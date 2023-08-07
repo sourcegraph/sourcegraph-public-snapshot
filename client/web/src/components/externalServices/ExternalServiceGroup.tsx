@@ -3,32 +3,26 @@ import { FC, useState } from 'react'
 import { mdiChevronUp, mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, Text, Icon, Link } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, ProductStatusBadge, Badge } from '@sourcegraph/wildcard'
 
-import { ExternalServiceCard } from './ExternalServiceCard'
 import { AddExternalServiceOptions } from './externalServices'
 
 import styles from './ExternalServiceGroup.module.scss'
 
 interface ExternalServiceGroupProps {
     name: string
-    services: AddExternalServiceOptions[]
+    services: AddExternalServiceOptionsWithID[]
     description: string
     renderServiceIcon: boolean
 
     icon?: React.ComponentType<{ className?: string }>
-    enabled?: boolean
-    to?: string
+}
 
-    /**
-     * ToIcon is an icon shown on the right-hand side of the card. Default value is right-pointed chevron.
-     */
-    toIcon?: string | undefined | null
-    className?: string
+export type AddExternalServiceOptionsWithID = AddExternalServiceOptions & {
+    serviceID: string
     enabled?: boolean
     badge?: string
     tooltip?: string
-    bordered?: boolean
 }
 
 export const ExternalServiceGroup: FC<ExternalServiceGroupProps> = ({
@@ -40,11 +34,7 @@ export const ExternalServiceGroup: FC<ExternalServiceGroupProps> = ({
 }) => {
     const [isOpen, setIsOpen] = useState<boolean>(true)
     const toggleIsOpen = (): void => setIsOpen(prevIsOpen => !prevIsOpen)
-    // <Link
-    //         className="d-block text-left text-body text-decoration-none"
-    //         to={to}
-    //         data-test-external-service-card-link={kind}
-    //     >
+
     return (
         <div className={styles.externalServiceGroupContainer}>
             <Button
@@ -65,25 +55,34 @@ export const ExternalServiceGroup: FC<ExternalServiceGroupProps> = ({
                 <ul className={styles.externalServiceGroupBody}>
                     {services.map((service, index) => (
                         <li key={index} className={styles.externalServiceGroupNode}>
-                            <ExternalServiceCard to={getAddURL(service.id)} {...service} />
-                            {/* <Link
+                            <Link
                                 className={classNames(
                                     styles.externalServiceGroupNodeLink,
                                     'text-left text-body text-decoration-none'
                                 )}
-                                to={getAddURL(service.id)}
+                                to={getAddURL(service.serviceID)}
                             >
                                 {renderServiceIcon && (
                                     <Icon inline={true} className="mb-0 mr-1" as={service.icon} aria-hidden={true} />
                                 )}
-                                <Text className={styles.externalServiceGroupNodeDisplayName}>
-                                    {service.title}
+                                <div className={styles.externalServiceGroupNodeDisplayName}>
+                                    <span>{service.title}</span>
                                     {'  '}
-                                    <span className={styles.externalServiceGroupNodeDescription}>
+                                    {service.status && <ProductStatusBadge status={service.status} className="mx-1" />}
+                                    {service.badge && (
+                                        <Badge className="mx-1" variant="outlineSecondary">
+                                            {service.badge.toUpperCase()}
+                                        </Badge>
+                                    )}
+                                    <span
+                                        className={classNames(styles.externalServiceGroupNodeDescription, {
+                                            'd-block': Boolean(service.status || service.badge),
+                                        })}
+                                    >
                                         {service.shortDescription}
                                     </span>
-                                </Text>
-                            </Link> */}
+                                </div>
+                            </Link>
                         </li>
                     ))}
                 </ul>
