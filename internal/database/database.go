@@ -39,10 +39,6 @@ func ReadResponse[T any](resp any, respErr error) (T, error) {
 		return t, &ErrInvalidResponseType{FromType: reflect.TypeOf(resp), ToType: reflect.TypeOf(t)}
 	}
 
-	if respErr != nil {
-		return t, respErr
-	}
-
 	return t, nil
 }
 
