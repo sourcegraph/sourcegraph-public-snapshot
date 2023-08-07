@@ -22,7 +22,7 @@ type Template struct {
 // https://docs.google.com/document/d/1FJ6AhHmVInSE22EHcDZnzvvAd9KfwOkKvFpx7e346z4
 var ProblemSolutionDriveTemplate = Template{Name: "solution", DriveID: "1FJ6AhHmVInSE22EHcDZnzvvAd9KfwOkKvFpx7e346z4"}
 
-// AllTemplates contains all the RFC temaplates that one can use when creating a new RFC
+// AllTemplates contains all the RFC templates that one can use when creating a new RFC
 var AllTemplates = []Template{ProblemSolutionDriveTemplate}
 
 func Create(ctx context.Context, template Template, title string, driveSpec DriveSpec, out *std.Output) error {
