@@ -101,6 +101,7 @@
     "@babel/runtime": "^7.20.6",
     "@gql2ts/types": "^1.9.0",
     "@graphql-codegen/cli": "^2.16.1",
+    "@graphql-codegen/plugin-helpers": "^5.0.1",
     "@graphql-codegen/typescript": "2.8.5",
     "@graphql-codegen/typescript-apollo-client-helpers": "^2.2.6",
     "@graphql-codegen/typescript-operations": "2.5.10",
