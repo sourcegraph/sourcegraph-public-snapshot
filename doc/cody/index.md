@@ -102,7 +102,7 @@ td:first-child {
 Cody is currently available in beta.
 
 <br />
-We value your feedback! You can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an  <a href="https://github.com/sourcegraph/sourcegraph">issue</a>, or <a href="https://twitter.com/sourcegraph">tweet</a> to share feedback.
+We value your feedback! You can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an  <a href="https://github.com/sourcegraph/cody/issues">issue</a>, Join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">tweet</a> to share feedback.
 </p>
 </aside>
 
