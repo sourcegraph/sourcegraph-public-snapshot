@@ -110,6 +110,14 @@ func (o *FilterArgs) SQL() []*sqlf.Query {
 	return conds
 }
 
+type Client struct {
+	dbclient database.DBClient
+}
+
+func NewClient(dbclient database.DBClient) *Client {
+	return &Client{dbclient}
+}
+
 type CreateQuery struct {
 	AccessRequest *types.AccessRequest
 }
@@ -314,11 +322,3 @@ func scanAccessRequest(sc dbutil.Scanner) (*types.AccessRequest, error) {
 }
 
 var scanAccessRequests = basestore.NewSliceScanner(scanAccessRequest)
-
-type Client struct {
-	dbclient database.DBClient
-}
-
-func NewClient(dbclient database.DBClient) *Client {
-	return &Client{dbclient}
-}
