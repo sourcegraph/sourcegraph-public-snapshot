@@ -80,7 +80,7 @@ body.theme-dark {
   --sidebar-border-color: #1986ea66;
   --input-border-color: var(--sidebar-border-color);
   --input-focus-border-color: #1986ea;
-  --link-color: #66aaff;
+  --link-color: var(--brand-cyan-color);
   --link-hover-color: #77bbff;
   --anchor-inline-bg: yellow;
   --anchor-inline-border-color: #eecc11;
@@ -112,14 +112,9 @@ body.theme-light .markdown-body a {
   color: var(--link-color);
 }
 
-body.theme-dark a {
-  color:var(--brand-cyan-color);
-
-}
 a:hover {
-  opacity:0.8;
+  opacity: 0.8;
   transition: color 0.2s ease-in-out;
-  text-decoration: none;
 }
 
 body.theme-light #sidebar a,
