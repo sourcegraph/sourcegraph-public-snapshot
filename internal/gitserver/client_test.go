@@ -429,6 +429,9 @@ func TestClient_Remove(t *testing.T) {
 				},
 			},
 		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
 		test(t, &called)
 		if !called {
 			t.Fatal("grpc client not called")
@@ -442,6 +445,9 @@ func TestClient_Remove(t *testing.T) {
 					EnableGRPC: false,
 				},
 			},
+		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
 		})
 		test(t, &called)
 		if called {
@@ -608,6 +614,9 @@ func TestClient_ArchiveReader(t *testing.T) {
 				},
 			},
 		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
 		for _, test := range tests {
 			db := database.NewMockDB()
 			repoName := api.RepoName(test.name)
@@ -653,6 +662,9 @@ func TestClient_ArchiveReader(t *testing.T) {
 					EnableGRPC: false,
 				},
 			},
+		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
 		})
 
 		for _, test := range tests {
@@ -886,8 +898,9 @@ func TestClient_P4ExecGRPC(t *testing.T) {
 					},
 				},
 			})
-
-			defer conf.Mock(nil)
+			t.Cleanup(func() {
+				conf.Mock(nil)
+			})
 
 			const gitserverAddr = "172.16.8.1:8080"
 			addrs := []string{gitserverAddr}
@@ -1012,7 +1025,10 @@ func TestClient_P4Exec(t *testing.T) {
 					},
 				},
 			})
-			defer conf.Mock(nil)
+			t.Cleanup(func() {
+				conf.Mock(nil)
+			})
+
 			testServer := httptest.NewServer(test.handler)
 			defer testServer.Close()
 
@@ -1124,7 +1140,9 @@ func TestClient_BatchLogGRPC(t *testing.T) {
 			},
 		},
 	})
-	defer conf.Mock(nil)
+	t.Cleanup(func() {
+		conf.Mock(nil)
+	})
 
 	addrs := []string{"172.16.8.1:8080"}
 
@@ -1342,7 +1360,9 @@ func TestClient_ReposStats(t *testing.T) {
 			},
 		},
 	})
-	defer conf.Mock(nil)
+	t.Cleanup(func() {
+		conf.Mock(nil)
+	})
 
 	const gitserverAddr = "172.16.8.1:8080"
 	now := time.Now().UTC()
@@ -1387,6 +1407,9 @@ func TestClient_ReposStatsGRPC(t *testing.T) {
 				EnableGRPC: true,
 			},
 		},
+	})
+	t.Cleanup(func() {
+		conf.Mock(nil)
 	})
 
 	const gitserverAddr = "172.16.8.1:8080"
@@ -1487,6 +1510,9 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 				},
 			},
 		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
 
 		for _, tc := range testCases {
 
@@ -1521,6 +1547,9 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 					EnableGRPC: false,
 				},
 			},
+		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
 		})
 		expected := fmt.Sprintf("http://%s", gitserverAddr)
 
@@ -1565,70 +1594,6 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 		}
 	})
 
-}
-
-func TestGitserverClient_RepoClone(t *testing.T) {
-	t.Skip("Skipping because it's flaky. Seems to only happen on CI.")
-	root := gitserver.CreateRepoDir(t)
-
-	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				EnableGRPC: true,
-			},
-		},
-	})
-
-	db := newMockDB()
-	s := server.Server{
-		Logger:   logtest.Scoped(t),
-		ReposDir: filepath.Join(root, "repos"),
-		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
-			return "https://" + string(name) + ".git", nil
-		},
-		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
-			return server.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
-		},
-		DB:                      db,
-		CloneQueue:              server.NewCloneQueue(observation.TestContextTB(t), list.New()),
-		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
-	}
-
-	grpcServer := defaults.NewServer(logtest.Scoped(t))
-	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: &s})
-
-	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
-	srv := httptest.NewServer(handler)
-
-	defer srv.Close()
-
-	u, _ := url.Parse(srv.URL)
-	addrs := []string{u.Host}
-	called := false
-	source := gitserver.NewTestClientSource(t, db, addrs, func(o *gitserver.TestClientSourceOptions) {
-		o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
-			mockRepoClone := func(ctx context.Context, in *proto.RepoCloneRequest, opts ...grpc.CallOption) (*proto.RepoCloneResponse, error) {
-				base := proto.NewGitserverServiceClient(cc)
-				called = true
-				return base.RepoClone(ctx, in, opts...)
-			}
-			return &mockClient{mockRepoClone: mockRepoClone}
-		}
-	})
-
-	client := gitserver.NewTestClient(http.DefaultClient, source)
-	repo := api.RepoName("github.com/gorilla/mux")
-	resp, err := client.RequestRepoClone(context.Background(), repo)
-	if err != nil {
-		t.Errorf("unexpected error: %s", err.Error())
-	}
-
-	if resp.Error != "" {
-		t.Errorf("unexpected response: %+v", resp)
-	}
-	if !called {
-		t.Fatal("RepoClone: grpc client not called")
-	}
 }
 
 type mockClient struct {
