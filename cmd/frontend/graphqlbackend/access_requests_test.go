@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"net/http"
 	"testing"
 	"time"
 
@@ -249,7 +248,6 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 	})
 
 	t.Run("non-existing access request", func(t *testing.T) {
-		http.Client
 		mockDBClient := database.NewMockDBClient()
 		db.ClientFunc.SetDefaultReturn(mockDBClient)
 		notFoundErr := &accessrequests.ErrNotFound{ID: 1}
