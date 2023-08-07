@@ -728,6 +728,13 @@ body > #page > main > #content {
   margin: 3em 0;
 }
 
+@media (max-width: 500px) {
+    .markdown-body {
+        /* Smaller line lengths are more readable with shorter line heights */
+        line-height: 1.5;
+    }
+}
+
 
 /* SEARCH RESULT */
 .search-result h1, .search-result h2, .search-result h3 {
