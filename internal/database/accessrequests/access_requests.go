@@ -118,11 +118,11 @@ func NewClient(dbclient database.DBClient) *Client {
 	return &Client{dbclient}
 }
 
-type CreateQuery struct {
+type Create struct {
 	AccessRequest *types.AccessRequest
 }
 
-func (q *CreateQuery) Execute(ctx context.Context, store *basestore.Store) (*types.AccessRequest, error) {
+func (q *Create) Execute(ctx context.Context, store *basestore.Store) (*types.AccessRequest, error) {
 	var newAccessRequest *types.AccessRequest
 	err := store.WithTransact(ctx, func(tx *basestore.Store) error {
 		// We don't allow adding a new request_access with an email address that has already been
@@ -167,23 +167,23 @@ func (q *CreateQuery) Execute(ctx context.Context, store *basestore.Store) (*typ
 	return newAccessRequest, err
 }
 
-func (q *CreateQuery) ExecuteRaw(ctx context.Context, store *basestore.Store) (any, error) {
+func (q *Create) ExecuteRaw(ctx context.Context, store *basestore.Store) (any, error) {
 	return q.Execute(ctx, store)
 }
 
 func (c *Client) Create(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
-	query := &CreateQuery{
+	query := &Create{
 		AccessRequest: accessRequest,
 	}
 
 	return database.ExecuteWithClient[*types.AccessRequest](ctx, query, c.dbclient)
 }
 
-type UpdateQuery struct {
+type Update struct {
 	AccessRequest *types.AccessRequest
 }
 
-func (q *UpdateQuery) Execute(ctx context.Context, store *basestore.Store) (*types.AccessRequest, error) {
+func (q *Update) Execute(ctx context.Context, store *basestore.Store) (*types.AccessRequest, error) {
 	query := sqlf.Sprintf(updateQuery, q.AccessRequest.Status, *q.AccessRequest.DecisionByUserID, q.AccessRequest.ID, sqlf.Join(columns, ","))
 	updated, err := scanAccessRequest(store.QueryRow(ctx, query))
 	if err != nil {
@@ -196,23 +196,23 @@ func (q *UpdateQuery) Execute(ctx context.Context, store *basestore.Store) (*typ
 	return updated, nil
 }
 
-func (q *UpdateQuery) ExecuteRaw(ctx context.Context, store *basestore.Store) (any, error) {
+func (q *Update) ExecuteRaw(ctx context.Context, store *basestore.Store) (any, error) {
 	return q.Execute(ctx, store)
 }
 
 func (c *Client) Update(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
-	query := &UpdateQuery{
+	query := &Update{
 		AccessRequest: accessRequest,
 	}
 
 	return database.ExecuteWithClient[*types.AccessRequest](ctx, query, c.dbclient)
 }
 
-type GetByIDQuery struct {
+type GetByID struct {
 	ID int32
 }
 
-func (q *GetByIDQuery) Execute(ctx context.Context, store *basestore.Store) (*types.AccessRequest, error) {
+func (q *GetByID) Execute(ctx context.Context, store *basestore.Store) (*types.AccessRequest, error) {
 	row := store.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE id = %s", sqlf.Join(columns, ","), q.ID))
 	node, err := scanAccessRequest(row)
 	if err != nil {
@@ -225,23 +225,23 @@ func (q *GetByIDQuery) Execute(ctx context.Context, store *basestore.Store) (*ty
 	return node, nil
 }
 
-func (q *GetByIDQuery) ExecuteRaw(ctx context.Context, store *basestore.Store) (any, error) {
+func (q *GetByID) ExecuteRaw(ctx context.Context, store *basestore.Store) (any, error) {
 	return q.Execute(ctx, store)
 }
 
 func (c *Client) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
-	query := &GetByIDQuery{
+	query := &GetByID{
 		ID: id,
 	}
 
 	return database.ExecuteWithClient[*types.AccessRequest](ctx, query, c.dbclient)
 }
 
-type GetByEmailQuery struct {
+type GetByEmail struct {
 	Email string
 }
 
-func (q *GetByEmailQuery) Execute(ctx context.Context, store *basestore.Store) (*types.AccessRequest, error) {
+func (q *GetByEmail) Execute(ctx context.Context, store *basestore.Store) (*types.AccessRequest, error) {
 	row := store.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE email = %s", sqlf.Join(columns, ","), q.Email))
 	node, err := scanAccessRequest(row)
 	if err != nil {
@@ -254,23 +254,23 @@ func (q *GetByEmailQuery) Execute(ctx context.Context, store *basestore.Store) (
 	return node, nil
 }
 
-func (q *GetByEmailQuery) ExecuteRaw(ctx context.Context, store *basestore.Store) (any, error) {
+func (q *GetByEmail) ExecuteRaw(ctx context.Context, store *basestore.Store) (any, error) {
 	return q.Execute(ctx, store)
 }
 
 func (c *Client) GetByEmail(ctx context.Context, email string) (*types.AccessRequest, error) {
-	query := &GetByEmailQuery{
+	query := &GetByEmail{
 		Email: email,
 	}
 
 	return database.ExecuteWithClient[*types.AccessRequest](ctx, query, c.dbclient)
 }
 
-type CountQuery struct {
+type Count struct {
 	FArgs *FilterArgs
 }
 
-func (q *CountQuery) Execute(ctx context.Context, store *basestore.Store) (int, error) {
+func (q *Count) Execute(ctx context.Context, store *basestore.Store) (int, error) {
 	query := sqlf.Sprintf("SELECT COUNT(*) FROM access_requests WHERE (%s)", sqlf.Join(q.FArgs.SQL(), ") AND ("))
 	count, err := basestore.ScanInt(store.QueryRow(ctx, query))
 	if err != nil {
@@ -280,24 +280,24 @@ func (q *CountQuery) Execute(ctx context.Context, store *basestore.Store) (int, 
 	return count, nil
 }
 
-func (q *CountQuery) ExecuteRaw(ctx context.Context, store *basestore.Store) (any, error) {
+func (q *Count) ExecuteRaw(ctx context.Context, store *basestore.Store) (any, error) {
 	return q.Execute(ctx, store)
 }
 
 func (c *Client) Count(ctx context.Context, fArgs *FilterArgs) (int, error) {
-	query := &CountQuery{
+	query := &Count{
 		FArgs: fArgs,
 	}
 
 	return database.ExecuteWithClient[int](ctx, query, c.dbclient)
 }
 
-type ListQuery struct {
+type List struct {
 	FArgs *FilterArgs
 	PArgs *database.PaginationArgs
 }
 
-func (q *ListQuery) Execute(ctx context.Context, store *basestore.Store) ([]*types.AccessRequest, error) {
+func (q *List) Execute(ctx context.Context, store *basestore.Store) ([]*types.AccessRequest, error) {
 	if q.FArgs == nil {
 		q.FArgs = &FilterArgs{}
 	}
@@ -323,12 +323,12 @@ func (q *ListQuery) Execute(ctx context.Context, store *basestore.Store) ([]*typ
 	return nodes, nil
 }
 
-func (q *ListQuery) ExecuteRaw(ctx context.Context, store *basestore.Store) (any, error) {
+func (q *List) ExecuteRaw(ctx context.Context, store *basestore.Store) (any, error) {
 	return q.Execute(ctx, store)
 }
 
 func (c *Client) List(ctx context.Context, fArgs *FilterArgs, pArgs *database.PaginationArgs) ([]*types.AccessRequest, error) {
-	query := &ListQuery{
+	query := &List{
 		FArgs: fArgs,
 		PArgs: pArgs,
 	}
