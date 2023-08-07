@@ -58,7 +58,6 @@ func newService(
 	}
 }
 
-// TODO move this to a config file
 // Flagrantly taken from default value in enterprise/cmd/frontend/internal/codeintel/config.go
 const (
 	maximumIndexesPerMonikerSearch = 500
@@ -262,8 +261,6 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		// DEBUGGING
 		lap("PHASE 2: %d matching precise symbols\n", len(fuzzyNameSetBySymbol))
 	} else {
-		// TODO: we might have to strip the root active file
-		// TODO: if the file name starts with the root remove it
 		symbolsNames, err := s.codenavSvc.GetSymbolNamesByRange(ctx, requestArgs, filename, reqState, activeRangeSelection)
 		if err != nil {
 			return nil, err
@@ -303,25 +300,6 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		}
 	}
 
-	// for symbol, fuzzyNames := range fuzzyNameSetBySymbol {
-	// 	// TODO - these are duplicated and should also be batched
-	// 	fmt.Printf("> Fetching definitions of %q\n", symbol)
-
-	// 	ul, err := s.codenavSvc.NewGetDefinitionsBySymbolNames(ctx, requestArgs, reqState, []string{symbol})
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-
-	// 	// TODO - should this ever be non-singleton? (this will go away when we batch)
-	// 	for fzn := range fuzzyNames {
-	// 		preciseDataList = append(preciseDataList, &preciseData{
-	// 			fuzzyName:      fzn,
-	// 			scipSymbolName: symbol,
-	// 			location:       ul,
-	// 		})
-	// 	}
-	// }
-
 	trace.AddEvent("preciseDataList", attribute.Int("fuzzyName", len(preciseDataList)))
 
 	// DEBUGGING
@@ -336,12 +314,6 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	cache := map[string]DocumentAndText{}
 	for _, pd := range preciseDataList {
 		for _, l := range pd.location {
-			// key := fmt.Sprintf("%s@%s:%s", l.Dump.RepositoryName, l.Dump.Commit, filepath.Join(l.Dump.Root, l.Path))
-			// if _, ok := cache[key]; ok {
-			// 	continue
-			// }
-			// fmt.Printf("> Parsing file %q\n", key)
-
 			repoCommitKey := fmt.Sprintf("%s@%s", l.Dump.RepositoryName, l.Dump.Commit)
 
 			px := filesByRepo[repoCommitKey].paths
@@ -356,31 +328,13 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				dump:  l.Dump,
 				paths: px,
 			}
-
-			// // TODO - archive where possible when we fetch multiple files from the
-			// // same repo. Cut round trips down from one per file to one per repo,
-			// // and we'll likely have a lot of shared definition sources.
-			// // TODO: Group by repo, then fetch the archive containing those files
-
-			// file, err := s.gitserverClient.ReadFile(
-			// 	ctx,
-			// 	authz.DefaultSubRepoPermsChecker,
-			// 	api.RepoName(l.Dump.RepositoryName),
-			// 	api.CommitID(l.Dump.Commit),
-			// 	l.Path,
-			// )
-			// if err != nil {
-			// 	return nil, err
-			// }
-
-			// syntectDocs, err := s.getSCIPDocumentByContent(ctx, string(file), l.Path)
-			// if err != nil {
-			// 	return nil, err
-			// }
-			// cache[key] = NewDocumentAndText(string(file), syntectDocs)
 		}
 	}
 
+	fileToPath := map[string]struct {
+		path string
+		dump shared.Dump
+	}{}
 	for repoCommitKey, path := range filesByRepo {
 		parts := strings.Split(repoCommitKey, "@")
 		repo := api.RepoName(parts[0])
@@ -419,13 +373,23 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			// the returned filepaths.
 			file := buf.String()
 			p := strings.TrimPrefix(header.Name, ":(literal)")
-			syntectDocs, err := s.getSCIPDocumentByContent(ctx, file, p)
-			if err != nil {
-				return nil, err
+			fileToPath[file] = struct {
+				path string
+				dump shared.Dump
+			}{
+				path: p,
+				dump: path.dump,
 			}
-			key := fmt.Sprintf("%s@%s:%s", path.dump.RepositoryName, path.dump.Commit, filepath.Join(path.dump.Root, p))
-			cache[key] = NewDocumentAndText(file, syntectDocs)
 		}
+	}
+
+	for file, path := range fileToPath {
+		syntectDocs, err := s.getSCIPDocumentByContent(ctx, file, path.path)
+		if err != nil {
+			return nil, err
+		}
+		key := fmt.Sprintf("%s@%s:%s", path.dump.RepositoryName, path.dump.Commit, filepath.Join(path.dump.Root, path.path))
+		cache[key] = NewDocumentAndText(file, syntectDocs)
 	}
 
 	// DEBUGGING
