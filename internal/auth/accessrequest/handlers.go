@@ -73,7 +73,7 @@ func handleRequestAccess(logger log.Logger, db database.DB, w http.ResponseWrite
 		return
 	}
 	logger.Error("Error in access request.", log.String("email", data.Email), log.String("name", data.Name), log.Error(err))
-	if accessrequests.IsAccessRequestUserWithEmailExists(err) || accessrequests.IsAccessRequestWithEmailExists(err) {
+	if accessrequests.IsUserWithEmailExists(err) || accessrequests.IsAccessRequestWithEmailExists(err) {
 		// 🚨 SECURITY: We don't show an error message when the user or access request with the same e-mail address exists
 		// as to not leak the existence of a given e-mail address in the database.
 		w.WriteHeader(http.StatusCreated)

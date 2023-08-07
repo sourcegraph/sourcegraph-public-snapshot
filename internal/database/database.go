@@ -27,12 +27,12 @@ func (e *InvalidResponseType) Error() string {
 
 func ReadResponse[T any](resp any, respErr error) (t T, err error) {
 	if respErr != nil {
-		return t, err
+		return t, respErr
 	}
 
 	createResp, ok := resp.(T)
 	if !ok {
-		return t, &InvalidResponseType{FromType: reflect.TypeOf(resp), ToType: reflect.TypeOf((*T)(nil))}
+		return t, &InvalidResponseType{FromType: reflect.TypeOf(resp), ToType: reflect.TypeOf(*(*T)(nil))}
 	}
 
 	return createResp, nil

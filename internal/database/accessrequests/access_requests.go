@@ -86,8 +86,8 @@ func (e *ErrNotFound) NotFound() bool {
 	return true
 }
 
-// IsAccessRequestUserWithEmailExists reports whether err is an error indicating that the access request email was already taken by a signed in user.
-func IsAccessRequestUserWithEmailExists(err error) bool {
+// IsUserWithEmailExists reports whether err is an error indicating that the access request email was already taken by a signed in user.
+func IsUserWithEmailExists(err error) bool {
 	var e ErrCannotCreate
 	return errors.As(err, &e) && e.code == errorCodeUserWithEmailExists
 }

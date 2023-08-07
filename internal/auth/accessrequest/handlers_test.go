@@ -116,7 +116,7 @@ func TestRequestAccess(t *testing.T) {
 			Name:  "a1",
 			Email: "a1@example.com",
 		}
-		accessrequests.NewClient(db.Client()).Create(context.Background(), &accessRequest)
+		client.Create(context.Background(), &accessRequest)
 		_, err := client.GetByEmail(context.Background(), accessRequest.Email)
 		require.NoError(t, err)
 
