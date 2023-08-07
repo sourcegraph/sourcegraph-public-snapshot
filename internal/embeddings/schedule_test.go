@@ -3,7 +3,6 @@ package embeddings
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"testing"
 
 	"github.com/keegancsmith/sqlf"
@@ -16,6 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestScheduleRepositoriesForEmbedding(t *testing.T) {
