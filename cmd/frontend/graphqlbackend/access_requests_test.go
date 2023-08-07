@@ -251,7 +251,8 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 		mockDBClient := database.NewMockDBClient()
 		db.ClientFunc.SetDefaultReturn(mockDBClient)
 		notFoundErr := &accessrequests.ErrNotFound{ID: 1}
-		mockDBClient.Mock(&accessrequests.GetByID{}, nil, notFoundErr)
+		var notFound *types.AccessRequest
+		mockDBClient.Mock(&accessrequests.GetByID{}, notFound, notFoundErr)
 
 		userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
