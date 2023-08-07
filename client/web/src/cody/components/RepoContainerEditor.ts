@@ -1,6 +1,8 @@
 import {
     ActiveTextEditor,
+    ActiveTextEditorDiagnostic,
     ActiveTextEditorSelection,
+    ActiveTextEditorSelectionRange,
     ActiveTextEditorVisibleContent,
     Editor,
 } from '@sourcegraph/cody-shared/dist/editor'
@@ -9,6 +11,10 @@ export class RepoContainerEditor implements Editor {
     constructor(private repoName: string) {}
 
     public getWorkspaceRootPath(): string | null {
+        return null
+    }
+
+    public getWorkspaceRootUri(): URI | null {
         return null
     }
 
@@ -25,6 +31,12 @@ export class RepoContainerEditor implements Editor {
     }
 
     public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
+        return null
+    }
+
+    public getActiveTextEditorDiagnosticsForRange(
+        range: ActiveTextEditorSelectionRange
+    ): ActiveTextEditorDiagnostic[] | null {
         return null
     }
 

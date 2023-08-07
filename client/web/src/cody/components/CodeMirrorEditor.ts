@@ -40,13 +40,7 @@ export class CodeMirrorEditor implements Editor {
         return null
     }
 
-    // ???
     public getWorkspaceRootUri(): URI | null {
-        return null
-    }
-    public getActiveTextEditorDiagnosticsForRange(
-        range: ActiveTextEditorSelectionRange
-    ): ActiveTextEditorDiagnostic[] | null {
         return null
     }
 
@@ -108,6 +102,12 @@ export class CodeMirrorEditor implements Editor {
             }
         }
 
+        return null
+    }
+
+    public getActiveTextEditorDiagnosticsForRange(
+        range: ActiveTextEditorSelectionRange
+    ): ActiveTextEditorDiagnostic[] | null {
         return null
     }
 

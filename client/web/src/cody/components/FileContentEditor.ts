@@ -2,7 +2,9 @@ import { URI } from 'vscode-uri'
 
 import {
     ActiveTextEditor,
+    ActiveTextEditorDiagnostic,
     ActiveTextEditorSelection,
+    ActiveTextEditorSelectionRange,
     ActiveTextEditorVisibleContent,
     Editor,
 } from '@sourcegraph/cody-shared/dist/editor'
@@ -45,6 +47,12 @@ export class FileContentEditor implements Editor {
             selectedText: this.editor.content,
             followingText: '',
         }
+    }
+
+    public getActiveTextEditorDiagnosticsForRange(
+        range: ActiveTextEditorSelectionRange
+    ): ActiveTextEditorDiagnostic[] | null {
+        return null
     }
 
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
