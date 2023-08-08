@@ -59,6 +59,20 @@ for apk in "${apks[@]}"; do
   # no-cache to avoid index/packages getting out of sync
   echo "   * Uploading package and index fragment to repo"
   gsutil -u "$GCP_PROJECT" -h "Cache-Control:no-cache" cp "$apk" "$index_fragment" "$dest_path"
+
+  # Show package usage message on branches
+  if [[ "$IS_MAIN" != "true" ]]; then
+    echo -e "   * To use this package locally, add the following lines to your base image config:\n"
+    # TODO: Update keyring when keys change: https://storage.googleapis.com/package-repository/packages/${BRANCH_PATH}/melange.rsa.pub
+    echo -e "contents:
+  keyring:
+    - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
+  repositories:
+    - '@branch https://storage.googleapis.com/package-repository/packages/${BRANCH_PATH}'
+  packages:
+    - <package-name>@branch\n\n"
+  fi
+
 done
 
 if [[ "$error" == "true" ]]; then
