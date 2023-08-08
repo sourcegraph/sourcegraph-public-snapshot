@@ -9,8 +9,8 @@
 </script>
 
 <div class="header">
-    <div class="toggle-wrapper" class:open={$sidebarOpen}>
-        <SidebarToggleButton />&nbsp;
+    <div class="toggle-wrapper" class:hidden={$sidebarOpen}>
+        <SidebarToggleButton />
     </div>
     <h2>
         <span class="icon">
@@ -49,11 +49,15 @@
     }
 
     .toggle-wrapper {
-        display: initial;
-        margin-right: 0.1rem;
+        margin-right: 0.5rem;
 
-        &.open {
-            display: none;
+        // We still want the height of the button to be considered
+        // when rendering the header, so that toggling the sidebar
+        // won't change the height of the header.
+        &.hidden {
+            visibility: hidden;
+            margin-right: 0;
+            width: 0;
         }
     }
 
