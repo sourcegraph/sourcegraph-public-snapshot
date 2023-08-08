@@ -150,7 +150,13 @@ func (s *Store) BackfillSchemaVersions(ctx context.Context) error {
 
 		// We haven't broken out of the loop, we've applied the entirety of this
 		// version's migrations. We can backfill from its root.
-		rootMap[bounds.RootID] = struct{}{}
+		root := bounds.RootID
+		if root < 0 {
+			root = -root
+		}
+		if _, ok := definitions.GetByID(root); ok {
+			rootMap[root] = struct{}{}
+		}
 	}
 
 	roots := make([]int, 0, len(rootMap))
