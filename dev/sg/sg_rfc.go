@@ -99,12 +99,12 @@ sg rfc --private create --type <type> "title"
 		},
 		{
 			Name:      "create",
-			ArgsUsage: "--type <type> <title...>",
+			ArgsUsage: "--type <type> [title...]",
 			Flags: []cli.Flag{
 				&cli.StringFlag{
-					Name:     "type",
-					Usage:    "the type of the RFC to create (valid: solution)",
-					Required: true,
+					Name:  "type",
+					Usage: "the type of the RFC to create (valid: solution)",
+					Value: rfc.ProblemSolutionDriveTemplate.Name,
 				},
 			},
 			Usage: "Create Sourcegraph RFCs",
@@ -113,18 +113,25 @@ sg rfc --private create --type <type> "title"
 				if c.Bool("private") {
 					driveSpec = rfc.PrivateDrive
 				}
+
 				rfcType := c.String("type")
-				var rfcTemplate rfc.RfcTemplate
-				switch rfcType {
-				case "solution":
-					rfcTemplate = rfc.ProblemSolutionDriveTemplate
-				default:
+
+				var template rfc.Template
+				// Search for the rfcType and assign it to template
+				for _, tpl := range rfc.AllTemplates {
+					if tpl.Name == rfcType {
+						template = tpl
+						break
+					}
+				}
+				if template.Name == "" {
 					return errors.New(fmt.Sprintf("Unknown RFC type: %s", rfcType))
 				}
+
 				if c.Args().Len() == 0 {
 					return errors.New("no title given")
 				}
-				return rfc.Create(c.Context, rfcTemplate, strings.Join(c.Args().Slice(), " "),
+				return rfc.Create(c.Context, template, strings.Join(c.Args().Slice(), " "),
 					driveSpec, std.Out)
 			},
 		},

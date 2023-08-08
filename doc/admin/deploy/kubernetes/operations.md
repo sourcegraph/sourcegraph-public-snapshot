@@ -14,19 +14,19 @@ Operations guides specific to managing [Sourcegraph on Kubernetes](./index.md) i
 <div class="getting-started">
   <a href="configure" class="btn btn-primary" alt="Configure">
    <span>Configure</span>
-   </br>
+   <br>
    Configure your Sourcegraph deployment with our deployment reference.
   </a>
 
   <a href="#upgrade" class="btn" alt="Upgrade">
    <span>Upgrade</span>
-   </br>
+   <br>
    Upgrade your deployment to the latest Sourcegraph release.
   </a>
 
   <a href="troubleshoot" class="btn" alt="Backup and restore">
    <span>Troubleshoot</span>
-   </br>
+   <br>
    Troubleshoot common issues with your Sourcegraph instance.
   </a>
 </div>
