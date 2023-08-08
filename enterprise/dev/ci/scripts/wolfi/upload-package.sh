@@ -50,6 +50,7 @@ for apk in "${apks[@]}"; do
     echo "The production package repository already contains a package with this version: $apk" >&2
     echo "   -> Production repository file path: ${dest_path_main}${apk}" >&2
     echo "Resolve this issue by incrementing the \`epoch\` field in the package's YAML file." >&2
+    # Soft fail at the end - we still want to allow the package to be uploaded for cases like a Buildkite pipeline being rerun
     error="true"
   else
     echo "   * File does not exist, uploading..."
@@ -61,5 +62,5 @@ for apk in "${apks[@]}"; do
 done
 
 if [[ "$error" == "true" ]]; then
-  exit 222
+  exit 222 # Soft fail
 fi
