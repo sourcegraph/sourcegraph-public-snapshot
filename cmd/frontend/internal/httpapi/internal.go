@@ -8,7 +8,6 @@ import (
 	"path"
 
 	"github.com/gorilla/mux"
-	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	proto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
@@ -32,23 +31,7 @@ type configServer struct {
 
 func (c *configServer) GetConfig(_ context.Context, _ *proto.GetConfigRequest) (*proto.GetConfigResponse, error) {
 	raw := conf.Raw()
-	sc := raw.ServiceConnections
-	return &proto.GetConfigResponse{
-		Id:   raw.ID,
-		Site: raw.Site,
-		ServiceConnections: &proto.ServiceConnections{
-			GitServers:           sc.GitServers,
-			PostgresDsn:          sc.PostgresDSN,
-			CodeIntelPostgresDsn: sc.CodeIntelPostgresDSN,
-			CodeInsightsDsn:      sc.CodeInsightsDSN,
-			Searchers:            sc.Searchers,
-			Symbols:              sc.Symbols,
-			Embeddings:           sc.Embeddings,
-			Qdrant:               sc.Qdrant,
-			Zoekts:               sc.Zoekts,
-			ZoektListTtl:         durationpb.New(sc.ZoektListTTL),
-		},
-	}, nil
+	return &proto.GetConfigResponse{RawUnified: raw.ToProto()}, nil
 }
 
 // gitServiceHandler are handlers which redirect git clone requests to the

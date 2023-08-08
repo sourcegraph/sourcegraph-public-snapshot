@@ -78,32 +78,14 @@ func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnifie
 		if err != nil {
 			return conftypes.RawUnified{}, err
 		}
-		return rawUnifiedFromProto(resp), nil
+		var raw conftypes.RawUnified
+		raw.FromProto(resp.RawUnified)
+		return raw, nil
 	}
 
 	var cfg conftypes.RawUnified
 	err := c.postInternal(ctx, "configuration", nil, &cfg)
 	return cfg, err
-}
-
-func rawUnifiedFromProto(in *proto.GetConfigResponse) conftypes.RawUnified {
-	sc := in.GetServiceConnections()
-	return conftypes.RawUnified{
-		ID:   in.GetId(),
-		Site: in.GetSite(),
-		ServiceConnections: conftypes.ServiceConnections{
-			GitServers:           sc.GetGitServers(),
-			PostgresDSN:          sc.GetPostgresDsn(),
-			CodeIntelPostgresDSN: sc.GetCodeIntelPostgresDsn(),
-			CodeInsightsDSN:      sc.GetCodeInsightsDsn(),
-			Searchers:            sc.GetSearchers(),
-			Symbols:              sc.GetSymbols(),
-			Embeddings:           sc.GetEmbeddings(),
-			Qdrant:               sc.GetQdrant(),
-			Zoekts:               sc.GetZoekts(),
-			ZoektListTTL:         sc.GetZoektListTtl().AsDuration(),
-		},
-	}
 }
 
 // postInternal sends an HTTP post request to the internal route.
