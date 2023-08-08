@@ -103,10 +103,6 @@ body {
 
 a {
   text-decoration: none;
-}
-
-body.theme-light a,
-body.theme-light .markdown-body a {
   color: var(--link-color);
 }
 
@@ -115,14 +111,14 @@ a:hover {
   transition: color 0.2s ease-in-out;
 }
 
-body.theme-light #sidebar a,
-body.theme-light #index a {
-  color: #171717;
+body.theme-light #sidebar,
+body.theme-light #index {
+  --link-color: #171717
 }
 
-body.theme-dark #sidebar a,
-body.theme-dark #index a {
-  color: rgb(161, 161, 161);
+body.theme-dark #sidebar,
+body.theme-dark #index {
+  --link-color: rgb(161, 161, 161);
 }
 
 /* Nav links */
