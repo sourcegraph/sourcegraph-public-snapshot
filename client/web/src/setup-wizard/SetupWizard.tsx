@@ -114,7 +114,7 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
     // about the setup wizard availability and redirect to the wizard if it wasn't skipped already.
     // eslint-disable-next-line no-restricted-syntax
     const [, setSkipWizardState] = useLocalStorage('setup.skipped', false)
-    const [isSetupChecklistEnabled] = useFeatureFlag('setup-checklist', false)
+    const [isSetupChecklistEnabled, flagFetchStatus] = useFeatureFlag('setup-checklist', false)
     const steps = useMemo(() => (isSetupChecklistEnabled ? CHECKLIST_STEPS : CORE_STEPS), [isSetupChecklistEnabled])
 
     const handleStepChange = useCallback(
@@ -139,11 +139,16 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
         return null
     }
 
+    // skip rendering until feature flag is loaded
+    if (!['loaded', 'error'].includes(flagFetchStatus)) {
+        return null
+    }
+
     return (
         <div className={styles.root}>
             <PageTitle title="Setup" />
             <SetupStepsRoot
-                initialStepId={activeStepId}
+                initialStepId={isSetupChecklistEnabled ? undefined : activeStepId}
                 steps={steps}
                 onSkip={handleSkip}
                 onStepChange={handleStepChange}
