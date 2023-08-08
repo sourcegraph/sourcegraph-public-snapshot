@@ -8,8 +8,10 @@ import (
 	"path"
 
 	"github.com/gorilla/mux"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	proto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -21,6 +23,32 @@ func serveConfiguration(w http.ResponseWriter, _ *http.Request) error {
 		return errors.Wrap(err, "Encode")
 	}
 	return nil
+}
+
+// configServer implements proto.ConfigServiceServer to serve config to other clients in the cluster.
+type configServer struct {
+	proto.UnimplementedConfigServiceServer
+}
+
+func (c *configServer) GetConfig(_ context.Context, _ *proto.GetConfigRequest) (*proto.GetConfigResponse, error) {
+	raw := conf.Raw()
+	sc := raw.ServiceConnections
+	return &proto.GetConfigResponse{
+		Id:   raw.ID,
+		Site: raw.Site,
+		ServiceConnections: &proto.ServiceConnections{
+			GitServers:           sc.GitServers,
+			PostgresDsn:          sc.PostgresDSN,
+			CodeIntelPostgresDsn: sc.CodeIntelPostgresDSN,
+			CodeInsightsDsn:      sc.CodeInsightsDSN,
+			Searchers:            sc.Searchers,
+			Symbols:              sc.Symbols,
+			Embeddings:           sc.Embeddings,
+			Qdrant:               sc.Qdrant,
+			Zoekts:               sc.Zoekts,
+			ZoektListTtl:         durationpb.New(sc.ZoektListTTL),
+		},
+	}, nil
 }
 
 // gitServiceHandler are handlers which redirect git clone requests to the
