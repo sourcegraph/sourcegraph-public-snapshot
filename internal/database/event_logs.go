@@ -1598,8 +1598,8 @@ sub_cohort AS (
   FROM event_logs
   WHERE
     timestamp >= %s::timestamp - '1 month'::interval
-    AND name not like '%%completion:started%%'
-    AND name not like '%%completion:suggested%%'
+    AND name not ilike '%%completion:started%%'
+    AND name not ilike '%%completion:suggested%%'
 ),
 events AS (
   SELECT
@@ -1613,9 +1613,8 @@ events AS (
     ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
   FROM event_logs
   WHERE
-    (name like '%%cody%%' or name like '%%Cody%%')
-    AND name not like '%%CTA%%'
-    AND name not like '%%Cta%%'
+    name ilike '%%cody%%'
+    AND name not ilike '%%cta%%'
     AND (name NOT IN ('` + strings.Join(nonActiveCodyEvents, "','") + `'))
 ),
 code_generation_keys AS (
