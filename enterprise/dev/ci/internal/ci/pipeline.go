@@ -146,14 +146,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 		// Inspect package dependencies to work out which base images need to be rebuilt
-		imagesToUpdate, err := GetDependenciesOfPackages(updatedPackages, "sourcegraph")
+		_, imagesWithChangedPackages, err := GetDependenciesOfPackages(updatedPackages, "sourcegraph")
 		if err != nil {
 			panic(err)
 		}
 
-		// TODO: Resolve mix of image names and file names
-		// TODO: This list needs to be uniqed
-		imagesToRebuild := append(imagesToUpdate, c.ChangedFiles[changed.WolfiBaseImages]...)
+		imagesToRebuild := append(imagesWithChangedPackages, c.ChangedFiles[changed.WolfiBaseImages]...)
+		imagesToRebuild = sortUniq(imagesToRebuild)
 
 		if updateBaseImages {
 			var baseImageOps *operations.Set

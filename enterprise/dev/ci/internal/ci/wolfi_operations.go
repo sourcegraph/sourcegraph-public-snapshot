@@ -143,16 +143,17 @@ func sanitizeStepKey(key string) string {
 }
 
 // GetDependenciesOfPackages takes a list of packages and returns the set of base images that depend on these packages
-func GetDependenciesOfPackages(packageNames []string, repo string) (images []string, err error) {
+// Returns two slices: the image names, and the paths to the associated config files
+func GetDependenciesOfPackages(packageNames []string, repo string) (images []string, imagePaths []string, err error) {
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	wolfiImageDirPath := filepath.Join(repoRoot, wolfiImageDir)
 
 	packagesByImage, err := GetAllImageDependencies(wolfiImageDirPath)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Create a list of images that depend on packageNames
@@ -162,6 +163,11 @@ func GetDependenciesOfPackages(packageNames []string, repo string) (images []str
 
 		fmt.Printf("Base images which depend on package %s: %v\n", packageName, i)
 	}
+
+	// Dedupe image names
+	images = sortUniq(images)
+	// Append paths to returned image names
+	imagePaths = imagesToImagePaths(wolfiImageDir, images)
 
 	return
 }
@@ -184,18 +190,31 @@ func GetDependenciesOfPackage(packagesByImage map[string][]string, packageName s
 	}
 
 	// Dedupe image names
+	images = sortUniq(images)
+
+	return
+}
+
+// Add directory path and .yaml extension to each image name
+func imagesToImagePaths(path string, images []string) (imagePaths []string) {
+	for _, image := range images {
+		imagePaths = append(imagePaths, filepath.Join(path, image)+".yaml")
+	}
+
+	return
+}
+
+func sortUniq(inputs []string) []string {
 	unique := make(map[string]bool)
 	var dedup []string
-	for _, image := range images {
-		if !unique[image] {
-			unique[image] = true
-			dedup = append(dedup, image)
+	for _, input := range inputs {
+		if !unique[input] {
+			unique[input] = true
+			dedup = append(dedup, input)
 		}
 	}
 	sort.Strings(dedup)
-	images = dedup
-
-	return
+	return dedup
 }
 
 // GetAllImageDependencies returns a map of base images to the list of packages they depend upon
