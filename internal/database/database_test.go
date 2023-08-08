@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -17,33 +16,6 @@ import (
 
 func init() {
 	useFastPasswordMocks()
-}
-
-func TestReadResponse(t *testing.T) {
-	type testStruct struct {
-		data string
-	}
-
-	const testString = "some test data"
-	var testAny any = &testStruct{data: testString}
-
-	t.Run("valid response type returns correctly", func(t *testing.T) {
-		resp, err := readResponse[*testStruct](testAny, nil)
-		require.NoError(t, err)
-		require.Equal(t, testString, resp.data)
-		require.True(t, testAny == resp, fmt.Sprintf("pointers don't match, want %p got %p", testAny, resp))
-	})
-
-	t.Run("invalid response type returns ErrInvalidResponseType", func(t *testing.T) {
-		type wrongStruct struct {
-			data string
-		}
-
-		resp, err := readResponse[*wrongStruct](testAny, nil)
-		wantErr := &ErrInvalidResponseType{}
-		require.ErrorAs(t, err, &wantErr)
-		require.Nil(t, resp)
-	})
 }
 
 func TestDBTransactions(t *testing.T) {

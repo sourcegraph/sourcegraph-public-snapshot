@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"sync"
 )
@@ -46,9 +47,32 @@ func (c *mockDBClient) Execute(ctx context.Context, q DBExecutableRaw) (any, err
 
 // Mocks a DBQuery by registering a response and an error that will be
 // returned whenever that query is executed.
-func (c *mockDBClient) Mock(req DBExecutableRaw, resp any, err error) {
-	c.mocks[reflect.TypeOf(req)] = &mockedResponse{
-		val: resp,
+func (c *mockDBClient) Mock(dbe DBExecutableRaw, resp any, err error) {
+	// We do some reflection to make sure types implement the correct methods
+	// when mocking in tests.
+
+	method, ok := reflect.TypeOf(dbe).MethodByName("Execute")
+	if !ok {
+		panic(fmt.Sprintf("%T does not implement method Execute", dbe))
+	}
+
+	// Make sure that the mocked value matches the return type of the Execute
+	// method.
+	t := method.Type.Out(0)
+	rv := reflect.ValueOf(resp)
+	if rt := reflect.TypeOf(resp); rt != t {
+		if resp != nil {
+			panic(fmt.Sprintf("Mock type %s does not match return type %s", rt.String(), t.String()))
+		}
+
+		// If resp is an untyped nil, we create a typed nil value that matches
+		// the type of dbe.Execute's return type, as this is most likely what
+		// the programmer intended.
+		rv = reflect.New(t).Elem()
+	}
+
+	c.mocks[reflect.TypeOf(dbe)] = &mockedResponse{
+		val: rv.Interface(),
 		err: err,
 	}
 }

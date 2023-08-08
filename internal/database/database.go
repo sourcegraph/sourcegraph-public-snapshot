@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -16,37 +15,27 @@ import (
 	gha "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 )
 
-// ErrInvalidResponseType is returned by ReadResponse if the any value in the
-// resp argument could not be casted to the requested type in the generic
-// parameter.
-type ErrInvalidResponseType struct {
-	FromType reflect.Type
-	ToType   reflect.Type
-}
-
-func (e *ErrInvalidResponseType) Error() string {
-	return fmt.Sprintf("Could not cast from %s to %s", e.FromType, e.ToType)
-}
-
-// readResponse accepts a (any, error) pair returned from a
-// DBExecutableRaw.ExecuteRaw call and attempts to cast the
-// response to the generic type T.
-//
-// If the type casting fails, an ErrInvalidResponseType is returned.
-func readResponse[T any](resp any, respErr error) (T, error) {
-	t, ok := resp.(T)
-	if !ok {
-		return t, &ErrInvalidResponseType{FromType: reflect.TypeOf(resp), ToType: reflect.TypeOf(t)}
-	}
-
-	return t, respErr
-}
-
 // ExecuteWithClient executes a DBExecutable with the provided DBClient.
 // The client executes the Executable using the ExecuteRaw method, which
 // is then immediately converted by the readResponse function.
 func ExecuteWithClient[T any](ctx context.Context, dbe DBExecutable[T], client DBClient) (T, error) {
-	return readResponse[T](client.Execute(ctx, dbe))
+	resp, err := client.Execute(ctx, dbe)
+
+	respT, ok := resp.(T)
+	if !ok {
+		var t T
+		panic(fmt.Sprintf(`Return type of %[1].Execute does not match return type of %[1]T.ExecuteRaw.
+
+The implementation for DBExecutable[%[2]T] should match the following:
+
+func (q %[1]T) Execute(ctx context.Context, store *basestore.Store) (%[2]T, error) {...}
+
+func (q %[1]T) ExecuteRaw(ctx context.Context, store *basestore.Store) (any, error) {
+	return q.Execute(ctx, store)
+}`, dbe, t))
+	}
+
+	return respT, err
 }
 
 // A DBExecutableRaw uses a store to perform various operations on a database.
