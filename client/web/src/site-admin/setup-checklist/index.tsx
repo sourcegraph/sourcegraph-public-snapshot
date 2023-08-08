@@ -34,9 +34,11 @@ export const ChecklistNavbarItem: React.FC = () => {
                 content: (
                     <div className="d-flex align-items-center">
                         Setup
-                        <Badge variant="warning" className="ml-1" pill={true} small={true}>
-                            {notConfiguredCount}
-                        </Badge>
+                        {notConfiguredCount > 0 && (
+                            <Badge variant="warning" className="ml-1" pill={true} small={true}>
+                                {notConfiguredCount}
+                            </Badge>
+                        )}
                     </div>
                 ),
             }}
