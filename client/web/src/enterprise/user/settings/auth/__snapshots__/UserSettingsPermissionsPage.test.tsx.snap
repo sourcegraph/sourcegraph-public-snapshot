@@ -350,7 +350,7 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
             <span
               class="timestamp"
             >
-              in over 17 years
+              1 minute ago
             </span>
           </span>
           <span>
@@ -580,7 +580,7 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
               <span
                 class="timestamp"
               >
-                in over 17 years
+                19 minutes ago
               </span>
             </td>
             <td
@@ -632,7 +632,7 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
               <span
                 class="timestamp"
               >
-                in over 17 years
+                1 minute ago
               </span>
             </td>
             <td
@@ -708,7 +708,7 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
               <span
                 class="timestamp"
               >
-                in over 17 years
+                20 minutes ago
               </span>
             </td>
             <td
@@ -784,7 +784,7 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
               <span
                 class="timestamp"
               >
-                in over 17 years
+                20 minutes ago
               </span>
             </td>
             <td
@@ -860,7 +860,7 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
               <span
                 class="timestamp"
               >
-                in over 17 years
+                20 minutes ago
               </span>
             </td>
             <td
@@ -936,7 +936,7 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
               <span
                 class="timestamp"
               >
-                in over 17 years
+                21 minutes ago
               </span>
             </td>
             <td
@@ -1362,12 +1362,12 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
                 </svg>
                 <a
                   class="anchorLink"
-                  href="/github.com/hashicorp/go-multierror"
+                  href="/github.com/alice/acme-destroy"
                 >
                   <span>
-                    hashicorp/
+                    alice/
                     <span>
-                      go-multierror
+                      acme-destroy
                     </span>
                   </span>
                 </a>
@@ -1375,16 +1375,20 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
             </td>
             <td>
               <span
-                class="badge primary"
+                class="badge secondary"
               >
-                Unrestricted
+                Site Admin
               </span>
             </td>
             <td>
               <div
                 class="updatedAtCell"
               >
-                -
+                <span
+                  class="timestamp"
+                >
+                  about 1 year ago
+                </span>
               </div>
             </td>
           </tr>
@@ -1433,7 +1437,7 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
                 <span
                   class="timestamp"
                 >
-                  in over 17 years
+                  4 months ago
                 </span>
               </div>
             </td>
@@ -1483,7 +1487,7 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
                 <span
                   class="timestamp"
                 >
-                  in over 17 years
+                  1 minute ago
                 </span>
               </div>
             </td>

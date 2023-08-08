@@ -21,6 +21,17 @@ import { UserSettingsPermissionsPage } from './UserSettingsPermissionsPage'
 const gqlUserID = 'VXNlcjox'
 
 describe('UserSettingsPermissionsPage', () => {
+    // mock current date time for consistent timestamps
+    const dateNow = Date.now
+    beforeEach(() => {
+        const now = new Date('2023-08-08T12:25:12Z').getTime()
+        Date.now = jest.fn(() => now)
+    })
+
+    afterEach(() => {
+        Date.now = dateNow
+    })
+
     test('empty state', async () => {
         const component = renderWithBrandedContext(
             <MockedTestProvider
@@ -206,9 +217,9 @@ const SYNC_JOBS_RESPONSE: { data: PermissionsSyncJobsResult } = {
                         reason: PermissionsSyncJobReason.REASON_USER_OUTDATED_PERMS,
                         __typename: 'PermissionsSyncJobReasonWithGroup',
                     },
-                    queuedAt: '2023-08-08T12:05:29Z',
-                    startedAt: '2023-08-08T12:05:31Z',
-                    finishedAt: '2023-08-08T12:05:34Z',
+                    queuedAt: '2023-08-08T12:23:29Z',
+                    startedAt: '2023-08-08T12:23:31Z',
+                    finishedAt: '2023-08-08T12:23:52Z',
                     processAfter: null,
                     permissionsAdded: 0,
                     permissionsRemoved: 0,
@@ -218,7 +229,7 @@ const SYNC_JOBS_RESPONSE: { data: PermissionsSyncJobsResult } = {
                     ranForMs: 3069,
                     numResets: 0,
                     numFailures: 0,
-                    lastHeartbeatAt: '2023-08-08T12:05:31Z',
+                    lastHeartbeatAt: '2023-08-08T12:23:52Z',
                     workerHostname: 'MacBook-Pro-10.local',
                     cancel: false,
                     priority: PermissionsSyncJobPriority.LOW,
@@ -548,12 +559,12 @@ const USER_PERMISSIONS_RESPONSE: { data: UserPermissionsInfoResult } = {
                         },
                         {
                             id: 'UmVwb3NpdG9yeTo4',
-                            reason: 'Unrestricted',
-                            updatedAt: null,
+                            reason: 'Site Admin',
+                            updatedAt: '2022-07-08T10:42:25Z',
                             repository: {
                                 id: 'UmVwb3NpdG9yeTo4',
-                                name: 'github.com/hashicorp/go-multierror',
-                                url: '/github.com/hashicorp/go-multierror',
+                                name: 'github.com/alice/acme-destroy',
+                                url: '/github.com/alice/acme-destroy',
                                 externalRepository: {
                                     serviceType: 'github',
                                     __typename: 'ExternalRepository',
@@ -565,7 +576,7 @@ const USER_PERMISSIONS_RESPONSE: { data: UserPermissionsInfoResult } = {
                         {
                             id: 'UmVwb3NpdG9yeTo5',
                             reason: 'Explicit API',
-                            updatedAt: '2023-07-27T14:17:25Z',
+                            updatedAt: '2023-04-01T03:17:43Z',
                             repository: {
                                 id: 'UmVwb3NpdG9yeTo5',
                                 name: 'gitlab.com/alice/acme-frontend',
