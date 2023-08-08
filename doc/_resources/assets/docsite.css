@@ -53,7 +53,6 @@ body.theme-light {
   --input-border-color: var(--sidebar-border-color);
   --input-focus-border-color: #1986ea;
   --link-color: #0055c5;
-  --link-hover-color: #1986ea;
   --anchor-inline-bg: yellow;
   --anchor-inline-border-color: #eecc11;
   --code-bg: #f4f7fb;
@@ -81,7 +80,6 @@ body.theme-dark {
   --input-border-color: var(--sidebar-border-color);
   --input-focus-border-color: #1986ea;
   --link-color: var(--brand-cyan-color);
-  --link-hover-color: #77bbff;
   --anchor-inline-bg: yellow;
   --anchor-inline-border-color: #eecc11;
   --code-bg: #191929;
@@ -795,9 +793,6 @@ body > #page > main > #content {
     color: var(--link-color);
     font-size: 1.5rem;
 }
-.copy-text:hover {
-    color: var(--link-hover-color);
-}
 
 /* Display hash on hover for schema doc key. */
 .markdown-body .json-schema-doc-heading {
@@ -1368,7 +1363,7 @@ markprompt-content.dark {
 }
 
 #markprompt-button:hover {
-    color: var(--link-hover-color);
+    color: var(--link-color);
 }
 
 .markdown-body a {
