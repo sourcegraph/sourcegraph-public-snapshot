@@ -12537,9 +12537,6 @@ type MockDB struct {
 	// object controlling the behavior of the method
 	// BitbucketProjectPermissions.
 	BitbucketProjectPermissionsFunc *DBBitbucketProjectPermissionsFunc
-	// ClientFunc is an instance of a mock function object controlling the
-	// behavior of the method Client.
-	ClientFunc *DBClientFunc
 	// CodeHostsFunc is an instance of a mock function object controlling
 	// the behavior of the method CodeHosts.
 	CodeHostsFunc *DBCodeHostsFunc
@@ -12552,6 +12549,9 @@ type MockDB struct {
 	// ConfFunc is an instance of a mock function object controlling the
 	// behavior of the method Conf.
 	ConfFunc *DBConfFunc
+	// DBStoreFunc is an instance of a mock function object controlling the
+	// behavior of the method DBStore.
+	DBStoreFunc *DBDBStoreFunc
 	// EventLogsFunc is an instance of a mock function object controlling
 	// the behavior of the method EventLogs.
 	EventLogsFunc *DBEventLogsFunc
@@ -12749,11 +12749,6 @@ func NewMockDB() *MockDB {
 				return
 			},
 		},
-		ClientFunc: &DBClientFunc{
-			defaultHook: func() (r0 DBStore) {
-				return
-			},
-		},
 		CodeHostsFunc: &DBCodeHostsFunc{
 			defaultHook: func() (r0 CodeHostStore) {
 				return
@@ -12771,6 +12766,11 @@ func NewMockDB() *MockDB {
 		},
 		ConfFunc: &DBConfFunc{
 			defaultHook: func() (r0 ConfStore) {
+				return
+			},
+		},
+		DBStoreFunc: &DBDBStoreFunc{
+			defaultHook: func() (r0 DBStore) {
 				return
 			},
 		},
@@ -13081,11 +13081,6 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.BitbucketProjectPermissions")
 			},
 		},
-		ClientFunc: &DBClientFunc{
-			defaultHook: func() DBStore {
-				panic("unexpected invocation of MockDB.Client")
-			},
-		},
 		CodeHostsFunc: &DBCodeHostsFunc{
 			defaultHook: func() CodeHostStore {
 				panic("unexpected invocation of MockDB.CodeHosts")
@@ -13104,6 +13099,11 @@ func NewStrictMockDB() *MockDB {
 		ConfFunc: &DBConfFunc{
 			defaultHook: func() ConfStore {
 				panic("unexpected invocation of MockDB.Conf")
+			},
+		},
+		DBStoreFunc: &DBDBStoreFunc{
+			defaultHook: func() DBStore {
+				panic("unexpected invocation of MockDB.DBStore")
 			},
 		},
 		EventLogsFunc: &DBEventLogsFunc{
@@ -13403,9 +13403,6 @@ func NewMockDBFrom(i DB) *MockDB {
 		BitbucketProjectPermissionsFunc: &DBBitbucketProjectPermissionsFunc{
 			defaultHook: i.BitbucketProjectPermissions,
 		},
-		ClientFunc: &DBClientFunc{
-			defaultHook: i.DBStore,
-		},
 		CodeHostsFunc: &DBCodeHostsFunc{
 			defaultHook: i.CodeHosts,
 		},
@@ -13417,6 +13414,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		ConfFunc: &DBConfFunc{
 			defaultHook: i.Conf,
+		},
+		DBStoreFunc: &DBDBStoreFunc{
+			defaultHook: i.DBStore,
 		},
 		EventLogsFunc: &DBEventLogsFunc{
 			defaultHook: i.EventLogs,
@@ -14080,104 +14080,6 @@ func (c DBBitbucketProjectPermissionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// DBClientFunc describes the behavior when the Client method of the parent
-// MockDB instance is invoked.
-type DBClientFunc struct {
-	defaultHook func() DBStore
-	hooks       []func() DBStore
-	history     []DBClientFuncCall
-	mutex       sync.Mutex
-}
-
-// DBStore delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockDB) DBStore() DBStore {
-	r0 := m.ClientFunc.nextHook()()
-	m.ClientFunc.appendCall(DBClientFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Client method of the
-// parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBClientFunc) SetDefaultHook(hook func() DBStore) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Client method of the parent MockDB instance invokes the hook at the front
-// of the queue and discards it. After the queue is empty, the default hook
-// function is invoked for any future action.
-func (f *DBClientFunc) PushHook(hook func() DBStore) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBClientFunc) SetDefaultReturn(r0 DBStore) {
-	f.SetDefaultHook(func() DBStore {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBClientFunc) PushReturn(r0 DBStore) {
-	f.PushHook(func() DBStore {
-		return r0
-	})
-}
-
-func (f *DBClientFunc) nextHook() func() DBStore {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBClientFunc) appendCall(r0 DBClientFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBClientFuncCall objects describing the
-// invocations of this function.
-func (f *DBClientFunc) History() []DBClientFuncCall {
-	f.mutex.Lock()
-	history := make([]DBClientFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBClientFuncCall is an object that describes an invocation of method
-// Client on an instance of MockDB.
-type DBClientFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 DBStore
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBClientFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBClientFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
 // DBCodeHostsFunc describes the behavior when the CodeHosts method of the
 // parent MockDB instance is invoked.
 type DBCodeHostsFunc struct {
@@ -14567,6 +14469,104 @@ func (c DBConfFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBConfFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBDBStoreFunc describes the behavior when the DBStore method of the
+// parent MockDB instance is invoked.
+type DBDBStoreFunc struct {
+	defaultHook func() DBStore
+	hooks       []func() DBStore
+	history     []DBDBStoreFuncCall
+	mutex       sync.Mutex
+}
+
+// DBStore delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) DBStore() DBStore {
+	r0 := m.DBStoreFunc.nextHook()()
+	m.DBStoreFunc.appendCall(DBDBStoreFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DBStore method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBDBStoreFunc) SetDefaultHook(hook func() DBStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DBStore method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBDBStoreFunc) PushHook(hook func() DBStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBDBStoreFunc) SetDefaultReturn(r0 DBStore) {
+	f.SetDefaultHook(func() DBStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBDBStoreFunc) PushReturn(r0 DBStore) {
+	f.PushHook(func() DBStore {
+		return r0
+	})
+}
+
+func (f *DBDBStoreFunc) nextHook() func() DBStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBDBStoreFunc) appendCall(r0 DBDBStoreFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBDBStoreFuncCall objects describing the
+// invocations of this function.
+func (f *DBDBStoreFunc) History() []DBDBStoreFuncCall {
+	f.mutex.Lock()
+	history := make([]DBDBStoreFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBDBStoreFuncCall is an object that describes an invocation of method
+// DBStore on an instance of MockDB.
+type DBDBStoreFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 DBStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBDBStoreFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBDBStoreFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

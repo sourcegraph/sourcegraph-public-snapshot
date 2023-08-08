@@ -11,25 +11,25 @@ type mockedResponse struct {
 	err error
 }
 
-type mockDBClient struct {
+type mockDBStore struct {
 	mutex   sync.Mutex
 	history map[reflect.Type][]DBCommand
 	mocks   map[reflect.Type]*mockedResponse
 }
 
-// Creates a new mockDBClient.
+// Creates a new mockDBStore.
 //
-// The mockDBClient implements the DBClient interface, but provides additional
-// methods to mock DBQuery executions and return pre-determined responses
+// The mockDBStore implements the DBStore interface, but provides additional
+// methods to mock DBCommand executions and return pre-determined responses
 // instead of performing the actual database queries.
-func NewMockDBClient() *mockDBClient {
-	return &mockDBClient{
+func NewMockDBStore() *mockDBStore {
+	return &mockDBStore{
 		mocks:   make(map[reflect.Type]*mockedResponse),
 		history: make(map[reflect.Type][]DBCommand),
 	}
 }
 
-func (c *mockDBClient) ExecuteCommand(_ context.Context, command DBCommand) error {
+func (c *mockDBStore) ExecuteCommand(_ context.Context, command DBCommand) error {
 	rt := reflect.TypeOf(command)
 	rv := reflect.ValueOf(command)
 	newValue := reflect.New(rv.Elem().Type())
@@ -49,7 +49,7 @@ func (c *mockDBClient) ExecuteCommand(_ context.Context, command DBCommand) erro
 	return resp.err
 }
 
-func (c *mockDBClient) Mock(command DBCommand, err error) {
+func (c *mockDBStore) Mock(command DBCommand, err error) {
 	c.mocks[reflect.TypeOf(command)] = &mockedResponse{
 		val: command,
 		err: err,
@@ -57,7 +57,7 @@ func (c *mockDBClient) Mock(command DBCommand, err error) {
 }
 
 // Returns the query history as a list of DBQueries for the provided DBQuery.
-func (c *mockDBClient) History(command DBCommand) []DBCommand {
+func (c *mockDBStore) History(command DBCommand) []DBCommand {
 	ct := reflect.TypeOf(command)
 	c.mutex.Lock()
 	history := make([]DBCommand, len(c.history[ct]))

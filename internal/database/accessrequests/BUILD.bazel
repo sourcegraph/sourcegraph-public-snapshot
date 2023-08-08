@@ -3,7 +3,15 @@ load("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "accessrequests",
-    srcs = ["access_requests.go"],
+    srcs = [
+        "count.go",
+        "create.go",
+        "get_by_email.go",
+        "get_by_id.go",
+        "list.go",
+        "store.go",
+        "update.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/database/accessrequests",
     visibility = ["//:__subpackages__"],
     deps = [
@@ -18,7 +26,14 @@ go_library(
 
 go_test(
     name = "accessrequests_test",
-    srcs = ["access_requests_test.go"],
+    srcs = [
+        "count_test.go",
+        "create_test.go",
+        "get_by_email_test.go",
+        "get_by_id_test.go",
+        "list_test.go",
+        "update_test.go",
+    ],
     embed = [":accessrequests"],
     tags = [
         # Test requires localhost database
