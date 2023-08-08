@@ -30,8 +30,10 @@ describe('SetupWizard', () => {
         )
     }
 
-    it('should render correctly', () => {
-        expect(setup().asFragment()).toMatchSnapshot()
+    it('should render correctly', async () => {
+        const { getByText, asFragment } = setup(false)
+        await waitFor(() => expect(getByText('Add remote repositories')).toBeInTheDocument())
+        expect(asFragment()).toMatchSnapshot()
     })
 
     it('should render new checklist steps if feature flag is enabled', async () => {
