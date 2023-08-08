@@ -24,7 +24,7 @@ var baseImageRegex = lazyregexp.New(`wolfi-images\/([\w-]+)[.]yaml`)
 var packageRegex = lazyregexp.New(`wolfi-packages\/([\w-]+)[.]yaml`)
 
 // WolfiPackagesOperations rebuilds any packages whose configurations have changed
-func WolfiPackagesOperations(changedFiles []string) (*operations.Set, int, []string) {
+func WolfiPackagesOperations(changedFiles []string) (*operations.Set, []string) {
 	// TODO: Should we require the image name, or the full path to the yaml file?
 	ops := operations.NewNamedSet("Dependency packages")
 
@@ -42,7 +42,7 @@ func WolfiPackagesOperations(changedFiles []string) (*operations.Set, int, []str
 
 	ops.Append(buildRepoIndex("main", buildStepKeys))
 
-	return ops, len(buildStepKeys), changedPackages
+	return ops, changedPackages
 }
 
 // WolfiBaseImagesOperations rebuilds any base images whose configurations have changed
