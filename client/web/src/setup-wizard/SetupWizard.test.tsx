@@ -1,4 +1,4 @@
-import { act, render, waitFor } from '@testing-library/react'
+import { render, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -37,7 +37,7 @@ describe('SetupWizard', () => {
     it('should render new checklist steps if feature flag is enabled', async () => {
         const { getByText, asFragment } = setup(true)
         // wait until new steps get rendered
-        await waitFor(() => expect(getByText('Add license')).toBeDefined())
+        await waitFor(() => expect(getByText('Add license')).toBeInTheDocument())
         expect(asFragment()).toMatchSnapshot()
     })
 })

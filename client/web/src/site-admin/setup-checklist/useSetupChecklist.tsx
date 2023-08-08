@@ -1,4 +1,4 @@
-export type SetupChecklistItem = {
+export interface SetupChecklistItem {
     name: string
     setupURL: string
     configured?: boolean
@@ -14,7 +14,13 @@ const CodeHostStep: SetupChecklistItem = {
     setupURL: '/setup/remote-repositories',
 }
 
-export function useSetupChecklist() {
+interface UseSetupChecklistReturnType {
+    data: SetupChecklistItem[]
+    error?: any
+    loading: boolean
+}
+
+export function useSetupChecklist(): UseSetupChecklistReturnType {
     return {
         data: [AddLicenseStep, CodeHostStep],
         loading: false,
