@@ -20,6 +20,8 @@ import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.cody.ui.PasswordFieldWithShowHideButton;
 import com.sourcegraph.common.AuthorizationUtil;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import java.util.Enumeration;
 import java.util.Optional;
@@ -38,6 +40,8 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
+
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -126,6 +130,18 @@ public class SettingsComponent implements Disposable {
     // Create URL field for the enterprise section
     JBLabel urlLabel = new JBLabel("Sourcegraph URL:");
     urlTextField = new JBTextField();
+    urlTextField.addFocusListener(new FocusAdapter() {
+      @Override
+      public void focusLost(FocusEvent e) {
+        super.focusLost(e);
+        String url = urlTextField.getText();
+        // Check if text field contains protocol value, if not add http://
+        if (!StringUtils.startsWith(url, "http://") && !StringUtils.startsWith(url, "https://") && !url.isEmpty()) {
+          urlTextField.setText("http://" + url);
+        }
+      }
+    });
+
     //noinspection DialogTitleCapitalization
     urlTextField.getEmptyText().setText("https://sourcegraph.example.com");
     urlTextField.setToolTipText("The default is \"" + ConfigUtil.DOTCOM_URL + "\".");
@@ -134,9 +150,7 @@ public class SettingsComponent implements Disposable {
         () ->
             urlTextField.getText().isEmpty()
                 ? new ValidationInfo("Missing URL", urlTextField)
-                : (!JsonSchemaConfigurable.isValidURL(urlTextField.getText())
-                    ? new ValidationInfo("This is an invalid URL", urlTextField)
-                    : null));
+                : null);
     addDocumentListener(
         urlTextField, urlTextField.getDocument(), e -> updateAccessTokenLinkCommentText());
 
@@ -520,7 +534,11 @@ public class SettingsComponent implements Disposable {
   }
 
   private void updateAccessTokenLinkCommentText() {
+
     String baseUrl = urlTextField.getText();
+    if (!StringUtils.startsWith(baseUrl, "http://") && !StringUtils.startsWith(baseUrl, "https://")) {
+      baseUrl = "http://" + baseUrl;
+    }
     String settingsUrl = (baseUrl.endsWith("/") ? baseUrl : baseUrl + "/") + "settings";
     enterpriseAccessTokenLinkComment.setText(
         isUrlValid(baseUrl)
