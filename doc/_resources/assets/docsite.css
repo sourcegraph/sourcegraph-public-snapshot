@@ -1172,7 +1172,7 @@ body {
     --markprompt-secondaryForeground: #171717;
     --markprompt-primaryHighlight: #A112FF;
     --markprompt-secondaryHighlight: #00CBEC;
-    --markprompt-overlay: #00000010;
+    --markprompt-overlay: #00000090;
     --markprompt-ring: #00CBEC;
     --markprompt-radius: 8px;
     --markprompt-text-size: .875rem;
@@ -1265,6 +1265,10 @@ body.theme-dark {
 .MarkpromptSearchAnswerButton:focus,
 .MarkpromptSearchAnswerButton:focus kbd svg {
     color: #ffffff;
+}
+
+.MarkpromptOverlay {
+    z-index: 99 !important;
 }
 
 .MarkpromptContentDialog {
