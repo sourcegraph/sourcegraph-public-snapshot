@@ -24,6 +24,9 @@ import (
 )
 
 var frontendInternal = env.Get("SRC_FRONTEND_INTERNAL", defaultFrontendInternal(), "HTTP address for internal frontend HTTP API.")
+
+// NOTE: this intentionally does not use the site configuration option because we need to make the decision
+// about whether or not to use gRPC to fetch the site configuration in the first place.
 var enableGRPC = env.MustGetBool("SRC_GRPC_ENABLE_CONF", false, "Enable gRPC for configuration updates")
 
 func defaultFrontendInternal() string {
