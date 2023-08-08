@@ -35,7 +35,7 @@ func (c *azureCompletionClient) Complete(
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
 	if feature == types.CompletionsFeatureCode {
-		return nil, errors.Newf("%q for OpenAI is currently not supported")
+		return nil, errors.Newf("%q for Azure OpenAI is currently not supported")
 	}
 
 	resp, err := c.makeRequest(ctx, requestParams, false)
