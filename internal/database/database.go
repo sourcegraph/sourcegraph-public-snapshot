@@ -24,7 +24,7 @@ func ExecuteWithClient[T any](ctx context.Context, dbe DBExecutable[T], client D
 	respT, ok := resp.(T)
 	if !ok {
 		var t T
-		panic(fmt.Sprintf(`Return type of %[1].Execute does not match return type of %[1]T.ExecuteRaw.
+		panic(fmt.Sprintf(`Return type of %[1]T.Execute does not match return type of %[1]T.ExecuteRaw.
 
 The implementation for DBExecutable[%[2]T] should match the following:
 
