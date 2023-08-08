@@ -24,7 +24,7 @@ func ScheduleRepositoriesForEmbedding(
 
 	tx, txErr := repoEmbeddingJobsStore.Transact(ctx)
 	if txErr != nil {
-		return
+		return errors.Wrap(txErr, "generating repo embedding job store")
 	}
 	defer func() {
 		txErr = tx.Done(txErr)
@@ -72,8 +72,8 @@ func ScheduleRepositoriesForEmbedding(
 			return err
 		}()
 		if txErr != nil {
-			return
+			return errors.Wrap(txErr, "creating repo embedding job")
 		}
 	}
-	return
+	return errs
 }
