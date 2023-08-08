@@ -3,6 +3,8 @@ import { createPopper, type Instance, type Options } from '@popperjs/core'
 import type { ActionReturn, Action } from 'svelte/action'
 import * as uuid from 'uuid'
 
+import { highlightNode } from '$lib/common'
+
 /**
  * Returns a unique ID to be used with accessible elements.
  * Generates stable IDs in tests.
@@ -75,5 +77,26 @@ export function createPopover(): PopperReturnValue {
                 },
             }
         },
+    }
+}
+
+/**
+ * Updates the DOM to highlight the provided ranges.
+ * IMPORTANT: If the element content is dynamic you have to ensure that the attached is recreated
+ * to properly update and re-highlight the content. One way to enforce this is to use #key
+ */
+export const highlightRanges: Action<HTMLElement, { ranges: [number, number][] }> = (node, parameters) => {
+    function highlight({ ranges }: { ranges: [number, number][] }) {
+        if (ranges.length > 0) {
+            for (const [start, end] of ranges) {
+                highlightNode(node, start, end - start)
+            }
+        }
+    }
+
+    highlight(parameters)
+
+    return {
+        update: highlight,
     }
 }
