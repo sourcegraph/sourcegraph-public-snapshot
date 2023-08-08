@@ -21,7 +21,7 @@ func NewExhaustiveSearchWorker(
 	observationCtx *observation.Context,
 	workerStore dbworkerstore.Store[*exhaustive.Job],
 ) goroutine.BackgroundRoutine {
-	handler := &exhaustiveSearch{
+	handler := &exhaustiveSearchHandler{
 		logger: log.Scoped("exhaustive-search", "The background worker running exhaustive searches"),
 	}
 
@@ -37,13 +37,13 @@ func NewExhaustiveSearchWorker(
 	return dbworker.NewWorker[*exhaustive.Job](ctx, workerStore, handler, opts)
 }
 
-type exhaustiveSearch struct {
+type exhaustiveSearchHandler struct {
 	logger log.Logger
 }
 
-var _ workerutil.Handler[*exhaustive.Job] = &exhaustiveSearch{}
+var _ workerutil.Handler[*exhaustive.Job] = &exhaustiveSearchHandler{}
 
-func (e *exhaustiveSearch) Handle(ctx context.Context, logger log.Logger, record *exhaustive.Job) error {
+func (e *exhaustiveSearchHandler) Handle(ctx context.Context, logger log.Logger, record *exhaustive.Job) error {
 	// TODO at the moment this does nothing. This will be implemented in a future PR.
 	return errors.New("not implemented")
 }
