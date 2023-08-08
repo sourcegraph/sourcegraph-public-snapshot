@@ -175,6 +175,18 @@ func GetDependenciesOfPackage(packagesByImage map[string][]string, packageName s
 		}
 	}
 
+	// Dedupe image names
+	unique := make(map[string]bool)
+	var dedup []string
+	for _, image := range images {
+		if !unique[image] {
+			unique[image] = true
+			dedup = append(dedup, image)
+		}
+	}
+	sort.Strings(dedup)
+	images = dedup
+
 	return
 }
 
