@@ -58,4 +58,4 @@ jobs:
       - name: Upload lsif to Codyintel
         run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
         env:
-          SRC_ENDPOINT: https://codyintel.sourcegraph.com/
+          SRC_ENDPOINT: https://codyintel.sourcegraphcloud.com/
