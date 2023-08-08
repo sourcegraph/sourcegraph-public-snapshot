@@ -18,7 +18,7 @@ interface ExternalServiceGroupProps {
     icon?: React.ComponentType<{ className?: string }>
 }
 
-export type AddExternalServiceOptionsWithID = AddExternalServiceOptions & {
+export interface AddExternalServiceOptionsWithID extends AddExternalServiceOptions {
     serviceID: string
     enabled?: boolean
     badge?: string
@@ -98,7 +98,11 @@ const ExternalServiceGroupNode: FC<ExternalServiceGroupNodeProps> = ({ service, 
     )
 
     return service.enabled ? (
-        <Link className="text-left text-body text-decoration-none" to={getAddURL(service.serviceID)}>
+        <Link
+            className="text-left text-body text-decoration-none"
+            to={getAddURL(service.serviceID)}
+            data-test-external-service-card-link={service.kind}
+        >
             {children}
         </Link>
     ) : (
