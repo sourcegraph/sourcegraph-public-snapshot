@@ -138,6 +138,7 @@ exports[`ExternalServiceGroup should render correctly with enabled external serv
       >
         <a
           class="text-left text-body text-decoration-none"
+          data-test-external-service-card-link="GITHUB"
           href="?id=github"
         >
           <div
