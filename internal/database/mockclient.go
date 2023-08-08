@@ -2,20 +2,19 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"sync"
 )
 
 type mockedResponse struct {
-	val any
+	val DBCommand
 	err error
 }
 
 type mockDBClient struct {
 	mutex   sync.Mutex
+	history map[reflect.Type][]DBCommand
 	mocks   map[reflect.Type]*mockedResponse
-	history map[reflect.Type][]DBExecutableRaw
 }
 
 // Creates a new mockDBClient.
@@ -26,63 +25,43 @@ type mockDBClient struct {
 func NewMockDBClient() *mockDBClient {
 	return &mockDBClient{
 		mocks:   make(map[reflect.Type]*mockedResponse),
-		history: make(map[reflect.Type][]DBExecutableRaw),
+		history: make(map[reflect.Type][]DBCommand),
 	}
 }
 
-// Executes a DBQuery by returning the mocked response for the query.
-// If not mocked responses are found, nil is returned instead.
-func (c *mockDBClient) Execute(ctx context.Context, q DBExecutableRaw) (any, error) {
-	rt := reflect.TypeOf(q)
-	resp, ok := c.mocks[rt]
+func (c *mockDBClient) ExecuteCommand(_ context.Context, command DBCommand) error {
+	rt := reflect.TypeOf(command)
+	rv := reflect.ValueOf(command)
+	newValue := reflect.New(rv.Elem().Type())
+	newValue.Elem().Set(rv.Elem())
+	commandCopy := newValue.Interface().(DBCommand)
 	c.mutex.Lock()
-	c.history[rt] = append(c.history[rt], q)
+	c.history[rt] = append(c.history[rt], commandCopy)
 	c.mutex.Unlock()
+
+	resp, ok := c.mocks[rt]
 	if !ok {
-		return nil, nil
+		return nil
 	}
 
-	return resp.val, resp.err
+	rv.Elem().Set(reflect.ValueOf(resp.val).Elem())
+
+	return resp.err
 }
 
-// Mocks a DBQuery by registering a response and an error that will be
-// returned whenever that query is executed.
-func (c *mockDBClient) Mock(dbe DBExecutableRaw, resp any, err error) {
-	// We do some reflection to make sure types implement the correct methods
-	// when mocking in tests.
-
-	method, ok := reflect.TypeOf(dbe).MethodByName("Execute")
-	if !ok {
-		panic(fmt.Sprintf("%T does not implement method Execute", dbe))
-	}
-
-	// Make sure that the mocked value matches the return type of the Execute
-	// method.
-	t := method.Type.Out(0)
-	rv := reflect.ValueOf(resp)
-	if rt := reflect.TypeOf(resp); rt != t {
-		if resp != nil {
-			panic(fmt.Sprintf("Mock type %s does not match return type %s", rt.String(), t.String()))
-		}
-
-		// If resp is an untyped nil, we create a typed nil value that matches
-		// the type of dbe.Execute's return type, as this is most likely what
-		// the programmer intended.
-		rv = reflect.New(t).Elem()
-	}
-
-	c.mocks[reflect.TypeOf(dbe)] = &mockedResponse{
-		val: rv.Interface(),
+func (c *mockDBClient) Mock(command DBCommand, err error) {
+	c.mocks[reflect.TypeOf(command)] = &mockedResponse{
+		val: command,
 		err: err,
 	}
 }
 
 // Returns the query history as a list of DBQueries for the provided DBQuery.
-func (c *mockDBClient) History(q DBExecutableRaw) []DBExecutableRaw {
-	queryType := reflect.TypeOf(q)
+func (c *mockDBClient) History(command DBCommand) []DBCommand {
+	ct := reflect.TypeOf(command)
 	c.mutex.Lock()
-	history := make([]DBExecutableRaw, len(c.history[queryType]))
-	copy(history, c.history[queryType])
+	history := make([]DBCommand, len(c.history[ct]))
+	copy(history, c.history[ct])
 	c.mutex.Unlock()
 	return history
 }
