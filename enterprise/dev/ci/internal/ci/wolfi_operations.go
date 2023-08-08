@@ -5,11 +5,13 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/sourcegraph/log"
 	"gopkg.in/yaml.v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -142,7 +144,13 @@ func sanitizeStepKey(key string) string {
 
 // GetDependenciesOfPackages takes a list of packages and returns the set of base images that depend on these packages
 func GetDependenciesOfPackages(packageNames []string, repo string) (images []string, err error) {
-	packagesByImage, err := GetAllImageDependencies()
+	repoRoot, err := root.RepositoryRoot()
+	if err != nil {
+		return nil, err
+	}
+	wolfiImageDirPath := filepath.Join(repoRoot, wolfiImageDir)
+
+	packagesByImage, err := GetAllImageDependencies(wolfiImageDirPath)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +199,7 @@ func GetDependenciesOfPackage(packagesByImage map[string][]string, packageName s
 }
 
 // GetAllImageDependencies returns a map of base images to the list of packages they depend upon
-func GetAllImageDependencies() (packagesByImage map[string][]string, err error) {
+func GetAllImageDependencies(wolfiImageDir string) (packagesByImage map[string][]string, err error) {
 	packagesByImage = make(map[string][]string)
 
 	files, err := os.ReadDir(wolfiImageDir)
