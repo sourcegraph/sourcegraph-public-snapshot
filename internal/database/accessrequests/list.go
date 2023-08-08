@@ -16,6 +16,11 @@ type List struct {
 	Response []*types.AccessRequest
 }
 
+const listQuery = `
+SELECT %s
+FROM access_requests
+WHERE (%s)`
+
 func (c *List) Execute(ctx context.Context, store *basestore.Store) error {
 	if c.FArgs == nil {
 		c.FArgs = &FilterArgs{}

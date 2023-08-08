@@ -17,40 +17,16 @@ const (
 	errorCodeAccessRequestWithEmailExists = "err_access_request_with_such_email_exists"
 )
 
-const (
-	insertQuery = `
-		INSERT INTO access_requests (%s)
-		VALUES ( %s, %s, %s, %s )
-		RETURNING %s`
-	listQuery = `
-		SELECT %s
-		FROM access_requests
-		WHERE (%s)`
-	updateQuery = `
-		UPDATE access_requests
-		SET status = %s, updated_at = NOW(), decision_by_user_id = %s
-		WHERE id = %s
-		RETURNING %s`
-)
-
-var (
-	columns = []*sqlf.Query{
-		sqlf.Sprintf("id"),
-		sqlf.Sprintf("created_at"),
-		sqlf.Sprintf("updated_at"),
-		sqlf.Sprintf("name"),
-		sqlf.Sprintf("email"),
-		sqlf.Sprintf("status"),
-		sqlf.Sprintf("additional_info"),
-		sqlf.Sprintf("decision_by_user_id"),
-	}
-	insertColumns = []*sqlf.Query{
-		sqlf.Sprintf("name"),
-		sqlf.Sprintf("email"),
-		sqlf.Sprintf("additional_info"),
-		sqlf.Sprintf("status"),
-	}
-)
+var columns = []*sqlf.Query{
+	sqlf.Sprintf("id"),
+	sqlf.Sprintf("created_at"),
+	sqlf.Sprintf("updated_at"),
+	sqlf.Sprintf("name"),
+	sqlf.Sprintf("email"),
+	sqlf.Sprintf("status"),
+	sqlf.Sprintf("additional_info"),
+	sqlf.Sprintf("decision_by_user_id"),
+}
 
 type ListColumn string
 

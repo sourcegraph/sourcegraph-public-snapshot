@@ -15,6 +15,18 @@ type Create struct {
 	Response *types.AccessRequest
 }
 
+const insertQuery = `
+INSERT INTO access_requests (%s)
+VALUES ( %s, %s, %s, %s )
+RETURNING %s`
+
+var insertColumns = []*sqlf.Query{
+	sqlf.Sprintf("name"),
+	sqlf.Sprintf("email"),
+	sqlf.Sprintf("additional_info"),
+	sqlf.Sprintf("status"),
+}
+
 func (c *Create) Execute(ctx context.Context, store *basestore.Store) error {
 	err := store.WithTransact(ctx, func(tx *basestore.Store) error {
 		// We don't allow adding a new request_access with an email address that has already been
