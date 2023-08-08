@@ -1593,14 +1593,6 @@ var nonActiveCodyEvents = []string{
 
 var aggregatedCodyUsageEventsQuery = `
 WITH
-sub_cohort AS (
-  SELECT *
-  FROM event_logs
-  WHERE
-    timestamp >= %s::timestamp - '1 month'::interval
-    AND name not ilike '%%completion:started%%'
-    AND name not ilike '%%completion:suggested%%'
-),
 events AS (
   SELECT
     name AS key,
@@ -1613,8 +1605,12 @@ events AS (
     ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
   FROM event_logs
   WHERE
-    name ilike '%%cody%%'
-    AND name not ilike '%%cta%%'
+  	timestamp >= %s::timestamp - '1 month'::interval
+    AND name not ilike '%%completion:started%%'
+    AND name not ilike '%%completion:suggested%%'
+    AND name ilike '%%cody%%'
+    AND name not like '%%cta%%'
+	AND name not like '%%Cta%%'
     AND (name NOT IN ('` + strings.Join(nonActiveCodyEvents, "','") + `'))
 ),
 code_generation_keys AS (

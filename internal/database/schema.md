@@ -1379,7 +1379,7 @@ Referenced by:
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
-    "event_logs_name" btree (name)
+    "event_logs_name" gin (name gin_trgm_ops)
     "event_logs_name_timestamp" btree (name, "timestamp" DESC)
     "event_logs_source" btree (source)
     "event_logs_timestamp" btree ("timestamp")
