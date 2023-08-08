@@ -95,8 +95,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	})
 	defer state.Unmock()
 
-	btypes.MockInternalClientExternalURL("https://sourcegraph.test")
-	t.Cleanup(btypes.ResetInternalClient)
+	mockExternalURL(t, "https://sourcegraph.test")
 
 	githubPR := buildGithubPR(clock(), btypes.ChangesetExternalStateOpen)
 	githubHeadRef := gitdomain.EnsureRefPrefix(githubPR.HeadRefName)
@@ -1216,8 +1215,7 @@ func TestDecorateChangesetBody(t *testing.T) {
 		return &database.Namespace{Name: "my-user", User: user}, nil
 	})
 
-	btypes.MockInternalClientExternalURL("https://sourcegraph.test")
-	t.Cleanup(btypes.ResetInternalClient)
+	mockExternalURL(t, "https://sourcegraph.test")
 
 	fs := &FakeStore{
 		GetBatchChangeMock: func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {

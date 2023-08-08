@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/require"
 	"github.com/throttled/throttled/v2/store/memstore"
 
 	"github.com/sourcegraph/log/logtest"
@@ -28,7 +29,7 @@ func newTest(t *testing.T) *httptestutil.Client {
 
 	db := database.NewMockDB()
 
-	return httptestutil.NewTest(NewHandler(db,
+	handler, err := NewHandler(db,
 		router.New(mux.NewRouter()),
 		nil,
 		rateLimiter,
@@ -49,5 +50,7 @@ func newTest(t *testing.T) *httptestutil.Client {
 			NewChatCompletionsStreamHandler: enterpriseServices.NewChatCompletionsStreamHandler,
 			NewCodeCompletionsHandler:       enterpriseServices.NewCodeCompletionsHandler,
 		},
-	))
+	)
+	require.NoError(t, err)
+	return httptestutil.NewTest(handler)
 }

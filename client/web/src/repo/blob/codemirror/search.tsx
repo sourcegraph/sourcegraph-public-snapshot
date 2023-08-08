@@ -60,6 +60,8 @@ type SearchMatches = Map<number, number>
 
 export const BLOB_SEARCH_CONTAINER_ID = 'blob-search-container'
 
+const focusSearchInput = StateEffect.define<boolean>()
+
 interface SearchPanelState {
     searchQuery: SearchQuery
     // The input value is usually derived from searchQuery. But we are
@@ -147,6 +149,15 @@ class SearchPanel implements Panel {
         if (newState !== this.state) {
             this.state = newState
             this.render(this.state)
+        }
+
+        if (
+            update.transactions.some(transaction =>
+                transaction.effects.some(effect => effect.is(focusSearchInput) && effect.value)
+            )
+        ) {
+            this.input?.focus()
+            this.input?.select()
         }
     }
 
@@ -445,7 +456,25 @@ export function search(config: SearchConfig): Extension {
 
     function getKeyBindings(override: boolean): readonly KeyBinding[] {
         if (override) {
-            return searchKeymap
+            return searchKeymap.map(binding =>
+                binding.key === 'Mod-f'
+                    ? {
+                          ...binding,
+                          run: view => {
+                              // By default pressing Mod+f when the search input is already focused won't select
+                              // the input value, unlike browser's built-in search feature.
+                              // We are overwriting the keybinding here to ensure that the input value is always
+                              // selected.
+                              const result = binding.run?.(view)
+                              if (result) {
+                                  view.dispatch({ effects: focusSearchInput.of(true) })
+                                  return true
+                              }
+                              return false
+                          },
+                      }
+                    : binding
+            )
         }
         return searchKeymap.filter(binding => binding.key !== 'Mod-f' && binding.key !== 'Escape')
     }

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
+	luaParse "github.com/yuin/gopher-lua/parse"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -38,6 +39,11 @@ func (s *store) SetInferenceScript(ctx context.Context, script string) (err erro
 		attribute.Int("scriptSize", len(script)),
 	}})
 	defer endObservation(1, observation.Args{})
+
+	_, error := luaParse.Parse(strings.NewReader(script), "(inference script)")
+	if error != nil {
+		return error
+	}
 
 	return s.db.Exec(ctx, sqlf.Sprintf(setInferenceScriptQuery, script))
 }

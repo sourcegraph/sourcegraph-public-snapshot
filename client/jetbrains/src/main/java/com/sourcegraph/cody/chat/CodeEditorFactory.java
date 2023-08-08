@@ -1,7 +1,5 @@
 package com.sourcegraph.cody.chat;
 
-import com.intellij.ide.highlighter.HighlighterFactory;
-import com.intellij.lang.Language;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.CaretModel;
@@ -9,16 +7,13 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.EditorSettings;
-import com.intellij.openapi.editor.colors.EditorColorsManager;
+import com.intellij.openapi.editor.event.DocumentEvent;
+import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.editor.event.EditorMouseEvent;
 import com.intellij.openapi.editor.event.EditorMouseListener;
 import com.intellij.openapi.editor.event.EditorMouseMotionListener;
 import com.intellij.openapi.editor.ex.EditorEx;
-import com.intellij.openapi.editor.highlighter.EditorHighlighter;
 import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.fileTypes.FileTypeManager;
-import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.util.ui.JBInsets;
@@ -35,7 +30,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.time.Duration;
-import java.util.Optional;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JLayeredPane;
@@ -60,10 +54,9 @@ public class CodeEditorFactory {
     this.rightMargin = rightMargin;
   }
 
-  public JComponent createCodeEditor(@NotNull String code, @Nullable String language) {
+  public CodeEditorPart createCodeEditor(@NotNull String code, @Nullable String language) {
     Document codeDocument = EditorFactory.getInstance().createDocument(code);
     EditorEx editor = (EditorEx) EditorFactory.getInstance().createViewer(codeDocument);
-    setHighlighting(editor, language);
     fillEditorSettings(editor.getSettings());
     editor.setVerticalScrollbarVisible(false);
     editor.getGutterComponentEx().setPaintBackground(false);
@@ -160,6 +153,7 @@ public class CodeEditorFactory {
         new ComponentAdapter() {
           @Override
           public void componentResized(ComponentEvent e) {
+            Dimension editorPreferredSize = editorComponent.getPreferredSize();
             editorComponent.setBounds(
                 rightMargin,
                 0,
@@ -181,6 +175,24 @@ public class CodeEditorFactory {
                 insertAtCursorButtonPreferredSize.height);
           }
         });
+    editor
+        .getDocument()
+        .addDocumentListener(
+            new DocumentListener() {
+              @Override
+              public void documentChanged(@NotNull DocumentEvent event) {
+                Dimension editorPreferredSize = editorComponent.getPreferredSize();
+                layeredEditorPane.setPreferredSize(
+                    new Dimension(
+                        editorPreferredSize.width + rightMargin,
+                        editorPreferredSize.height + halfOfButtonHeight));
+                editorComponent.setBounds(
+                    rightMargin,
+                    0,
+                    parentPanel.getSize().width - rightMargin,
+                    editorPreferredSize.height + halfOfButtonHeight);
+              }
+            });
 
     // show and hide the copy button when the mouse is over the editor or over the button
     MouseMotionAdapter buttonsMouseMotionAdapter =
@@ -225,22 +237,9 @@ public class CodeEditorFactory {
 
     editor.addEditorMouseMotionListener(editorMouseMotionListener);
     editor.addEditorMouseListener(editorMouseListener);
-    return layeredEditorPane;
-  }
-
-  private static void setHighlighting(@NotNull EditorEx editor, @Nullable String languageName) {
-    FileType fileType =
-        Language.getRegisteredLanguages().stream()
-            .filter(it -> it.getDisplayName().equalsIgnoreCase(languageName))
-            .findFirst()
-            .flatMap(
-                it -> Optional.ofNullable(FileTypeManager.getInstance().findFileTypeByLanguage(it)))
-            .orElse(PlainTextFileType.INSTANCE);
-
-    EditorHighlighter editorHighlighter =
-        HighlighterFactory.createHighlighter(
-            fileType, EditorColorsManager.getInstance().getSchemeForCurrentUITheme(), null);
-    editor.setHighlighter(editorHighlighter);
+    CodeEditorPart codeEditorPart = new CodeEditorPart(layeredEditorPane, editor);
+    codeEditorPart.updateLanguage(language);
+    return codeEditorPart;
   }
 
   private static void fillEditorSettings(@NotNull EditorSettings editorSettings) {

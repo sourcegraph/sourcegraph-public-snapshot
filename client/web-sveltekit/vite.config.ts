@@ -8,6 +8,7 @@ const config = defineConfig(({ mode }) => ({
             ? {}
             : {
                   'process.platform': '"browser"',
+                  'process.env.VITEST': 'undefined',
                   'process.env': '{}',
               },
     css: {
@@ -19,7 +20,7 @@ const config = defineConfig(({ mode }) => ({
         proxy: {
             // Proxy requests to specific endpoints to a real Sourcegraph
             // instance.
-            '^(/sign-in|/.assets|/-|/.api|/search/stream)': {
+            '^(/sign-in|/.assets|/-|/.api|/search/stream|/users)': {
                 target: process.env.SOURCEGRAPH_API_URL || 'https://sourcegraph.com',
                 changeOrigin: true,
                 secure: false,
@@ -31,6 +32,10 @@ const config = defineConfig(({ mode }) => ({
             // Without addings this Vite throws an error
             'linguist-languages',
         ],
+    },
+
+    test: {
+        setupFiles: './src/testing/setup.ts',
     },
 }))
 

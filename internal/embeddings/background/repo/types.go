@@ -67,6 +67,7 @@ func NewEmbedFilesStats(filesTotal int) EmbedFilesStats {
 		FilesEmbedded:  0,
 		FilesSkipped:   map[string]int{},
 		ChunksEmbedded: 0,
+		ChunksExcluded: 0,
 		BytesEmbedded:  0,
 	}
 }
@@ -86,6 +87,10 @@ type EmbedFilesStats struct {
 	// Equivalent to the number of embeddings generated.
 	ChunksEmbedded int
 
+	// The number of chunks that were excluded from the index.
+	// Cause of exclusion is typically due to failed embeddings requests.
+	ChunksExcluded int
+
 	// The sum of the size of the contents of successful embeddings
 	BytesEmbedded int
 }
@@ -94,9 +99,13 @@ func (e *EmbedFilesStats) Skip(reason string, size int) {
 	e.FilesSkipped[reason] += 1
 }
 
-func (e *EmbedFilesStats) AddChunk(size int) {
-	e.ChunksEmbedded += 1
+func (e *EmbedFilesStats) AddChunks(count, size int) {
+	e.ChunksEmbedded += count
 	e.BytesEmbedded += size
+}
+
+func (e *EmbedFilesStats) ExcludeChunks(count int) {
+	e.ChunksExcluded += count
 }
 
 func (e *EmbedFilesStats) AddFile() {
@@ -112,6 +121,7 @@ func (e *EmbedFilesStats) ToFields() []log.Field {
 		log.Int("filesTotal", e.FilesScheduled),
 		log.Int("filesEmbedded", e.FilesEmbedded),
 		log.Int("chunksEmbedded", e.ChunksEmbedded),
+		log.Int("chunksExcluded", e.ChunksExcluded),
 		log.Int("bytesEmbedded", e.BytesEmbedded),
 		log.Object("filesSkipped", skippedCounts...),
 	}

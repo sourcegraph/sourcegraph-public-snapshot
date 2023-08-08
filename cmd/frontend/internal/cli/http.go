@@ -34,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/session"
 	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // newExternalHTTPHandler creates and returns the HTTP handler that serves the app and API pages to
@@ -45,7 +46,7 @@ func newExternalHTTPHandler(
 	handlers *internalhttpapi.Handlers,
 	newExecutorProxyHandler enterprise.NewExecutorProxyHandler,
 	newGitHubAppSetupHandler enterprise.NewGitHubAppSetupHandler,
-) http.Handler {
+) (http.Handler, error) {
 	logger := log.Scoped("external", "external http handlers")
 
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
@@ -54,7 +55,10 @@ func newExternalHTTPHandler(
 
 	// HTTP API handler, the call order of middleware is LIFO.
 	r := router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter())
-	apiHandler := internalhttpapi.NewHandler(db, r, schema, rateLimitWatcher, handlers)
+	apiHandler, err := internalhttpapi.NewHandler(db, r, schema, rateLimitWatcher, handlers)
+	if err != nil {
+		return nil, errors.Errorf("create internal HTTP API handler: %v", err)
+	}
 	if hooks.PostAuthMiddleware != nil {
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		apiHandler = hooks.PostAuthMiddleware(apiHandler)
@@ -118,7 +122,7 @@ func newExternalHTTPHandler(
 	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
 	h = instrumentation.HTTPMiddleware("external", h)
 
-	return h
+	return h, nil
 }
 
 func healthCheckMiddleware(next http.Handler) http.Handler {

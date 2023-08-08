@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/modeltransformations"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -57,19 +58,16 @@ func (c *sourcegraphEmbeddingsClient) GetModelIdentifier() string {
 	return fmt.Sprintf("sourcegraph/%s", c.model)
 }
 
-// GetEmbeddings tries to embed the given texts using the external service specified in the config.
-func (c *sourcegraphEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []string) ([]float32, error) {
-	_, replaceNewlines := modelsWithoutNewlines[c.model]
-	augmentedTexts := texts
-	if replaceNewlines {
-		augmentedTexts = make([]string, len(texts))
-		// Replace newlines for certain (OpenAI) models, because they can negatively affect performance.
-		for idx, text := range texts {
-			augmentedTexts[idx] = strings.ReplaceAll(text, "\n", " ")
-		}
-	}
+func (c *sourcegraphEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) (*client.EmbeddingsResults, error) {
+	return c.getEmbeddings(ctx, []string{modeltransformations.ApplyToQuery(query, c.GetModelIdentifier())})
+}
 
-	request := codygateway.EmbeddingsRequest{Model: c.model, Input: augmentedTexts}
+func (c *sourcegraphEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context, documents []string) (*client.EmbeddingsResults, error) {
+	return c.getEmbeddings(ctx, modeltransformations.ApplyToDocuments(documents, c.GetModelIdentifier()))
+}
+
+func (c *sourcegraphEmbeddingsClient) getEmbeddings(ctx context.Context, texts []string) (*client.EmbeddingsResults, error) {
+	request := codygateway.EmbeddingsRequest{Model: c.model, Input: texts}
 	response, err := c.do(ctx, request)
 	if err != nil {
 		return nil, err
@@ -84,20 +82,26 @@ func (c *sourcegraphEmbeddingsClient) GetEmbeddings(ctx context.Context, texts [
 		return response.Embeddings[i].Index < response.Embeddings[j].Index
 	})
 
-	embeddings := make([]float32, 0, len(response.Embeddings)*response.ModelDimensions)
+	dimensionality := response.ModelDimensions
+	embeddings := make([]float32, 0, len(response.Embeddings)*dimensionality)
+	failed := make([]int, 0)
 	for _, embedding := range response.Embeddings {
 		if len(embedding.Data) > 0 {
 			embeddings = append(embeddings, embedding.Data...)
 		} else {
-			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, c.model, augmentedTexts[embedding.Index], 3)
+			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, c.model, texts[embedding.Index], 3)
 			if err != nil {
-				return nil, client.PartialError{err, embedding.Index}
+				failed = append(failed, embedding.Index)
+
+				// reslice to provide zero value embedding for failed chunk
+				embeddings = embeddings[:len(embeddings)+dimensionality]
+				continue
 			}
 			embeddings = append(embeddings, resp...)
 		}
 	}
 
-	return embeddings, nil
+	return &client.EmbeddingsResults{Embeddings: embeddings, Failed: failed, Dimensions: response.ModelDimensions}, nil
 }
 
 func (c *sourcegraphEmbeddingsClient) do(ctx context.Context, request codygateway.EmbeddingsRequest) (*codygateway.EmbeddingsResponse, error) {
@@ -170,8 +174,4 @@ func (c *sourcegraphEmbeddingsClient) requestSingleEmbeddingWithRetryOnNull(ctx 
 		return resp.Embeddings[0].Data, err
 	}
 	return nil, errors.Newf("null response for embedding after %d retries", retries)
-}
-
-var modelsWithoutNewlines = map[string]struct{}{
-	"openai/text-embedding-ada-002": {},
 }
