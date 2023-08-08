@@ -12,6 +12,9 @@ import com.intellij.openapi.util.Key;
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings;
 import com.intellij.util.concurrency.annotations.RequiresEdt;
 import com.sourcegraph.cody.CodyCompatibility;
+import com.sourcegraph.cody.agent.CodyAgent;
+import com.sourcegraph.cody.agent.CodyAgentServer;
+import com.sourcegraph.cody.agent.protocol.AutocompleteExecuteParams;
 import com.sourcegraph.cody.api.CompletionsService;
 import com.sourcegraph.cody.autocomplete.prompt_library.*;
 import com.sourcegraph.cody.autocomplete.render.*;
@@ -88,7 +91,13 @@ public class CodyAutoCompleteManager {
       Callable<CompletableFuture<Void>> callable =
           () ->
               triggerAutoCompleteAsync(
-                  editor, offset, token, provider, textDocument, autoCompleteDocumentContext);
+                  project,
+                  editor,
+                  offset,
+                  token,
+                  provider,
+                  textDocument,
+                  autoCompleteDocumentContext);
       // debouncing the autocomplete trigger
       cancelCurrentJob();
       this.currentJob.set(
@@ -97,77 +106,88 @@ public class CodyAutoCompleteManager {
   }
 
   private CompletableFuture<Void> triggerAutoCompleteAsync(
+      @NotNull Project project,
       @NotNull Editor editor,
       int offset,
       @NotNull CancellationToken token,
       @NotNull CodyAutoCompleteItemProvider provider,
       @NotNull TextDocument textDocument,
       @NotNull AutoCompleteDocumentContext autoCompleteDocumentContext) {
-    return provider
-        .provideInlineAutoCompleteItems(
-            textDocument,
-            textDocument.positionAt(offset),
-            new InlineAutoCompleteContext(InlineAutoCompleteTriggerKind.Automatic, null),
-            token)
-        .thenAccept(
-            result -> {
-              if (Thread.interrupted()) {
-                return;
-              }
-              if (result.items.isEmpty()) {
-                return;
-              }
-              InlayModel inlayModel = editor.getInlayModel();
-              // TODO: smarter logic around selecting the best completion item.
-              Optional<InlineAutoCompleteItem> maybeItem =
-                  result.items.stream()
-                      .map(CodyAutoCompleteManager::removeUndesiredCharacters)
-                      .map(item -> normalizeIndentation(item, EditorUtils.indentOptions(editor)))
-                      .filter(resultItem -> !resultItem.insertText.isEmpty())
-                      .findFirst();
-              if (maybeItem.isEmpty()) {
-                return;
-              }
-              InlineAutoCompleteItem item = maybeItem.get();
-              try {
-                ApplicationManager.getApplication()
-                    .invokeLater(
-                        () -> {
-                          /* Clear existing completions */
-                          this.clearAutoCompleteSuggestions(editor);
+    CodyAgentServer server = CodyAgent.getServer(project);
+    Position position = textDocument.positionAt(offset);
+    CompletableFuture<InlineAutoCompleteList> asyncCompletions =
+        server != null
+            ? server.autocompleteExecute(
+                new AutocompleteExecuteParams()
+                    .setFilePath(textDocument.fileName())
+                    .setPosition(
+                        new com.sourcegraph.cody.agent.protocol.Position()
+                            .setLine(position.line)
+                            .setCharacter(position.character)))
+            : provider.provideInlineAutoCompleteItems(
+                textDocument,
+                position,
+                new InlineAutoCompleteContext(InlineAutoCompleteTriggerKind.Automatic, null),
+                token);
 
-                          /* Log the event */
-                          Optional.ofNullable(editor.getProject())
-                              .ifPresent(
-                                  p -> GraphQlLogger.logCodyEvent(p, "completion", "suggested"));
+    return asyncCompletions.thenAccept(
+        result -> {
+          if (Thread.interrupted()) {
+            return;
+          }
+          if (result.items.isEmpty()) {
+            return;
+          }
+          InlayModel inlayModel = editor.getInlayModel();
+          // TODO: smarter logic around selecting the best completion item.
+          Optional<InlineAutoCompleteItem> maybeItem =
+              result.items.stream()
+                  .map(CodyAutoCompleteManager::removeUndesiredCharacters)
+                  .map(item -> normalizeIndentation(item, EditorUtils.indentOptions(editor)))
+                  .filter(resultItem -> !resultItem.insertText.isEmpty())
+                  .findFirst();
+          if (maybeItem.isEmpty()) {
+            return;
+          }
+          InlineAutoCompleteItem item = maybeItem.get();
+          try {
+            ApplicationManager.getApplication()
+                .invokeLater(
+                    () -> {
+                      /* Clear existing completions */
+                      this.clearAutoCompleteSuggestions(editor);
 
-                          /* display autocomplete */
-                          AutoCompleteText autoCompleteText =
-                              item.toAutoCompleteText(
-                                  autoCompleteDocumentContext.getSameLineSuffix().trim());
-                          autoCompleteText
-                              .getInlineRenderer(editor)
-                              .ifPresent(
-                                  inlineRenderer ->
-                                      inlayModel.addInlineElement(offset, true, inlineRenderer));
-                          autoCompleteText
-                              .getAfterLineEndRenderer(editor)
-                              .ifPresent(
-                                  afterLineEndRenderer ->
-                                      inlayModel.addAfterLineEndElement(
-                                          offset, true, afterLineEndRenderer));
-                          autoCompleteText
-                              .getBlockRenderer(editor)
-                              .ifPresent(
-                                  blockRenderer ->
-                                      inlayModel.addBlockElement(
-                                          offset, true, false, Integer.MAX_VALUE, blockRenderer));
-                        });
-              } catch (Exception e) {
-                // TODO: do something smarter with unexpected errors.
-                logger.warn(e);
-              }
-            });
+                      /* Log the event */
+                      Optional.ofNullable(editor.getProject())
+                          .ifPresent(p -> GraphQlLogger.logCodyEvent(p, "completion", "suggested"));
+
+                      /* display autocomplete */
+                      AutoCompleteText autoCompleteText =
+                          item.toAutoCompleteText(
+                              autoCompleteDocumentContext.getSameLineSuffix().trim());
+                      autoCompleteText
+                          .getInlineRenderer(editor)
+                          .ifPresent(
+                              inlineRenderer ->
+                                  inlayModel.addInlineElement(offset, true, inlineRenderer));
+                      autoCompleteText
+                          .getAfterLineEndRenderer(editor)
+                          .ifPresent(
+                              afterLineEndRenderer ->
+                                  inlayModel.addAfterLineEndElement(
+                                      offset, true, afterLineEndRenderer));
+                      autoCompleteText
+                          .getBlockRenderer(editor)
+                          .ifPresent(
+                              blockRenderer ->
+                                  inlayModel.addBlockElement(
+                                      offset, true, false, Integer.MAX_VALUE, blockRenderer));
+                    });
+          } catch (Exception e) {
+            // TODO: do something smarter with unexpected errors.
+            logger.warn(e);
+          }
+        });
   }
 
   // TODO: handle tabs in multiline autocomplete suggestions when we add them
