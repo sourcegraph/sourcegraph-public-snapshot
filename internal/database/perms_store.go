@@ -1929,6 +1929,7 @@ WITH accessible_repos AS (
 		repo.name,
 		repo.private,
 		es.unrestricted,
+		-- We need row_id to preserve the order, because ORDER BY is done in this subquery
 		row_number() OVER() as row_id
 	FROM repo
 	LEFT JOIN external_service_repos AS esr ON esr.repo_id = repo.id

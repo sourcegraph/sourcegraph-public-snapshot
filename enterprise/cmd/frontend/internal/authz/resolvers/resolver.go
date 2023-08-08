@@ -637,7 +637,7 @@ func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (grap
 	for _, p := range perms {
 		if p.UpdatedAt.After(updatedAt) {
 			updatedAt = p.UpdatedAt
-			source = string(p.Source)
+			source = p.Source.ToGraphQL()
 		}
 	}
 

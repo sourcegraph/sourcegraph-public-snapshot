@@ -26,6 +26,7 @@ import {
     UserPermissionsInfoVariables,
     PermissionsInfoRepositoryFields as INode,
     UserPermissionsInfoUserNode as IUser,
+    PermissionSource,
 } from '../../../../graphql-operations'
 import { useURLSyncedState } from '../../../../hooks'
 import { ActionContainer } from '../../../../repo/settings/components/ActionContainer'
@@ -111,10 +112,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
                                         <Timestamp date={permissionsInfo.updatedAt} />
                                     </span>
                                     <span>
-                                        by{' '}
-                                        <PermissionSource
-                                            source={permissionsInfo.source as PermissionSourceProps['source']}
-                                        />
+                                        by <PermsSource source={permissionsInfo.source} />
                                     </span>
                                 </>
                             ) : (
@@ -122,20 +120,12 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
                             )}
                         </span>
                     </div>
-                    <Text className="text-muted mt-1 mb-4">
+                    <Text className="text-muted mt-2 mb-4">
                         <Icon aria-label="more-info text-normal" svgPath={mdiInformationOutline} /> The timestamp
-                        indicates the last update made to the repository permissions of this user. This might have been
-                        done via{' '}
-                        <Link rel="noopener noreferrer" target="_blank" to="/help/admin/permissions/syncing">
-                            permission syncing
-                        </Link>{' '}
-                        or{' '}
-                        <Link rel="noopener noreferrer" target="_blank" to="/help/admin/permissions/api">
-                            explicit permissions API
-                        </Link>
-                        . If the value <i>never</i> is displayed, it means we currently do not have any permission
-                        records for the user. However, please note that the user may have had permissions stored in
-                        Sourcegraph in the past.
+                        indicates the last update made to the repository permissions of this user. If the value{' '}
+                        <i>never</i> is displayed, it means we currently do not have any permission records for the
+                        user. However, please note that the user may have had permissions stored in Sourcegraph in the
+                        past.
                     </Text>
                     <ScheduleUserPermissionsSyncActionContainer user={user} />
                 </>
@@ -261,18 +251,23 @@ class ScheduleUserPermissionsSyncActionContainer extends React.PureComponent<Sch
 }
 
 const permsSourceMap = {
-    user_sync: 'user-centric permission sync',
-    repo_sync: 'repo-centric permission sync',
-    api: 'explicit permissions API',
+    USER_SYNC: 'user-centric permission sync',
+    REPO_SYNC: 'repo-centric permission sync',
+    API: 'explicit permissions API',
 }
 
-interface PermissionSourceProps {
-    source: 'user_sync' | 'repo_sync' | 'api' | null
+interface PermsSourceProps {
+    source: PermissionSource | null
 }
 
-const PermissionSource: React.FunctionComponent<PermissionSourceProps> = ({ source }) => {
+const PermsSource: React.FunctionComponent<PermsSourceProps> = ({ source }) => {
     if (!source) {
         return <>unknown</>
     }
-    return <>{permsSourceMap[source]}</>
+    let href = '/help/admin/permissions/syncing#permission-syncing'
+    if (source === PermissionSource.API) {
+        href = '/help/admin/permissions/api'
+    }
+
+    return <a href={href}>{permsSourceMap[source]}</a>
 }

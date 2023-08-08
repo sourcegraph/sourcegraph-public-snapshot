@@ -344,6 +344,12 @@ enum RepositoryPermission {
     READ
 }
 
+enum PermissionSource {
+    REPO_SYNC
+    USER_SYNC
+    API
+}
+
 """
 Permissions information of a repository or a user.
 """
@@ -365,7 +371,7 @@ type PermissionsInfo {
     """
     What was the source of the last permission update. The value is updated whenever different source last touched the database row (i.e. permission sync or explicit permissions update)
     """
-    source: String
+    source: PermissionSource
     """
     If true for a repo, it indicates access to the repo is allowed for all users.
     It will always be false for users.
