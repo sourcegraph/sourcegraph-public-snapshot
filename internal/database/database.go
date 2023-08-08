@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -15,49 +14,8 @@ import (
 	gha "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 )
 
-// ExecuteWithClient executes a DBExecutable with the provided DBClient.
-// The client executes the Executable using the ExecuteRaw method, which
-// is then immediately converted by the readResponse function.
-func ExecuteWithClient[T any](ctx context.Context, dbe DBExecutable[T], client DBClient) (T, error) {
-	resp, err := client.Execute(ctx, dbe)
-
-	respT, ok := resp.(T)
-	if !ok {
-		var t T
-		panic(fmt.Sprintf(`Return type of %[1]T.Execute does not match return type of %[1]T.ExecuteRaw.
-
-The implementation for DBExecutable[%[2]T] should match the following:
-
-func (q %[1]T) Execute(ctx context.Context, store *basestore.Store) (%[2]T, error) {...}
-
-func (q %[1]T) ExecuteRaw(ctx context.Context, store *basestore.Store) (any, error) {
-	return q.Execute(ctx, store)
-}`, dbe, t))
-	}
-
-	return respT, err
-}
-
-// A DBExecutableRaw uses a store to perform various operations on a database.
-//
-// Execute returns an `any` type, and it is the responsibility of the caller
-// to ensure that the response is casted to the correct response type.
-//
-// This is not meant to be used outside of a dedicated Client implementation.
-//
-// An Execute call can require multiple database calls to produce its result.
-//
-// See ReadResponse for a method to conveniently process an Execute response.
-type DBExecutableRaw interface {
-	ExecuteRaw(context.Context, *basestore.Store) (any, error)
-}
-
-// A DBExecutable uses a store to perform various operations on a database.
-//
-// An Execute call can require multiple database calls to produce its result.
-type DBExecutable[T any] interface {
-	DBExecutableRaw
-	Execute(context.Context, *basestore.Store) (T, error)
+type DBCommand interface {
+	Execute(context.Context, *basestore.Store) error
 }
 
 // A DBClient is a database client capable of executing DBQueries.
@@ -67,15 +25,15 @@ type DBExecutable[T any] interface {
 //
 // An Execute call can lead to multiple database queries.
 type DBClient interface {
-	Execute(context.Context, DBExecutableRaw) (any, error)
+	ExecuteCommand(context.Context, DBCommand) error
 }
 
 type dbClient struct {
 	store *basestore.Store
 }
 
-func (c *dbClient) Execute(ctx context.Context, query DBExecutableRaw) (any, error) {
-	return query.ExecuteRaw(ctx, c.store)
+func (c *dbClient) ExecuteCommand(ctx context.Context, command DBCommand) error {
+	return command.Execute(ctx, c.store)
 }
 
 // DB is an interface that embeds dbutil.DB, adding methods to

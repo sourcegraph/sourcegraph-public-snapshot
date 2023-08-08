@@ -28,7 +28,7 @@ func TestAccessRequestNode(t *testing.T) {
 
 	mockDBClient := database.NewMockDBClient()
 	db.ClientFunc.SetDefaultReturn(mockDBClient)
-	mockDBClient.Mock(&accessrequests.GetByID{}, mockAccessRequest, nil)
+	mockDBClient.Mock(&accessrequests.GetByID{Response: mockAccessRequest}, nil)
 
 	userStore := database.NewMockUserStore()
 	db.UsersFunc.SetDefaultReturn(userStore)
@@ -121,8 +121,8 @@ func TestAccessRequestsQuery(t *testing.T) {
 			{ID: 3, Email: "a3@example.com", Name: "a3", CreatedAt: createdAtTime, Status: types.AccessRequestStatusRejected},
 		}
 
-		mockDBClient.Mock(&accessrequests.List{}, mockAccessRequests, nil)
-		mockDBClient.Mock(&accessrequests.Count{}, len(mockAccessRequests), nil)
+		mockDBClient.Mock(&accessrequests.List{Response: mockAccessRequests}, nil)
+		mockDBClient.Mock(&accessrequests.Count{Response: len(mockAccessRequests)}, nil)
 		userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
@@ -220,8 +220,8 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 	t.Run("existing access request", func(t *testing.T) {
 		createdAtTime, _ := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")
 		mockAccessRequest := &types.AccessRequest{ID: 1, Email: "a1@example.com", Name: "a1", CreatedAt: createdAtTime, AdditionalInfo: "af1", Status: types.AccessRequestStatusPending}
-		mockDBClient.Mock(&accessrequests.GetByID{}, mockAccessRequest, nil)
-		mockDBClient.Mock(&accessrequests.Update{}, mockAccessRequest, nil)
+		mockDBClient.Mock(&accessrequests.GetByID{Response: mockAccessRequest}, nil)
+		mockDBClient.Mock(&accessrequests.Update{Response: mockAccessRequest}, nil)
 		userID := int32(123)
 		userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: userID, SiteAdmin: true}, nil)
 
@@ -251,7 +251,7 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 		mockDBClient := database.NewMockDBClient()
 		db.ClientFunc.SetDefaultReturn(mockDBClient)
 		notFoundErr := &accessrequests.ErrNotFound{ID: 1}
-		mockDBClient.Mock(&accessrequests.GetByID{}, nil, notFoundErr)
+		mockDBClient.Mock(&accessrequests.GetByID{}, notFoundErr)
 
 		userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
