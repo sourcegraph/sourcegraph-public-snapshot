@@ -1,11 +1,8 @@
 package ci
 
 import (
-	"path/filepath"
 	"reflect"
 	"testing"
-
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 )
 
 func Test_sanitizeStepKey(t *testing.T) {
@@ -44,7 +41,7 @@ func TestGetAllImageDependencies(t *testing.T) {
 	}{
 		{
 			"Test 1",
-			"enterprise/dev/ci/internal/ci/test/wolfi-images",
+			"test/wolfi-images",
 			map[string][]string{
 				"wolfi-test-image-1": {
 					"tini",
@@ -59,6 +56,8 @@ func TestGetAllImageDependencies(t *testing.T) {
 					"mailcap",
 					"git",
 					"foobar-package",
+					"wolfi-test-package-subpackage@sourcegraph",
+					"wolfi-test-package-2@sourcegraph",
 				},
 			},
 			false,
@@ -66,14 +65,7 @@ func TestGetAllImageDependencies(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
-			repoRoot, err := root.RepositoryRoot()
-			if err != nil {
-				t.Errorf("RepositoryRoot() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			wolfiImageDirPath := filepath.Join(repoRoot, tt.wolfiImageDir)
-
+			wolfiImageDirPath := tt.wolfiImageDir
 			gotPackagesByImage, err := GetAllImageDependencies(wolfiImageDirPath)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetAllImageDependencies() error = %v, wantErr %v", err, tt.wantErr)
@@ -109,14 +101,7 @@ func TestGetDependenciesOfPackage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			wolfiImageDir := "enterprise/dev/ci/internal/ci/test/wolfi-images"
-			repoRoot, err := root.RepositoryRoot()
-			if err != nil {
-				t.Errorf("RepositoryRoot() error = %v", err)
-				return
-			}
-			wolfiImageDirPath := filepath.Join(repoRoot, wolfiImageDir)
-
+			wolfiImageDirPath := "test/wolfi-images"
 			gotPackagesByImage, err := GetAllImageDependencies(wolfiImageDirPath)
 			if err != nil {
 				t.Errorf("Error running GetAllImageDependencies() error = %v", err)

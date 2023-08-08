@@ -2,7 +2,6 @@ package ci
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -256,7 +255,7 @@ type BaseImageConfig struct {
 func getPackagesFromBaseImageConfig(configFile string) ([]string, error) {
 	var config BaseImageConfig
 
-	yamlFile, err := ioutil.ReadFile(configFile)
+	yamlFile, err := os.ReadFile(configFile)
 	if err != nil {
 		return nil, err
 	}
