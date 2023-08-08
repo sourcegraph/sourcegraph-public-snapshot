@@ -61,4 +61,4 @@ jobs:
         working-directory: ${{ matrix.root }}
         run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo=github.com/sourcegraph/sourcegraph
         env:
-          SRC_ENDPOINT: https://codyintel.sourcegraph.com/
+          SRC_ENDPOINT: https://codyintel.sourcegraphcloud.com/
