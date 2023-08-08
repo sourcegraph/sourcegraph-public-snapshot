@@ -159,8 +159,6 @@ func GetDependenciesOfPackages(packageNames []string, repo string) (images []str
 	for _, packageName := range packageNames {
 		i := GetDependenciesOfPackage(packagesByImage, packageName, repo)
 		images = append(images, i...)
-
-		fmt.Printf("Base images which depend on package %s: %v\n", packageName, i)
 	}
 
 	// Dedupe image names
