@@ -149,6 +149,7 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Testing principles](background-information/testing_principles.md)
 - [Testing Go code](background-information/languages/testing_go_code.md)
 - [Testing web code](background-information/testing_web_code.md)
+- [Code host test plans](background-information/test-plans/code-hosts/index.md)
 
 ### Tools
 
