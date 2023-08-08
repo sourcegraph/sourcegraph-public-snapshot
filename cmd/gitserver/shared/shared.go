@@ -61,59 +61,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var (
-
-	// Align these variables with the 'disk_space_remaining' alerts in monitoring
-	wantPctFree     = env.MustGetInt("SRC_REPOS_DESIRED_PERCENT_FREE", 10, "Target percentage of free space on disk.")
-	janitorInterval = env.MustGetDuration("SRC_REPOS_JANITOR_INTERVAL", 1*time.Minute, "Interval between cleanup runs")
-
-	syncRepoStateInterval          = env.MustGetDuration("SRC_REPOS_SYNC_STATE_INTERVAL", 10*time.Minute, "Interval between state syncs")
-	syncRepoStateBatchSize         = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of updates to perform per batch")
-	syncRepoStateUpdatePerSecond   = env.MustGetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", 500, "The number of updated rows allowed per second across all gitserver instances")
-	batchLogGlobalConcurrencyLimit = env.MustGetInt("SRC_BATCH_LOG_GLOBAL_CONCURRENCY_LIMIT", 256, "The maximum number of in-flight Git commands from all /batch-log requests combined")
-
-	// 80 per second (4800 per minute) is well below our alert threshold of 30k per minute.
-	rateLimitSyncerLimitPerSecond = env.MustGetInt("SRC_REPOS_SYNC_RATE_LIMIT_RATE_PER_SECOND", 80, "Rate limit applied to rate limit syncing")
-)
-
 type EnterpriseInit func(db database.DB, keyring keyring.Ring)
-
-type Config struct {
-	env.BaseConfig
-
-	ReposDir         string
-	CoursierCacheDir string
-}
-
-func (c *Config) Load() {
-	c.ReposDir = c.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
-
-	// if COURSIER_CACHE_DIR is set, try create that dir and use it. If not set, use the SRC_REPOS_DIR value (or default).
-	c.CoursierCacheDir = env.Get("COURSIER_CACHE_DIR", "", "Directory in which coursier data is cached for JVM package repos.")
-	if c.CoursierCacheDir == "" && c.ReposDir != "" {
-		c.CoursierCacheDir = filepath.Join(c.ReposDir, "coursier")
-	}
-}
-
-func LoadConfig() *Config {
-	var config Config
-	config.Load()
-	return &config
-}
 
 func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config *Config, enterpriseInit EnterpriseInit) error {
 	logger := observationCtx.Logger
 
-	if config.ReposDir == "" {
-		return errors.New("SRC_REPOS_DIR is required")
-	}
-	if err := os.MkdirAll(config.ReposDir, os.ModePerm); err != nil {
-		return errors.Wrap(err, "creating SRC_REPOS_DIR")
+	if err := config.Validate(); err != nil {
+		return errors.Wrap(err, "failed to validate configuration")
 	}
 
-	wantPctFree2, err := getPercent(wantPctFree)
-	if err != nil {
-		return errors.Wrap(err, "SRC_REPOS_DESIRED_PERCENT_FREE is out of range")
+	// Ensure the ReposDir exists.
+	if err := os.MkdirAll(config.ReposDir, os.ModePerm); err != nil {
+		return errors.Wrap(err, "creating SRC_REPOS_DIR")
 	}
 
 	sqlDB, err := getDB(observationCtx)
@@ -144,7 +103,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		Logger:             logger,
 		ObservationCtx:     observationCtx,
 		ReposDir:           config.ReposDir,
-		DesiredPercentFree: wantPctFree2,
+		DesiredPercentFree: config.JanitorReposDesiredPercentFree,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
 			return getRemoteURLFunc(ctx, db, repoStore, repo)
 		},
@@ -162,7 +121,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		Hostname:                externalAddress(),
 		DB:                      db,
 		CloneQueue:              server.NewCloneQueue(observationCtx, list.New()),
-		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
+		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(config.BatchLogGlobalConcurrencyLimit)),
 		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
 		RecordingCommandFactory: recordingCommandFactory,
 		DeduplicatedForksSet:    types.NewRepoURICache(conf.GetDeduplicatedForksIndex()),
@@ -237,9 +196,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// Ready immediately
 	ready()
 
-	go syncRateLimiters(ctx, logger, externalServiceStore, rateLimitSyncerLimitPerSecond)
-	go gitserver.Janitor(actor.WithInternalActor(ctx), janitorInterval)
-	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpdatePerSecond)
+	go syncRateLimiters(ctx, logger, externalServiceStore, config.RateLimitSyncerLimitPerSecond)
+	go gitserver.Janitor(actor.WithInternalActor(ctx), config.JanitorInterval)
+	go gitserver.SyncRepoState(config.SyncRepoStateInterval, config.SyncRepoStateBatchSize, config.SyncRepoStateUpdatePerSecond)
 
 	gitserver.StartClonePipeline(ctx)
 
@@ -333,16 +292,6 @@ func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 	fc.FsyncEnable = conn.FusionClient.FsyncEnable
 
 	return fc
-}
-
-func getPercent(p int) (int, error) {
-	if p < 0 {
-		return 0, errors.Errorf("negative value given for percentage: %d", p)
-	}
-	if p > 100 {
-		return 0, errors.Errorf("excessively high value given for percentage: %d", p)
-	}
-	return p, nil
 }
 
 // getDB initializes a connection to the database and returns a dbutil.DB
