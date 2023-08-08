@@ -40,7 +40,4 @@ go_test(
         "//enterprise/dev/ci/internal/ci/test:test-image-configs",
     ],
     embed = [":ci"],
-    deps = [
-        "//dev/sg/root",
-    ],
 )
