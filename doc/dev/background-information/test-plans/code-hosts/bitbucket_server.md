@@ -12,7 +12,7 @@ This test plan serves the purpose of manually testing if critical functionality 
     a. If you already have one, delete it before running this test plan
     b. Deleting is better than modifying, because it provides consistent path for everyone who follows the test plan
 1. No user with username `engineers` on the instance
-    a. This is the user we will use from the bitbucket.sgdev.org instance, the username must match a sourcegraph user
+    a. This is the user we will use from the [bitbucket.sgdev.org](https://bitbucket.sgdev.org) instance, the username must match a sourcegraph user
 1. Builtin auth provider is enabled in site configuration:
     ```
     "auth.providers": [
