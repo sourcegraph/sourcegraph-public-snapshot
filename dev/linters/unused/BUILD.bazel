@@ -6,6 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/linters/unused",
     visibility = ["//visibility:public"],
     deps = [
+        "//dev/linters/nolint",
         "@co_honnef_go_tools//unused",
         "@org_golang_x_tools//go/analysis",
     ],
