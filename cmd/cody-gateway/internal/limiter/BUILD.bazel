@@ -1,0 +1,32 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "limiter",
+    srcs = [
+        "error.go",
+        "limiter.go",
+        "prefix.go",
+        "store.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter",
+    visibility = ["//cmd/cody-gateway:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel//codes",
+        "@io_opentelemetry_go_otel_trace//:trace",
+    ],
+)
+
+go_test(
+    name = "limiter_test",
+    srcs = ["limiter_test.go"],
+    embed = [":limiter"],
+    deps = [
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

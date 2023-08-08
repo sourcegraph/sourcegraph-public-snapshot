@@ -10,7 +10,7 @@ import { EditorView } from '@codemirror/view'
 import { isEqual } from 'lodash'
 import { createPath, NavigateFunction, useLocation, useNavigate, Location } from 'react-router-dom'
 
-import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
+import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
 import {
     addLineRangeQueryParameter,
     formatSearchParameters,

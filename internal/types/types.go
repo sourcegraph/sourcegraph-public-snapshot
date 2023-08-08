@@ -84,6 +84,13 @@ type Repo struct {
 	KeyValuePairs map[string]*string `json:",omitempty"`
 }
 
+func (r *Repo) IDName() RepoIDName {
+	return RepoIDName{
+		ID:   r.ID,
+		Name: r.Name,
+	}
+}
+
 type GitHubAppDomain string
 
 func (s GitHubAppDomain) ToGraphQL() string { return strings.ToUpper(string(s)) }
@@ -577,7 +584,7 @@ func ParseCloneStatusFromGraphQL(s string) CloneStatus {
 	return ParseCloneStatus(strings.ToLower(s))
 }
 
-// GitserverRepo  represents the data gitserver knows about a repo
+// GitserverRepo represents the data gitserver knows about a repo
 type GitserverRepo struct {
 	RepoID api.RepoID
 	// Usually represented by a gitserver hostname
@@ -600,6 +607,54 @@ type GitserverRepo struct {
 	// A log of the different types of corruption that was detected on this repo. The order of the log entries are
 	// stored from most recent to least recent and capped at 10 entries. See LogCorruption on Gitserverrepo store.
 	CorruptionLogs []RepoCorruptionLog
+
+	// PoolRepoID is the repo_id of the parent repo of which this repo is a fork. This is referenced
+	// for deduplicated storage of the repo itself on disk.
+	//
+	// It is an optional value so consumers must check for non-zero value before using it.
+	PoolRepoID api.RepoID
+}
+
+// PoolRepo is used for using deduplicated storage for a repository and all its forks. If a
+// repository exists in the database as:
+//
+// github.com/sourcegraph/sourcegraph with ID: 1
+//
+// And a fork of this repository exists in the database as:
+//
+// github.com/forked/sourcegraph with ID: 2
+//
+// Then the PoolRepo for github.com/forked/sourcegraph will be:
+//
+//	PoolRepo{
+//	    RepoName: "github.com/sourcegraph/sourcegraph",
+//	    RepoURI: "github.com/sourcegraph/sourcegraph",
+//	}
+//
+// A parent repository does not have a poolrepo.
+//
+// The pool repo is stored in $REPODIR/.pool/ by default and the repositories (both the parent and
+// the forks) are stored in $REPODIR configured as git-alternates of the repository stored at
+// $REPODIR/.pool. So for the above example we expect to have the following directory structure:
+//
+// $REPODIR
+// |_ .pool
+// |  |_ github.com
+// |    |_ sourcegraph
+// |       |_ sourcegraph
+// |
+// |_ github.com
+//
+//	|_ forked
+//	   |_ sourcegraph
+//	|_  sourcegraph
+//	   |_sourcegraph
+//
+// The PoolRepo type here is used to identify the fork -> parent repo relationship since the pool
+// repository in the disk is stored with the name of the parent.
+type PoolRepo struct {
+	RepoName api.RepoName
+	RepoURI  string
 }
 
 // RepoCorruptionLog represents a corruption event that has been detected on a repo.
@@ -625,6 +680,7 @@ type ExternalService struct {
 	CloudDefault   bool       // Whether this external service is our default public service on Cloud
 	HasWebhooks    *bool      // Whether this external service has webhooks configured; calculated from Config
 	TokenExpiresAt *time.Time // Whether the token in this external services expires, nil indicates never expires.
+	CodeHostID     *int32
 }
 
 type ExternalServiceRepo struct {
@@ -852,6 +908,7 @@ type User struct {
 	BuiltinAuth           bool
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
+	CompletedPostSignup   bool
 	Searchable            bool
 	SCIMControlled        bool
 }
@@ -2055,4 +2112,17 @@ const (
 type PerforceChangelist struct {
 	CommitSHA    api.CommitID
 	ChangelistID int64
+}
+
+// CodeHost represents a signle code source, usually defined by url e.g. github.com, gitlab.com, bitbucket.sgdev.org.
+type CodeHost struct {
+	ID                          int32
+	Kind                        string
+	URL                         string
+	APIRateLimitQuota           *int32
+	APIRateLimitIntervalSeconds *int32
+	GitRateLimitQuota           *int32
+	GitRateLimitIntervalSeconds *int32
+	CreatedAt                   time.Time
+	UpdatedAt                   time.Time
 }

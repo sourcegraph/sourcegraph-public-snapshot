@@ -287,6 +287,13 @@ type Mutation {
     """
     setSearchable(searchable: Boolean!): EmptyResponse!
     """
+    Sets the user to have completed the post-signup flow.
+    If the ID is omitted, the current user is assumed.
+
+    Only the user or site admins may perform this mutation.
+    """
+    setCompletedPostSignup(userID: ID): EmptyResponse!
+    """
     Creates an access token that grants the privileges of the specified user (referred to as the access token's
     "subject" user after token creation). The result is the access token value, which the caller is responsible
     for storing (it is not accessible by Sourcegraph after creation).
@@ -539,6 +546,26 @@ type Mutation {
         Used on Sourcegraph Cloud only.
         """
         insertID: String
+        """
+        The client that this event is being sent from.
+        """
+        client: String
+        """
+        The product category for the event, used for billing purposes.
+        """
+        billingProductCategory: String
+        """
+        The billing ID for the event, used for tagging user events for billing aggregation purposes.
+        """
+        billingEventID: String
+        """
+        The site ID that the client was connected to when the event was logged.
+        """
+        connectedSiteID: String
+        """
+        The connected site's license key, hashed using sha256. Used for uniquely identifying the site.
+        """
+        hashedLicenseKey: String
     ): EmptyResponse
     """
     Logs a batch of events.
@@ -1022,6 +1049,26 @@ input Event {
     Used on Sourcegraph Cloud only.
     """
     insertID: String
+    """
+    The client that this event is being sent from.
+    """
+    client: String
+    """
+    The product category for the event, used for billing purposes.
+    """
+    billingProductCategory: String
+    """
+    The billing ID for the event, used for tagging user events for billing aggregation purposes.
+    """
+    billingEventID: String
+    """
+    The site ID that the client was connected to when the event was logged.
+    """
+    connectedSiteID: String
+    """
+    The connected site's license key, hashed using sha256. Used for uniquely identifying the site.
+    """
+    hashedLicenseKey: String
 }
 
 """
@@ -1084,7 +1131,79 @@ enum EventSource {
     BACKEND
     STATICWEB
     IDEEXTENSION
+    """
+    DEPRECATED
+    """
     CODY
+}
+
+"""
+The product client where events come from.
+
+Future additions include:
+- BITBUCKET_NATIVE_INTEGRATION
+- GITLAB_NATIVE_INTEGRATION
+- CHROME_SOURCEGRAPH_EXTENSION
+- FIREFOX_SOURCEGRAPH_EXTENSION
+- EDGE_SOURCEGRAPH_EXTENSION
+- VSCODE_SOURCEGRAPH_EXTENSION (for https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph)
+- EMACS_CODY_EXTENSION
+"""
+enum EventClient {
+    SERVER_WEB
+    APP_WEB
+    DOTCOM_WEB
+    MARKETING_WEB
+    DOTCOM_BACKEND
+    APP_BACKEND
+    SERVER_BACKEND
+    VSCODE_CODY_EXTENSION
+    JETBRAINS_CODY_EXTENSION
+    NEOVIM_CODY_EXTENSION
+}
+
+"""
+The product categories for events, used for billing purposes.
+"""
+enum EventBillingProductCategory {
+    """
+    Used for all events related to non-billable, non-product usage (e.g. marketing, CTAs, signed out
+    events, etc.)
+    """
+    NOT_BILLABLE
+    """
+    Used for all billable but shared user interface events, such as administration, authentication, user
+    profile and settings, shared landing pages, etc.
+    """
+    SHARED
+    """
+    Used for all events primarily related to the Code Search product, including file and repo pageviews,
+    search actions, code navigation, batch changes, code insights, etc.
+    """
+    CODE_SEARCH
+    """
+    Used for all events primarily related to the Cody product, including chats, recipes, completions, web
+    chat views, etc.
+    """
+    CODY
+}
+
+"""
+Billing IDs for events, used for tagging user events for billing aggregation purposes.
+"""
+enum EventBillingID {
+    """
+    A billable Cody chat event, including manual chats, recipes, and more.
+    """
+    CodyChat
+    """
+    A billable Cody completion (aka suggestion or autocomplete) event.
+    """
+    CodyCompletion
+    """
+    A billable Cody embedding/code graph creation or search event.
+    """
+    CodyEmbedding
 }
 
 """
@@ -1358,10 +1477,10 @@ type Query {
         uri: String
     ): Repository
     """
-    Looks up a repository by either name or cloneURL or hashedName. When the repository does not exist on the server
-    and "disablePublicRepoRedirects" is "false" in the site configuration, it returns a Redirect to
-    an external Sourcegraph URL that may have this repository instead. Otherwise, this query returns
-    null.
+    Looks up a repository by either name or cloneURL or hashedName. When the
+    repository does not exist on the server, it returns a Redirect to an
+    external Sourcegraph URL that may have this repository instead. Otherwise,
+    this query returns null.
     """
     repositoryRedirect(
         """
@@ -1394,6 +1513,10 @@ type Query {
         Opaque pagination cursor.
         """
         after: String
+        """
+        If provided, fetch external services which contain a repo with the given ID.
+        """
+        repo: ID
     ): ExternalServiceConnection!
     """
     Lists all namespaces for a given external service connection.
@@ -1504,6 +1627,14 @@ type Query {
         Include repositories that do not have a text search index.
         """
         notIndexed: Boolean = true
+        """
+        Include repositories that have embeddings.
+        """
+        embedded: Boolean = true
+        """
+        Include repositories that don't have embeddings.
+        """
+        notEmbedded: Boolean = true
         """
         Include only repositories that have encountered errors when cloning or fetching
         """
@@ -3782,6 +3913,70 @@ type Repository implements Node & GenericSearchResultInterface {
     Returns true if embeddings for the repo are generated.
     """
     embeddingExists: Boolean!
+
+    """
+    Returns a list of all recorded commands for given repository.
+    """
+    recordedCommands(
+        """
+        Maximum number of recorded commands returned.
+        If a query specifies a limit higher than 40, it will be capped at 40.
+        The default value is 40. This prevents returning an excessive number
+        of recorded commands for performance reasons.
+        """
+        limit: Int = 40
+        """
+        Skips initial "offset" number of recorded commands.
+        (Default: 0)
+        """
+        offset: Int = 0
+    ): RecordedCommandConnection!
+}
+
+"""
+RecordedCommandConnection is a connection containing a list of RecordedCommand nodes.
+"""
+type RecordedCommandConnection {
+    """
+    A list of recorded commands for given repository.
+    """
+    nodes: [RecordedCommand!]!
+
+    """
+    The total number of recorded commands for given repository in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Recorded command is a Git command and its metadata which was run for particular repo.
+"""
+type RecordedCommand {
+    """
+    When the command started its execution.
+    """
+    start: DateTime!
+    """
+    Command run time in seconds.
+    """
+    duration: Float!
+    """
+    The command itself (e.g. "git fetch").
+    """
+    command: String!
+    """
+    Directory in which the command has been run.
+    """
+    dir: String!
+    """
+    Path to command executable (git executable in most cases).
+    """
+    path: String!
 }
 
 """
@@ -6187,6 +6382,11 @@ type User implements Node & SettingsSubject & Namespace {
     """
     hasVerifiedEmail: Boolean!
     """
+    Whether the user has completed the post-signup flow.
+    Only the user and site admins can access this field.
+    """
+    completedPostSignup: Boolean!
+    """
     The user's verified primary email address (if any).
     On dotcom only the user and site admins can access this field.
     """
@@ -8304,6 +8504,21 @@ type ProductLicenseInfo {
     The Salesforce opportunity ID associated with this license.
     """
     salesforceOpportunityID: String
+    """
+    This indicates if the current license is valid. It will be false if:
+    - The license key has expired
+    - The license key is in use on another instance
+    - The license key was revoked
+    """
+    isValid: Boolean!
+    """
+    This indicates the reason the license is invalid. It'll be null if `isValid` is true.
+    """
+    licenseInvalidityReason: String
+    """
+    The license key, hashed using sha256.
+    """
+    hashedKey: String
 }
 
 """
@@ -8438,6 +8653,10 @@ type RepositoryStats {
     The number of repositories that are currently corrupt
     """
     corrupted: Int!
+    """
+    The number of repositories that have embeddings
+    """
+    embedded: Int!
 }
 
 """

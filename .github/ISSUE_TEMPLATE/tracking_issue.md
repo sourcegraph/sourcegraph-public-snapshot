@@ -21,13 +21,3 @@ Summarize what the team wants to achieve this iteration.
 <!-- BEGIN WORK -->
 <!-- END WORK -->
 
-#### Legend
-
-- 👩 Customer issue
-- 🐛 Bug
-- 🧶 Technical debt
-- 🎩 Quality of life
-- 🛠️ [Roadmap](https://handbook.sourcegraph.com/departments/product-engineering/process/planning-process#roadmap)
-- 🕵️ [Spike](https://en.wikipedia.org/wiki/Spike_(software_development))
-- 🔒 Security issue
-- 🙆 Stretch goal

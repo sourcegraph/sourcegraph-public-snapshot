@@ -1,11 +1,9 @@
 package com.sourcegraph.cody.chat;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
-import com.sourcegraph.cody.UpdatableChat;
-import com.sourcegraph.cody.UpdatableChatHolderService;
+import com.sourcegraph.cody.CodyToolWindowContent;
 import com.sourcegraph.common.ErrorNotification;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,20 +16,20 @@ public class ResetCurrentConversationAction extends DumbAwareAction {
       displayUnableToResetConversationError();
       return;
     }
-    UpdatableChatHolderService updatableChatHolderService =
-        ServiceManager.getService(project, UpdatableChatHolderService.class);
-    UpdatableChat updatableChat = updatableChatHolderService.getUpdatableChat();
-    updatableChat.resetConversation();
+    CodyToolWindowContent codyToolWindowContent = CodyToolWindowContent.getInstance(project);
+    if (codyToolWindowContent != null) {
+      codyToolWindowContent.resetConversation();
+    }
   }
 
   @Override
   public void update(@NotNull AnActionEvent e) {
     Project project = e.getProject();
     if (project != null) {
-      UpdatableChatHolderService updatableChatHolderService =
-          project.getService(UpdatableChatHolderService.class);
-      UpdatableChat updatableChat = updatableChatHolderService.getUpdatableChat();
-      e.getPresentation().setVisible(updatableChat.isChatVisible());
+      CodyToolWindowContent codyToolWindowContent = CodyToolWindowContent.getInstance(project);
+      if (codyToolWindowContent != null) {
+        e.getPresentation().setVisible(codyToolWindowContent.isChatVisible());
+      }
     }
   }
 

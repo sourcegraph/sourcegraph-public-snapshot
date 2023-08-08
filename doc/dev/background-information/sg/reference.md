@@ -16,6 +16,7 @@ Global flags:
 * `--disable-analytics`: disable event logging (logged to '~/.sourcegraph/events')
 * `--disable-output-detection`: use fixed output configuration instead of detecting terminal capabilities
 * `--disable-overwrite`: disable loading additional sg configuration from overwrite file (see -overwrite)
+* `--no-dev-private`: disable checking for dev-private - only useful for automation or ci
 * `--overwrite, -o="<value>"`: load sg configuration from `file` that is gitignored and can be used to, for example, add credentials (default: sg.config.overwrite.yaml)
 * `--skip-auto-update`: prevent sg from automatically updating itself
 * `--verbose, -v`: toggle verbose mode
@@ -78,8 +79,10 @@ Flags:
 * `--debug, -d="<value>"`: Services to set at debug log level.
 * `--describe`: Print details about the selected commandset
 * `--error, -e="<value>"`: Services to set at info error level.
+* `--except="<value>"`: List of services of the specified command set to NOT start
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--info, -i="<value>"`: Services to set at info log level.
+* `--only="<value>"`: List of services of the specified command set to start. Commands NOT in this list will NOT be started.
 * `--warn, -w="<value>"`: Services to set at warn log level.
 
 ## sg run
@@ -102,8 +105,6 @@ Available commands in `sg.config.yaml`:
 * codeintel-executor-kubernetes
 * codeintel-worker
 * cody-gateway
-* cody-slack-dev: Start Cody-Slack dev locally
-* cody-slack-docker: Start Cody-Slack locally prod in Docker
 * debug-env: Debug env vars
 * docsite: Docsite instance serving the docs
 * embeddings
@@ -164,6 +165,7 @@ Flags:
 
 * `--describe`: Print details about selected run target
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--legacy`: Force run to pick the non-bazel variant of the command
 
 ## sg ci
 
@@ -260,10 +262,12 @@ This command is useful when:
 Supported run types when providing an argument for 'sg ci build [runtype]':
 
 * wolfi - Wolfi Exp Branch
+* _manually_triggered_external - Manually Triggered External Build
 * main-dry-run - Main dry run
 * docker-images-patch - Patch image
 * docker-images-patch-notest - Patch image without testing
 * executor-patch-notest - Build executor without testing
+* docker-images-candidates-notest - Build all candidates without testing
 * backend-integration - Backend integration tests
 * bazel-do - Bazel command
 
@@ -362,9 +366,6 @@ Available testsuites in `sg.config.yaml`:
 * bext-e2e
 * bext-integration
 * client
-* cody-e2e
-* cody-integration
-* cody-unit
 * docsite
 * web-e2e
 * web-integration
@@ -1155,6 +1156,108 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--url, -u="<value>"`: Run the evaluation against this endpoint (default: http://localhost:9991/search)
 
+## sg deploy
+
+Generate a Kubernetes manifest for a Sourcegraph deployment.
+
+Internal deployments live in the sourcegraph/infra repository.
+
+```sh
+$ sg deploy --values <path to values file>
+
+$ Example of a values.yaml file:
+
+$ name: my-app
+$ image: gcr.io/sourcegraph-dev/my-app:latest
+$ replicas: 1
+$ envvars:
+$ - name: ricky
+$ value: foo
+$ - name: julian
+$ value: bar
+$ containerPorts:
+$ - name: frontend
+$ port: 80
+$ servicePorts:
+$ - name: http
+$ port: 80
+$ targetPort: test # Set to the name or port number of the containerPort you want to expose
+$ dns: dave-app.sgdev.org
+```
+
+Flags:
+
+* `--dry-run`: Write the manifest to stdout instead of writing to a file
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--infra-repo="<value>"`: The location of the sourcegraph/infrastructure repository. If undefined the currect directory will be used.
+* `--values="<value>"`: The path to the values file
+
+## sg wolfi
+
+Automate Wolfi related tasks.
+
+Build Wolfi packages and images locally, and update base image hashes
+
+```sh
+# Update base image hashes
+$ sg wolfi update-hashes
+
+# Build a specific package using a manifest from wolfi-packages/
+$ sg wolfi package jaeger
+$ sg wolfi package jaeger.yaml
+
+# Build a base image using a manifest from wolfi-images/
+$ sg wolfi image gitserver
+$ sg wolfi image gitserver.yaml
+```
+
+### sg wolfi package
+
+Build a package locally using a manifest from sourcegraph/wolfi-packages/.
+
+```sh
+$ Build a Wolfi package locally by running Melange against a provided Melange manifest file, which can be found in sourcegraph/wolfi-packages.
+
+$ This is convenient for testing package changes locally before pushing to the Wolfi registry.
+$ Base images containing locally-built packages can then be built using 'sg wolfi image'.
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg wolfi image
+
+Build a base image locally using a manifest from sourcegraph/wolfi-images/.
+
+```sh
+$ Build a base image locally by running apko against a provided apko manifest file, which can be found in sourcegraph/wolfi-images.
+
+$ Any packages built locally using 'sg wolfi package' can be included in the base image using the 'package@local' syntax in the base image manifest.
+$ This is convenient for testing package changes locally before publishing them.
+
+$ Once built, the base image is loaded into Docker and can be run locally.
+$ It can also be used for local development by updating its path and hash in the 'dev/oci_deps.bzl' file.
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg wolfi update-hashes
+
+Update Wolfi base images hashes to the latest versions.
+
+```sh
+$ Update the hash references for all Wolfi base images in the 'dev/oci_deps.bzl' file.
+
+$ This is done by fetching the ':latest' tag for each base image from the registry, and updating the corresponding hash in 'dev/oci_deps.bzl'.
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
 ## sg secret
 
 Manipulate secrets stored in memory and in file.
@@ -1272,6 +1375,12 @@ $ sg app update-manifest --no-upload
 
 # Update the manifest but don't update the signatures from the release - useful if the release comes from the same build
 $ sg app update-manifest --update-signatures
+
+# Resets the dev app's db and web cache
+$ sg app reset
+
+# Prints the locations to be removed without deleting
+$ sg app reset --dry-run
 ```
 
 ### sg app update-manifest
@@ -1287,6 +1396,16 @@ Flags:
 * `--no-upload`: do everything except upload the final manifest
 * `--release-tag="<value>"`: GitHub release tag which should be used to update the manifest with. If no tag is given the latest GitHub release is used (default: latest)
 * `--update-signatures`: update the signatures in the update manifest by retrieving the signature content from the GitHub release
+
+### sg app reset
+
+Resets the dev app's db and web cache.
+
+
+Flags:
+
+* `--dry-run`: write out paths to be removed
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
 ## sg teammate
 
@@ -1353,6 +1472,12 @@ $ sg rfc open 420
 
 # Open a specific private RFC
 $ sg rfc --private open 420
+
+# Create a new public RFC
+$ sg rfc create "title"
+
+# Create a new private RFC. Possible types: [solution]
+$ sg rfc --private create --type <type> "title"
 ```
 
 Flags:
@@ -1387,6 +1512,17 @@ Arguments: `[number]`
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg rfc create
+
+Create Sourcegraph RFCs.
+
+Arguments: `--type <type> [title...]`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--type="<value>"`: the type of the RFC to create (valid: solution) (default: solution)
 
 ## sg adr
 

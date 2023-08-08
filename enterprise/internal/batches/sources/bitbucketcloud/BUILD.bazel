@@ -1,9 +1,0 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
-
-go_library(
-    name = "bitbucketcloud",
-    srcs = ["types.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud",
-    visibility = ["//enterprise:__subpackages__"],
-    deps = ["//internal/extsvc/bitbucketcloud"],
-)

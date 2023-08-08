@@ -3,7 +3,7 @@ import {
     ActiveTextEditorSelection,
     ActiveTextEditorVisibleContent,
     Editor,
-} from '@sourcegraph/cody-shared/src/editor'
+} from '@sourcegraph/cody-shared/dist/editor'
 
 export class RepoContainerEditor implements Editor {
     constructor(private repoName: string) {}

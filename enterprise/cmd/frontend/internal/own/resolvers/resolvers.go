@@ -10,31 +10,28 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-
-	"github.com/sourcegraph/sourcegraph/internal/rbac"
-
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
-	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/own"
+	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
+	"github.com/sourcegraph/sourcegraph/internal/rbac"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func New(db database.DB, gitserver gitserver.Client, logger log.Logger) graphqlbackend.OwnResolver {
 	return &ownResolver{
-		db:           edb.NewEnterpriseDB(db),
+		db:           db,
 		gitserver:    gitserver,
 		ownServiceFn: func() own.Service { return own.NewService(gitserver, db) },
 		logger:       logger,
@@ -43,7 +40,7 @@ func New(db database.DB, gitserver gitserver.Client, logger log.Logger) graphqlb
 
 func NewWithService(db database.DB, gitserver gitserver.Client, ownService own.Service, logger log.Logger) graphqlbackend.OwnResolver {
 	return &ownResolver{
-		db:           edb.NewEnterpriseDB(db),
+		db:           db,
 		gitserver:    gitserver,
 		ownServiceFn: func() own.Service { return ownService },
 		logger:       logger,
@@ -63,7 +60,7 @@ var (
 )
 
 type ownResolver struct {
-	db           edb.EnterpriseDB
+	db           database.DB
 	gitserver    gitserver.Client
 	ownServiceFn func() own.Service
 	logger       log.Logger
@@ -436,7 +433,7 @@ func (r *ownResolver) ownershipConnection(
 }
 
 type ownStatsResolver struct {
-	db           edb.EnterpriseDB
+	db           database.DB
 	opts         database.TreeLocationOpts
 	once         sync.Once
 	ownCounts    database.PathAggregateCounts
@@ -487,7 +484,7 @@ func (r *ownStatsResolver) UpdatedAt(ctx context.Context) (*gqlutil.DateTime, er
 }
 
 type ownershipConnectionResolver struct {
-	db          edb.EnterpriseDB
+	db          database.DB
 	total       int
 	totalOwners int
 	next        *string
@@ -525,7 +522,7 @@ func (r *ownershipConnectionResolver) Nodes(_ context.Context) ([]graphqlbackend
 }
 
 type ownershipResolver struct {
-	db            edb.EnterpriseDB
+	db            database.DB
 	gitserver     gitserver.Client
 	resolvedOwner codeowners.ResolvedOwner
 	path          string

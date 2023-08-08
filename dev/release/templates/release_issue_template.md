@@ -52,14 +52,17 @@ Do the [branch cut](./index.md#release-branches) for the release:
   ```
 
 - [ ] Manually review the pull requests created in the previous step and merge.
-
-- [ ] Enable the `release-protector` github action in the sourcegraph/sourcegraph repo. This may require you to request admin permissions using Entitle.
+- [ ] Wait for CI of the commit on `main` to pass.
+- [ ] Request Admin permissions of `sourcegraph/sourcegraph` repository through [Entitle](https://app.entitle.io/request?targetType=resource&duration=1800&justification=Temporarily%20disable%20the%20%22Require%20linear%20history%22%20rule%20for%20release%20branches%20to%20create%20a%20new%20release%20branch.&integrationId=032680b6-f13d-42aa-9837-38097b45f0fe&resourceId=cd16ad0f-0e7e-4f20-8a8c-b3c57751dafd&roleId=5151f2f3-40a3-4697-99a2-b5e756e43f5b&grantMethodId=5151f2f3-40a3-4697-99a2-b5e756e43f5b) in order to disable the [**Require linear history** protection rule for release branches](https://github.com/sourcegraph/sourcegraph/settings/branch_protection_rules/34536616#:~:text=Require%20linear%20history).
+- [ ] Enable the [`release-protector` GitHub Action](https://github.com/sourcegraph/sourcegraph/blob/main/.github/workflows/release-protector.yml) in the `sourcegraph/sourcegraph` repository.
 
 - [ ] Create the `$MAJOR.$MINOR` branch off the CHANGELOG commit in the previous step:
 
   ```sh
   pnpm run release release:branch-cut
   ```
+
+- [ ] Re-enable the [**Require linear history** protection rule for release branches](https://github.com/sourcegraph/sourcegraph/settings/branch_protection_rules/34536616#:~:text=Require%20linear%20history).
 
 - [ ] Bake constants and other static values into the release branch (and also update main) This requires the release branch exists (should be automated above).
   ```shell
@@ -73,7 +76,7 @@ Do the [branch cut](./index.md#release-branches) for the release:
   ```
 - [ ] Ensure the latest version of src-cli is available in all sources. You may need to run this command a few times in the background.
   ```shell
-    pnpm run release release:verify-src-cli
+    pnpm run release release:verify-releases
   ```
 
 Upon branch cut, create and test release candidates:
@@ -143,7 +146,7 @@ On the day of the release, confirm there are no more release-blocking issues (as
 - [ ] Ensure that the following pipelines all pass for the `v$MAJOR.$MINOR.$PATCH` tag:
   - [ ] [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH)
 - [ ] Wait for the `v$MAJOR.$MINOR.$PATCH` release Docker images to be available in [Docker Hub](https://hub.docker.com/r/sourcegraph/server/tags)
-- [ ] Open PRs that publish the new release and address any action items required to finalize draft PRs (track PR status via the [generated release batch change](https://k8s.sgdev.org/organizations/sourcegraph/batch-changes)):
+- [ ] Open PRs that publish the new release and address any action items required to finalize draft PRs (track PR status via the [generated release batch change](https://sourcegraph.sourcegraph.com/organizations/sourcegraph/batch-changes)):
 
   ```sh
   pnpm run release release:stage
@@ -151,7 +154,7 @@ On the day of the release, confirm there are no more release-blocking issues (as
 
 ### Finalize release
 
-- [ ] From the [release batch change](https://k8s.sgdev.org/organizations/sourcegraph/batch-changes), merge the release-publishing PRs created previously.
+- [ ] From the [release batch change](https://sourcegraph.sourcegraph.com/organizations/sourcegraph/batch-changes), merge the release-publishing PRs created previously.
   - For [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph)
     - [ ] Ensure the [release tag `v$MAJOR.$MINOR.$PATCH`](https://github.com/sourcegraph/deploy-sourcegraph/tags) has been created
   - For [deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker)

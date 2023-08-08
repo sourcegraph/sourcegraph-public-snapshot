@@ -32,8 +32,6 @@ go_library(
         "//lib/errors",
         "//schema",
         "@com_github_grafana_regexp//:regexp",
-        "@com_github_prometheus_client_golang//prometheus",
-        "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_zoekt//:zoekt",
         "@com_github_sourcegraph_zoekt//query",

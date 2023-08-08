@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/require"
 	"github.com/throttled/throttled/v2/store/memstore"
 
 	"github.com/sourcegraph/log/logtest"
@@ -13,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 )
 
@@ -24,13 +24,12 @@ func init() {
 func newTest(t *testing.T) *httptestutil.Client {
 	logger := logtest.Scoped(t)
 	enterpriseServices := enterprise.DefaultServices()
-	rateLimitStore, _ := memstore.New(1024)
+	rateLimitStore, _ := memstore.NewCtx(1024)
 	rateLimiter := graphqlbackend.NewBasicLimitWatcher(logger, rateLimitStore)
 
 	db := database.NewMockDB()
 
-	return httptestutil.NewTest(NewHandler(db,
-		jobutil.NewUnimplementedEnterpriseJobs(),
+	handler, err := NewHandler(db,
 		router.New(mux.NewRouter()),
 		nil,
 		rateLimiter,
@@ -51,5 +50,7 @@ func newTest(t *testing.T) *httptestutil.Client {
 			NewChatCompletionsStreamHandler: enterpriseServices.NewChatCompletionsStreamHandler,
 			NewCodeCompletionsHandler:       enterpriseServices.NewCodeCompletionsHandler,
 		},
-	))
+	)
+	require.NoError(t, err)
+	return httptestutil.NewTest(handler)
 }

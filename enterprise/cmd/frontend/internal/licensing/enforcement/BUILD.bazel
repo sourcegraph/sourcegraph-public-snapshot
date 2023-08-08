@@ -14,9 +14,9 @@ go_library(
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
-        "//enterprise/internal/cloud",
         "//internal/actor",
         "//internal/auth",
+        "//internal/cloud",
         "//internal/database",
         "//internal/errcode",
         "//internal/extsvc",
@@ -39,9 +39,9 @@ go_test(
     embed = [":enforcement"],
     deps = [
         "//cmd/frontend/envvar",
-        "//enterprise/internal/cloud",
         "//internal/actor",
         "//internal/auth",
+        "//internal/cloud",
         "//internal/database",
         "//internal/extsvc",
         "//internal/license",

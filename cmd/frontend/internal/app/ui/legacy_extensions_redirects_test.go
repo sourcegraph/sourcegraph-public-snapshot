@@ -6,11 +6,10 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 )
 
 func TestLegacyExtensionsRedirects(t *testing.T) {
-	InitRouter(database.NewMockDB(), jobutil.NewUnimplementedEnterpriseJobs())
+	InitRouter(database.NewMockDB())
 	router := Router()
 
 	tests := map[string]bool{

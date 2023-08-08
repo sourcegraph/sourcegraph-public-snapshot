@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache"
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
@@ -36,9 +35,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/updatecheck"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -90,12 +89,11 @@ type Handlers struct {
 // and sets the actor in the request context.
 func NewHandler(
 	db database.DB,
-	enterpriseJobs jobutil.EnterpriseJobs,
 	m *mux.Router,
 	schema *graphql.Schema,
 	rateLimiter graphqlbackend.LimitWatcher,
 	handlers *Handlers,
-) http.Handler {
+) (http.Handler, error) {
 	logger := sglog.Scoped("Handler", "frontend HTTP API handler")
 
 	if m == nil {
@@ -163,19 +161,27 @@ func NewHandler(
 	if envvar.SourcegraphDotComMode() {
 		m.Path("/app/check/update").Name(codyapp.RouteAppUpdateCheck).Handler(trace.Route(codyapp.AppUpdateHandler(logger)))
 		m.Path("/app/latest").Name(codyapp.RouteCodyAppLatestVersion).Handler(trace.Route(codyapp.LatestVersionHandler(logger)))
-		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.HandlerWithLog(logger))))
 		m.Path("/license/check").Methods("POST").Name("dotcom.license.check").Handler(trace.Route(handlers.NewDotcomLicenseCheckHandler()))
+
+		updatecheckHandler, err := updatecheck.HandlerWithLog(logger)
+		if err != nil {
+			return nil, errors.Errorf("create updatecheck handler: %v", err)
+		}
+		m.Path("/updates").
+			Methods(http.MethodGet, http.MethodPost).
+			Name("updatecheck").
+			Handler(trace.Route(updatecheckHandler))
 	}
 
 	m.Get(apirouter.SCIM).Handler(trace.Route(handlers.SCIMHandler))
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(logger, schema, rateLimiter, false))))
 
-	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(db, enterpriseJobs)))
+	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(db)))
 
 	// Return the minimum src-cli version that's compatible with this instance
 	m.Get(apirouter.SrcCli).Handler(trace.Route(newSrcCliVersionHandler(logger)))
 
-	gsClient := gitserver.NewClient()
+	gsClient := gitserver.NewClient(db)
 	m.Get(apirouter.GitBlameStream).Handler(trace.Route(handleStreamBlame(logger, db, gsClient)))
 
 	// Set up the src-cli version cache handler (this will effectively be a
@@ -189,7 +195,7 @@ func NewHandler(
 		http.Error(w, "no route", http.StatusNotFound)
 	})
 
-	return m
+	return m, nil
 }
 
 // RegisterInternalServices registers REST and gRPC handlers for Sourcegraph's internal API on the
@@ -203,7 +209,6 @@ func RegisterInternalServices(
 	s *grpc.Server,
 
 	db database.DB,
-	enterpriseJobs jobutil.EnterpriseJobs,
 	schema *graphql.Schema,
 	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
 	rankingService enterprise.RankingService,
@@ -219,10 +224,8 @@ func RegisterInternalServices(
 		WriteErrBody: true,
 	})
 
-	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.Route(handler(serveExternalServiceConfigs(db))))
-
 	// zoekt-indexserver endpoints
-	gsClient := gitserver.NewClient()
+	gsClient := gitserver.NewClient(db)
 	indexer := &searchIndexerServer{
 		db:              db,
 		logger:          logger.Scoped("searchIndexerServer", "zoekt-indexserver endpoints"),
@@ -243,18 +246,15 @@ func RegisterInternalServices(
 
 	proto.RegisterZoektConfigurationServiceServer(s, &searchIndexerGRPCServer{server: indexer})
 
-	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))
-	m.Get(apirouter.SendEmail).Handler(trace.Route(handler(serveSendEmail)))
 	gitService := &gitServiceHandler{
 		Gitserver: gsClient,
 	}
 	m.Get(apirouter.GitInfoRefs).Handler(trace.Route(handler(gitService.serveInfoRefs())))
 	m.Get(apirouter.GitUploadPack).Handler(trace.Route(handler(gitService.serveGitUploadPack())))
-	m.Get(apirouter.Telemetry).Handler(trace.Route(telemetryHandler(db)))
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(logger, schema, rateLimitWatcher, true))))
 	m.Get(apirouter.Configuration).Handler(trace.Route(handler(serveConfiguration)))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
-	m.Get(apirouter.StreamingSearch).Handler(trace.Route(frontendsearch.StreamHandler(db, enterpriseJobs)))
+	m.Get(apirouter.StreamingSearch).Handler(trace.Route(frontendsearch.StreamHandler(db)))
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(newComputeStreamHandler()))
 
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(false)))

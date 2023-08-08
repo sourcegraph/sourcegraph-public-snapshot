@@ -1,0 +1,87 @@
+// Representation of code ownership for a repository as described in a CODEOWNERS file.
+// As various implementations have slightly different syntax for CODEOWNERS files,
+// this algebraic representation servers as a unified funnel.
+
+syntax = "proto3";
+
+package own.codeowners.v1;
+
+option go_package = "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1";
+
+// File represents the contents of a single CODEOWNERS file.
+// As specified by various CODEOWNERS implementations the following apply:
+//   - There is at most one CODEOWNERS file per repository.
+//   - The semantic contents of the file boil down to rules.
+//   - Order matters: When discerning ownership for a path
+//     only the owners from the last rule that matches the path
+//     is applied.
+//   - Except if using sections - then every section is considered
+//     separately. That is, an owner is potentially extracted
+//     for every section.
+message File {
+  repeated Rule rule = 1;
+}
+
+// Rule associates a single pattern to match a path with an owner.
+message Rule {
+  // Patterns are familliar glob patterns that match file paths.
+  // * `filename` matches any file with that name, for example:
+  //   * `/filename` and `/src/filename` match.
+  // * `directory/path/` matches any tree of subdirectories rooted
+  //   at this pattern, for example:
+  //   * `/src/directory/path/file` matches.
+  //   * `/src/directory/path/another/directory/file` matches.
+  // * `directory/*` matches only files with specified parent,
+  //   but not descendants, for example:
+  //   * `/src/foo/bar/directory/file` matches.
+  //   * `/src/foo/bar/directory/another/file` does not match.
+  // * Any of the above can be prefixed with `/`, which further
+  //   filters the match, by requiring the file path match to be
+  //   rooted at the directory root, for `/src/dir/*`:
+  //   * `/src/dir/file` matches.
+  //   * `/main/src/dir/file` does not match, as `src` is not top-level.
+  //   * `/src/dir/another/file` does not match as `*` matches
+  //     only files directly contained in specified directory.
+  // * In the above patterns `/**/` can be used to match any sub-path
+  //   between two parts of a pattern. For example: `/docs/**/internal/`
+  //   will match `/docs/foo/bar/internal/file`.
+  // * The file part of the pattern can use a `*` wildcard like so:
+  //   `docs/*.md` will match `/src/docs/index.md` but not `/src/docs/index.js`.
+  // * In BITBUCKET plugin, patterns that serve to exclude ownership
+  //   start with an exclamation mark `!/src/noownershere`. These are
+  //   translated to a pattern without the `!` and now owners.
+  string pattern = 1;
+  // Owners list all the parties that claim ownership over files
+  // matched by a given pattern.
+  // This list may be empty. In such case it denotes an abandoned
+  // codebase, and can be used if there is an un-owned subdirectory
+  // within otherwise owned directory structure.
+  repeated Owner owner = 2;
+  // Optionally a rule can be associated with a section name.
+  // The name must be lowercase, as the names of sections in text
+  // representation of the codeowners file are case-insensitive.
+  // Each section represents a kind-of-ownership. That is,
+  // when evaluating an owner for a path, only one rule can apply
+  // for a path, but that is within the scope of a section.
+  // For instance a CODEOWNERS file could specify a [PM] section
+  // associating product managers with codebases. This rule set
+  // can be completely independent of the others. In that case,
+  // when evaluating owners, the result also contains a separate
+  // owners for the PM section.
+  string section_name = 3;
+  // The line number this rule originally appeared in in the input data.
+  int32 line_number = 4;
+}
+
+// Owner is denoted by either a handle or an email.
+// We expect exactly one of the fields to be present.
+message Owner {
+  // Handle can refer to a user or a team defined externally.
+  // In the text config, a handle always starts with `@`.
+  // In can contain `/` to denote a sub-group.
+  // The string content of the handle stored here DOES NOT CONTAIN
+  // the initial `@` sign.
+  string handle = 1;
+  // E-mail can be used instead of a handle to denote an owner account.
+  string email = 2;
+}

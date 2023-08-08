@@ -119,6 +119,18 @@ func TestNew(t *testing.T) {
 			},
 			dsn: "postgres://sg:REDACTED@pgsql:5432/sg?sslmode=disable",
 		},
+
+		// #54858 fixes previous incorrect output that cannot be parsed
+		// as a legal URL due to the double port:
+		//
+		// postgres://testuser@127.0.0.1:5432:5333
+		{
+			name: "overwritten port",
+			env: map[string]string{
+				"PGPORT": "5333",
+			},
+			dsn: "postgres://testuser@127.0.0.1:5333",
+		},
 	}
 
 	for _, tc := range cases {

@@ -9,12 +9,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/own"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -39,7 +39,7 @@ func TestCodeownersIngestionGuarding(t *testing.T) {
 	ctx := context.Background()
 	adminUser := fs.AddUser(types.User{SiteAdmin: false})
 
-	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: NewWithService(db, git, svc, logtest.NoOp(t))}})
+	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: NewWithService(db, git, svc, logtest.NoOp(t))}})
 	if err != nil {
 		t.Fatal(err)
 	}

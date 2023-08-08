@@ -1,0 +1,67 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "prometheus is runnable"
+    command: "prometheus"
+    args:
+      - --version
+  - name: "promtool is runnable"
+    command: "promtool"
+    args:
+      - --version
+  - name: "alertmanager is runnable"
+    command: "alertmanager"
+    args:
+      - --version
+
+  - name: "not running as root"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    excludedOutput: ["^0"]
+    exitCode: 0
+
+fileExistenceTests:
+- name: '/prometheus'
+  path: '/prometheus'
+  shouldExist: true
+  uid: 100
+  gid: 101
+  permissions: 'drwxr-xr-x'
+- name: '/alertmanager'
+  path: '/alertmanager'
+  shouldExist: true
+  uid: 100
+  gid: 101
+  permissions: 'drwxr-xr-x'
+- name: '/prometheus.sh'
+  path: '/prometheus.sh'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-r-xr-xr-x'
+- name: '/alertmanager.sh'
+  path: '/alertmanager.sh'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-r-xr-xr-x'
+# /sg_config_prometheus configuration
+- name: '/sg_config_prometheus/prometheus.yml'
+  path: '/sg_config_prometheus/prometheus.yml'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-rwxrwxrwx'
+- name: '/sg_config_prometheus/alertmanager.yml'
+  path: '/sg_config_prometheus/alertmanager.yml'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-rwxrwxrwx'
+- name: '/sg_config_prometheus/prometheus_alert_rules.yml'
+  path: '/sg_config_prometheus/prometheus_alert_rules.yml'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-r-xr-xr-x'

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { mdiClose, mdiFormatListBulleted, mdiPlus, mdiDelete } from '@mdi/js'
 
-import { CodyLogo } from '@sourcegraph/cody-ui/src/icons/CodyLogo'
+import { CodyLogo } from '@sourcegraph/cody-ui/dist/icons/CodyLogo'
 import { Button, Icon, Tooltip, Badge } from '@sourcegraph/wildcard'
 
 import { ChatUI, ScrollDownButton } from '../components/ChatUI'

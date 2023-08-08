@@ -54,6 +54,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		onlyCloudDefault bool
 		includeDeleted   bool
 		wantArgs         []any
+		repoID           api.RepoID
 	}{
 		{
 			name:      "no condition",
@@ -93,6 +94,12 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			includeDeleted: true,
 			wantQuery:      "TRUE",
 		},
+		{
+			name:      "has repoID",
+			repoID:    10,
+			wantQuery: "deleted_at IS NULL AND id IN (SELECT external_service_id FROM external_service_repos WHERE repo_id = $1)",
+			wantArgs:  []any{api.RepoID(10)},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -102,6 +109,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 				UpdatedAfter:     test.updatedAfter,
 				OnlyCloudDefault: test.onlyCloudDefault,
 				IncludeDeleted:   test.includeDeleted,
+				RepoID:           test.repoID,
 			}
 			q := sqlf.Join(opts.sqlConditions(), "AND")
 			if diff := cmp.Diff(test.wantQuery, q.Query(sqlf.PostgresBindVar)); diff != "" {
@@ -240,6 +248,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	tests := []struct {
 		name             string
 		externalService  *types.ExternalService
+		codeHostURL      string
 		wantUnrestricted bool
 		wantHasWebhooks  bool
 		wantError        bool
@@ -251,6 +260,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				DisplayName: "GITHUB #1",
 				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "webhooks": [{"org": "org", "secret": "secret"}]}`),
 			},
+			codeHostURL:      "https://github.com/",
 			wantUnrestricted: false,
 			wantHasWebhooks:  true,
 		},
@@ -261,6 +271,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				DisplayName: "GITHUB #1",
 				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 			},
+			codeHostURL:      "https://github.com/",
 			wantUnrestricted: false,
 			wantHasWebhooks:  false,
 		},
@@ -271,6 +282,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				DisplayName: "GITHUB #2",
 				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 			},
+			codeHostURL:      "https://github.com/",
 			wantUnrestricted: false,
 			wantHasWebhooks:  false,
 		},
@@ -287,6 +299,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	// "authorization": {}
 }`),
 			},
+			codeHostURL:      "https://github.com/",
 			wantUnrestricted: false,
 		},
 		{
@@ -296,6 +309,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				DisplayName: "GITHUB #4",
 				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 			},
+			codeHostURL:      "https://github.com/",
 			wantUnrestricted: false,
 			wantHasWebhooks:  false,
 		},
@@ -306,6 +320,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				DisplayName: "GITLAB #1",
 				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "projectQuery": ["none"], "token": "abc"}`),
 			},
+			codeHostURL:      "https://gitlab.com/",
 			wantUnrestricted: false,
 			wantHasWebhooks:  false,
 		},
@@ -355,6 +370,14 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				t.Fatalf("Wanted has_webhooks = %v, but got %v", test.wantHasWebhooks, *got.HasWebhooks)
 			}
 
+			ch, err := db.CodeHosts().GetByURL(ctx, test.codeHostURL)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if ch.ID != *got.CodeHostID {
+				t.Fatalf("expected code host ids to match:%+v\n, and: %+v\n", ch.ID, *got.CodeHostID)
+			}
+
 			err = db.ExternalServices().Delete(ctx, test.externalService.ID)
 			if err != nil {
 				t.Fatal(err)
@@ -395,6 +418,9 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
+	now := timeutil.Now()
+	codeHostURL := "https://github.com/"
+
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(false)
 
@@ -412,6 +438,16 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// We want to test that Update creates the Code Host, so we have to delete it first because db.ExternalServices().Create also creates the code host.
+	ch, err := db.CodeHosts().GetByURL(ctx, codeHostURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = db.CodeHosts().Delete(ctx, ch.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// NOTE: The order of tests matters
 	tests := []struct {
 		name               string
@@ -420,6 +456,8 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		wantCloudDefault   bool
 		wantHasWebhooks    bool
 		wantTokenExpiresAt bool
+		wantLastSyncAt     time.Time
+		wantNextSyncAt     time.Time
 		wantError          bool
 	}{
 		{
@@ -500,6 +538,29 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			},
 			wantError: true,
 		},
+		{
+			name: "update last_sync_at",
+			update: &ExternalServiceUpdate{
+				DisplayName: strptr("GITHUB (updated) #6"),
+				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+				LastSyncAt:  pointers.Ptr(now),
+			},
+			wantCloudDefault:   true,
+			wantTokenExpiresAt: true,
+			wantLastSyncAt:     now,
+		},
+		{
+			name: "update next_sync_at",
+			update: &ExternalServiceUpdate{
+				DisplayName: strptr("GITHUB (updated) #7"),
+				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+				LastSyncAt:  pointers.Ptr(now),
+				NextSyncAt:  pointers.Ptr(now),
+			},
+			wantCloudDefault:   true,
+			wantTokenExpiresAt: true,
+			wantNextSyncAt:     now,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -554,6 +615,14 @@ func TestExternalServicesStore_Update(t *testing.T) {
 				t.Fatalf("Want cloud_default = %v, but got %v", test.wantCloudDefault, got.CloudDefault)
 			}
 
+			if !test.wantLastSyncAt.IsZero() && !test.wantLastSyncAt.Equal(got.LastSyncAt) {
+				t.Fatalf("Want last_sync_at = %v, but got %v", test.wantLastSyncAt, got.LastSyncAt)
+			}
+
+			if !test.wantNextSyncAt.IsZero() && !test.wantNextSyncAt.Equal(got.NextSyncAt) {
+				t.Fatalf("Want last_sync_at = %v, but got %v", test.wantNextSyncAt, got.NextSyncAt)
+			}
+
 			if got.HasWebhooks == nil {
 				t.Fatal("has_webhooks is unexpectedly null")
 			} else if test.wantHasWebhooks != *got.HasWebhooks {
@@ -562,6 +631,14 @@ func TestExternalServicesStore_Update(t *testing.T) {
 
 			if (got.TokenExpiresAt != nil) != test.wantTokenExpiresAt {
 				t.Fatalf("Want token_expires_at = %v, but got %v", test.wantTokenExpiresAt, got.TokenExpiresAt)
+			}
+
+			ch, err := db.CodeHosts().GetByURL(ctx, codeHostURL)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if ch.ID != *got.CodeHostID {
+				t.Fatalf("expected code host ids to match:%+v\n, and: %+v\n", ch.ID, *got.CodeHostID)
 			}
 		})
 	}
@@ -1565,6 +1642,18 @@ func TestExternalServicesStore_List(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Creating a repo which will be bound to GITHUB #1 and GITHUB #2 external
+	// services. We cannot use repos.Store because of import cycles, the simplest way
+	// is to run a raw query.
+	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "repo1"})
+	require.NoError(t, err)
+	q := sqlf.Sprintf(`
+INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+VALUES (1, 1, ''), (2, 1, '')
+`)
+	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	require.NoError(t, err)
+
 	t.Run("list all external services", func(t *testing.T) {
 		got, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{})
 		if err != nil {
@@ -1650,7 +1739,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		// We should find all services were updated after a time in the past
+		// We should find all cloud default services
 		if len(ess) != 1 {
 			t.Fatalf("Want 0 external services but got %d", len(ess))
 		}
@@ -1663,9 +1752,22 @@ func TestExternalServicesStore_List(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		// We should find all services were updated after a time in the past
+		// We should find all services including deleted
 		if len(ess) != 4 {
 			t.Fatalf("Want 4 external services but got %d", len(ess))
+		}
+	})
+
+	t.Run("list for repoID", func(t *testing.T) {
+		ess, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
+			RepoID: 1,
+		})
+		require.NoError(t, err)
+		// We should find all services which have repoID=1 (GITHUB #1, GITHUB #2).
+		assert.Len(t, ess, 2)
+		sort.Slice(ess, func(i, j int) bool { return ess[i].ID < ess[j].ID })
+		for idx, es := range ess {
+			assert.Equal(t, fmt.Sprintf("GITHUB #%d", idx+1), es.DisplayName)
 		}
 	})
 }
@@ -1993,6 +2095,50 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		if diff := cmp.Diff(have, []*types.ExternalService(nil), cmpopts.EquateEmpty(), et.CompareEncryptable); diff != "" {
 			t.Errorf("List:\n%s", diff)
 		}
+	})
+
+	t.Run("check code hosts created with many external services", func(t *testing.T) {
+		db := NewDB(logger, dbtest.NewDB(logger, t))
+		store := db.ExternalServices()
+
+		svcs := typestest.MakeExternalServices()
+		want := typestest.GenerateExternalServices(11, svcs...)
+
+		if err := store.Upsert(ctx, want...); err != nil {
+			t.Fatalf("Upsert error: %s", err)
+		}
+
+		haveES, err := store.List(ctx, ExternalServicesListOptions{Kinds: svcs.Kinds()})
+		if err != nil {
+			t.Fatalf("List error: %s", err)
+		}
+		chs, _, err := db.CodeHosts().List(ctx, ListCodeHostsOpts{
+			LimitOffset: LimitOffset{
+				Limit: 20,
+			},
+		})
+		if err != nil {
+			t.Fatalf("List error: %s", err)
+		}
+
+		// for this test all external services of the same kind have the same URL, so we can group them into one code host.
+		chMap := make(map[string]int32)
+		for _, es := range haveES {
+			chMap[es.Kind] = *es.CodeHostID
+		}
+		if len(chs) != len(chMap) {
+			t.Fatalf("expected equal number of external services: %+v and code hosts: %+v", len(chs), len(chMap))
+		}
+		for _, ch := range chs {
+			if chID, ok := chMap[ch.Kind]; !ok {
+				t.Fatalf("could not find code host with id: %+v", ch.ID)
+			} else {
+				if chID != ch.ID {
+					t.Fatalf("expected code host ids to match: %+v and %+v", ch.ID, chID)
+				}
+			}
+		}
+
 	})
 }
 

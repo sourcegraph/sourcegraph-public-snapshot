@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/pointer"
 
@@ -18,7 +19,8 @@ import (
 	apiworker "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
-	executorutil "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/util"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	executorutil "github.com/sourcegraph/sourcegraph/internal/executor/util"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -38,7 +40,7 @@ func newQueueTelemetryOptions(ctx context.Context, runner util.CmdRunner, useFir
 		logger.Error("Failed to get git version", log.Error(err))
 	}
 
-	if !config.IsKubernetes() {
+	if !config.IsKubernetes() && (!deploy.IsApp() || deploy.IsAppFullSourcegraph()) {
 		t.SrcCliVersion, err = util.GetSrcVersion(ctx, runner)
 		if err != nil {
 			logger.Error("Failed to get src-cli version", log.Error(err))
@@ -205,6 +207,15 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 	}
 	fsGroup := pointer.Int64(int64(c.KubernetesSecurityContextFSGroup))
 	deadline := pointer.Int64(int64(c.KubernetesJobDeadline))
+
+	var imagePullSecrets []corev1.LocalObjectReference
+	if c.KubernetesImagePullSecrets != "" {
+		secrets := strings.Split(c.KubernetesImagePullSecrets, ",")
+		for _, secret := range secrets {
+			imagePullSecrets = append(imagePullSecrets, corev1.LocalObjectReference{Name: secret})
+		}
+	}
+
 	return runner.KubernetesOptions{
 		Enabled:    config.IsKubernetes(),
 		ConfigPath: c.KubernetesConfigPath,
@@ -214,8 +225,11 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 				EndpointURL:    c.FrontendURL,
 				GitServicePath: "/.executors/git",
 			},
-			NodeName:     c.KubernetesNodeName,
-			NodeSelector: nodeSelector,
+			NodeName:         c.KubernetesNodeName,
+			NodeSelector:     nodeSelector,
+			JobAnnotations:   c.KubernetesJobAnnotations,
+			PodAnnotations:   c.KubernetesJobPodAnnotations,
+			ImagePullSecrets: imagePullSecrets,
 			RequiredNodeAffinity: command.KubernetesNodeAffinity{
 				MatchExpressions: c.KubernetesNodeRequiredAffinityMatchExpressions,
 				MatchFields:      c.KubernetesNodeRequiredAffinityMatchFields,

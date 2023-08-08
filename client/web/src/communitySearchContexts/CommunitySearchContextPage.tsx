@@ -119,6 +119,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                     queryState={queryState}
                     setQueryState={setQueryState}
                     hardCodedSearchContextSpec={props.communitySearchContextMetadata.spec}
+                    simpleSearch={false}
                 />
             </div>
             {!props.communitySearchContextMetadata.lowProfile && (

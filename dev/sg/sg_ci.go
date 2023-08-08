@@ -503,6 +503,7 @@ sg ci build docker-images-candidates-notest
 				if err != nil {
 					return err
 				}
+
 				commit := cmd.String("commit")
 				if commit == "" {
 					commit, err = run.TrimResult(run.GitCmd("rev-parse", "HEAD"))
@@ -511,6 +512,7 @@ sg ci build docker-images-candidates-notest
 					}
 				}
 
+				var rt = runtype.PullRequest
 				// 🚨 SECURITY: We do a simple check to see if commit is in origin, this is
 				// non blocking but we ask for confirmation to double check that the user
 				// is aware that potentially unknown code is going to get run on our infra.
@@ -525,13 +527,11 @@ sg ci build docker-images-candidates-notest
 					if response != "yes" {
 						return errors.New("Cancelling request.")
 					}
-					branch = fmt.Sprintf("_manually_triggered_external/%s", commit)
+					branch = fmt.Sprintf("ext_%s", commit)
+					rt = runtype.ManuallyTriggered
 				}
 
-				var rt runtype.RunType
-				if cmd.NArg() == 0 {
-					rt = runtype.PullRequest
-				} else {
+				if cmd.NArg() > 0 {
 					rt = runtype.Compute("", fmt.Sprintf("%s/%s", cmd.Args().First(), branch), nil)
 					// If a special runtype is not detected then the argument was invalid
 					if rt == runtype.PullRequest {

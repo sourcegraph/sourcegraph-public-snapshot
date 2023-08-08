@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"path"
 	"strings"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
@@ -28,16 +31,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func EncryptableCloneURL(ctx context.Context, logger log.Logger, kind string, config *extsvc.EncryptableConfig, repo *types.Repo) (string, error) {
+func EncryptableCloneURL(ctx context.Context, logger log.Logger, db database.DB, kind string, config *extsvc.EncryptableConfig, repo *types.Repo) (string, error) {
 	parsed, err := extsvc.ParseEncryptableConfig(ctx, kind, config)
 	if err != nil {
 		return "", errors.Wrap(err, "loading service configuration")
 	}
 
-	return cloneURL(ctx, parsed, logger, kind, repo)
+	return cloneURL(ctx, db, parsed, logger, kind, repo)
 }
 
-func cloneURL(ctx context.Context, parsed any, logger log.Logger, kind string, repo *types.Repo) (string, error) {
+func cloneURL(ctx context.Context, db database.DB, parsed any, logger log.Logger, kind string, repo *types.Repo) (string, error) {
 	switch t := parsed.(type) {
 	case *schema.AWSCodeCommitConnection:
 		if r, ok := repo.Metadata.(*awscodecommit.Repository); ok {
@@ -61,7 +64,7 @@ func cloneURL(ctx context.Context, parsed any, logger log.Logger, kind string, r
 		}
 	case *schema.GitHubConnection:
 		if r, ok := repo.Metadata.(*github.Repository); ok {
-			return githubCloneURL(ctx, logger, r, t)
+			return githubCloneURL(ctx, logger, db, r, t)
 		}
 	case *schema.GitLabConnection:
 		if r, ok := repo.Metadata.(*gitlab.Project); ok {
@@ -187,7 +190,7 @@ func bitbucketCloudCloneURL(logger log.Logger, repo *bitbucketcloud.Repo, cfg *s
 	return u.String()
 }
 
-func githubCloneURL(ctx context.Context, logger log.Logger, repo *github.Repository, cfg *schema.GitHubConnection) (string, error) {
+func githubCloneURL(ctx context.Context, logger log.Logger, db database.DB, repo *github.Repository, cfg *schema.GitHubConnection) (string, error) {
 	if cfg.GitURLType == "ssh" {
 		baseURL, err := url.Parse(cfg.Url)
 		if err != nil {
@@ -211,7 +214,7 @@ func githubCloneURL(ctx context.Context, logger log.Logger, repo *github.Reposit
 		return repo.URL, nil
 	}
 
-	auther, err := ghauth.FromConnection(context.Background(), cfg)
+	auther, err := ghauth.FromConnection(context.Background(), cfg, db.GitHubApps(), keyring.Default().GitHubAppKey)
 	if err != nil {
 		return "", err
 	}
@@ -255,8 +258,8 @@ func gerritCloneURL(logger log.Logger, project *gerrit.Project, cfg *schema.Gerr
 	}
 	u.User = url.UserPassword(cfg.Username, cfg.Password)
 
-	// Gerrit encodes slashes in IDs, so need to decode them.
-	u.Path = strings.ReplaceAll(project.ID, "%2F", "/")
+	// Gerrit encodes slashes in IDs, so need to decode them. The 'a' is for cloning with auth.
+	u.Path = path.Join("a", strings.ReplaceAll(project.ID, "%2F", "/"))
 
 	return u.String()
 }

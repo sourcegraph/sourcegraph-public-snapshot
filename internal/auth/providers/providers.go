@@ -84,6 +84,12 @@ type Info struct {
 	AuthenticationURL string
 }
 
+// UniqueID returns a unique identifier that's a combination of the ServiceID and the ClientID of
+// the provider.
+func (i *Info) UniqueID() string {
+	return i.ServiceID + ":" + i.ClientID
+}
+
 var (
 	// curProviders is a map (package name -> (config string -> Provider)). The first key is the
 	// package name under which the provider was registered (this should be unique among
@@ -190,7 +196,9 @@ func SortedProviders() []Provider {
 // p (Provider): The authentication provider to extract common fields from.
 // Returns schema.AuthProviderCommon: The common fields from the provider's config struct.
 func GetAuthProviderCommon(p Provider) schema.AuthProviderCommon {
-	common := schema.AuthProviderCommon{}
+	common := schema.AuthProviderCommon{
+		DisplayName: p.CachedInfo().DisplayName,
+	}
 
 	v := reflect.ValueOf(p.Config())
 	for _, f := range reflect.VisibleFields(v.Type()) {
@@ -208,7 +216,7 @@ func GetAuthProviderCommon(p Provider) schema.AuthProviderCommon {
 				common.Order = order.Interface().(int)
 			}
 			dN := e.FieldByName("DisplayName")
-			if dN.IsValid() {
+			if dN.IsValid() && !dN.IsZero() {
 				common.DisplayName = dN.Interface().(string)
 			}
 			dP := e.FieldByName("DisplayPrefix")

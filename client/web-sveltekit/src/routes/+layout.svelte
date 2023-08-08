@@ -5,7 +5,7 @@
     import { browser } from '$app/environment'
     import { isErrorLike } from '$lib/common'
     import { TemporarySettingsStorage } from '$lib/shared'
-    import { KEY, type SourcegraphContext } from '$lib/stores'
+    import { KEY, scrollAll, type SourcegraphContext } from '$lib/stores'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
 
     import Header from './Header.svelte'
@@ -15,6 +15,7 @@
     import { beforeNavigate } from '$app/navigation'
 
     import type { LayoutData, Snapshot } from './$types'
+    import { createFeatureFlagStore, fetchEvaluatedFeatureFlags } from '$lib/featureflags'
 
     export let data: LayoutData
 
@@ -46,6 +47,8 @@
         settings,
         isLightTheme,
         temporarySettingsStorage,
+        featureFlags: createFeatureFlagStore(data.featureFlags, () => fetchEvaluatedFeatureFlags(data.graphqlClient)),
+        client: data.graphqlClient,
     })
 
     // Update stores when data changes
@@ -92,7 +95,7 @@
     <meta name="description" content="Code search" />
 </svelte:head>
 
-<div class="app">
+<div class="app" class:overflowHidden={!$scrollAll}>
     <Header authenticatedUser={$user} />
 
     <main bind:this={main}>
@@ -105,7 +108,15 @@
         display: flex;
         flex-direction: column;
         height: 100vh;
-        overflow: hidden;
+        overflow-y: auto;
+
+        &.overflowHidden {
+            overflow: hidden;
+
+            main {
+                overflow-y: auto;
+            }
+        }
     }
 
     main {
@@ -113,6 +124,5 @@
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
-        overflow: auto;
     }
 </style>

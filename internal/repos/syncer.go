@@ -47,6 +47,11 @@ type Syncer struct {
 	// Hooks for enterprise specific functionality. Ignored in OSS
 	EnterpriseCreateRepoHook func(context.Context, Store, *types.Repo) error
 	EnterpriseUpdateRepoHook func(context.Context, Store, *types.Repo, *types.Repo) error
+
+	// DeduplicatedForksSet is a set of all repos added to the deduplicateForks site config
+	// property. It exists only to aid in fast lookups instead of having to iterate through the list
+	// each time.
+	DeduplicatedForksSet *types.RepoURISet
 }
 
 // RunOptions contains options customizing Run behaviour.
@@ -293,7 +298,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 	logger.Debug("SyncRepo started")
 
 	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", name.Attr())
-	defer tr.Finish()
+	defer tr.End()
 
 	repo, err = s.Store.RepoStore().GetByName(ctx, name)
 	if err != nil && !errcode.IsNotFound(err) {
@@ -526,10 +531,16 @@ func (s *Syncer) SyncExternalService(
 		now := s.Now()
 		interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, modified, err)
 
-		svc.NextSyncAt = now.Add(interval)
-		svc.LastSyncAt = now
+		nextSyncAt := now.Add(interval)
+		lastSyncAt := now
 
-		if err := s.Store.ExternalServiceStore().Upsert(ctx, svc); err != nil {
+		// We call Update here instead of Upsert, because upsert stores all fields of the external
+		// service, and syncs take a while so changes to the external service made while this sync
+		// was running would be overwritten again.
+		if err := s.Store.ExternalServiceStore().Update(ctx, nil, svc.ID, &database.ExternalServiceUpdate{
+			LastSyncAt: &lastSyncAt,
+			NextSyncAt: &nextSyncAt,
+		}); err != nil {
 			// We only want to log this error, not return it
 			logger.Error("upserting external service", log.Error(err))
 		}
@@ -906,7 +917,7 @@ func (s *Syncer) observeSync(
 			syncErrors.WithLabelValues(name, owner, syncErrorReason(err)).Inc()
 		}
 
-		tr.Finish()
+		tr.End()
 	}
 }
 

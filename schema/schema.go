@@ -660,8 +660,12 @@ type Embeddings struct {
 	Enabled *bool `json:"enabled,omitempty"`
 	// Endpoint description: The endpoint under which to reach the provider. Sensible default will be used for each provider.
 	Endpoint string `json:"endpoint,omitempty"`
+	// ExcludeChunkOnError description: Whether to cancel indexing a repo if embedding a single file fails. If true, the chunk that cannot generate embeddings is not indexed and the remainder of the repository proceeds with indexing.
+	ExcludeChunkOnError *bool `json:"excludeChunkOnError,omitempty"`
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
+	// FileFilters description: Filters that will decode which files om a repository get embedded.
+	FileFilters *FileFilters `json:"fileFilters,omitempty"`
 	// Incremental description: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.
 	Incremental *bool `json:"incremental,omitempty"`
 	// MaxCodeEmbeddingsPerRepo description: The maximum number of embeddings for code files to generate per repo
@@ -885,8 +889,10 @@ type ExperimentalFeatures struct {
 	StructuralSearch   string              `json:"structuralSearch,omitempty"`
 	SubRepoPermissions *SubRepoPermissions `json:"subRepoPermissions,omitempty"`
 	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
-	TlsExternal *TlsExternal   `json:"tls.external,omitempty"`
-	Additional  map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
+	TlsExternal *TlsExternal `json:"tls.external,omitempty"`
+	// UseGitserverAddressLookupCache description: (Internal development only) Short lived experimental flag to test the effect of caching vs no caching of repo address lookup
+	UseGitserverAddressLookupCache *bool          `json:"useGitserverAddressLookupCache,omitempty"`
+	Additional                     map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
 }
 
 func (v ExperimentalFeatures) MarshalJSON() ([]byte, error) {
@@ -950,6 +956,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "structuralSearch")
 	delete(m, "subRepoPermissions")
 	delete(m, "tls.external")
+	delete(m, "useGitserverAddressLookupCache")
 	if len(m) > 0 {
 		v.Additional = make(map[string]any, len(m))
 	}
@@ -977,6 +984,16 @@ type ExternalIdentity struct {
 	// GitlabProvider description: The name that identifies the authentication provider to GitLab. This is passed to the `?provider=` query parameter in calls to the GitLab Users API. If you're not sure what this value is, you can look at the `identities` field of the GitLab Users API result (`curl  -H 'PRIVATE-TOKEN: $YOUR_TOKEN' $GITLAB_URL/api/v4/users`).
 	GitlabProvider string `json:"gitlabProvider"`
 	Type           string `json:"type"`
+}
+
+// FileFilters description: Filters that will decode which files om a repository get embedded.
+type FileFilters struct {
+	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
+	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
+	// IncludedFilePathPatterns description: A list of glob patterns that match file paths you want to include in embeddings. If specified, all files not matching these include patterns are excluded.
+	IncludedFilePathPatterns []string `json:"includedFilePathPatterns,omitempty"`
+	// MaxFileSizeBytes description: The maximum file size (in bytes) to include in embeddings. Must be between 0 and 100000 (1 MB).
+	MaxFileSizeBytes int `json:"maxFileSizeBytes,omitempty"`
 }
 
 // FusionClient description: Configuration for the experimental p4-fusion client
@@ -1208,6 +1225,8 @@ type GitLabAuthProvider struct {
 	DisplayPrefix *string `json:"displayPrefix,omitempty"`
 	Hidden        bool    `json:"hidden,omitempty"`
 	Order         int     `json:"order,omitempty"`
+	// SsoURL description: An alternate sign-in URL used to ease SSO sign-in flows, such as https://gitlab.com/groups/your-group/saml/sso?token=xxxxxx
+	SsoURL string `json:"ssoURL,omitempty"`
 	// TokenRefreshWindowMinutes description: Time in minutes before token expiry when we should attempt to refresh it
 	TokenRefreshWindowMinutes int    `json:"tokenRefreshWindowMinutes,omitempty"`
 	Type                      string `json:"type"`
@@ -1295,9 +1314,11 @@ type GitLabWebhook struct {
 	Secret string `json:"secret"`
 }
 
-// GitRecorder description: Record git operations that are executed on configured repositories. The following commands are not recorded: show, log, rev-parse and diff.
+// GitRecorder description: Record git operations that are executed on configured repositories.
 type GitRecorder struct {
-	// Repos description: List of repositories whose git operations should be recorded.
+	// IgnoredGitCommands description: List of git commands that should be ignored and not recorded.
+	IgnoredGitCommands []string `json:"ignoredGitCommands,omitempty"`
+	// Repos description: List of repositories whose git operations should be recorded. To record commands on all repositories, simply pass in an asterisk as the only item in the array.
 	Repos []string `json:"repos,omitempty"`
 	// Size description: Defines how many recordings to keep. Once this size is reached, the oldest entry will be removed.
 	Size int `json:"size,omitempty"`
@@ -1896,6 +1917,12 @@ type Repos struct {
 	Path string `json:"path"`
 }
 
+// Repositories description: Top level configuration key for all things repositories.
+type Repositories struct {
+	// DeduplicateForks description: EXPERIMENTAL: A list of absolute paths of repositories whose forks will use deduplicated storage in gitserver
+	DeduplicateForks []string `json:"deduplicateForks,omitempty"`
+}
+
 // Repository description: The repository to get the latest version of.
 type Repository struct {
 	// Name description: The repository name.
@@ -2472,7 +2499,7 @@ type SiteConfiguration struct {
 	DisableFeedbackSurvey bool `json:"disableFeedbackSurvey,omitempty"`
 	// DisableNonCriticalTelemetry description: DEPRECATED. Has no effect.
 	DisableNonCriticalTelemetry bool `json:"disableNonCriticalTelemetry,omitempty"`
-	// DisablePublicRepoRedirects description: Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.
+	// DisablePublicRepoRedirects description: DEPRECATED! Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.
 	DisablePublicRepoRedirects bool `json:"disablePublicRepoRedirects,omitempty"`
 	// Dotcom description: Configuration options for Sourcegraph.com only.
 	Dotcom *Dotcom `json:"dotcom,omitempty"`
@@ -2523,7 +2550,7 @@ type SiteConfiguration struct {
 	GitMaxCodehostRequestsPerSecond *int `json:"gitMaxCodehostRequestsPerSecond,omitempty"`
 	// GitMaxConcurrentClones description: Maximum number of git clone processes that will be run concurrently per gitserver to update repositories. Note: the global git update scheduler respects gitMaxConcurrentClones. However, we allow each gitserver to run upto gitMaxConcurrentClones to allow for urgent fetches. Urgent fetches are used when a user is browsing a PR and we do not have the commit yet.
 	GitMaxConcurrentClones int `json:"gitMaxConcurrentClones,omitempty"`
-	// GitRecorder description: Record git operations that are executed on configured repositories. The following commands are not recorded: show, log, rev-parse and diff.
+	// GitRecorder description: Record git operations that are executed on configured repositories.
 	GitRecorder *GitRecorder `json:"gitRecorder,omitempty"`
 	// GitUpdateInterval description: JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.
 	GitUpdateInterval []*UpdateIntervalRule `json:"gitUpdateInterval,omitempty"`
@@ -2623,7 +2650,9 @@ type SiteConfiguration struct {
 	RepoListUpdateInterval int `json:"repoListUpdateInterval,omitempty"`
 	// RepoPurgeWorker description: Configuration for repository purge worker.
 	RepoPurgeWorker *RepoPurgeWorker `json:"repoPurgeWorker,omitempty"`
-	// ScimAuthToken description: DISCLAIMER: UNDER DEVELOPMENT. THE ENDPOINT DOES NOT COMPLY WITH THE SCIM STANDARD YET. The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.
+	// Repositories description: Top level configuration key for all things repositories.
+	Repositories *Repositories `json:"repositories,omitempty"`
+	// ScimAuthToken description: The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.
 	ScimAuthToken string `json:"scim.authToken,omitempty"`
 	// ScimIdentityProvider description: Identity provider used for SCIM support.  "STANDARD" should be used unless a more specific value is available
 	ScimIdentityProvider string `json:"scim.identityProvider,omitempty"`
@@ -2793,6 +2822,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "repoConcurrentExternalServiceSyncers")
 	delete(m, "repoListUpdateInterval")
 	delete(m, "repoPurgeWorker")
+	delete(m, "repositories")
 	delete(m, "scim.authToken")
 	delete(m, "scim.identityProvider")
 	delete(m, "search.index.symbols.enabled")

@@ -1,4 +1,4 @@
-import { AskCodyIcon } from '@sourcegraph/cody-ui/src/icons/AskCodyIcon'
+import { AskCodyIcon } from '@sourcegraph/cody-ui/dist/icons/AskCodyIcon'
 import { Button, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './AskCodyButton.module.scss'

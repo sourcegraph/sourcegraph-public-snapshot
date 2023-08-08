@@ -523,14 +523,26 @@ func MaxRetries(n int) int {
 // NewRetryPolicy returns a retry policy used in any Doer or Client returned
 // by NewExternalClientFactory.
 func NewRetryPolicy(max int, retryAfterMaxSleepDuration time.Duration) rehttp.RetryFn {
+	// Indicates in trace whether or not this request was retried at some point
+	const retriedTraceAttributeKey = "httpcli.retried"
+
 	return func(a rehttp.Attempt) (retry bool) {
+		tr := trace.FromContext(a.Request.Context())
+		if a.Index == 0 {
+			// For the initial attempt set it to false in case we never retry,
+			// to make this easier to query in Cloud Trace. This attribute will
+			// get overwritten later if a retry occurs.
+			tr.SetAttributes(
+				attribute.Bool(retriedTraceAttributeKey, false))
+		}
+
 		status := 0
 		var retryAfterHeader string
 
 		defer func() {
 			// Avoid trace log spam if we haven't invoked the retry policy.
 			shouldTraceLog := retry || a.Index > 0
-			if tr := trace.TraceFromContext(a.Request.Context()); tr != nil && shouldTraceLog {
+			if tr.IsRecording() && shouldTraceLog {
 				fields := []attribute.KeyValue{
 					attribute.Bool("retry", retry),
 					attribute.Int("attempt", a.Index),
@@ -543,6 +555,11 @@ func NewRetryPolicy(max int, retryAfterMaxSleepDuration time.Duration) rehttp.Re
 					fields = append(fields, trace.Error(a.Error))
 				}
 				tr.AddEvent("request-retry-decision", fields...)
+				// Record on span itself as well for ease of querying, updates
+				// will overwrite previous values.
+				tr.SetAttributes(
+					attribute.Bool(retriedTraceAttributeKey, true),
+					attribute.Int("httpcli.retriedAttempts", a.Index))
 			}
 
 			// Update request context with latest retry for logging middleware
@@ -553,10 +570,6 @@ func NewRetryPolicy(max int, retryAfterMaxSleepDuration time.Duration) rehttp.Re
 
 			if retry {
 				metricRetry.Inc()
-			}
-
-			if retry || a.Error == nil || a.Index == 0 {
-				return
 			}
 		}()
 

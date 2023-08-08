@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import { CodyClientScope } from '@sourcegraph/cody-shared/src/chat/useClient'
+import { CodyClientScope } from '@sourcegraph/cody-shared/dist/chat/useClient'
 import { useLazyQuery } from '@sourcegraph/http-client'
 
 import { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
@@ -53,7 +53,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
 
         loadReposStatus({
             variables: { repoNames, first: repoNames.length, includeJobs: !!window.context.currentUser?.siteAdmin },
-            pollInterval: 5000,
+            pollInterval: 2000,
         }).catch(() => null)
     }, [activeEditor, scope.repositories, loadReposStatus])
 
@@ -118,7 +118,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
                     inferredFilePath={activeEditor?.filePath || null}
                     additionalRepositories={additionalRepositories}
                     addRepository={addRepository}
-                    resetScope={resetScope}
+                    resetScope={!isSourcegraphApp ? resetScope : null}
                     removeRepository={removeRepository}
                     toggleIncludeInferredRepository={toggleIncludeInferredRepository}
                     toggleIncludeInferredFile={toggleIncludeInferredFile}

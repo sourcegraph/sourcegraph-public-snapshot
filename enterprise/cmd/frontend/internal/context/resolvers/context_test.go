@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -35,7 +34,7 @@ func TestContextResolver(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
-	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	repo1 := types.Repo{Name: "repo1"}
 	repo2 := types.Repo{Name: "repo2"}
 	// Create populates the IDs in the passed in types.Repo

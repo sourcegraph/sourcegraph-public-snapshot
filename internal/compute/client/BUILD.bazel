@@ -8,7 +8,7 @@ go_library(
         "match_context_client.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/compute/client",
-    visibility = ["//enterprise:__subpackages__"],
+    visibility = ["//:__subpackages__"],
     deps = [
         "//internal/compute",
         "//internal/search/streaming/api",

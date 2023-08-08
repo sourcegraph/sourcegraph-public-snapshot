@@ -31,10 +31,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/byteutils"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -268,11 +268,6 @@ type CommitGraphOptions struct {
 	Limit   int
 	Since   *time.Time
 } // please update LogFields if you add a field here
-
-func stableTimeRepr(t time.Time) string {
-	s, _ := t.MarshalText()
-	return string(s)
-}
 
 // CommitGraph returns the commit graph for the given repository as a mapping
 // from a commit to its parents. If a commit is supplied, the returned graph will
@@ -1078,28 +1073,6 @@ func (c *clientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPe
 		files = files[:len(files)-1]
 	}
 	return filterPaths(ctx, checker, repo, files)
-}
-
-// ListFiles returns a list of root-relative file paths matching the given
-// pattern in a particular commit of a repository.
-func (c *clientImplementor) ListFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, opts *protocol.ListFilesOpts) (_ []string, err error) {
-	files, err := c.ReadDir(ctx, checker, repo, commit, "", true)
-	if err != nil {
-		return nil, errors.Wrap(err, "reading directory")
-	}
-	var filteredFiles []string
-
-	for _, file := range files {
-		if file.IsDir() && !opts.IncludeDirs {
-			continue
-		} else if opts.MaxFileSizeBytes != 0 && file.Size() > opts.MaxFileSizeBytes {
-			continue
-		}
-
-		filteredFiles = append(filteredFiles, file.Name())
-	}
-
-	return filterPaths(ctx, checker, repo, filteredFiles)
 }
 
 // 🚨 SECURITY: All git methods that deal with file or path access need to have
@@ -2533,8 +2506,8 @@ func (c *clientImplementor) ArchiveReader(
 		return nil, err
 	}
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
-		client, err := c.clientSource.ClientForRepo(c.userAgent, repo)
+	if conf.IsGRPCEnabled(ctx) {
+		client, err := c.clientSource.ClientForRepo(ctx, c.userAgent, repo)
 		if err != nil {
 			return nil, err
 		}
@@ -2612,7 +2585,7 @@ func (c *clientImplementor) ArchiveReader(
 
 	} else {
 		// Fall back to http request
-		u := c.archiveURL(repo, options)
+		u := c.archiveURL(ctx, repo, options)
 		resp, err := c.do(ctx, repo, "POST", u.String(), nil)
 		if err != nil {
 			return nil, err

@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -25,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
@@ -57,7 +55,7 @@ func TestRedirects(t *testing.T) {
 		db.ExternalServicesFunc.SetDefaultReturn(extSvcs)
 		db.RepoStatisticsFunc.SetDefaultReturn(repoStatistics)
 
-		InitRouter(db, jobutil.NewUnimplementedEnterpriseJobs())
+		InitRouter(db)
 		rw := httptest.NewRecorder()
 		req, err := http.NewRequest("GET", path, nil)
 		if err != nil {
@@ -480,5 +478,4 @@ func init() {
 
 	db := database.NewMockDB()
 	db.GlobalStateFunc.SetDefaultReturn(gss)
-	siteid.Init(db)
 }

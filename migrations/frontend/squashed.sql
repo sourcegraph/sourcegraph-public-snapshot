@@ -1652,6 +1652,28 @@ CREATE SEQUENCE cm_webhooks_id_seq
 
 ALTER SEQUENCE cm_webhooks_id_seq OWNED BY cm_webhooks.id;
 
+CREATE TABLE code_hosts (
+    id integer NOT NULL,
+    kind text NOT NULL,
+    url text NOT NULL,
+    api_rate_limit_quota integer,
+    api_rate_limit_interval_seconds integer,
+    git_rate_limit_quota integer,
+    git_rate_limit_interval_seconds integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE code_hosts_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE code_hosts_id_seq OWNED BY code_hosts.id;
+
 CREATE TABLE codeintel_autoindex_queue (
     id integer NOT NULL,
     repository_id integer NOT NULL,
@@ -2219,6 +2241,9 @@ CREATE TABLE event_logs (
     referrer text,
     device_id text,
     insert_id text,
+    billing_product_category text,
+    billing_event_id text,
+    client text,
     CONSTRAINT event_logs_check_has_user CHECK ((((user_id = 0) AND (anonymous_user_id <> ''::text)) OR ((user_id <> 0) AND (anonymous_user_id = ''::text)) OR ((user_id <> 0) AND (anonymous_user_id <> ''::text)))),
     CONSTRAINT event_logs_check_name_not_empty CHECK ((name <> ''::text)),
     CONSTRAINT event_logs_check_source_not_empty CHECK ((source <> ''::text)),
@@ -2509,6 +2534,7 @@ CREATE TABLE external_services (
     namespace_org_id integer,
     has_webhooks boolean,
     token_expires_at timestamp with time zone,
+    code_host_id integer,
     CONSTRAINT check_non_empty_config CHECK ((btrim(config) <> ''::text)),
     CONSTRAINT external_services_max_1_namespace CHECK ((((namespace_user_id IS NULL) AND (namespace_org_id IS NULL)) OR ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))))
 );
@@ -2693,12 +2719,15 @@ CREATE TABLE gitserver_repos (
     repo_size_bytes bigint,
     corrupted_at timestamp with time zone,
     corruption_logs jsonb DEFAULT '[]'::jsonb NOT NULL,
-    cloning_progress text DEFAULT ''::text
+    cloning_progress text DEFAULT ''::text,
+    pool_repo_id integer
 );
 
 COMMENT ON COLUMN gitserver_repos.corrupted_at IS 'Timestamp of when repo corruption was detected';
 
 COMMENT ON COLUMN gitserver_repos.corruption_logs IS 'Log output of repo corruptions that have been detected - encoded as json';
+
+COMMENT ON COLUMN gitserver_repos.pool_repo_id IS 'This is used to refer to the pool repository for deduplicated repos';
 
 CREATE TABLE gitserver_repos_statistics (
     shard_id text NOT NULL,
@@ -2760,7 +2789,7 @@ CREATE TABLE insights_query_runner_jobs (
     trace_id text
 );
 
-COMMENT ON TABLE insights_query_runner_jobs IS 'See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)';
+COMMENT ON TABLE insights_query_runner_jobs IS 'See [internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)';
 
 COMMENT ON COLUMN insights_query_runner_jobs.priority IS 'Integer representing a category of priority for this query. Priority in this context is ambiguously defined for consumers to decide an interpretation.';
 
@@ -4081,6 +4110,7 @@ CREATE TABLE users (
     searchable boolean DEFAULT true NOT NULL,
     completions_quota integer,
     code_completions_quota integer,
+    completed_post_signup boolean DEFAULT false NOT NULL,
     CONSTRAINT users_display_name_max_length CHECK ((char_length(display_name) <= 255)),
     CONSTRAINT users_username_max_length CHECK ((char_length((username)::text) <= 255)),
     CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^\w(?:\w|[-.](?=\w))*-?$'::citext))
@@ -4220,7 +4250,9 @@ CREATE TABLE repo_embedding_job_stats (
     text_files_embedded integer DEFAULT 0 NOT NULL,
     text_chunks_embedded integer DEFAULT 0 NOT NULL,
     text_files_skipped jsonb DEFAULT '{}'::jsonb NOT NULL,
-    text_bytes_embedded integer DEFAULT 0 NOT NULL
+    text_bytes_embedded integer DEFAULT 0 NOT NULL,
+    code_chunks_excluded integer DEFAULT 0 NOT NULL,
+    text_chunks_excluded integer DEFAULT 0 NOT NULL
 );
 
 CREATE TABLE repo_embedding_jobs (
@@ -4495,8 +4527,6 @@ CREATE TABLE sub_repo_permissions (
     repo_id integer NOT NULL,
     user_id integer NOT NULL,
     version integer DEFAULT 1 NOT NULL,
-    path_includes text[],
-    path_excludes text[],
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     paths text[]
 );
@@ -4933,6 +4963,8 @@ ALTER TABLE ONLY cm_trigger_jobs ALTER COLUMN id SET DEFAULT nextval('cm_trigger
 
 ALTER TABLE ONLY cm_webhooks ALTER COLUMN id SET DEFAULT nextval('cm_webhooks_id_seq'::regclass);
 
+ALTER TABLE ONLY code_hosts ALTER COLUMN id SET DEFAULT nextval('code_hosts_id_seq'::regclass);
+
 ALTER TABLE ONLY codeintel_autoindex_queue ALTER COLUMN id SET DEFAULT nextval('codeintel_autoindex_queue_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_autoindexing_exceptions ALTER COLUMN id SET DEFAULT nextval('codeintel_autoindexing_exceptions_id_seq'::regclass);
@@ -5226,6 +5258,12 @@ ALTER TABLE ONLY cm_trigger_jobs
 
 ALTER TABLE ONLY cm_webhooks
     ADD CONSTRAINT cm_webhooks_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY code_hosts
+    ADD CONSTRAINT code_hosts_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY code_hosts
+    ADD CONSTRAINT code_hosts_url_key UNIQUE (url);
 
 ALTER TABLE ONLY codeintel_autoindex_queue
     ADD CONSTRAINT codeintel_autoindex_queue_pkey PRIMARY KEY (id);
@@ -6493,6 +6531,9 @@ ALTER TABLE ONLY external_service_repos
 ALTER TABLE ONLY external_service_repos
     ADD CONSTRAINT external_service_repos_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
 
+ALTER TABLE ONLY external_services
+    ADD CONSTRAINT external_services_code_host_id_fkey FOREIGN KEY (code_host_id) REFERENCES code_hosts(id) ON UPDATE CASCADE ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED;
+
 ALTER TABLE ONLY external_service_sync_jobs
     ADD CONSTRAINT external_services_id_fk FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE;
 
@@ -6537,6 +6578,9 @@ ALTER TABLE ONLY github_app_installs
 
 ALTER TABLE ONLY github_apps
     ADD CONSTRAINT github_apps_webhook_id_fkey FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY gitserver_repos
+    ADD CONSTRAINT gitserver_repos_pool_repo_id_fkey FOREIGN KEY (pool_repo_id) REFERENCES repo(id);
 
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;

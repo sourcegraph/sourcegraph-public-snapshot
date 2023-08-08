@@ -132,6 +132,7 @@ go_test(
         "//cmd/searcher/protocol",
         "//internal/api",
         "//internal/comby",
+        "//internal/database",
         "//internal/errcode",
         "//internal/gitserver",
         "//internal/observation",

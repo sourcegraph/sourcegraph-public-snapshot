@@ -2,8 +2,6 @@
 package api
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -11,8 +9,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // RepoID is the unique identifier for a repository.
@@ -43,6 +41,17 @@ func UndeletedRepoName(name RepoName) RepoName {
 	return RepoName(deletedRegex.ReplaceAllString(string(name), ""))
 }
 
+var validCommitIDRegexp = lazyregexp.New(`^[a-fA-F0-9]{40}$`)
+
+// NewCommitID creates a new CommitID and validates that it conforms to the
+// requirements of the type.
+func NewCommitID(s string) (CommitID, error) {
+	if validCommitIDRegexp.MatchString(s) {
+		return CommitID(s), nil
+	}
+	return "", errors.Newf("invalid CommitID %q", s)
+}
+
 // CommitID is the 40-character SHA-1 hash for a Git commit.
 type CommitID string
 
@@ -57,10 +66,6 @@ func (c CommitID) Short() string {
 	}
 	return string(c)
 }
-
-// RevSpec is a revision range specifier suitable for passing to git. See
-// the manpage gitrevisions(7).
-type RevSpec string
 
 // RepoCommit scopes a commit to a repository.
 type RepoCommit struct {
@@ -176,24 +181,6 @@ func cmp(a, b string) int {
 	}
 }
 
-// SavedQueryInfo represents information about a saved query that was executed.
-type SavedQueryInfo struct {
-	// Query is the search query in question.
-	Query string
-
-	// LastExecuted is the timestamp of the last time that the search query was
-	// executed.
-	LastExecuted time.Time
-
-	// LatestResult is the timestamp of the latest-known result for the search
-	// query. Therefore, searching `after:<LatestResult>` will return the new
-	// search results not yet seen.
-	LatestResult time.Time
-
-	// ExecDuration is the amount of time it took for the query to execute.
-	ExecDuration time.Duration
-}
-
 type SavedQueryIDSpec struct {
 	Subject SettingsSubject
 	Key     string
@@ -210,18 +197,6 @@ type ConfigSavedQuery struct {
 	UserID          *int32  `json:"userID"`
 	OrgID           *int32  `json:"orgID"`
 	SlackWebhookURL *string `json:"slackWebhookURL"`
-}
-
-func (sq ConfigSavedQuery) Equals(other ConfigSavedQuery) bool {
-	a, _ := json.Marshal(sq)
-	b, _ := json.Marshal(other)
-	return bytes.Equal(a, b)
-}
-
-// PartialConfigSavedQueries is the JSON configuration shape, including only the
-// search.savedQueries section.
-type PartialConfigSavedQueries struct {
-	SavedQueries []ConfigSavedQuery `json:"search.savedQueries"`
 }
 
 // SavedQuerySpecAndConfig represents a saved query configuration its unique ID.

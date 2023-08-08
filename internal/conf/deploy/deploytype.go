@@ -1,6 +1,9 @@
 package deploy
 
-import "os"
+import (
+	"os"
+	"strconv"
+)
 
 // Deploy type constants. Any changes here should be reflected in the DeployType type declared in client/web/src/jscontext.ts:
 // https://sourcegraph.com/search?q=r:github.com/sourcegraph/sourcegraph%24+%22type+DeployType%22
@@ -103,6 +106,15 @@ func IsValidDeployType(deployType string) bool {
 func IsApp() bool {
 	return Type() == App
 }
+
+// IsAppFullSourcegraph tells if the Cody app should run a full Sourcegraph instance (true),
+// or whether components not needed for the baseline Cody experience should be disabled
+// such as precise code intel, zoekt, etc.
+func IsAppFullSourcegraph() bool {
+	return IsApp() && appFullSourcegraph
+}
+
+var appFullSourcegraph, _ = strconv.ParseBool(os.Getenv("APP_FULL_SOURCEGRAPH"))
 
 // IsSingleBinary tells if the running deployment is a single-binary or not.
 //

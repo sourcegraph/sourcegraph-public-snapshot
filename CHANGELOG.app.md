@@ -15,6 +15,15 @@ All notable changes to the Cody app are documented in this file.
 
 ## Unreleased
 
+## v2023.7.11
+
+- Added support for Claude 2. This model improves Cody’s reasoning ability and often increases accuracy.
+- Added a new settings screen to view Cody rate limits and usage
+- Fixes conflicts on port 6060
+
+## v2023.7.4
+
+- Fixes conflicts on port 9000
 - Added a new menu option to check for app updates.
 - Removed the ability to add new remote repositories as that feature will be retired for the Cody App, all repositories should be added locally.
 

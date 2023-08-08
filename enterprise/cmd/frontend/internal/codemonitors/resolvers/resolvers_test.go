@@ -16,10 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	batchesApitest "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/codemonitors/background"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -38,7 +37,7 @@ func TestCreateCodeMonitor(t *testing.T) {
 
 	user := insertTestUser(t, db, "cm-user1", true)
 
-	want := &edb.Monitor{
+	want := &database.Monitor{
 		ID:          1,
 		CreatedBy:   user.ID,
 		CreatedAt:   r.Now(),
@@ -70,7 +69,6 @@ func TestCreateCodeMonitor(t *testing.T) {
 		require.NoError(t, err)
 		_, err = r.db.CodeMonitors().GetMonitor(ctx, got.(*monitor).Monitor.ID)
 		require.Error(t, err, "monitor should have been deleted")
-
 	})
 
 	t.Run("invalid slack webhook", func(t *testing.T) {
@@ -99,7 +97,7 @@ func TestCreateCodeMonitor(t *testing.T) {
 			}},
 		})
 		require.Error(t, err)
-		monitors, err := r.Monitors(ctx, user.ID, &graphqlbackend.ListMonitorsArgs{First: 10})
+		monitors, err := r.Monitors(ctx, &user.ID, &graphqlbackend.ListMonitorsArgs{First: 10})
 		require.NoError(t, err)
 		require.Len(t, monitors.Nodes(), 0) // the transaction should have been rolled back
 	})
@@ -121,7 +119,7 @@ func TestListCodeMonitors(t *testing.T) {
 	args := &graphqlbackend.ListMonitorsArgs{
 		First: 5,
 	}
-	r1, err := r.Monitors(ctx, user.ID, args)
+	r1, err := r.Monitors(ctx, &user.ID, args)
 	require.NoError(t, err)
 
 	require.Len(t, r1.Nodes(), 1, "unexpected node count")
@@ -133,7 +131,7 @@ func TestListCodeMonitors(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	r2, err := r.Monitors(ctx, user.ID, args)
+	r2, err := r.Monitors(ctx, &user.ID, args)
 	require.NoError(t, err)
 
 	require.Len(t, r2.Nodes(), 5, "unexpected node count")
@@ -145,7 +143,7 @@ func TestListCodeMonitors(t *testing.T) {
 		First: 10,
 		After: pi.EndCursor(),
 	}
-	r3, err := r.Monitors(ctx, user.ID, args)
+	r3, err := r.Monitors(ctx, &user.ID, args)
 	require.NoError(t, err)
 
 	require.Len(t, r3.Nodes(), 6, "unexpected node count")
@@ -336,15 +334,15 @@ func TestQueryMonitor(t *testing.T) {
 		func() error { _, err := r.db.CodeMonitors().EnqueueQueryTriggerJobs(ctx); return err },
 		func() error { _, err := r.db.CodeMonitors().EnqueueActionJobsForMonitor(ctx, 1, 1); return err },
 		func() error {
-			err := (&edb.TestStore{CodeMonitorStore: r.db.CodeMonitors()}).SetJobStatus(ctx, edb.ActionJobs, edb.Completed, 1)
+			err := (&database.TestStore{CodeMonitorStore: r.db.CodeMonitors()}).SetJobStatus(ctx, database.ActionJobs, database.Completed, 1)
 			if err != nil {
 				return err
 			}
-			err = (&edb.TestStore{CodeMonitorStore: r.db.CodeMonitors()}).SetJobStatus(ctx, edb.ActionJobs, edb.Completed, 2)
+			err = (&database.TestStore{CodeMonitorStore: r.db.CodeMonitors()}).SetJobStatus(ctx, database.ActionJobs, database.Completed, 2)
 			if err != nil {
 				return err
 			}
-			return (&edb.TestStore{CodeMonitorStore: r.db.CodeMonitors()}).SetJobStatus(ctx, edb.ActionJobs, edb.Completed, 3)
+			return (&database.TestStore{CodeMonitorStore: r.db.CodeMonitors()}).SetJobStatus(ctx, database.ActionJobs, database.Completed, 3)
 		},
 		func() error { _, err := r.db.CodeMonitors().EnqueueActionJobsForMonitor(ctx, 1, 1); return err },
 		// Set the job status of trigger job with id = 1 to "completed". Since we already
@@ -356,7 +354,7 @@ func TestQueryMonitor(t *testing.T) {
 		// 1   1     completed
 		// 2   2     queued
 		func() error {
-			return (&edb.TestStore{CodeMonitorStore: r.db.CodeMonitors()}).SetJobStatus(ctx, edb.TriggerJobs, edb.Completed, 1)
+			return (&database.TestStore{CodeMonitorStore: r.db.CodeMonitors()}).SetJobStatus(ctx, database.TriggerJobs, database.Completed, 1)
 		},
 		// This will create a second trigger job (id = 3) for the first monitor. Since
 		// the job with id = 2 is still queued, no new job will be enqueued for query 2.

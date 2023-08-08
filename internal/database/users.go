@@ -530,6 +530,7 @@ type UserUpdate struct {
 	DisplayName, AvatarURL *string
 	TosAccepted            *bool
 	Searchable             *bool
+	CompletedPostSignup    *bool
 }
 
 // Update updates a user's profile information.
@@ -573,6 +574,9 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 	if update.Searchable != nil {
 		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("searchable=%s", *update.Searchable))
 	}
+	if update.CompletedPostSignup != nil {
+		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("completed_post_signup=%s", *update.CompletedPostSignup))
+	}
 	query := sqlf.Sprintf("UPDATE users SET %s WHERE id=%d", sqlf.Join(fieldUpdates, ", "), id)
 	res, err := tx.ExecResult(ctx, query)
 	if err != nil {
@@ -593,6 +597,7 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 }
 
 // Delete performs a soft-delete of the user and all resources associated with this user.
+// Permissions for soft-deleted users are removed from the user_repo_permissions table via a trigger.
 func (u *userStore) Delete(ctx context.Context, id int32) (err error) {
 	return u.DeleteList(ctx, []int32{id})
 }
@@ -634,7 +639,7 @@ func (u *userStore) DeleteList(ctx context.Context, ids []int32) (err error) {
 	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM user_emails WHERE user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE user_external_accounts SET deleted_at=now() WHERE deleted_at IS NULL AND user_id IN (%s) AND deleted_at IS NULL", idsCond)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE user_external_accounts SET deleted_at=now() WHERE deleted_at IS NULL AND user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
 	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE org_invitations SET deleted_at=now() WHERE deleted_at IS NULL AND (sender_user_id IN (%s) OR recipient_user_id IN (%s))", idsCond, idsCond)); err != nil {
@@ -1065,7 +1070,7 @@ type UsersListOptions struct {
 
 func (u *userStore) List(ctx context.Context, opt *UsersListOptions) (_ []*types.User, err error) {
 	tr, ctx := trace.New(ctx, "database.Users.List", attribute.String("opt", fmt.Sprintf("%+v", opt)))
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	if opt == nil {
 		opt = &UsersListOptions{}
@@ -1079,7 +1084,7 @@ func (u *userStore) List(ctx context.Context, opt *UsersListOptions) (_ []*types
 // ListForSCIM lists users along with their email addresses and SCIM ExternalID.
 func (u *userStore) ListForSCIM(ctx context.Context, opt *UsersListOptions) (_ []*types.UserForSCIM, err error) {
 	tr, ctx := trace.New(ctx, "database.Users.ListForSCIM", attribute.String("opt", fmt.Sprintf("%+v", opt)))
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	if opt == nil {
 		opt = &UsersListOptions{}
@@ -1291,6 +1296,7 @@ SELECT u.id,
        u.passwd IS NOT NULL,
        u.invalidated_sessions_at,
        u.tos_accepted,
+       u.completed_post_signup,
        u.searchable,
        EXISTS (SELECT 1 FROM user_external_accounts WHERE service_type = 'scim' AND user_id = u.id AND deleted_at IS NULL) AS scim_controlled
 FROM users u %s`, query)
@@ -1304,7 +1310,7 @@ FROM users u %s`, query)
 	for rows.Next() {
 		var u types.User
 		var displayName, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, &u.SCIMControlled)
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.CompletedPostSignup, &u.Searchable, &u.SCIMControlled)
 		if err != nil {
 			return nil, err
 		}

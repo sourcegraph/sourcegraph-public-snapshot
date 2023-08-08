@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -54,6 +55,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -138,24 +140,13 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	recordingCommandFactory := wrexec.NewRecordingCommandFactory(nil, 0)
-	conf.Watch(func() {
-		// We update the factory with a predicate func. Each subsequent recordable command will use this predicate
-		// to determine whether a command should be recorded or not.
-		recordingConf := conf.Get().SiteConfig().GitRecorder
-		if recordingConf == nil {
-			recordingCommandFactory.Disable()
-			return
-		}
-		recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf.Repos), recordingConf.Size)
-	})
-
 	gitserver := server.Server{
 		Logger:             logger,
 		ObservationCtx:     observationCtx,
 		ReposDir:           config.ReposDir,
 		DesiredPercentFree: wantPctFree2,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
-			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, repo)
+			return getRemoteURLFunc(ctx, db, repoStore, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
 			return getVCSSyncer(ctx, &newVCSSyncerOpts{
@@ -174,7 +165,21 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
 		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
 		RecordingCommandFactory: recordingCommandFactory,
+		DeduplicatedForksSet:    types.NewRepoURICache(conf.GetDeduplicatedForksIndex()),
 	}
+
+	conf.Watch(func() {
+		gitserver.DeduplicatedForksSet.Overwrite(conf.GetDeduplicatedForksIndex())
+
+		// We update the factory with a predicate func. Each subsequent recordable command will use this predicate
+		// to determine whether a command should be recorded or not.
+		recordingConf := conf.Get().SiteConfig().GitRecorder
+		if recordingConf == nil {
+			recordingCommandFactory.Disable()
+			return
+		}
+		recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf.Repos, recordingConf.IgnoredGitCommands), recordingConf.Size)
+	})
 
 	configurationWatcher := conf.DefaultClient()
 
@@ -356,7 +361,7 @@ func getDB(observationCtx *observation.Context) (*sql.DB, error) {
 
 func getRemoteURLFunc(
 	ctx context.Context,
-	externalServiceStore database.ExternalServiceStore,
+	db database.DB,
 	repoStore database.RepoStore,
 	repo api.RepoName,
 ) (string, error) {
@@ -368,7 +373,7 @@ func getRemoteURLFunc(
 	for _, info := range r.Sources {
 		// build the clone url using the external service config instead of using
 		// the source CloneURL field
-		svc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
+		svc, err := db.ExternalServices().GetByID(ctx, info.ExternalServiceID())
 		if err != nil {
 			return "", err
 		}
@@ -381,7 +386,7 @@ func getRemoteURLFunc(
 			continue
 		}
 
-		return repos.EncryptableCloneURL(ctx, log.Scoped("repos.CloneURL", ""), svc.Kind, svc.Config, r)
+		return repos.EncryptableCloneURL(ctx, log.Scoped("repos.CloneURL", ""), db, svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
 }
@@ -615,9 +620,17 @@ func methodSpecificUnaryInterceptor(method string, next grpc.UnaryServerIntercep
 	}
 }
 
+var defaultIgnoredGitCommands = []string{
+	"show",
+	"rev-parse",
+	"log",
+	"diff",
+	"ls-tree",
+}
+
 // recordCommandsOnRepos returns a ShouldRecordFunc which determines whether the given command should be recorded
 // for a particular repository.
-func recordCommandsOnRepos(repos []string) wrexec.ShouldRecordFunc {
+func recordCommandsOnRepos(repos []string, ignoredGitCommands []string) wrexec.ShouldRecordFunc {
 	// empty repos, means we should never record since there is nothing to match on
 	if len(repos) == 0 {
 		return func(ctx context.Context, c *exec.Cmd) bool {
@@ -625,14 +638,13 @@ func recordCommandsOnRepos(repos []string) wrexec.ShouldRecordFunc {
 		}
 	}
 
-	// we won't record any git commands with these commands since they are considered to be not destructive
-	ignoredGitCommands := map[string]struct{}{
-		"show":      {},
-		"rev-parse": {},
-		"log":       {},
-		"diff":      {},
-		"ls-tree":   {},
+	if len(ignoredGitCommands) == 0 {
+		ignoredGitCommands = append(ignoredGitCommands, defaultIgnoredGitCommands...)
 	}
+
+	// we won't record any git commands with these commands since they are considered to be not destructive
+	ignoredGitCommandsMap := collections.NewSet(ignoredGitCommands...)
+
 	return func(ctx context.Context, cmd *exec.Cmd) bool {
 		base := filepath.Base(cmd.Path)
 		if base != "git" {
@@ -640,10 +652,20 @@ func recordCommandsOnRepos(repos []string) wrexec.ShouldRecordFunc {
 		}
 
 		repoMatch := false
-		for _, repo := range repos {
-			if strings.Contains(cmd.Dir, repo) {
-				repoMatch = true
-				break
+		// If repos contains a single "*" element, it means to record commands
+		// for all repositories.
+		if len(repos) == 1 && repos[0] == "*" {
+			repoMatch = true
+		} else {
+			for _, repo := range repos {
+				// We need to check the suffix, because we can have some common parts in
+				// different repo names. E.g. "sourcegraph/sourcegraph" and
+				// "sourcegraph/sourcegraph-code-ownership" will both be allowed even if only the
+				// first name is included in the config.
+				if strings.HasSuffix(cmd.Dir, repo+"/.git") {
+					repoMatch = true
+					break
+				}
 			}
 		}
 
@@ -654,11 +676,10 @@ func recordCommandsOnRepos(repos []string) wrexec.ShouldRecordFunc {
 		// we have to scan the Args, since it isn't guaranteed that the Arg at index 1 is the git command:
 		// git -c "protocol.version=2" remote show
 		for _, arg := range cmd.Args {
-			if _, ok := ignoredGitCommands[arg]; ok {
+			if ok := ignoredGitCommandsMap.Has(arg); ok {
 				return false
 			}
 		}
 		return true
 	}
-
 }

@@ -46,8 +46,8 @@ jobs:
           Test plan: CI should pass with any updates.
         # token must be a personal access token for pull request to trigger other actions
         # token must have `repo` scope
-        # currently @sourcegraph-bot cross-repo-github-actions in 1password
-        # configure in https://github.com/sourcegraph/sourcegraph/settings/secrets/GH_REPO_TOKEN
+        # currently @sourcegraph-devx-bot create-pr-github-actions in 1password
+        # configure in https://github.com/sourcegraph/sourcegraph/settings/secrets/DEVX_TOKEN
         token: ${{ secrets.DEVX_TOKEN }}
 
     - name: Enable pull request automerge

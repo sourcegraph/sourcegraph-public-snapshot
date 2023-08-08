@@ -284,7 +284,7 @@ func TestStatusMessages(t *testing.T) {
 				if id == 0 {
 					continue
 				}
-				err := db.ZoektRepos().UpdateIndexStatuses(ctx, map[uint32]*zoekt.MinimalRepoListEntry{
+				err := db.ZoektRepos().UpdateIndexStatuses(ctx, zoekt.ReposMap{
 					id: {
 						Branches: []zoekt.RepositoryBranch{{Name: "main", Version: "d34db33f"}},
 					},

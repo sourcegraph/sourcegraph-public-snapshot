@@ -5,7 +5,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/context/resolvers"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	codycontext "github.com/sourcegraph/sourcegraph/internal/codycontext"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -24,14 +23,10 @@ func Init(
 	enterpriseServices *enterprise.Services,
 ) error {
 	embeddingsClient := embeddings.NewDefaultClient()
-	searchClient := client.New(
-		observationCtx.Logger,
-		db,
-		enterpriseServices.EnterpriseSearchJobs,
-	)
+	searchClient := client.New(observationCtx.Logger, db)
 	contextClient := codycontext.NewCodyContextClient(
 		observationCtx,
-		edb.NewEnterpriseDB(db),
+		db,
 		embeddingsClient,
 		searchClient,
 	)

@@ -21,6 +21,7 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
@@ -50,6 +51,7 @@ func TestSearch(t *testing.T) {
 
 Hello world example in go`, typeFile},
 		"file++.plus": {`filename contains regex metachars`, typeFile},
+		"nonutf8.txt": {"file contains invalid utf8 \xC0 characters", typeFile},
 		"main.go": {`package main
 
 import "fmt"
@@ -255,6 +257,7 @@ filename contains regex metachars
 abc.txt
 file++.plus
 milton.png
+nonutf8.txt
 symlink
 `},
 
@@ -263,6 +266,7 @@ abc.txt
 file++.plus
 main.go
 milton.png
+nonutf8.txt
 symlink
 `},
 
@@ -271,6 +275,7 @@ README.md
 abc.txt
 file++.plus
 milton.png
+nonutf8.txt
 symlink
 `},
 		{protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: true, PatternMatchesContent: true}, `
@@ -284,6 +289,10 @@ abc.txt
 `},
 		{protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: true, PatternMatchesContent: false}, `
 abc.txt
+`},
+		{protocol.PatternInfo{Pattern: "utf8", PatternMatchesPath: false, PatternMatchesContent: true}, `
+nonutf8.txt:1:1:
+file contains invalid utf8 � characters
 `},
 	}
 
@@ -567,6 +576,7 @@ func newStore(t *testing.T, files map[string]struct {
 	}
 
 	return &search.Store{
+		GitserverClient: gitserver.NewClient(database.NewMockDB()),
 		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 			r, w := io.Pipe()
 			go func() {

@@ -8,6 +8,7 @@ load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
 load("//dev:webpack.bzl", "webpack_bundle", "webpack_devserver", "webpack_web_app")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
@@ -66,8 +67,6 @@ ts_config(
         "//client/build-config:tsconfig",
         "//client/client-api:tsconfig",
         "//client/codeintellify:tsconfig",
-        "//client/cody-shared:tsconfig",
-        "//client/cody-ui:tsconfig",
         "//client/common:tsconfig",
         "//client/extension-api-types:tsconfig",
         "//client/http-client:tsconfig",
@@ -177,6 +176,7 @@ ts_project(
         "src/auth.ts",
         "src/auth/CloudSignUpPage.tsx",
         "src/auth/OrDivider.tsx",
+        "src/auth/PostSignUpPage.tsx",
         "src/auth/RequestAccessPage.tsx",
         "src/auth/ResetPasswordPage.tsx",
         "src/auth/SignInPage.tsx",
@@ -244,6 +244,13 @@ ts_project(
         "src/cody/sidebar/Provider.tsx",
         "src/cody/sidebar/index.tsx",
         "src/cody/sidebar/useSidebarSize.tsx",
+        "src/cody/update/AboutPageUpdate.tsx",
+        "src/cody/update/InstallModal.tsx",
+        "src/cody/update/ReviewAndInstallModal.tsx",
+        "src/cody/update/StartupUpdateChecker.tsx",
+        "src/cody/update/UpdateGlobalNav.tsx",
+        "src/cody/update/UpdateInfoContent.tsx",
+        "src/cody/update/updater.tsx",
         "src/cody/useCodyChat.tsx",
         "src/cody/useSizebarSize.tsx",
         "src/cody/widgets/CodyRecipesWidget.tsx",
@@ -390,7 +397,9 @@ ts_project(
         "src/enterprise/app/components/zero-states/AppZeroStates.tsx",
         "src/enterprise/app/routes.tsx",
         "src/enterprise/app/settings/AppSettingsArea.tsx",
+        "src/enterprise/app/settings/about/AboutPage.tsx",
         "src/enterprise/app/settings/local-repositories/LocalRepositoriesTab.tsx",
+        "src/enterprise/app/settings/rate-limits/RateLimitsTab.tsx",
         "src/enterprise/app/setup/AppSetupWizard.tsx",
         "src/enterprise/app/setup/components/AppSetupProgressBar.tsx",
         "src/enterprise/app/setup/steps/AppAllSetSetupStep.tsx",
@@ -1006,10 +1015,12 @@ ts_project(
         "src/enterprise/repo/enterpriseRepoContainerRoutes.tsx",
         "src/enterprise/repo/enterpriseRepoRevisionContainerRoutes.tsx",
         "src/enterprise/repo/repoHeaderActionButtons.tsx",
+        "src/enterprise/repo/settings/RepoSettingsLogsPage.tsx",
         "src/enterprise/repo/settings/RepoSettingsPermissionsPage.tsx",
         "src/enterprise/repo/settings/backend.ts",
         "src/enterprise/repo/settings/routes.tsx",
         "src/enterprise/repo/settings/sidebaritems.ts",
+        "src/enterprise/repo/settings/utils.ts",
         "src/enterprise/routes.tsx",
         "src/enterprise/searchContexts/CreateSearchContextPage.tsx",
         "src/enterprise/searchContexts/DeleteSearchContextModal.tsx",
@@ -1226,7 +1237,6 @@ ts_project(
         "src/person/PersonLink.tsx",
         "src/platform/context.ts",
         "src/productSubscription/helpers.ts",
-        "src/rbac/constants.ts",
         "src/repo/DirectImportRepoAlert.tsx",
         "src/repo/FilePathBreadcrumbs.tsx",
         "src/repo/GitReference.tsx",
@@ -1354,6 +1364,7 @@ ts_project(
         "src/repo/components/RepoRevision/index.ts",
         "src/repo/components/TryCodyWidget/TryCodyWidget.tsx",
         "src/repo/components/TryCodyWidget/WidgetIcons.tsx",
+        "src/repo/constants.ts",
         "src/repo/linkifiy/Linkified.tsx",
         "src/repo/linkifiy/get-links.ts",
         "src/repo/packages/isPackageServiceType.ts",
@@ -1604,11 +1615,15 @@ ts_project(
         "src/storm/pages/LayoutPage/LayoutPage.loader.ts",
         "src/storm/pages/LayoutPage/LayoutPage.tsx",
         "src/storm/pages/SearchPage/AddCodeHostWidget.tsx",
+        "src/storm/pages/SearchPage/CodeSearchSimpleSearch.tsx",
+        "src/storm/pages/SearchPage/FindChangesSimpleSearch.tsx",
+        "src/storm/pages/SearchPage/RepoSearchSimpleSearch.tsx",
         "src/storm/pages/SearchPage/SearchPage.loader.ts",
         "src/storm/pages/SearchPage/SearchPage.tsx",
         "src/storm/pages/SearchPage/SearchPageContent.tsx",
         "src/storm/pages/SearchPage/SearchPageFooter.tsx",
         "src/storm/pages/SearchPage/SearchPageInput.tsx",
+        "src/storm/pages/SearchPage/SimpleSearch.tsx",
         "src/storm/pages/SearchPage/TryCodyCtaSection.tsx",
         "src/storm/pages/SearchPage/TryCodySignUpCtaSection.tsx",
         "src/storm/pages/SearchPage/index.ts",
@@ -1827,6 +1842,7 @@ ts_project(
         "//:node_modules/uuid",
         "//:node_modules/yaml-ast-parser",
         "//:node_modules/zustand",
+        "//client/web/src/rbac:constants",
         "//schema:schema-json",
     ],
 )
@@ -1843,6 +1859,7 @@ ts_project(
     testonly = True,
     srcs = [
         "src/__mocks__/zustand.ts",
+        "src/auth/PostSignUpPage.test.tsx",
         "src/auth/RequestAccessPage.test.tsx",
         "src/auth/SignInPage.test.tsx",
         "src/auth/SignUpPage.test.tsx",
@@ -1862,6 +1879,7 @@ ts_project(
         "src/components/diff/DiffStat.test.tsx",
         "src/components/externalServices/ExternalServiceForm.test.tsx",
         "src/components/externalServices/externalServices.test.tsx",
+        "src/components/fuzzyFinder/FuzzyFiles.test.ts",
         "src/components/fuzzyFinder/FuzzyFinder.mocks.tsx",
         "src/components/fuzzyFinder/FuzzyFinder.test.tsx",
         "src/components/legacyLayoutRouteContext.mock.ts",
@@ -1892,6 +1910,8 @@ ts_project(
         "src/enterprise/insights/pages/insights/creation/search-insight/utils/search-insight-url-parsers/search-insight-url-parsers.test.ts",
         "src/enterprise/insights/pages/insights/creation/search-insight/utils/use-url-query-insight/use-url-query-insight.test.ts",
         "src/enterprise/rbac/mock.ts",
+        "src/enterprise/repo/settings/RepoSettingsLogsPage.test.tsx",
+        "src/enterprise/repo/settings/utils.test.ts",
         "src/enterprise/searchContexts/SearchContextsList.test.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminGenerateProductLicenseForSubscriptionForm.test.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminProductLicenseNode.test.tsx",
@@ -2005,6 +2025,7 @@ ts_project(
         "//:node_modules/wildcard-mock-link",
         "//:node_modules/zustand",
         "//client/shared:graphql_operations",
+        "//client/web/src/rbac:constants",
     ],
 )
 
@@ -2071,9 +2092,6 @@ BUNDLE_DATA_DEPS = [
 ]
 
 ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
-    # static assets imported in .ts
-    "src/enterprise/productSubscription/ProductCertificate-background.png",
-
     # TODO(bazel): this is already in the main ts_project(srcs). Why also here?
     "src/enterprise/codeintel/configuration/schema.json",
     ":enterprise-yaml",
@@ -2178,8 +2196,16 @@ webpack_devserver(
 build_test(
     name = "webpack_test",
     size = "enormous",
+    tags = ["manual"],  # avoid building the oss bundle
     targets = [
         ":bundle",
+    ],
+)
+
+build_test(
+    name = "webpack_test_enterprise",
+    size = "enormous",
+    targets = [
         ":bundle-enterprise",
     ],
 )

@@ -19,6 +19,7 @@ import (
 )
 
 var legacyDockerImages = []string{
+	"dind",
 	"executor-vm",
 
 	// See RFC 793, those images will be dropped in 5.1.x.
@@ -26,7 +27,6 @@ var legacyDockerImages = []string{
 	"codeinsights-db",
 	"codeintel-db",
 	"postgres-12-alpine",
-	"prometheus-gcp",
 }
 
 // GeneratePipeline is the main pipeline generation function. It defines the build pipeline for each of the
@@ -162,6 +162,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			CreateBundleSizeDiff:      true,
 		}))
 
+		securityOps := operations.NewNamedSet("Security Scanning")
+		securityOps.Append(sonarcloudScan())
+		ops.Merge(securityOps)
+
 		// Now we set up conditional operations that only apply to pull requests.
 		if c.Diff.Has(changed.Client) {
 			// triggers a slow pipeline, currently only affects web. It's optional so we
@@ -190,22 +194,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			wait,
 			addVsceReleaseSteps)
 
-	case runtype.CodyReleaseBranch:
-		// If this is the Cody VS Code extension release branch, run the Cody tests and release
-		ops = operations.NewSet(
-			addCodyUnitIntegrationTests,
-			addCodyE2ETests,
-			wait,
-			addCodyReleaseSteps("stable"))
-
-	case runtype.CodyNightly:
-		// If this is a Cody VS Code extension nightly build, run the Cody tests and release
-		ops = operations.NewSet(
-			addCodyUnitIntegrationTests,
-			addCodyE2ETests,
-			wait,
-			addCodyReleaseSteps("nightly"))
-
 	case runtype.BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
@@ -227,6 +215,22 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	case runtype.AppInsiders:
 		ops = operations.NewSet(addAppReleaseSteps(c, true))
+
+	case runtype.CandidatesNoTest:
+		imageBuildOps := operations.NewNamedSet("Image builds")
+		imageBuildOps.Append(bazelBuildCandidateDockerImages(legacyDockerImages, c.Version, c.candidateImageTag(), c.RunType))
+		ops.Merge(imageBuildOps)
+
+		ops.Append(wait)
+
+		// Add final artifacts
+		publishOps := operations.NewNamedSet("Publish images")
+		publishOps.Append(bazelPushImagesNoTest(c.Version))
+
+		for _, dockerImage := range legacyDockerImages {
+			publishOps.Append(publishFinalDockerImage(c, dockerImage))
+		}
+		ops.Merge(publishOps)
 
 	case runtype.ImagePatch:
 		// only build image for the specified image in the branch name
@@ -307,6 +311,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
 			IsMainBranch:              true,
 		}))
+
+		// Security scanning - sonarcloud
+		securityOps := operations.NewNamedSet("Security Scanning")
+		securityOps.Append(sonarcloudScan())
+		ops.Merge(securityOps)
 
 		// Publish candidate images to dev registry
 		publishOpsDev := operations.NewNamedSet("Publish candidate images")

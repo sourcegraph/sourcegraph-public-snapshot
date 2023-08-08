@@ -16,6 +16,8 @@ deployed with a dedicated instance of Prometheus and Grafana.
 
 Add the query to [`queries.txt`](https://github.com/sourcegraph/sourcegraph/blob/main/internal/cmd/search-blitz/queries.txt).
 
+For attribution search add a `.txt` file to the attribution directory.
+
 ## How to deploy
 
 1. Merge your changes to _main_

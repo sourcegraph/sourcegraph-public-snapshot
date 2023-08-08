@@ -139,7 +139,7 @@ export async function ensureEvent(
         calendarId: 'primary',
         requestBody: {
             anyoneCanAddSelf,
-            attendees: attendees.map(email => ({ email })),
+            attendees: attendees.map(email => ({ email, optional: true })),
             start: { date: startDate, dateTime: startDateTime },
             end: { date: endDate, dateTime: endDateTime },
             description,

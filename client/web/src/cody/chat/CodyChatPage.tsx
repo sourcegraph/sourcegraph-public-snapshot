@@ -14,7 +14,7 @@ import {
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 
-import { CodyLogo } from '@sourcegraph/cody-ui/src/icons/CodyLogo'
+import { CodyLogo } from '@sourcegraph/cody-ui/dist/icons/CodyLogo'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import {
@@ -250,7 +250,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiOpenInNew} /> Cody Docs & FAQ
                                 </MenuLink>
-                                {authenticatedUser?.siteAdmin && (
+                                {!isSourcegraphApp && authenticatedUser?.siteAdmin && (
                                     <MenuLink as={Link} to="/site-admin/cody">
                                         <Icon aria-hidden={true} svgPath={mdiCogOutline} /> Cody Settings
                                     </MenuLink>

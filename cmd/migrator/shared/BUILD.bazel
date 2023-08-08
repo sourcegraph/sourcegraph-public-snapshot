@@ -12,7 +12,7 @@ go_library(
         "//internal/database/migration/schemas",
         "//internal/database/migration/store",
         "//internal/observation",
-        "//internal/oobmigration/migrations",
+        "//internal/oobmigration/migrations/register",
         "//internal/version",
         "//lib/output",
         "@com_github_sourcegraph_log//:log",

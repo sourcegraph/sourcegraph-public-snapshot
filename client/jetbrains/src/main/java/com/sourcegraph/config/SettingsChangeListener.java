@@ -13,18 +13,22 @@ import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
+import com.sourcegraph.cody.CodyToolWindowFactory;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
-import com.sourcegraph.cody.completions.CodyCompletionsManager;
+import com.sourcegraph.cody.api.CodyLLMConfiguration;
+import com.sourcegraph.cody.autocomplete.CodyAutoCompleteManager;
 import com.sourcegraph.find.browser.JavaToJSBridge;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.util.Arrays;
 import java.util.Objects;
-import javax.swing.*;
+import javax.swing.KeyStroke;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -66,22 +70,27 @@ public class SettingsChangeListener implements Disposable {
             // Log install events
             if (!Objects.equals(context.oldUrl, context.newUrl)) {
               GraphQlLogger.logInstallEvent(project, ConfigUtil::setInstallEventLogged);
-            } else if ((!Objects.equals(context.oldDotComAccessToken, context.newDotComAccessToken)
-                    || !Objects.equals(
-                        context.oldEnterpriseAccessToken, context.newEnterpriseAccessToken))
+            } else if ((context.isDotComAccessTokenChanged
+                    || context.isEnterpriseAccessTokenChanged)
                 && !ConfigUtil.isInstallEventLogged()) {
               GraphQlLogger.logInstallEvent(project, ConfigUtil::setInstallEventLogged);
             }
 
+            boolean urlChanged = !Objects.equals(context.oldUrl, context.newUrl);
+            SettingsComponent.InstanceType instanceType = ConfigUtil.getInstanceType(project);
+            boolean accessTokenChanged =
+                (instanceType == SettingsComponent.InstanceType.DOTCOM
+                        && context.isDotComAccessTokenChanged)
+                    || (instanceType == SettingsComponent.InstanceType.ENTERPRISE
+                        && context.isEnterpriseAccessTokenChanged);
+
+            boolean connectionSettingsChanged = urlChanged || accessTokenChanged;
             // Notify user about a successful connection
-            if (context.newUrl != null) {
-              final String accessToken =
-                  ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.DOTCOM
-                      ? context.newDotComAccessToken
-                      : context.newEnterpriseAccessToken;
+            if (connectionSettingsChanged) {
+              String accessTokenToTest = ConfigUtil.getProjectAccessToken(project);
               ApiAuthenticator.testConnection(
                   context.newUrl,
-                  accessToken,
+                  accessTokenToTest,
                   context.newCustomRequestHeaders,
                   (status) -> {
                     if (ConfigUtil.didAuthenticationFailLastTime()
@@ -93,17 +102,39 @@ public class SettingsChangeListener implements Disposable {
                   });
             }
 
-            // clear completions if freshly disabled
-            if (context.oldCodyCompletionsEnabled && !context.newCodyCompletionsEnabled) {
+            // clear autocomplete suggestions if freshly disabled
+            if (context.oldCodyAutoCompleteEnabled && !context.newCodyAutoCompleteEnabled) {
               Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
-              CodyCompletionsManager codyCompletionsManager = CodyCompletionsManager.getInstance();
+              CodyAutoCompleteManager codyAutoCompleteManager =
+                  CodyAutoCompleteManager.getInstance();
               Arrays.stream(openProjects)
                   .flatMap(
                       project ->
                           Arrays.stream(FileEditorManager.getInstance(project).getAllEditors()))
                   .filter(fileEditor -> fileEditor instanceof TextEditor)
                   .map(fileEditor -> ((TextEditor) fileEditor).getEditor())
-                  .forEach(codyCompletionsManager::clearCompletions);
+                  .forEach(codyAutoCompleteManager::clearAutoCompleteSuggestions);
+            }
+
+            // Disable/enable the Cody tool window depending on the setting
+            if (!context.newCodyEnabled && context.oldCodyEnabled) {
+              ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
+              ToolWindow toolWindow =
+                  toolWindowManager.getToolWindow(CodyToolWindowFactory.TOOL_WINDOW_ID);
+              if (toolWindow != null) {
+                toolWindow.setAvailable(false, null);
+              }
+            } else if (context.newCodyEnabled && !context.oldCodyEnabled) {
+              ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
+              ToolWindow toolWindow =
+                  toolWindowManager.getToolWindow(CodyToolWindowFactory.TOOL_WINDOW_ID);
+              if (toolWindow != null) {
+                toolWindow.setAvailable(true, null);
+              }
+            }
+            if (context.newCodyEnabled) {
+              // refresh Cody LLM configuration
+              CodyLLMConfiguration.getInstance(project).refreshCache();
             }
           }
         });

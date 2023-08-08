@@ -19,7 +19,7 @@ fn create_system_tray_menu() -> SystemTrayMenu {
             .add_item(clear_all_data_item),
     );
 
-    SystemTrayMenu::new()
+    let menu = SystemTrayMenu::new()
         .add_item(CustomMenuItem::new("open".to_string(), "Open Cody"))
         .add_native_item(SystemTrayMenuItem::Separator)
         .add_item(
@@ -37,7 +37,23 @@ fn create_system_tray_menu() -> SystemTrayMenu {
         ))
         .add_native_item(SystemTrayMenuItem::Separator)
         .add_item(CustomMenuItem::new("restart".to_string(), "Restart"))
-        .add_item(CustomMenuItem::new("quit".to_string(), "Quit").accelerator("CmdOrCtrl+Q"))
+        .add_item(CustomMenuItem::new("quit".to_string(), "Quit").accelerator("CmdOrCtrl+Q"));
+
+    #[cfg(dev)]
+    {
+        let jump_to_chat_item = CustomMenuItem::new("dev_jump_chat".to_string(), "Jump to chat");
+        let jump_to_repo_setup_item =
+            CustomMenuItem::new("dev_jump_repo_setup".to_string(), "Jump to repo setup");
+        let dev_navigation_menu = SystemTraySubmenu::new(
+            "Dev Navigation",
+            SystemTrayMenu::new()
+                .add_item(jump_to_chat_item)
+                .add_item(jump_to_repo_setup_item),
+        );
+        return menu.clone().add_submenu(dev_navigation_menu);
+    }
+
+    return menu;
 }
 
 pub fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
@@ -61,6 +77,18 @@ pub fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
             "restart" => app.restart(),
             "update" => app.trigger_global("tauri://update", None),
             "quit" => app.exit(0),
+            "dev_jump_repo_setup" => {
+                let window = app.get_window("main").unwrap();
+                window
+                    .eval("window.location.href = '/app-setup/local-repositories'")
+                    .unwrap();
+            }
+            "dev_jump_chat" => {
+                let window = app.get_window("main").unwrap();
+                window
+                    .eval("localStorage.setItem('app.setup.finished', true); window.location.href = '/'")
+                    .unwrap();
+            }
             _ => {}
         }
     }

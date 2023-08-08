@@ -1,24 +1,22 @@
 package conf
 
 import (
-	"context"
-	"encoding/base64"
+	"encoding/hex"
 	"log"
 	"strings"
 	"time"
 
 	"github.com/hashicorp/cronexpr"
 
-	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
-	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/dotcomuser"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/hashutil"
+	"github.com/sourcegraph/sourcegraph/internal/license"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -53,82 +51,6 @@ func ExecutorsAccessToken() string {
 		return confdefaults.AppInMemoryExecutorPassword
 	}
 	return Get().ExecutorsAccessToken
-}
-
-func BitbucketServerConfigs(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
-	var config []*schema.BitbucketServerConnection
-	if err := internalapi.Client.ExternalServiceConfigs(ctx, extsvc.KindBitbucketServer, &config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
-func GitHubConfigs(ctx context.Context) ([]*schema.GitHubConnection, error) {
-	var config []*schema.GitHubConnection
-	if err := internalapi.Client.ExternalServiceConfigs(ctx, extsvc.KindGitHub, &config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
-func GitLabConfigs(ctx context.Context) ([]*schema.GitLabConnection, error) {
-	var config []*schema.GitLabConnection
-	if err := internalapi.Client.ExternalServiceConfigs(ctx, extsvc.KindGitLab, &config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
-func GitoliteConfigs(ctx context.Context) ([]*schema.GitoliteConnection, error) {
-	var config []*schema.GitoliteConnection
-	if err := internalapi.Client.ExternalServiceConfigs(ctx, extsvc.KindGitolite, &config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
-func PhabricatorConfigs(ctx context.Context) ([]*schema.PhabricatorConnection, error) {
-	var config []*schema.PhabricatorConnection
-	if err := internalapi.Client.ExternalServiceConfigs(ctx, extsvc.KindPhabricator, &config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
-func GitHubAppEnabled() bool {
-	cfg, _ := GitHubAppConfig()
-	return cfg.Configured()
-}
-
-type GitHubAppConfiguration struct {
-	PrivateKey   []byte
-	AppID        string
-	Slug         string
-	ClientID     string
-	ClientSecret string
-}
-
-func (c GitHubAppConfiguration) Configured() bool {
-	return c.AppID != "" && len(c.PrivateKey) != 0 && c.Slug != "" && c.ClientID != "" && c.ClientSecret != ""
-}
-
-func GitHubAppConfig() (config GitHubAppConfiguration, err error) {
-	cfg := Get().GitHubApp
-	if cfg == nil {
-		return GitHubAppConfiguration{}, nil
-	}
-
-	privateKey, err := base64.StdEncoding.DecodeString(cfg.PrivateKey)
-	if err != nil {
-		return GitHubAppConfiguration{}, errors.Wrap(err, "decoding GitHub app private key failed")
-	}
-	return GitHubAppConfiguration{
-		PrivateKey:   privateKey,
-		AppID:        cfg.AppID,
-		Slug:         cfg.Slug,
-		ClientID:     cfg.ClientID,
-		ClientSecret: cfg.ClientSecret,
-	}, nil
 }
 
 type AccessTokenAllow string
@@ -169,6 +91,16 @@ func EmailVerificationRequired() bool {
 // It's false for sites that do not have an email sending API key set up.
 func CanSendEmail() bool {
 	return Get().EmailSmtp != nil
+}
+
+// EmailSenderName returns `email.senderName`. If that's not set, it returns
+// the default value "Sourcegraph".
+func EmailSenderName() string {
+	sender := Get().EmailSenderName
+	if sender != "" {
+		return sender
+	}
+	return "Sourcegraph"
 }
 
 // UpdateChannel tells the update channel. Default is "release".
@@ -347,20 +279,6 @@ func CodeIntelRankingDocumentReferenceCountsGraphKey() string {
 	return "dev"
 }
 
-func CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix() string {
-	if val := Get().CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix; val != "" {
-		return val
-	}
-	return ""
-}
-
-func CodeIntelRankingStaleResultAge() time.Duration {
-	if val := Get().CodeIntelRankingStaleResultsAge; val > 0 {
-		return time.Duration(val) * time.Hour
-	}
-	return 24 * time.Hour
-}
-
 func EmbeddingsEnabled() bool {
 	return GetEmbeddingsConfig(Get().SiteConfiguration) != nil
 }
@@ -474,14 +392,6 @@ func ExperimentalFeatures() schema.ExperimentalFeatures {
 		return schema.ExperimentalFeatures{}
 	}
 	return *val
-}
-
-func Tracer() string {
-	ot := Get().ObservabilityTracing
-	if ot == nil {
-		return ""
-	}
-	return ot.Type
 }
 
 // AuthMinPasswordLength returns the value of minimum password length requirement.
@@ -648,6 +558,33 @@ func GitMaxConcurrentClones() int {
 	return v
 }
 
+// HashedCurrentLicenseKeyForAnalytics provides the current site license key, hashed using sha256, for anaytics purposes.
+func HashedCurrentLicenseKeyForAnalytics() string {
+	return HashedLicenseKeyForAnalytics(Get().LicenseKey)
+}
+
+// HashedCurrentLicenseKeyForAnalytics provides a license key, hashed using sha256, for anaytics purposes.
+func HashedLicenseKeyForAnalytics(licenseKey string) string {
+	return HashedLicenseKeyWithPrefix(licenseKey, "event-logging-telemetry-prefix")
+}
+
+// HashedLicenseKeyWithPrefix provides a sha256 hashed license key with a prefix (to ensure unique hashed values by use case).
+func HashedLicenseKeyWithPrefix(licenseKey string, prefix string) string {
+	return hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(prefix + licenseKey)))
+}
+
+func GetDeduplicatedForksIndex() collections.Set[string] {
+	index := collections.NewSet[string]()
+
+	repoConf := Get().Repositories
+	if repoConf == nil {
+		return index
+	}
+
+	index.Add(repoConf.DeduplicateForks...)
+	return index
+}
+
 // GetCompletionsConfig evaluates a complete completions configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
 func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.CompletionsConfig) {
@@ -670,9 +607,9 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	if completionsConfig == nil {
 		completionsConfig = &schema.Completions{
 			Provider:        string(conftypes.CompletionsProviderNameSourcegraph),
-			ChatModel:       "anthropic/claude-v1",
-			FastChatModel:   "anthropic/claude-instant-v1",
-			CompletionModel: "anthropic/claude-instant-v1",
+			ChatModel:       "anthropic/claude-2",
+			FastChatModel:   "anthropic/claude-instant-1",
+			CompletionModel: "anthropic/claude-instant-1",
 		}
 	}
 
@@ -710,17 +647,17 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "anthropic/claude-v1"
+			completionsConfig.ChatModel = "anthropic/claude-2"
 		}
 
 		// Set a default fast chat model.
 		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = "anthropic/claude-instant-v1"
+			completionsConfig.FastChatModel = "anthropic/claude-instant-1"
 		}
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "anthropic/claude-instant-v1"
+			completionsConfig.CompletionModel = "anthropic/claude-instant-1"
 		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameOpenAI) {
 		// If no endpoint is configured, use a default value.
@@ -760,17 +697,42 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "claude-v1"
+			completionsConfig.ChatModel = "claude-2"
 		}
 
 		// Set a default fast chat model.
 		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = "claude-instant-v1"
+			completionsConfig.FastChatModel = "claude-instant-1"
 		}
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "claude-instant-v1"
+			completionsConfig.CompletionModel = "claude-instant-1"
+		}
+	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAzureOpenAI) {
+		// If no endpoint is configured, this provider is misconfigured.
+		if completionsConfig.Endpoint == "" {
+			return nil
+		}
+
+		// If not access token is set, we cannot talk to Azure OpenAI. Bail.
+		if completionsConfig.AccessToken == "" {
+			return nil
+		}
+
+		// If not chat model is set, we cannot talk to Azure OpenAI. Bail.
+		if completionsConfig.ChatModel == "" {
+			return nil
+		}
+
+		// If not fast chat model is set, we fall back to the Chat Model.
+		if completionsConfig.FastChatModel == "" {
+			completionsConfig.FastChatModel = completionsConfig.ChatModel
+		}
+
+		// If not completions model is set, we cannot talk to Azure OpenAI. Bail.
+		if completionsConfig.CompletionModel == "" {
+			return nil
 		}
 	}
 
@@ -813,6 +775,8 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 	return computedConfig
 }
+
+const embeddingsMaxFileSizeBytes = 1000000
 
 // GetEmbeddingsConfig evaluates a complete embeddings configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
@@ -934,9 +898,44 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		if embeddingsConfig.Dimensions <= 0 && embeddingsConfig.Model == "text-embedding-ada-002" {
 			embeddingsConfig.Dimensions = 1536
 		}
+	} else if embeddingsConfig.Provider == string(conftypes.EmbeddingsProviderNameAzureOpenAI) {
+		// If no endpoint is configured, we cannot talk to Azure OpenAI.
+		if embeddingsConfig.Endpoint == "" {
+			return nil
+		}
+
+		// If not access token is set, we cannot talk to OpenAI. Bail.
+		if embeddingsConfig.AccessToken == "" {
+			return nil
+		}
+
+		// If no model is set, we cannot do anything here.
+		if embeddingsConfig.Model == "" {
+			return nil
+		}
+		// Make sure models are always treated case-insensitive.
+		// TODO: Are model names on azure case insensitive?
+		embeddingsConfig.Model = strings.ToLower(embeddingsConfig.Model)
 	} else {
 		// Unknown provider value.
 		return nil
+	}
+
+	// While its not removed, use both options
+	var includedFilePathPatterns []string
+	excludedFilePathPatterns := embeddingsConfig.ExcludedFilePathPatterns
+	maxFileSizeLimit := embeddingsMaxFileSizeBytes
+	if embeddingsConfig.FileFilters != nil {
+		includedFilePathPatterns = embeddingsConfig.FileFilters.IncludedFilePathPatterns
+		excludedFilePathPatterns = append(excludedFilePathPatterns, embeddingsConfig.FileFilters.ExcludedFilePathPatterns...)
+		if embeddingsConfig.FileFilters.MaxFileSizeBytes >= 0 && embeddingsConfig.FileFilters.MaxFileSizeBytes <= embeddingsMaxFileSizeBytes {
+			maxFileSizeLimit = embeddingsConfig.FileFilters.MaxFileSizeBytes
+		}
+	}
+	fileFilters := conftypes.EmbeddingsFileFilters{
+		IncludedFilePathPatterns: includedFilePathPatterns,
+		ExcludedFilePathPatterns: excludedFilePathPatterns,
+		MaxFileSizeBytes:         maxFileSizeLimit,
 	}
 
 	computedConfig := &conftypes.EmbeddingsConfig{
@@ -947,10 +946,11 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		Dimensions:  embeddingsConfig.Dimensions,
 		// This is definitely set at this point.
 		Incremental:                *embeddingsConfig.Incremental,
-		ExcludedFilePathPatterns:   embeddingsConfig.ExcludedFilePathPatterns,
+		FileFilters:                fileFilters,
 		MaxCodeEmbeddingsPerRepo:   embeddingsConfig.MaxCodeEmbeddingsPerRepo,
 		MaxTextEmbeddingsPerRepo:   embeddingsConfig.MaxTextEmbeddingsPerRepo,
 		PolicyRepositoryMatchLimit: embeddingsConfig.PolicyRepositoryMatchLimit,
+		ExcludeChunkOnError:        pointers.Deref(embeddingsConfig.ExcludeChunkOnError, true),
 	}
 	d, err := time.ParseDuration(embeddingsConfig.MinimumInterval)
 	if err != nil {
@@ -978,7 +978,7 @@ func getSourcegraphProviderAccessToken(accessToken string, config schema.SiteCon
 	if config.LicenseKey == "" {
 		return ""
 	}
-	return licensing.GenerateLicenseKeyBasedAccessToken(config.LicenseKey)
+	return license.GenerateLicenseKeyBasedAccessToken(config.LicenseKey)
 }
 
 const (
@@ -1010,6 +1010,10 @@ func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model st
 		return anthropicDefaultMaxPromptTokens(model)
 	case conftypes.CompletionsProviderNameOpenAI:
 		return openaiDefaultMaxPromptTokens(model)
+	case conftypes.CompletionsProviderNameAzureOpenAI:
+		// We cannot know based on the model name what model is actually used,
+		// this is a sane default for GPT in general.
+		return 8_000
 	}
 
 	// Should be unreachable.
@@ -1020,6 +1024,11 @@ func anthropicDefaultMaxPromptTokens(model string) int {
 	if strings.HasSuffix(model, "-100k") {
 		return 100_000
 
+	}
+	if model == "claude-2" {
+		// TODO: Technically, v2 also uses a 100k window, but we should validate
+		// that returning 100k here is the right thing to do.
+		return 12_000
 	}
 	// For now, all other claude models have a 9k token window.
 	return 9_000

@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -342,7 +341,7 @@ func TestUpdateUser(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).UpdateUser(context.Background(),
+		result, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateUser(context.Background(),
 			&updateUserArgs{
 				User: "VXNlcjox",
 			},
@@ -363,7 +362,7 @@ func TestUpdateUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).UpdateUser(ctx,
+		_, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateUser(ctx,
 			&updateUserArgs{
 				User:     MarshalUserID(1),
 				Username: strptr("about"),
@@ -390,7 +389,7 @@ func TestUpdateUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).UpdateUser(ctx,
+		result, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateUser(ctx,
 			&updateUserArgs{
 				User:     "VXNlcjox",
 				Username: strptr("alice"),
@@ -493,7 +492,7 @@ func TestUpdateUser(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).UpdateUser(
+				_, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateUser(
 					test.ctx,
 					&updateUserArgs{
 						User: MarshalUserID(1),
@@ -525,7 +524,7 @@ func TestUpdateUser(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				_, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).UpdateUser(
+				_, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateUser(
 					actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
 					&updateUserArgs{
 						User:      MarshalUserID(2),
@@ -772,7 +771,7 @@ func TestSchema_SetUserCompletionsQuota(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).SetUserCompletionsQuota(context.Background(),
+		result, err := newSchemaResolver(db, gitserver.NewClient(db)).SetUserCompletionsQuota(context.Background(),
 			SetUserCompletionsQuotaArgs{
 				User:  MarshalUserID(1),
 				Quota: nil,
@@ -847,7 +846,7 @@ func TestSchema_SetUserCodeCompletionsQuota(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		schemaResolver := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs())
+		schemaResolver := newSchemaResolver(db, gitserver.NewClient(db))
 		result, err := schemaResolver.SetUserCodeCompletionsQuota(context.Background(),
 			SetUserCodeCompletionsQuotaArgs{
 				User:  MarshalUserID(1),
@@ -905,5 +904,109 @@ func TestSchema_SetUserCodeCompletionsQuota(t *testing.T) {
 		`,
 			},
 		})
+	})
+}
+
+func TestSchema_SetCompletedPostSignup(t *testing.T) {
+	db := database.NewMockDB()
+
+	currentUserID := int32(2)
+
+	t.Run("not site admin, not current user", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{
+				ID:       id,
+				Username: strconv.Itoa(int(id)),
+			}, nil
+		})
+		// Different user.
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: currentUserID, Username: "2"}, nil)
+		db.UsersFunc.SetDefaultReturn(users)
+
+		userID := MarshalUserID(1)
+		result, err := newSchemaResolver(db, gitserver.NewClient(db)).SetCompletedPostSignup(context.Background(),
+			&userMutationArgs{UserID: &userID},
+		)
+		got := fmt.Sprintf("%v", err)
+		want := auth.ErrMustBeSiteAdminOrSameUser.Error()
+		assert.Equal(t, want, got)
+		assert.Nil(t, result)
+	})
+
+	t.Run("current user can set field on themselves", func(t *testing.T) {
+		currentUser := &types.User{ID: currentUserID, Username: "2", SiteAdmin: true}
+
+		users := database.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultReturn(currentUser, nil)
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(currentUser, nil)
+		db.UsersFunc.SetDefaultReturn(users)
+		var called bool
+		users.UpdateFunc.SetDefaultHook(func(ctx context.Context, id int32, update database.UserUpdate) error {
+			called = true
+			return nil
+		})
+
+		RunTest(t, &Test{
+			Context: actor.WithActor(context.Background(), &actor.Actor{UID: currentUserID}),
+			Schema:  mustParseGraphQLSchema(t, db),
+			Query: `
+			mutation {
+				setCompletedPostSignup(userID: "VXNlcjoy") {
+					alwaysNil
+				}
+			}
+		`,
+			ExpectedResult: `
+			{
+				"setCompletedPostSignup": {
+					"alwaysNil": null
+				}
+			}
+		`,
+		})
+
+		if !called {
+			t.Errorf("updatefunc was not called, but should have been")
+		}
+	})
+
+	t.Run("site admin can set post-signup complete", func(t *testing.T) {
+		mockUser := &types.User{
+			ID:       1,
+			Username: "alice",
+		}
+		users := database.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultReturn(mockUser, nil)
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: currentUserID, Username: "2", SiteAdmin: true}, nil)
+		db.UsersFunc.SetDefaultReturn(users)
+		var called bool
+		users.UpdateFunc.SetDefaultHook(func(ctx context.Context, id int32, update database.UserUpdate) error {
+			called = true
+			return nil
+		})
+
+		RunTest(t, &Test{
+			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+			Schema:  mustParseGraphQLSchema(t, db),
+			Query: `
+			mutation {
+				setCompletedPostSignup(userID: "VXNlcjox") {
+					alwaysNil
+				}
+			}
+		`,
+			ExpectedResult: `
+			{
+				"setCompletedPostSignup": {
+					"alwaysNil": null
+				}
+			}
+		`,
+		})
+
+		if !called {
+			t.Errorf("updatefunc was not called, but should have been")
+		}
 	})
 }

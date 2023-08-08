@@ -1,7 +1,7 @@
 package resolvers
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
+	"github.com/sourcegraph/sourcegraph/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 

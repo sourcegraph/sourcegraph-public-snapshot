@@ -17,14 +17,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
-	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
+	"github.com/sourcegraph/sourcegraph/internal/batches/service"
+	"github.com/sourcegraph/sourcegraph/internal/batches/store"
+	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -51,7 +50,7 @@ func TestPermissionLevels(t *testing.T) {
 	key := et.TestKey{}
 
 	bstore := store.New(db, &observation.TestContext, key)
-	sr := New(edb.NewEnterpriseDB(db), bstore, gitserver.NewMockClient(), logger)
+	sr := New(db, bstore, gitserver.NewMockClient(), logger)
 	s, err := newSchema(db, sr)
 	if err != nil {
 		t.Fatal(err)

@@ -28,16 +28,15 @@ const DefaultSymbolLimit = 100
 // repository at a specific commit. If it has it returns the branch name (for
 // use when querying zoekt). Otherwise an empty string is returned.
 func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit string) string {
-	z := search.Indexed()
-
+	// We use ListAllIndexed since that is cached.
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
-	list, err := z.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
+	list, err := search.ListAllIndexed(ctx)
 	if err != nil {
 		return ""
 	}
 
-	r, ok := list.Minimal[uint32(repo.ID)] //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+	r, ok := list.ReposMap[uint32(repo.ID)]
 	if !ok || !r.HasSymbols {
 		return ""
 	}

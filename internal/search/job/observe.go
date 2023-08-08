@@ -13,7 +13,7 @@ import (
 
 type finishSpanFunc func(*search.Alert, error)
 
-func StartSpan(ctx context.Context, stream streaming.Sender, job Job) (*trace.Trace, context.Context, streaming.Sender, finishSpanFunc) {
+func StartSpan(ctx context.Context, stream streaming.Sender, job Job) (trace.Trace, context.Context, streaming.Sender, finishSpanFunc) {
 	tr, ctx := trace.New(ctx, job.Name())
 	tr.SetAttributes(job.Attributes(VerbosityMax)...)
 
@@ -25,16 +25,16 @@ func StartSpan(ctx context.Context, stream streaming.Sender, job Job) (*trace.Tr
 			tr.SetAttributes(attribute.String("alert", alert.Title))
 		}
 		tr.SetAttributes(attribute.Int64("total_results", observingStream.totalEvents.Load()))
-		tr.Finish()
+		tr.End()
 	}
 }
 
-func newObservingStream(tr *trace.Trace, parent streaming.Sender) *observingStream {
+func newObservingStream(tr trace.Trace, parent streaming.Sender) *observingStream {
 	return &observingStream{tr: tr, parent: parent}
 }
 
 type observingStream struct {
-	tr          *trace.Trace
+	tr          trace.Trace
 	parent      streaming.Sender
 	totalEvents atomic.Int64
 }

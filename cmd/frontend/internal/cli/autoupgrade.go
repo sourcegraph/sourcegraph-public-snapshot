@@ -22,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/register"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
@@ -171,7 +171,7 @@ func runMigration(
 	enterpriseMigratorsHook store.RegisterMigratorsUsingConfAndStoreFactoryFunc,
 ) error {
 	registerMigrators := store.ComposeRegisterMigratorsFuncs(
-		migrations.RegisterOSSMigratorsUsingConfAndStoreFactory,
+		register.RegisterOSSMigratorsUsingConfAndStoreFactory,
 		enterpriseMigratorsHook,
 	)
 

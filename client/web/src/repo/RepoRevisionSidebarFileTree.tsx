@@ -629,6 +629,13 @@ function appendTreeData(tree: TreeData, entries: FileTreeEntry[], rootTreeUrl: s
             siblingCount = 0
             const errorMessage = 'Full list of files is too long to display. Use search to find a specific file.'
             const id = tree.nodes.length
+
+            let entryFolder = dirname(entry.path)
+            if (entryFolder === '.') {
+                // If it's just a . it won't render properly.
+                entryFolder = ''
+            }
+
             const node: TreeNode = {
                 name: errorMessage,
                 id,
@@ -637,7 +644,7 @@ function appendTreeData(tree: TreeData, entries: FileTreeEntry[], rootTreeUrl: s
                 children: [],
                 // The path is only used to determine if a node is a parent of
                 // another node so we can use dummy values.
-                path: entry.path + '/...sourcegraph.error',
+                path: entryFolder + '/sourcegraph.error.sidebar-file-tree',
                 entry: null,
                 error: errorMessage,
                 dotdot: null,
