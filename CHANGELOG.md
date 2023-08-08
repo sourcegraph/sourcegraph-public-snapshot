@@ -44,6 +44,9 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- Updated all packages in container images to latest versions
+- Updated Docker-in-Docker image from 23.0.1 to 23.0.6
+
 ### Fixed
 
 - Fixed a bug where user account requests could not be approved even though the license would permit user creation otherwise. [#55482](https://github.com/sourcegraph/sourcegraph/pull/55482)
