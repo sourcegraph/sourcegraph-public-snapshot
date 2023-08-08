@@ -39,7 +39,7 @@ func WolfiPackagesOperations(changedFiles []string) (*operations.Set, []string) 
 		}
 	}
 
-	ops.Append(buildRepoIndex("main", buildStepKeys))
+	ops.Append(buildRepoIndex(buildStepKeys))
 
 	return ops, changedPackages
 }
@@ -83,10 +83,10 @@ func buildPackage(target string) (func(*bk.Pipeline), string) {
 	}, stepKey
 }
 
-func buildRepoIndex(branch string, packageKeys []string) func(*bk.Pipeline) {
+func buildRepoIndex(packageKeys []string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(fmt.Sprintf(":card_index_dividers: Build and sign repository index for branch '%s'", branch),
-			bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/wolfi/build-repo-index.sh %s", branch)),
+		pipeline.AddStep(":card_index_dividers: Build and sign repository index",
+			bk.Cmd("./enterprise/dev/ci/scripts/wolfi/build-repo-index.sh"),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", "bazel"),
 			// Depend on all previous package building steps
