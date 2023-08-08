@@ -21,7 +21,14 @@ go_proto_library(
         "//:gen-go-grpc",
         "@io_bazel_rules_go//proto:go_proto",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1",
+    importpath = "github.com/sorucegraph/sourcegraph/internal/api/internalapi/v1",
     proto = ":v1_proto",
     visibility = ["//visibility:private"],
+)
+
+go_library(
+    name = "internalapi",
+    embed = [":v1_go_proto"],
+    importpath = "github.com/sorucegraph/sourcegraph/internal/api/internalapi/v1",
+    visibility = ["//:__subpackages__"],
 )
