@@ -10,6 +10,10 @@
         display: flex;
         justify-content: space-between;
         padding: 0.5rem;
+
+        &:hover {
+            background-color: var(--gray-02);
+        }
     }
 
     &__expanded-header {
