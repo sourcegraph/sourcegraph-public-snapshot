@@ -14,25 +14,27 @@ import (
 	gha "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 )
 
+// A DBCommand represents a contained series of database interactions that
+// serves a singular purpose (i.e. fetch all users from the database).
+//
+// A DBCommand requires a context and a store to execute, and any results
+// are contained within the command itself. Once a command has been executed,
+// the results can be read.
 type DBCommand interface {
 	Execute(context.Context, *basestore.Store) error
 }
 
-// A DBClient is a database client capable of executing DBQueries.
-//
-// It is higher-level than a basestore.Store, and will most likely be passing
-// a basestore.Store to the DBQuery in order to execute it.
-//
-// An Execute call can lead to multiple database queries.
-type DBClient interface {
+// A DBStore is capable of executing DBCommands. It provides the DBCommand
+// with the context and store it requires to execute.
+type DBStore interface {
 	ExecuteCommand(context.Context, DBCommand) error
 }
 
-type dbClient struct {
+type dbStore struct {
 	store *basestore.Store
 }
 
-func (c *dbClient) ExecuteCommand(ctx context.Context, command DBCommand) error {
+func (c *dbStore) ExecuteCommand(ctx context.Context, command DBCommand) error {
 	return command.Execute(ctx, c.store)
 }
 
@@ -44,7 +46,7 @@ type DB interface {
 	dbutil.DB
 	basestore.ShareableStore
 
-	Client() DBClient
+	DBStore() DBStore
 	AccessTokens() AccessTokenStore
 	Authz() AuthzStore
 	BitbucketProjectPermissions() BitbucketProjectPermissionsStore
@@ -155,8 +157,8 @@ func (d *db) Done(err error) error {
 	return d.Store.Done(err)
 }
 
-func (d *db) Client() DBClient {
-	return &dbClient{
+func (d *db) DBStore() DBStore {
+	return &dbStore{
 		store: d.Store,
 	}
 }
