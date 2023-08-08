@@ -57,13 +57,18 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
         window.context?.codyEnabled && data?.codeIntelligenceConfigurationPolicies.totalCount === 0
     const [isSetupChecklistEnabled] = useFeatureFlag('setup-checklist', false)
 
+    const shouldRepositoriesConfigurationAlert =
+        !isSetupChecklistEnabled &&
+        siteFlagsValue?.externalServicesCounts.remoteExternalServicesCount === 0 &&
+        !isSourcegraphApp
+
     return (
         <div className={classNames('test-global-alert', styles.globalAlerts)}>
             {siteFlagsValue && (
                 <>
-                    {!isSetupChecklistEnabled &&
-                        siteFlagsValue?.externalServicesCounts.remoteExternalServicesCount === 0 &&
-                        !isSourcegraphApp && <NeedsRepositoryConfigurationAlert className={styles.alert} />}
+                    {shouldRepositoriesConfigurationAlert && (
+                        <NeedsRepositoryConfigurationAlert className={styles.alert} />
+                    )}
                     {siteFlagsValue.freeUsersExceeded && (
                         <FreeUsersExceededAlert
                             noLicenseWarningUserCount={siteFlagsValue.productSubscription.noLicenseWarningUserCount}
