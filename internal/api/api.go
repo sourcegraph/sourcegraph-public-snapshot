@@ -9,8 +9,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // RepoID is the unique identifier for a repository.
@@ -39,6 +39,17 @@ var deletedRegex = lazyregexp.New("DELETED-[0-9]+\\.[0-9]+-")
 // name.
 func UndeletedRepoName(name RepoName) RepoName {
 	return RepoName(deletedRegex.ReplaceAllString(string(name), ""))
+}
+
+var validCommitIDRegexp = lazyregexp.New(`^[a-fA-F0-9]{40}$`)
+
+// NewCommitID creates a new CommitID and validates that it conforms to the
+// requirements of the type.
+func NewCommitID(s string) (CommitID, error) {
+	if validCommitIDRegexp.MatchString(s) {
+		return CommitID(s), nil
+	}
+	return "", errors.Newf("invalid CommitID %q", s)
 }
 
 // CommitID is the 40-character SHA-1 hash for a Git commit.

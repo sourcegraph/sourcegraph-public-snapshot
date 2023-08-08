@@ -17,9 +17,9 @@ import java.util.stream.Collectors;
 import javax.swing.border.EmptyBorder;
 import org.jetbrains.annotations.NotNull;
 
-public class ContextFilesMessage extends MessagePanel {
+public class ContextFilesMessage extends PanelWithGradientBorder {
   public ContextFilesMessage(@NotNull List<ContextMessage> contextMessages) {
-    super(Speaker.ASSISTANT, ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH);
+    super(ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH, Speaker.ASSISTANT);
     this.setLayout(new BorderLayout());
 
     JBInsets margin =

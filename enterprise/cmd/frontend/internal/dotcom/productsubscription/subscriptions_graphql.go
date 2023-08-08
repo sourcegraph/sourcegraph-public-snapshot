@@ -176,7 +176,7 @@ func (r *productSubscription) SourcegraphAccessTokens(ctx context.Context) (toke
 		if !l.AccessTokenEnabled {
 			continue
 		}
-		lt := license.GenerateLicenseKeyBasedAccessToken(r.activeLicense.LicenseKey)
+		lt := license.GenerateLicenseKeyBasedAccessToken(l.LicenseKey)
 		if mainToken == "" || lt != mainToken {
 			tokens = append(tokens, lt)
 		}

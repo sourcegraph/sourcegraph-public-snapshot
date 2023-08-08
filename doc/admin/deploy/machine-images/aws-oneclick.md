@@ -104,6 +104,29 @@ Choose an AWS Region in the launcher below and click **Launch Stack**. When prom
 
 Find the URL of your Sourcegraph instance in the **Outputs** section of the AWS Stack. On first launch, Sourcegraph may take ~5 minutes to start and may display a `404 not found` page temporarily.
 
+### Executors
+Executors are supported using [native kubernetes executors](../../../admin/executors/deploy_executors_kubernetes.md).
+
+Executors support [auto-indexing](../../../code_navigation/explanations/auto_indexing.md) and [server-side batch changes](../../../batch_changes/explanations/server_side.md).
+
+To enable executors you must do the following:
+1. Connect to the AMI instance using `ssh`
+2. Run `cd /home/ec2-user/deploy/install/`
+3. Replace the placeholder `executor.frontendPassword` in `override.yaml`
+4. Run the following command to update the executor
+```
+helm upgrade -i -f ./override.yaml --version "$(cat /home/ec2-user/.sourcegraph-version)" executor sourcegraph/sourcegraph-executor-k8s
+```
+5. Adding the following to the site-admin config using the password you chose previously
+```
+"executors.accessToken": "<exector.frontendPassword>",
+"executors.frontendURL": "http://sourcegraph-frontend:30080",
+"codeIntelAutoIndexing.enabled": true
+```
+6. Check `Site-Admin > Executors > Instances` to verify the executor connected successfully. If it does not appear try reboot the instance
+
+To use server-side batch changes you will need to enable the `native-ssbc-execution` [feature flag](../../../admin/executors/native_execution.md#enable).
+
 ### Secure your instance
 
 By default Sourcegraph will be available over HTTP on the public internet. To secure it you should now perform the following:

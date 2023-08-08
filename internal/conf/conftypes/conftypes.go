@@ -34,6 +34,8 @@ type ServiceConnections struct {
 	Symbols []string `json:"symbols"`
 	// Embeddings is the addresses of embeddings instances that should be talked to.
 	Embeddings []string `json:"embeddings"`
+	// Qdrant is the address of the Qdrant instance (or empty if disabled)
+	Qdrant string `json:"qdrant"`
 	// Zoekts is the addresses of Zoekt instances to talk to.
 	Zoekts []string `json:"zoekts"`
 	// ZoektListTTL is the TTL of the internal cache that Zoekt clients use to

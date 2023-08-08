@@ -15,14 +15,14 @@ For a higher-level overview, please refer to the [continuous integration docs](h
 The default run type.
 
 - Pipeline for `Go` changes:
-  - Ensure buildfiles are up to date
+  - Perform bazel prechecks
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
   - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `Client` changes:
-  - Ensure buildfiles are up to date
+  - Perform bazel prechecks
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
@@ -31,91 +31,91 @@ The default run type.
   - **Pipeline setup**: Trigger async
 
 - Pipeline for `GraphQL` changes:
-  - Ensure buildfiles are up to date
+  - Perform bazel prechecks
   - Tests
   - BackCompat Tests
   - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
   - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `DatabaseSchema` changes:
-  - Ensure buildfiles are up to date
+  - Perform bazel prechecks
   - Tests
   - BackCompat Tests
   - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `Docs` changes:
-  - Ensure buildfiles are up to date
+  - Perform bazel prechecks
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
   - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `Dockerfiles` changes:
-  - Ensure buildfiles are up to date
+  - Perform bazel prechecks
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
   - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `ExecutorVMImage` changes:
-  - Ensure buildfiles are up to date
+  - Perform bazel prechecks
   - Tests
   - BackCompat Tests
   - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `ExecutorDockerRegistryMirror` changes:
-  - Ensure buildfiles are up to date
+  - Perform bazel prechecks
   - Tests
   - BackCompat Tests
   - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `CIScripts` changes:
-  - Ensure buildfiles are up to date
+  - Perform bazel prechecks
   - Tests
   - BackCompat Tests
   - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `Terraform` changes:
-  - Ensure buildfiles are up to date
+  - Perform bazel prechecks
   - Tests
   - BackCompat Tests
   - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `SVG` changes:
-  - Ensure buildfiles are up to date
+  - Perform bazel prechecks
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
   - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `Shell` changes:
-  - Ensure buildfiles are up to date
+  - Perform bazel prechecks
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
   - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `DockerImages` changes:
-  - Ensure buildfiles are up to date
+  - Perform bazel prechecks
   - Tests
   - BackCompat Tests
   - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `WolfiPackages` changes:
-  - Ensure buildfiles are up to date
+  - Perform bazel prechecks
   - Tests
   - BackCompat Tests
   - **Security Scanning**: Sonarcloud Scan
   - **Dependency packages**: Build and sign repository index
 
 - Pipeline for `WolfiBaseImages` changes:
-  - Ensure buildfiles are up to date
+  - Perform bazel prechecks
   - Tests
   - BackCompat Tests
   - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `Protobuf` changes:
-  - Ensure buildfiles are up to date
+  - Perform bazel prechecks
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
@@ -134,7 +134,7 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build Docker images
-- Ensure buildfiles are up to date
+- Perform bazel prechecks
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
@@ -142,7 +142,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
+- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
 
 ### Release branch nightly healthcheck build
 
@@ -196,7 +196,7 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build Docker images, Build executor image, Build executor binary, Build docker registry mirror image
-- Ensure buildfiles are up to date
+- Perform bazel prechecks
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
@@ -204,7 +204,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Publish executor image, Publish executor binary, Publish docker registry mirror image, Push final images
+- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Publish executor image, Publish executor binary, Publish docker registry mirror image, Push final images
 
 ### Release branch
 
@@ -214,7 +214,7 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build Docker images, Build executor image, Build executor binary, Build docker registry mirror image
-- Ensure buildfiles are up to date
+- Perform bazel prechecks
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
@@ -222,7 +222,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
+- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
 
 ### Browser extension release build
 
@@ -255,7 +255,7 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build Docker images, Build executor image, Build executor binary
-- Ensure buildfiles are up to date
+- Perform bazel prechecks
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
@@ -263,7 +263,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Publish executor image, Publish executor binary, Push final images
+- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Publish executor image, Publish executor binary, Push final images
 
 ### Main dry run
 
@@ -278,7 +278,7 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build Docker images, Build executor image, Build executor binary
-- Ensure buildfiles are up to date
+- Perform bazel prechecks
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
@@ -286,7 +286,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
+- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
 
 ### Patch image
 
@@ -339,7 +339,7 @@ sg ci build docker-images-candidates-notest
 Base pipeline (more steps might be included based on branch changes):
 
 - **Image builds**: Build Docker images
-- **Publish images**: Push final images, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine
+- **Publish images**: Push final images, dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine
 
 ### Backend integration tests
 
@@ -354,7 +354,7 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build Docker images
-- Ensure buildfiles are up to date
+- Perform bazel prechecks
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
@@ -362,7 +362,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
+- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
 
 ### Bazel command
 

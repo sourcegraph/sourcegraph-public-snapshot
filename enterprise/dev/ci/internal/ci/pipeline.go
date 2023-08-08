@@ -19,6 +19,7 @@ import (
 )
 
 var legacyDockerImages = []string{
+	"dind",
 	"executor-vm",
 
 	// See RFC 793, those images will be dropped in 5.1.x.

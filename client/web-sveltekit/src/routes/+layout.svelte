@@ -15,6 +15,7 @@
     import { beforeNavigate } from '$app/navigation'
 
     import type { LayoutData, Snapshot } from './$types'
+    import { createFeatureFlagStore, fetchEvaluatedFeatureFlags } from '$lib/featureflags'
 
     export let data: LayoutData
 
@@ -46,6 +47,8 @@
         settings,
         isLightTheme,
         temporarySettingsStorage,
+        featureFlags: createFeatureFlagStore(data.featureFlags, () => fetchEvaluatedFeatureFlags(data.graphqlClient)),
+        client: data.graphqlClient,
     })
 
     // Update stores when data changes

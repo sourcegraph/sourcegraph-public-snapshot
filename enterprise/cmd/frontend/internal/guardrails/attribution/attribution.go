@@ -88,6 +88,25 @@ func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit 
 	})
 	defer endObservationWithResult(traceLogger, endObservation, &result)()
 
+	limitHitErr := errors.New("limit hit error")
+	ctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
+
+	// we massage results in this function and possibly cancel if we can stop
+	// looking.
+	truncateAtLimit := func(result *SnippetAttributions) {
+		if result == nil {
+			return
+		}
+		if limit <= len(result.RepositoryNames) {
+			result.LimitHit = true
+			result.RepositoryNames = result.RepositoryNames[:limit]
+		}
+		if result.LimitHit {
+			cancel(limitHitErr)
+		}
+	}
+
 	// TODO(keegancsmith) how should we handle partial errors?
 	p := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
 
@@ -97,6 +116,7 @@ func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit 
 	p.Go(func(ctx context.Context) error {
 		var err error
 		local, err = c.snippetAttributionLocal(ctx, snippet, limit)
+		truncateAtLimit(local)
 		return err
 	})
 
@@ -104,11 +124,12 @@ func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit 
 		p.Go(func(ctx context.Context) error {
 			var err error
 			dotcom, err = c.snippetAttributionDotCom(ctx, snippet, limit)
+			truncateAtLimit(dotcom)
 			return err
 		})
 	}
 
-	if err := p.Wait(); err != nil {
+	if err := p.Wait(); err != nil && context.Cause(ctx) != limitHitErr {
 		return nil, err
 	}
 
@@ -134,6 +155,11 @@ func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit 
 			agg.RepositoryNames = append(agg.RepositoryNames, name)
 		}
 	}
+
+	// we call truncateAtLimit on the aggregated result to ensure we only
+	// return upto limit. Note this function will call cancel but that is fine
+	// since we just return after this.
+	truncateAtLimit(&agg)
 
 	return &agg, nil
 }

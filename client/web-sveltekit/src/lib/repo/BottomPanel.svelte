@@ -18,7 +18,7 @@
 
     import HistoryPanel, { type Capture as HistoryPanelCapture } from './HistoryPanel.svelte'
 
-    export let history: Promise<HistoryResult> | null
+    export let history: Promise<HistoryResult>
 
     export function capture(): Capture {
         return {
@@ -74,14 +74,11 @@
 
 <div class:open={selectedTab !== null}>
     <Tabs selected={selectedTab} toggable on:select={selectTab}>
-        <!-- TODO: add support for disabled tabs -->
-        {#if history}
-            <TabPanel title="History">
-                {#key $page.params.path}
-                    <HistoryPanel bind:this={historyPanel} {history} fetchMoreHandler={fetchMoreHistory} />
-                {/key}
-            </TabPanel>
-        {/if}
+        <TabPanel title="History">
+            {#key $page.params.path}
+                <HistoryPanel bind:this={historyPanel} {history} fetchMoreHandler={fetchMoreHistory} />
+            {/key}
+        </TabPanel>
     </Tabs>
 </div>
 
