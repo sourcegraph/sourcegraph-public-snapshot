@@ -62,6 +62,8 @@ for apk in "${apks[@]}"; do
 
   # Show package usage message on branches
   if [[ "$IS_MAIN" != "true" ]]; then
+    package_name=$(echo "$apk" | sed -E 's/(-[0-9].*)//')
+
     echo -e "   * To use this package locally, add the following lines to your base image config:\n"
     # TODO: Update keyring when keys change: https://storage.googleapis.com/package-repository/packages/${BRANCH_PATH}/melange.rsa.pub
     echo -e "contents:
@@ -70,7 +72,7 @@ for apk in "${apks[@]}"; do
   repositories:
     - '@branch https://storage.googleapis.com/package-repository/packages/${BRANCH_PATH}'
   packages:
-    - <package-name>@branch\n\n"
+    - ${package_name}@branch\n\n"
   fi
 
 done
