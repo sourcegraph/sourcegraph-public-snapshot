@@ -11,15 +11,20 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	proto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var frontendInternal = env.Get("SRC_FRONTEND_INTERNAL", defaultFrontendInternal(), "HTTP address for internal frontend HTTP API.")
+var enableGRPC = env.MustGetBool("SRC_GRPC_ENABLE_CONF", false, "Enable gRPC for configuration updates")
 
 func defaultFrontendInternal() string {
 	if deploy.IsApp() {
@@ -31,9 +36,21 @@ func defaultFrontendInternal() string {
 type internalClient struct {
 	// URL is the root to the internal API frontend server.
 	URL string
+
+	getConfClient func() (proto.ConfigServiceClient, error)
 }
 
-var Client = &internalClient{URL: "http://" + frontendInternal}
+var Client = &internalClient{
+	URL: "http://" + frontendInternal,
+	getConfClient: syncx.OnceValues(func() (proto.ConfigServiceClient, error) {
+		logger := log.Scoped("internalapi", "")
+		conn, err := defaults.Dial(frontendInternal, logger)
+		if err != nil {
+			return nil, err
+		}
+		return proto.NewConfigServiceClient(conn), nil
+	}),
+}
 
 var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "src_frontend_internal_request_duration_seconds",
@@ -48,9 +65,42 @@ func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnifie
 	if MockClientConfiguration != nil {
 		return MockClientConfiguration()
 	}
+
+	if enableGRPC {
+		cc, err := c.getConfClient()
+		if err != nil {
+			return conftypes.RawUnified{}, err
+		}
+		resp, err := cc.GetConfig(ctx, &proto.GetConfigRequest{})
+		if err != nil {
+			return conftypes.RawUnified{}, err
+		}
+		return rawUnifiedFromProto(resp), nil
+	}
+
 	var cfg conftypes.RawUnified
 	err := c.postInternal(ctx, "configuration", nil, &cfg)
 	return cfg, err
+}
+
+func rawUnifiedFromProto(in *proto.GetConfigResponse) conftypes.RawUnified {
+	sc := in.GetServiceConnections()
+	return conftypes.RawUnified{
+		ID:   in.GetId(),
+		Site: in.GetSite(),
+		ServiceConnections: conftypes.ServiceConnections{
+			GitServers:           sc.GetGitServers(),
+			PostgresDSN:          sc.GetPostgresDsn(),
+			CodeIntelPostgresDSN: sc.GetCodeIntelPostgresDsn(),
+			CodeInsightsDSN:      sc.GetCodeInsightsDsn(),
+			Searchers:            sc.GetSearchers(),
+			Symbols:              sc.GetSymbols(),
+			Embeddings:           sc.GetEmbeddings(),
+			Qdrant:               sc.GetQdrant(),
+			Zoekts:               sc.GetZoekts(),
+			ZoektListTTL:         sc.GetZoektListTtl().AsDuration(),
+		},
+	}
 }
 
 // postInternal sends an HTTP post request to the internal route.
