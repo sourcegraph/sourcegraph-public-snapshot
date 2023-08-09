@@ -29,29 +29,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type bodyTransformer[T UpstreamRequest] func(*T, *actor.Actor)
-type requestTransformer func(*http.Request)
-type requestValidator[T UpstreamRequest] func(T) error
-type requestMetadataRetriever[T UpstreamRequest] func(T) (promptCharacterCount int, model string, additionalMetadata map[string]any)
-type responseParser[T UpstreamRequest] func(T, io.Reader) (completionCharacterCount int)
-
 // upstreamHandlerMethods declares a set of methods that are used throughout the
-// lifecycle of a request to an upstream API. All methods are required.
+// lifecycle of a request to an upstream API. All methods are required, and called
+// in the order they are defined here.
 type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
+	// validateRequest can be used to validate the HTTP request before it is sent upstream.
+	// Returning a non-nil error will stop further processing and return the given error
+	// code, or a 400.
+	validateRequest func(codygateway.Feature, ReqT) (int, error)
 	// transformBody can be used to modify the request body before it is sent
 	// upstream. To manipulate the HTTP request, use transformRequest.
-	transformBody bodyTransformer[ReqT]
+	transformBody func(*ReqT, *actor.Actor)
 	// transformRequest can be used to modify the HTTP request before it is sent
 	// upstream. To manipulate the body, use transformBody.
-	transformRequest requestTransformer
+	transformRequest func(*http.Request)
 	// getRequestMetadata should extract details about the request we are sending
 	// upstream for validation and tracking purposes.
-	getRequestMetadata requestMetadataRetriever[ReqT]
+	getRequestMetadata func(ReqT) (promptCharacterCount int, model string, additionalMetadata map[string]any)
 	// parseResponse should extract details from the response we get back from
 	// upstream for tracking purposes.
-	parseResponse responseParser[ReqT]
-	// validateRequest can be used to validate the HTTP request before it is sent upstream. Returning a non-nil error will stop further processing and return a 400 HTTP error code
-	validateRequest requestValidator[ReqT]
+	parseResponse func(ReqT, io.Reader) (completionCharacterCount int)
 }
 
 type UpstreamRequest interface{}
@@ -79,13 +76,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 ) http.Handler {
 	baseLogger = baseLogger.Scoped(upstreamName, fmt.Sprintf("%s upstream handler", upstreamName)).
 		With(log.String("upstream.url", upstreamAPIURL))
-
-	var (
-		transformBody      = methods.transformBody
-		transformRequest   = methods.transformRequest
-		getRequestMetadata = methods.getRequestMetadata
-		parseResponse      = methods.parseResponse
-	)
 
 	// Convert allowedModels to the Cody Gateway configuration format with the
 	// provider as a prefix. This aligns with the models returned when we query
@@ -136,12 +126,15 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				return
 			}
 
-			if err := methods.validateRequest(body); err != nil {
-				response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "invalid request"))
+			if status, err := methods.validateRequest(feature, body); err != nil {
+				if status == 0 {
+					response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "invalid request"))
+				}
+				response.JSONError(logger, w, status, err)
 				return
 			}
 
-			transformBody(&body, act)
+			methods.transformBody(&body, act)
 
 			// Re-marshal the payload for upstream to unset metadata and remove any properties
 			// not known to us.
@@ -159,10 +152,10 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			}
 
 			// Run the request transformer.
-			transformRequest(req)
+			methods.transformRequest(req)
 
 			// Retrieve metadata from the initial request.
-			promptCharacterCount, model, requestMetadata := getRequestMetadata(body)
+			promptCharacterCount, model, requestMetadata := methods.getRequestMetadata(body)
 
 			// Match the model against the allowlist of models, which are configured
 			// with the Cody Gateway model format "$PROVIDER/$MODEL_NAME". Models
@@ -288,7 +281,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 
 			if upstreamStatusCode >= 200 && upstreamStatusCode < 300 {
 				// Pass reader to response transformer to capture token counts.
-				completionCharacterCount = parseResponse(body, &responseBuf)
+				completionCharacterCount = methods.parseResponse(body, &responseBuf)
 
 			} else if upstreamStatusCode >= 500 {
 				logger.Error("error from upstream",
