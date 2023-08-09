@@ -27,10 +27,10 @@ func (s *Server) dir(name api.RepoName) common.GitDir {
 	return common.GitDir(filepath.Join(s.ReposDir, filepath.FromSlash(p), ".git"))
 }
 
-func (s *Server) name(dir common.GitDir) api.RepoName {
+func repoNameFromDir(reposDir string, dir common.GitDir) api.RepoName {
 	// dir == ${s.ReposDir}/${name}/.git
 	parent := filepath.Dir(string(dir))                   // remove suffix "/.git"
-	name := strings.TrimPrefix(parent, s.ReposDir)        // remove prefix "${s.ReposDir}"
+	name := strings.TrimPrefix(parent, reposDir)          // remove prefix "${s.ReposDir}"
 	name = strings.Trim(name, string(filepath.Separator)) // remove /
 	name = filepath.ToSlash(name)                         // filepath -> path
 	return protocol.NormalizeRepo(api.RepoName(name))
@@ -271,4 +271,19 @@ func bestEffortWalk(root string, walkFn func(path string, entry fs.DirEntry) err
 
 		return walkFn(path, d)
 	})
+}
+
+// hostnameMatch checks whether the hostname matches the given address.
+// If we don't find an exact match, we look at the initial prefix.
+func hostnameMatch(shardID, addr string) bool {
+	if !strings.HasPrefix(addr, shardID) {
+		return false
+	}
+	if addr == shardID {
+		return true
+	}
+	// We know that shardID is shorter than addr so we can safely check the next
+	// char
+	next := addr[len(shardID)]
+	return next == '.' || next == ':'
 }
