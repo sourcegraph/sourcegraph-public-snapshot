@@ -1,5 +1,7 @@
 # <img alt="Sourcegraph logo" src="/assets/sourcegraph-logo-dark.svg" width="50%" class="theme-dark-only"><img alt="Sourcegraph logo" src="/assets/sourcegraph-logo-light.svg" width="50%" class="theme-light-only"><span class="sr-only">Sourcegraph</span>
 
+<marquee>Thorsten was here</marquee>
+
 Sourcegraph makes it easy to read, write, and fix code—even in big, complex codebases.
 
 - **Code search:** Search all of your repositories across all branches and all code hosts.
