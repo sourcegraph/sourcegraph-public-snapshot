@@ -2,24 +2,17 @@ import React, { useMemo } from 'react'
 
 import { mdiCheck, mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import { sortBy } from 'lodash'
 import MagnifyIcon from 'mdi-react/GearIcon'
 
 import { Icon, Badge } from '@sourcegraph/wildcard'
 
 import { NavDropdown } from '../../nav/NavBar/NavDropdown'
 
-import { useSetupChecklist } from './useSetupChecklist'
+import { useSetupChecklist } from './hooks/useSetupChecklist'
 
 export const ChecklistNavbarItem: React.FC = () => {
     const { data, loading } = useSetupChecklist()
-    const { sortedData, notConfiguredCount } = useMemo(
-        () => ({
-            sortedData: sortBy(data, item => item.configured),
-            notConfiguredCount: data.filter(item => !item.configured).length,
-        }),
-        [data]
-    )
+    const notConfiguredCount = useMemo(() => data.filter(item => !item.configured).length, [data])
 
     if (loading) {
         return null
@@ -27,7 +20,7 @@ export const ChecklistNavbarItem: React.FC = () => {
 
     return (
         <NavDropdown
-            routeMatch="something-that-never-matches"
+            routeMatch="something-that-does-not-match"
             toggleItem={{
                 path: '#',
                 icon: MagnifyIcon,
@@ -42,7 +35,7 @@ export const ChecklistNavbarItem: React.FC = () => {
                     </div>
                 ),
             }}
-            items={sortedData.map(feature => ({
+            items={data.map(feature => ({
                 content: (
                     <div className="d-flex align-items-center">
                         <Icon
@@ -53,8 +46,9 @@ export const ChecklistNavbarItem: React.FC = () => {
                         {feature.name}
                     </div>
                 ),
-                path: feature.setupURL,
-                target: '_blank',
+                path: feature?.configured
+                    ? feature.path
+                    : `${feature.path}?setup-checklist=${encodeURIComponent(feature.id)}`,
             }))}
             name="feedback"
         />
