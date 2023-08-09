@@ -18,7 +18,6 @@ export {
 export { SectionID as SearchSidebarSectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 export { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 export {
-    type ContentMatch,
     type Skipped,
     getFileMatchUrl,
     getRepositoryUrl,
@@ -26,25 +25,35 @@ export {
     LATEST_VERSION,
     type AggregateStreamingSearchResults,
     type StreamSearchOptions,
-    type SearchMatch,
-    type OwnerMatch,
     getRepoMatchLabel,
     getRepoMatchUrl,
+    getMatchUrl,
     type RepositoryMatch,
     type SymbolMatch,
+    type PathMatch,
+    type ContentMatch,
+    type SearchMatch,
+    type OwnerMatch,
+    type TeamMatch,
+    type PersonMatch,
+    type CommitMatch,
     type Progress,
+    type Range,
 } from '@sourcegraph/shared/src/search/stream'
 export type {
     MatchItem,
     MatchGroupMatch,
     MatchGroup,
+    PerFileResultRanking,
+    RankingResult,
 } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 export { ZoektRanking } from '@sourcegraph/shared/src/components/ranking/ZoektRanking'
+export { LineRanking } from '@sourcegraph/shared/src/components/ranking/LineRanking'
 export type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 export { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 export { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-export { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
-export { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+export { getGlobalSearchContextFilter, findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
+export { omitFilter, appendFilter } from '@sourcegraph/shared/src/search/query/transformer'
 export type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 export {
     type SettingsCascade,
