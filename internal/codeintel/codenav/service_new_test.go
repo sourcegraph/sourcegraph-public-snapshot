@@ -186,7 +186,7 @@ func TestNewGetDefinitions(t *testing.T) {
 		if history := mockLsifStore.GetMinimalBulkMonikerLocationsFunc.History(); len(history) != 1 {
 			t.Fatalf("unexpected call count for lsifstore.BulkMonikerResults. want=%d have=%d", 1, len(history))
 		} else {
-			if diff := cmp.Diff([]int{151, 152, 153}, history[0].Arg2); diff != "" {
+			if diff := cmp.Diff([]int{50, 51, 52, 53, 151, 152, 153}, history[0].Arg2); diff != "" {
 				t.Errorf("unexpected ids (-want +got):\n%s", diff)
 			}
 
@@ -417,7 +417,7 @@ func TestNewGetReferences(t *testing.T) {
 		if history := mockLsifStore.GetMinimalBulkMonikerLocationsFunc.History(); len(history) != 3 {
 			t.Fatalf("unexpected call count for lsifstore.BulkMonikerResults. want=%d have=%d", 3, len(history))
 		} else {
-			if diff := cmp.Diff([]int{151, 152, 153}, history[0].Arg2); diff != "" {
+			if diff := cmp.Diff([]int{50, 51, 52, 53, 151, 152, 153}, history[0].Arg2); diff != "" {
 				t.Errorf("unexpected ids (-want +got):\n%s", diff)
 			}
 

@@ -73,7 +73,7 @@ func (c *graphQLClient) requestGraphQL(ctx context.Context, queryName string, qu
 			httpcli.ExternalTransportOpt,
 			httpcli.NewErrorResilientTransportOpt(
 				httpcli.NewRetryPolicy(httpcli.MaxRetries(graphQLRetryMaxAttempts), 2*time.Second),
-				httpcli.ExpJitterDelay(graphQLRetryDelayBase, graphQLRetryDelayMax),
+				httpcli.ExpJitterDelayOrRetryAfterDelay(graphQLRetryDelayBase, graphQLRetryDelayMax),
 			),
 			httpcli.TracedTransportOpt,
 		)
