@@ -868,8 +868,9 @@ BEGIN
 END
 $$;
 
-CREATE FUNCTION isCodyGenerationEvent(name text)
-RETURNS boolean AS $$
+CREATE FUNCTION isCodyGenerationEvent(name text) RETURNS boolean
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
 BEGIN
   RETURN name = ANY(ARRAY[
     'CodyVSCodeExtension:recipe:rewrite-to-functional:executed',
@@ -883,10 +884,11 @@ BEGIN
 	'CodyVSCodeExtension:recipe:translate-to-language:executed'
   ]);
 END;
-$$ LANGUAGE plpgsql IMMUTABLE;
+$$;
 
-CREATE FUNCTION isCodyExplanationEvent(name text)
-RETURNS boolean AS $$
+CREATE FUNCTION isCodyExplanationEvent(name text) RETURNS boolean
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
 BEGIN
   RETURN name = ANY(ARRAY[
     'CodyVSCodeExtension:recipe:explain-code-high-level:executed',
@@ -896,10 +898,11 @@ BEGIN
     'CodyVSCodeExtension:recipe:rate-code:executed'
   ]);
 END;
-$$ LANGUAGE plpgsql IMMUTABLE;
+$$;
 
-CREATE FUNCTION isCodyActiveEvent(name text)
-RETURNS boolean AS $$
+CREATE FUNCTION isCodyActiveEvent(name text) RETURNS boolean
+LANGUAGE plpgsql IMMUTABLE
+AS $$
 BEGIN
   RETURN
     (name LIKE '%%cody%%' OR name LIKE '%%Cody%%')
@@ -923,7 +926,7 @@ BEGIN
         'CodyUninstalled',
         'SpeakToACodyEngineerCTA']));
 END;
-$$ LANGUAGE plpgsql IMMUTABLE;
+$$;
 
 CREATE AGGREGATE snapshot_transition_columns(hstore[]) (
     SFUNC = merge_audit_log_transitions,
