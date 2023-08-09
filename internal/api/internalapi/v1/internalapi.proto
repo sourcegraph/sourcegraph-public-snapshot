@@ -12,7 +12,9 @@ service ConfigService {
 
 message GetConfigRequest {}
 
-message GetConfigResponse { RawUnified raw_unified = 1; }
+message GetConfigResponse {
+  RawUnified raw_unified = 1;
+}
 
 message RawUnified {
   int32 id = 1;
