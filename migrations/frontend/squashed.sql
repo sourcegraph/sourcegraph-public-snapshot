@@ -458,24 +458,25 @@ BEGIN
   RETURN
     (name LIKE '%%cody%%' OR name LIKE '%%Cody%%')
     AND NOT
-    (
-    name LIKE '%%completion:started%%' OR
-    name LIKE '%%completion:suggested%%' OR
-    name LIKE '%%cta%%' OR
-    name LIKE '%%Cta%%' OR
-    name = ANY(ARRAY['CodyVSCodeExtension:CodySavedLogin:executed',
-        'web:codyChat:tryOnPublicCode',
-        'web:codyEditorWidget:viewed',
-        'web:codyChat:pageViewed',
-        'CodyConfigurationPageViewed',
-        'ClickedOnTryCodySearchCTA',
-        'TryCodyWebOnboardingDisplayed',
-        'AboutGetCodyPopover',
-        'TryCodyWeb',
-        'CodySurveyToastViewed',
-        'SiteAdminCodyPageViewed',
-        'CodyUninstalled',
-        'SpeakToACodyEngineerCTA']));
+    ((
+        name LIKE '%%completion:started%%' OR
+        name LIKE '%%completion:suggested%%' OR
+        name LIKE '%%cta%%' OR
+        name LIKE '%%Cta%%' OR
+        name = ANY(ARRAY['CodyVSCodeExtension:CodySavedLogin:executed',
+            'web:codyChat:tryOnPublicCode',
+            'web:codyEditorWidget:viewed',
+            'web:codyChat:pageViewed',
+            'CodyConfigurationPageViewed',
+            'ClickedOnTryCodySearchCTA',
+            'TryCodyWebOnboardingDisplayed',
+            'AboutGetCodyPopover',
+            'TryCodyWeb',
+            'CodySurveyToastViewed',
+            'SiteAdminCodyPageViewed',
+            'CodyUninstalled',
+            'SpeakToACodyEngineerCTA'])
+    ));
 END;
 $$;
 
