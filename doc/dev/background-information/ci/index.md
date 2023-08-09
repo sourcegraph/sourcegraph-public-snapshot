@@ -11,19 +11,19 @@ Sourcegraph also maintains a variety of tooling on [GitHub Actions](#github-acti
 <div class="getting-started">
   <a href="#buildkite-pipelines" class="btn" alt="Buildkite pipelines">
    <span>★ Buildkite pipelines</span>
-   </br>
+   <br>
    An introduction to Sourcegraph's Buildkite pipelines.
   </a>
 
   <a href="./reference" class="btn" alt="Pipeline references">
    <span>Pipelines reference</span>
-   </br>
+   <br>
    A complete Buildkite pipeline reference covering all the different pipeline types.
   </a>
 
   <a href="./development" class="btn" alt="Development">
    <span>Development</span>
-   </br>
+   <br>
    Contribute changes to Sourcegraph's Buildkite pipelines!
   </a>
 </div>
