@@ -160,7 +160,6 @@ commands:
       - lib
       - internal
       - cmd/frontend
-      - enterprise/internal
       - enterprise/cmd/frontend
 
   gitserver-template: &gitserver_template
@@ -177,7 +176,6 @@ commands:
       - lib
       - internal
       - cmd/gitserver
-      - enterprise/internal
       - enterprise/cmd/gitserver
 
   # This is only here to stay backwards-compatible with people's custom
@@ -289,7 +287,6 @@ commands:
     watch:
       - lib
       - internal
-      - enterprise/internal
       - cmd/worker
       - enterprise/cmd/worker
 
@@ -471,7 +468,6 @@ commands:
       - lib
       - internal
       - cmd/precise-code-intel-worker
-      - enterprise/internal
       - lib/codeintel
 
   executor-template:
@@ -482,7 +478,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor
+      go build -gcflags="$GCFLAGS" -o .bin/executor github.com/sourcegraph/sourcegraph/cmd/executor
     checkBinary: .bin/executor
     env:
       # Required for frontend and executor to communicate
@@ -495,8 +491,7 @@ commands:
     watch:
       - lib
       - internal
-      - enterprise/internal
-      - enterprise/cmd/executor
+      - cmd/executor
 
   executor-kubernetes-template: &executor_kubernetes_template
     cmd: |
@@ -527,8 +522,7 @@ commands:
     watch:
       - lib
       - internal
-      - enterprise/internal
-      - enterprise/cmd/executor
+      - cmd/executor
 
   codeintel-executor:
     <<: *executor_template
@@ -552,7 +546,7 @@ commands:
   codeintel-executor-kubernetes:
     <<: *executor_kubernetes_template
     env:
-      MANIFEST_PATH: ./enterprise/cmd/executor/kubernetes/codeintel
+      MANIFEST_PATH: ./cmd/executor/kubernetes/codeintel
 
   batches-executor:
     <<: *executor_template
@@ -577,7 +571,7 @@ commands:
   batches-executor-kubernetes:
     <<: *executor_kubernetes_template
     env:
-      MANIFEST_PATH: ./enterprise/cmd/executor/kubernetes/batches
+      MANIFEST_PATH: ./cmd/executor/kubernetes/batches
 
   # This tool rebuilds the batcheshelper image every time the source of it is changed.
   batcheshelper-builder:
@@ -956,7 +950,7 @@ bazelCommands:
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
     target: //cmd/precise-code-intel-worker
   executor-template: &executor_template_bazel
-    target: //enterprise/cmd/executor
+    target: //cmd/executor
     env:
       EXECUTOR_QUEUE_NAME: TEMPLATE
       TMPDIR: $HOME/.sourcegraph/executor-temp
