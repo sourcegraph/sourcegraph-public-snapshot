@@ -15,6 +15,7 @@ export const prerender = false
 if (browser) {
     // Necessary to make authenticated GrqphQL requests work
     // No idea why TS picks up Mocha.SuiteFunction for this
+    // @ts-ignore
     window.context = {
         xhrHeaders: {
             'X-Requested-With': 'Sourcegraph',

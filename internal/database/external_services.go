@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/tidwall/gjson"
 	"github.com/xeipuuv/gojsonschema"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
 
@@ -31,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -259,6 +261,9 @@ type ExternalServicesListOptions struct {
 	// When specified, only include external services which contain repository with a given ID.
 	RepoID api.RepoID
 
+	// Only include external services that belong to the given CodeHost.
+	CodeHostID int32
+
 	*LimitOffset
 
 	// When true, soft-deleted external services will also be included in the results.
@@ -284,6 +289,9 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.OnlyCloudDefault {
 		conds = append(conds, sqlf.Sprintf("cloud_default = true"))
+	}
+	if o.CodeHostID != 0 {
+		conds = append(conds, sqlf.Sprintf("code_host_id = %s", o.CodeHostID))
 	}
 	if o.RepoID > 0 {
 		conds = append(conds, sqlf.Sprintf("id IN (SELECT external_service_id FROM external_service_repos WHERE repo_id = %s)", o.RepoID))
@@ -522,7 +530,7 @@ func disablePermsSyncingForExternalService(config string) (string, error) {
 	return jsonc.Remove(withoutEnforcePermissions, "authorization")
 }
 
-func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error {
+func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) (err error) {
 	rawConfig, err := es.Config.Decrypt(ctx)
 	if err != nil {
 		return err
@@ -569,7 +577,21 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		return err
 	}
 
-	return e.QueryRow(
+	tx, err := e.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = tx.Done(err)
+	}()
+
+	chID, err := ensureCodeHost(ctx, tx, es.Kind, string(normalized))
+	if err != nil {
+		return err
+	}
+	es.CodeHostID = &chID
+
+	return tx.QueryRow(
 		ctx,
 		sqlf.Sprintf(
 			createExternalServiceQueryFmtstr,
@@ -582,14 +604,15 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 			es.Unrestricted,
 			es.CloudDefault,
 			es.HasWebhooks,
+			es.CodeHostID,
 		),
 	).Scan(&es.ID)
 }
 
 const createExternalServiceQueryFmtstr = `
 INSERT INTO external_services
-	(kind, display_name, config, encryption_key_id, created_at, updated_at, unrestricted, cloud_default, has_webhooks)
-	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)
+	(kind, display_name, config, encryption_key_id, created_at, updated_at, unrestricted, cloud_default, has_webhooks, code_host_id)
+	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id
 `
 
@@ -605,6 +628,14 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	if len(svcs) == 0 {
 		return nil
 	}
+
+	tx, err := e.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = tx.Done(err)
+	}()
 
 	authProviders := conf.Get().AuthProviders
 	for _, s := range svcs {
@@ -637,13 +668,13 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 		if err := e.recalculateFields(s, string(normalized)); err != nil {
 			return err
 		}
-	}
 
-	tx, err := e.transact(ctx)
-	if err != nil {
-		return err
+		chID, err := ensureCodeHost(ctx, tx, s.Kind, string(normalized))
+		if err != nil {
+			return err
+		}
+		s.CodeHostID = &chID
 	}
-	defer func() { err = tx.Done(err) }()
 
 	// Get the list services that are marked as deleted. We don't know at this point
 	// whether they are marked as deleted in the DB too.
@@ -697,6 +728,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&svcs[i].CloudDefault,
 			&keyID,
 			&dbutil.NullBool{B: svcs[i].HasWebhooks},
+			&svcs[i].CodeHostID,
 		)
 		if err != nil {
 			return err
@@ -731,6 +763,7 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 			s.Unrestricted,
 			s.CloudDefault,
 			s.HasWebhooks,
+			s.CodeHostID,
 		))
 	}
 
@@ -741,7 +774,7 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 
 const upsertExternalServicesQueryFmtstr = `
@@ -758,7 +791,8 @@ INSERT INTO external_services (
   next_sync_at,
   unrestricted,
   cloud_default,
-  has_webhooks
+  has_webhooks,
+  code_host_id
 )
 VALUES %s
 ON CONFLICT(id) DO UPDATE
@@ -774,7 +808,8 @@ SET
   next_sync_at       = excluded.next_sync_at,
   unrestricted       = excluded.unrestricted,
   cloud_default      = excluded.cloud_default,
-  has_webhooks       = excluded.has_webhooks
+  has_webhooks       = excluded.has_webhooks,
+  code_host_id       = excluded.code_host_id
 RETURNING
 	id,
 	kind,
@@ -788,7 +823,8 @@ RETURNING
 	unrestricted,
 	cloud_default,
 	encryption_key_id,
-	has_webhooks
+	has_webhooks,
+	code_host_id
 `
 
 // ExternalServiceUpdate contains optional fields to update.
@@ -802,17 +838,29 @@ type ExternalServiceUpdate struct {
 }
 
 func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) (err error) {
+	tx, err := e.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = tx.Done(err)
+	}()
+
 	var (
 		normalized      []byte
 		encryptedConfig string
 		keyID           string
 		hasWebhooks     bool
 	)
+
+	// 5 is the number of fields of the ExternalServiceUpdate plus 1 for code_host_id
+	updates := make([]*sqlf.Query, 0, 5)
+
 	if update.Config != nil {
 		rawConfig := *update.Config
 
 		// Query to get the kind (which is immutable) so we can validate the new config.
-		externalService, err := e.GetByID(ctx, id)
+		externalService, err := tx.GetByID(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -840,7 +888,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			hasWebhooks = false
 		}
 
-		normalized, err = ValidateExternalServiceConfig(ctx, e, ValidateExternalServiceConfigOptions{
+		normalized, err = ValidateExternalServiceConfig(ctx, tx, ValidateExternalServiceConfigOptions{
 			ExternalServiceID: id,
 			Kind:              externalService.Kind,
 			Config:            unredactedConfig,
@@ -861,14 +909,17 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			newSvc.Config.Set(unredactedConfig)
 		}
 
+		chID, err := ensureCodeHost(ctx, tx, externalService.Kind, string(normalized))
+		if err != nil {
+			return err
+		}
+		updates = append(updates, sqlf.Sprintf("code_host_id = %s", chID))
+
 		encryptedConfig, keyID, err = newSvc.Config.Encrypt(ctx, e.getEncryptionKey())
 		if err != nil {
 			return err
 		}
 	}
-
-	// 4 is the number of fields of the ExternalServiceUpdate
-	updates := make([]*sqlf.Query, 0, 4)
 
 	if update.DisplayName != nil {
 		updates = append(updates, sqlf.Sprintf("display_name = %s", update.DisplayName))
@@ -907,7 +958,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 	}
 
 	q := sqlf.Sprintf("UPDATE external_services SET %s, updated_at = NOW() WHERE id = %d AND deleted_at IS NULL", sqlf.Join(updates, ","), id)
-	res, err := e.Store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	res, err := tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
 	}
@@ -1375,7 +1426,8 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 			unrestricted,
 			cloud_default,
 			has_webhooks,
-			token_expires_at
+			token_expires_at,
+			code_host_id
 		FROM external_services
 		WHERE (%s)
 		ORDER BY id `+opt.OrderByDirection+`
@@ -1417,6 +1469,7 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 			&h.CloudDefault,
 			&hasWebhooks,
 			&tokenExpiresAt,
+			&h.CodeHostID,
 		); err != nil {
 			return nil, err
 		}
@@ -1618,6 +1671,39 @@ func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawC
 	es.HasWebhooks = &hasWebhooks
 
 	return nil
+}
+
+func ensureCodeHost(ctx context.Context, tx *externalServiceStore, kind string, config string) (codeHostID int32, _ error) {
+	// Ensure a code host for this external service exists.
+	// TODO: Use this method for the OOB migrator as well.
+	codeHostIdentifier, err := extsvc.UniqueCodeHostIdentifier(kind, config)
+	if err != nil {
+		return 0, err
+	}
+	// TODO: Use this method for the OOB migrator as well.
+	rateLimit, isDefaultRateLimit, err := extsvc.ExtractRateLimit(config, kind)
+	if err != nil && !errors.HasType(err, extsvc.ErrRateLimitUnsupported{}) {
+		return 0, err
+	}
+	ch := &types.CodeHost{
+		Kind:      kind,
+		URL:       codeHostIdentifier,
+		CreatedAt: timeutil.Now(),
+	}
+	if rateLimit != rate.Inf && rateLimit != 0. && !isDefaultRateLimit {
+		ch.APIRateLimitQuota = pointers.Ptr(int32(rateLimit * 3600.0))
+		ch.APIRateLimitIntervalSeconds = pointers.Ptr(int32(3600))
+	}
+	siteCfg := conf.Get()
+	if siteCfg.GitMaxCodehostRequestsPerSecond != nil {
+		ch.GitRateLimitQuota = pointers.Ptr(int32(*siteCfg.GitMaxCodehostRequestsPerSecond))
+		ch.GitRateLimitIntervalSeconds = pointers.Ptr(int32(1))
+	}
+	chstore := CodeHostsWith(tx)
+	if err := chstore.Create(ctx, ch); err != nil {
+		return 0, errors.Wrap(err, "failed to create code host")
+	}
+	return ch.ID, nil
 }
 
 func configurationHasWebhooks(config any) bool {

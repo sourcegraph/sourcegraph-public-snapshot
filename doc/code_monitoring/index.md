@@ -44,14 +44,14 @@ Watch your code with code monitors and trigger actions to run automatically in r
 <div class="getting-started">
   <a href="quickstart" class="btn" alt="Run through the Quickstart guide">
    <span>New to code monitoring?</span>
-   </br>
+   <br>
    Use our <b>quickstart guide</b> to create your first code monitor.
   </a>
 
 
   <a href="how-tos/starting_points" class="btn" alt="Starting points for code monitors">
    <span>Starting points</span>
-   </br>
+   <br>
    Use our starting points to jump-start your code monitoring.
   </a>
 </div>

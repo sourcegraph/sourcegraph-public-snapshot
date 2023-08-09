@@ -445,11 +445,12 @@ func NewGRPCInternalErrorMetricsGroup(opts GRPCInternalErrorMetricsOptions, owne
 
 // GRPCMethodVariable creates a container variable that contains all the gRPC methods
 // exposed by the given service.
-func GRPCMethodVariable(serviceNamespace string) monitoring.ContainerVariable {
-	query := "grpc_server_started_total"
-	if serviceNamespace != "" {
-		query = fmt.Sprintf("%s_%s", serviceNamespace, query)
-	}
+//
+// services is a list of the full, dot-separated, code-generated gRPC service names that we're gathering metrics for
+// (e.g. "gitserver.v1.GitserverService").
+func GRPCMethodVariable(services ...string) monitoring.ContainerVariable {
+	servicesRegex := fmt.Sprintf(`(%s)`, strings.Join(services, "|"))
+	query := fmt.Sprintf("grpc_server_started_total{grpc_service=~`%s`}", servicesRegex)
 
 	return monitoring.ContainerVariable{
 		Label: "RPC Method",
@@ -459,6 +460,7 @@ func GRPCMethodVariable(serviceNamespace string) monitoring.ContainerVariable {
 			LabelName:     "grpc_method",
 			ExampleOption: "Exec",
 		},
+
 		Multi: true,
 	}
 }

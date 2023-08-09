@@ -58,6 +58,7 @@ func NewAnthropicHandler(
 				r.Header.Set("Content-Type", "application/json")
 				r.Header.Set("Client", "sourcegraph-cody-gateway/1.0")
 				r.Header.Set("X-API-Key", accessToken)
+				r.Header.Set("anthropic-version", "2023-01-01")
 			},
 			parseResponse: func(reqBody anthropicRequest, r io.Reader) int {
 				// Try to parse the request we saw, if it was non-streaming, we can simply parse
@@ -104,6 +105,14 @@ func NewAnthropicHandler(
 				return nil
 			},
 		},
+
+		// Anthropic primarily uses concurrent requests to rate-limit spikes
+		// in requests, so set a default retry-after that is likely to be
+		// acceptable for Sourcegraph clients to retry (the default
+		// SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION) since we might be
+		// able to circumvent concurrents limits without raising an error to the
+		// user.
+		2, // seconds
 	)
 }
 

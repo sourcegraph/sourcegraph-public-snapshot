@@ -1591,7 +1591,7 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 	})
 
 	perms := database.NewStrictMockPermsStore()
-	perms.LoadUserPermissionsFunc.SetDefaultReturn([]authz.Permission{{UpdatedAt: clock()}}, nil)
+	perms.LoadUserPermissionsFunc.SetDefaultReturn([]authz.Permission{{UpdatedAt: clock(), Source: authz.SourceUserSync}}, nil)
 	perms.ListUserPermissionsFunc.SetDefaultReturn([]*database.UserPermission{{Repo: &types.Repo{ID: 42}}}, nil)
 
 	syncJobs := database.NewStrictMockPermissionSyncJobStore()
@@ -1623,8 +1623,8 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 					currentUser {
 						permissionsInfo {
 							permissions
-							syncedAt
 							updatedAt
+							source
 							repositories(first: 1) {
 								nodes {
 									id
@@ -1639,8 +1639,8 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 					"currentUser": {
 						"permissionsInfo": {
 							"permissions": ["READ"],
-							"syncedAt": "%[1]s",
 							"updatedAt": "%[1]s",
+							"source": "%[2]s",
 							"repositories": {
 								"nodes": [
 									{
@@ -1651,7 +1651,7 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 						}
     				}
 				}
-			`, clock().Format(time.RFC3339)),
+			`, clock().Format(time.RFC3339), authz.SourceUserSync.ToGraphQL()),
 				},
 			},
 		},

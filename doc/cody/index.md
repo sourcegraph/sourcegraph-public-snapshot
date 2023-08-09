@@ -102,13 +102,13 @@ td:first-child {
 Cody is currently available in beta.
 
 <br />
-We value your feedback! You can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an  <a href="https://github.com/sourcegraph/sourcegraph">issue</a>, or <a href="https://twitter.com/sourcegraph">tweet</a> to share feedback.
+We value your feedback! You can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an  <a href="https://github.com/sourcegraph/cody/issues">issue</a>, Join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">tweet</a> to share feedback.
 </p>
 </aside>
 
 ## What is Cody?
 
-Cody is an AI coding assistant that utilizes Sourcegraph's <a href="https://docs.sourcegraph.com/cody/explanations/code_graph_context">code graph</a> and Large Language Models (LLMs) to write code and provide answers based on your codebase.
+Cody is a free and open source AI coding assistant that utilizes Sourcegraph's <a href="https://docs.sourcegraph.com/cody/explanations/code_graph_context">code graph</a> and Large Language Models (LLMs) to write code and provide answers based on your codebase.
 
 Think of Cody as your personal dedicated AI coding assistant, equipped with a comprehensive understanding of three crucial elements:
 
@@ -157,10 +157,10 @@ Some of the main Cody features include:
 
 |     Feature     |                                                                                         Description                                                                                         |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Code chatbot    | Your AI-powered code assistant. It fits your project's coding conventions and architecture, unlike other AI code chatbots. Chat with Cody from your code editor or the Sourcegraph sidebar. |
-| Fix code inline | Cody can help you make interactive edits and refactor code by following natural-language instructions.                                                                                      |
-| Recipes         | Cody uses its codebase awareness to produce unit tests, documentation, and more. Use our pre-built recipes to simplify development with a few clicks.                                       |
-| Autocomplete    | Cody provides context-based code auto-completion while typing. Predictions make coding easier.                                                                                              |
+| [Code chatbot](capabilities.md#code-chatbot)    | Your AI-powered code assistant. It fits your project's coding conventions and architecture, unlike other AI code chatbots. Chat with Cody from your code editor or the Sourcegraph sidebar. |
+| [Fix code inline](capabilities.md#fix-code-inline) | Cody can help you make interactive edits and refactor code by following natural-language instructions.                                                                                      |
+| [Recipes](capabilities.md#cody-recipes)         | Cody uses its codebase awareness to produce unit tests, documentation, and more. Use our pre-built recipes to simplify development with a few clicks.                                       |
+| [Autocomplete](capabilities.md#code-autocomplete)    | Cody provides context-based code auto-completion while typing. Predictions make coding easier.                                                                                              |
 
 ## Join our community
 

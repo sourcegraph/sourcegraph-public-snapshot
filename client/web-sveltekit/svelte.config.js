@@ -10,6 +10,13 @@ const config = {
   // for more information about preprocessors
   preprocess: vitePreprocess(),
 
+  vitePlugin: {
+    inspector: {
+      showToggleButton: 'always',
+      toggleButtonPos: 'bottom-right',
+    },
+  },
+
   kit: {
     adapter: adapter({
       fallback: 'index.html',

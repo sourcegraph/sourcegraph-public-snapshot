@@ -10,7 +10,8 @@ import (
 
 func RepoUpdater() *monitoring.Dashboard {
 	const (
-		containerName = "repo-updater"
+		containerName   = "repo-updater"
+		grpcServiceName = "repoupdater.v1.RepoUpdaterService"
 
 		// This is set a bit longer than maxSyncInterval in internal/repos/syncer.go
 		syncDurationThreshold = 9 * time.Hour
@@ -22,7 +23,7 @@ func RepoUpdater() *monitoring.Dashboard {
 		},
 	}
 
-	grpcMethodVariable := shared.GRPCMethodVariable("repo_updater")
+	grpcMethodVariable := shared.GRPCMethodVariable(grpcServiceName)
 
 	return &monitoring.Dashboard{
 		Name:        "repo-updater",
@@ -577,7 +578,7 @@ func RepoUpdater() *monitoring.Dashboard {
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
 					HumanServiceName:   "repo_updater",
-					RawGRPCServiceName: "repoupdater.v1.RepoUpdaterService",
+					RawGRPCServiceName: grpcServiceName,
 
 					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 					InstanceFilterRegex: `${instance:regex}`,
@@ -586,7 +587,7 @@ func RepoUpdater() *monitoring.Dashboard {
 			shared.NewGRPCInternalErrorMetricsGroup(
 				shared.GRPCInternalErrorMetricsOptions{
 					HumanServiceName:   "repo_updater",
-					RawGRPCServiceName: "repoupdater.v1.RepoUpdaterService",
+					RawGRPCServiceName: grpcServiceName,
 
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSource),

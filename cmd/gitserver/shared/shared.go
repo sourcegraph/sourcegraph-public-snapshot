@@ -146,7 +146,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		ReposDir:           config.ReposDir,
 		DesiredPercentFree: wantPctFree2,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
-			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, repo)
+			return getRemoteURLFunc(ctx, db, repoStore, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
 			return getVCSSyncer(ctx, &newVCSSyncerOpts{
@@ -361,7 +361,7 @@ func getDB(observationCtx *observation.Context) (*sql.DB, error) {
 
 func getRemoteURLFunc(
 	ctx context.Context,
-	externalServiceStore database.ExternalServiceStore,
+	db database.DB,
 	repoStore database.RepoStore,
 	repo api.RepoName,
 ) (string, error) {
@@ -373,7 +373,7 @@ func getRemoteURLFunc(
 	for _, info := range r.Sources {
 		// build the clone url using the external service config instead of using
 		// the source CloneURL field
-		svc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
+		svc, err := db.ExternalServices().GetByID(ctx, info.ExternalServiceID())
 		if err != nil {
 			return "", err
 		}
@@ -386,7 +386,7 @@ func getRemoteURLFunc(
 			continue
 		}
 
-		return repos.EncryptableCloneURL(ctx, log.Scoped("repos.CloneURL", ""), svc.Kind, svc.Config, r)
+		return repos.EncryptableCloneURL(ctx, log.Scoped("repos.CloneURL", ""), db, svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
 }
@@ -643,7 +643,7 @@ func recordCommandsOnRepos(repos []string, ignoredGitCommands []string) wrexec.S
 	}
 
 	// we won't record any git commands with these commands since they are considered to be not destructive
-	var ignoredGitCommandsMap = collections.NewSet(ignoredGitCommands...)
+	ignoredGitCommandsMap := collections.NewSet(ignoredGitCommands...)
 
 	return func(ctx context.Context, cmd *exec.Cmd) bool {
 		base := filepath.Base(cmd.Path)
