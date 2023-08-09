@@ -925,8 +925,7 @@ CREATE FUNCTION versions_insert_row_trigger() RETURNS trigger
 BEGIN
     NEW.first_version = NEW.version;
     RETURN NEW;
-END
-$$;
+END $$;
 
 CREATE AGGREGATE snapshot_transition_columns(hstore[]) (
     SFUNC = merge_audit_log_transitions,
