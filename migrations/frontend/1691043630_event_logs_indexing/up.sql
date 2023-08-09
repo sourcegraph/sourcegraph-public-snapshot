@@ -28,7 +28,7 @@ BEGIN
     'CodyVSCodeExtension:recipe:rate-code:executed'
   ]);
 END;
-$$ LANGUAGE plpgsql IMMUTABLE;
+$$;
 
 CREATE FUNCTION isCodyActiveEvent(name text) RETURNS boolean
     LANGUAGE plpgsql IMMUTABLE
@@ -56,7 +56,7 @@ BEGIN
         'CodyUninstalled',
         'SpeakToACodyEngineerCTA']));
 END;
-$$ LANGUAGE plpgsql IMMUTABLE;
+$$;
 
 CREATE INDEX IF NOT EXISTS event_logs_name ON event_logs USING GIN (name gin_trgm_ops);
 
