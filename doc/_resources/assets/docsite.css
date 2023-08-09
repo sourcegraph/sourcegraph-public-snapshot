@@ -53,7 +53,6 @@ body.theme-light {
   --input-border-color: var(--sidebar-border-color);
   --input-focus-border-color: #1986ea;
   --link-color: #0055c5;
-  --link-hover-color: #1986ea;
   --anchor-inline-bg: yellow;
   --anchor-inline-border-color: #eecc11;
   --code-bg: #f4f7fb;
@@ -81,7 +80,6 @@ body.theme-dark {
   --input-border-color: var(--sidebar-border-color);
   --input-focus-border-color: #1986ea;
   --link-color: var(--brand-cyan-color);
-  --link-hover-color: #77bbff;
   --anchor-inline-bg: yellow;
   --anchor-inline-border-color: #eecc11;
   --code-bg: #191929;
@@ -105,10 +103,6 @@ body {
 
 a {
   text-decoration: none;
-}
-
-body.theme-light a,
-body.theme-light .markdown-body a {
   color: var(--link-color);
 }
 
@@ -117,14 +111,14 @@ a:hover {
   transition: color 0.2s ease-in-out;
 }
 
-body.theme-light #sidebar a,
-body.theme-light #index a {
-  color: #171717;
+body.theme-light #sidebar,
+body.theme-light #index {
+  --link-color: #171717
 }
 
-body.theme-dark #sidebar a,
-body.theme-dark #index a {
-  color: rgb(161, 161, 161);
+body.theme-dark #sidebar,
+body.theme-dark #index {
+  --link-color: rgb(161, 161, 161);
 }
 
 /* Nav links */
@@ -253,6 +247,7 @@ body > #sidebar {
     flex-direction: column;
     padding-top: calc(2*var(--spacing));
     margin-left: calc(6*var(--spacing));
+    padding-right: var(--spacing);
 }
 /* Logo */
 body > #sidebar #logo {
@@ -348,7 +343,7 @@ body > #sidebar #theme {
     gap: 0.5rem;
     align-items: center;
 }
-body > #sidebar svg {
+body > #sidebar #theme svg {
     width: 16px;
     margin-right: 0.25rem;
     fill: var(--text-muted);
@@ -795,9 +790,6 @@ body > #page > main > #content {
     color: var(--link-color);
     font-size: 1.5rem;
 }
-.copy-text:hover {
-    color: var(--link-hover-color);
-}
 
 /* Display hash on hover for schema doc key. */
 .markdown-body .json-schema-doc-heading {
@@ -1177,7 +1169,7 @@ body {
     --markprompt-secondaryForeground: #171717;
     --markprompt-primaryHighlight: #A112FF;
     --markprompt-secondaryHighlight: #00CBEC;
-    --markprompt-overlay: #00000010;
+    --markprompt-overlay: #00000090;
     --markprompt-ring: #00CBEC;
     --markprompt-radius: 8px;
     --markprompt-text-size: .875rem;
@@ -1272,6 +1264,10 @@ body.theme-dark {
     color: #ffffff;
 }
 
+.MarkpromptOverlay {
+    z-index: 99 !important;
+}
+
 .MarkpromptContentDialog {
     z-index: 100 !important;
 }
@@ -1361,18 +1357,20 @@ markprompt-content.dark {
 }
 
 #markprompt-button {
-    background-color: transparent;
-    border: 0px;
+    all: unset;
     color: var(--markprompt-mutedForeground);
-    cursor:pointer;
+    cursor: pointer;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
 }
 
 #markprompt-button:hover {
-    color: var(--link-hover-color);
+    color: var(--link-color);
 }
 
-.markdown-body a {
-    color: var(--brand-cyan-color);
+body > #markprompt-button svg {
+    margin-right: 0;
 }
 
 #sidebar ul ul li {

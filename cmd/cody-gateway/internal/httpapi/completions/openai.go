@@ -108,6 +108,12 @@ func NewOpenAIHandler(
 				return nil
 			},
 		},
+
+		// OpenAI primarily uses tokens-per-minute ("TPM") to rate-limit spikes
+		// in requests, so set a very high retry-after to discourage Sourcegraph
+		// clients from retrying at all since retries are probably not going to
+		// help in a minute-long rate limit window.
+		30, // seconds
 	)
 }
 

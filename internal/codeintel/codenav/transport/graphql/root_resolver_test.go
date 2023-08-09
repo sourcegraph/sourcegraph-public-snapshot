@@ -81,13 +81,13 @@ func TestDefinitions(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(mockCodeNavService.GetDefinitionsFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.GetDefinitionsFunc.History()))
+	if len(mockCodeNavService.NewGetDefinitionsFunc.History()) != 1 {
+		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.NewGetDefinitionsFunc.History()))
 	}
-	if val := mockCodeNavService.GetDefinitionsFunc.History()[0].Arg1; val.Line != 10 {
+	if val := mockCodeNavService.NewGetDefinitionsFunc.History()[0].Arg1; val.Line != 10 {
 		t.Fatalf("unexpected line. want=%v have=%v", 10, val)
 	}
-	if val := mockCodeNavService.GetDefinitionsFunc.History()[0].Arg1; val.Character != 15 {
+	if val := mockCodeNavService.NewGetDefinitionsFunc.History()[0].Arg1; val.Character != 15 {
 		t.Fatalf("unexpected character. want=%d have=%v", 15, val)
 	}
 }
@@ -112,8 +112,8 @@ func TestReferences(t *testing.T) {
 	)
 
 	offset := int32(25)
-	mockRefCursor := codenav.ReferencesCursor{Phase: "local"}
-	encodedCursor := encodeReferencesCursor(mockRefCursor)
+	mockRefCursor := codenav.Cursor{Phase: "local"}
+	encodedCursor := encodeTraversalCursor(mockRefCursor)
 	mockCursor := base64.StdEncoding.EncodeToString([]byte(encodedCursor))
 
 	args := &resolverstubs.LSIFPagedQueryPositionArgs{
@@ -128,19 +128,19 @@ func TestReferences(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(mockCodeNavService.GetReferencesFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.GetReferencesFunc.History()))
+	if len(mockCodeNavService.NewGetReferencesFunc.History()) != 1 {
+		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.NewGetReferencesFunc.History()))
 	}
-	if val := mockCodeNavService.GetReferencesFunc.History()[0].Arg1; val.Line != 10 {
+	if val := mockCodeNavService.NewGetReferencesFunc.History()[0].Arg1; val.Line != 10 {
 		t.Fatalf("unexpected line. want=%v have=%v", 10, val)
 	}
-	if val := mockCodeNavService.GetReferencesFunc.History()[0].Arg1; val.Character != 15 {
+	if val := mockCodeNavService.NewGetReferencesFunc.History()[0].Arg1; val.Character != 15 {
 		t.Fatalf("unexpected character. want=%v have=%v", 15, val)
 	}
-	if val := mockCodeNavService.GetReferencesFunc.History()[0].Arg1; val.Limit != 25 {
+	if val := mockCodeNavService.NewGetReferencesFunc.History()[0].Arg1; val.Limit != 25 {
 		t.Fatalf("unexpected character. want=%v have=%v", 25, val)
 	}
-	if val := mockCodeNavService.GetReferencesFunc.History()[0].Arg1; val.RawCursor != encodedCursor {
+	if val := mockCodeNavService.NewGetReferencesFunc.History()[0].Arg1; val.RawCursor != encodedCursor {
 		t.Fatalf("unexpected character. want=%v have=%v", "test-cursor", val)
 	}
 }
@@ -176,10 +176,10 @@ func TestReferencesDefaultLimit(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(mockCodeNavService.GetReferencesFunc.History()) != 1 {
+	if len(mockCodeNavService.NewGetReferencesFunc.History()) != 1 {
 		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.GetDiagnosticsFunc.History()))
 	}
-	if val := mockCodeNavService.GetReferencesFunc.History()[0].Arg1; val.Limit != DefaultReferencesPageSize {
+	if val := mockCodeNavService.NewGetReferencesFunc.History()[0].Arg1; val.Limit != DefaultReferencesPageSize {
 		t.Fatalf("unexpected limit. want=%v have=%v", DefaultReferencesPageSize, val)
 	}
 }

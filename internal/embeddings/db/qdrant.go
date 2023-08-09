@@ -4,10 +4,15 @@ import (
 	"context"
 
 	qdrant "github.com/qdrant/go-client/qdrant"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
+
+func NewQdrantDBFromConn(conn *grpc.ClientConn) VectorDB {
+	return NewQdrantDB(qdrant.NewPointsClient(conn), qdrant.NewCollectionsClient(conn))
+}
 
 func NewQdrantDB(pointsClient qdrant.PointsClient, collectionsClient qdrant.CollectionsClient) VectorDB {
 	return &qdrantDB{

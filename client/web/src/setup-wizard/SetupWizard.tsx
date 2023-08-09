@@ -1,14 +1,15 @@
-import { FC, useCallback } from 'react'
+import { FC, useCallback, useMemo } from 'react'
 
 import { ApolloClient } from '@apollo/client'
 import { useNavigate } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { H1, H2, useLocalStorage } from '@sourcegraph/wildcard'
+import { H1, H2, Text, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { PageTitle } from '../components/PageTitle'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { refreshSiteFlags } from '../site/backend'
 
 import {
@@ -55,6 +56,51 @@ const CORE_STEPS: StepConfiguration[] = [
     },
 ]
 
+const CHECKLIST_STEPS: StepConfiguration[] = [
+    {
+        id: 'add-license',
+        name: 'Add license',
+        path: '/setup/add-license',
+        nextURL: '/setup/remote-repositories',
+        component: () => (
+            <div className="w-50 h-100 mx-auto d-flex flex-column justify-content-center align-items-center">
+                <Text size="base" weight="bold">
+                    Coming soon
+                </Text>
+            </div>
+        ),
+    },
+    {
+        id: 'add-remote-repositories',
+        name: 'Add remote repositories',
+        path: '/setup/remote-repositories',
+        component: RemoteRepositoriesStep,
+        // If user clicked next button in setup remote repositories
+        // this mean that setup was completed, and they're ready to go
+        // to app UI. See https://github.com/sourcegraph/sourcegraph/issues/50122
+        onNext: (client: ApolloClient<{}>) => {
+            // Mutate initial needsRepositoryConfiguration value
+            // in order to avoid loop in Layout page redirection logic
+            // TODO Remove this as soon as we have a proper Sourcegraph context store
+            window.context.needsRepositoryConfiguration = false
+
+            // Update global site flags in order to fix global navigation items about
+            // setup instance state
+            refreshSiteFlags(client).then(
+                () => {},
+                () => {}
+            )
+        },
+    },
+    {
+        id: 'sync-repositories',
+        name: 'Sync repositories',
+        path: '/setup/sync-repositories',
+        nextURL: '/setup/configure-features',
+        component: SyncRepositoriesStep,
+    },
+]
+
 interface SetupWizardProps extends TelemetryProps {}
 
 export const SetupWizard: FC<SetupWizardProps> = props => {
@@ -68,7 +114,8 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
     // about the setup wizard availability and redirect to the wizard if it wasn't skipped already.
     // eslint-disable-next-line no-restricted-syntax
     const [, setSkipWizardState] = useLocalStorage('setup.skipped', false)
-    const steps = CORE_STEPS
+    const [isSetupChecklistEnabled, flagFetchStatus] = useFeatureFlag('setup-checklist', false)
+    const steps = useMemo(() => (isSetupChecklistEnabled ? CHECKLIST_STEPS : CORE_STEPS), [isSetupChecklistEnabled])
 
     const handleStepChange = useCallback(
         (nextStep: StepConfiguration): void => {
@@ -92,11 +139,16 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
         return null
     }
 
+    // skip rendering until feature flag is loaded
+    if (!['loaded', 'error'].includes(flagFetchStatus)) {
+        return null
+    }
+
     return (
         <div className={styles.root}>
             <PageTitle title="Setup" />
             <SetupStepsRoot
-                initialStepId={activeStepId}
+                initialStepId={isSetupChecklistEnabled ? undefined : activeStepId}
                 steps={steps}
                 onSkip={handleSkip}
                 onStepChange={handleStepChange}
