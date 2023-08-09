@@ -5,3 +5,5 @@ breaking:
 lint:
   use:
     - DEFAULT
+  except:
+    - PACKAGE_DIRECTORY_MATCH
