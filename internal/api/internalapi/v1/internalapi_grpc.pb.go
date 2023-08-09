@@ -19,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ConfigService_GetConfig_FullMethodName = "/internalapi.v1.ConfigService/GetConfig"
+	ConfigService_GetConfig_FullMethodName = "/api.internalapi.v1.ConfigService/GetConfig"
 )
 
 // ConfigServiceClient is the client API for ConfigService service.
@@ -96,7 +96,7 @@ func _ConfigService_GetConfig_Handler(srv interface{}, ctx context.Context, dec 
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ConfigService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "internalapi.v1.ConfigService",
+	ServiceName: "api.internalapi.v1.ConfigService",
 	HandlerType: (*ConfigServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
