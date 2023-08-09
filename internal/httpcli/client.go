@@ -526,7 +526,7 @@ func NewRetryPolicy(max int, maxRetryAfterDuration time.Duration) rehttp.RetryFn
 	const retriedTraceAttributeKey = "httpcli.retried"
 
 	return func(a rehttp.Attempt) (retry bool) {
-		tr := trace.FromContext(a.Request.Context())
+		tr := trace.TraceFromContext(a.Request.Context())
 		if a.Index == 0 {
 			// For the initial attempt set it to false in case we never retry,
 			// to make this easier to query in Cloud Trace. This attribute will
