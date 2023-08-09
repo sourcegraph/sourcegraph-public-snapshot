@@ -201,18 +201,6 @@
     {
       "Name": "versions_insert_row_trigger",
       "Definition": "CREATE OR REPLACE FUNCTION public.versions_insert_row_trigger()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n    NEW.first_version = NEW.version;\n    RETURN NEW;\nEND $function$\n"
-    },
-    {
-      "Name": "isCodyGenerationEvent",
-      "Definition": "CREATE OR REPLACE FUNCTION public.isCodyGenerationEvent(name text)\nRETURNS boolean AS $$\nBEGIN\n  RETURN name = ANY(ARRAY[\n    'CodyVSCodeExtension:recipe:rewrite-to-functional:executed',\n    'CodyVSCodeExtension:recipe:improve-variable-names:executed',\n    'CodyVSCodeExtension:recipe:replace:executed',\n    'CodyVSCodeExtension:recipe:generate-docstring:executed',\n    'CodyVSCodeExtension:recipe:generate-unit-test:executed',\n    'CodyVSCodeExtension:recipe:rewrite-functional:executed',\n    'CodyVSCodeExtension:recipe:code-refactor:executed',\n    'CodyVSCodeExtension:recipe:fixup:executed',\n\t'CodyVSCodeExtension:recipe:translate-to-language:executed'\n  ]);\nEND;\n$$ LANGUAGE plpgsql IMMUTABLE;"
-    },
-    {
-      "Name": "isCodyExplanationEvent",
-      "Definition": "CREATE OR REPLACE FUNCTION public.isCodyExplanationEvent(name text)\nRETURNS boolean AS $$\nBEGIN\n  RETURN name = ANY(ARRAY[\n    'CodyVSCodeExtension:recipe:explain-code-high-level:executed',\n    'CodyVSCodeExtension:recipe:explain-code-detailed:executed',\n    'CodyVSCodeExtension:recipe:find-code-smells:executed',\n    'CodyVSCodeExtension:recipe:git-history:executed',\n    'CodyVSCodeExtension:recipe:rate-code:executed'\n  ]);\nEND;\n$$ LANGUAGE plpgsql IMMUTABLE;"
-    },
-    {
-      "Name": "isCodyActiveEvent",
-      "Definition": "CREATE OR REPLACE FUNCTION public.isCodyActiveEvent(name text)\nRETURNS boolean AS $$\nBEGIN\n  RETURN\n    (name LIKE '%%cody%%' OR name LIKE '%%Cody%%')\n    AND NOT\n    (\n    name LIKE '%%completion:started%%' OR\n    name LIKE '%%completion:suggested%%' OR\n    name LIKE '%%cta%%' OR\n    name LIKE '%%Cta%%' OR\n    name = ANY(ARRAY['CodyVSCodeExtension:CodySavedLogin:executed',\n        'web:codyChat:tryOnPublicCode',\n        'web:codyEditorWidget:viewed',\n        'web:codyChat:pageViewed',\n        'CodyConfigurationPageViewed',\n        'ClickedOnTryCodySearchCTA',\n        'TryCodyWebOnboardingDisplayed',\n        'AboutGetCodyPopover',\n        'TryCodyWeb',\n        'CodySurveyToastViewed',\n        'SiteAdminCodyPageViewed',\n        'CodyUninstalled',\n        'SpeakToACodyEngineerCTA']));\nEND;\n$$ LANGUAGE plpgsql IMMUTABLE;"
     }
   ],
   "Sequences": [
@@ -10604,46 +10592,6 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX event_logs_anonymous_user_id ON event_logs USING btree (anonymous_user_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "event_logs_name",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX event_logs_name ON event_logs USING gin (name gin_trgm_ops)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "event_logs_name_is_cody_explanation_event",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX event_logs_name_is_cody_explanation_event ON event_logs (isCodyExplanationEvent(name))",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "event_logs_name_is_cody_generation_event",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX event_logs_name_is_cody_generation_event ON event_logs (isCodyGenerationEvent(name))",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "event_logs_name_is_cody_active_event",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX event_logs_name_is_cody_active_event ON event_logs (isCodyActiveEvent(name))",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
