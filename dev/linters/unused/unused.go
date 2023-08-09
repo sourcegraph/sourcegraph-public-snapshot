@@ -1,6 +1,7 @@
 package unused
 
 import (
+	"errors"
 	"fmt"
 	"go/token"
 	"reflect"
@@ -19,8 +20,12 @@ var Analyzer = nolint.Wrap(&analysis.Analyzer{
 		// a result
 		allUnused := pass.ResultOf[unused.Analyzer.Analyzer].(unused.Result).Unused
 		for _, u := range allUnused {
+			pos := findPos(pass, u.Position)
+			if pos == token.NoPos {
+				return nil, errors.New("could not find position in file set")
+			}
 			pass.Report(analysis.Diagnostic{
-				Pos:     token.Pos(u.Position.Offset),
+				Pos:     pos,
 				Message: fmt.Sprintf("%s is unused", u.Name),
 			})
 		}
@@ -29,3 +34,21 @@ var Analyzer = nolint.Wrap(&analysis.Analyzer{
 	Requires:   []*analysis.Analyzer{unused.Analyzer.Analyzer},
 	ResultType: reflect.TypeOf(nil),
 })
+
+// HACK: findPos is a hack to get around the fact that `analysis.Diagnostic`
+// requirs a token.Pos, but the unused analyzer only gives us `token.Position`.
+// This uses some internal knowledge about how `token.Pos` works to reconstruct
+// it from the `token.Position`.
+// It is a workaround for the problems described in this issue:
+// https://github.com/dominikh/go-tools/issues/375
+func findPos(pass *analysis.Pass, position token.Position) (res token.Pos) {
+	res = token.NoPos
+	pass.Fset.Iterate(func(f *token.File) bool {
+		if f.Name() == position.Filename {
+			res = token.Pos(f.Base() + position.Offset)
+			return false
+		}
+		return true
+	})
+	return res
+}
