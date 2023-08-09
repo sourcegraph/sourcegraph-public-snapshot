@@ -5,7 +5,6 @@ package observation
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -18,11 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// enableTraceLog toggles whether TraceLogger.Log events should be logged at info level,
-// which is useful in environments like Datadog that don't support OpenTrace/OpenTelemetry
-// trace log events.
-var enableTraceLog = os.Getenv("SRC_TRACE_LOG") == "true"
 
 type ErrorFilterBehaviour uint8
 
