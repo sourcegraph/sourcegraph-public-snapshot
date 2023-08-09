@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
-import { mdiClose, mdiFormatListBulleted, mdiPlus, mdiDelete } from '@mdi/js'
+import { mdiClose, mdiHistory, mdiPlus, mdiDelete } from '@mdi/js'
 
 import { CodyLogo } from '@sourcegraph/cody-ui/dist/icons/CodyLogo'
 import { Button, Icon, Tooltip, Badge } from '@sourcegraph/wildcard'
@@ -92,7 +92,7 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose }) => {
                                 onClick={() => setShowHistory(showing => !showing)}
                                 aria-pressed={showHistory}
                             >
-                                <Icon aria-hidden={true} svgPath={mdiFormatListBulleted} />
+                                <Icon aria-hidden={true} svgPath={mdiHistory} />
                             </Button>
                         </Tooltip>
                         <Tooltip content="Start a new chat">
