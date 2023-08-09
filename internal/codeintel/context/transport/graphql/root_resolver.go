@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -38,13 +40,10 @@ func (r *rootResolver) GetPreciseContext(ctx context.Context, input *resolverstu
 	resolvers := make([]resolverstubs.PreciseContextResolver, 0, len(context))
 	for _, c := range context {
 		resolvers = append(resolvers, &preciseContextResolver{
-			scipSymbolName:        c.ScipSymbolName,
-			fuzzySymbolName:       c.FuzzySymbolName,
-			scipDescriptorSuffix:  c.ScipDescriptorSuffix,
-			fuzzyDescriptorSuffix: c.FuzzyDescriptorSuffix,
-			repositoryName:        c.RepositoryName,
-			text:                  c.Text,
-			filepath:              c.FilePath,
+			symbol:            &preciseSymbolReferenceResolver{c.Symbol},
+			repositoryName:    c.RepositoryName,
+			definitionSnippet: c.DefinitionSnippet,
+			filepath:          c.Filepath,
 		})
 	}
 	return &preciseContextOutputResolver{context: resolvers}, nil
@@ -59,23 +58,21 @@ func (r *preciseContextOutputResolver) Context() []resolverstubs.PreciseContextR
 }
 
 type preciseContextResolver struct {
-	scipSymbolName        string
-	fuzzySymbolName       string
-	repositoryName        string
-	scipDescriptorSuffix  string
-	fuzzyDescriptorSuffix string
-	text                  string
-	filepath              string
+	symbol            *preciseSymbolReferenceResolver
+	definitionSnippet string
+	repositoryName    string
+	filepath          string
 }
 
-func (r *preciseContextResolver) ScipSymbolName() string  { return r.scipSymbolName }
-func (r *preciseContextResolver) FuzzySymbolName() string { return r.fuzzySymbolName }
-func (r *preciseContextResolver) ScipDescriptorSuffix() string {
-	return r.scipDescriptorSuffix
+type preciseSymbolReferenceResolver struct {
+	ref types.PreciseSymbolReference
 }
-func (r *preciseContextResolver) FuzzyDescriptorSuffix() string {
-	return r.fuzzyDescriptorSuffix
-}
-func (r *preciseContextResolver) RepositoryName() string { return r.repositoryName }
-func (r *preciseContextResolver) Text() string           { return r.text }
-func (r *preciseContextResolver) FilePath() string       { return r.filepath }
+
+func (r *preciseContextResolver) Symbol() resolvers.PreciseSymbolReferenceResolver { return r.symbol }
+func (r *preciseContextResolver) DefinitionSnippet() string                        { return r.definitionSnippet }
+func (r *preciseContextResolver) RepositoryName() string                           { return r.repositoryName }
+func (r *preciseContextResolver) Filepath() string                                 { return r.filepath }
+func (r *preciseContextResolver) CanonicalLocationURL() string                     { return "UNIMPLEMENTED" } // TODO
+func (r *preciseSymbolReferenceResolver) ScipName() string                         { return r.ref.ScipName }
+func (r *preciseSymbolReferenceResolver) ScipDescriptorSuffix() string             { return r.ref.DescriptorSuffix }
+func (r *preciseSymbolReferenceResolver) FuzzyName() *string                       { return r.ref.FuzzyName }

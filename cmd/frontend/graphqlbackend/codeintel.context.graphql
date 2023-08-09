@@ -68,31 +68,44 @@ PreciseContext provides code intelligence information for a snippet of code.
 """
 type PreciseContext {
     """
-    The scip symbol name.
+    The symbol name.
     """
-    scipSymbolName: String!
+    symbol: PreciseSymbolReference
+
     """
-    The fuzzy symbol name created by Syntect and TreeSitter.
+    The snippet of code defining the symbol.
     """
-    fuzzySymbolName: String!
-    """
-    The descriptor suffix of the scip symbol name.
-    """
-    scipDescriptorSuffix: String!
-    """
-    The fuzzy descriptor suffix created by Syntect and TreeSitter.
-    """
-    fuzzyDescriptorSuffix: String!
+    definitionSnippet: String!
+
     """
     The repository name.
     """
     repositoryName: String!
-    """
-    The snippet of code of the symbol.
-    """
-    text: String!
+
     """
     The filepath of code snippet.
     """
     filepath: String!
+
+    """
+    The canonical URL to this snippet's location (using an immutable revision specifier).
+    """
+    canonicalLocationURL: String!
+}
+
+type PreciseSymbolReference {
+    """
+    The SCIP symbol name matched from the context input.
+    """
+    scipName: String!
+
+    """
+    TODO
+    """
+    scipDescriptorSuffix: String!
+
+    """
+    The fuzzy name pulled from a syntactic analysis of the context input.
+    """
+    fuzzyName: String
 }

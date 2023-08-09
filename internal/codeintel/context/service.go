@@ -274,9 +274,9 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	// PHASE 3: Gather definitions for each relevant SCIP symbol
 
 	type preciseData struct {
-		fuzzyName      string
-		scipSymbolName string
-		location       []codenavshared.UploadLocation
+		scipName  string
+		fuzzyName string
+		location  []codenavshared.UploadLocation
 	}
 	preciseDataList := []*preciseData{}
 
@@ -293,9 +293,9 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	for _, location := range ul {
 		for fzn := range fuzzyNameSetBySymbol[location.SymbolName] {
 			preciseDataList = append(preciseDataList, &preciseData{
-				fuzzyName:      fzn,
-				scipSymbolName: location.SymbolName,
-				location:       []codenavshared.UploadLocation{location},
+				scipName:  location.SymbolName,
+				fuzzyName: fzn,
+				location:  []codenavshared.UploadLocation{location},
 			})
 		}
 	}
@@ -416,7 +416,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 					continue
 				}
 				if len(occ.EnclosingRange) > 0 {
-					ex, err := symbols.NewExplodedSymbol(pd.scipSymbolName)
+					ex, err := symbols.NewExplodedSymbol(pd.scipName)
 					if err != nil {
 						return nil, err
 					}
@@ -424,14 +424,20 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 					if err != nil {
 						return nil, err
 					}
+					var fuzzyName *string
+					if fex.FuzzyDescriptorSuffix != "" {
+						fuzzyName = &fex.FuzzyDescriptorSuffix
+					}
+
 					preciseResponse = append(preciseResponse, &types.PreciseContext{
-						ScipSymbolName:        pd.scipSymbolName,
-						FuzzySymbolName:       pd.fuzzyName,
-						ScipDescriptorSuffix:  ex.DescriptorSuffix,
-						FuzzyDescriptorSuffix: fex.FuzzyDescriptorSuffix,
-						RepositoryName:        l.Dump.RepositoryName,
-						Text:                  documentAndText.Extract(scip.NewRange(occ.EnclosingRange)),
-						FilePath:              l.Path,
+						Symbol: types.PreciseSymbolReference{
+							ScipName:         pd.scipName,
+							DescriptorSuffix: ex.DescriptorSuffix,
+							FuzzyName:        fuzzyName,
+						},
+						RepositoryName:    l.Dump.RepositoryName,
+						DefinitionSnippet: documentAndText.Extract(scip.NewRange(occ.EnclosingRange)),
+						Filepath:          l.Path,
 					})
 				}
 			}
