@@ -865,7 +865,65 @@ CREATE FUNCTION versions_insert_row_trigger() RETURNS trigger
 BEGIN
     NEW.first_version = NEW.version;
     RETURN NEW;
-END $$;
+END
+$$;
+
+CREATE FUNCTION isCodyGenerationEvent(name text)
+RETURNS boolean AS $$
+BEGIN
+  RETURN name = ANY(ARRAY[
+    'CodyVSCodeExtension:recipe:rewrite-to-functional:executed',
+    'CodyVSCodeExtension:recipe:improve-variable-names:executed',
+    'CodyVSCodeExtension:recipe:replace:executed',
+    'CodyVSCodeExtension:recipe:generate-docstring:executed',
+    'CodyVSCodeExtension:recipe:generate-unit-test:executed',
+    'CodyVSCodeExtension:recipe:rewrite-functional:executed',
+    'CodyVSCodeExtension:recipe:code-refactor:executed',
+    'CodyVSCodeExtension:recipe:fixup:executed',
+	'CodyVSCodeExtension:recipe:translate-to-language:executed'
+  ]);
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+CREATE FUNCTION isCodyExplanationEvent(name text)
+RETURNS boolean AS $$
+BEGIN
+  RETURN name = ANY(ARRAY[
+    'CodyVSCodeExtension:recipe:explain-code-high-level:executed',
+    'CodyVSCodeExtension:recipe:explain-code-detailed:executed',
+    'CodyVSCodeExtension:recipe:find-code-smells:executed',
+    'CodyVSCodeExtension:recipe:git-history:executed',
+    'CodyVSCodeExtension:recipe:rate-code:executed'
+  ]);
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+CREATE FUNCTION isCodyActiveEvent(name text)
+RETURNS boolean AS $$
+BEGIN
+  RETURN
+    (name LIKE '%%cody%%' OR name LIKE '%%Cody%%')
+    AND NOT
+    (
+    name LIKE '%%completion:started%%' OR
+    name LIKE '%%completion:suggested%%' OR
+    name LIKE '%%cta%%' OR
+    name LIKE '%%Cta%%' OR
+    name = ANY(ARRAY['CodyVSCodeExtension:CodySavedLogin:executed',
+        'web:codyChat:tryOnPublicCode',
+        'web:codyEditorWidget:viewed',
+        'web:codyChat:pageViewed',
+        'CodyConfigurationPageViewed',
+        'ClickedOnTryCodySearchCTA',
+        'TryCodyWebOnboardingDisplayed',
+        'AboutGetCodyPopover',
+        'TryCodyWeb',
+        'CodySurveyToastViewed',
+        'SiteAdminCodyPageViewed',
+        'CodyUninstalled',
+        'SpeakToACodyEngineerCTA']));
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
 
 CREATE AGGREGATE snapshot_transition_columns(hstore[]) (
     SFUNC = merge_audit_log_transitions,
@@ -5867,6 +5925,12 @@ CREATE INDEX event_logs_anonymous_user_id ON event_logs USING btree (anonymous_u
 CREATE UNIQUE INDEX event_logs_export_allowlist_event_name_idx ON event_logs_export_allowlist USING btree (event_name);
 
 CREATE INDEX event_logs_name ON event_logs USING gin (name gin_trgm_ops);
+
+CREATE INDEX event_logs_name_is_cody_explanation_event ON event_logs (isCodyExplanationEvent(name));
+
+CREATE INDEX event_logs_name_is_cody_generation_event ON event_logs (isCodyGenerationEvent(name));
+
+CREATE INDEX event_logs_name_is_cody_active_event ON event_logs (isCodyActiveEvent(name));
 
 CREATE INDEX event_logs_name_timestamp ON event_logs USING btree (name, "timestamp" DESC);
 
