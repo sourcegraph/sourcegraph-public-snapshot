@@ -389,6 +389,8 @@ message RepoDeleteResponse {}
 
 // RepoUpdateRequest is a request to update a repository.
 message RepoUpdateRequest {
+  // RepoUpdateRequest used to have an unused clone_from_shard field.
+  reserved 3;
   // repo is the name of the repo to update.
   string repo = 1;
   // since is the debounce interval for queries, used only with request-repo-update
