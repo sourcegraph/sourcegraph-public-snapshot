@@ -4,10 +4,6 @@ set -eu -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
 
-MAIN_BRANCH="main"
-BRANCH="${BUILDKITE_BRANCH:-'default-branch'}"
-IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
-
 # TODO: Manage these variables properly
 GCP_PROJECT="sourcegraph-ci"
 GCS_BUCKET="package-repository"
@@ -47,7 +43,7 @@ apkindex_build_dir=$(mktemp -d -t apkindex-build.XXXXXXXX)
 pushd "$apkindex_build_dir"
 
 # Fetch all APKINDEX fragments from bucket
-gsutil -u "$GCP_PROJECT" -m cp "gs://$GCS_BUCKET/packages/$BRANCH_PATH/$TARGET_ARCH/*.APKINDEX.fragment" ./
+gsutil -u "$GCP_PROJECT" -m cp "gs://$GCS_BUCKET/$BRANCH_PATH/$TARGET_ARCH/*.APKINDEX.fragment" ./
 
 # Concat all fragments into a single APKINDEX and tar.gz it
 touch placeholder.APKINDEX.fragment
@@ -65,4 +61,4 @@ melange sign-index --signing-key "$key_path" APKINDEX.tar.gz
 
 # Upload signed APKINDEX archive
 # Use no-cache to avoid index/packages getting out of sync
-gsutil -u "$GCP_PROJECT" -h "Cache-Control:no-cache" cp APKINDEX.tar.gz "gs://$GCS_BUCKET/packages/$BRANCH_PATH/$TARGET_ARCH/"
+gsutil -u "$GCP_PROJECT" -h "Cache-Control:no-cache" cp APKINDEX.tar.gz "gs://$GCS_BUCKET/$BRANCH_PATH/$TARGET_ARCH/"
