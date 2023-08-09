@@ -24,12 +24,12 @@ For example:
 
 Cody can also edit code directly in your file rather than making suggestions. You can prompt Cody to refactor code using inline chat.
 
-To refactor code inline, try:
+To refactor code inline:
 
 1. Highlight the snippet of code you'd like to refactor.
-2. Click the `+` icon in the gutter to the left of the first line of code.
+2. Click the `+` icon to the left of the first line of code.
 3. In the Cody chat box, type `/fix` + your prompt for Cody. For example: `/fix refactor this code to be more easily readable`.
-4. Click `Ask Cody`.
+4. Click `Ask Cody` (or alternatively use shortcut `Cmd + Enter`)
 
 After submitting the request, Cody will prepare a code fix. You can click `Apply` and Cody will change the code inline, or you can click `Show Diff` to see Cody's proposed change.
 
