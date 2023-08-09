@@ -22,6 +22,8 @@ func TestIsAllowedGitCmd(t *testing.T) {
 		{"reset", "-q", "ceed6a398bd66c090b6c24bd8251ac9255d90fb2"},
 		{"apply", "--cached", "-p0"},
 		{"commit", "-m", "An awesome commit message."},
+		{"commit", "-F", "-"},
+		{"commit", "--file=-"},
 		{"push", "--force", "git@github.com:repo/name", "f22cfd066432e382c24f1eaa867444671e23a136:refs/heads/a-branch"},
 		{"update-ref", "--"},
 	}

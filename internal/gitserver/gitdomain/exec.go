@@ -1,7 +1,6 @@
 package gitdomain
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -155,7 +154,6 @@ func IsAllowedGitCmd(logger log.Logger, args []string) bool {
 			return false
 		}
 		if strings.HasPrefix(arg, "-") {
-			fmt.Printf("EVALUATING ARGUMENT %d: %s\n", i, arg)
 			// Special-case `git log -S` and `git log -G`, which interpret any characters
 			// after their 'S' or 'G' as part of the query. There is no long form of this
 			// flags (such as --something=query), so if we did not special-case these, there

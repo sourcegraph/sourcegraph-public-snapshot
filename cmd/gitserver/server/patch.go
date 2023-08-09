@@ -234,7 +234,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	// NOTE: join messages with a blank line in between ("\n\n")
 	// because the previous behavior was to use multiple -m arguments,
 	// which concatenate with a blank line in between.
-	// Gerrit is the only code host that usees multiple messages at the moment
+	// Gerrit is the only code host that uses multiple messages at the moment.
 	cmd.Stdin = strings.NewReader(strings.Join(messages, "\n\n"))
 
 	cmd.Dir = tmpRepoDir
