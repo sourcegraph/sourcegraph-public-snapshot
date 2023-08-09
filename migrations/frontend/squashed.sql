@@ -4220,6 +4220,36 @@ CREATE SEQUENCE registry_extensions_id_seq
 
 ALTER SEQUENCE registry_extensions_id_seq OWNED BY registry_extensions.id;
 
+CREATE TABLE repo_clone_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    failure_message text,
+    queued_at timestamp with time zone DEFAULT now(),
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
+    gitserver_address text NOT NULL,
+    repo_name text NOT NULL,
+    update_after integer NOT NULL,
+    clone boolean DEFAULT false NOT NULL
+);
+
+CREATE SEQUENCE repo_clone_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE repo_clone_jobs_id_seq OWNED BY repo_clone_jobs.id;
+
 CREATE TABLE repo_commits_changelists (
     id integer NOT NULL,
     repo_id integer NOT NULL,
@@ -5113,6 +5143,8 @@ ALTER TABLE ONLY registry_extensions ALTER COLUMN id SET DEFAULT nextval('regist
 
 ALTER TABLE ONLY repo ALTER COLUMN id SET DEFAULT nextval('repo_id_seq'::regclass);
 
+ALTER TABLE ONLY repo_clone_jobs ALTER COLUMN id SET DEFAULT nextval('repo_clone_jobs_id_seq'::regclass);
+
 ALTER TABLE ONLY repo_commits_changelists ALTER COLUMN id SET DEFAULT nextval('repo_commits_changelists_id_seq'::regclass);
 
 ALTER TABLE ONLY repo_embedding_jobs ALTER COLUMN id SET DEFAULT nextval('repo_embedding_jobs_id_seq'::regclass);
@@ -5573,6 +5605,9 @@ ALTER TABLE ONLY registry_extension_releases
 
 ALTER TABLE ONLY registry_extensions
     ADD CONSTRAINT registry_extensions_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY repo_clone_jobs
+    ADD CONSTRAINT repo_clone_jobs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY repo_commits_changelists
     ADD CONSTRAINT repo_commits_changelists_pkey PRIMARY KEY (id);
@@ -6101,6 +6136,10 @@ CREATE UNIQUE INDEX registry_extensions_uuid ON registry_extensions USING btree 
 CREATE INDEX repo_archived ON repo USING btree (archived);
 
 CREATE INDEX repo_blocked_idx ON repo USING btree (((blocked IS NOT NULL)));
+
+CREATE INDEX repo_clone_jobs_repo_name_idx ON repo_clone_jobs USING btree (repo_name);
+
+CREATE INDEX repo_clone_jobs_state_gitserver_address_idx ON repo_clone_jobs USING btree (state, gitserver_address);
 
 CREATE INDEX repo_created_at ON repo USING btree (created_at);
 

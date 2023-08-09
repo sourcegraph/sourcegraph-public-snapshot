@@ -3510,6 +3510,34 @@ Triggers:
 
 ```
 
+# Table "public.repo_clone_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                   Default                   
+-------------------+--------------------------+-----------+----------+---------------------------------------------
+ id                | integer                  |           | not null | nextval('repo_clone_jobs_id_seq'::regclass)
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ cancel            | boolean                  |           | not null | false
+ gitserver_address | text                     |           | not null | 
+ repo_name         | text                     |           | not null | 
+ update_after      | integer                  |           | not null | 
+ clone             | boolean                  |           | not null | false
+Indexes:
+    "repo_clone_jobs_pkey" PRIMARY KEY, btree (id)
+    "repo_clone_jobs_repo_name_idx" btree (repo_name)
+    "repo_clone_jobs_state_gitserver_address_idx" btree (state, gitserver_address)
+
+```
+
 # Table "public.repo_commits_changelists"
 ```
          Column         |           Type           | Collation | Nullable |                       Default                        
