@@ -1,6 +1,7 @@
 package gitdomain
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -141,8 +142,20 @@ func IsAllowedGitCmd(logger log.Logger, args []string) bool {
 		logger.Warn("command not allowed", log.String("cmd", cmd))
 		return false
 	}
+
+	// I hate state machines, but I hate them less than complicated multi-argument checking
+	checkFileInput := false
 	for i, arg := range args[1:] {
+		if checkFileInput {
+			if arg == "-" {
+				checkFileInput = false
+				continue
+			}
+			logger.Warn("IsAllowedGitCmd: unallowed file input for `git commit`", log.String("cmd", cmd), log.String("arg", arg))
+			return false
+		}
 		if strings.HasPrefix(arg, "-") {
+			fmt.Printf("EVALUATING ARGUMENT %d: %s\n", i, arg)
 			// Special-case `git log -S` and `git log -G`, which interpret any characters
 			// after their 'S' or 'G' as part of the query. There is no long form of this
 			// flags (such as --something=query), so if we did not special-case these, there
@@ -160,6 +173,24 @@ func IsAllowedGitCmd(logger log.Logger, args []string) bool {
 			// Special case numeric arguments like `git log -20`.
 			if _, err := strconv.Atoi(arg[1:]); err == nil {
 				continue // this arg is OK
+			}
+
+			// For `git commit`, allow reading the commit message from stdin
+			// but don't just blindly accept the `--file` or `-F` args
+			// because they could be used to read arbitrary files.
+			// Instead, accept only the forms that read from stdin.
+			if cmd == "commit" {
+				if arg == "--file=-" {
+					continue
+				}
+				// checking `-F` requires a second check for `-` in the next argument
+				// Instead of an obtuse check of next and previous arguments, set state and check it the next time around
+				// Here's the alternative obtuse check of previous and next arguments:
+				// (arg == "-F" && len(args) > i+2 && args[i+2] == "-") || (arg == "-" && args[i] == "-F")
+				if arg == "-F" {
+					checkFileInput = true
+					continue
+				}
 			}
 
 			if !isAllowedGitArg(allowedArgs, arg) {

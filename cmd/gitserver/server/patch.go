@@ -18,6 +18,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/unpack"
@@ -225,11 +227,14 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		committerEmail = authorEmail
 	}
 
-	gitCommitArgs := []string{"commit"}
-	for _, m := range messages {
-		gitCommitArgs = append(gitCommitArgs, "-m", stylizeCommitMessage(m))
-	}
-	cmd = exec.CommandContext(ctx, "git", gitCommitArgs...)
+	// Commit messages can be arbitrary strings, so using `-m` runs into problems.
+	// Instead, feed the commit messages to stdin.
+	cmd = exec.CommandContext(ctx, "git", "commit", "-F", "-")
+	// NOTE: join messages with a blank line in between ("\n\n")
+	// because the previous behavior was to use multiple -m arguments,
+	// which concatenate with a blank line in between.
+	// Gerrit is the only code host that usees multiple messages at the moment
+	cmd.Stdin = strings.NewReader(strings.Join(messages, "\n\n"))
 
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(os.Environ(), []string{
@@ -349,15 +354,49 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	return http.StatusOK, resp
 }
 
-func stylizeCommitMessage(message string) string {
-	if styleMessage(message) {
-		return fmt.Sprintf("%q", message)
-	}
-	return message
-}
+// repoRemoteRefs returns a map containing ref + commit pairs from the
+// remote Git repository starting with the specified prefix.
+//
+// The ref prefix `ref/<ref type>/` is stripped away from the returned
+// refs.
+func (s *Server) repoRemoteRefs(ctx context.Context, remoteURL *vcs.URL, repoName, prefix string) (map[string]string, error) {
+	// The expected output of this git command is a list of:
+	// <commit hash> <ref name>
+	cmd := exec.Command("git", "ls-remote", remoteURL.String(), prefix+"*")
 
-func styleMessage(message string) bool {
-	return !strings.HasPrefix(message, "Change-Id: I")
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	_, err := runCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, nil, api.RepoName(repoName), cmd))
+	if err != nil {
+		stderr := stderr.Bytes()
+		if len(stderr) > 200 {
+			stderr = stderr[:200]
+		}
+		return nil, errors.Errorf("git %s failed: %s (%q)", cmd.Args, err, stderr)
+	}
+
+	refs := make(map[string]string)
+	raw := stdout.String()
+	for _, line := range strings.Split(raw, "\n") {
+		if line == "" {
+			continue
+		}
+
+		fields := strings.Fields(line)
+		if len(fields) != 2 {
+			return nil, errors.Errorf("git %s failed (invalid output): %s", cmd.Args, line)
+		}
+
+		split := strings.SplitN(fields[1], "/", 3)
+		if len(split) != 3 {
+			return nil, errors.Errorf("git %s failed (invalid refname): %s", cmd.Args, fields[1])
+		}
+
+		refs[split[2]] = fields[0]
+	}
+	return refs, nil
+>>>>>>> d1202d8735 (Batch Changes - commit message on stdin (#55657))
 }
 
 func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchCommit string, remoteURL *vcs.URL, tmpGitPathEnv, altObjectsEnv string) (string, error) {
