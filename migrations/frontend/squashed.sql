@@ -5926,11 +5926,11 @@ CREATE UNIQUE INDEX event_logs_export_allowlist_event_name_idx ON event_logs_exp
 
 CREATE INDEX event_logs_name ON event_logs USING gin (name gin_trgm_ops);
 
-CREATE INDEX event_logs_name_is_cody_explanation_event ON event_logs (isCodyExplanationEvent(name));
+CREATE INDEX event_logs_name_is_cody_explanation_event ON event_logs USING btree (isCodyExplanationEvent(name));
 
-CREATE INDEX event_logs_name_is_cody_generation_event ON event_logs (isCodyGenerationEvent(name));
+CREATE INDEX event_logs_name_is_cody_generation_event ON event_logs USING btree (isCodyGenerationEvent(name));
 
-CREATE INDEX event_logs_name_is_cody_active_event ON event_logs (isCodyActiveEvent(name));
+CREATE INDEX event_logs_name_is_cody_active_event ON event_logs USING btree (isCodyActiveEvent(name));
 
 CREATE INDEX event_logs_name_timestamp ON event_logs USING btree (name, "timestamp" DESC);
 
