@@ -14,9 +14,12 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
+	vdb "github.com/sourcegraph/sourcegraph/internal/embeddings/db"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -25,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type FileChunkContext struct {
@@ -70,6 +74,7 @@ type CodyContextClient struct {
 	db               database.DB
 	embeddingsClient embeddings.Client
 	searchClient     client.SearchClient
+	searcher         vdb.VectorSearcher
 
 	obsCtx                 *observation.Context
 	getCodyContextOp       *observation.Operation
@@ -82,6 +87,14 @@ type GetContextArgs struct {
 	Query            string
 	CodeResultsCount int32
 	TextResultsCount int32
+}
+
+func (a *GetContextArgs) RepoIDs() []api.RepoID {
+	res := make([]api.RepoID, 0, len(a.Repos))
+	for _, repo := range a.Repos {
+		res = append(res, repo.ID)
+	}
+	return res
 }
 
 func (a *GetContextArgs) Attrs() []attribute.KeyValue {
@@ -164,6 +177,10 @@ func (c *CodyContextClient) partitionRepos(ctx context.Context, input []types.Re
 func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
 	ctx, _, endObservation := c.getEmbeddingsContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	defer endObservation(1, observation.Args{})
+
+	if featureflag.FromContext(ctx).GetBoolOr("qdrant", false) {
+		return c.getEmbeddingsContextFromQdrant(ctx, args)
+	}
 
 	if len(args.Repos) == 0 || (args.CodeResultsCount == 0 && args.TextResultsCount == 0) {
 		// Don't bother doing an API request if we can't actually have any results.
@@ -306,6 +323,48 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 	}
 
 	return append(results[0], results[1]...), nil
+}
+
+func (c *CodyContextClient) getEmbeddingsContextFromQdrant(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
+	embeddingsConf := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+	if c == nil {
+		return nil, errors.New("embeddings not configured or disabled")
+	}
+	client, err := embed.NewEmbeddingsClient(embeddingsConf)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting embeddings client")
+	}
+
+	resp, err := client.GetQueryEmbedding(ctx, args.Query)
+	if err != nil || len(resp.Failed) > 0 {
+		return nil, errors.Wrap(err, "getting query embedding")
+	}
+	query := resp.Embeddings
+
+	params := vdb.SearchParams{
+		ModelID:   client.GetModelIdentifier(),
+		RepoIDs:   args.RepoIDs(),
+		Query:     query,
+		CodeLimit: int(args.CodeResultsCount),
+		TextLimit: int(args.TextResultsCount),
+	}
+	chunks, err := c.searcher.Search(ctx, params)
+	if err != nil {
+		return nil, errors.Wrap(err, "searching vector DB")
+	}
+
+	res := make([]FileChunkContext, 0, len(chunks))
+	for _, chunk := range chunks {
+		res = append(res, FileChunkContext{
+			RepoName:  chunk.Point.Payload.RepoName,
+			RepoID:    chunk.Point.Payload.RepoID,
+			CommitID:  chunk.Point.Payload.Revision,
+			Path:      chunk.Point.Payload.FilePath,
+			StartLine: int(chunk.Point.Payload.StartLine),
+			EndLine:   int(chunk.Point.Payload.EndLine),
+		})
+	}
+	return res, nil
 }
 
 func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {

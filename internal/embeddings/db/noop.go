@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-func NewNoopInserter() VectorInserter {
+func NewNoopDB() VectorDB {
 	return noopInserter{}
 }
 
