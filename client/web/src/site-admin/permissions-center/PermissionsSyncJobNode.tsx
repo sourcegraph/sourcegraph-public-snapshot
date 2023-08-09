@@ -104,11 +104,11 @@ export const JOB_STATE_METADATA_MAPPING: Record<PermissionsSyncJobState, JobStat
     },
 }
 
-interface PermissionsSyncJobStatusBadgeProps {
+interface PermissionsSyncJobDefaultProps {
     job: PermissionsSyncJob
 }
 
-export const PermissionsSyncJobStatusBadge: React.FunctionComponent<PermissionsSyncJobStatusBadgeProps> = ({ job }) => {
+export const PermissionsSyncJobStatusBadge: React.FunctionComponent<PermissionsSyncJobDefaultProps> = ({ job }) => {
     const { state, cancellationReason, failureMessage, codeHostStates, partialSuccess } = job
     const warningMessage = partialSuccess ? getWarningMessage(codeHostStates) : undefined
     return (
@@ -122,12 +122,17 @@ export const PermissionsSyncJobStatusBadge: React.FunctionComponent<PermissionsS
     )
 }
 
+export const PermissionsSyncJobUpdatedAt: React.FunctionComponent<PermissionsSyncJobDefaultProps> = ({ job }) => {
+    const time = job.finishedAt ?? job.startedAt ?? job.queuedAt
+    return <Timestamp date={time} />
+}
+
 const getWarningMessage = (codeHostStates: CodeHostState[]): string => {
     const failingCodeHostSyncsNumber = codeHostStates.filter(({ status }) => status === CodeHostStatus.ERROR).length
     return `${failingCodeHostSyncsNumber}/${codeHostStates.length} provider syncs were not successful`
 }
 
-export const PermissionsSyncJobSubject: React.FunctionComponent<{ job: PermissionsSyncJob }> = ({ job }) => {
+export const PermissionsSyncJobSubject: React.FunctionComponent<PermissionsSyncJobDefaultProps> = ({ job }) => {
     const [isOpen, setIsOpen] = useState<boolean>(false)
     const handleOpenChange = useCallback((event: PopoverOpenEvent): void => {
         setIsOpen(event.isOpen)
@@ -218,7 +223,7 @@ const getReadableReason = (reason: PermissionsSyncJobReason | null): string => {
     return 'Unknown reason'
 }
 
-export const PermissionsSyncJobReasonByline: React.FunctionComponent<{ job: PermissionsSyncJob }> = ({ job }) => {
+export const PermissionsSyncJobReasonByline: React.FunctionComponent<PermissionsSyncJobDefaultProps> = ({ job }) => {
     const message =
         job.reason.group === PermissionsSyncJobReasonGroup.MANUAL && job.triggeredByUser?.username
             ? `by ${job.triggeredByUser.username}`
@@ -238,18 +243,46 @@ export const PermissionsSyncJobReasonByline: React.FunctionComponent<{ job: Perm
     )
 }
 
-export const PermissionsSyncJobNumbers: React.FunctionComponent<{ job: PermissionsSyncJob; added: boolean }> = ({
-    job,
-    added,
-}) =>
-    added ? (
-        <div className={classNames('text-right', job.permissionsAdded > 0 ? 'text-success' : styles.textSuccessMuted)}>
-            {job.permissionsAdded > 0 && '+'}
-            <b>{job.permissionsAdded}</b>
-        </div>
-    ) : (
-        <div className={classNames('text-right', job.permissionsRemoved > 0 ? 'text-danger' : styles.textDangerMuted)}>
-            {job.permissionsRemoved > 0 && '-'}
-            <b>{job.permissionsRemoved}</b>
+export enum PermissionsSyncJobNumberType {
+    ADDED = 'ADDED',
+    REMOVED = 'REMOVED',
+    TOTAL = 'TOTAL',
+}
+
+const failedStates = new Set([
+    PermissionsSyncJobState.CANCELED,
+    PermissionsSyncJobState.ERRORED,
+    PermissionsSyncJobState.FAILED,
+])
+interface PermissionsSyncJobNumbersProps extends PermissionsSyncJobDefaultProps {
+    type: PermissionsSyncJobNumberType
+}
+
+export const PermissionsSyncJobNumbers: React.FunctionComponent<PermissionsSyncJobNumbersProps> = ({ job, type }) => {
+    let diff = 0
+    let classes = 'text-right'
+    switch (type) {
+        case PermissionsSyncJobNumberType.ADDED:
+            diff = job.permissionsAdded
+            classes = classNames(classes, { 'text-success': diff > 0 })
+            break
+        case PermissionsSyncJobNumberType.REMOVED:
+            diff = job.permissionsRemoved
+            classes = classNames(classes, { 'text-danger': diff > 0 })
+            break
+        default:
+            diff = job.permissionsFound
+    }
+    classes = classNames(classes, { [styles.textTotalNumber]: diff === 0 })
+
+    // do not show anything
+    if (diff === 0 && (job.finishedAt === null || failedStates.has(job.state))) {
+        return null
+    }
+
+    return (
+        <div className={classes}>
+            <b>{diff}</b>
         </div>
     )
+}

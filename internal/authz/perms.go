@@ -2,6 +2,7 @@ package authz
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -96,6 +97,8 @@ const (
 	SourceUserSync PermsSource = "user_sync"
 	SourceAPI      PermsSource = "api"
 )
+
+func (s PermsSource) ToGraphQL() string { return strings.ToUpper(string(s)) }
 
 func (p *Permission) Attrs() []attribute.KeyValue {
 	return []attribute.KeyValue{

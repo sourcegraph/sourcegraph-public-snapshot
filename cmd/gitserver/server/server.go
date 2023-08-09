@@ -927,13 +927,7 @@ func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdate
 	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 	defer cancel2()
 	if !repoCloned(dir) && !s.skipCloneForTests {
-		// We do not need to check if req.CloneFromShard is non-zero here since that has no effect on
-		// the code path at this point. Since the repo is already not cloned at this point, either
-		// this request was received for a repo migration or a regular clone - for both of which we
-		// want to go ahead and clone the repo. The responsibility of figuring out where to clone
-		// the repo from (upstream URL of the external service or the gitserver instance) lies with
-		// the implementation details of cloneRepo.
-		_, err := s.cloneRepo(ctx, req.Repo, &cloneOptions{Block: true, CloneFromShard: req.CloneFromShard})
+		_, err := s.cloneRepo(ctx, req.Repo, &cloneOptions{Block: true})
 		if err != nil {
 			logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
 			resp.Error = err.Error()
@@ -2005,11 +1999,6 @@ type cloneOptions struct {
 
 	// Overwrite will overwrite the existing clone.
 	Overwrite bool
-
-	// CloneFromShard is the hostname of the gitserver instance which is the current owner of the
-	// repository. If this is a non-zero string, then gitserver will attempt to clone the repo from
-	// that gitserver instance instead of the upstream repo URL of the external service.
-	CloneFromShard string
 }
 
 // cloneRepo performs a clone operation for the given repository. It is
@@ -2038,24 +2027,10 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", errors.Wrap(err, "get VCS syncer")
 	}
 
-	var remoteURL *vcs.URL
-	if opts != nil && opts.CloneFromShard != "" {
-		// are we cloning from the same gitserver instance?
-		if s.hostnameMatch(strings.TrimPrefix(opts.CloneFromShard, "http://")) {
-			return "", errors.Errorf("cannot clone from the same gitserver instance")
-		}
-
-		remoteURL, err = vcs.ParseURL(opts.CloneFromShard)
-		if err != nil {
-			return "", err
-		}
-		remoteURL = remoteURL.JoinPath("git", string(repo))
-	} else {
-		// We may be attempting to clone a private repo so we need an internal actor.
-		remoteURL, err = s.getRemoteURL(actor.WithInternalActor(ctx), repo)
-		if err != nil {
-			return "", err
-		}
+	// We may be attempting to clone a private repo so we need an internal actor.
+	remoteURL, err := s.getRemoteURL(actor.WithInternalActor(ctx), repo)
+	if err != nil {
+		return "", err
 	}
 
 	// isCloneable causes a network request, so we limit the number that can

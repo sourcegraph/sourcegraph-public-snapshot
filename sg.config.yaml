@@ -271,6 +271,12 @@ commands:
       - internal
       - enterprise/cmd/embeddings
       - internal/embeddings
+  qdrant:
+    cmd: |
+      docker run -p 6333:6333 -p 6334:6334 \
+        -v $HOME/.sourcegraph-dev/data/qdrant_data:/qdrant/storage \
+        -e QDRANT__SERVICE__GRPC_PORT="6334" \
+        qdrant/qdrant
   worker:
     cmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -1424,6 +1430,31 @@ commandsets:
       - redis
     commands:
       - cody-gateway
+
+  qdrant:
+    commands:
+      - qdrant
+      - frontend
+      - worker
+      - repo-updater
+      - web
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - caddy
+      - symbols
+      - docsite
+      - syntax-highlighter
+      - github-proxy
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - blobstore
+      - embeddings
+    env:
+      QDRANT_ENDPOINT: 'localhost:6334'
+
 
 tests:
   # These can be run with `sg test [name]`

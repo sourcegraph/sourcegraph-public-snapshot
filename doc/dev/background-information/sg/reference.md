@@ -50,6 +50,7 @@ Available comamndsets in `sg.config.yaml`:
 * monitoring
 * monitoring-alerts
 * otel
+* qdrant
 * web-standalone
 * web-standalone-prod
 
@@ -124,6 +125,7 @@ Available commands in `sg.config.yaml`:
 * otel-collector: OpenTelemetry collector
 * postgres_exporter
 * prometheus
+* qdrant
 * redis-postgres: Dockerized version of redis and postgres
 * repo-updater
 * searcher
