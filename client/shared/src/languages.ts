@@ -402,6 +402,11 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'scala':
             return 'scala'
 
+        // Smithy
+        case 'smithy':
+            return 'smithy'
+
+
         // Starlark
         case 'bzl':
         case 'bazel':

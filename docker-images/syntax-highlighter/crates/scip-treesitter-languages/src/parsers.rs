@@ -21,7 +21,7 @@ pub enum BundledParser {
     Sql,
     Xlsg,
     Zig,
-    Smithy
+    Smithy,
 
     // These two are special cases
     Typescript,
@@ -46,12 +46,12 @@ impl BundledParser {
             BundledParser::Ruby => tree_sitter_ruby::language(),
             BundledParser::Rust => tree_sitter_rust::language(),
             BundledParser::Scala => tree_sitter_scala::language(),
+            BundledParser::Smithy => tree_sitter_smithy::language(),
             BundledParser::Sql => tree_sitter_sql::language(),
             BundledParser::Typescript => tree_sitter_typescript::language_typescript(),
             BundledParser::Tsx => tree_sitter_typescript::language_tsx(),
             BundledParser::Xlsg => tree_sitter_xlsg::language(),
             BundledParser::Zig => tree_sitter_zig::language(),
-            BundledParser::Smithy => tree_sitter_smithy::language(),
         }
     }
 
@@ -72,12 +72,12 @@ impl BundledParser {
             "ruby" => Some(BundledParser::Ruby),
             "rust" => Some(BundledParser::Rust),
             "scala" => Some(BundledParser::Scala),
+            "smithy" => Some(BundledParser::Smithy),
             "sql" => Some(BundledParser::Sql),
             "typescript" => Some(BundledParser::Typescript),
             "tsx" => Some(BundledParser::Tsx),
             "xlsg" => Some(BundledParser::Xlsg),
             "zig" => Some(BundledParser::Zig),
-            "smithy" => Some(BundledParser::Smithy),
             _ => None,
         }
     }
@@ -99,6 +99,7 @@ impl BundledParser {
             BundledParser::Ruby => "ruby",
             BundledParser::Rust => "rust",
             BundledParser::Scala => "scala",
+            BundledParser::Smithy => "smithy",
             BundledParser::Sql => "sql",
             BundledParser::Typescript => "typescript",
             BundledParser::Tsx => "tsx",
@@ -125,6 +126,7 @@ impl BundledParser {
             "rb" => Some(BundledParser::Ruby),
             "rs" => Some(BundledParser::Rust),
             "scala" => Some(BundledParser::Scala),
+            "smithy" => Some(BundledParser::Smithy),
             "sql" => Some(BundledParser::Sql),
             "ts" => Some(BundledParser::Typescript),
             "tsx" => Some(BundledParser::Tsx),

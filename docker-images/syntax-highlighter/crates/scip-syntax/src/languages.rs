@@ -235,6 +235,7 @@ mod tags {
     create_tags_configuration!(cpp, BundledParser::Cpp, "cpp");
     create_tags_configuration!(typescript, BundledParser::Typescript, "typescript");
     create_tags_configuration!(scala, BundledParser::Scala, "scala");
+    create_tags_configuration!(smithy, BundledParser::Smithy, "smithy");
     create_tags_configuration!(c_sharp, BundledParser::C_Sharp, "c_sharp");
     create_tags_configuration!(java, BundledParser::Java, "java");
     create_tags_configuration!(rust, BundledParser::Rust, "rust");
@@ -251,6 +252,7 @@ mod tags {
             BundledParser::Cpp => Some(cpp()),
             BundledParser::Typescript => Some(typescript()),
             BundledParser::Scala => Some(scala()),
+            BundledParser::Smithy => Some(smithy()),
             BundledParser::C_Sharp => Some(c_sharp()),
             BundledParser::Java => Some(java()),
             BundledParser::Rust => Some(rust()),
