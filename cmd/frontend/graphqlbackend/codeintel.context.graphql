@@ -61,6 +61,11 @@ type PreciseContextOutput {
     The precise context data.
     """
     context: [PreciseContext!]!
+
+    """
+    TODO
+    """
+    traceLogs: String!
 }
 
 """

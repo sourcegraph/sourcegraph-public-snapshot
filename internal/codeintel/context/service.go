@@ -65,13 +65,21 @@ const (
 	enableSyntect                  = true
 )
 
-func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.GetPreciseContextInput) (_ []*types.PreciseContext, err error) {
+func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.GetPreciseContextInput) (_ []*types.PreciseContext, traceLogs string, err error) {
 	ctx, trace, endObservation := s.operations.getPreciseContext.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("repositoryName", args.Input.RepositoryName),
 		attribute.String("content", args.Input.ActiveFileContent),
 		attribute.String("closestRemoteCommitSHA", args.Input.ClosestRemoteCommitSHA),
 	}})
 	defer endObservation(1, observation.Args{})
+
+	var logBuf *bytes.Buffer
+	debug := func(format string, args ...any) {
+		s := fmt.Sprintf(format+"\n", args...)
+		fmt.Print(s)
+		logBuf.WriteString(s)
+	}
+	defer func() { traceLogs = logBuf.String() }()
 
 	filename := args.Input.ActiveFile
 	content := args.Input.ActiveFileContent
@@ -80,22 +88,22 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 
 	repo, err := s.repostore.GetByName(ctx, repoName)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	commitID, err := s.gitserverClient.ResolveRevision(ctx, repoName, args.Input.ClosestRemoteCommitSHA, gitserver.ResolveRevisionOptions{})
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	closestRemoteCommitSHA := string(commitID)
 
 	uploads, err := s.codenavSvc.GetClosestDumpsForBlob(ctx, int(repo.ID), closestRemoteCommitSHA, filename, true, "")
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	trace.AddEvent("codenavSvc.GetClosestDumpsForBlob", attribute.Int("numDumps", len(uploads)))
 	if len(uploads) == 0 {
-		return nil, nil
+		return nil, "", nil
 	}
 
 	requestArgs := codenavtypes.RequestArgs{
@@ -106,7 +114,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	}
 	hunkCache, err := codenav.NewHunkCache(hunkCacheSize)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	reqState := codenavtypes.NewRequestState(
 		uploads,
@@ -127,16 +135,16 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		n := time.Now()
 		delta := n.Sub(phaseStart)
 		phaseStart = n
-		fmt.Printf("\t[%s]: %s\n", delta, fmt.Sprintf(format, args...))
+		debug("\t[%s]: %s\n", delta, fmt.Sprintf(format, args...))
 	}
-	fmt.Printf("> CONTEXT API\n")
-	defer func() { fmt.Printf("< CONTEXT API done in %s (%s)\n", time.Since(start), err) }()
+	debug("> CONTEXT API\n")
+	defer func() { debug("CONTEXT API done in %s (%s)\n", time.Since(start), err) }()
 	fuzzyNameSetBySymbol := map[string]map[string]struct{}{}
 	if enableSyntect {
 		// PHASE 1: Run current scope through treesitter
 		syntectDocument, err := s.getSCIPDocumentByContent(ctx, content, filename)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		trace.AddEvent("contextSvc.getSCIPDocumentByContent", attribute.String("filename", filename))
 
@@ -180,7 +188,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			// DEBUGGING
 			for _, scipName := range explodedScipNames {
 				if strings.Contains(scipName.DescriptorSuffix, "Runner") {
-					fmt.Printf("\tSCIP:%q\n", scipName.DescriptorSuffix)
+					debug("\tSCIP:%q\n", scipName.DescriptorSuffix)
 				}
 			}
 			for _, fuzzyName := range fuzzySymbolNames {
@@ -190,10 +198,9 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 						trace.AddEvent("NewExplodedSymbol error in scipNamesByFuzzyName", attribute.String("exploded symbol err", err.Error()))
 						continue
 					}
-					fmt.Printf("\tSYNTECT: %q -> %q\n", fuzzyName, ex.DescriptorSuffix)
+					debug("\tSYNTECT: %q -> %q\n", fuzzyName, ex.DescriptorSuffix)
 				}
 			}
-			fmt.Printf("\n\n")
 
 			explodedScipSymbolsByFuzzyName := map[string][]*symbols.ExplodedSymbol{}
 			for _, fuzzyName := range fuzzySymbolNames {
@@ -215,13 +222,13 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				if len(explodedScipSymbols) == 0 {
 					ex, _ := symbols.NewExplodedSymbol(fuzzyName)
 					if strings.Contains(fuzzyName, "Runner") {
-						fmt.Printf("> NO MATCHES FOR %q (%q)??\n", fuzzyName, ex.DescriptorSuffix)
+						debug("> NO MATCHES FOR %q (%q)??\n", fuzzyName, ex.DescriptorSuffix)
 					}
 				}
 
 				if len(explodedScipSymbols) > 20 {
 					// DEBUGGING
-					fmt.Printf("TOO MANY RESULTS FOR %q\n", fuzzyName)
+					debug("TOO MANY RESULTS FOR %q\n", fuzzyName)
 					trace.AddEvent("TOO MANY RESULTS", attribute.String("syntectName", fuzzyName))
 					explodedScipSymbols = nil
 				}
@@ -239,12 +246,12 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				),
 			)
 			// DEBUGGING
-			fmt.Printf("\n\n")
+			debug("\n\n")
 
 			return explodedScipSymbolsByFuzzyName, nil
 		}()
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 
 		for fuzzyName, explodedSymbols := range scipNamesByFuzzyName {
@@ -263,7 +270,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	} else {
 		symbolsNames, err := s.codenavSvc.GetSymbolNamesByRange(ctx, requestArgs, filename, reqState, activeRangeSelection)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 
 		for _, symbolName := range symbolsNames {
@@ -287,7 +294,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 
 	ul, err := s.codenavSvc.NewGetDefinitionsBySymbolNames(ctx, requestArgs, reqState, symbolNames)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	for _, location := range ul {
@@ -349,7 +356,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		}
 		rc, err := s.gitserverClient.ArchiveReader(ctx, authz.DefaultSubRepoPermsChecker, repo, opts)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		defer rc.Close()
 
@@ -358,7 +365,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			header, err := tr.Next()
 			if err != nil {
 				if err != io.EOF {
-					return nil, err
+					return nil, "", err
 				}
 
 				break
@@ -366,7 +373,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 
 			var buf bytes.Buffer
 			if _, err := io.CopyN(&buf, tr, header.Size); err != nil {
-				return nil, err
+				return nil, "", err
 			}
 
 			// Since we quoted all literal path specs on entry, we need to remove it from
@@ -386,7 +393,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	for file, path := range fileToPath {
 		syntectDocs, err := s.getSCIPDocumentByContent(ctx, file, path.path)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		key := fmt.Sprintf("%s@%s:%s", path.dump.RepositoryName, path.dump.Commit, filepath.Join(path.dump.Root, path.path))
 		cache[key] = NewDocumentAndText(file, syntectDocs)
@@ -418,11 +425,11 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				if len(occ.EnclosingRange) > 0 {
 					ex, err := symbols.NewExplodedSymbol(pd.scipName)
 					if err != nil {
-						return nil, err
+						return nil, "", err
 					}
 					fex, err := symbols.NewExplodedSymbol(pd.fuzzyName)
 					if err != nil {
-						return nil, err
+						return nil, "", err
 					}
 					var fuzzyName *string
 					if fex.FuzzyDescriptorSuffix != "" {
@@ -447,7 +454,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 
 	// DEBUGGING
 	lap("PHASE 5: generated %s context items\n", len(preciseResponse))
-	return preciseResponse, nil
+	return preciseResponse, "", nil
 }
 
 func (s *Service) getSCIPDocumentByContent(ctx context.Context, content, fileName string) (*scip.Document, error) {

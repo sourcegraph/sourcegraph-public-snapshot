@@ -48,4 +48,5 @@ type PreciseSymbolReferenceResolver interface {
 
 type PreciseContextOutputResolver interface {
 	Context() []PreciseContextResolver
+	TraceLogs() string
 }

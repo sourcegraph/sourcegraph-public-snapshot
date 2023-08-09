@@ -2,7 +2,6 @@ package graphql
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -27,12 +26,12 @@ func (r *rootResolver) GetPreciseContext(ctx context.Context, input *resolverstu
 	}
 
 	// DEBUG
-	if input.Input.ActiveFileSelectionRange != nil {
-		fmt.Println("I gots start selection", input.Input.ActiveFileSelectionRange.StartLine, input.Input.ActiveFileSelectionRange.StartCharacter)
-		fmt.Println("I gots end selection", input.Input.ActiveFileSelectionRange.EndLine, input.Input.ActiveFileSelectionRange.EndCharacter)
-	}
+	// if input.Input.ActiveFileSelectionRange != nil {
+	// 	fmt.Println("I gots start selection", input.Input.ActiveFileSelectionRange.StartLine, input.Input.ActiveFileSelectionRange.StartCharacter)
+	// 	fmt.Println("I gots end selection", input.Input.ActiveFileSelectionRange.EndLine, input.Input.ActiveFileSelectionRange.EndCharacter)
+	// }
 
-	context, err := r.svc.GetPreciseContext(ctx, input)
+	context, traceLogs, err := r.svc.GetPreciseContext(ctx, input)
 	if err != nil {
 		return nil, err
 	}
@@ -46,15 +45,24 @@ func (r *rootResolver) GetPreciseContext(ctx context.Context, input *resolverstu
 			filepath:          c.Filepath,
 		})
 	}
-	return &preciseContextOutputResolver{context: resolvers}, nil
+
+	return &preciseContextOutputResolver{
+		context:   resolvers,
+		traceLogs: traceLogs,
+	}, nil
 }
 
 type preciseContextOutputResolver struct {
-	context []resolverstubs.PreciseContextResolver
+	context   []resolverstubs.PreciseContextResolver
+	traceLogs string
 }
 
 func (r *preciseContextOutputResolver) Context() []resolverstubs.PreciseContextResolver {
 	return r.context
+}
+
+func (r *preciseContextOutputResolver) TraceLogs() string {
+	return r.traceLogs
 }
 
 type preciseContextResolver struct {

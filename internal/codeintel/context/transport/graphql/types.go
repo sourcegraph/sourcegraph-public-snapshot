@@ -8,5 +8,5 @@ import (
 )
 
 type ContextService interface {
-	GetPreciseContext(ctx context.Context, args *resolverstubs.GetPreciseContextInput) ([]*types.PreciseContext, error)
+	GetPreciseContext(ctx context.Context, args *resolverstubs.GetPreciseContextInput) ([]*types.PreciseContext, string, error)
 }
