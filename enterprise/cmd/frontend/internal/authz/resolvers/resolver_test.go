@@ -1651,7 +1651,7 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 						}
     				}
 				}
-			`, clock().Format(time.RFC3339), authz.SourceUserSync),
+			`, clock().Format(time.RFC3339), authz.SourceUserSync.ToGraphQL()),
 				},
 			},
 		},
