@@ -50,18 +50,18 @@ func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *res
 	// is used to resolve each page. This cursor will be modified in-place to become the
 	// cursor used to fetch the subsequent page of results in this result set.
 	var nextCursor string
-	cursor, err := decodeImplementationsCursor(rawCursor)
+	cursor, err := decodeTraversalCursor(rawCursor)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("invalid cursor: %q", rawCursor))
 	}
 
-	impls, implsCursor, err := r.codeNavSvc.GetImplementations(ctx, requestArgs, r.requestState, cursor)
+	impls, implsCursor, err := r.codeNavSvc.NewGetImplementations(ctx, requestArgs, r.requestState, cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "codeNavSvc.GetImplementations")
 	}
 
 	if implsCursor.Phase != "done" {
-		nextCursor = encodeImplementationsCursor(implsCursor)
+		nextCursor = encodeTraversalCursor(implsCursor)
 	}
 
 	if args.Filter != nil && *args.Filter != "" {
@@ -107,18 +107,18 @@ func (r *gitBlobLSIFDataResolver) Prototypes(ctx context.Context, args *resolver
 	// is used to resolve each page. This cursor will be modified in-place to become the
 	// cursor used to fetch the subsequent page of results in this result set.
 	var nextCursor string
-	cursor, err := decodeImplementationsCursor(rawCursor)
+	cursor, err := decodeTraversalCursor(rawCursor)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("invalid cursor: %q", rawCursor))
 	}
 
-	prototypes, protoCursor, err := r.codeNavSvc.GetPrototypes(ctx, requestArgs, r.requestState, cursor)
+	prototypes, protoCursor, err := r.codeNavSvc.NewGetPrototypes(ctx, requestArgs, r.requestState, cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "codeNavSvc.GetPrototypes")
 	}
 
 	if protoCursor.Phase != "done" {
-		nextCursor = encodeImplementationsCursor(protoCursor)
+		nextCursor = encodeTraversalCursor(protoCursor)
 	}
 
 	if args.Filter != nil && *args.Filter != "" {
