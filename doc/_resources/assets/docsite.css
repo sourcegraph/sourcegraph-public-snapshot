@@ -111,6 +111,10 @@ a:hover {
   transition: color 0.2s ease-in-out;
 }
 
+.test {
+    color: red;
+}
+
 body.theme-light #sidebar,
 body.theme-light #index {
   --link-color: #171717

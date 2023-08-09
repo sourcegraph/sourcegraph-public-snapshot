@@ -20,11 +20,16 @@ Sourcegraph makes it easy to read, write, and fix code—even in big, complex co
 
 <br><br>
 
+  <h1 class="test"><marquee>Cesar was here too</marquee></h1>
+  <h1><marquee>Cesar was here too</marquee></h1>
+
 <div class="getting-started">
   <a href="getting-started" class="btn" alt="Run through the Quickstart guide">
     <span>Sourcegraph 101</span>
     <p>Learn how to use Sourcegraph.</p>
   </a>
+
+  
   <a href="getting-started/tour" class="btn" alt="Read the src reference">
     <span>Sourcegraph Tour</span>
     <p>Take a tour of Sourcegraph’s features using real-world examples and use cases.</p>
