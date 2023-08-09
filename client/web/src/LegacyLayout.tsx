@@ -78,7 +78,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const [isSetupChecklistEnabled, flagLoading] = useFeatureFlag('setup-checklist')
     const [setupSkipped] = useLocalStorage('setup.skipped', false)
     // navigate to setup wizard if not skipped and new setup-checklist is disabled
-    const wasSetupWizardSkipped = !flagLoading && !isSetupChecklistEnabled && setupSkipped
+    const wasSetupWizardSkipped = flagLoading || isSetupChecklistEnabled || setupSkipped
 
     const [wasAppSetupFinished] = useLocalStorage('app.setup.finished', false)
 

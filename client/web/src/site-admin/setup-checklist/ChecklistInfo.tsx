@@ -1,19 +1,13 @@
-import React from 'react'
-
 import { useSearchParameters, Alert } from '@sourcegraph/wildcard'
 
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
+import { withFeatureFlag } from '../../featureFlags/withFeatureFlag'
 
 import { useSetupChecklist } from './hooks/useSetupChecklist'
 
-export const ChecklistInfo: React.FC = () => {
+export const ChecklistInfo = withFeatureFlag('setup-checklist', function ChecklistInfo() {
     const params = useSearchParameters()
-    const [isSetupChecklistEnabled] = useFeatureFlag('setup-checklist', false)
     const { data, loading } = useSetupChecklist()
     if (loading) {
-        return null
-    }
-    if (!isSetupChecklistEnabled) {
         return null
     }
     const paramsID = decodeURIComponent(params.get('setup-checklist') ?? '')
@@ -23,4 +17,4 @@ export const ChecklistInfo: React.FC = () => {
     }
 
     return <Alert variant="info">{info}</Alert>
-}
+})
