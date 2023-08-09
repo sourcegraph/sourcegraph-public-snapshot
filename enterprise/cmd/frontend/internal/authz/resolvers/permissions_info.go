@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 
@@ -25,6 +26,7 @@ type permissionsInfoResolver struct {
 	perms        authz.Perms
 	syncedAt     time.Time
 	updatedAt    time.Time
+	source       *string
 	unrestricted bool
 }
 
@@ -41,6 +43,10 @@ func (r *permissionsInfoResolver) SyncedAt() *gqlutil.DateTime {
 
 func (r *permissionsInfoResolver) UpdatedAt() *gqlutil.DateTime {
 	return gqlutil.FromTime(r.updatedAt)
+}
+
+func (r *permissionsInfoResolver) Source() *string {
+	return r.source
 }
 
 func (r *permissionsInfoResolver) Unrestricted(_ context.Context) bool {
