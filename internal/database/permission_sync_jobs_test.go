@@ -121,8 +121,8 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			Reason:             ReasonGitHubRepoEvent,
 			FinishedAt:         finishedTime,
 			CodeHostStates:     codeHostStates[1:],
-			FailureMessage:     strptr("imma failure"),
-			CancellationReason: strptr("i tried to cancel but it already failed"),
+			FailureMessage:     pointers.Ptr("imma failure"),
+			CancellationReason: pointers.Ptr("i tried to cancel but it already failed"),
 			IsPartialSuccess:   false,
 		},
 		{
@@ -754,12 +754,12 @@ func TestPermissionSyncJobs_Pagination(t *testing.T) {
 	}{
 		{
 			name:           "After",
-			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, After: strptr("1")},
+			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, After: pointers.Ptr("1")},
 			wantJobs:       []*PermissionSyncJob{},
 		},
 		{
 			name:           "Before",
-			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, Before: strptr("2")},
+			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, Before: pointers.Ptr("2")},
 			wantJobs:       jobs,
 		},
 		{

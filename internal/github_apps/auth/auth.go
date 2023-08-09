@@ -17,41 +17,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	ghauth "github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
-	"github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-// CreateEnterpriseFromConnection creates a FromConnectionFunc that has access to
-// the provided db. This gives the function access to GitHub App details
-// in the database.
-func CreateEnterpriseFromConnection(ghApps store.GitHubAppsStore, encryptionKey encryption.Key) ghauth.FromConnectionFunc {
-	return func(ctx context.Context, conn *schema.GitHubConnection) (ghauth.RefreshableURLRequestAuthenticator, error) {
-		if conn.GitHubAppDetails == nil {
-			return &auth.OAuthBearerToken{Token: conn.Token}, nil
-		}
-
-		ghApp, err := ghApps.GetByAppID(ctx, conn.GitHubAppDetails.AppID, conn.Url)
-		if err != nil {
-			return nil, err
-		}
-
-		appAuther, err := NewGitHubAppAuthenticator(ghApp.AppID, []byte(ghApp.PrivateKey))
-		if err != nil {
-			return nil, err
-		}
-
-		baseURL, err := url.Parse(conn.Url)
-		if err != nil {
-			return nil, err
-		}
-
-		return NewInstallationAccessToken(baseURL, conn.GitHubAppDetails.InstallationID, appAuther, encryptionKey), nil
-	}
-}
 
 // gitHubAppAuthenticator is used to authenticate requests to the GitHub API
 // using a GitHub App. It contains the ID and private key associated with

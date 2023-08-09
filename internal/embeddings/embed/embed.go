@@ -7,16 +7,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeintelContext "github.com/sourcegraph/sourcegraph/internal/codeintel/context"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	citypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	bgrepo "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/db"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/azureopenai"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/openai"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/sourcegraph"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/paths"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -33,19 +35,17 @@ func NewEmbeddingsClient(config *conftypes.EmbeddingsConfig) (client.EmbeddingsC
 	}
 }
 
-const (
-	getEmbeddingsMaxRetries = 5
-)
-
 // EmbedRepo embeds file contents from the given file names for a repository.
 // It separates the file names into code files and text files and embeds them separately.
 // It returns a RepoEmbeddingIndex containing the embeddings and metadata.
 func EmbedRepo(
 	ctx context.Context,
 	client client.EmbeddingsClient,
+	inserter db.VectorInserter,
 	contextService ContextService,
 	readLister FileReadLister,
-	ranks types.RepoPathRanks,
+	repo types.RepoIDName,
+	ranks citypes.RepoPathRanks,
 	opts EmbedRepoOpts,
 	logger log.Logger,
 	reportProgress func(*bgrepo.EmbedRepoStats),
@@ -106,6 +106,13 @@ func EmbedRepo(
 		IsIncremental:  isIncremental,
 	}
 
+	insertDB := func(batch []embeddings.RepoEmbeddingRowMetadata, embeddings []float32, isCode bool) error {
+		return inserter.InsertChunks(ctx, db.InsertParams{
+			ModelID:     client.GetModelIdentifier(),
+			ChunkPoints: batchToChunkPoints(repo, opts.Revision, batch, embeddings, isCode),
+		})
+	}
+
 	insertIndex := func(index *embeddings.EmbeddingIndex, metadata []embeddings.RepoEmbeddingRowMetadata, vectors []float32) {
 		index.RowMetadata = append(index.RowMetadata, metadata...)
 		index.Embeddings = append(index.Embeddings, embeddings.Quantize(vectors, nil)...)
@@ -120,7 +127,7 @@ func EmbedRepo(
 	codeIndex := newIndex(len(codeFileNames))
 	insertCode := func(md []embeddings.RepoEmbeddingRowMetadata, embeddings []float32) error {
 		insertIndex(&codeIndex, md, embeddings)
-		return nil
+		return insertDB(md, embeddings, true)
 	}
 
 	reportCodeProgress := func(codeIndexStats bgrepo.EmbedFilesStats) {
@@ -145,7 +152,7 @@ func EmbedRepo(
 	textIndex := newIndex(len(textFileNames))
 	insertText := func(md []embeddings.RepoEmbeddingRowMetadata, embeddings []float32) error {
 		insertIndex(&textIndex, md, embeddings)
-		return nil
+		return insertDB(md, embeddings, false)
 	}
 
 	reportTextProgress := func(textIndexStats bgrepo.EmbedFilesStats) {
@@ -243,7 +250,7 @@ func embedFiles(
 			batchChunks[idx] = chunk.Content
 		}
 
-		batchEmbeddings, err := embeddingsClient.GetEmbeddings(ctx, batchChunks)
+		batchEmbeddings, err := embeddingsClient.GetDocumentEmbeddings(ctx, batchChunks)
 		if err != nil {
 			return nil, errors.Wrap(err, "error while getting embeddings")
 		}
@@ -383,6 +390,29 @@ func embedFiles(
 	}
 
 	return stats, nil
+}
+
+func batchToChunkPoints(repo types.RepoIDName, revision api.CommitID, batch []embeddings.RepoEmbeddingRowMetadata, embeddings []float32, isCode bool) []db.ChunkPoint {
+	if len(batch) == 0 {
+		return nil
+	}
+
+	dimensions := len(embeddings) / len(batch)
+	points := make([]db.ChunkPoint, 0, len(batch))
+	for i, chunk := range batch {
+		payload := db.ChunkPayload{
+			RepoName:  repo.Name,
+			RepoID:    repo.ID,
+			Revision:  revision,
+			FilePath:  chunk.FileName,
+			StartLine: uint32(chunk.StartLine),
+			EndLine:   uint32(chunk.EndLine),
+			IsCode:    isCode,
+		}
+		point := db.NewChunkPoint(payload, embeddings[i*dimensions:(i+1)*dimensions])
+		points = append(points, point)
+	}
+	return points
 }
 
 type FileReadLister interface {

@@ -565,7 +565,7 @@ func (c *V4Client) buildGetReposBatchQuery(ctx context.Context, namesWithOwners 
 			return "", err
 		}
 		fmt.Fprintf(&b, "repo%d: repository(owner: %q, name: %q) { ", i, owner, name)
-		b.WriteString("... on Repository { ...RepositoryFields } }\n")
+		b.WriteString("... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }\n")
 	}
 
 	b.WriteString("}")

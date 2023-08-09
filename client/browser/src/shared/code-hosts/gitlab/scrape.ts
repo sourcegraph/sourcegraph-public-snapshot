@@ -3,7 +3,6 @@ import { BehaviorSubject } from 'rxjs'
 
 import { FileSpec, RawRepoSpec, RepoSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
-import { isExtension } from '../../context'
 import { commitIDFromPermalink } from '../../util/dom'
 import { FileInfo } from '../shared/codeHost'
 
@@ -84,21 +83,23 @@ export const repoNameOnSourcegraph = new BehaviorSubject<string>('')
  */
 export function getPageInfo(): GitLabInfo {
     const {
-        hostname,
         projectFullName: projectFullNameOnGitLab,
         owner: ownerOnGitLab,
         projectName: projectNameOnGitLab,
     } = parseGitLabRepoURL()
-    const projectFullName = repoNameOnSourcegraph.value
-        ? repoNameOnSourcegraph.value.split('/').slice(1).join('/') // e.g. 'gitlab.com/sourcegraph/jsonrpc2' -> 'sourcegraph/jsonrpc2'
-        : projectFullNameOnGitLab
-    const { owner, projectName } = parseFullProjectName(projectFullName)
+
+    /**
+     * Get the repository name that we can use to interact with the Sourcegraph API.
+     * It is possible that this differs from `projectNameOnGitLab` if the Sourcegraph instance
+     * has `nameTransformations` or `repositoryPathPattern` set.
+     */
+    const sourcegraphCompatibleProjectName = repoNameOnSourcegraph.value
     const pageKind = getPageKindFromPathName(ownerOnGitLab, projectNameOnGitLab, window.location.pathname)
 
     return {
-        owner,
-        projectName,
-        rawRepoName: [isExtension ? hostname : new URL(gon.gitlab_url).hostname, owner, projectName].join('/'),
+        owner: ownerOnGitLab,
+        projectName: projectNameOnGitLab,
+        rawRepoName: sourcegraphCompatibleProjectName,
         repoName: projectFullNameOnGitLab, // original (untransformed) repo name to be use in GitLab API calls
         pageKind,
     }

@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/modeltransformations"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -44,8 +45,16 @@ func (c *azureOpenaiEmbeddingsClient) GetModelIdentifier() string {
 	return fmt.Sprintf("azure-openai/%s", c.model)
 }
 
-// GetEmbeddings tries to embed the given texts using the external service specified in the config.
-func (c *azureOpenaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []string) (*client.EmbeddingsResults, error) {
+func (c *azureOpenaiEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) (*client.EmbeddingsResults, error) {
+	return c.getEmbeddings(ctx, []string{modeltransformations.ApplyToQuery(query, c.GetModelIdentifier())})
+}
+
+func (c *azureOpenaiEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context, documents []string) (*client.EmbeddingsResults, error) {
+	return c.getEmbeddings(ctx, modeltransformations.ApplyToDocuments(documents, c.GetModelIdentifier()))
+}
+
+// getEmbeddings tries to embed the given texts using the external service specified in the config.
+func (c *azureOpenaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []string) (*client.EmbeddingsResults, error) {
 	for _, text := range texts {
 		if text == "" {
 			// The Azure OpenAI API will return an error if any of the strings in texts is an empty string,

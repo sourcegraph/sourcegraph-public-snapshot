@@ -300,8 +300,8 @@ func TestUserEmails_ListByUser(t *testing.T) {
 		require.NoError(t, err)
 		normalizeUserEmails(userEmails)
 		want := []*UserEmail{
-			{UserID: user.ID, Email: "a@example.com", VerificationCode: strptr("c"), Primary: true},
-			{UserID: user.ID, Email: "b@example.com", VerificationCode: strptr("c2"), VerifiedAt: &testTime},
+			{UserID: user.ID, Email: "a@example.com", VerificationCode: pointers.Ptr("c"), Primary: true},
+			{UserID: user.ID, Email: "b@example.com", VerificationCode: pointers.Ptr("c2"), VerifiedAt: &testTime},
 		}
 		assert.Empty(t, cmp.Diff(want, userEmails))
 	})
@@ -314,7 +314,7 @@ func TestUserEmails_ListByUser(t *testing.T) {
 		require.NoError(t, err)
 		normalizeUserEmails(userEmails)
 		want := []*UserEmail{
-			{UserID: user.ID, Email: "b@example.com", VerificationCode: strptr("c2"), VerifiedAt: &testTime},
+			{UserID: user.ID, Email: "b@example.com", VerificationCode: pointers.Ptr("c2"), VerifiedAt: &testTime},
 		}
 		assert.Empty(t, cmp.Diff(want, userEmails))
 	})

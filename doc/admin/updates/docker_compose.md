@@ -20,7 +20,8 @@ For upgrade procedures or general info about sourcegraph versioning see the link
 ## v5.1.4 ➔ v5.1.5
 
 #### Notes:
-
+- Upgrades from versions `v5.0.3`, `v5.0.4`, `v5.0.5`, and `v5.0.6` to `v5.1.5` are affected by an ordering error in the `frontend` databases migration tree. Learn more from the [PR which resolves this bug](https://github.com/sourcegraph/sourcegraph/pull/55650). **For admins who have already attempted an upgrade to this release from one of the effected versions, see this issue which provides a description of [how to manually fix the frontend db](https://github.com/sourcegraph/sourcegraph/issues/55658).**
+  
 ## v5.1.3 ➔ v5.1.4
 
 #### Notes:
@@ -44,18 +45,22 @@ For upgrade procedures or general info about sourcegraph versioning see the link
 ## v5.0.6 ➔ v5.1.0
 
 #### Notes:
+- See note under v5.1.5 release on issues with standard and multiversion upgrades to v5.1.5.
 
 ## v5.0.5 ➔ v5.0.6
 
 #### Notes:
+- See note under v5.1.5 release on issues with standard and multiversion upgrades to v5.1.5.
 
 ## v5.0.4 ➔ v5.0.5
 
 #### Notes:
+- See note under v5.1.5 release on issues with standard and multiversion upgrades to v5.1.5.
 
 ## v5.0.3 ➔ v5.0.4
 
 #### Notes:
+- See note under v5.1.5 release on issues with standard and multiversion upgrades to v5.1.5.
 
 ## v5.0.2 ➔ v5.0.3
 

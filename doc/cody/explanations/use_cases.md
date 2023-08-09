@@ -9,7 +9,7 @@ Cody can help with you write code and answers questions in several ways, includi
 
 ## Writing code
 
-When writing code, Cody can help by generating boilerplate code, writing code with the fixup feature, or writing docstrings.
+When writing code, Cody can help by generating boilerplate code, refactoring code inline, or writing docstrings.
 
 ### Generate boilerplate code
 
@@ -17,42 +17,39 @@ Cody can generate boilerplate code to save you time. Use the Cody chat function 
 
 For example:
 
-- "Generate boilerplate code for reading a text file in Go"
+- "Generate code for reading a text file in Go"
 - "Write a new graphql resolver in Go for a new object type called PitaOrders"
 
-### Write code with fixup
+### Refactor code with inline chat
 
-Cody can also add and edit code directly in your file rather than making suggestions. This functionality is called "fixup," and it's designed to keep you in flow writing code alongside Cody.
+Cody can also edit code directly in your file rather than making suggestions. You can prompt Cody to refactor code using inline chat.
 
-To fixup some code, try:
+To refactor code inline:
 
-1. Write something you'd like Cody to do inline in your file
-2. Highlight this code plus any related code you'd like changed, then use the `ctrl`+`alt`+`/` hotkey (or the `Cody: Fixup` VS Code command)
-3. Cody will work directly in your file
+1. Highlight the snippet of code you'd like to refactor
+2. Click the `+` icon to the left of the first line of code
+3. In the Cody chat box, type `/fix` + your prompt for Cody. For example: `/fix refactor this code to be more easily readable`
+4. Click `Ask Cody` (or alternatively use shortcut `Cmd + Enter`)
 
-For example:
+After submitting the request, Cody will prepare a code fix. You can click `Apply` and Cody will change the code inline, or you can click `Show Diff` to see Cody's proposed change.
 
-- "Add a link here to the admin settings page"
-- "Add boilerplate code for a Java loop here"
-- "Factor out any common helper functions"
-- "Convert this code to a react functional component"
+Here are some examples of what you can do with inline /fix commands:
 
-### Write docstrings
+- "/fix Add a link here to the admin settings page"
+- "/fix Make this code less verbose"
+- "/fix Factor out any common helper functions"
+- "/fix Convert this code to a react functional component"
 
-Cody can write docstrings for you to save time. To try this:
-
-1. Highlight a code snippet, such as a function or class
-2. Right click -> `Ask Cody` -> `Ask Cody: Generate Docstring`
-3. Cody will provide a copy of the code with docstrings inserted
+Note: inline chat is currently only available in the VS Code extension.
 
 ## Testing code
 
 ### Generate unit tests
 
-When testing code, use Cody to quickly generate unit tests. Simply:
+You can use Cody to quickly generate unit tests. Simply:
 
 1. Highlight a component you want to test (such as a specific function)
-2. Right click -> `Ask Cody` -> `Ask Cody: Generate Unit Test`
+2. Right click -> `Cody` -> `Generate Unit Test`
 3. Cody provides code for a unit test
 
 ## Fixing bugs
@@ -71,16 +68,11 @@ For example:
 
 Cody will respond with potential issues it sees in your code. You can then respond by asking Cody to fix listed issues.
 
-### Fix bugs with fixup
+### Fix bugs with inline chat
 
-The same fixup functionality that can be used to write code can also be used to debug, fix, and update code from directly within a file.
+The same inline chat `/fix` functionality that can be used to refactor code can also be used to debug, fix, and update code from directly within a file.
 
-For example:
-
-- Type "fix the bug in this function" directly underneath some function code
-- Highlight the function plus the line you just typed
-- Use the `ctrl`+`alt`+`/` hotkey (or the `Cody: Fixup` VS Code command)
-- Cody will read your command and deploy its fix inline
+For example, try: "/fix fix the bug in this function"
 
 ## Onboarding to a new codebase
 
@@ -88,12 +80,18 @@ When onboarding to a new codebase, understanding code can be time consuming. Use
 
 ### Explain code at a high level
 
-The `Explain selected code (high level)` recipe provides concise explanations of what a file or code selection is doing. Use this when jumping into a new code file and trying to understand what's happening.
+The `Explain Code` command provides concise explanations of what a file or code selection is doing. Use this when jumping into a new code file and trying to understand what's happening.
 
-You can use the recipe in 2 ways:
+To use the command in the VS Code extension:
 
-1. Highlight a code snippet and click the recipe. Cody will expain what is happening within that code.
-2. Open a code file and click the recipe. Cody will explain the entire file.
+1. Highlight a code snippet
+2. Open Cody code, and type `/explain`
+
+To use the recipe in the IntelliJ extension:
+
+1. Highlight a code snippet
+2. Open the Cody "Recipes" panel
+3. Click the "Explain selected code" recipe
 
 ### Show where things are defined
 

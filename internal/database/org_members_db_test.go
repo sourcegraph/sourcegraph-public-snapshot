@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
@@ -300,7 +301,7 @@ func TestOrgMembers_AutocompleteMembersSearch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Users().Update(ctx, user.ID, UserUpdate{Searchable: boolptr(false)}); err != nil {
+	if err := db.Users().Update(ctx, user.ID, UserUpdate{Searchable: pointers.Ptr(false)}); err != nil {
 		t.Fatal(err)
 	}
 
