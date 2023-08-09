@@ -1589,7 +1589,7 @@ events AS (
   FROM event_logs
   WHERE
   	timestamp >= %s::timestamp - '1 month'::interval
-    AND isCodyActiveEvent(name)
+    AND iscodyactiveevent(name)
 )
 SELECT
   name,
@@ -1602,17 +1602,17 @@ SELECT
   COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
   COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
-  SUM(case when month = current_month and isCodeGenerationEvent(name)
+  SUM(case when month = current_month and iscodegenerationevent(name)
   	then 1 else 0 end) as code_generation_month,
-  SUM(case when week = current_week and isCodeGenerationEvent(name)
+  SUM(case when week = current_week and iscodegenerationevent(name)
 	then 1 else 0 end) as code_generation_week,
-  SUM(case when day = current_day and isCodeGenerationEvent(name)
+  SUM(case when day = current_day and iscodegenerationevent(name)
 	then 1 else 0 end) as code_generation_day,
-  SUM(case when month = current_month and isCodeExplanationEvent(name)
+  SUM(case when month = current_month and iscodeexplanationevent(name)
 	then 1 else 0 end) as explanation_month,
-  SUM(case when week = current_week and isCodeExplanationEvent(name)
+  SUM(case when week = current_week and iscodeexplanationevent(name)
 	then 1 else 0 end) as explanation_week,
-  SUM(case when day = current_day and isCodeExplanationEvent(name)
+  SUM(case when day = current_day and iscodeexplanationevent(name)
 	then 1 else 0 end) as explanation_day,
 	0 as invalid_month,
 	0 as invalid_week,
