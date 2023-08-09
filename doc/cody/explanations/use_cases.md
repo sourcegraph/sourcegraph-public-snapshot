@@ -42,16 +42,6 @@ Here are some examples of what you can do with inline /fix commands:
 
 Note: inline chat is currently only available in the VS Code extension.
 
-## Testing code
-
-### Generate unit tests
-
-You can use Cody to quickly generate unit tests. Simply:
-
-1. Highlight a component you want to test (such as a specific function)
-2. Right click -> `Cody` -> `Generate Unit Test`
-3. Cody provides code for a unit test
-
 ## Fixing bugs
 
 When debugging code, you can use Cody's natural language chat plus the fixup function to quickly isolate and fix issues.
