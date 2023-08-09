@@ -1,6 +1,9 @@
 # <img alt="Sourcegraph logo" src="/assets/sourcegraph-logo-dark.svg" width="50%" class="theme-dark-only"><img alt="Sourcegraph logo" src="/assets/sourcegraph-logo-light.svg" width="50%" class="theme-light-only"><span class="sr-only">Sourcegraph</span>
 
-<marquee>Thorsten was here</marquee>
+<h1><marquee>Thorsten was here</marquee></h1>
+<h1><marquee>Thorsten was here</marquee></h1>
+
+FOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
 
 Sourcegraph makes it easy to read, write, and fix code—even in big, complex codebases.
 
