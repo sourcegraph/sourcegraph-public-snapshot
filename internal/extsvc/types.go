@@ -401,18 +401,6 @@ func TypeToKind(t string) string {
 	return variant.AsKind()
 }
 
-var (
-	// Precompute these for use in ParseServiceType below since the constants are mixed case
-	bbsLower    = strings.ToLower(VariantBitbucketServer.AsType())
-	bbcLower    = strings.ToLower(VariantBitbucketCloud.AsType())
-	jvmLower    = strings.ToLower(VariantJVMPackages.AsType())
-	npmLower    = strings.ToLower(VariantNpmPackages.AsType())
-	goLower     = strings.ToLower(VariantGoPackages.AsType())
-	pythonLower = strings.ToLower(VariantPythonPackages.AsType())
-	rustLower   = strings.ToLower(VariantRustPackages.AsType())
-	rubyLower   = strings.ToLower(VariantRubyPackages.AsType())
-)
-
 // ParseServiceType will return a ServiceType constant after doing a case insensitive match on s.
 // It returns ("", false) if no match was found.
 func ParseServiceType(s string) (string, bool) {
