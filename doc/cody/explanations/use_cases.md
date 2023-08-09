@@ -9,7 +9,7 @@ Cody can help with you write code and answers questions in several ways, includi
 
 ## Writing code
 
-When writing code, Cody can help by generating boilerplate code, writing code with the fixup feature, or writing docstrings.
+When writing code, Cody can help by generating boilerplate code, refactoring code inline, or writing docstrings.
 
 ### Generate boilerplate code
 
@@ -17,7 +17,7 @@ Cody can generate boilerplate code to save you time. Use the Cody chat function 
 
 For example:
 
-- "Generate boilerplate code for reading a text file in Go"
+- "Generate code for reading a text file in Go"
 - "Write a new graphql resolver in Go for a new object type called PitaOrders"
 
 ### Refactor code with inline chat
@@ -26,9 +26,9 @@ Cody can also edit code directly in your file rather than making suggestions. Yo
 
 To refactor code inline:
 
-1. Highlight the snippet of code you'd like to refactor.
-2. Click the `+` icon to the left of the first line of code.
-3. In the Cody chat box, type `/fix` + your prompt for Cody. For example: `/fix refactor this code to be more easily readable`.
+1. Highlight the snippet of code you'd like to refactor
+2. Click the `+` icon to the left of the first line of code
+3. In the Cody chat box, type `/fix` + your prompt for Cody. For example: `/fix refactor this code to be more easily readable`
 4. Click `Ask Cody` (or alternatively use shortcut `Cmd + Enter`)
 
 After submitting the request, Cody will prepare a code fix. You can click `Apply` and Cody will change the code inline, or you can click `Show Diff` to see Cody's proposed change.
@@ -40,11 +40,13 @@ Here are some examples of what you can do with inline /fix commands:
 - "/fix Factor out any common helper functions"
 - "/fix Convert this code to a react functional component"
 
+Note: inline chat is currently only available in the VS Code extension.
+
 ## Testing code
 
 ### Generate unit tests
 
-When testing code, use Cody to quickly generate unit tests. Simply:
+You can use Cody to quickly generate unit tests. Simply:
 
 1. Highlight a component you want to test (such as a specific function)
 2. Right click -> `Cody` -> `Generate Unit Test`
@@ -80,10 +82,16 @@ When onboarding to a new codebase, understanding code can be time consuming. Use
 
 The `Explain Code` command provides concise explanations of what a file or code selection is doing. Use this when jumping into a new code file and trying to understand what's happening.
 
-To use the command:
+To use the command in the VS Code extension:
 
-1. Highlight a code snippet.
-2. Open Cody code, and type `/explain`.
+1. Highlight a code snippet
+2. Open Cody code, and type `/explain`
+
+To use the recipe in the IntelliJ extension:
+
+1. Highlight a code snippet
+2. Open the Cody "Recipes" panel
+3. Click the "Explain selected code" recipe
 
 ### Show where things are defined
 
