@@ -55,6 +55,10 @@
   ],
   "Functions": [
     {
+      "Name": "addr_for_repo",
+      "Definition": "CREATE OR REPLACE FUNCTION public.addr_for_repo(repo_name text, addrs text[])\n RETURNS text\n LANGUAGE plpgsql\nAS $function$\nDECLARE\n    md5_hash     BYTEA;\n    server_index BIGINT;\nBEGIN\n    -- Compute the MD5 hash of the repo name\n    md5_hash := decode(md5(repo_name), 'hex');\n\n    -- Convert the first 8 bytes of the MD5 hash to a BIGINT\n    server_index := get_byte(md5_hash, 0)::BIGINT \u003c\u003c 56 |\n                    get_byte(md5_hash, 1)::BIGINT \u003c\u003c 48 |\n                    get_byte(md5_hash, 2)::BIGINT \u003c\u003c 40 |\n                    get_byte(md5_hash, 3)::BIGINT \u003c\u003c 32 |\n                    get_byte(md5_hash, 4)::BIGINT \u003c\u003c 24 |\n                    get_byte(md5_hash, 5)::BIGINT \u003c\u003c 16 |\n                    get_byte(md5_hash, 6)::BIGINT \u003c\u003c 8 |\n                    get_byte(md5_hash, 7)::BIGINT;\n\n    -- Use modulo to get the index and fetch the address from the array\n    RETURN addrs[(server_index % array_length(addrs, 1)) + 1];\nEND;\n$function$\n"
+    },
+    {
       "Name": "batch_spec_workspace_execution_last_dequeues_upsert",
       "Definition": "CREATE OR REPLACE FUNCTION public.batch_spec_workspace_execution_last_dequeues_upsert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    INSERT INTO\n        batch_spec_workspace_execution_last_dequeues\n    SELECT\n        user_id,\n        MAX(started_at) as latest_dequeue\n    FROM\n        newtab\n    GROUP BY\n        user_id\n    ON CONFLICT (user_id) DO UPDATE SET\n        latest_dequeue = GREATEST(batch_spec_workspace_execution_last_dequeues.latest_dequeue, EXCLUDED.latest_dequeue);\n\n    RETURN NULL;\nEND $function$\n"
     },
@@ -1154,6 +1158,15 @@
     },
     {
       "Name": "repo_paths_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "repo_update_jobs_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
       "MinimumValue": 1,
@@ -24203,6 +24216,288 @@
       "Triggers": []
     },
     {
+      "Name": "repo_update_jobs",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 13,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "execution_logs",
+          "Index": 11,
+          "TypeName": "json[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "failure_message",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "finished_at",
+          "Index": 6,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('repo_update_jobs_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "last_changed",
+          "Index": 17,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "last_fetched",
+          "Index": 16,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "last_heartbeat_at",
+          "Index": 10,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_failures",
+          "Index": 9,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_resets",
+          "Index": 8,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "priority",
+          "Index": 15,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "process_after",
+          "Index": 7,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "queued_at",
+          "Index": 4,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repo_id",
+          "Index": 14,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "started_at",
+          "Index": 5,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "state",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "'queued'::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "update_interval_seconds",
+          "Index": 18,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "worker_hostname",
+          "Index": 12,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "''::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "repo_update_jobs_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX repo_update_jobs_pkey ON repo_update_jobs USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "repo_update_jobs_repo_id_queued_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX repo_update_jobs_repo_id_queued_idx ON repo_update_jobs USING btree (repo_id) WHERE state = 'queued'::text",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "repo_update_jobs_state_gitserver_address_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX repo_update_jobs_state_gitserver_address_idx ON repo_update_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "repo_update_jobs_repo_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "role_permissions",
       "Comment": "",
       "Columns": [
@@ -28589,6 +28884,10 @@
     {
       "Name": "reconciler_changesets",
       "Definition": " SELECT c.id,\n    c.batch_change_ids,\n    c.repo_id,\n    c.queued_at,\n    c.created_at,\n    c.updated_at,\n    c.metadata,\n    c.external_id,\n    c.external_service_type,\n    c.external_deleted_at,\n    c.external_branch,\n    c.external_updated_at,\n    c.external_state,\n    c.external_review_state,\n    c.external_check_state,\n    c.commit_verification,\n    c.diff_stat_added,\n    c.diff_stat_deleted,\n    c.sync_state,\n    c.current_spec_id,\n    c.previous_spec_id,\n    c.publication_state,\n    c.owned_by_batch_change_id,\n    c.reconciler_state,\n    c.computed_state,\n    c.failure_message,\n    c.started_at,\n    c.finished_at,\n    c.process_after,\n    c.num_resets,\n    c.closing,\n    c.num_failures,\n    c.log_contents,\n    c.execution_logs,\n    c.syncer_error,\n    c.external_title,\n    c.worker_hostname,\n    c.ui_publication_state,\n    c.last_heartbeat_at,\n    c.external_fork_name,\n    c.external_fork_namespace,\n    c.detached_at,\n    c.previous_failure_message\n   FROM (changesets c\n     JOIN repo r ON ((r.id = c.repo_id)))\n  WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1\n           FROM ((batch_changes\n             LEFT JOIN users namespace_user ON ((batch_changes.namespace_user_id = namespace_user.id)))\n             LEFT JOIN orgs namespace_org ON ((batch_changes.namespace_org_id = namespace_org.id)))\n          WHERE ((c.batch_change_ids ? (batch_changes.id)::text) AND (namespace_user.deleted_at IS NULL) AND (namespace_org.deleted_at IS NULL)))));"
+    },
+    {
+      "Name": "repo_update_jobs_with_repo_name",
+      "Definition": " SELECT j.id,\n    j.state,\n    j.failure_message,\n    j.queued_at,\n    j.started_at,\n    j.finished_at,\n    j.process_after,\n    j.num_resets,\n    j.num_failures,\n    j.last_heartbeat_at,\n    j.execution_logs,\n    j.worker_hostname,\n    j.cancel,\n    j.repo_id,\n    j.priority,\n    j.last_fetched,\n    j.last_changed,\n    j.update_interval_seconds,\n    r.name AS repository_name,\n    g.pool_repo_id\n   FROM ((repo_update_jobs j\n     JOIN gitserver_repos g ON ((g.repo_id = j.repo_id)))\n     JOIN repo r ON ((r.id = COALESCE(g.pool_repo_id, j.repo_id))))\n  WHERE (r.deleted_at IS NULL);"
     },
     {
       "Name": "site_config",

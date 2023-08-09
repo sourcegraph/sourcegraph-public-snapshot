@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 )
@@ -2125,4 +2127,32 @@ type CodeHost struct {
 	GitRateLimitIntervalSeconds *int32
 	CreatedAt                   time.Time
 	UpdatedAt                   time.Time
+}
+
+type RepoCloneJob struct {
+	ID               int
+	State            string
+	FailureMessage   *string
+	QueuedAt         time.Time
+	StartedAt        *time.Time
+	FinishedAt       *time.Time
+	ProcessAfter     *time.Time
+	NumResets        int
+	NumFailures      int
+	LastHeartbeatAt  time.Time
+	ExecutionLogs    []executor.ExecutionLogEntry
+	WorkerHostname   string
+	Cancel           bool
+	GitserverAddress string
+	UpdateAfter      int
+	RepoName         string
+	Clone            bool
+}
+
+func (r *RepoCloneJob) RecordID() int {
+	return r.ID
+}
+
+func (r *RepoCloneJob) RecordUID() string {
+	return strconv.Itoa(r.ID)
 }
