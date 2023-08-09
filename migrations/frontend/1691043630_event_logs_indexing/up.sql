@@ -1,4 +1,4 @@
-CREATE FUNCTION iscodyactiveevent(name text) RETURNS boolean
+CREATE OR REPLACE FUNCTION iscodyactiveevent(name text) RETURNS boolean
     LANGUAGE plpgsql IMMUTABLE
     AS $$
 BEGIN
@@ -26,7 +26,7 @@ BEGIN
 END;
 $$;
 
-CREATE FUNCTION iscodyexplanationevent(name text) RETURNS boolean
+CREATE OR REPLACE FUNCTION iscodyexplanationevent(name text) RETURNS boolean
     LANGUAGE plpgsql IMMUTABLE
     AS $$
 BEGIN
@@ -40,7 +40,7 @@ BEGIN
 END;
 $$;
 
-CREATE FUNCTION iscodygenerationevent(name text) RETURNS boolean
+CREATE OR REPLACE FUNCTION iscodygenerationevent(name text) RETURNS boolean
     LANGUAGE plpgsql IMMUTABLE
     AS $$
 BEGIN
@@ -58,10 +58,10 @@ BEGIN
 END;
 $$;
 
-CREATE INDEX event_logs_name ON event_logs USING GIN (name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS event_logs_name ON event_logs USING GIN (name gin_trgm_ops);
 
-CREATE INDEX event_logs_name_is_cody_explanation_event ON event_logs USING btree (iscodyexplanationevent(name));
+CREATE INDEX IF NOT EXISTS event_logs_name_is_cody_explanation_event ON event_logs USING btree (iscodyexplanationevent(name));
 
-CREATE INDEX event_logs_name_is_cody_generation_event ON event_logs USING btree (iscodygenerationevent(name));
+CREATE INDEX IF NOT EXISTS event_logs_name_is_cody_generation_event ON event_logs USING btree (iscodygenerationevent(name));
 
-CREATE INDEX event_logs_name_is_cody_active_event ON event_logs USING btree (iscodyactiveevent(name));
+CREATE INDEX IF NOT EXISTS event_logs_name_is_cody_active_event ON event_logs USING btree (iscodyactiveevent(name));
