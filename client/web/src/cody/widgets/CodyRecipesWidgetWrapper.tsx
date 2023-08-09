@@ -10,7 +10,7 @@ import { useTextSelection } from './useTextSelection'
 
 interface RecipesWidgetWrapperProps {
     targetRef: RefObject<HTMLElement>
-    children: any
+    children: React.ReactNode
     codyChatStore: CodyChatStore
     fileName?: string
     repoName?: string
@@ -96,7 +96,7 @@ const RecipePopoverPortal: React.FunctionComponent<{
         return null
     }
 
-    const positioningElement = getElementFromNode(selection.focusNode)
+    const positioningElement = getElementFromNode(selection?.focusNode)
     if (!positioningElement) {
         return null
     }
@@ -111,7 +111,7 @@ const RecipePopoverPortal: React.FunctionComponent<{
             className="cody-recipe-widget"
             style={{
                 position: 'absolute',
-                'margin-top': `-${mountContainerRect.top - positioningClientRect.top + positioningClientRect.height}px`,
+                marginTop: `-${mountContainerRect.top - positioningClientRect.top + positioningClientRect.height}px`,
             }}
             codyChatStore={codyChatStore}
             editor={
@@ -124,6 +124,6 @@ const RecipePopoverPortal: React.FunctionComponent<{
                 })
             }
         />,
-        commonAncestorContainer.lastChild?.previousElementSibling || commonAncestorContainer
+        commonAncestorContainer.lastChild?.previousSibling || commonAncestorContainer
     )
 }

@@ -19,7 +19,7 @@ import { Recipes } from './components/Recipes'
 interface IProps {
     editor?: CodeMirrorEditor | ChatEditor
     codyChatStore?: CodyChatStore | null
-    style?: any
+    style?: React.CSSProperties
     className?: string
 }
 
