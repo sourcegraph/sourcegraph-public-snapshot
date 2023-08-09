@@ -396,7 +396,6 @@ func (s *Server) repoRemoteRefs(ctx context.Context, remoteURL *vcs.URL, repoNam
 		refs[split[2]] = fields[0]
 	}
 	return refs, nil
->>>>>>> d1202d8735 (Batch Changes - commit message on stdin (#55657))
 }
 
 func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchCommit string, remoteURL *vcs.URL, tmpGitPathEnv, altObjectsEnv string) (string, error) {
