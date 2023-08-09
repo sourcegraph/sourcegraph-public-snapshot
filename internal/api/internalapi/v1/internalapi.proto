@@ -4,7 +4,7 @@ package internalapi.v1;
 
 import "google/protobuf/duration.proto";
 
-option go_package = "github.com/sorucegraph/sourcegraph/internal/api/internalapi/v1";
+option go_package = "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1";
 
 service ConfigService {
   rpc GetConfig(GetConfigRequest) returns (GetConfigResponse) {}

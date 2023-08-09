@@ -35,6 +35,7 @@ go_library(
         "//cmd/frontend/webhooks",
         "//internal/actor",
         "//internal/api",
+        "//internal/api/internalapi/v1:internalapi",
         "//internal/audit",
         "//internal/auth",
         "//internal/authz",
