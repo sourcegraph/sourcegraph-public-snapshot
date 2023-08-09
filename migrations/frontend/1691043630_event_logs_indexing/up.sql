@@ -1,5 +1,6 @@
-CREATE FUNCTION isCodyGenerationEvent(name text)
-RETURNS boolean AS $$
+CREATE FUNCTION isCodyGenerationEvent(name text) RETURNS boolean
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
 BEGIN
   RETURN name = ANY(ARRAY[
     'CodyVSCodeExtension:recipe:rewrite-to-functional:executed',
@@ -13,10 +14,11 @@ BEGIN
 	'CodyVSCodeExtension:recipe:translate-to-language:executed'
   ]);
 END;
-$$ LANGUAGE plpgsql IMMUTABLE;
+$$;
 
-CREATE FUNCTION isCodyExplanationEvent(name text)
-RETURNS boolean AS $$
+CREATE FUNCTION isCodyExplanationEvent(name text) RETURNS boolean
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
 BEGIN
   RETURN name = ANY(ARRAY[
     'CodyVSCodeExtension:recipe:explain-code-high-level:executed',
@@ -28,8 +30,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
-CREATE FUNCTION isCodyActiveEvent(name text)
-RETURNS boolean AS $$
+CREATE FUNCTION isCodyActiveEvent(name text) RETURNS boolean
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
 BEGIN
   RETURN
     (name LIKE '%%cody%%' OR name LIKE '%%Cody%%')
@@ -57,8 +60,8 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 
 CREATE INDEX IF NOT EXISTS event_logs_name ON event_logs USING GIN (name gin_trgm_ops);
 
-CREATE INDEX IF NOT EXISTS event_logs_name_is_cody_explanation_event ON event_logs (isCodyExplanationEvent(name));
+CREATE INDEX IF NOT EXISTS event_logs_name_is_cody_explanation_event ON event_logs USING btree (isCodyExplanationEvent(name));
 
-CREATE INDEX IF NOT EXISTS event_logs_name_is_cody_generation_event ON event_logs (isCodyGenerationEvent(name));
+CREATE INDEX IF NOT EXISTS event_logs_name_is_cody_generation_event ON event_logs USING btree (isCodyGenerationEvent(name));
 
-CREATE INDEX IF NOT EXISTS event_logs_name_is_cody_active_event ON event_logs (isCodyActiveEvent(name));
+CREATE INDEX IF NOT EXISTS event_logs_name_is_cody_active_event ON event_logs USING btree (isCodyActiveEvent(name));
