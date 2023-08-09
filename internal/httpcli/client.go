@@ -527,7 +527,7 @@ func NewRetryPolicy(max int, maxRetryAfterDuration time.Duration) rehttp.RetryFn
 
 	return func(a rehttp.Attempt) (retry bool) {
 		tr := trace.TraceFromContext(a.Request.Context())
-		if a.Index == 0 {
+		if tr != nil && a.Index == 0 {
 			// For the initial attempt set it to false in case we never retry,
 			// to make this easier to query in Cloud Trace. This attribute will
 			// get overwritten later if a retry occurs.
@@ -541,7 +541,7 @@ func NewRetryPolicy(max int, maxRetryAfterDuration time.Duration) rehttp.RetryFn
 		defer func() {
 			// Avoid trace log spam if we haven't invoked the retry policy.
 			shouldTraceLog := retry || a.Index > 0
-			if tr := trace.TraceFromContext(a.Request.Context()); tr != nil && shouldTraceLog {
+			if tr != nil && shouldTraceLog {
 				fields := []attribute.KeyValue{
 					attribute.Bool("retry", retry),
 					attribute.Int("attempt", a.Index),
