@@ -8,14 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 )
 
-func strptr(s string) *string {
-	return &s
-}
-
-func boolptr(b bool) *bool {
-	return &b
-}
-
 func testEncryptionKeyID(key encryption.Key) string {
 	v, err := key.Version(context.Background())
 	if err != nil {
