@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package internalapi.v1;
+package api.internalapi.v1;
 
 import "google/protobuf/duration.proto";
 
