@@ -1581,8 +1581,8 @@ importers:
         specifier: workspace:*
         version: link:../codeintellify
       '@sourcegraph/cody-shared':
-        specifier: ^0.0.4
-        version: 0.0.4
+        specifier: ^0.0.5
+        version: 0.0.5
       '@sourcegraph/cody-ui':
         specifier: ^0.0.6
         version: 0.0.6
@@ -9357,6 +9357,21 @@ packages:
       - encoding
     dev: false
 
+  /@sourcegraph/cody-shared@0.0.5:
+    resolution: {integrity: sha512-xwNHKsE9NPEUcQoEqJMYuU86D3NRqBn/V6Fjc09FlkgNQUcouJhGZuVntpOuBa3g8aEqOVT+bI/QcX0Oy1QGfQ==}
+    dependencies:
+      '@microsoft/fetch-event-source': 2.0.1
+      dompurify: 3.0.4
+      highlight.js: 10.7.3
+      isomorphic-fetch: 3.0.0
+      lodash: 4.17.21
+      marked: 4.0.16
+      vscode-uri: 3.0.7
+      x2js: 3.4.4
+    transitivePeerDependencies:
+      - encoding
+    dev: false
+
   /@sourcegraph/cody-ui@0.0.6:
     resolution: {integrity: sha512-MBeFDFebKfrTZOCwV9MeLYeluFyFaALhMbX+NltXiF3LjiFh3qqJDM0DcpOFwKgqKnaJkm1i4Uh/8/R9DUaglQ==}
     dependencies:
@@ -14163,7 +14178,6 @@ packages:
   /@xmldom/xmldom@0.8.10:
     resolution: {integrity: sha512-2WALfTl4xo2SkGCYRt6rDTFfk9R1czmBvUQy12gK2KuRKIpWEhcbbzy8EZXtz/jkRqHX8bFEc6FC1HjX4TUWYw==}
     engines: {node: '>=10.0.0'}
-    dev: true
 
   /@xtuc/ieee754@1.2.0:
     resolution: {integrity: sha512-DX8nKgqcGwsc0eJSqYt5lwP4DH5FlHnmuWWBRy7X0NcaGR0ZtuyeESgMwTYVEtxmsNGY+qit4QYT/MIYTOTPeA==}
@@ -34662,6 +34676,12 @@ packages:
     optionalDependencies:
       default-browser-id: 1.0.4
     dev: true
+
+  /x2js@3.4.4:
+    resolution: {integrity: sha512-yG/ThaBCgnsa3aoMPAe7QwDpcyU4D70hjXC4Y1lZSfD/Tgd0MpE19FnZZRAjekryw0c8cffpOt9zsPEiqktO6Q==}
+    dependencies:
+      '@xmldom/xmldom': 0.8.10
+    dev: false
 
   /xdg-basedir@3.0.0:
     resolution: {integrity: sha512-1Dly4xqlulvPD3fZUQJLY+FUIeqN3N2MM3uqe4rCJftAvOjFa3jFGfctOgluGx4ahPbUCsZkmJILiP0Vi4T6lQ==}
