@@ -15,8 +15,8 @@ import {
     Link,
     Badge,
     BadgeProps,
-    Tooltip,
     Icon,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../../../components/FilteredConnection/hooks/usePageSwitcherPagination'
@@ -26,6 +26,7 @@ import {
     UserPermissionsInfoVariables,
     PermissionsInfoRepositoryFields as INode,
     UserPermissionsInfoUserNode as IUser,
+    PermissionSource,
 } from '../../../../graphql-operations'
 import { useURLSyncedState } from '../../../../hooks'
 import { ActionContainer } from '../../../../repo/settings/components/ActionContainer'
@@ -102,50 +103,40 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
             />
             <Container className="mb-3">
                 <>
-                    <table className="table">
-                        <tbody>
-                            <tr>
-                                <th className="border-0">
-                                    Last complete sync{' '}
-                                    <Tooltip content="Syncs user permissions from the code host. All repositories that the user has access to on the code host will be accessible on Sourcegraph as well.">
-                                        <Icon aria-label="more-info" svgPath={mdiInformationOutline} />
-                                    </Tooltip>
-                                </th>
-                                <td className="border-0">
-                                    {permissionsInfo.syncedAt ? <Timestamp date={permissionsInfo.syncedAt} /> : 'Never'}
-                                </td>
-                                <td className="text-muted border-0">Updated by user-centric permission sync.</td>
-                            </tr>
-                            <tr>
-                                <th>
-                                    Last partial sync{' '}
-                                    <Tooltip content="Syncs repository permissions from the code host. If a repository-centric sync returns this user as accessor, it is noted here as partial sync. Partial syncs do not show in the list of permission sync jobs below.">
-                                        <Icon aria-label="more-info" svgPath={mdiInformationOutline} />
-                                    </Tooltip>
-                                </th>
-                                <td>
-                                    {permissionsInfo.updatedAt === null ? (
-                                        'Never'
-                                    ) : (
+                    <div className="d-flex">
+                        <b>Last update to permissions </b>
+                        <span className="d-flex flex-grow-1">
+                            {permissionsInfo.updatedAt ? (
+                                <>
+                                    <span className="flex-grow-1 text-center">
                                         <Timestamp date={permissionsInfo.updatedAt} />
-                                    )}
-                                </td>
-                                <td className="text-muted">
-                                    Partial update done by repositor-centric permission sync.
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                    </span>
+                                    <span>
+                                        by <PermsSource source={permissionsInfo.source} />
+                                    </span>
+                                </>
+                            ) : (
+                                'Never'
+                            )}
+                        </span>
+                    </div>
+                    <Text className="text-muted mt-2 mb-4">
+                        <Icon aria-label="more-info text-normal" svgPath={mdiInformationOutline} /> The timestamp
+                        indicates the last update made to the repository permissions of this user. If the value{' '}
+                        <i>never</i> is displayed, it means we currently do not have any permission records for the
+                        user. However, please note that the user may have had permissions stored in Sourcegraph in the
+                        past.
+                    </Text>
                     <ScheduleUserPermissionsSyncActionContainer user={user} />
                 </>
             </Container>
             <PageHeader
                 headingElement="h2"
-                path={[{ text: 'Permissions Sync Jobs' }]}
+                path={[{ text: 'Sync Jobs' }]}
                 description={
                     <>
-                        List of permissions sync jobs. A permission sync job fetches the newest permissions for the
-                        given user.
+                        List of permission sync jobs that fetch which <i>private</i> repositories the user can access on
+                        the code host.
                     </>
                 }
                 className="my-3 pt-3"
@@ -156,7 +147,11 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
             <PageHeader
                 headingElement="h2"
                 path={[{ text: 'Accessible Repositories' }]}
-                description="List of repositories which are accessible to the user."
+                description={
+                    <>
+                        List of <i>all</i> repositories the user can access on Sourcegraph.
+                    </>
+                }
                 className="my-3 pt-3"
             />
             <Container className="mb-3">
@@ -221,6 +216,10 @@ const PermissionReasonBadgeProps: { [reason: string]: BadgeProps } = {
     },
     Unrestricted: { variant: 'primary', tooltip: 'The repository is accessible to all the users. ' },
     'Site Admin': { variant: 'secondary', tooltip: 'The user is site admin and has access to all the repositories.' },
+    'Explicit API': {
+        variant: 'success',
+        tooltip: 'The permission was granted through explicit permissions API.',
+    },
 }
 
 interface ScheduleUserPermissionsSyncActionContainerProps {
@@ -232,7 +231,12 @@ class ScheduleUserPermissionsSyncActionContainer extends React.PureComponent<Sch
         return (
             <ActionContainer
                 title="Manually schedule a permissions sync"
-                description={<div>Schedule a permissions sync for user: {this.props.user.username}.</div>}
+                description={
+                    <div>
+                        Schedules a high priority permissions sync job for the current user. This action will cancel all
+                        previously queued user sync jobs.
+                    </div>
+                }
                 buttonLabel="Schedule now"
                 flashText="Added to queue"
                 run={this.scheduleUserPermissions}
@@ -244,4 +248,30 @@ class ScheduleUserPermissionsSyncActionContainer extends React.PureComponent<Sch
     private scheduleUserPermissions = async (): Promise<void> => {
         await scheduleUserPermissionsSync({ user: this.props.user.id }).toPromise()
     }
+}
+
+const permsSourceMap = {
+    USER_SYNC: 'user-centric permission sync',
+    REPO_SYNC: 'repo-centric permission sync',
+    API: 'explicit permissions API',
+}
+
+interface PermsSourceProps {
+    source: PermissionSource | null
+}
+
+const PermsSource: React.FunctionComponent<PermsSourceProps> = ({ source }) => {
+    if (!source) {
+        return <>unknown</>
+    }
+    let href = '/help/admin/permissions/syncing#permission-syncing'
+    if (source === PermissionSource.API) {
+        href = '/help/admin/permissions/api'
+    }
+
+    return (
+        <Link to={href} target="_blank" rel="noopener">
+            {permsSourceMap[source]}
+        </Link>
+    )
 }
