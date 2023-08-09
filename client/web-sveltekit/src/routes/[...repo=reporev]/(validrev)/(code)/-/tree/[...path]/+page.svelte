@@ -1,7 +1,6 @@
 <script lang="ts">
     import { mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
 
-    import { isErrorLike } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
@@ -34,13 +33,13 @@
     {#if data.deferred.compare}
         {#await data.deferred.compare.diff}
             <LoadingSpinner />
-        {:then result}
-            {#each result.nodes as fileDiff}
+        {:then nodes}
+            {#each nodes as fileDiff}
                 <FileDiff {fileDiff} expanded={false} />
             {/each}
         {/await}
     {:else}
-        <FileTable {entries} />
+        <FileTable revision={data.revision ?? ''} {entries} />
     {/if}
     {#if $readme}
         <h4 class="header">

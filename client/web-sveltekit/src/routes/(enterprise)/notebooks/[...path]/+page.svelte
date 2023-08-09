@@ -8,26 +8,32 @@
     the default browser behavior to take place.
 -->
 <script lang="ts">
-    import type { Observable } from 'rxjs'
+    import { from, type Observable } from 'rxjs'
 
     import { PUBLIC_DOTCOM } from '$env/static/public'
     import { eventLogger } from '$lib/logger'
     import ReactComponent from '$lib/ReactComponent.svelte'
-    import {
-        aggregateStreamingSearch,
-        fetchHighlightedFileLineRanges as _fetchHighlightedFileLineRanges,
-        type FetchFileParameters,
-    } from '$lib/shared'
+    import { aggregateStreamingSearch, type FetchFileParameters } from '$lib/shared'
     import { GlobalNotebooksArea, type GlobalNotebooksAreaProps } from '$lib/web'
 
     import type { PageData } from './$types'
+    import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
 
     export let data: PageData
 
     const isSourcegraphDotCom = !!PUBLIC_DOTCOM
 
-    function fetchHighlightedFileLineRanges(parameters: FetchFileParameters, force?: boolean): Observable<string[][]> {
-        return _fetchHighlightedFileLineRanges({ ...parameters, platformContext: data.platformContext }, force)
+    function fetchHighlightedFileLineRanges(parameters: FetchFileParameters): Observable<string[][]> {
+        return from(
+            fetchFileRangeMatches({
+                result: {
+                    repository: parameters.repoName,
+                    path: parameters.filePath,
+                    commit: parameters.commitID,
+                },
+                ranges: parameters.ranges,
+            })
+        )
     }
 
     $: props = {

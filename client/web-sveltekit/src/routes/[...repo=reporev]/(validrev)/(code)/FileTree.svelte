@@ -4,17 +4,17 @@
     import { mdiFileCodeOutline, mdiFolderArrowUpOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
     import { onMount } from 'svelte'
 
-    import type { TreeEntryFields } from '@sourcegraph/shared/src/graphql-operations'
-
     import { afterNavigate, goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
-    import { type FileTreeProvider, NODE_LIMIT, type FileTreeNodeValue } from '$lib/repo/api/tree'
+    import { type FileTreeProvider, NODE_LIMIT, type FileTreeNodeValue, type TreeEntryFields } from '$lib/repo/api/tree'
     import { getSidebarFileTreeStateForRepo } from '$lib/repo/stores'
     import TreeView, { setTreeContext } from '$lib/TreeView.svelte'
     import { createForwardStore } from '$lib/utils'
+    import { replaceRevisionInURL } from '$lib/web'
 
     export let treeProvider: FileTreeProvider
     export let selectedPath: string
+    export let revision: string
 
     /**
      * Returns the corresponding icon for `entry`
@@ -83,18 +83,18 @@
     }
 
     let treeView: TreeView<FileTreeNodeValue>
-    let repoName = treeProvider.getRepoName()
+    let repoID = treeProvider.getRepoID()
     // Since context is only set once when the component is created
     // we need to dynamically sync any changes to the corresponding
     // file tree state store
-    const treeState = createForwardStore(getSidebarFileTreeStateForRepo(repoName))
+    const treeState = createForwardStore(getSidebarFileTreeStateForRepo(treeProvider.getRepoID()))
     // Propagating the tree state via context yielded better performance than passing
     // it via props.
     setTreeContext(treeState)
 
     $: treeRoot = treeProvider.getRoot()
-    $: repoName = treeProvider.getRepoName()
-    $: treeState.updateStore(getSidebarFileTreeStateForRepo(repoName))
+    $: repoID = treeProvider.getRepoID()
+    $: treeState.updateStore(getSidebarFileTreeStateForRepo(repoID))
     // Update open and selected nodes when the path changes.
     $: markSelected(selectedPath)
 
@@ -120,7 +120,7 @@
                     Using a link here allows us to benefit from data preloading.
                 -->
                 <a
-                    href={entry.url ?? ''}
+                    href={replaceRevisionInURL(entry.canonicalURL, revision)}
                     on:click|preventDefault={() => {}}
                     tabindex={-1}
                     data-go-up={isRoot ? true : undefined}
