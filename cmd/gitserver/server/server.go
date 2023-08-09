@@ -915,17 +915,22 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
-	logger := s.Logger.Scoped("handleRepoUpdate", "synchronous http handler for repo updates")
+	// This does nothing because the worker clones repos.
+	return protocol.RepoUpdateResponse{}
+	// logger := s.Logger.Scoped("handleRepoUpdate", "synchronous http handler for repo updates")
+	// despite the existence of a context on the request, we don't want to
+	// cancel the git commands partway through if the request terminates.
+	// ctx, cancel1 := s.serverContext()
+	// defer cancel1()
+	// ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
+	// defer cancel2()
+	// return s.HandleRepoUpdateRequest(ctx, req, logger)
+}
+
+func (s *Server) HandleRepoUpdateRequest(ctx context.Context, req *protocol.RepoUpdateRequest, logger log.Logger) protocol.RepoUpdateResponse {
 	var resp protocol.RepoUpdateResponse
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 	dir := s.dir(req.Repo)
-
-	// despite the existence of a context on the request, we don't want to
-	// cancel the git commands partway through if the request terminates.
-	ctx, cancel1 := s.serverContext()
-	defer cancel1()
-	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
-	defer cancel2()
 	if !repoCloned(dir) && !s.skipCloneForTests {
 		_, err := s.cloneRepo(ctx, req.Repo, &cloneOptions{Block: true})
 		if err != nil {

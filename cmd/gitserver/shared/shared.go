@@ -16,10 +16,12 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/sourcegraph/log"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
+
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/worker"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
@@ -140,6 +142,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	recordingCommandFactory := wrexec.NewRecordingCommandFactory(nil, 0)
+	hostname := externalAddress()
 	gitserver := server.Server{
 		Logger:             logger,
 		ObservationCtx:     observationCtx,
@@ -159,7 +162,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 				recordingCommandFactory: recordingCommandFactory,
 			})
 		},
-		Hostname:                externalAddress(),
+		Hostname:                hostname,
 		DB:                      db,
 		CloneQueue:              server.NewCloneQueue(observationCtx, list.New()),
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
@@ -240,6 +243,8 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	go syncRateLimiters(ctx, logger, externalServiceStore, rateLimitSyncerLimitPerSecond)
 	go gitserver.Janitor(actor.WithInternalActor(ctx), janitorInterval)
 	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpdatePerSecond)
+	repoCloneWorker := worker.MakeRepoCloneWorker(ctx, observationCtx, db, &gitserver, hostname)
+	go goroutine.MonitorBackgroundRoutines(ctx, repoCloneWorker)
 
 	gitserver.StartClonePipeline(ctx)
 

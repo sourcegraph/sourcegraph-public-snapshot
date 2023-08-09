@@ -100,6 +100,7 @@ type ClientSource interface {
 func NewClient(db database.DB) Client {
 	logger := sglog.Scoped("GitserverClient", "Client to talk from other services to Gitserver")
 	return &clientImplementor{
+		db:          db,
 		logger:      logger,
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
@@ -203,6 +204,7 @@ func NewMockClientWithExecReader(execReader func(context.Context, api.RepoName, 
 
 // clientImplementor is a gitserver client.
 type clientImplementor struct {
+	db database.DB
 	// Limits concurrency of outstanding HTTP posts
 	HTTPLimiter limiter.Limiter
 
@@ -1174,6 +1176,20 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 		Repo:  repo,
 		Since: since,
 	}
+
+	repoCloneJobs := database.RepoCloneJobStoreWith(c.db)
+	err := repoCloneJobs.Create(ctx, database.RepoCloneJobOpts{
+		GitserverAddress: c.AddrForRepo(ctx, repo),
+		UpdateAfter:      0,
+		RepoName:         repo,
+	})
+	if err != nil {
+		fmt.Printf("ERROR DURING CREATING A CLONE JOB: %s\n", err.Error())
+		return nil, err
+	}
+
+	// We proceed with a request, but on the server side it does nothing but returns
+	// an empty response.
 
 	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(ctx, repo)
