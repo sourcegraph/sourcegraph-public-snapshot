@@ -148,7 +148,7 @@ func newExternalClientFactory(cache bool, middleware ...Middleware) *Factory {
 		ExternalTransportOpt,
 		NewErrorResilientTransportOpt(
 			NewRetryPolicy(MaxRetries(externalRetryMaxAttempts), externalRetryAfterMaxDuration),
-			ExpJitterDelay(externalRetryDelayBase, externalRetryDelayMax),
+			ExpJitterDelayOrRetryAfterDelay(externalRetryDelayBase, externalRetryDelayMax),
 		),
 		TracedTransportOpt,
 	}
@@ -203,7 +203,7 @@ func NewInternalClientFactory(subsystem string, middleware ...Middleware) *Facto
 		NewMaxIdleConnsPerHostOpt(500),
 		NewErrorResilientTransportOpt(
 			NewRetryPolicy(MaxRetries(internalRetryMaxAttempts), internalRetryAfterMaxDuration),
-			ExpJitterDelay(internalRetryDelayBase, internalRetryDelayMax),
+			ExpJitterDelayOrRetryAfterDelay(internalRetryDelayBase, internalRetryDelayMax),
 		),
 		MeteredTransportOpt(subsystem),
 		ActorTransportOpt,
@@ -520,9 +520,8 @@ func MaxRetries(n int) int {
 	return n
 }
 
-// NewRetryPolicy returns a retry policy used in any Doer or Client returned
-// by NewExternalClientFactory.
-func NewRetryPolicy(max int, retryAfterMaxSleepDuration time.Duration) rehttp.RetryFn {
+// NewRetryPolicy returns a retry policy based on some Sourcegraph defaults.
+func NewRetryPolicy(max int, maxRetryAfterDuration time.Duration) rehttp.RetryFn {
 	// Indicates in trace whether or not this request was retried at some point
 	const retriedTraceAttributeKey = "httpcli.retried"
 
@@ -616,52 +615,71 @@ func NewRetryPolicy(max int, retryAfterMaxSleepDuration time.Duration) rehttp.Re
 			return true
 		}
 
-		if status == 0 || (status >= 500 && status != http.StatusNotImplemented) {
-			return true
-		}
-
-		if status == http.StatusTooManyRequests {
-			// If a retry-after header exists, we only want to retry if it might resolve
-			// the issue.
-			if a.Response != nil {
-				retryAfterHeader = a.Response.Header.Get("retry-after")
-				if retryAfterHeader != "" {
-					// There are two valid formats for retry-after headers: seconds
-					// until retry in int, or a RFC1123 date string.
-					// First, see if it is denoted in seconds.
-					s, err := strconv.Atoi(retryAfterHeader)
-					// If denoted in seconds, only retry if we will get access within
-					// the next retryAfterMaxSleepDuration seconds.
-					if err == nil {
-						return s <= int(retryAfterMaxSleepDuration/time.Second)
-					}
-
-					// If we weren't able to parse as seconds, try to parse as RFC1123.
-					if err != nil {
-						after, err := time.Parse(time.RFC1123, retryAfterHeader)
-						if err != nil {
-							// We don't know how to parse this header, so let's just retry.
-							return true
-						}
-						// Check if the date is either in the past, or if within the next
-						// retryAfterMaxSleepDuration we would get access again.
-						in := time.Until(after)
-						return in <= retryAfterMaxSleepDuration
-					}
-				}
-
-				// Otherwise, default to the behavior this function always had: retry 429 errors.
-				return true
-			}
+		// If we have some 5xx response or 429 response that could work after
+		// a few retries, retry the request, as determined by retryWithRetryAfter
+		if status == 0 ||
+			(status >= 500 && status != http.StatusNotImplemented) ||
+			status == http.StatusTooManyRequests {
+			retry, retryAfterHeader = retryWithRetryAfter(a.Response, maxRetryAfterDuration)
+			return retry
 		}
 
 		return false
 	}
 }
 
-// ExpJitterDelay returns a DelayFn that returns a delay between 0 and
-// base * 2^attempt capped at max (an exponential backoff delay with
-// jitter).
+// retryWithRetryAfter always retries, unless we have a non-nil response that
+// indicates a retry-after header as outlined here: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
+func retryWithRetryAfter(response *http.Response, retryAfterMaxSleepDuration time.Duration) (bool, string) {
+	// If a retry-after header exists, we only want to retry if it might resolve
+	// the issue.
+	retryAfterHeader, retryAfter := extractRetryAfter(response)
+	if retryAfter != nil {
+		// Retry if retry-after is within the maximum sleep duration, otherwise
+		// there's no point retrying
+		return *retryAfter <= retryAfterMaxSleepDuration, retryAfterHeader
+	}
+
+	// Otherwise, default to the behavior we always had: retry.
+	return true, retryAfterHeader
+}
+
+// extractRetryAfter attempts to extract a retry-after time from retryAfterHeader,
+// returning a nil duration if it cannot infer one.
+func extractRetryAfter(response *http.Response) (retryAfterHeader string, retryAfter *time.Duration) {
+	if response != nil {
+		// See  https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
+		// for retry-after standards.
+		retryAfterHeader = response.Header.Get("retry-after")
+		if retryAfterHeader != "" {
+			// There are two valid formats for retry-after headers: seconds
+			// until retry in int, or a RFC1123 date string.
+			// First, see if it is denoted in seconds.
+			s, err := strconv.Atoi(retryAfterHeader)
+			if err == nil {
+				d := time.Duration(s) * time.Second
+				return retryAfterHeader, &d
+			}
+
+			// If we weren't able to parse as seconds, try to parse as RFC1123.
+			if err != nil {
+				after, err := time.Parse(time.RFC1123, retryAfterHeader)
+				if err != nil {
+					// We don't know how to parse this header
+					return retryAfterHeader, nil
+				}
+				in := time.Until(after)
+				return retryAfterHeader, &in
+			}
+		}
+	}
+	return retryAfterHeader, nil
+}
+
+// ExpJitterDelayOrRetryAfterDelay returns a DelayFn that returns a delay
+// between 0 and base * 2^attempt capped at max (an exponential backoff delay
+// with jitter), unless a 'retry-after' value is provided in the response - then
+// the 'retry-after' duration is used, up to max.
 //
 // See the full jitter algorithm in:
 // http://www.awsarchitectureblog.com/2015/03/backoff.html
@@ -669,20 +687,31 @@ func NewRetryPolicy(max int, retryAfterMaxSleepDuration time.Duration) rehttp.Re
 // This is adapted from rehttp.ExpJitterDelay to not use a non-thread-safe
 // package level PRNG and to be safe against overflows. It assumes that
 // max > base.
-func ExpJitterDelay(base, max time.Duration) rehttp.DelayFn {
+//
+// This retry policy has also been adapted to support using
+func ExpJitterDelayOrRetryAfterDelay(base, max time.Duration) rehttp.DelayFn {
 	var mu sync.Mutex
 	prng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return func(attempt rehttp.Attempt) time.Duration {
-		exp := math.Pow(2, float64(attempt.Index))
-		top := float64(base) * exp
-		n := int64(math.Min(float64(max), top))
-		if n <= 0 {
-			return base
-		}
+		var delay time.Duration
+		if _, retryAfter := extractRetryAfter(attempt.Response); retryAfter != nil {
+			// Delay by what upstream request tells us. If retry-after is
+			// significantly higher than max, then it should be up to the retry
+			// policy to choose not to retry the request.
+			delay = *retryAfter
+		} else {
+			// Otherwise, generate a delay with some jitter.
+			exp := math.Pow(2, float64(attempt.Index))
+			top := float64(base) * exp
+			n := int64(math.Min(float64(max), top))
+			if n <= 0 {
+				return base
+			}
 
-		mu.Lock()
-		delay := time.Duration(prng.Int63n(n))
-		mu.Unlock()
+			mu.Lock()
+			delay = time.Duration(prng.Int63n(n))
+			mu.Unlock()
+		}
 
 		// Overflow handling
 		switch {
