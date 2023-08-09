@@ -421,16 +421,6 @@ func ParseServiceKind(s string) (string, bool) {
 	return variant.AsKind(), true
 }
 
-var supportsRepoExclusion = map[string]bool{
-	VariantAWSCodeCommit.AsKind():   true,
-	VariantBitbucketCloud.AsKind():  true,
-	VariantBitbucketServer.AsKind(): true,
-	VariantGitHub.AsKind():          true,
-	VariantGitLab.AsKind():          true,
-	VariantGitolite.AsKind():        true,
-	VariantAzureDevOps.AsKind():     true,
-}
-
 // SupportsRepoExclusion returns true when given external service kind supports
 // repo exclusion.
 func SupportsRepoExclusion(extSvcKind string) bool {
