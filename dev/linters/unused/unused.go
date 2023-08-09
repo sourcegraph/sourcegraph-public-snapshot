@@ -1,14 +1,15 @@
 package unused
 
 import (
-	"errors"
 	"fmt"
 	"go/token"
 	"reflect"
 
-	"github.com/sourcegraph/sourcegraph/dev/linters/nolint"
 	"golang.org/x/tools/go/analysis"
 	"honnef.co/go/tools/unused"
+
+	"github.com/sourcegraph/sourcegraph/dev/linters/nolint"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var Analyzer = nolint.Wrap(&analysis.Analyzer{
