@@ -120,21 +120,22 @@ func SetLuaFunction(ptr **lua.LFunction) func(lua.LValue) error {
 	}
 }
 
-type notArrayError struct {
+type notSliceError struct {
 	value lua.LValue
 }
 
-func (n *notArrayError) Error() string {
+func (n *notSliceError) Error() string {
 	return NewTypeError("array", n.value).Error()
 }
 
-var _ error = &notArrayError{}
+var _ error = &notSliceError{}
 
 func MapSlice[T any](table *lua.LTable, f func(lua.LValue) (T, error)) (values []T, _ error) {
-	return MapTableValues(table, func(value lua.LValue) (T, error) {
+	return MapTableValues(table, func(value lua.LValue) (t T, _ error) {
 		if table.Len() == 0 {
-			var t T
-			return t, &notArrayError{value}
+			// At least one key-value pair is present but Len() == 0
+			// ==> This table is map-like, not slice-like.
+			return t, &notSliceError{value}
 		}
 		return f(value)
 	})
@@ -184,7 +185,7 @@ func TypecheckUserData[T any](value lua.LValue, expectedType string) (T, error) 
 func MapSliceOrSingleton[T any](value lua.LValue, f func(lua.LValue) (T, error)) ([]T, error) {
 	if table, ok := value.(*lua.LTable); ok {
 		ts, err := MapSlice(table, f)
-		if _, ok := err.(*notArrayError); !ok {
+		if _, ok := err.(*notSliceError); !ok {
 			return ts, err
 		}
 	}
