@@ -1,3 +1,5 @@
+import { URI } from 'vscode-uri'
+
 import {
     ActiveTextEditor,
     ActiveTextEditorSelection,
@@ -6,8 +8,8 @@ import {
 } from '@sourcegraph/cody-shared/dist/editor'
 
 export interface EditorStore {
+    selectedText: string
     content: string
-    fullText: string
     filename: string
     repo: string
     revision: string
@@ -51,14 +53,14 @@ export class ChatEditor implements Editor {
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
         const editor = this.editor
 
-        if (!editor || !editor.fullText) {
+        if (!editor?.content) {
             return null
         }
 
-        const splitText = editor.fullText.split(editor.content)
+        const splitText = editor.content.split(editor.selectedText)
         const precedingText = splitText[0]
         splitText.shift()
-        const selectedText = editor.content
+        const selectedText = editor.selectedText
         const followingText = splitText.join('')
 
         return {
@@ -83,7 +85,7 @@ export class ChatEditor implements Editor {
                 repoName: this.repoName,
                 revision: this.revision,
                 precedingText: '',
-                selectedText: this.editor.content,
+                selectedText: this.editor.selectedText,
                 followingText: '',
             }
         }
@@ -98,7 +100,7 @@ export class ChatEditor implements Editor {
                 fileName: editor.filename,
                 repoName: this.repoName,
                 revision: this.revision,
-                content: editor.content,
+                content: editor.selectedText,
             }
         }
 
@@ -130,5 +132,10 @@ export class ChatEditor implements Editor {
     public didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
         // Not implemented.
         return Promise.resolve(undefined)
+    }
+
+    public getWorkspaceRootUri(): URI | null {
+        // Not implemented.
+        return null
     }
 }

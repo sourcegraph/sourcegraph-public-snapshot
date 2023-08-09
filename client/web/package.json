@@ -51,6 +51,6 @@
     "@sourcegraph/schema": "workspace:*",
     "@sourcegraph/shared": "workspace:*",
     "@sourcegraph/wildcard": "workspace:*",
-    "react-text-selection-popover": "^2.0.2"
+    "use-text-selection": "^1.1.5"
   }
 }

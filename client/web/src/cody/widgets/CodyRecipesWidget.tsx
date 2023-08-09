@@ -20,9 +20,10 @@ interface IProps {
     editor?: CodeMirrorEditor | ChatEditor
     codyChatStore?: CodyChatStore | null
     style?: any
+    className?: string
 }
 
-export const CodyRecipesWidget: React.FC<IProps> = ({ editor, codyChatStore, style }) => {
+export const CodyRecipesWidget: React.FC<IProps> = ({ editor, codyChatStore, style, className }) => {
     useEffect(() => {
         eventLogger.log(EventName.CODY_CHAT_EDITOR_WIDGET_VIEWED)
     }, [])
@@ -38,7 +39,20 @@ export const CodyRecipesWidget: React.FC<IProps> = ({ editor, codyChatStore, sty
     }
 
     return (
-        <div style={style}>
+        <div
+            style={style}
+            className={className}
+            onClick={event => {
+                event.stopPropagation()
+                event.preventDefault()
+                return false
+            }}
+            onMouseDown={event => {
+                event.stopPropagation()
+                event.preventDefault()
+                return false
+            }}
+        >
             <Recipes>
                 <Recipe title="Explain" icon={mdiCardBulletedOutline}>
                     <RecipeAction

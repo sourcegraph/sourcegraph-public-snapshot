@@ -1579,10 +1579,10 @@ importers:
         version: link:../codeintellify
       '@sourcegraph/cody-shared':
         specifier: ^0.0.4
-        version: 0.0.4
+        version: link:../../cody/lib/shared
       '@sourcegraph/cody-ui':
         specifier: ^0.0.6
-        version: 0.0.6
+        version: link:../../cody/lib/ui
       '@sourcegraph/common':
         specifier: workspace:*
         version: link:../common
@@ -1601,9 +1601,9 @@ importers:
       '@sourcegraph/wildcard':
         specifier: workspace:*
         version: link:../wildcard
-      react-text-selection-popover:
-        specifier: ^2.0.2
-        version: 2.0.2(postcss@8.4.27)(react-dom@18.1.0)(react@18.1.0)
+      use-text-selection:
+        specifier: ^1.1.5
+        version: 1.1.5(postcss@8.4.27)(react@17.0.2)
     devDependencies:
       '@sourcegraph/build-config':
         specifier: workspace:*
@@ -7636,7 +7636,7 @@ packages:
       dotenv: 7.0.0
       dotenv-expand: 5.1.0
       json5: 2.2.3
-      msgpackr: 1.9.5
+      msgpackr: 1.9.6
       nullthrows: 1.1.1
       semver: 7.5.4
     dev: false
@@ -7795,7 +7795,7 @@ packages:
       '@parcel/plugin': 2.9.3(@parcel/core@2.9.3)
       '@parcel/source-map': 2.1.1
       '@parcel/utils': 2.9.3
-      '@swc/core': 1.3.71
+      '@swc/core': 1.3.75
       nullthrows: 1.1.1
     transitivePeerDependencies:
       - '@parcel/core'
@@ -9493,7 +9493,7 @@ packages:
       lodash.values: 4.3.0
       object-hash: 3.0.0
       packageurl-js: 1.0.1
-      semver: 7.5.1
+      semver: 7.5.4
       tslib: 2.1.0
     dev: true
 
@@ -9718,7 +9718,7 @@ packages:
       '@types/semver': 7.3.12
       archy: 1.0.0
       jora: 1.0.0-beta.7
-      semver: 7.5.1
+      semver: 7.5.4
 
   /@statoscope/report-writer@5.22.0:
     resolution: {integrity: sha512-oEIlfsMSwBM8PcHnHDwhgMz5fyDgu10oAVFwuQSJFBUXMwaZ/46ewr1kfAcUNc8CkOIolhO6EIo/e0ZjcVCR1g==}
@@ -10923,7 +10923,7 @@ packages:
       prompts: 2.4.2
       puppeteer-core: 2.1.1
       read-pkg-up: 7.0.1
-      semver: 7.5.1
+      semver: 7.5.4
       simple-update-notifier: 1.1.0
       strip-json-comments: 3.1.1
       tempy: 1.0.1
@@ -11316,7 +11316,7 @@ packages:
       pretty-hrtime: 1.0.3
       prompts: 2.4.2
       read-pkg-up: 7.0.1
-      semver: 7.5.1
+      semver: 7.5.4
       serve-favicon: 2.5.0
       telejson: 7.1.0
       tiny-invariant: 1.3.1
@@ -11507,7 +11507,7 @@ packages:
       memoizerific: 1.11.3
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      semver: 7.5.1
+      semver: 7.5.4
       store2: 2.14.2
       telejson: 7.1.0
       ts-dedent: 2.2.0
@@ -11532,7 +11532,7 @@ packages:
       memoizerific: 1.11.3
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      semver: 7.5.1
+      semver: 7.5.4
       store2: 2.14.2
       telejson: 7.1.0
       ts-dedent: 2.2.0
@@ -12286,8 +12286,8 @@ packages:
       - supports-color
     dev: true
 
-  /@swc/core-darwin-arm64@1.3.71:
-    resolution: {integrity: sha512-xOm0hDbcO2ShwQu1CjLtq3fwrG9AvhuE0s8vtBc8AsamYExHmR8bo6GQHJUtfPG1FVPk5a8xoQSd1fs09FQjLg==}
+  /@swc/core-darwin-arm64@1.3.75:
+    resolution: {integrity: sha512-anDnx9L465lGbjB2mvcV54NGHW6illr0IDvVV7JmkabYUVneaRdQvTr0tbHv3xjHnjrK1wuwVOHKV0LcQF2tnQ==}
     engines: {node: '>=10'}
     cpu: [arm64]
     os: [darwin]
@@ -12295,8 +12295,8 @@ packages:
     dev: false
     optional: true
 
-  /@swc/core-darwin-x64@1.3.71:
-    resolution: {integrity: sha512-9sbDXBWgM22w/3Ll5kPhXMPkOiHRoqwMOyxLJBfGtIMnFlh5O+NRN3umRerK3pe4Q6/7hj2M5V+crEHYrXmuxg==}
+  /@swc/core-darwin-x64@1.3.75:
+    resolution: {integrity: sha512-dIHDfrLmeZfr2xwi1whO7AmzdI3HdamgvxthaL+S8L1x8TeczAZEvsmZTjy3s8p3Va4rbGXcb3+uBhmfkqCbfw==}
     engines: {node: '>=10'}
     cpu: [x64]
     os: [darwin]
@@ -12304,8 +12304,8 @@ packages:
     dev: false
     optional: true
 
-  /@swc/core-linux-arm-gnueabihf@1.3.71:
-    resolution: {integrity: sha512-boKdMZsfKvhBs0FDeqH7KQj0lfYe0wCtrL1lv50oYMEeLajY9o4U5xSmc61Sg4HRXjlbR6dlM2cFfL84t7NpAA==}
+  /@swc/core-linux-arm-gnueabihf@1.3.75:
+    resolution: {integrity: sha512-qeJmvMGrjC6xt+G0R4kVqqxvlhxJx7tTzhcEoWgLJnfvGZiF6SJdsef4OSM7HuReXrlBoEtJbfGPrLJtbV+C0w==}
     engines: {node: '>=10'}
     cpu: [arm]
     os: [linux]
@@ -12313,8 +12313,8 @@ packages:
     dev: false
     optional: true
 
-  /@swc/core-linux-arm64-gnu@1.3.71:
-    resolution: {integrity: sha512-yDatyHYMiOVwhyIA/LBwknPs2CUtLYWEMzPZjgLc+56PbgPs3oiEbNWeVUND5onPrfDQgK7NK1y8JeiXZqTgGQ==}
+  /@swc/core-linux-arm64-gnu@1.3.75:
+    resolution: {integrity: sha512-sqA9JqHEJBF4AdNuwo5zRqq0HC3l31SPsG9zpRa4nRzG5daBBJ80H7fi6PZQud1rfNNq+Q08gjYrdrxwHstvjw==}
     engines: {node: '>=10'}
     cpu: [arm64]
     os: [linux]
@@ -12322,8 +12322,8 @@ packages:
     dev: false
     optional: true
 
-  /@swc/core-linux-arm64-musl@1.3.71:
-    resolution: {integrity: sha512-xAdCA0L/hoa0ULL5SR4sMZCxkWk7C90DOU7wJalNVG9qNWYICfq3G7AR0E9Ohphzqyahfb5QJED/nA7N0+XwbQ==}
+  /@swc/core-linux-arm64-musl@1.3.75:
+    resolution: {integrity: sha512-95rQT5xTAL3eKhMJbJbLsZHHP9EUlh1rcrFoLf0gUApoVF8g94QjZ9hYZiI72mMP5WPjgTEXQVnVB9O2GxeaLw==}
     engines: {node: '>=10'}
     cpu: [arm64]
     os: [linux]
@@ -12331,8 +12331,8 @@ packages:
     dev: false
     optional: true
 
-  /@swc/core-linux-x64-gnu@1.3.71:
-    resolution: {integrity: sha512-j94qLXP/yqhu2afnABAq/xrJIU8TEqcNkp1TlsAeO3R2nVLYL1w4XX8GW71SPnXmd2bwF102c3Cfv/2ilf2y2A==}
+  /@swc/core-linux-x64-gnu@1.3.75:
+    resolution: {integrity: sha512-If7UpAhnPduMmtC+TSgPpZ1UXZfp2hIpjUFxpeCmHHYLS6Fn/2GZC5hpEiu+wvFJF0hzPh93eNAHa9gUxGUG+w==}
     engines: {node: '>=10'}
     cpu: [x64]
     os: [linux]
@@ -12340,8 +12340,8 @@ packages:
     dev: false
     optional: true
 
-  /@swc/core-linux-x64-musl@1.3.71:
-    resolution: {integrity: sha512-YiyU848ql6dLlmt0BHccGAaZ36Cf61VzCAMDKID/gd72snvzWcMCHrwSRW0gEFNXHsjBJrmNl+SLYZHfqoGwUA==}
+  /@swc/core-linux-x64-musl@1.3.75:
+    resolution: {integrity: sha512-HOhxX0YNHTElCZqIviquka3CGYTN8rSQ6BdFfSk/K0O+ZEHx3qGte0qr+gGLPF/237GxreUkp3OMaWKuURtuCg==}
     engines: {node: '>=10'}
     cpu: [x64]
     os: [linux]
@@ -12349,8 +12349,8 @@ packages:
     dev: false
     optional: true
 
-  /@swc/core-win32-arm64-msvc@1.3.71:
-    resolution: {integrity: sha512-1UsJ+6hnIRe/PVdgDPexvgGaN4KpBncT/bAOqlWc9XC7KeBXAWcGA08LrPUz2Ei00DJXzR622IGZVEYOHNkUOw==}
+  /@swc/core-win32-arm64-msvc@1.3.75:
+    resolution: {integrity: sha512-7QPI+mvBXAerVfWahrgBNe+g7fK8PuetxFnZSEmXUcDXvWcdJXAndD7GjAJzbDyjQpLKHbsDKMiHYvfNxZoN/A==}
     engines: {node: '>=10'}
     cpu: [arm64]
     os: [win32]
@@ -12358,8 +12358,8 @@ packages:
     dev: false
     optional: true
 
-  /@swc/core-win32-ia32-msvc@1.3.71:
-    resolution: {integrity: sha512-KnuI89+zojR9lDFELdQYZpxzPZ6pBfLwJfWTSGatnpL1ZHhIsV3tK1jwqIdJK1zkRxpBwc6p6FzSZdZwCSpnJw==}
+  /@swc/core-win32-ia32-msvc@1.3.75:
+    resolution: {integrity: sha512-EfABCy4Wlq7O5ShWsm32FgDkSjyeyj/SQ4wnUIvWpkXhgfT1iNXky7KRU1HtX+SmnVk/k/NnabVZpIklYbjtZA==}
     engines: {node: '>=10'}
     cpu: [ia32]
     os: [win32]
@@ -12367,8 +12367,8 @@ packages:
     dev: false
     optional: true
 
-  /@swc/core-win32-x64-msvc@1.3.71:
-    resolution: {integrity: sha512-Pcw7fFirpaBOZsU8fhO48ZCb7NxIjuLnLRPrHqWQ4Mapx1+w9ZNdGya2DKP9n8EAiUrJO20WDsrBNMT2MQSWkA==}
+  /@swc/core-win32-x64-msvc@1.3.75:
+    resolution: {integrity: sha512-cTvP0pOD9C3pSp1cwtt85ZsrUkQz8RZfSPhM+jCGxKxmoowDCnInoOQ4Ica/ehyuUnQ4/IstSdYtYpO5yzPDJg==}
     engines: {node: '>=10'}
     cpu: [x64]
     os: [win32]
@@ -12376,8 +12376,8 @@ packages:
     dev: false
     optional: true
 
-  /@swc/core@1.3.71:
-    resolution: {integrity: sha512-T8dqj+SV/S8laW/FGmKHhCGw1o4GRUvJ2jHfbYgEwiJpeutT9uavHvG02t39HJvObBJ52EZs/krGtni4U5928Q==}
+  /@swc/core@1.3.75:
+    resolution: {integrity: sha512-YLqd5oZVnaOq/OzkjRSsJUQqAfKYiD0fzUyVUPVlNNCoQEfVfSMcXH80hLmYe9aDH0T/a7qEMjWyIr/0kWqy1A==}
     engines: {node: '>=10'}
     requiresBuild: true
     peerDependencies:
@@ -12386,16 +12386,16 @@ packages:
       '@swc/helpers':
         optional: true
     optionalDependencies:
-      '@swc/core-darwin-arm64': 1.3.71
-      '@swc/core-darwin-x64': 1.3.71
-      '@swc/core-linux-arm-gnueabihf': 1.3.71
-      '@swc/core-linux-arm64-gnu': 1.3.71
-      '@swc/core-linux-arm64-musl': 1.3.71
-      '@swc/core-linux-x64-gnu': 1.3.71
-      '@swc/core-linux-x64-musl': 1.3.71
-      '@swc/core-win32-arm64-msvc': 1.3.71
-      '@swc/core-win32-ia32-msvc': 1.3.71
-      '@swc/core-win32-x64-msvc': 1.3.71
+      '@swc/core-darwin-arm64': 1.3.75
+      '@swc/core-darwin-x64': 1.3.75
+      '@swc/core-linux-arm-gnueabihf': 1.3.75
+      '@swc/core-linux-arm64-gnu': 1.3.75
+      '@swc/core-linux-arm64-musl': 1.3.75
+      '@swc/core-linux-x64-gnu': 1.3.75
+      '@swc/core-linux-x64-musl': 1.3.75
+      '@swc/core-win32-arm64-msvc': 1.3.75
+      '@swc/core-win32-ia32-msvc': 1.3.75
+      '@swc/core-win32-x64-msvc': 1.3.75
     dev: false
 
   /@swc/helpers@0.5.1:
@@ -13654,7 +13654,7 @@ packages:
       ignore: 5.2.4
       natural-compare-lite: 1.4.0
       regexpp: 3.2.0
-      semver: 7.5.1
+      semver: 7.5.4
       tsutils: 3.21.0(typescript@5.0.2)
       typescript: 5.0.2
     transitivePeerDependencies:
@@ -13772,7 +13772,7 @@ packages:
       debug: 4.3.4
       globby: 11.1.0
       is-glob: 4.0.3
-      semver: 7.5.1
+      semver: 7.5.4
       tsutils: 3.21.0(typescript@5.0.2)
       typescript: 5.0.2
     transitivePeerDependencies:
@@ -13793,7 +13793,7 @@ packages:
       debug: 4.3.4
       globby: 11.1.0
       is-glob: 4.0.3
-      semver: 7.5.1
+      semver: 7.5.4
       tsutils: 3.21.0(typescript@5.0.2)
       typescript: 5.0.2
     transitivePeerDependencies:
@@ -13814,7 +13814,7 @@ packages:
       debug: 4.3.4
       globby: 11.1.0
       is-glob: 4.0.3
-      semver: 7.5.1
+      semver: 7.5.4
       tsutils: 3.21.0(typescript@5.1.3)
       typescript: 5.1.3
     transitivePeerDependencies:
@@ -13835,7 +13835,7 @@ packages:
       debug: 4.3.4
       globby: 11.1.0
       is-glob: 4.0.3
-      semver: 7.5.1
+      semver: 7.5.4
       tsutils: 3.21.0(typescript@5.0.2)
       typescript: 5.0.2
     transitivePeerDependencies:
@@ -13856,7 +13856,7 @@ packages:
       eslint: 8.34.0
       eslint-scope: 5.1.1
       eslint-utils: 3.0.0(eslint@8.34.0)
-      semver: 7.5.1
+      semver: 7.5.4
     transitivePeerDependencies:
       - supports-color
       - typescript
@@ -13876,7 +13876,7 @@ packages:
       eslint: 8.42.0
       eslint-scope: 5.1.1
       eslint-utils: 3.0.0(eslint@8.42.0)
-      semver: 7.5.1
+      semver: 7.5.4
     transitivePeerDependencies:
       - supports-color
       - typescript
@@ -14425,7 +14425,7 @@ packages:
       p-limit: 2.3.0
       pluralize: 7.0.0
       pretty-bytes: 5.3.0
-      semver: 7.5.1
+      semver: 7.5.4
       stream-to-promise: 2.2.0
       tar-stream: 2.2.0
       treeify: 1.1.0
@@ -15907,7 +15907,7 @@ packages:
       chalk: 3.0.0
       cli-boxes: 2.2.1
       string-width: 4.2.3
-      term-size: 2.2.0
+      term-size: 2.2.1
       type-fest: 0.8.1
       widest-line: 3.1.0
     dev: true
@@ -17465,7 +17465,7 @@ packages:
       postcss-modules-values: 4.0.0(postcss@8.4.27)
       postcss-value-parser: 4.2.0
       schema-utils: 3.1.1
-      semver: 7.5.1
+      semver: 7.5.4
       webpack: 5.75.0(esbuild@0.17.14)(webpack-cli@5.0.1)
     dev: true
 
@@ -19523,7 +19523,7 @@ packages:
       jsdoctypeparser: 9.0.0
       lodash: 4.17.21
       regextras: 0.7.1
-      semver: 7.5.1
+      semver: 7.5.4
       spdx-expression-parse: 3.0.1
     transitivePeerDependencies:
       - supports-color
@@ -19691,7 +19691,7 @@ packages:
       read-pkg-up: 7.0.1
       regexp-tree: 0.1.24
       safe-regex: 2.1.1
-      semver: 7.5.1
+      semver: 7.5.4
       strip-indent: 3.0.0
     dev: true
 
@@ -19851,7 +19851,7 @@ packages:
       optionator: 0.9.1
       progress: 2.0.3
       regexpp: 3.2.0
-      semver: 7.5.1
+      semver: 7.5.4
       strip-ansi: 6.0.1
       strip-json-comments: 3.1.1
       text-table: 0.2.0
@@ -20716,7 +20716,7 @@ packages:
       memfs: 3.4.12
       minimatch: 3.1.2
       schema-utils: 2.7.0
-      semver: 7.5.1
+      semver: 7.5.4
       tapable: 1.1.3
       typescript: 5.0.2
       webpack: 5.75.0(esbuild@0.17.14)(webpack-cli@5.0.1)
@@ -23969,7 +23969,7 @@ packages:
       jest-resolve: 26.6.2
       natural-compare: 1.4.0
       pretty-format: 26.6.2
-      semver: 7.5.1
+      semver: 7.5.4
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -24000,7 +24000,7 @@ packages:
       jest-util: 28.1.3
       natural-compare: 1.4.0
       pretty-format: 28.1.3
-      semver: 7.5.1
+      semver: 7.5.4
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -26555,8 +26555,8 @@ packages:
       msgpackr-extract: 3.0.2
     dev: false
 
-  /msgpackr@1.9.5:
-    resolution: {integrity: sha512-/IJ3cFSN6Ci3eG2wLhbFEL6GT63yEaoN/R5My2QkV6zro+OJaVRLPlwvxY7EtHYSmDlQpk8stvOQTL2qJFkDRg==}
+  /msgpackr@1.9.6:
+    resolution: {integrity: sha512-50rmb6+ZWvEm0vJn8R8CwI1Eavss3h5rgtKrcdUal3EkZcpqw82+xsmc7RoHb8fYB5V4EOU2NDaOitDAdO0t+w==}
     optionalDependencies:
       msgpackr-extract: 3.0.2
     dev: false
@@ -26692,7 +26692,7 @@ packages:
     resolution: {integrity: sha512-zNy02qivjjRosswoYmPi8hIKJRr8MpQyeKT6qlcq/OnOgA3Rhoae+IYOqsM9V5+JnHWmxKnWOT2GxvtqdtOCXA==}
     engines: {node: '>=10'}
     dependencies:
-      semver: 7.5.1
+      semver: 7.5.4
     dev: true
 
   /node-addon-api@4.3.0:
@@ -26833,7 +26833,7 @@ packages:
     dependencies:
       hosted-git-info: 3.0.8
       resolve: 1.22.1
-      semver: 7.5.1
+      semver: 7.5.4
       validate-npm-package-license: 3.0.4
     dev: true
 
@@ -28123,7 +28123,7 @@ packages:
       loader-utils: 2.0.4
       postcss: 7.0.39
       schema-utils: 3.1.1
-      semver: 7.5.1
+      semver: 7.5.4
       webpack: 5.75.0(esbuild@0.17.14)(webpack-cli@5.0.1)
     dev: true
 
@@ -29666,26 +29666,6 @@ packages:
       scheduler: 0.20.2
     dev: true
 
-  /react-text-selection-popover@2.0.2(postcss@8.4.27)(react-dom@18.1.0)(react@18.1.0):
-    resolution: {integrity: sha512-VbQnJMHX6GrMRS5QGQnb8YuFL45JRcosraTJjdmjib4Xt9MOcTHXmuIyI12xbG2QZv2Tsa+aOZvYgTlo8I00dA==}
-    peerDependencies:
-      react: ^16.8.0,^17.x,^18.x
-      react-dom: ^16.8.0,^17.x,^18.x
-    dependencies:
-      react: 18.1.0
-      react-dom: 18.1.0(react@18.1.0)
-      use-text-selection: 1.1.5(postcss@8.4.27)(react@18.1.0)
-    transitivePeerDependencies:
-      - '@swc/helpers'
-      - cssnano
-      - postcss
-      - purgecss
-      - relateurl
-      - srcset
-      - terser
-      - uncss
-    dev: false
-
   /react-transition-group@2.9.0(react-dom@18.1.0)(react@18.1.0):
     resolution: {integrity: sha512-+HzNTCHpeQyl4MJ/bdE0u6XRMe9+XG/+aL4mCxVN4DnPBQ0/5bfHWPDuOZUzYdMj94daZaZdCCc1Dzt9R/xSSg==}
     peerDependencies:
@@ -29738,6 +29718,14 @@ packages:
       resize-observer-polyfill: 1.5.1
       scheduler: 0.13.3
       zdog: 1.1.3
+    dev: false
+
+  /react@17.0.2:
+    resolution: {integrity: sha512-gnhPt75i/dq/z3/6q/0asP78D0u592D5L1pd7M8P+dck6Fu/jJeL6iVVK23fptSUZj8Vjf++7wXA8UNclGQcbA==}
+    engines: {node: '>=0.10.0'}
+    dependencies:
+      loose-envify: 1.4.0
+      object-assign: 4.1.1
     dev: false
 
   /react@18.1.0:
@@ -30755,7 +30743,6 @@ packages:
     hasBin: true
     dependencies:
       lru-cache: 6.0.0
-    dev: false
 
   /send@0.18.0:
     resolution: {integrity: sha512-qqWzuOjSFOuqPjFe4NOsMLafToQQwBSOEpS+FwEt3A2V3vKubTquT3vmLTQpFgMXp8AlFWFuP1qKaJZOtPpVXg==}
@@ -31162,7 +31149,7 @@ packages:
       lodash.isempty: 4.4.0
       lodash.topairs: 4.3.0
       micromatch: 4.0.5
-      semver: 7.5.1
+      semver: 7.5.4
       snyk-config: 5.1.0
       tslib: 2.1.0
       uuid: 8.3.2
@@ -32067,7 +32054,7 @@ packages:
       mime: 2.6.0
       qs: 6.11.2
       readable-stream: 3.6.2
-      semver: 7.5.1
+      semver: 7.5.4
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -32431,7 +32418,6 @@ packages:
   /term-size@2.2.1:
     resolution: {integrity: sha512-wK0Ri4fOGjv/XPy8SBHZChl8CM7uMc5VML7SqiQ0zG7+J5Vr+RMQDoHa2CNT6KHUnTGIXH34UDMkPzAUyapBZg==}
     engines: {node: '>=8'}
-    dev: false
 
   /terminal-link@2.1.1:
     resolution: {integrity: sha512-un0FmiRUQNr5PJqy9kP7c40F5BOfpGlYTrxonDChEZB7pzZxRNp/bt+ymiy9/npwXya9KH99nJ/GXFIiUkYGFQ==}
@@ -33654,13 +33640,13 @@ packages:
       react: 18.1.0
     dev: false
 
-  /use-text-selection@1.1.5(postcss@8.4.27)(react@18.1.0):
+  /use-text-selection@1.1.5(postcss@8.4.27)(react@17.0.2):
     resolution: {integrity: sha512-JOuQYG0vKHRj0dfax0dy/HxyF31MN0Q2UP1rl1LtFA0qnQ0Uw4XGh4BucHA9g8kxlnVFv+JTlJQ4B+TwXCGxOg==}
     peerDependencies:
       react: ^17.0.1
     dependencies:
       parcel: 2.9.3(postcss@8.4.27)
-      react: 18.1.0
+      react: 17.0.2
     transitivePeerDependencies:
       - '@swc/helpers'
       - cssnano
