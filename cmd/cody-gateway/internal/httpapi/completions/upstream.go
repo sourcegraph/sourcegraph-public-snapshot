@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -70,6 +71,11 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	allowedModels []string,
 
 	methods upstreamHandlerMethods[ReqT],
+
+	// defaultRetryAfterSeconds sets the retry-after policy on upstream rate
+	// limit events in case a retry-after is not provided by the upstream
+	// response.
+	defaultRetryAfterSeconds int,
 ) http.Handler {
 	baseLogger = baseLogger.Scoped(upstreamName, fmt.Sprintf("%s upstream handler", upstreamName)).
 		With(log.String("upstream.url", upstreamAPIURL))
@@ -253,14 +259,22 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			if upstreamStatusCode == http.StatusTooManyRequests {
 				// Rewrite 429 to 503 because we share a quota when talking to upstream,
 				// and a 429 from upstream should NOT indicate to the client that they
-				// should retry. To ensure we are notified when this happens, log this
-				// as an error and record the headers that are provided to us.
+				// should liberally retry until the rate limit is lifted. To ensure we are
+				// notified when this happens, log this as an error and record the headers
+				// that are provided to us.
 				var headers bytes.Buffer
 				_ = resp.Header.Write(&headers)
 				logger.Error("upstream returned 429, rewriting to 503",
 					log.Error(errors.New(resp.Status)), // real error needed for Sentry reporting
 					log.String("resp.headers", headers.String()))
 				resolvedStatusCode = http.StatusServiceUnavailable
+				// Propagate retry-after in case it is handle-able by the client,
+				// or write our default. 503 errors can have retry-after as well.
+				if upstreamRetryAfter := resp.Header.Get("retry-after"); upstreamRetryAfter != "" {
+					w.Header().Set("retry-after", upstreamRetryAfter)
+				} else {
+					w.Header().Set("retry-after", strconv.Itoa(defaultRetryAfterSeconds))
+				}
 			}
 
 			// Write the resolved status code.

@@ -64,9 +64,11 @@ import {
 import {
     JOB_STATE_METADATA_MAPPING,
     PermissionsSyncJobNumbers,
+    PermissionsSyncJobNumberType,
     PermissionsSyncJobReasonByline,
     PermissionsSyncJobStatusBadge,
     PermissionsSyncJobSubject,
+    PermissionsSyncJobUpdatedAt,
 } from './PermissionsSyncJobNode'
 import { PermissionsSyncStats } from './PermissionsSyncStats'
 
@@ -330,7 +332,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 {connection?.nodes?.length === 0 && <EmptyList />}
                 {!!connection?.nodes?.length && (
                     <Table<PermissionsSyncJob>
-                        columns={TableColumns}
+                        columns={SiteAdminTableColumns}
                         getRowId={node => node.id}
                         data={connection.nodes}
                         rowClassName={styles.tableRow}
@@ -413,6 +415,49 @@ const TableColumns: IColumn<PermissionsSyncJob>[] = [
         render: job => <PermissionsSyncJobStatusBadge job={job} />,
     },
     {
+        key: 'UpdatedAt',
+        header: 'Updated At',
+        render: job => <PermissionsSyncJobUpdatedAt job={job} />,
+    },
+    {
+        key: 'Reason',
+        header: 'Reason',
+        render: (node: PermissionsSyncJob) => <PermissionsSyncJobReasonByline job={node} />,
+        cellClassName: classNames(styles.reasonGroupContainer, 'pr-1'),
+    },
+    {
+        key: 'Added',
+        header: { label: 'Added', align: 'right' },
+        align: 'right',
+        render: (node: PermissionsSyncJob) => (
+            <PermissionsSyncJobNumbers job={node} type={PermissionsSyncJobNumberType.ADDED} />
+        ),
+    },
+    {
+        key: 'Removed',
+        header: { label: 'Removed', align: 'right' },
+        align: 'right',
+        render: (node: PermissionsSyncJob) => (
+            <PermissionsSyncJobNumbers job={node} type={PermissionsSyncJobNumberType.REMOVED} />
+        ),
+    },
+    {
+        key: 'Total',
+        header: { label: 'Total', align: 'right' },
+        align: 'right',
+        render: (node: PermissionsSyncJob) => (
+            <PermissionsSyncJobNumbers job={node} type={PermissionsSyncJobNumberType.TOTAL} />
+        ),
+    },
+]
+
+const SiteAdminTableColumns: IColumn<PermissionsSyncJob>[] = [
+    {
+        key: 'Status',
+        header: 'Status',
+        render: job => <PermissionsSyncJobStatusBadge job={job} />,
+    },
+    {
         key: 'Name',
         header: 'Name',
         render: (node: PermissionsSyncJob) => <PermissionsSyncJobSubject job={node} />,
@@ -428,22 +473,24 @@ const TableColumns: IColumn<PermissionsSyncJob>[] = [
         key: 'Added',
         header: { label: 'Added', align: 'right' },
         align: 'right',
-        render: (node: PermissionsSyncJob) => <PermissionsSyncJobNumbers job={node} added={true} />,
+        render: (node: PermissionsSyncJob) => (
+            <PermissionsSyncJobNumbers job={node} type={PermissionsSyncJobNumberType.ADDED} />
+        ),
     },
     {
         key: 'Removed',
         header: { label: 'Removed', align: 'right' },
         align: 'right',
-        render: (node: PermissionsSyncJob) => <PermissionsSyncJobNumbers job={node} added={false} />,
+        render: (node: PermissionsSyncJob) => (
+            <PermissionsSyncJobNumbers job={node} type={PermissionsSyncJobNumberType.REMOVED} />
+        ),
     },
     {
         key: 'Total',
         header: { label: 'Total', align: 'right' },
         align: 'right',
-        render: ({ permissionsFound }: PermissionsSyncJob) => (
-            <div className={classNames('text-right', permissionsFound === 0 ? styles.textTotalNumber : 'text-muted')}>
-                <b>{permissionsFound}</b>
-            </div>
+        render: (node: PermissionsSyncJob) => (
+            <PermissionsSyncJobNumbers job={node} type={PermissionsSyncJobNumberType.TOTAL} />
         ),
     },
 ]
@@ -689,14 +736,26 @@ const renderModal = (job: PermissionsSyncJob, hideModal: () => void): React.Reac
                     <Text className="mb-0" weight="bold">
                         Permissions added
                     </Text>
-                    <Text className="text-success mb-0" weight="bold">
+                    <Text
+                        className={classNames('mb-0', {
+                            'text-success': job.permissionsAdded > 0,
+                            'text-muted': job.permissionsAdded === 0,
+                        })}
+                        weight="bold"
+                    >
                         {job.permissionsAdded}
                     </Text>
 
                     <Text className="mb-0" weight="bold">
                         Permissions removed
                     </Text>
-                    <Text className="text-danger mb-0" weight="bold">
+                    <Text
+                        className={classNames('mb-0', {
+                            'text-danger': job.permissionsAdded > 0,
+                            'text-muted': job.permissionsAdded === 0,
+                        })}
+                        weight="bold"
+                    >
                         {job.permissionsRemoved}
                     </Text>
 

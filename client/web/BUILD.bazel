@@ -1920,6 +1920,7 @@ ts_project(
         "src/enterprise/site-admin/dotcom/productSubscriptions/utils.test.ts",
         "src/enterprise/user/productSubscriptions/UserProductSubscriptionStatus.test.tsx",
         "src/enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionPage.test.tsx",
+        "src/enterprise/user/settings/auth/UserSettingsPermissionsPage.test.tsx",
         "src/featureFlags/lib/parseUrlOverrideFeatureFlags.test.ts",
         "src/featureFlags/useFeatureFlag.test.tsx",
         "src/featureFlags/withFeatureFlag.test.tsx",

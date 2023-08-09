@@ -1886,7 +1886,7 @@ func (s *permsStore) ListUserPermissions(ctx context.Context, userID int32, args
 	}
 
 	conds := []*sqlf.Query{authzParams.ToAuthzQuery()}
-	order := sqlf.Sprintf("repo.id ASC")
+	order := sqlf.Sprintf("es.id, repo.name ASC")
 	limit := sqlf.Sprintf("")
 
 	if args != nil {
@@ -1919,44 +1919,21 @@ func (s *permsStore) ListUserPermissions(ctx context.Context, userID int32, args
 		userID,
 	)
 
-	rows, err := s.Query(ctx, reposQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	perms := make([]*UserPermission, 0)
-	for rows.Next() {
-		var repo types.Repo
-		var reason UserRepoPermissionReason
-		var updatedAt time.Time
-
-		if err := rows.Scan(
-			&repo.ID,
-			&repo.Name,
-			&dbutil.NullTime{Time: &updatedAt},
-			&reason,
-		); err != nil {
-			return nil, err
-		}
-
-		// If authz is bypassed due to user being site-admin then show permissions
-		// reason as `UserRepoPermissionReasonSiteAdmin`.
-		if authzParams.BypassAuthzReasons.SiteAdmin {
-			reason = UserRepoPermissionReasonSiteAdmin
-		}
-
-		perms = append(perms, &UserPermission{Repo: &repo, Reason: reason, UpdatedAt: updatedAt})
-	}
-
-	return perms, nil
+	return scanRepoPermissionsInfo(authzParams)(s.Query(ctx, reposQuery))
 }
 
 const reposPermissionsInfoQueryFmt = `
 WITH accessible_repos AS (
 	SELECT
 		repo.id,
-		repo.name
+		repo.name,
+		repo.private,
+		es.unrestricted,
+		-- We need row_id to preserve the order, because ORDER BY is done in this subquery
+		row_number() OVER() as row_id
 	FROM repo
+	LEFT JOIN external_service_repos AS esr ON esr.repo_id = repo.id
+	LEFT JOIN external_services AS es ON esr.external_service_id = es.id
 	WHERE
 		repo.deleted_at IS NULL
 		AND %s -- Authz Conds, Pagination Conds, Search
@@ -1964,17 +1941,56 @@ WITH accessible_repos AS (
 	%s -- Limit
 )
 SELECT
-	ar.*,
+	ar.id,
+	ar.name,
+	ar.private,
+	ar.unrestricted,
 	urp.updated_at AS permission_updated_at,
-	CASE
-		WHEN urp.user_id IS NOT NULL THEN 'Permissions Sync'
-		ELSE 'Unrestricted'
-	END AS permission_reason
+	urp.source
 FROM
 	accessible_repos AS ar
 	LEFT JOIN user_repo_permissions AS urp ON urp.user_id = %d
 		AND urp.repo_id = ar.id
+	ORDER BY row_id
 `
+
+var scanRepoPermissionsInfo = func(authzParams *AuthzQueryParameters) func(basestore.Rows, error) ([]*UserPermission, error) {
+	return basestore.NewSliceScanner(func(s dbutil.Scanner) (*UserPermission, error) {
+		var repo types.Repo
+		var reason UserRepoPermissionReason
+		var updatedAt time.Time
+		var source *authz.PermsSource
+		var unrestricted bool
+
+		if err := s.Scan(
+			&repo.ID,
+			&repo.Name,
+			&repo.Private,
+			&unrestricted,
+			&dbutil.NullTime{Time: &updatedAt},
+			&source,
+		); err != nil {
+			return nil, err
+		}
+
+		if source != nil {
+			// if source is API, set reason to explicit perms
+			if *source == authz.SourceAPI {
+				reason = UserRepoPermissionReasonExplicitPerms
+			}
+			// if source is perms sync, set reason to perms syncing
+			if *source == authz.SourceRepoSync || *source == authz.SourceUserSync {
+				reason = UserRepoPermissionReasonPermissionsSync
+			}
+		} else if !repo.Private || unrestricted {
+			reason = UserRepoPermissionReasonUnrestricted
+		} else if repo.Private && !unrestricted && authzParams.BypassAuthzReasons.SiteAdmin {
+			reason = UserRepoPermissionReasonSiteAdmin
+		}
+
+		return &UserPermission{Repo: &repo, Reason: reason, UpdatedAt: updatedAt}, nil
+	})
+}
 
 var defaultPageSize = 100
 
@@ -2172,4 +2188,5 @@ const (
 	UserRepoPermissionReasonSiteAdmin       UserRepoPermissionReason = "Site Admin"
 	UserRepoPermissionReasonUnrestricted    UserRepoPermissionReason = "Unrestricted"
 	UserRepoPermissionReasonPermissionsSync UserRepoPermissionReason = "Permissions Sync"
+	UserRepoPermissionReasonExplicitPerms   UserRepoPermissionReason = "Explicit API"
 )
