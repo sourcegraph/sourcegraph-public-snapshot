@@ -35,14 +35,14 @@ func (api patternAPI) LuaAPI() map[string]lua.LGFunction {
 			glob := state.CheckString(1)
 			pathspecTable := state.CheckTable(2)
 
-			values, err := util.DecodeSlice(pathspecTable)
+			pathspecs, err := util.MapSlice(pathspecTable, func(value lua.LValue) (string, error) {
+				if s, ok := value.(lua.LString); ok {
+					return string(s), nil
+				}
+				return "", util.NewTypeError("lua.LString", value)
+			})
 			if err != nil {
 				return err
-			}
-
-			var pathspecs []string
-			for _, v := range values {
-				pathspecs = append(pathspecs, v.String())
 			}
 
 			state.Push(luar.New(state, luatypes.NewPattern(glob, pathspecs)))
