@@ -29,7 +29,7 @@ import (
 // upstreamHandlerMethods declares a set of methods that are used throughout the
 // lifecycle of a request to an upstream API. All methods are required, and called
 // in the order they are defined here.
-type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
+type upstreamHandlerMethods[ReqT any] struct {
 	// validateRequest can be used to validate the HTTP request before it is sent upstream.
 	// Returning a non-nil error will stop further processing and return the given error
 	// code, or a 400.

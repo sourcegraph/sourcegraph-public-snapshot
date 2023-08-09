@@ -8,14 +8,13 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const anthropicAPIURL = "https://api.anthropic.com/v1/complete"
@@ -38,9 +37,6 @@ func NewAnthropicHandler(
 		allowedModels,
 		upstreamHandlerMethods[anthropicRequest]{
 			validateRequest: func(_ codygateway.Feature, ar anthropicRequest) (int, error) {
-				if ar.MaxTokensToSample > int32(maxTokensToSample) {
-					return http.StatusBadRequest, errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", maxTokensToSample, ar.MaxTokensToSample)
-				}
 				return 0, nil
 			},
 			transformBody: func(body *anthropicRequest, act *actor.Actor) {
@@ -107,15 +103,15 @@ func NewAnthropicHandler(
 
 // anthropicRequest captures all known fields from https://console.anthropic.com/docs/api/reference.
 type anthropicRequest struct {
-	Prompt            string                   `json:"prompt"`
-	Model             string                   `json:"model"`
-	MaxTokensToSample int32                    `json:"max_tokens_to_sample"`
-	StopSequences     []string                 `json:"stop_sequences,omitempty"`
-	Stream            bool                     `json:"stream,omitempty"`
-	Temperature       float32                  `json:"temperature,omitempty"`
-	TopK              int32                    `json:"top_k,omitempty"`
-	TopP              int32                    `json:"top_p,omitempty"`
-	Metadata          anthropicRequestMetadata `json:"metadata,omitempty"`
+	Prompt            string                    `json:"prompt"`
+	Model             string                    `json:"model"`
+	MaxTokensToSample int32                     `json:"max_tokens_to_sample"`
+	StopSequences     []string                  `json:"stop_sequences,omitempty"`
+	Stream            bool                      `json:"stream,omitempty"`
+	Temperature       float32                   `json:"temperature,omitempty"`
+	TopK              int32                     `json:"top_k,omitempty"`
+	TopP              int32                     `json:"top_p,omitempty"`
+	Metadata          *anthropicRequestMetadata `json:"metadata,omitempty"`
 }
 
 type anthropicRequestMetadata struct {
