@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -227,11 +228,14 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		committerEmail = authorEmail
 	}
 
-	gitCommitArgs := []string{"commit"}
-	for _, m := range messages {
-		gitCommitArgs = append(gitCommitArgs, "-m", stylizeCommitMessage(m))
-	}
-	cmd = exec.CommandContext(ctx, "git", gitCommitArgs...)
+	// Commit messages can be arbitrary strings, so using `-m` runs into problems.
+	// Instead, feed the commit messages to stdin.
+	cmd = exec.CommandContext(ctx, "git", "commit", "-F", "-")
+	// NOTE: join messages with a blank line in between ("\n\n")
+	// because the previous behavior was to use multiple -m arguments,
+	// which concatenate with a blank line in between.
+	// Gerrit is the only code host that usees multiple messages at the moment
+	cmd.Stdin = strings.NewReader(strings.Join(messages, "\n\n"))
 
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(os.Environ(), []string{
@@ -393,17 +397,6 @@ func (s *Server) repoRemoteRefs(ctx context.Context, remoteURL *vcs.URL, repoNam
 		refs[split[2]] = fields[0]
 	}
 	return refs, nil
-}
-
-func stylizeCommitMessage(message string) string {
-	if styleMessage(message) {
-		return fmt.Sprintf("%q", message)
-	}
-	return message
-}
-
-func styleMessage(message string) bool {
-	return !strings.HasPrefix(message, "Change-Id: I")
 }
 
 func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchCommit string, remoteURL *vcs.URL, tmpGitPathEnv, altObjectsEnv string) (string, error) {
