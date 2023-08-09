@@ -139,11 +139,9 @@ func NamedRecognizersFromUserDataMap(value lua.LValue, allowFalseAsNil bool) (re
 			return nil
 		}
 
-		if value.Type() == lua.LTBool && !lua.LVAsBool(value) {
-			if allowFalseAsNil {
-				recognizers[name] = nil
-				return nil
-			}
+		if allowFalseAsNil && value.Type() == lua.LTBool && !lua.LVAsBool(value) {
+			recognizers[name] = nil
+			return nil
 		}
 
 		recognizer, err := util.TypecheckUserData[*Recognizer](value, "*Recognizer")
