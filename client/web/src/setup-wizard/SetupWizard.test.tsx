@@ -4,8 +4,6 @@ import { MemoryRouter } from 'react-router-dom'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { createFlagMock } from '../featureFlags/createFlagMock'
-
 import { SetupWizard } from './SetupWizard'
 
 describe('SetupWizard', () => {
@@ -14,8 +12,7 @@ describe('SetupWizard', () => {
         window.context = origContext
     })
 
-    const setup = (setupChecklistEnabled = false) => {
-        const MOCKS = [createFlagMock('setup-checklist', setupChecklistEnabled)]
+    const setup = () => {
         window.context = {
             extsvcConfigFileExists: false,
             extsvcConfigAllowEdits: false,
@@ -23,7 +20,7 @@ describe('SetupWizard', () => {
 
         return render(
             <MemoryRouter>
-                <MockedTestProvider mocks={MOCKS}>
+                <MockedTestProvider mocks={[]}>
                     <SetupWizard telemetryService={NOOP_TELEMETRY_SERVICE} />
                 </MockedTestProvider>
             </MemoryRouter>
@@ -31,15 +28,8 @@ describe('SetupWizard', () => {
     }
 
     it('should render correctly', async () => {
-        const { getByText, asFragment } = setup(false)
+        const { getByText, asFragment } = setup()
         await waitFor(() => expect(getByText('Add remote repositories')).toBeInTheDocument())
-        expect(asFragment()).toMatchSnapshot()
-    })
-
-    it('should render new checklist steps if feature flag is enabled', async () => {
-        const { getByText, asFragment } = setup(true)
-        // wait until new steps get rendered
-        await waitFor(() => expect(getByText('Add license')).toBeInTheDocument())
         expect(asFragment()).toMatchSnapshot()
     })
 })
