@@ -116,6 +116,12 @@ func NewHandler(
 			usedTokens = ut
 			upstreamFinished = time.Since(upstreamStarted)
 			if err != nil {
+				// This is an error path, so always set a default retry-after
+				// on errors that discourages Sourcegraph clients from retrying
+				// at all - embeddings will likely be run by embeddings workers
+				// that will eventually retry on a more reasonable schedule.
+				w.Header().Set("retry-after", "60")
+
 				// If a status error is returned, pass through the code and error
 				var statusCodeErr response.HTTPStatusCodeError
 				if errors.As(err, &statusCodeErr) {

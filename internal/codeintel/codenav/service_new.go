@@ -578,9 +578,16 @@ func (s *Service) prepareCandidateUploads(
 		if err != nil {
 			return Cursor{}, false, err
 		}
-		var ids []int
+		idMap := make(map[int]struct{}, len(uploads)+len(cursor.VisibleUploads))
+		for _, upload := range cursor.VisibleUploads {
+			idMap[upload.DumpID] = struct{}{}
+		}
 		for _, upload := range uploads {
-			ids = append(ids, upload.ID)
+			idMap[upload.ID] = struct{}{}
+		}
+		ids := make([]int, 0, len(idMap))
+		for id := range idMap {
+			ids = append(ids, id)
 		}
 		sort.Ints(ids)
 

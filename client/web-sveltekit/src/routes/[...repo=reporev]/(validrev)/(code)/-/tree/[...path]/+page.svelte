@@ -11,12 +11,16 @@
     import FileDiff from '../../../../-/commit/[...revspec]/FileDiff.svelte'
 
     import type { PageData } from './$types'
+    import FileTable from '$lib/repo/FileTable.svelte'
 
     export let data: PageData
 
-    const { value: treeOrError, set } = createPromiseStore<PageData['deferred']['treeEntries']>()
-    $: set(data.deferred.treeEntries)
-    $: entries = $treeOrError && !isErrorLike($treeOrError) ? $treeOrError.entries : []
+    const { value: tree, set: setTree } = createPromiseStore<PageData['deferred']['treeEntries']>()
+    const { value: readme, set: setReadme } = createPromiseStore<PageData['deferred']['readme']>()
+
+    $: setTree(data.deferred.treeEntries)
+    $: setReadme(data.deferred.readme)
+    $: entries = $tree?.entries ?? []
 </script>
 
 <FileHeader>
@@ -36,28 +40,45 @@
             {/each}
         {/await}
     {:else}
-        <ul>
-            {#each entries as entry}
-                <li>
-                    <a href={entry.url}>
-                        <Icon svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline} inline />
-                        {entry.name}
-                    </a>
-                </li>
-            {/each}
-        </ul>
+        <FileTable {entries} />
+    {/if}
+    {#if $readme}
+        <h4 class="header">
+            <Icon svgPath={mdiFileDocumentOutline} />
+            &nbsp;
+            {$readme.name}
+        </h4>
+        <div class="readme">
+            {#if $readme.richHTML}
+                {@html $readme.richHTML}
+            {:else if $readme.content}
+                <pre>{$readme.content}</pre>
+            {/if}
+        </div>
     {/if}
 </div>
 
 <style lang="scss">
     .content {
-        padding: 1rem;
         flex: 1;
     }
 
-    ul {
-        list-style: none;
-        padding: 0;
+    .header {
+        background-color: var(--body-bg);
+        position: sticky;
+        top: 2.8rem;
+        padding: 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+        border-top: 1px solid var(--border-color);
         margin: 0;
+    }
+
+    .readme {
+        padding: 1rem;
+        flex: 1;
+
+        pre {
+            white-space: pre-wrap;
+        }
     }
 </style>
