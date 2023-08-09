@@ -244,6 +244,17 @@ func (s *userEmailsStore) SetVerified(ctx context.Context, userID int32, email s
 		if err != nil {
 			return errors.New("could not mark email as verified")
 		}
+		_, _, err = s.GetPrimaryEmail(ctx, userID)
+		// if we had an error, check if the error is userEmailNotFoundError
+		if err != nil {
+			switch err.(type) {
+			case userEmailNotFoundError: // if user has an email & we've verified it, set it as primary email
+				err = s.SetPrimaryEmail(ctx, userID, email)
+				if err != nil {
+					return errors.New("Email verified but cannot set as primary.")
+				}
+			}
+		}
 	} else {
 		// Mark as unverified.
 		res, err = s.Handle().ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=null WHERE user_id=$1 AND email=$2", userID, email)
