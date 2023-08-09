@@ -1,7 +1,6 @@
 package conf
 
 import (
-	"context"
 	"encoding/base64"
 	"log"
 	"strings"
@@ -10,12 +9,10 @@ import (
 	"github.com/hashicorp/cronexpr"
 
 	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
-	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/dotcomuser"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -53,46 +50,6 @@ func ExecutorsAccessToken() string {
 		return confdefaults.AppInMemoryExecutorPassword
 	}
 	return Get().ExecutorsAccessToken
-}
-
-func BitbucketServerConfigs(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
-	var config []*schema.BitbucketServerConnection
-	if err := internalapi.Client.ExternalServiceConfigs(ctx, extsvc.KindBitbucketServer, &config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
-func GitHubConfigs(ctx context.Context) ([]*schema.GitHubConnection, error) {
-	var config []*schema.GitHubConnection
-	if err := internalapi.Client.ExternalServiceConfigs(ctx, extsvc.KindGitHub, &config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
-func GitLabConfigs(ctx context.Context) ([]*schema.GitLabConnection, error) {
-	var config []*schema.GitLabConnection
-	if err := internalapi.Client.ExternalServiceConfigs(ctx, extsvc.KindGitLab, &config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
-func GitoliteConfigs(ctx context.Context) ([]*schema.GitoliteConnection, error) {
-	var config []*schema.GitoliteConnection
-	if err := internalapi.Client.ExternalServiceConfigs(ctx, extsvc.KindGitolite, &config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
-func PhabricatorConfigs(ctx context.Context) ([]*schema.PhabricatorConnection, error) {
-	var config []*schema.PhabricatorConnection
-	if err := internalapi.Client.ExternalServiceConfigs(ctx, extsvc.KindPhabricator, &config); err != nil {
-		return nil, err
-	}
-	return config, nil
 }
 
 func GitHubAppEnabled() bool {
@@ -772,6 +729,31 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		if completionsConfig.CompletionModel == "" {
 			completionsConfig.CompletionModel = "claude-instant-1"
 		}
+	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAzureOpenAI) {
+		// If no endpoint is configured, this provider is misconfigured.
+		if completionsConfig.Endpoint == "" {
+			return nil
+		}
+
+		// If not access token is set, we cannot talk to Azure OpenAI. Bail.
+		if completionsConfig.AccessToken == "" {
+			return nil
+		}
+
+		// If not chat model is set, we cannot talk to Azure OpenAI. Bail.
+		if completionsConfig.ChatModel == "" {
+			return nil
+		}
+
+		// If not fast chat model is set, we fall back to the Chat Model.
+		if completionsConfig.FastChatModel == "" {
+			completionsConfig.FastChatModel = completionsConfig.ChatModel
+		}
+
+		// If not completions model is set, we cannot talk to Azure OpenAI. Bail.
+		if completionsConfig.CompletionModel == "" {
+			return nil
+		}
 	}
 
 	// Make sure models are always treated case-insensitive.
@@ -936,6 +918,24 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		if embeddingsConfig.Dimensions <= 0 && embeddingsConfig.Model == "text-embedding-ada-002" {
 			embeddingsConfig.Dimensions = 1536
 		}
+	} else if embeddingsConfig.Provider == string(conftypes.EmbeddingsProviderNameAzureOpenAI) {
+		// If no endpoint is configured, we cannot talk to Azure OpenAI.
+		if embeddingsConfig.Endpoint == "" {
+			return nil
+		}
+
+		// If not access token is set, we cannot talk to OpenAI. Bail.
+		if embeddingsConfig.AccessToken == "" {
+			return nil
+		}
+
+		// If no model is set, we cannot do anything here.
+		if embeddingsConfig.Model == "" {
+			return nil
+		}
+		// Make sure models are always treated case-insensitive.
+		// TODO: Are model names on azure case insensitive?
+		embeddingsConfig.Model = strings.ToLower(embeddingsConfig.Model)
 	} else {
 		// Unknown provider value.
 		return nil
@@ -970,6 +970,7 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		MaxCodeEmbeddingsPerRepo:   embeddingsConfig.MaxCodeEmbeddingsPerRepo,
 		MaxTextEmbeddingsPerRepo:   embeddingsConfig.MaxTextEmbeddingsPerRepo,
 		PolicyRepositoryMatchLimit: embeddingsConfig.PolicyRepositoryMatchLimit,
+		ExcludeChunkOnError:        pointers.Deref(embeddingsConfig.ExcludeChunkOnError, true),
 	}
 	d, err := time.ParseDuration(embeddingsConfig.MinimumInterval)
 	if err != nil {
@@ -1029,6 +1030,10 @@ func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model st
 		return anthropicDefaultMaxPromptTokens(model)
 	case conftypes.CompletionsProviderNameOpenAI:
 		return openaiDefaultMaxPromptTokens(model)
+	case conftypes.CompletionsProviderNameAzureOpenAI:
+		// We cannot know based on the model name what model is actually used,
+		// this is a sane default for GPT in general.
+		return 8_000
 	}
 
 	// Should be unreachable.

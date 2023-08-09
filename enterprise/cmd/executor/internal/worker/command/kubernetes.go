@@ -44,7 +44,8 @@ const (
 type KubernetesContainerOptions struct {
 	CloneOptions          KubernetesCloneOptions
 	Namespace             string
-	Annotations           map[string]string
+	JobAnnotations        map[string]string
+	PodAnnotations        map[string]string
 	NodeName              string
 	NodeSelector          map[string]string
 	ImagePullSecrets      []corev1.LocalObjectReference
@@ -439,13 +440,16 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Annotations: options.Annotations,
+			Annotations: options.JobAnnotations,
 		},
 		Spec: batchv1.JobSpec{
 			// Prevent K8s from retrying. This will lead to the retried jobs always failing as the workspace will get
 			// cleaned up from the first failure.
 			BackoffLimit: pointer.Int32(0),
 			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: options.PodAnnotations,
+				},
 				Spec: corev1.PodSpec{
 					NodeName:         options.NodeName,
 					NodeSelector:     options.NodeSelector,
@@ -658,13 +662,16 @@ func NewKubernetesSingleJob(
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Annotations: options.Annotations,
+			Annotations: options.JobAnnotations,
 		},
 		Spec: batchv1.JobSpec{
 			// Prevent K8s from retrying. This will lead to the retried jobs always failing as the workspace will get
 			// cleaned up from the first failure.
 			BackoffLimit: pointer.Int32(0),
 			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: options.PodAnnotations,
+				},
 				Spec: corev1.PodSpec{
 					NodeName:              options.NodeName,
 					NodeSelector:          options.NodeSelector,

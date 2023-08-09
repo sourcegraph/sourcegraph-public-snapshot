@@ -8,7 +8,7 @@ option go_package = "github.com/sourcegraph/sourcegraph/internal/symbols/v1";
 
 service SymbolsService {
   rpc Search(SearchRequest) returns (SearchResponse) {}
-  rpc LocalCodeIntel(LocalCodeIntelRequest) returns (LocalCodeIntelResponse) {}
+  rpc LocalCodeIntel(LocalCodeIntelRequest) returns (stream LocalCodeIntelResponse) {}
   rpc ListLanguages(ListLanguagesRequest) returns (ListLanguagesResponse) {}
   rpc SymbolInfo(SymbolInfoRequest) returns (SymbolInfoResponse) {}
   rpc Healthz(HealthzRequest) returns (HealthzResponse) {}

@@ -15,6 +15,50 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// SSOLoginHandler is a custom implementation of github.com/dghubble/gologin/oauth2's LoginHandler method.
+// It takes an extra ssoAuthURL parameter, and adds the original authURL as a redirect parameter to that
+// URL.
+//
+// This is used in cases where customers use SAML/SSO on their GitLab configurations. The default
+// way GitLab handles redirects for groups that require SSO sign-on does not work, and users
+// need to sign into GitLab outside of Sourcegraph, and can only then come back and use OAuth.
+//
+// This implementaion allows users to be directed to their GitLab SSO sign-in page, and then
+// the redirect query parameter will redirect them to the OAuth sign-in flow that Sourcegraph
+// requires.
+func SSOLoginHandler(config *oauth2.Config, failure http.Handler, ssoAuthURL string) http.Handler {
+	if failure == nil {
+		failure = gologin.DefaultFailureHandler
+	}
+	fn := func(w http.ResponseWriter, req *http.Request) {
+		ctx := req.Context()
+		state, err := oauth2Login.StateFromContext(ctx)
+		if err != nil {
+			ctx = gologin.WithError(ctx, err)
+			failure.ServeHTTP(w, req.WithContext(ctx))
+			return
+		}
+		authURL, err := url.Parse(config.AuthCodeURL(state))
+		if err != nil {
+			ctx = gologin.WithError(ctx, err)
+			failure.ServeHTTP(w, req.WithContext(ctx))
+			return
+		}
+
+		ssoAuthURL, err := url.Parse(ssoAuthURL)
+		if err != nil {
+			ctx = gologin.WithError(ctx, err)
+			failure.ServeHTTP(w, req.WithContext(ctx))
+			return
+		}
+		queryParams := ssoAuthURL.Query()
+		queryParams.Add("redirect", authURL.Path+"?"+authURL.RawQuery)
+		ssoAuthURL.RawQuery = queryParams.Encode()
+		http.Redirect(w, req, ssoAuthURL.String(), http.StatusFound)
+	}
+	return http.HandlerFunc(fn)
+}
+
 func LoginHandler(config *oauth2.Config, failure http.Handler) http.Handler {
 	return oauth2Login.LoginHandler(config, failure)
 }
