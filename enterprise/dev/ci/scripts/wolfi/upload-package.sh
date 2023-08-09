@@ -31,11 +31,11 @@ for apk in "${apks[@]}"; do
   echo " * Processing $apk"
 
   # Generate the branch-specific path to upload the package to
-  dest_path="gs://$GCS_BUCKET/packages/$BRANCH_PATH/$TARGET_ARCH/"
+  dest_path="gs://$GCS_BUCKET/$BRANCH_PATH/$TARGET_ARCH/"
   echo "   -> File path: ${dest_path}${apk}"
 
   # Generate the path to the package file on the main branch
-  dest_path_main="gs://$GCS_BUCKET/packages/$MAIN_BRANCH/$TARGET_ARCH/"
+  dest_path_main="gs://$GCS_BUCKET/$MAIN_BRANCH/$TARGET_ARCH/"
 
   # Generate index fragment for this package
   melange index -o "$apk.APKINDEX.tar.gz" "$apk"
@@ -65,12 +65,11 @@ for apk in "${apks[@]}"; do
     package_name=$(echo "$apk" | sed -E 's/(-[0-9].*)//')
 
     echo -e "   * To use this package locally, add the following lines to your base image config:\n"
-    # TODO: Update keyring when keys change: https://storage.googleapis.com/package-repository/packages/${BRANCH_PATH}/melange.rsa.pub
     echo -e "contents:
   keyring:
-    - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
+    - https://packages.sgdev.org/sourcegraph-melange-dev.rsa.pub
   repositories:
-    - '@branch https://storage.googleapis.com/package-repository/packages/${BRANCH_PATH}'
+    - '@branch https://packages.sgdev.org/${BRANCH_PATH}'
   packages:
     - ${package_name}@branch\n\n"
   fi
