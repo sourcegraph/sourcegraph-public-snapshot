@@ -269,5 +269,9 @@ const PermsSource: React.FunctionComponent<PermsSourceProps> = ({ source }) => {
         href = '/help/admin/permissions/api'
     }
 
-    return <a href={href}>{permsSourceMap[source]}</a>
+    return (
+        <Link to={href} target="_blank" rel="noopener">
+            {permsSourceMap[source]}
+        </Link>
+    )
 }

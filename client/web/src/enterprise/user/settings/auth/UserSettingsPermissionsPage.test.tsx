@@ -1,3 +1,5 @@
+import sinon from 'sinon'
+
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
@@ -22,14 +24,20 @@ const gqlUserID = 'VXNlcjox'
 
 describe('UserSettingsPermissionsPage', () => {
     // mock current date time for consistent timestamps
-    const dateNow = Date.now
+    let sandbox: sinon.SinonSandbox
+
     beforeEach(() => {
-        const now = new Date('2023-08-08T12:25:12Z').getTime()
-        Date.now = jest.fn(() => now)
+        sandbox = sinon.createSandbox()
+        const now = new Date('2023-08-08T12:25:12Z')
+        sinon.useFakeTimers({
+            now,
+            shouldAdvanceTime: true,
+            toFake: ['Date'],
+        })
     })
 
     afterEach(() => {
-        Date.now = dateNow
+        sandbox.restore()
     })
 
     test('empty state', async () => {

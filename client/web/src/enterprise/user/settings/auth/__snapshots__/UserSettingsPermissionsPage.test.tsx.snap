@@ -356,7 +356,9 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
           <span>
             by 
             <a
+              class="anchorLink"
               href="/help/admin/permissions/syncing#permission-syncing"
+              target="_blank"
             >
               user-centric permission sync
             </a>
