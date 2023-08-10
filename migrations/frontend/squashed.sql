@@ -5926,8 +5926,6 @@ CREATE INDEX event_logs_anonymous_user_id ON event_logs USING btree (anonymous_u
 
 CREATE UNIQUE INDEX event_logs_export_allowlist_event_name_idx ON event_logs_export_allowlist USING btree (event_name);
 
-CREATE INDEX event_logs_name ON event_logs USING gin (name gin_trgm_ops);
-
 CREATE INDEX event_logs_name_is_cody_active_event ON event_logs USING btree (iscodyactiveevent(name));
 
 CREATE INDEX event_logs_name_is_cody_explanation_event ON event_logs USING btree (iscodyexplanationevent(name));
