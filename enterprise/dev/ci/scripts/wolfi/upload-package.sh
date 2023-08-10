@@ -64,15 +64,17 @@ for apk in "${apks[@]}"; do
   if [[ "$IS_MAIN" != "true" ]]; then
     package_name=$(echo "$apk" | sed -E 's/(-[0-9].*)//')
 
-    echo -e "   * To use this package locally, add the following lines to your base image config:\n"
     # TODO: Update keyring when keys change: https://storage.googleapis.com/package-repository/packages/${BRANCH_PATH}/melange.rsa.pub
-    echo -e "contents:
+    if [[ -n "$BUILDKITE" ]]; then
+      echo -e "   * To use this package locally, add the following lines to your base image config:\n\n
+contents:
   keyring:
     - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
   repositories:
     - '@branch https://storage.googleapis.com/package-repository/packages/${BRANCH_PATH}'
   packages:
     - ${package_name}@branch\n\n"
+    fi
   fi
 
 done
