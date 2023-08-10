@@ -7,6 +7,7 @@ import com.sourcegraph.cody.autocomplete.render.AutoCompleteRendererType;
 import com.sourcegraph.cody.autocomplete.render.CodyAutoCompleteBlockElementRenderer;
 import com.sourcegraph.cody.autocomplete.render.CodyAutoCompleteElementRenderer;
 import com.sourcegraph.cody.autocomplete.render.CodyAutoCompleteSingleLineRenderer;
+import com.sourcegraph.cody.vscode.InlineAutoCompleteItem;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -16,6 +17,21 @@ public class AutoCompleteText {
   @NotNull public final String sameLineBeforeSuffixText;
   @NotNull public final String sameLineAfterSuffixText;
   @NotNull public final String blockText;
+
+  @Override
+  public String toString() {
+    return "AutoCompleteText{"
+        + "sameLineBeforeSuffixText='"
+        + sameLineBeforeSuffixText
+        + '\''
+        + ", sameLineAfterSuffixText='"
+        + sameLineAfterSuffixText
+        + '\''
+        + ", blockText='"
+        + blockText
+        + '\''
+        + '}';
+  }
 
   public AutoCompleteText(
       @NotNull String sameLineBeforeSuffixText,
@@ -82,30 +98,47 @@ public class AutoCompleteText {
       // Only return a non-empty autocomplete if there's at least one non-empty string
       // to apply.
       return Optional.of(
-          new AutoCompleteTextAtCaret(caret, inlineText, afterEndOfLineText, blockText));
+          new AutoCompleteTextAtCaret(
+              caret,
+              inlineText,
+              afterEndOfLineText,
+              blockText,
+              autoCompleteRenderers.stream()
+                  .map(renderer -> renderer.completionItem)
+                  .findFirst()
+                  .orElse(null)));
     else return Optional.empty();
   }
 
-  public Optional<CodyAutoCompleteSingleLineRenderer> getInlineRenderer(@NotNull Editor editor) {
+  public Optional<CodyAutoCompleteSingleLineRenderer> getInlineRenderer(
+      @NotNull InlineAutoCompleteItem completionItem, @NotNull Editor editor) {
     return this.sameLineBeforeSuffixText.isBlank()
         ? Optional.empty()
         : Optional.of(
             new CodyAutoCompleteSingleLineRenderer(
-                this.sameLineBeforeSuffixText, editor, AutoCompleteRendererType.INLINE));
+                this.sameLineBeforeSuffixText,
+                completionItem,
+                editor,
+                AutoCompleteRendererType.INLINE));
   }
 
   public Optional<CodyAutoCompleteSingleLineRenderer> getAfterLineEndRenderer(
-      @NotNull Editor editor) {
+      @NotNull InlineAutoCompleteItem completionItem, @NotNull Editor editor) {
     return this.sameLineAfterSuffixText.isBlank()
         ? Optional.empty()
         : Optional.of(
             new CodyAutoCompleteSingleLineRenderer(
-                this.sameLineAfterSuffixText, editor, AutoCompleteRendererType.AFTER_LINE_END));
+                this.sameLineAfterSuffixText,
+                completionItem,
+                editor,
+                AutoCompleteRendererType.AFTER_LINE_END));
   }
 
-  public Optional<CodyAutoCompleteBlockElementRenderer> getBlockRenderer(@NotNull Editor editor) {
+  public Optional<CodyAutoCompleteBlockElementRenderer> getBlockRenderer(
+      @NotNull InlineAutoCompleteItem completionItem, @NotNull Editor editor) {
     return this.blockText.isBlank()
         ? Optional.empty()
-        : Optional.of(new CodyAutoCompleteBlockElementRenderer(this.blockText, editor));
+        : Optional.of(
+            new CodyAutoCompleteBlockElementRenderer(this.blockText, completionItem, editor));
   }
 }
