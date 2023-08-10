@@ -40,7 +40,7 @@ Additional RBAC Roles are needed for single pod + pvc executors. Hidden for now 
 -->
 
 See
-the [example Role YAML](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/enterprise/cmd/executor/kubernetes/executor-batches.Role.yml)
+the [example Role YAML](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/cmd/executor/kubernetes/executor-batches.Role.yml)
 for details.
 
 ### Docker Image
@@ -143,7 +143,7 @@ Kubernetes, [Native Server-Side Batch Changes](./native_execution.md) must be en
 ### Example Configuration YAML
 
 See
-the [local development YAMLs](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/enterprise/cmd/executor/kubernetes)
+the [local development YAMLs](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/cmd/executor/kubernetes)
 for an example of how to configure the Executor in Kubernetes.
 
 ## Deployment

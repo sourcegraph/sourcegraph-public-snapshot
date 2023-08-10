@@ -6,7 +6,7 @@ load("//cmd/server:macro.bzl", "container_dependencies", "dependencies_tars")
 
 DEPS = [
     "//cmd/batcheshelper",
-    "//enterprise/cmd/executor",
+    "//cmd/executor",
 ]
 
 container_dependencies(DEPS)
