@@ -38,6 +38,10 @@ dependencies {
     implementation("org.commonmark:commonmark:0.21.0")
     implementation("org.commonmark:commonmark-ext-gfm-tables:0.21.0")
     implementation("org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.21.0")
+    implementation("com.googlecode.java-diff-utils:diffutils:1.3.0")
+    implementation("io.github.java-diff-utils:java-diff-utils:4.12")
+
+
     testImplementation(platform("org.junit:junit-bom:5.7.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.assertj:assertj-core:3.24.2")
@@ -121,10 +125,10 @@ tasks {
     fun copyAgentBinariesToPluginPath(targetPath: String) {
         val shouldBuildBinaries =
             agentSourceDirectory.isDirectory && (
-                findProperty("forceAgentBuild") == "true" ||
-                    !Files.isDirectory(agentTargetDirectory) ||
-                    agentTargetDirectory.toFile().list()?.isEmpty() ?: false
-                )
+                    findProperty("forceAgentBuild") == "true" ||
+                            !Files.isDirectory(agentTargetDirectory) ||
+                            agentTargetDirectory.toFile().list()?.isEmpty() ?: false
+                    )
         if (shouldBuildBinaries) {
             exec {
                 commandLine("pnpm", "install")
