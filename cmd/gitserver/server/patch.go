@@ -64,7 +64,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 	repo := string(protocol.NormalizeRepo(req.Repo))
 	repoDir := filepath.Join(s.ReposDir, repo)
-	repoGitDir := filepath.Join(s.ReposDir, repo, ".git")
+	repoGitDir := filepath.Join(repoDir, ".git")
 	if _, err := os.Stat(repoGitDir); os.IsNotExist(err) {
 		repoGitDir = filepath.Join(s.ReposDir, repo)
 		if _, err := os.Stat(repoGitDir); os.IsNotExist(err) {

@@ -104,8 +104,9 @@ func isAllowedDiffArg(arg string) bool {
 			return true
 		}
 	}
-
+	// make sure that arg is not a local file
 	_, err := os.Stat(arg)
+
 	return os.IsNotExist(err)
 }
 
@@ -140,18 +141,19 @@ func isAllowedDiffPathArg(arg string, repoDir string) bool {
 	if !filepath.IsAbs(arg) {
 		arg = filepath.Join(repoDir, arg)
 	}
-	filePath, err := filepath.Abs(arg)
 
+	filePath, err := filepath.Abs(arg)
 	if err != nil {
 		return false
-	} else {
-		// Check if absolute path is a sub path of the repo dir
-		repoRoot, err := filepath.Abs(repoDir)
-		if err == nil {
-			return strings.HasPrefix(filePath, repoRoot)
-		}
 	}
-	return false
+
+	// Check if absolute path is a sub path of the repo dir
+	repoRoot, err := filepath.Abs(repoDir)
+	if err != nil {
+		return false
+	}
+
+	return strings.HasPrefix(filePath, repoRoot)
 }
 
 // IsAllowedGitCmd checks if the cmd and arguments are allowed.
