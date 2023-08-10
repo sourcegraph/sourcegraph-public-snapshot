@@ -11,6 +11,7 @@ go_library(
         "//internal/auth/userpasswd",
         "//internal/conf",
         "//internal/database",
+        "//internal/database/accessrequests",
         "//internal/deviceid",
         "//internal/errcode",
         "//internal/featureflag",

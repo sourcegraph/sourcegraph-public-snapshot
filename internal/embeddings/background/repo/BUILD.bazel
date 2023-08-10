@@ -13,8 +13,8 @@ go_library(
     deps = [
         "//internal/api",
         "//internal/conf",
-        "//internal/database",
         "//internal/database/basestore",
+        "//internal/database/dbtypes",
         "//internal/database/dbutil",
         "//internal/executor",
         "//internal/observation",
@@ -41,6 +41,7 @@ go_test(
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbtest",
+        "//internal/database/dbtypes",
         "//internal/types",
         "//lib/pointers",
         "//schema",

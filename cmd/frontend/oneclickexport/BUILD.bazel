@@ -13,6 +13,7 @@ go_library(
     deps = [
         "//internal/conf",
         "//internal/database",
+        "//internal/database/dbtypes",
         "//internal/types",
         "@com_github_sourcegraph_log//:log",
     ],

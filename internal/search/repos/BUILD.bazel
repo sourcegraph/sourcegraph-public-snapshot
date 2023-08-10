@@ -16,6 +16,7 @@ go_library(
         "//internal/authz",
         "//internal/conf",
         "//internal/database",
+        "//internal/database/dbtypes",
         "//internal/endpoint",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",

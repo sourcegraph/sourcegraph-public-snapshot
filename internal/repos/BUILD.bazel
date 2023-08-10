@@ -58,6 +58,7 @@ go_library(
         "//internal/conf/reposource",
         "//internal/database",
         "//internal/database/basestore",
+        "//internal/database/dbtypes",
         "//internal/database/dbutil",
         "//internal/encryption/keyring",
         "//internal/errcode",

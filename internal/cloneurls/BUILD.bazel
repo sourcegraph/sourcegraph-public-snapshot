@@ -11,6 +11,7 @@ go_library(
         "//internal/api",
         "//internal/conf/reposource",
         "//internal/database",
+        "//internal/database/dbtypes",
         "//internal/extsvc",
         "//internal/trace",
         "//internal/types",

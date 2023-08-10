@@ -26,6 +26,7 @@ go_library(
         "//internal/conf",
         "//internal/database",
         "//internal/database/basestore",
+        "//internal/database/dbtypes",
         "//internal/errcode",
         "//internal/gitserver",
         "//internal/gqlutil",

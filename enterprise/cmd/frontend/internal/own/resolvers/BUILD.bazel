@@ -21,6 +21,7 @@ go_library(
         "//internal/api",
         "//internal/auth",
         "//internal/database",
+        "//internal/database/dbtypes",
         "//internal/deviceid",
         "//internal/errcode",
         "//internal/featureflag",
