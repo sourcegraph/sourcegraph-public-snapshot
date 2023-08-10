@@ -67,13 +67,15 @@ for apk in "${apks[@]}"; do
     # TODO: Update keyring when keys change: https://storage.googleapis.com/package-repository/packages/${BRANCH_PATH}/melange.rsa.pub
     if [[ -n "$BUILDKITE" ]]; then
       echo -e "   * To use this package locally, add the following lines to your base image config:\n\n
+\`\`\`
 contents:
   keyring:
     - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
   repositories:
     - '@branch https://storage.googleapis.com/package-repository/packages/${BRANCH_PATH}'
   packages:
-    - ${package_name}@branch\n\n" | ../../../enterprise/dev/ci/scripts/annotate.sh
+    - ${package_name}@branch
+  \`\`\`\n\n" | ../../../enterprise/dev/ci/scripts/annotate.sh -s "custom-repo" -m
     fi
   fi
 
