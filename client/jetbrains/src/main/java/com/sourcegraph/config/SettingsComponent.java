@@ -6,12 +6,14 @@ import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComponentValidator;
 import com.intellij.openapi.ui.ValidationInfo;
+import com.intellij.openapi.util.Couple;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.components.ActionLink;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPasswordField;
 import com.intellij.ui.components.JBTextField;
+import com.intellij.util.UriUtil;
 import com.intellij.util.ui.FormBuilder;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
@@ -19,6 +21,7 @@ import com.jetbrains.jsonSchema.settings.mappings.JsonSchemaConfigurable;
 import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.cody.ui.PasswordFieldWithShowHideButton;
 import com.sourcegraph.common.AuthorizationUtil;
+
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
@@ -45,7 +48,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** Supports creating and managing a {@link JPanel} for the Settings Dialog. */
+/**
+ * Supports creating and managing a {@link JPanel} for the Settings Dialog.
+ */
 public class SettingsComponent implements Disposable {
   private final JPanel panel;
   private ButtonGroup instanceTypeButtonGroup;
@@ -134,10 +139,10 @@ public class SettingsComponent implements Disposable {
       @Override
       public void focusLost(FocusEvent e) {
         super.focusLost(e);
-        String url = urlTextField.getText();
         // Check if text field contains protocol value, if not add http://
-        if (!StringUtils.startsWith(url, "http://") && !StringUtils.startsWith(url, "https://") && !url.isEmpty()) {
-          urlTextField.setText("http://" + url);
+        Couple<String> couple = UriUtil.splitScheme(urlTextField.getText());
+        if (!couple.second.isEmpty() && !couple.first.startsWith("http")) {
+          urlTextField.setText("http://" + urlTextField.getText());
         }
       }
     });
@@ -148,9 +153,16 @@ public class SettingsComponent implements Disposable {
     addValidation(
         urlTextField,
         () ->
-            urlTextField.getText().isEmpty()
-                ? new ValidationInfo("Missing URL", urlTextField)
-                : null);
+        {
+          if (urlTextField.getText().isEmpty()) {
+            return new ValidationInfo("Missing URL", urlTextField);
+          } else {
+            Couple<String> couple = UriUtil.splitScheme(urlTextField.getText());
+            if (!couple.first.isEmpty() && !couple.first.startsWith("http"))
+              return new ValidationInfo("This is an invalid URL", urlTextField);
+            return null;
+          }
+        });
     addDocumentListener(
         urlTextField, urlTextField.getDocument(), e -> updateAccessTokenLinkCommentText());
 
@@ -534,11 +546,7 @@ public class SettingsComponent implements Disposable {
   }
 
   private void updateAccessTokenLinkCommentText() {
-
     String baseUrl = urlTextField.getText();
-    if (!StringUtils.startsWith(baseUrl, "http://") && !StringUtils.startsWith(baseUrl, "https://")) {
-      baseUrl = "http://" + baseUrl;
-    }
     String settingsUrl = (baseUrl.endsWith("/") ? baseUrl : baseUrl + "/") + "settings";
     enterpriseAccessTokenLinkComment.setText(
         isUrlValid(baseUrl)
