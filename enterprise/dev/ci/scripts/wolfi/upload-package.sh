@@ -73,7 +73,7 @@ contents:
   repositories:
     - '@branch https://storage.googleapis.com/package-repository/packages/${BRANCH_PATH}'
   packages:
-    - ${package_name}@branch\n\n" | ./enterprise/dev/ci/scripts/annotate.sh
+    - ${package_name}@branch\n\n" | "$(dirname "${BASH_SOURCE[0]}")/../../../../../enterprise/dev/ci/scripts/annotate.sh"
     fi
   fi
 
