@@ -1,13 +1,13 @@
 import React, { useEffect, useRef } from 'react'
 
-import { Args, useMemo } from '@storybook/addons'
-import { Meta, Story } from '@storybook/react'
+import { type Args, useMemo } from '@storybook/addons'
+import type { Meta, Story } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../components/WebStory'
 
-import { UserNavItem, UserNavItemProps } from './UserNavItem'
+import { UserNavItem, type UserNavItemProps } from './UserNavItem'
 
 const config: Meta = {
     title: 'web/nav/UserNavItem',

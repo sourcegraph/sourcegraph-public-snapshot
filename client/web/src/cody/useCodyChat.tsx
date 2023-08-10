@@ -1,12 +1,16 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 
-import { Transcript, TranscriptJSON, TranscriptJSONScope } from '@sourcegraph/cody-shared/dist/chat/transcript'
+import {
+    Transcript,
+    type TranscriptJSON,
+    type TranscriptJSONScope,
+} from '@sourcegraph/cody-shared/dist/chat/transcript'
 import {
     useClient,
-    CodyClient,
-    CodyClientScope,
-    CodyClientConfig,
-    CodyClientEvent,
+    type CodyClient,
+    type CodyClientScope,
+    type CodyClientConfig,
+    type CodyClientEvent,
 } from '@sourcegraph/cody-shared/dist/chat/useClient'
 import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
 import { useLocalStorage } from '@sourcegraph/wildcard'

@@ -1,11 +1,11 @@
-import { FunctionComponent, useState, useCallback } from 'react'
+import { type FunctionComponent, useState, useCallback } from 'react'
 
-import { asError, ErrorLike } from '@sourcegraph/common'
+import { asError, type ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { Badge, Button, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
-import {
+import type {
     RemoveUserEmailResult,
     RemoveUserEmailVariables,
     ResendVerificationEmailResult,

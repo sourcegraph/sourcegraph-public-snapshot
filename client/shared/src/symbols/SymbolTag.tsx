@@ -5,7 +5,7 @@ import { upperFirst } from 'lodash'
 
 import { Tooltip } from '@sourcegraph/wildcard'
 
-import { SymbolKind } from '../graphql-operations'
+import type { SymbolKind } from '../graphql-operations'
 
 import styles from './SymbolTag.module.scss'
 

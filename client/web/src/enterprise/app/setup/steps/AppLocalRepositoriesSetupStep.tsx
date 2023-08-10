@@ -1,18 +1,18 @@
-import { FC, useContext, useState } from 'react'
+import { type FC, useContext, useState } from 'react'
 
-import { MutationTuple } from '@apollo/client'
+import type { MutationTuple } from '@apollo/client'
 import { mdiGit } from '@mdi/js'
 import classNames from 'classnames'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
 import { Button, H1, Icon, Text, Tooltip, Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import {
+import type {
     LocalRepository,
     ScheduleLocalRepoEmbeddingJobsResult,
     ScheduleLocalRepoEmbeddingJobsVariables,
 } from '../../../../graphql-operations'
-import { callFilePicker, SetupStepsContext, StepComponentProps } from '../../../../setup-wizard/components'
+import { callFilePicker, SetupStepsContext, type StepComponentProps } from '../../../../setup-wizard/components'
 import { LocalRepositoriesWidget } from '../../settings/local-repositories/LocalRepositoriesTab'
 
 import styles from './AppLocalRepositoriesSetupStep.module.scss'

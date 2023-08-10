@@ -1,7 +1,7 @@
-import { fetchCache } from '@sourcegraph/common'
-import { GraphQLResult } from '@sourcegraph/http-client'
+import type { fetchCache } from '@sourcegraph/common'
+import type { GraphQLResult } from '@sourcegraph/http-client'
 
-import { OptionFlagValues } from '../../shared/util/optionFlags'
+import type { OptionFlagValues } from '../../shared/util/optionFlags'
 
 export interface PhabricatorMapping {
     callsign: string

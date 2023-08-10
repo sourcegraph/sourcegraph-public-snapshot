@@ -1,4 +1,4 @@
-import { Extension } from '@codemirror/state'
+import type { Extension } from '@codemirror/state'
 import { Decoration, EditorView, WidgetType } from '@codemirror/view'
 
 class SCIPSnapshotDecorations extends WidgetType {

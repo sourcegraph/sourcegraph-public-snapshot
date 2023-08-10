@@ -1,4 +1,4 @@
-import { SourcegraphContext } from '../jscontext'
+import type { SourcegraphContext } from '../jscontext'
 
 /**
  * @returns whether the access request feature is allowed or not

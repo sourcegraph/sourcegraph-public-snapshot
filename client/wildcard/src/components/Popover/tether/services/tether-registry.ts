@@ -1,5 +1,5 @@
 import { render } from './tether-render'
-import { Tether } from './types'
+import type { Tether } from './types'
 
 export interface TetherInstanceAPI {
     unsubscribe: () => void

@@ -1,4 +1,4 @@
-import { QuickLink } from '@sourcegraph/shared/src/schema/settings.schema'
+import type { QuickLink } from '@sourcegraph/shared/src/schema/settings.schema'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { getQuickLinks } from './QuickLink'

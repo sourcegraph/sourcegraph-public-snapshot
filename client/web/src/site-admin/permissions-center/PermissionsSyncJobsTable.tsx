@@ -1,6 +1,6 @@
-import React, { ChangeEvent, FC, useCallback, useEffect, useRef, useState } from 'react'
+import React, { type ChangeEvent, type FC, useCallback, useEffect, useRef, useState } from 'react'
 
-import { ApolloError } from '@apollo/client/errors'
+import type { ApolloError } from '@apollo/client/errors'
 import { mdiCancel, mdiClose, mdiDetails, mdiMapSearch, mdiReload, mdiSecurity } from '@mdi/js'
 import classNames from 'classnames'
 import { intervalToDuration } from 'date-fns'
@@ -11,7 +11,7 @@ import { animated, useSpring } from 'react-spring'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useMutation } from '@sourcegraph/http-client'
 import { convertREMToPX } from '@sourcegraph/shared/src/components/utils/size'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
     Button,
@@ -28,32 +28,32 @@ import {
     useDebounce,
     useLocalStorage,
     Badge,
-    BadgeVariantType,
+    type BadgeVariantType,
 } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { ConnectionError, ConnectionLoading } from '../../components/FilteredConnection/ui'
 import { PageTitle } from '../../components/PageTitle'
 import {
-    CancelPermissionsSyncJobResult,
+    type CancelPermissionsSyncJobResult,
     CancelPermissionsSyncJobResultMessage,
-    CancelPermissionsSyncJobVariables,
-    CodeHostState,
+    type CancelPermissionsSyncJobVariables,
+    type CodeHostState,
     CodeHostStatus,
-    PermissionsSyncJob,
+    type PermissionsSyncJob,
     PermissionsSyncJobReasonGroup,
-    PermissionsSyncJobsResult,
+    type PermissionsSyncJobsResult,
     PermissionsSyncJobsSearchType,
     PermissionsSyncJobState,
-    PermissionsSyncJobsVariables,
-    PermissionsSyncJobPriority,
-    ScheduleRepoPermissionsSyncResult,
-    ScheduleRepoPermissionsSyncVariables,
-    ScheduleUserPermissionsSyncResult,
-    ScheduleUserPermissionsSyncVariables,
+    type PermissionsSyncJobsVariables,
+    type PermissionsSyncJobPriority,
+    type ScheduleRepoPermissionsSyncResult,
+    type ScheduleRepoPermissionsSyncVariables,
+    type ScheduleUserPermissionsSyncResult,
+    type ScheduleUserPermissionsSyncVariables,
 } from '../../graphql-operations'
 import { useURLSyncedState } from '../../hooks'
-import { IColumn, Table } from '../UserManagement/components/Table'
+import { type IColumn, Table } from '../UserManagement/components/Table'
 
 import {
     CANCEL_PERMISSIONS_SYNC_JOB,

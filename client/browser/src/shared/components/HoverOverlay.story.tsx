@@ -1,9 +1,9 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import { BrowserRouter } from 'react-router-dom'
 
 import { registerHighlightContributions } from '@sourcegraph/common'
-import { HoverOverlay, HoverOverlayClassProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
+import { HoverOverlay, type HoverOverlayClassProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import {
     commonProps,
     FIXTURE_ACTIONS,

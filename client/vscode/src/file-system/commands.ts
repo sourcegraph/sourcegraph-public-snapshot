@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
-import { SourcegraphFileSystemProvider } from './SourcegraphFileSystemProvider'
-import { SourcegraphUri } from './SourcegraphUri'
+import type { SourcegraphFileSystemProvider } from './SourcegraphFileSystemProvider'
+import type { SourcegraphUri } from './SourcegraphUri'
 
 /**
  * Try to find local copy of the search result file first

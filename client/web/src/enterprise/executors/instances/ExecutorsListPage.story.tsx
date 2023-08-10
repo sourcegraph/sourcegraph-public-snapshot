@@ -1,9 +1,9 @@
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { DecoratorFn, Story, Meta } from '@storybook/react'
 import { subDays, subHours } from 'date-fns'
-import { Observable, of } from 'rxjs'
+import { type Observable, of } from 'rxjs'
 
 import { WebStory } from '../../../components/WebStory'
-import { ExecutorCompatibility, ExecutorConnectionFields } from '../../../graphql-operations'
+import { ExecutorCompatibility, type ExecutorConnectionFields } from '../../../graphql-operations'
 
 import { ExecutorsListPage } from './ExecutorsListPage'
 

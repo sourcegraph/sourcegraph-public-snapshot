@@ -1,10 +1,10 @@
 import React, { useState, useCallback } from 'react'
 
-import { ErrorLike } from '@sourcegraph/common'
+import type { ErrorLike } from '@sourcegraph/common'
 import { Button, Link, H3 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
-import { AuthProvider } from '../../../jscontext'
+import type { AuthProvider } from '../../../jscontext'
 
 import { AddGerritAccountModal } from './AddGerritAccountModal'
 import type { NormalizedExternalAccount } from './ExternalAccountsSignIn'

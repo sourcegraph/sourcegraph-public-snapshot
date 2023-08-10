@@ -2,15 +2,15 @@ import React, { useCallback, useEffect, useMemo } from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
 import { useLocation } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
-import { CodeMonitorFields } from '../../graphql-operations'
+import type { CodeMonitorFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { convertActionsForCreate } from './action-converters'

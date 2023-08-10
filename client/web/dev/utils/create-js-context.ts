@@ -1,4 +1,4 @@
-import { SourcegraphContext } from '../../src/jscontext'
+import type { SourcegraphContext } from '../../src/jscontext'
 
 import { ENVIRONMENT_CONFIG } from './environment-config'
 import { getSiteConfig } from './get-site-config'

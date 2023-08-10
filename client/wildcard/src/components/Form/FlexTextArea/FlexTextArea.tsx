@@ -1,8 +1,8 @@
-import { forwardRef, InputHTMLAttributes, Ref, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, type InputHTMLAttributes, type Ref, useEffect, useImperativeHandle, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { TextArea, TextAreaProps } from '../TextArea'
+import { TextArea, type TextAreaProps } from '../TextArea'
 
 import styles from './FlexTextArea.module.scss'
 

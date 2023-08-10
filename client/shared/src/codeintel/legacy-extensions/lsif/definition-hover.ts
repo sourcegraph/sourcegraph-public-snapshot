@@ -1,11 +1,11 @@
 import gql from 'tagged-template-noop'
 
 import * as sourcegraph from '../api'
-import { DefinitionAndHover } from '../providers'
-import { queryGraphQL as sgQueryGraphQL, QueryGraphQLFn } from '../util/graphql'
+import type { DefinitionAndHover } from '../providers'
+import { queryGraphQL as sgQueryGraphQL, type QueryGraphQLFn } from '../util/graphql'
 
-import { GenericLSIFResponse, queryLSIF } from './api'
-import { LocationConnectionNode, nodeToLocation } from './locations'
+import { type GenericLSIFResponse, queryLSIF } from './api'
+import { type LocationConnectionNode, nodeToLocation } from './locations'
 
 export type DefinitionAndHoverResponse = Partial<DefinitionResponse> & HoverResponse
 

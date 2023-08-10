@@ -4,11 +4,11 @@ import { NavLink } from 'react-router-dom'
 
 import { PageHeader, Button, Link, Icon } from '@sourcegraph/wildcard'
 
-import { BatchChangesProps } from '../../batches'
-import { NavItemWithIconDescriptor } from '../../util/contributions'
+import type { BatchChangesProps } from '../../batches'
+import type { NavItemWithIconDescriptor } from '../../util/contributions'
 import { OrgAvatar } from '../OrgAvatar'
 
-import { OrgAreaRouteContext } from './OrgArea'
+import type { OrgAreaRouteContext } from './OrgArea'
 
 interface Props extends OrgAreaRouteContext {
     isSourcegraphDotCom: boolean

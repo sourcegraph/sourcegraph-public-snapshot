@@ -1,11 +1,11 @@
-import { forwardRef, useContext, useState, HTMLAttributes } from 'react'
+import { forwardRef, useContext, useState, type HTMLAttributes } from 'react'
 
 import { useMergeRefs } from 'use-callback-ref'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, ParentSize, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { LangStatsInsight } from '../../../../core'
+import type { LangStatsInsight } from '../../../../core'
 import { useLazyLivePreviewLangStatsInsight } from '../../../../core/hooks/live-preview-insight'
 import { LazyQueryStatus } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'

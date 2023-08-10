@@ -1,7 +1,7 @@
-import { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, Story, DecoratorFn } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
-import { BatchChangeState, ChangesetsStatsFields } from '../../../graphql-operations'
+import { BatchChangeState, type ChangesetsStatsFields } from '../../../graphql-operations'
 
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'
 

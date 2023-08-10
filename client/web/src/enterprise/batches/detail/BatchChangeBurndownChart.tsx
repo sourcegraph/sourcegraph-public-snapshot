@@ -5,18 +5,18 @@ import { getYear, parseISO } from 'date-fns'
 import {
     Area,
     ComposedChart,
-    LabelFormatter,
+    type LabelFormatter,
     ResponsiveContainer,
     Tooltip,
     XAxis,
     YAxis,
-    TooltipPayload,
+    type TooltipPayload,
 } from 'recharts'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { Checkbox, Container, LoadingSpinner, Label, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { ChangesetCountsOverTimeFields, Scalars } from '../../../graphql-operations'
+import type { ChangesetCountsOverTimeFields, Scalars } from '../../../graphql-operations'
 
 import { useChangesetCountsOverTime } from './backend'
 

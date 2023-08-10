@@ -1,4 +1,4 @@
-import { FC, useState } from 'react'
+import { type FC, useState } from 'react'
 
 import { noop } from 'rxjs'
 
@@ -7,7 +7,7 @@ import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { Container, PageHeader, H3, Text, Label, Button, LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
-import {
+import type {
     GetOwnSignalConfigurationsResult,
     OwnSignalConfig,
     UpdateSignalConfigsResult,

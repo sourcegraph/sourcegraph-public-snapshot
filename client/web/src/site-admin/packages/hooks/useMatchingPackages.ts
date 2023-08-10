@@ -1,8 +1,8 @@
-import { ApolloError } from '@apollo/client'
+import type { ApolloError } from '@apollo/client'
 
 import { useQuery } from '@sourcegraph/http-client'
 
-import {
+import type {
     PackageRepoMatchFields,
     PackageRepoReferencesMatchingFilterResult,
     PackageRepoReferencesMatchingFilterVariables,

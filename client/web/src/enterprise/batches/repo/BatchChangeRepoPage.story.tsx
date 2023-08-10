@@ -1,13 +1,13 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
 
 import { mockAuthenticatedUser } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 
 import { WebStory } from '../../../components/WebStory'
-import { RepoBatchChange, RepositoryFields, RepositoryType } from '../../../graphql-operations'
-import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
+import { type RepoBatchChange, type RepositoryFields, RepositoryType } from '../../../graphql-operations'
+import type { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
 
-import {
+import type {
     queryRepoBatchChanges as _queryRepoBatchChanges,
     queryRepoBatchChangeStats as _queryRepoBatchChangeStats,
 } from './backend'

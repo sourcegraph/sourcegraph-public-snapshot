@@ -12,7 +12,7 @@ import {
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
 
-import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
+import { SearchContextDropdown, type SearchContextDropdownProps } from './SearchContextDropdown'
 
 describe('SearchContextDropdown', () => {
     const defaultProps: SearchContextDropdownProps = {

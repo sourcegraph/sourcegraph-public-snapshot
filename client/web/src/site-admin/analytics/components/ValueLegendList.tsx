@@ -1,4 +1,4 @@
-import React, { useMemo, ReactNode } from 'react'
+import React, { useMemo, type ReactNode } from 'react'
 
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'

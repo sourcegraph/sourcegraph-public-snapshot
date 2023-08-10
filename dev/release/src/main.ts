@@ -1,5 +1,5 @@
 import { loadReleaseConfig } from './config'
-import { runStep, StepID } from './release'
+import { runStep, type StepID } from './release'
 import { ensureMainBranchUpToDate } from './util'
 
 /**

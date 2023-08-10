@@ -1,16 +1,16 @@
-import * as Monaco from 'monaco-editor'
-import { Observable, fromEventPattern, of } from 'rxjs'
+import type * as Monaco from 'monaco-editor'
+import { type Observable, fromEventPattern, of } from 'rxjs'
 import { map, takeUntil } from 'rxjs/operators'
 
-import { SearchPatternType } from '../../graphql-operations'
-import { isSearchMatchOfType, SearchMatch } from '../stream'
+import type { SearchPatternType } from '../../graphql-operations'
+import { isSearchMatchOfType, type SearchMatch } from '../stream'
 
 import { getCompletionItems } from './completion'
 import { getMonacoTokens } from './decoratedToken'
 import { getHoverResult } from './hover'
 import { createCancelableFetchSuggestions, getSuggestionQuery } from './providers-utils'
 import { scanSearchQuery } from './scanner'
-import { Token } from './token'
+import type { Token } from './token'
 
 interface SearchFieldProviders {
     tokens: Monaco.languages.TokensProvider

@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { ProductStatusBadge, BaseProductStatusBadgeProps } from '../../Badge'
+import { ProductStatusBadge, type BaseProductStatusBadgeProps } from '../../Badge'
 import { Link } from '../../Link'
 
 import styles from './FeedbackBadge.module.scss'

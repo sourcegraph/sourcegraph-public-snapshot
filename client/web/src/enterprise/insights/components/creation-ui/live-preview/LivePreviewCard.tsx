@@ -1,10 +1,17 @@
-import React, { FC, forwardRef, HTMLAttributes, PropsWithChildren } from 'react'
+import React, { type FC, forwardRef, type HTMLAttributes, type PropsWithChildren } from 'react'
 
 import { mdiRefresh } from '@mdi/js'
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 
-import { Button, ForwardReferenceComponent, Icon, LegendItem, LegendList, Series } from '@sourcegraph/wildcard'
+import {
+    Button,
+    type ForwardReferenceComponent,
+    Icon,
+    LegendItem,
+    LegendList,
+    type Series,
+} from '@sourcegraph/wildcard'
 
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../views'
 

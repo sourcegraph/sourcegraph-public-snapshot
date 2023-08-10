@@ -2,7 +2,7 @@ import expect from 'expect'
 import { test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
-import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
+import { type SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import {
     commitHighlightResult,
     commitSearchStreamEvents,
@@ -13,16 +13,21 @@ import {
     symbolSearchStreamEvents,
     ownerSearchStreamEvents,
 } from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
-import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
+import type { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { WebGraphQlOperations } from '../graphql-operations'
+import type { WebGraphQlOperations } from '../graphql-operations'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { type WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
-import { getSearchQueryInputConfig, percySnapshotWithVariants, SearchQueryInput, withSearchQueryInput } from './utils'
+import {
+    getSearchQueryInputConfig,
+    percySnapshotWithVariants,
+    type SearchQueryInput,
+    withSearchQueryInput,
+} from './utils'
 
 const mockDefaultStreamEvents: SearchEvent[] = [
     {

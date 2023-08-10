@@ -1,8 +1,8 @@
 import { groupBy } from 'lodash'
 
-import { InsightDataSeries } from '../../../../../graphql-operations'
-import { ComputeInsight } from '../../types'
-import { CategoricalChartContent } from '../code-insights-backend-types'
+import type { InsightDataSeries } from '../../../../../graphql-operations'
+import type { ComputeInsight } from '../../types'
+import type { CategoricalChartContent } from '../code-insights-backend-types'
 
 interface CategoricalDatum {
     name: string
