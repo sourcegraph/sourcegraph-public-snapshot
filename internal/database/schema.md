@@ -1379,7 +1379,6 @@ Referenced by:
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
-    "event_logs_name" gin (name gin_trgm_ops)
     "event_logs_name_is_cody_active_event" btree (iscodyactiveevent(name))
     "event_logs_name_is_cody_explanation_event" btree (iscodyexplanationevent(name))
     "event_logs_name_is_cody_generation_event" btree (iscodygenerationevent(name))
