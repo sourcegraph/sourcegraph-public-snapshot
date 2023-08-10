@@ -11,20 +11,20 @@ const mockAccount = {
 }
 
 describe('ExternalAccountConnectionDetails', () => {
-    test("renders correctly when display name isn't set", () => {
-        const serviceTypes: AuthProvider['serviceType'][] = [
-            'github',
-            'gitlab',
-            'bitbucketCloud',
-            'http-header',
-            'openidconnect',
-            'sourcegraph-operator',
-            'saml',
-            'builtin',
-            'gerrit',
-            'azuredevops',
-        ]
+    const serviceTypes: AuthProvider['serviceType'][] = [
+        'github',
+        'gitlab',
+        'bitbucketCloud',
+        'http-header',
+        'openidconnect',
+        'sourcegraph-operator',
+        'saml',
+        'builtin',
+        'gerrit',
+        'azuredevops',
+    ]
 
+    test("renders correctly when display name isn't set", () => {
         for (const serviceType of serviceTypes) {
             const cmp = render(<ExternalAccountConnectionDetails account={mockAccount} serviceType={serviceType} />)
             expect(cmp.asFragment()).toMatchSnapshot()
@@ -32,19 +32,6 @@ describe('ExternalAccountConnectionDetails', () => {
     })
 
     test('renders correctly when display name is set', () => {
-        const serviceTypes: AuthProvider['serviceType'][] = [
-            'github',
-            'gitlab',
-            'bitbucketCloud',
-            'http-header',
-            'openidconnect',
-            'sourcegraph-operator',
-            'saml',
-            'builtin',
-            'gerrit',
-            'azuredevops',
-        ]
-
         for (const serviceType of serviceTypes) {
             const cmp = render(
                 <ExternalAccountConnectionDetails
