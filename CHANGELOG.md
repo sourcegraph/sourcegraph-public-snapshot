@@ -55,6 +55,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed a bug where user account requests could not be approved even though the license would permit user creation otherwise. [#55482](https://github.com/sourcegraph/sourcegraph/pull/55482)
+- Fixed a bug where the background scheduler for embedding jobs based on policies would not schedule jobs for private repositories. [#55698](https://github.com/sourcegraph/sourcegraph/pull/55698)
 
 ### Removed
 
