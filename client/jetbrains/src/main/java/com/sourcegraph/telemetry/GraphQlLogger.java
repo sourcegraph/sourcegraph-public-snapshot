@@ -36,13 +36,6 @@ public class GraphQlLogger {
     }
   }
 
-  public static void logCodyEvents(
-      @NotNull Project project, @NotNull String componentName, String... actions) {
-    for (String action : actions) {
-      logCodyEvent(project, componentName, action);
-    }
-  }
-
   public static void logCodyEvent(
       @NotNull Project project, @NotNull String componentName, @NotNull String action) {
     String anonymousUserId = ConfigUtil.getAnonymousUserId();
