@@ -1,4 +1,4 @@
-# Installing Cody in Jetbrains (Experimental)
+# Install Cody for Jetbrains <span class="badge badge-experimental" style="margin-left: 0.5rem; vertical-align:middle;">Experimental</span>
 
 ## Introduction
 
@@ -56,4 +56,3 @@ You're now ready to use Cody! See our recommendations for getting started with u
 ## Congratulations!
 
 **You're now up-and-running with your very own AI code asisstant!** 🎉
-
