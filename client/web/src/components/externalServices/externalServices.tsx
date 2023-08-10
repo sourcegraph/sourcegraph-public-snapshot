@@ -1631,18 +1631,18 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     git: GENERIC_GIT,
     gerrit: GERRIT,
     azuredevops: AZUREDEVOPS,
+    ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
+    ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
+}
+
+export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {
+    phabricator: PHABRICATOR_SERVICE,
     ...(window.context?.experimentalFeatures?.pythonPackages === 'enabled' ? { pythonPackages: PYTHON_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rustPackages === 'enabled' ? { rustPackages: RUST_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rubyPackages === 'enabled' ? { rubyPackages: RUBY_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.goPackages === 'enabled' ? { goModules: GO_MODULES } : {}),
     ...(window.context?.experimentalFeatures?.jvmPackages === 'enabled' ? { jvmPackages: JVM_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.npmPackages === 'enabled' ? { npmPackages: NPM_PACKAGES } : {}),
-    ...(window.context?.experimentalFeatures?.perforce !== 'disabled' ? { perforce: PERFORCE } : {}),
-    ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
-}
-
-export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {
-    phabricator: PHABRICATOR_SERVICE,
 }
 
 export const allExternalServices = {
