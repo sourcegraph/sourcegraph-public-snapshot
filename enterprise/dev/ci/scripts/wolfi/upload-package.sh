@@ -31,6 +31,9 @@ apks=(*.apk)
 for apk in "${apks[@]}"; do
   echo " * Processing $apk"
 
+  package_name=$(echo "$apk" | sed -E 's/(-[0-9].*)//')
+  package_version=$(echo "$apk" | sed -E 's/^.*-([0-9.]+-r[0-9]+).apk$/\\1/')
+
   # Generate the branch-specific path to upload the package to
   dest_path="gs://$GCS_BUCKET/$BRANCH_PATH/$TARGET_ARCH/"
   echo "   -> File path: ${dest_path}${apk}"
@@ -48,7 +51,7 @@ for apk in "${apks[@]}"; do
   # Check whether this version of the package already exists in the main package repo
   echo "   * Checking if this package version already exists in the production repo..."
   if gsutil -q -u "$GCP_PROJECT" stat "${dest_path_main}${apk}"; then
-    echo -e "The production package repository already contains the package \`$apk\` with this version at \`${dest_path_main}${apk}\`.\n\n
+    echo -e "The production package repository already contains the package \`$package_name\` version \`$package_version\` at \`${dest_path_main}${apk}\`.\n\n
 Resolve this issue by incrementing the \`epoch\` field in the package's YAML file." |
       ../../../enterprise/dev/ci/scripts/annotate.sh -s "package-version-exists" -t "error"
 
@@ -63,7 +66,6 @@ Resolve this issue by incrementing the \`epoch\` field in the package's YAML fil
   gsutil -u "$GCP_PROJECT" -h "Cache-Control:no-cache" cp "$apk" "$index_fragment" "$dest_path"
 
   # Concat package names for annotation
-  package_name=$(echo "$apk" | sed -E 's/(-[0-9].*)//')
   package_usage_list="$package_usage_list    - ${package_name}@branch\n"
 done
 
