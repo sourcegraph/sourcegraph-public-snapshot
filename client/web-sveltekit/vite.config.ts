@@ -8,7 +8,7 @@ import operations from '@sourcegraph/shared/dev/generateGraphQlOperations'
 function generateGraphQLOperations(): Plugin {
     const outputPath = './src/lib/graphql-operations.ts'
     const interfaceNameForOperations = 'SvelteKitGraphQlOperations'
-    const documents = ['src/lib/**/*.ts', '!src/lib/graphql-operations.ts']
+    const documents = ['src/lib/**/*.{ts,graphql}', '!src/lib/graphql-operations.ts']
 
     return codegen({
         config: {

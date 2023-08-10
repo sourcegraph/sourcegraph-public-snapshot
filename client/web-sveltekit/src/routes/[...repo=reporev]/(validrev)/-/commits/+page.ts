@@ -1,4 +1,4 @@
-import { fetchCommits } from '$lib/repo/api/commits'
+import { fetchRepoCommits } from '$lib/repo/api/commits'
 
 import type { PageLoad } from './$types'
 
@@ -7,7 +7,9 @@ export const load: PageLoad = async ({ parent }) => {
 
     return {
         deferred: {
-            commits: fetchCommits(resolvedRevision).then(result => result?.nodes ?? []),
+            commits: fetchRepoCommits({ repoID: resolvedRevision.repo.id, revision: resolvedRevision.commitID }).then(
+                result => result?.nodes ?? []
+            ),
         },
     }
 }

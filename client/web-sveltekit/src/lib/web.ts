@@ -1,17 +1,9 @@
 // We want to limit the number of imported modules as much as possible
 /* eslint-disable no-restricted-imports */
 
-import type { Observable } from 'rxjs'
-import { map, tap } from 'rxjs/operators'
-
-import { requestGraphQL, getWebGraphQLClient, mutateGraphQL } from '@sourcegraph/web/src/backend/graphql'
-import type { ResolvedRevision, Repo } from '@sourcegraph/web/src/repo/backend'
-
-import { resetAllMemoizationCaches } from './common'
+import { gql, mutation } from './graphql'
 import type { CheckMirrorRepositoryConnectionResult, Scalars } from './graphql-operations'
-import { dataOrThrowErrors, gql } from './http-client'
 
-export { requestGraphQL, getWebGraphQLClient, mutateGraphQL }
 export { parseSearchURL } from '@sourcegraph/web/src/search/index'
 export { replaceRevisionInURL } from '@sourcegraph/web/src/util/url'
 
@@ -30,8 +22,6 @@ export {
     type CodeInsightsRouterProps,
 } from '@sourcegraph/web/src/enterprise/insights/CodeInsightsRouter'
 
-export type RepoResolvedRevision = ResolvedRevision & Repo
-export { ResolvedRevision, Repo }
 export type { FeatureFlagName } from '@sourcegraph/web/src/featureFlags/featureFlags'
 
 // Copy of non-reusable code
@@ -55,10 +45,8 @@ export function checkMirrorRepositoryConnection(
         | {
               name: string
           }
-): Observable<CheckMirrorRepositoryConnectionResult['checkMirrorRepositoryConnection']> {
-    return mutateGraphQL<CheckMirrorRepositoryConnectionResult>(CHECK_MIRROR_REPOSITORY_CONNECTION, args).pipe(
-        map(dataOrThrowErrors),
-        tap(() => resetAllMemoizationCaches()),
-        map(data => data.checkMirrorRepositoryConnection)
+): Promise<CheckMirrorRepositoryConnectionResult['checkMirrorRepositoryConnection']> {
+    return mutation<CheckMirrorRepositoryConnectionResult>(CHECK_MIRROR_REPOSITORY_CONNECTION, args).then(
+        data => data?.checkMirrorRepositoryConnection ?? { error: null }
     )
 }

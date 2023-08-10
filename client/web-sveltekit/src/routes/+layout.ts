@@ -1,10 +1,8 @@
 import { browser } from '$app/environment'
 import { fetchEvaluatedFeatureFlags } from '$lib/featureflags'
-import type { CurrentAuthStateResult } from '$lib/graphql/shared'
-import { getDocumentNode } from '$lib/http-client'
-import { currentAuthStateQuery } from '$lib/loader/auth'
+import { getGraphQLClient } from '$lib/graphql'
 import { fetchUserSettings } from '$lib/user/api/settings'
-import { getWebGraphQLClient } from '$lib/web'
+import { fetchAuthenticatedUser } from '$lib/user/api/user'
 
 import type { LayoutLoad } from './$types'
 
@@ -24,15 +22,11 @@ if (browser) {
 }
 
 export const load: LayoutLoad = () => {
-    const graphqlClient = getWebGraphQLClient()
-
     return {
-        graphqlClient,
-        user: graphqlClient
-            .then(client => client.query<CurrentAuthStateResult>({ query: getDocumentNode(currentAuthStateQuery) }))
-            .then(result => result.data.currentUser),
+        graphqlClient: getGraphQLClient(),
+        user: fetchAuthenticatedUser(),
         // Initial user settings
-        settings: graphqlClient.then(fetchUserSettings),
-        featureFlags: graphqlClient.then(fetchEvaluatedFeatureFlags),
+        settings: fetchUserSettings(),
+        featureFlags: fetchEvaluatedFeatureFlags(),
     }
 }

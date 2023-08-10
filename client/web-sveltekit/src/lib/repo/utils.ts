@@ -1,6 +1,6 @@
 import { resolvePath } from '@sveltejs/kit'
 
-import type { ResolvedRevision } from '$lib/web'
+import type { ResolvedRevision } from '$lib/repo/api/repo'
 
 const TREE_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/tree/[...path]'
 
@@ -37,4 +37,9 @@ export function getRevisionLabel(
             ? resolvedRevision?.commitID.slice(0, 7)
             : urlRevision?.slice(0, 7)) || resolvedRevision?.defaultBranch
     )
+}
+
+export function getFileURL(repoURL: string, file: { canonicalURL: string }): string {
+    // TODO: Find out whether there is a safer way to do this
+    return repoURL + file.canonicalURL.slice(file.canonicalURL.indexOf('/-/'))
 }
