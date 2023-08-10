@@ -106,6 +106,7 @@ The default run type.
   - Tests
   - BackCompat Tests
   - **Security Scanning**: Sonarcloud Scan
+  - **Dependency packages**: Build and sign repository index
 
 - Pipeline for `WolfiBaseImages` changes:
   - Perform bazel prechecks
@@ -119,18 +120,6 @@ The default run type.
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
   - **Security Scanning**: Sonarcloud Scan
-
-### Wolfi Exp Branch
-
-The run type for branches matching `wolfi/`.
-You can create a build of this run type for your changes using:
-
-```sh
-sg ci build wolfi
-```
-
-Base pipeline (more steps might be included based on branch changes):
-
 
 ### Manually Triggered External Build
 

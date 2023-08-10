@@ -13,6 +13,7 @@ export default config
 
 const authProviders: SourcegraphContext['authProviders'] = [
     {
+        clientID: '001',
         displayName: 'Builtin username-password authentication',
         isBuiltin: true,
         serviceType: 'builtin',
@@ -20,6 +21,7 @@ const authProviders: SourcegraphContext['authProviders'] = [
         serviceID: '',
     },
     {
+        clientID: '002',
         serviceType: 'github',
         displayName: 'GitHub',
         isBuiltin: false,
@@ -27,6 +29,7 @@ const authProviders: SourcegraphContext['authProviders'] = [
         serviceID: 'https://github.com',
     },
     {
+        clientID: '003',
         serviceType: 'gitlab',
         displayName: 'GitLab',
         isBuiltin: false,

@@ -1,5 +1,5 @@
+import { gql, query } from '$lib/graphql'
 import type { EvaluatedFeatureFlagsResult } from '$lib/graphql-operations'
-import { dataOrThrowErrors, getDocumentNode, gql, type GraphQLClient } from '$lib/http-client'
 
 export interface FeatureFlag {
     name: string
@@ -14,10 +14,10 @@ const FEATUREFLAGS_QUERY = gql`
         }
     }
 `
-export async function fetchEvaluatedFeatureFlags(client: GraphQLClient): Promise<FeatureFlag[]> {
-    return dataOrThrowErrors(
-        await client.query<EvaluatedFeatureFlagsResult>({
-            query: getDocumentNode(FEATUREFLAGS_QUERY),
+export async function fetchEvaluatedFeatureFlags(): Promise<FeatureFlag[]> {
+    return (
+        await query<EvaluatedFeatureFlagsResult>(FEATUREFLAGS_QUERY, undefined, {
+            fetchPolicy: 'no-cache',
         })
     ).evaluatedFeatureFlags
 }

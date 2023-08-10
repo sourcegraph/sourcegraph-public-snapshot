@@ -466,7 +466,7 @@
 <!-- executor -->
 <g id="node23" class="node">
 <title>executor</title>
-<g id="a_node23"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/main/enterprise/cmd/executor" xlink:title="executor" target="_blank">
+<g id="a_node23"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/main/cmd/executor" xlink:title="executor" target="_blank">
 <polygon fill="#0dc9b6" stroke="black" points="194,-271 127,-271 123,-267 123,-235 190,-235 194,-239 194,-271"/>
 <polyline fill="none" stroke="black" points="190,-267 123,-267 "/>
 <polyline fill="none" stroke="black" points="190,-267 190,-235 "/>
