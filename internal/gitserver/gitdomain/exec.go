@@ -7,10 +7,9 @@ import (
 	"strings"
 
 	"github.com/grafana/regexp"
+	"k8s.io/utils/strings/slices"
 
 	"github.com/sourcegraph/log"
-
-	"k8s.io/utils/strings/slices"
 )
 
 var (
