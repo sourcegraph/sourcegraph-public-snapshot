@@ -5,6 +5,8 @@ import { mdiClose, mdiFormatListBulleted, mdiPlus, mdiDelete } from '@mdi/js'
 import { CodyLogo } from '@sourcegraph/cody-ui/dist/icons/CodyLogo'
 import { Button, Icon, Tooltip, Badge } from '@sourcegraph/wildcard'
 
+import { eventLogger } from '../../tracking/eventLogger'
+import { EventName } from '../../util/constants'
 import { ChatUI, ScrollDownButton } from '../components/ChatUI'
 import { HistoryList } from '../components/HistoryList'
 
@@ -23,6 +25,7 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose }) => {
     const {
         initializeNewChat,
         transcript,
+        scope,
         messageInProgress,
         clearHistory,
         loaded,
@@ -66,6 +69,15 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose }) => {
             scrollToBottom('auto')
         }
     }, [transcript, shouldScrollToBottom, messageInProgress])
+
+    useEffect(() => {
+        // TODO: Set the editor to not NoopEditor to access repo/filename here
+        console.log(scope)
+        eventLogger.log(EventName.CODY_SIDEBAR_CHAT_OPENED, {
+            // repo: scope.editor.repo,
+            // path: scope.editor.filename,
+        })
+    }, [])
 
     const onHistoryItemSelect = useCallback(
         async (id: string) => {

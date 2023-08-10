@@ -121,7 +121,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     const onCTADismiss = (): void => setIsCTADismissed(true)
 
     useEffect(() => {
-        eventLogger.log(EventName.CODY_CHAT_PAGE_VIEWED)
+        eventLogger.log(EventName.CODY_CHAT_PAGE_VIEWED, { chatId: transcript?.id })
     }, [])
 
     const transcriptId = transcript?.id
