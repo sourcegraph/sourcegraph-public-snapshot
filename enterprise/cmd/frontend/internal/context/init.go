@@ -27,13 +27,14 @@ func Init(
 ) error {
 	embeddingsClient := embeddings.NewDefaultClient()
 	searchClient := client.New(observationCtx.Logger, db)
+	qdrantSearcher := vdb.NewNoopDB()
 	contextClient := codycontext.NewCodyContextClient(
 		observationCtx,
 		db,
 		embeddingsClient,
 		searchClient,
+		qdrantSearcher,
 	)
-	qdrantSearcher := vdb.NewNoopDB()
 	if addr := conf.ServiceConnections().Qdrant; addr != "" {
 		conn, err := defaults.Dial(addr, observationCtx.Logger)
 		if err != nil {
@@ -45,7 +46,6 @@ func Init(
 		db,
 		services.GitserverClient,
 		contextClient,
-		qdrantSearcher,
 	)
 
 	return nil

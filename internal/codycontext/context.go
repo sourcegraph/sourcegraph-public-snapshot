@@ -40,7 +40,7 @@ type FileChunkContext struct {
 	EndLine   int
 }
 
-func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embeddingsClient embeddings.Client, searchClient client.SearchClient) *CodyContextClient {
+func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embeddingsClient embeddings.Client, searchClient client.SearchClient, qdrantSearcher vdb.VectorSearcher) *CodyContextClient {
 	redMetrics := metrics.NewREDMetrics(
 		obsCtx.Registerer,
 		"codycontext_client",
@@ -62,6 +62,7 @@ func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embedding
 		db:               db,
 		embeddingsClient: embeddingsClient,
 		searchClient:     searchClient,
+		qdrantSearcher:   qdrantSearcher,
 
 		obsCtx:                 obsCtx,
 		getCodyContextOp:       op("getCodyContext"),
@@ -74,7 +75,7 @@ type CodyContextClient struct {
 	db               database.DB
 	embeddingsClient embeddings.Client
 	searchClient     client.SearchClient
-	searcher         vdb.VectorSearcher
+	qdrantSearcher   vdb.VectorSearcher
 
 	obsCtx                 *observation.Context
 	getCodyContextOp       *observation.Operation
@@ -348,7 +349,7 @@ func (c *CodyContextClient) getEmbeddingsContextFromQdrant(ctx context.Context, 
 		CodeLimit: int(args.CodeResultsCount),
 		TextLimit: int(args.TextResultsCount),
 	}
-	chunks, err := c.searcher.Search(ctx, params)
+	chunks, err := c.qdrantSearcher.Search(ctx, params)
 	if err != nil {
 		return nil, errors.Wrap(err, "searching vector DB")
 	}
