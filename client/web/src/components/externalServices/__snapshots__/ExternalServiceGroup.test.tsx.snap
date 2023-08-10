@@ -134,7 +134,7 @@ exports[`ExternalServiceGroup should render correctly with enabled external serv
       class="externalServiceGroupBody"
     >
       <li
-        class="externalServiceGroupNode"
+        class="externalServiceGroupNode externalServiceGroupEnabledNode"
       >
         <a
           class="externalServiceGroupLink text-left text-body text-decoration-none"
