@@ -1,4 +1,3 @@
-import { faker } from '@faker-js/faker'
 import { createPopper, type Instance, type Options } from '@popperjs/core'
 import type { ActionReturn, Action } from 'svelte/action'
 import * as uuid from 'uuid'
@@ -11,7 +10,7 @@ import { highlightNode } from '$lib/common'
  */
 export function uniqueID(prefix = '') {
     if (process.env.VITEST) {
-        return `test-${prefix}-${faker.string.uuid()}`
+        return `test-${prefix}-123`
     }
     return `${prefix}-${uuid.v4()}`
 }
