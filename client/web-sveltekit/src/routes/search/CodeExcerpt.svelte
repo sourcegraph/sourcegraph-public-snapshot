@@ -67,7 +67,7 @@
                 </tbody>
             </table>
         {:then blobLines}
-            {#key blobLines}
+            {#key matches}
                 <table use:highlightMatches={matches}>
                     {@html blobLines.join('')}
                 </table>

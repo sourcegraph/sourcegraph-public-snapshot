@@ -594,7 +594,7 @@ WHERE NOT EXISTS (
 	return s.Exec(ctx, q)
 }
 
-func (s *store) EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error) {
+func (s *store) EnqueueSyncJobs(ctx context.Context, isDotCom bool) (err error) {
 	tr, ctx := s.trace(ctx, "Store.EnqueueSyncJobs")
 
 	defer func(began time.Time) {
@@ -605,9 +605,9 @@ func (s *store) EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error) {
 	}(time.Now())
 
 	filter := "TRUE"
-	// On Cloud we don't sync our default sources in the background, they are synced
+	// On Sourcegraph.com we don't sync our default sources in the background, they are synced
 	// on demand instead.
-	if isCloud {
+	if isDotCom {
 		filter = "cloud_default = false"
 	}
 	q := sqlf.Sprintf(enqueueSyncJobsQueryFmtstr, sqlf.Sprintf(filter))

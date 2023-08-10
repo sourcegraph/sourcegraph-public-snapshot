@@ -11,15 +11,23 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	proto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var frontendInternal = env.Get("SRC_FRONTEND_INTERNAL", defaultFrontendInternal(), "HTTP address for internal frontend HTTP API.")
+
+// NOTE: this intentionally does not use the site configuration option because we need to make the decision
+// about whether or not to use gRPC to fetch the site configuration in the first place.
+var enableGRPC = env.MustGetBool("SRC_GRPC_ENABLE_CONF", false, "Enable gRPC for configuration updates")
 
 func defaultFrontendInternal() string {
 	if deploy.IsApp() {
@@ -31,9 +39,21 @@ func defaultFrontendInternal() string {
 type internalClient struct {
 	// URL is the root to the internal API frontend server.
 	URL string
+
+	getConfClient func() (proto.ConfigServiceClient, error)
 }
 
-var Client = &internalClient{URL: "http://" + frontendInternal}
+var Client = &internalClient{
+	URL: "http://" + frontendInternal,
+	getConfClient: syncx.OnceValues(func() (proto.ConfigServiceClient, error) {
+		logger := log.Scoped("internalapi", "")
+		conn, err := defaults.Dial(frontendInternal, logger)
+		if err != nil {
+			return nil, err
+		}
+		return proto.NewConfigServiceClient(conn), nil
+	}),
+}
 
 var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "src_frontend_internal_request_duration_seconds",
@@ -48,6 +68,21 @@ func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnifie
 	if MockClientConfiguration != nil {
 		return MockClientConfiguration()
 	}
+
+	if enableGRPC {
+		cc, err := c.getConfClient()
+		if err != nil {
+			return conftypes.RawUnified{}, err
+		}
+		resp, err := cc.GetConfig(ctx, &proto.GetConfigRequest{})
+		if err != nil {
+			return conftypes.RawUnified{}, err
+		}
+		var raw conftypes.RawUnified
+		raw.FromProto(resp.RawUnified)
+		return raw, nil
+	}
+
 	var cfg conftypes.RawUnified
 	err := c.postInternal(ctx, "configuration", nil, &cfg)
 	return cfg, err

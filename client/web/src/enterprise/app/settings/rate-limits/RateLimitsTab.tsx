@@ -26,11 +26,13 @@ interface RateLimitStatus {
 
 export const GET_CODY_RATE_LIMIT_STATUS = gql`
     query CodyGatewayRateLimitStatus {
-        codyGatewayRateLimitStatus {
-            feature
-            limit
-            usage
-            nextLimitReset
+        site {
+            codyGatewayRateLimitStatus {
+                feature
+                limit
+                usage
+                nextLimitReset
+            }
         }
     }
 `
@@ -57,10 +59,13 @@ export const RateLimitsTab: FC<RateLimitsTabProps> = props => {
                     {error && <ErrorAlert error={error} />}
 
                     {!error && loading && <LoadingSpinner />}
-                    {!error && data && data.codyGatewayRateLimitStatus.length === 0 && <NoRateLimitState />}
-                    {!error && data && data.codyGatewayRateLimitStatus.length > 0 && (
-                        <RateLimitTable limits={data.codyGatewayRateLimitStatus} />
-                    )}
+                    {!error && data && data.site.codyGatewayRateLimitStatus?.length === 0 && <NoRateLimitState />}
+                    {!error &&
+                        data &&
+                        data.site.codyGatewayRateLimitStatus !== null &&
+                        data.site.codyGatewayRateLimitStatus.length > 0 && (
+                            <RateLimitTable limits={data.site.codyGatewayRateLimitStatus} />
+                        )}
                 </Container>
             </div>
         </div>
