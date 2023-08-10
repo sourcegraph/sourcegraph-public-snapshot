@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react'
 
-import { mdiCheck, mdiClose } from '@mdi/js'
+import { mdiCheck, mdiClose, mdiInformation } from '@mdi/js'
 import classNames from 'classnames'
 import MagnifyIcon from 'mdi-react/GearIcon'
 
-import { Icon, Badge } from '@sourcegraph/wildcard'
+import { Icon, Badge, Tooltip } from '@sourcegraph/wildcard'
 
 import { NavDropdown } from '../../nav/NavBar/NavDropdown'
 
@@ -12,7 +12,7 @@ import { useSetupChecklist } from './hooks/useSetupChecklist'
 
 export const ChecklistNavbarItem: React.FC = () => {
     const { data, loading } = useSetupChecklist()
-    const notConfiguredCount = useMemo(() => data.filter(item => !item.configured).length, [data])
+    const notConfiguredCount = useMemo(() => data.filter(item => item.needsSetup).length, [data])
 
     if (loading) {
         return null
@@ -38,17 +38,29 @@ export const ChecklistNavbarItem: React.FC = () => {
             items={data.map(feature => ({
                 content: (
                     <div className="d-flex align-items-center">
-                        <Icon
-                            svgPath={feature.configured ? mdiCheck : mdiClose}
-                            aria-label={feature.configured ? 'configured' : 'not configured'}
-                            className={classNames('mr-1', feature.configured ? 'text-success' : 'text-danger')}
-                        />
+                        {!feature.needsSetup && (
+                            <Icon
+                                svgPath={feature.needsSetup ? mdiClose : mdiCheck}
+                                aria-label={feature.needsSetup ? 'not configured' : 'configured'}
+                                className={classNames('mr-1', feature.needsSetup ? 'text-danger' : 'text-success')}
+                            />
+                        )}
+                        {feature.needsSetup && (
+                            <Tooltip content={feature.needsSetup}>
+                                <Icon
+                                    svgPath={mdiInformation}
+                                    // className="ml-1 text-muted"
+                                    className={classNames('mr-1 text-danger')}
+                                    aria-label={feature.needsSetup}
+                                />
+                            </Tooltip>
+                        )}
                         {feature.name}
                     </div>
                 ),
-                path: feature?.configured
-                    ? feature.path
-                    : `${feature.path}?setup-checklist=${encodeURIComponent(feature.id)}`,
+                path: feature?.needsSetup
+                    ? `${feature.path}?setup-checklist=${encodeURIComponent(feature.id)}`
+                    : feature.path,
             }))}
             name="feedback"
         />

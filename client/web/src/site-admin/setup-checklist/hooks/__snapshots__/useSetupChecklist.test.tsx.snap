@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`useSetupChecklist getLicenseSetupStatus returns reason if exceeded allowed user count 1`] = `"Your user count has exceeded your license limit. Please, get a new license."`;
+
+exports[`useSetupChecklist getLicenseSetupStatus returns reason if expired  1`] = `"The Sourcegraph license expired 1 day ago. Please, get a new license."`;
+
+exports[`useSetupChecklist getLicenseSetupStatus returns reason if expiring soon  1`] = `"The Sourcegraph license will expire in 6 days. Please, renew it soon."`;
+
+exports[`useSetupChecklist getLicenseSetupStatus returns reason if free plan license 1`] = `"You are on a free plan. Please, upgrade your license to unlock more features."`;
+
+exports[`useSetupChecklist getLicenseSetupStatus returns reason if isValid license 1`] = `"The Sourcegraph license key is invalid."`;
