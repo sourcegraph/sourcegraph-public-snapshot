@@ -100,7 +100,7 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose }) => {
                                 <Icon aria-hidden={true} svgPath={mdiPlus} />
                             </Button>
                         </Tooltip>
-                        {showHistory && (
+                        {showHistory && transcriptHistory[0].interactions.length > 0 && (
                             <Tooltip content="Clear all chats">
                                 <Button
                                     variant="icon"

@@ -238,10 +238,14 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                             </MenuButton>
 
                             <MenuList>
-                                <MenuItem onSelect={clearHistory}>
-                                    <Icon aria-hidden={true} svgPath={mdiDelete} /> Clear all chats
-                                </MenuItem>
-                                <MenuDivider />
+                                {transcriptHistory[0].interactions.length > 0 && (
+                                    <>
+                                        <MenuItem onSelect={clearHistory}>
+                                            <Icon aria-hidden={true} svgPath={mdiDelete} /> Clear all chats
+                                        </MenuItem>
+                                        <MenuDivider />
+                                    </>
+                                )}
                                 <MenuLink
                                     as={Link}
                                     to={isSourcegraphApp ? 'https://docs.sourcegraph.com/app' : '/help/cody'}
@@ -423,7 +427,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                         <Icon aria-hidden={true} svgPath={mdiPlus} />
                                     </Button>
                                 </Tooltip>
-                                {showMobileHistory && (
+                                {showMobileHistory && transcriptHistory[0].interactions.length > 0 && (
                                     <Tooltip content="Clear all chats">
                                         <Button
                                             variant="icon"
