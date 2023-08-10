@@ -813,7 +813,7 @@ func buildExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		if !skipHashCompare {
-			compareHashScript := "./dev/ci/scripts/compare-hash.sh"
+			compareHashScript := "./enterprise/dev/ci/scripts/compare-hash.sh"
 			stepOpts = append(stepOpts,
 				// Soft-fail with code 222 if nothing has changed
 				bk.SoftFail(222),

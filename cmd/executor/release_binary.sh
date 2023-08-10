@@ -2,7 +2,7 @@
 
 # This script publishes the executor binary.
 
-cd "$(dirname "${BASH_SOURCE[0]}")"/../../..
+cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 set -eu
 
 # Copy uploaded binary to 'latest'.
