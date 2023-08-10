@@ -34,7 +34,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 - [Quickstart](cody/quickstart.md)
 - [Capabilities](cody/capabilities.md)
 - [Explanations](cody/explanations/index.md)
-- [Use Cases](cody/use-cases.md)
+- [Cody Use Cases](cody/use-cases.md)
 - [Troubleshooting](cody/troubleshooting.md)
 - [FAQ](cody/faq.md)
 
