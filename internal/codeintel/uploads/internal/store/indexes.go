@@ -118,7 +118,8 @@ SELECT
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `,
 	u.should_reindex,
-	u.requested_envvars
+	u.requested_envvars,
+	u.enqueuer_user_id
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
@@ -173,6 +174,7 @@ func scanIndex(s dbutil.Scanner) (index uploadsshared.Index, err error) {
 		&index.AssociatedUploadID,
 		&index.ShouldReindex,
 		pq.Array(&index.RequestedEnvVars),
+		&index.EnqueuerUserID,
 	); err != nil {
 		return index, err
 	}
