@@ -26,6 +26,7 @@ echo " * Uploading package to repository"
 
 # List all .apk files under wolfi-packages/packages/$TARGET_ARCH/
 error="false"
+package_usage_list=""
 apks=(*.apk)
 for apk in "${apks[@]}"; do
   echo " * Processing $apk"
@@ -79,7 +80,7 @@ contents:
     - '@branch https://storage.googleapis.com/package-repository/packages/${BRANCH_PATH}'
   packages:
 $package_usage_list
-  \`\`\`" | ../../../enterprise/dev/ci/scripts/annotate.sh -s "custom-repo" -m
+  \`\`\`" | ../../../enterprise/dev/ci/scripts/annotate.sh -s "custom-repo" -m -t "info"
   fi
 fi
 
