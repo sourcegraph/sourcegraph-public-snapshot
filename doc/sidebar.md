@@ -30,6 +30,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Cody for VSCode](cody/overview/install-vscode.md)
   - [Cody for JetBrains](cody/overview/install-jetbrains.md)
   - [Cody App](cody/overview/app/index.md)
+  - [Cody with Sourcegraph](cody/explanations/cody-with-sourcegraph.md)
   - [Cody Enterprise](cody/overview/enable-cody-enterprise.md)
 - [Quickstart](cody/quickstart.md)
 - [Capabilities](cody/capabilities.md)
