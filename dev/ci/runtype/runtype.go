@@ -14,7 +14,6 @@ const (
 	// RunTypes should be defined by order of precedence.
 
 	PullRequest       RunType = iota // pull request build
-	WolfiExpBranch                   // branch that only builds wolfi images
 	ManuallyTriggered                // build that is manually triggred - typically used to start CI for external contributions
 
 	// Nightly builds - must be first because they take precedence
@@ -149,10 +148,6 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		return &RunTypeMatcher{
 			Branch: "_manually_triggered_external/",
 		}
-	case WolfiExpBranch:
-		return &RunTypeMatcher{
-			Branch: "wolfi/",
-		}
 	case ImagePatch:
 		return &RunTypeMatcher{
 			Branch:                 "docker-images-patch/",
@@ -189,8 +184,6 @@ func (t RunType) String() string {
 	switch t {
 	case PullRequest:
 		return "Pull request"
-	case WolfiExpBranch:
-		return "Wolfi Exp Branch"
 	case ManuallyTriggered:
 		return "Manually Triggered External Build"
 	case ReleaseNightly:
