@@ -49,7 +49,6 @@ export const ChecklistNavbarItem: React.FC = () => {
                             <Tooltip content={feature.needsSetup}>
                                 <Icon
                                     svgPath={mdiInformation}
-                                    // className="ml-1 text-muted"
                                     className={classNames('mr-1 text-danger')}
                                     aria-label={feature.needsSetup}
                                 />
