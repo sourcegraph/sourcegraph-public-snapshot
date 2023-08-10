@@ -61,13 +61,13 @@ for apk in "${apks[@]}"; do
   echo "   * Uploading package and index fragment to repo"
   gsutil -u "$GCP_PROJECT" -h "Cache-Control:no-cache" cp "$apk" "$index_fragment" "$dest_path"
 
-  # Concat package names for u
+  # Concat package names for annotation
+  package_name=$(echo "$apk" | sed -E 's/(-[0-9].*)//')
   package_usage_list="$package_usage_list    - ${package_name}@branch\n"
 done
 
 # Show package usage message on branches
 if [[ "$IS_MAIN" != "true" ]]; then
-  package_name=$(echo "$apk" | sed -E 's/(-[0-9].*)//')
 
   # TODO: Update keyring when keys change: https://storage.googleapis.com/package-repository/packages/${BRANCH_PATH}/melange.rsa.pub
   if [[ -n "$BUILDKITE" ]]; then
