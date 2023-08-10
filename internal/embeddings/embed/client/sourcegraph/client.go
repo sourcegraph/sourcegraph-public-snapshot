@@ -117,7 +117,7 @@ func (c *sourcegraphEmbeddingsClient) do(ctx context.Context, request codygatewa
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 	if len(request.Input) > 1 {
-		req.Header.Set(codygateway.EmbedBatchSizeHeaderName, strconv.Itoa(len(request.Input)))
+		req.Header.Set("X-Cody-Embed-Batch-Size", strconv.Itoa(len(request.Input)))
 	}
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

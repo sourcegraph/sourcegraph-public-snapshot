@@ -73,9 +73,6 @@ func NewHandler(
 				return
 			}
 
-			// Parse request headers
-			batchSize, _ := strconv.Atoi(r.Header.Get(codygateway.EmbedBatchSizeHeaderName))
-
 			// Add the client type to the logger fields.
 			logger = logger.With(log.String("client", c.ProviderName()))
 
@@ -107,7 +104,7 @@ func NewHandler(
 							"upstream_request_duration_ms":                   upstreamFinished.Milliseconds(),
 							"resolved_status_code":                           resolvedStatusCode,
 							codygateway.EmbeddingsTokenUsageMetadataField:    usedTokens,
-							"batch_size": batchSize,
+							"batch_size": len(body.Input),
 						},
 					},
 				)
