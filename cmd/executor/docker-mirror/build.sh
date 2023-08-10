@@ -18,7 +18,7 @@ echo "--- packer build"
 
 # Copy files into workspace.
 cp -R ./* "$TMR_WORKDIR"
-cp ../../../../.tool-versions "$TMR_WORKDIR"
+cp ../../../.tool-versions "$TMR_WORKDIR"
 
 export PKR_VAR_name
 PKR_VAR_name="${IMAGE_FAMILY}-${BUILDKITE_BUILD_NUMBER}"

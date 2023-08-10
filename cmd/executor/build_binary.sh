@@ -2,7 +2,7 @@
 
 # This script builds the executor binary.
 
-cd "$(dirname "${BASH_SOURCE[0]}")"/../../..
+cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 set -eu
 
 OUTPUT=$(mktemp -d -t sgbuild_XXXXXXX)
