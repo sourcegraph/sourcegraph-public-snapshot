@@ -130,7 +130,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}()
 
 	// Ensure tmp directory exists
-	tmpRepoDir, err := s.tempDir("patch-repo-")
+	tmpRepoDir, err := tempDir(s.ReposDir, "patch-repo-")
 	if err != nil {
 		resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: make tmp repo"))
 		return http.StatusInternalServerError, resp
@@ -430,7 +430,7 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 	p4client := strings.TrimPrefix(req.TargetRef, "refs/heads/")
 
 	// do all work in (another) temporary directory
-	tmpClientDir, err := s.tempDir("perforce-client-")
+	tmpClientDir, err := tempDir(s.ReposDir, "perforce-client-")
 	if err != nil {
 		return "", errors.Wrap(err, "gitserver: make tmp repo for Perforce client")
 	}
