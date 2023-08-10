@@ -51,6 +51,7 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
         case 'saml':
         case 'gerrit':
             accountConnection = account.external?.displayName || 'Not connected'
+            break
         case 'azuredevops':
             accountConnection = (
                 <>
