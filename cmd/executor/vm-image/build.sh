@@ -2,7 +2,7 @@
 
 # This script builds the executor image as a GCP boot disk image and as an AWS AMI.
 
-cd "$(dirname "${BASH_SOURCE[0]}")"/../../../..
+cd "$(dirname "${BASH_SOURCE[0]}")"/../../..
 set -eu
 
 OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
