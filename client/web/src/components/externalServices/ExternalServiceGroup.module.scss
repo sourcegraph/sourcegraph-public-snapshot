@@ -4,16 +4,21 @@
         margin-bottom: 1rem;
     }
 
+    &__link {
+        display: block;
+        padding: 0.5rem 0;
+
+        &:hover {
+            background-color: var(--color-bg-2);
+        }
+    }
+
     &__header {
         width: 100%;
         text-align: left;
         display: flex;
         justify-content: space-between;
         padding: 0.5rem;
-
-        &:hover {
-            background-color: var(--color-bg-2);
-        }
     }
 
     &__expanded-header {
@@ -28,17 +33,14 @@
 
     &__body {
         padding-right: 2rem;
-        padding-bottom: 0.75rem;
         margin: 0;
     }
 
     &__node {
         list-style: none;
-        padding-top: 0.5rem;
 
         &:not(:last-child) {
             border-bottom: 1px solid var(--border-color-2);
-            padding-bottom: 0.5rem;
         }
     }
 

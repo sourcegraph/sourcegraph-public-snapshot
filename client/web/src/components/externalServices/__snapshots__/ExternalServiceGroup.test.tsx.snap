@@ -51,7 +51,7 @@ exports[`ExternalServiceGroup should render correctly with disabled external ser
         class="externalServiceGroupNode"
       >
         <div
-          class="externalServiceGroupNodeWrapper text-muted"
+          class="externalServiceGroupNodeWrapper text-muted py-2"
         >
           <svg
             aria-hidden="true"
@@ -137,7 +137,7 @@ exports[`ExternalServiceGroup should render correctly with enabled external serv
         class="externalServiceGroupNode"
       >
         <a
-          class="text-left text-body text-decoration-none"
+          class="externalServiceGroupLink text-left text-body text-decoration-none"
           data-test-external-service-card-link="GITHUB"
           href="?id=github"
         >

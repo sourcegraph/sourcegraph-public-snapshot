@@ -70,10 +70,12 @@ interface ExternalServiceGroupNodeProps {
 }
 
 const ExternalServiceGroupNode: FC<ExternalServiceGroupNodeProps> = ({ service, renderServiceIcon }) => {
+    const isServiceEnabled = service.enabled
     const children = (
         <div
             className={classNames(styles.externalServiceGroupNodeWrapper, {
-                'text-muted': !service.enabled,
+                'text-muted': !isServiceEnabled,
+                'py-2': !isServiceEnabled,
             })}
         >
             {renderServiceIcon && <Icon inline={true} className="mb-0 mr-1" as={service.icon} aria-hidden={true} />}
@@ -99,7 +101,7 @@ const ExternalServiceGroupNode: FC<ExternalServiceGroupNodeProps> = ({ service, 
 
     return service.enabled ? (
         <Link
-            className="text-left text-body text-decoration-none"
+            className={classNames(styles.externalServiceGroupLink, 'text-left text-body text-decoration-none')}
             to={getAddURL(service.serviceID)}
             data-test-external-service-card-link={service.kind}
         >

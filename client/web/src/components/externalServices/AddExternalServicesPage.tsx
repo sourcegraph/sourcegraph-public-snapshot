@@ -101,7 +101,7 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
         ]
     }
 
-    const codeHostServicesGroup = computeExternalServicesGroup(codeHostExternalServices, allowedCodeHosts)
+    const servicesByGroup = computeExternalServicesGroup(codeHostExternalServices, allowedCodeHosts)
 
     return (
         <>
@@ -124,7 +124,7 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                 </LimitedAccessBanner>
             )}
 
-            <Container className="mb-3">
+            <Container>
                 <ChecklistInfo />
                 {!hasDismissedPrivacyWarning && (
                     <ExternalServicesPrivacyAlert dismissPrivacyWarning={dismissPrivacyWarning} />
@@ -140,7 +140,7 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                     </>
                 )}
 
-                {Object.entries(codeHostServicesGroup).map(([displayName, info], index) => (
+                {Object.entries(servicesByGroup).map(([displayName, info], index) => (
                     <ExternalServiceGroup
                         // We ignore the index key rule here since the grouping doesn't have a
                         // unique identifier.
@@ -158,7 +158,7 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                 {Object.values(nonCodeHostExternalServices).length > 0 && (
                     <ExternalServiceGroup
                         name="Dependencies"
-                        services={transformExternalServices(nonCodeHostExternalServices)}
+                        services={transformExternalServices(nonCodeHostExternalServices, allowedCodeHosts)}
                         renderServiceIcon={true}
                     />
                 )}
@@ -276,6 +276,10 @@ const computeExternalServicesGroup = (
 }
 
 const transformExternalServices = (
-    services: Record<string, AddExternalServiceOptions>
+    services: Record<string, AddExternalServiceOptions>,
+    allowedCodeHosts: AddExternalServiceOptions[] | null
 ): AddExternalServiceOptionsWithID[] =>
-    Object.entries(services).map(([serviceID, service]) => ({ ...service, serviceID }))
+    Object.entries(services).map(([serviceID, service]) => {
+        const isDisabled = Boolean(allowedCodeHosts && !allowedCodeHosts.includes(service))
+        return { ...service, serviceID, enabled: !isDisabled }
+    })
