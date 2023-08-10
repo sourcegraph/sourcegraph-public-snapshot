@@ -37,8 +37,8 @@ export const UserPermissionsInfoQuery = gql`
 
     fragment UserPermissionsInfoUserNode on User {
         permissionsInfo {
-            syncedAt
             updatedAt
+            source
             repositories(first: $first, last: $last, after: $after, before: $before, query: $query) {
                 nodes {
                     ...PermissionsInfoRepositoryFields

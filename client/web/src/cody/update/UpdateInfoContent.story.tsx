@@ -114,7 +114,7 @@ export const CheckNow: Story = {
 
 export const ReleaseDetails: Story = {
     render: function Render() {
-        const [state, setState] = useState<UpdateInfo>({
+        const [state] = useState<UpdateInfo>({
             stage: 'IDLE',
             hasNewVersion: true,
             version: '1.0.0',

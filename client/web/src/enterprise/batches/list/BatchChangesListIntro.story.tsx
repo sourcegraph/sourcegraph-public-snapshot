@@ -41,7 +41,9 @@ function stateToInput(state: LicensingState): boolean | undefined {
 }
 
 const Template: Story = ({ state, ...args }) => (
-    <WebStory>{() => <BatchChangesListIntro isLicensed={stateToInput(args.licensed)} />}</WebStory>
+    <WebStory>
+        {() => <BatchChangesListIntro viewerIsAdmin={false} isLicensed={stateToInput(args.licensed)} />}
+    </WebStory>
 )
 
 export const Licensed = Template.bind({})

@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
@@ -36,10 +37,9 @@ func (r repoEmbeddingSchedulerJob) Routines(_ context.Context, observationCtx *o
 		return nil, err
 	}
 
-	ctx := context.Background()
-
+	workCtx := actor.WithInternalActor(context.Background())
 	return []goroutine.BackgroundRoutine{
-		newRepoEmbeddingScheduler(ctx, gitserver.NewClient(db), db, repo.NewRepoEmbeddingJobsStore(db)),
+		newRepoEmbeddingScheduler(workCtx, gitserver.NewClient(db), db, repo.NewRepoEmbeddingJobsStore(db)),
 	}, nil
 }
 

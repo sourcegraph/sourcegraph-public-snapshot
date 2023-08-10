@@ -1655,6 +1655,7 @@ var (
 	MockValidPassword func(hash, password string) bool
 )
 
+//nolint:unused // used in tests
 func useFastPasswordMocks() {
 	// We can't care about security in tests, we care about speed.
 	MockHashPassword = func(password string) (sql.NullString, error) {

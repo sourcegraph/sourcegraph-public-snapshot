@@ -1,10 +1,10 @@
 import { getContext } from 'svelte'
 import { readable, writable, type Readable, type Writable } from 'svelte/store'
 
-import type { GraphQLClient } from '$lib/http-client'
 import type { SettingsCascade, AuthenticatedUser, TemporarySettingsStorage } from '$lib/shared'
 
 import type { FeatureFlag } from './featureflags'
+import type { GraphQLClient } from './graphql'
 
 export interface SourcegraphContext {
     settings: Readable<SettingsCascade['final'] | null>

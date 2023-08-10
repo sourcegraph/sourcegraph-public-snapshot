@@ -41,7 +41,7 @@ const config = {
       'rxjs/operators': '../../node_modules/rxjs/_esm5/operators/index',
       'rxjs/fetch': '../../node_modules/rxjs/_esm5/fetch/index',
       // Without it prod build doesnt work
-      '@apollo/client': '../../node_modules/@apollo/client/index.js',
+      '@apollo/client$': '../../node_modules/@apollo/client/index.js',
       lodash: './node_modules/lodash-es',
     },
     typescript: {

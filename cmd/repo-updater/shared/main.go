@@ -201,7 +201,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	go func() {
 		err := syncer.Run(ctx, store, repos.RunOptions{
 			EnqueueInterval: repos.ConfRepoListUpdateInterval,
-			IsCloud:         envvar.SourcegraphDotComMode(),
+			IsDotCom:        envvar.SourcegraphDotComMode(),
 			MinSyncInterval: repos.ConfRepoListUpdateInterval,
 		})
 		if err != nil {

@@ -12,9 +12,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const openAIURL = "https://api.openai.com/v1/chat/completions"
@@ -39,6 +41,14 @@ func NewOpenAIHandler(
 		openAIURL,
 		allowedModels,
 		upstreamHandlerMethods[openaiRequest]{
+			validateRequest: func(feature codygateway.Feature, _ openaiRequest) (int, error) {
+				if feature == codygateway.FeatureCodeCompletions {
+					return http.StatusNotImplemented,
+						errors.Newf("feature %q is currently not supported for OpenAI",
+							feature)
+				}
+				return 0, nil
+			},
 			transformBody: func(body *openaiRequest, act *actor.Actor) {
 				// We don't want to let users generate multiple responses, as this would
 				// mess with rate limit counting.
@@ -104,10 +114,13 @@ func NewOpenAIHandler(
 				}
 				return len(finalCompletion)
 			},
-			validateRequest: func(_ openaiRequest) error {
-				return nil
-			},
 		},
+
+		// OpenAI primarily uses tokens-per-minute ("TPM") to rate-limit spikes
+		// in requests, so set a very high retry-after to discourage Sourcegraph
+		// clients from retrying at all since retries are probably not going to
+		// help in a minute-long rate limit window.
+		30, // seconds
 	)
 }
 

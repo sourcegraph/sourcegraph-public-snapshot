@@ -16,6 +16,7 @@ go_library(
     visibility = ["//enterprise/dev/ci:__subpackages__"],
     deps = [
         "//dev/ci/runtype",
+        "//dev/sg/root",
         "//enterprise/dev/ci/images",
         "//enterprise/dev/ci/internal/buildkite",
         "//enterprise/dev/ci/internal/ci/changed",
@@ -25,11 +26,18 @@ go_library(
         "//lib/errors",
         "@com_github_masterminds_semver//:semver",
         "@com_github_sourcegraph_log//:log",
+        "@in_gopkg_yaml_v2//:yaml_v2",
     ],
 )
 
 go_test(
     name = "ci_test",
-    srcs = ["bazel_operations_test.go"],
+    srcs = [
+        "bazel_operations_test.go",
+        "wolfi_operations_test.go",
+    ],
+    data = [
+        "//enterprise/dev/ci/internal/ci/test:test-image-configs",
+    ],
     embed = [":ci"],
 )

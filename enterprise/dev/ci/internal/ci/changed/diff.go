@@ -138,7 +138,7 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 		}
 
 		// Affects executor docker registry mirror
-		if strings.HasPrefix(p, "enterprise/cmd/executor/docker-mirror/") {
+		if strings.HasPrefix(p, "cmd/executor/docker-mirror/") {
 			diff |= ExecutorDockerRegistryMirror
 		}
 

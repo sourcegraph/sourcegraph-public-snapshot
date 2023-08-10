@@ -24,12 +24,13 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
@@ -137,11 +138,10 @@ func TestClient_RepoStats_ProtoRoundTrip(t *testing.T) {
 func TestClient_RepoUpdateRequest_ProtoRoundTrip(t *testing.T) {
 	var diff string
 	t.Run("request", func(t *testing.T) {
-		fn := func(repo api.RepoName, since int64, cloneFromShard string) bool {
+		fn := func(repo api.RepoName, since int64) bool {
 			original := protocol.RepoUpdateRequest{
-				Repo:           repo,
-				Since:          time.Duration(since),
-				CloneFromShard: cloneFromShard,
+				Repo:  repo,
+				Since: time.Duration(since),
 			}
 
 			var converted protocol.RepoUpdateRequest

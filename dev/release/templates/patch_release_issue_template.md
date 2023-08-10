@@ -94,6 +94,7 @@ Once there is a release candidate available:
     - [ ] Cherry-pick the release-publishing PR from the release branch into `main`
 - [ ] Finalize and announce that the release is live:
   ```sh
+  pnpm run release release:finalize
   pnpm run release release:announce
   ```
 

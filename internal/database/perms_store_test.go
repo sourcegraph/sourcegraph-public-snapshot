@@ -3952,7 +3952,7 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	q := sqlf.Sprintf(`INSERT INTO user_repo_permissions(user_id, repo_id) VALUES(555, 1), (777, 2), (555, 3), (777, 3);`)
+	q := sqlf.Sprintf(`INSERT INTO user_repo_permissions(user_id, repo_id, source) VALUES(555, 1, 'user_sync'), (777, 2, 'user_sync'), (555, 3, 'api'), (777, 3, 'api');`)
 	if err := s.execute(ctx, q); err != nil {
 		t.Fatal(err)
 	}
@@ -3983,16 +3983,16 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 			Name:   "TestPagination",
 			UserID: 555,
 			Args: &ListUserPermissionsArgs{
-				PaginationArgs: &PaginationArgs{First: pointers.Ptr(2), After: pointers.Ptr("'public_repo_5'"), OrderBy: OrderBy{{Field: "repo.name"}}},
+				PaginationArgs: &PaginationArgs{First: pointers.Ptr(2), After: pointers.Ptr("'public_repo_5'"), OrderBy: OrderBy{{Field: "name"}}},
 			},
 			WantResults: []*listUserPermissionsResult{
 				{
-					RepoId: 4,
-					Reason: UserRepoPermissionReasonUnrestricted,
-				},
-				{
 					RepoId: 1,
 					Reason: UserRepoPermissionReasonPermissionsSync,
+				},
+				{
+					RepoId: 4,
+					Reason: UserRepoPermissionReasonUnrestricted,
 				},
 			},
 		},
@@ -4021,17 +4021,17 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 				{
 					// private repo but have access via user_permissions
 					RepoId: 2,
-					Reason: UserRepoPermissionReasonSiteAdmin,
+					Reason: UserRepoPermissionReasonPermissionsSync,
 				},
 				{
 					// public repo
 					RepoId: 4,
-					Reason: UserRepoPermissionReasonSiteAdmin,
+					Reason: UserRepoPermissionReasonUnrestricted,
 				},
 				{
 					// private repo but unrestricted
 					RepoId: 5,
-					Reason: UserRepoPermissionReasonSiteAdmin,
+					Reason: UserRepoPermissionReasonUnrestricted,
 				},
 			},
 		},

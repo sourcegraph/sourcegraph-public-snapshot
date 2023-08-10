@@ -130,29 +130,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		if bzlCmd == "" {
 			return nil, errors.Newf("no bazel command was given")
 		}
-	case runtype.WolfiExpBranch:
-		// Rebuild packages if package configs have changed
-		updatePackages := c.Diff.Has(changed.WolfiPackages)
-		// Rebuild base images if base image OR package configs have changed
-		updateBaseImages := c.Diff.Has(changed.WolfiBaseImages) || updatePackages
-
-		var numUpdatedPackages int
-
-		if updatePackages {
-			var packageOps *operations.Set
-			packageOps, numUpdatedPackages = WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages])
-			ops.Merge(packageOps)
-		}
-		if updateBaseImages {
-			var baseImageOps *operations.Set
-			baseImageOps, _ = WolfiBaseImagesOperations(
-				c.ChangedFiles[changed.WolfiBaseImages], // TODO: If packages have changed need to update all base images. Requires a list of all base images
-				c.Version,
-				(numUpdatedPackages > 0),
-			)
-			ops.Merge(baseImageOps)
-		}
-
 	case runtype.PullRequest:
 		// First, we set up core test operations that apply both to PRs and to other run
 		// types such as main.
@@ -165,6 +142,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		securityOps := operations.NewNamedSet("Security Scanning")
 		securityOps.Append(sonarcloudScan())
 		ops.Merge(securityOps)
+
+		// Wolfi package and base images
+		addWolfiOps(c, ops)
 
 		// Now we set up conditional operations that only apply to pull requests.
 		if c.Diff.Has(changed.Client) {
@@ -328,6 +308,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
 		))
 
+		// Wolfi package and base images
+		addWolfiOps(c, ops)
+
 		// All operations before this point are required
 		ops.Append(wait)
 
@@ -426,4 +409,34 @@ func withAgentLostRetries(s *bk.Step) {
 		Limit:      1,
 		ExitStatus: -1,
 	})
+}
+
+// addWolfiOps adds operations to rebuild modified Wolfi packages and base images.
+func addWolfiOps(c Config, ops *operations.Set) {
+	// Rebuild Wolfi packages that have config changes
+	var updatedPackages []string
+	if c.Diff.Has(changed.WolfiPackages) {
+		var packageOps *operations.Set
+		packageOps, updatedPackages = WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages])
+		ops.Merge(packageOps)
+	}
+
+	// Rebuild Wolfi base images
+	// Inspect package dependencies, and rebuild base images with updated packages
+	_, imagesWithChangedPackages, err := GetDependenciesOfPackages(updatedPackages, "sourcegraph")
+	if err != nil {
+		panic(err)
+	}
+	// Rebuild base images with package changes AND with config changes
+	imagesToRebuild := append(imagesWithChangedPackages, c.ChangedFiles[changed.WolfiBaseImages]...)
+	imagesToRebuild = sortUniq(imagesToRebuild)
+
+	if len(imagesToRebuild) > 0 {
+		baseImageOps, _ := WolfiBaseImagesOperations(
+			imagesToRebuild,
+			c.Version,
+			(len(updatedPackages) > 0),
+		)
+		ops.Merge(baseImageOps)
+	}
 }
