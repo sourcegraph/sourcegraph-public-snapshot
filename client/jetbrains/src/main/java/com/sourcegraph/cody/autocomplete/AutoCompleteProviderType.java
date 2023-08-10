@@ -6,7 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 public enum AutoCompleteProviderType {
   ANTHROPIC,
-  UNSTABLE_CODEGEN;
+  UNSTABLE_CODEGEN,
+  UNSTABLE_AZURE_OPENAI;
 
   public static final AutoCompleteProviderType DEFAULT_AUTOCOMPLETE_PROVIDER_TYPE = ANTHROPIC;
   private static final Logger logger = Logger.getInstance(AutoCompleteProviderType.class);
@@ -21,4 +22,8 @@ public enum AutoCompleteProviderType {
       return Optional.empty();
     }
   }
+
+    public String toString() {
+        return super.toString().toLowerCase().replace('_', '-');
+    }
 }
