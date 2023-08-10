@@ -31,7 +31,7 @@ func TestIsAllowedGitCmd(t *testing.T) {
 	logger := logtest.Scoped(t)
 	for _, args := range allowed {
 		t.Run("", func(t *testing.T) {
-			if !IsAllowedGitCmd(logger, args) {
+			if !IsAllowedGitCmd(logger, args, "/fake/path") {
 				t.Fatalf("expected args to be allowed: %q", args)
 			}
 		})
@@ -55,12 +55,18 @@ func TestIsAllowedDiffGitCmd(t *testing.T) {
 		{args: []string{"diff", "/etc/hosts", "/etc/passwd"}, pass: false},
 		{args: []string{"diff", "/dev/null", "/etc/passwd"}, pass: false},
 		{args: []string{"diff", "/etc/hosts", "/etc/passwd"}, pass: false},
+		{args: []string{"diff", "--", "/etc/hosts", "/etc/passwd"}, pass: false},
+		{args: []string{"diff", "--", "/etc/ees", "/etc/ee"}, pass: false},
+		{args: []string{"diff", "--", "../../../etc/ees", "/etc/ee"}, pass: false},
+		{args: []string{"diff", "--", "a/test.txt", "b/test.txt"}, pass: true},
+		{args: []string{"diff", "--find-renames"}, pass: true},
+		{args: []string{"diff", "a1c0f7d19f6e9eb76facc67c1c22c07bb2ad39c4...c70f79c26526ba74f38ecff2e1e686fc3e2bdcdd"}, pass: true},
 	}
 
 	logger := logtest.Scoped(t)
 	for _, cmd := range allowed {
 		t.Run(fmt.Sprintf("%s returns %t", strings.Join(cmd.args, " "), cmd.pass), func(t *testing.T) {
-			assert.Equal(t, cmd.pass, IsAllowedGitCmd(logger, cmd.args))
+			assert.Equal(t, cmd.pass, IsAllowedGitCmd(logger, cmd.args, "/foo/baz"))
 		})
 	}
 }
