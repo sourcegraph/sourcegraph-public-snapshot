@@ -81,9 +81,11 @@ type codeInsightsDataArchive struct {
 	data []byte
 }
 
-var notFoundError = errors.New("insight not found")
-var authenticationError = errors.New("authentication error")
-var invalidLicenseError = errors.New("invalid license for code insights")
+var (
+	notFoundError       = errors.New("insight not found")
+	authenticationError = errors.New("authentication error")
+	invalidLicenseError = errors.New("invalid license for code insights")
+)
 
 func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*codeInsightsDataArchive, error) {
 	currentActor := actor.FromContext(ctx)

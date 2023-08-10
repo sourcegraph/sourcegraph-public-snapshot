@@ -16,17 +16,19 @@ func main() {
 	}
 }
 
-var rootFlagSet = flag.NewFlagSet("depgraph", flag.ExitOnError)
-var rootCommand = &ffcli.Command{
-	ShortUsage: "depgraph [flags] <subcommand>",
-	FlagSet:    rootFlagSet,
-	Subcommands: []*ffcli.Command{
-		summaryCommand,
-		traceCommand,
-		traceInternalCommand,
-		lintCommand,
-	},
-}
+var (
+	rootFlagSet = flag.NewFlagSet("depgraph", flag.ExitOnError)
+	rootCommand = &ffcli.Command{
+		ShortUsage: "depgraph [flags] <subcommand>",
+		FlagSet:    rootFlagSet,
+		Subcommands: []*ffcli.Command{
+			summaryCommand,
+			traceCommand,
+			traceInternalCommand,
+			lintCommand,
+		},
+	}
+)
 
 func mainErr() error {
 	if err := rootCommand.Parse(os.Args[1:]); err != nil {

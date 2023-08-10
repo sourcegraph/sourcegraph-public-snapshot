@@ -132,7 +132,6 @@ func newTokenRequest(oauthCtx OAuthContext, refreshToken string, authStyle AuthS
 	}
 
 	req, err := http.NewRequest("POST", oauthCtx.Endpoint.TokenURL, strings.NewReader(v.Encode()))
-
 	if err != nil {
 		return nil, err
 	}

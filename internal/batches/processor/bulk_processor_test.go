@@ -259,7 +259,6 @@ func TestBulkProcessor(t *testing.T) {
 		// Ensure that the appropriate webhook job will be created
 		afterDone(bstore)
 		webhook, err := wstore.GetLast(ctx)
-
 		if err != nil {
 			t.Fatalf("could not get latest webhook job: %s", err)
 		}
@@ -298,7 +297,6 @@ func TestBulkProcessor(t *testing.T) {
 		// Ensure that the appropriate webhook job will be created
 		afterDone(bstore)
 		webhook, err := wstore.GetLast(ctx)
-
 		if err != nil {
 			t.Fatalf("could not get latest webhook job: %s", err)
 		}

@@ -34,7 +34,8 @@ func (r *UserResolver) OrganizationMemberships(ctx context.Context) (*organizati
 func (r *schemaResolver) AutocompleteMembersSearch(ctx context.Context, args *struct {
 	Organization graphql.ID
 	Query        string
-}) ([]*OrgMemberAutocompleteSearchItemResolver, error) {
+},
+) ([]*OrgMemberAutocompleteSearchItemResolver, error) {
 	actor := sgactor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("no current user")
@@ -46,7 +47,6 @@ func (r *schemaResolver) AutocompleteMembersSearch(ctx context.Context, args *st
 	}
 
 	usersMatching, err := r.db.OrgMembers().AutocompleteMembersSearch(ctx, orgID, args.Query)
-
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,8 @@ func (r *schemaResolver) AutocompleteMembersSearch(ctx context.Context, args *st
 
 func (r *schemaResolver) OrgMembersSummary(ctx context.Context, args *struct {
 	Organization graphql.ID
-}) (*OrgMembersSummaryResolver, error) {
+},
+) (*OrgMembersSummaryResolver, error) {
 	actor := sgactor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("no current user")
@@ -73,18 +74,16 @@ func (r *schemaResolver) OrgMembersSummary(ctx context.Context, args *struct {
 	}
 
 	usersCount, err := r.db.OrgMembers().MemberCount(ctx, orgID)
-
 	if err != nil {
 		return nil, err
 	}
 
 	pendingInvites, err := r.db.OrgInvitations().Count(ctx, database.OrgInvitationsListOptions{OrgID: orgID})
-
 	if err != nil {
 		return nil, err
 	}
 
-	var summary = NewOrgMembersSummaryResolver(r.db, orgID, int32(usersCount), int32(pendingInvites))
+	summary := NewOrgMembersSummaryResolver(r.db, orgID, int32(usersCount), int32(pendingInvites))
 
 	return summary, nil
 }
@@ -173,6 +172,7 @@ func NewOrgMembersSummaryResolver(db database.DB, orgId int32, membersCount int3
 		invitesCount: invitesCount,
 	}
 }
+
 func (r *OrgMembersSummaryResolver) ID() graphql.ID {
 	return MarshalUserID(r.id)
 }

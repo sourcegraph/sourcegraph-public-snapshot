@@ -88,7 +88,7 @@ func TestIndex(t *testing.T) {
 	state := map[string][]string{}
 
 	add := func(filename string, contents string) {
-		fatalIfError(os.WriteFile(path.Join(gitDir, filename), []byte(contents), 0644), "os.WriteFile")
+		fatalIfError(os.WriteFile(path.Join(gitDir, filename), []byte(contents), 0o644), "os.WriteFile")
 		gitRun("add", filename)
 		symbols, err := mockParser{}.Parse(filename, []byte(contents))
 		fatalIfError(err, "simpleParse")

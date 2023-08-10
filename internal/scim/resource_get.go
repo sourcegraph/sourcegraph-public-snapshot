@@ -29,7 +29,6 @@ func (h *ResourceHandler) GetAll(r *http.Request, params scim.ListRequestParams)
 
 	if params.Filter == nil {
 		totalCount, resources, err = h.service.GetAll(r.Context(), params.StartIndex, &params.Count)
-
 	} else {
 		extensionSchemas := make([]schema.Schema, 0, len(h.schemaExtensions))
 		for _, ext := range h.schemaExtensions {

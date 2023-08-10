@@ -9,6 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -75,7 +76,7 @@ type (
 )
 
 type RolesListOptions struct {
-	PaginationArgs *PaginationArgs
+	PaginationArgs *dbtypes.PaginationArgs
 
 	System bool
 	UserID int32
@@ -210,7 +211,7 @@ func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects *sq
 
 func (r *roleStore) computeConditionsAndJoins(opts RolesListOptions) ([]*sqlf.Query, *sqlf.Query) {
 	var conds []*sqlf.Query
-	var joins = sqlf.Sprintf("")
+	joins := sqlf.Sprintf("")
 
 	if opts.System {
 		conds = append(conds, sqlf.Sprintf("system IS TRUE"))

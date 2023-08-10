@@ -9,6 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -213,7 +214,7 @@ func (s *outboundWebhookStore) Delete(ctx context.Context, id int64) error {
 }
 
 type OutboundWebhookListOpts struct {
-	*LimitOffset
+	*dbtypes.LimitOffset
 	OutboundWebhookCountOpts
 }
 

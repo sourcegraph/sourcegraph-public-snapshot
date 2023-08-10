@@ -44,7 +44,7 @@ func UpdateCompose(path string, creds credentials.Credentials, pinTag string) er
 			return nil
 		}
 
-		if err := os.WriteFile(path, newComposeFile, 0644); err != nil {
+		if err := os.WriteFile(path, newComposeFile, 0o644); err != nil {
 			return errors.Newf("WriteFile: %w", err)
 		}
 

@@ -92,7 +92,6 @@ func Test_verifyAllowOrgs(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-
 		t.Run(tc.name, func(t *testing.T) {
 			mockServerInvokedCount = 0
 			s := &sessionIssuerHelper{allowOrgs: tc.allowOrgs}

@@ -171,7 +171,7 @@ func TestMarshalChangeset(t *testing.T) {
 			response, err := marshalChangeset(ctx, client, bgql.MarshalChangesetID(tc.changeset.ID))
 			require.NoError(t, err)
 
-			var have = &changeset{}
+			have := &changeset{}
 			err = json.Unmarshal(response, have)
 			require.NoError(t, err)
 

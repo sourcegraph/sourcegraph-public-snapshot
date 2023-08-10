@@ -75,7 +75,6 @@ func (sourcegraphOwn) NewOwnRepoIndexerWorkerGroup(containerName string) monitor
 // src_own_background_worker_reset_failures_total
 // src_own_background_worker_reset_errors_total
 func (sourcegraphOwn) NewOwnRepoIndexerResetterGroup(containerName string) monitoring.Group {
-
 	return WorkerutilResetter.NewGroup(containerName, monitoring.ObservableOwnerCodeInsights, ResetterGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       ownNamespace,

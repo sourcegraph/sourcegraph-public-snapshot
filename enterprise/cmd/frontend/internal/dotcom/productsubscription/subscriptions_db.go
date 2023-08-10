@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -108,7 +109,7 @@ type dbSubscriptionsListOptions struct {
 	UserID          int32 // only list product subscriptions for this user
 	Query           string
 	IncludeArchived bool
-	*database.LimitOffset
+	*dbtypes.LimitOffset
 }
 
 func (o dbSubscriptionsListOptions) sqlConditions() []*sqlf.Query {
@@ -134,7 +135,7 @@ func (s dbSubscriptions) List(ctx context.Context, opt dbSubscriptionsListOption
 	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
-func (s dbSubscriptions) list(ctx context.Context, conds []*sqlf.Query, limitOffset *database.LimitOffset) ([]*dbSubscription, error) {
+func (s dbSubscriptions) list(ctx context.Context, conds []*sqlf.Query, limitOffset *dbtypes.LimitOffset) ([]*dbSubscription, error) {
 	q := sqlf.Sprintf(`
 WITH %s
 SELECT

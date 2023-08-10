@@ -223,7 +223,6 @@ func TestIsStaticBool(t *testing.T) {
 		wantIsStatic bool
 		wantBoolVal  bool
 	}{
-
 		{
 			name:         "true literal",
 			template:     `true`,
@@ -276,7 +275,6 @@ func TestIsStaticBool(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			isStatic, boolVal, err := IsStaticBool(tt.template, partialEvalStepCtx)
 			if err != nil {
 				t.Fatal(err)

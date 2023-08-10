@@ -245,7 +245,8 @@ func Combine(path string, opt Options) error {
 
 func storeObject(storer storer.EncodedObjectStorer, obj interface {
 	Encode(plumbing.EncodedObject) error
-}) (plumbing.Hash, error) {
+},
+) (plumbing.Hash, error) {
 	o := storer.NewEncodedObject()
 	if err := obj.Encode(o); err != nil {
 		return plumbing.ZeroHash, err
@@ -514,7 +515,6 @@ func cleanupStaleLockFiles(gitDir string, logger *log.Logger) error {
 		lockFiles = append(lockFiles, path)
 		return nil
 	})
-
 	if err != nil {
 		return errors.Wrapf(err, "finding stale lockfiles in %q", refsDir)
 	}

@@ -119,7 +119,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 	}
 
 	tests := []testCase{
-
 		{
 			descr:         "single repo match",
 			searchResults: []result.Match{repoMatch},

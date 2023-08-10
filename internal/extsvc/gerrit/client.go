@@ -113,11 +113,9 @@ func (c *client) GetAuthenticatedUserAccount(ctx context.Context) (*Account, err
 }
 
 func (c *client) GetGroup(ctx context.Context, groupName string) (Group, error) {
-
 	urlGroup := url.URL{Path: fmt.Sprintf("a/groups/%s", groupName)}
 
 	reqAllAccounts, err := http.NewRequest("GET", urlGroup.String(), nil)
-
 	if err != nil {
 		return Group{}, err
 	}
@@ -144,7 +142,6 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	}
 
 	resp, err := c.httpClient.Do(req)
-
 	if err != nil {
 		return nil, err
 	}

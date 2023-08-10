@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -775,14 +776,13 @@ func privateReposForActor(ctx context.Context, logger log.Logger, db database.DB
 	userPrivateRepos, err := db.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
 		UserID:         userID, // Zero valued when not in sourcegraph.com mode
 		OnlyPrivate:    true,
-		LimitOffset:    &database.LimitOffset{Limit: limits.SearchLimits(conf.Get()).MaxRepos + 1},
+		LimitOffset:    &dbtypes.LimitOffset{Limit: limits.SearchLimits(conf.Get()).MaxRepos + 1},
 		OnlyForks:      repoOptions.OnlyForks,
 		NoForks:        repoOptions.NoForks,
 		OnlyArchived:   repoOptions.OnlyArchived,
 		NoArchived:     repoOptions.NoArchived,
 		ExcludePattern: query.UnionRegExps(repoOptions.MinusRepoFilters),
 	})
-
 	if err != nil {
 		logger.Error("doResults: failed to list user private repos", log.Error(err), log.Int32("user-id", userID))
 		tr.AddEvent("error resolving user private repos", trace.Error(err))

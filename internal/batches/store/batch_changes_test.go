@@ -588,7 +588,6 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 
 		for _, tc := range multiFilterTests {
 			t.Run("ListBatchChanges Multiple States "+tc.name, func(t *testing.T) {
-
 				have, _, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{States: tc.states})
 				if err != nil {
 					t.Fatal(err)
@@ -1022,7 +1021,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock b
 			t.Fatal(err)
 		}
 
-		var testBatchChangeIsGone = func(expectedErr error) {
+		testBatchChangeIsGone := func(expectedErr error) {
 			// We should now have the unowned batch change still be valid, but the
 			// owned batch change should have gone away.
 			cs, _, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{})

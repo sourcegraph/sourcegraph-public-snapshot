@@ -2,11 +2,13 @@ package conversion
 
 import "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
 
-type Element reader.Element
-type Edge reader.Edge
-type MetaData reader.MetaData
-type PackageInformation reader.PackageInformation
-type Diagnostic reader.Diagnostic
+type (
+	Element            reader.Element
+	Edge               reader.Edge
+	MetaData           reader.MetaData
+	PackageInformation reader.PackageInformation
+	Diagnostic         reader.Diagnostic
+)
 
 type Range struct {
 	reader.Range

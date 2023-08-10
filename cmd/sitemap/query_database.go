@@ -104,7 +104,7 @@ func openQueryDatabase(path string) (*queryDatabase, error) {
 	db := &queryDatabase{}
 
 	var err error
-	db.handle, err = bolt.Open(path, 0666, nil)
+	db.handle, err = bolt.Open(path, 0o666, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "bolt.Open")
 	}

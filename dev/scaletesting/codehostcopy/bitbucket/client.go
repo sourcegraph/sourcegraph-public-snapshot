@@ -38,8 +38,10 @@ type Client struct {
 	http    http.Client
 }
 
-type ClientOpt func(client *Client)
-type SetAuthFunc func(req *http.Request)
+type (
+	ClientOpt   func(client *Client)
+	SetAuthFunc func(req *http.Request)
+)
 
 func setBasicAuth(username, password string) SetAuthFunc {
 	return func(req *http.Request) {

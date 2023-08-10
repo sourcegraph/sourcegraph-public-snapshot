@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -204,7 +205,6 @@ func perms(logger log.Logger, db DB, clock func() time.Time) *permsStore {
 	store := basestore.NewWithHandle(db.Handle())
 
 	return &permsStore{logger: logger, Store: store, clock: clock, db: NewDBWith(logger, store)}
-
 }
 
 func PermsWith(logger log.Logger, other basestore.ShareableStore, clock func() time.Time) PermsStore {
@@ -1301,7 +1301,6 @@ var ScanPermissions = basestore.NewSliceScanner(func(s dbutil.Scanner) (authz.Pe
 })
 
 func (s *permsStore) loadUserRepoPermissions(ctx context.Context, userID, userExternalAccountID, repoID int32) ([]authz.Permission, error) {
-
 	clauses := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 
 	if userID != 0 {
@@ -1866,7 +1865,7 @@ func computeDiff[T comparable](oldIDs collections.Set[T], newIDs collections.Set
 
 type ListUserPermissionsArgs struct {
 	Query          string
-	PaginationArgs *PaginationArgs
+	PaginationArgs *dbtypes.PaginationArgs
 }
 
 type UserPermission struct {
@@ -1994,14 +1993,14 @@ var scanRepoPermissionsInfo = func(authzParams *AuthzQueryParameters) func(bases
 
 var defaultPageSize = 100
 
-var defaultPaginationArgs = PaginationArgs{
+var defaultPaginationArgs = dbtypes.PaginationArgs{
 	First:   &defaultPageSize,
-	OrderBy: OrderBy{{Field: "users.id"}},
+	OrderBy: dbtypes.OrderBy{{Field: "users.id"}},
 }
 
 type ListRepoPermissionsArgs struct {
 	Query          string
-	PaginationArgs *PaginationArgs
+	PaginationArgs *dbtypes.PaginationArgs
 }
 
 type RepoPermission struct {

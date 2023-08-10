@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -532,11 +533,11 @@ func TestRecentViewSignalStore_List(t *testing.T) {
 			expectedNoEntries: true,
 		},
 		"limit, offset": {
-			opts:           ListRecentViewSignalOpts{LimitOffset: &LimitOffset{Limit: 1, Offset: 1}},
+			opts:           ListRecentViewSignalOpts{LimitOffset: &dbtypes.LimitOffset{Limit: 1, Offset: 1}},
 			expectedCounts: []int{viewCounts1[""]},
 		},
 		"limit": {
-			opts:           ListRecentViewSignalOpts{LimitOffset: &LimitOffset{Limit: 1}},
+			opts:           ListRecentViewSignalOpts{LimitOffset: &dbtypes.LimitOffset{Limit: 1}},
 			expectedCounts: []int{viewCounts2[""]},
 		},
 	}

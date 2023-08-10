@@ -12,7 +12,7 @@ func TestUpdateFileIfDifferent(t *testing.T) {
 	target := filepath.Join(dir, "sg_refhash")
 
 	write := func(content string) {
-		err := os.WriteFile(target, []byte(content), 0600)
+		err := os.WriteFile(target, []byte(content), 0o600)
 		if err != nil {
 			t.Fatal(err)
 		}

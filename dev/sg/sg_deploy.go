@@ -79,7 +79,8 @@ dns: dave-app.sgdev.org
 			return errors.Wrap(err, "generate manifest")
 		}
 		return nil
-	}}
+	},
+}
 
 type Values struct {
 	Name    string
@@ -216,7 +217,6 @@ resource "cloudflare_record" "{{ .Name }}-sgdev-org" {
 `
 
 func generateConfig(valuesFile string, dryRun bool, path string) error {
-
 	var values Values
 	v, err := os.ReadFile(valuesFile)
 	if err != nil {
@@ -285,7 +285,7 @@ func WriteK8sConfig(values Values, dryRun bool, dest string) error {
 	} else if dest != "" {
 		var err error
 		k8sPath = path.Join(dest, "dogfood/kubernetes/tooling/", values.Name)
-		err = os.MkdirAll(k8sPath, 0755)
+		err = os.MkdirAll(k8sPath, 0o755)
 		if err != nil {
 			return errors.Wrap(err, "create app directory")
 		}

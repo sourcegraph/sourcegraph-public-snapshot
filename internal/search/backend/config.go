@@ -127,7 +127,6 @@ func (c *ConfigFingerprint) ChangesSince(other *ConfigFingerprint) time.Time {
 	}
 
 	if !older.sameConfig(newer) {
-
 		// Different site configuration could have changed the set of
 		// repositories we need to index. Load everything.
 		return time.Time{}

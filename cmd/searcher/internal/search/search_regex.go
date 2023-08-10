@@ -285,9 +285,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 	}
 	defer cancel()
 
-	var (
-		files = zf.Files
-	)
+	files := zf.Files
 
 	if rg.re == nil || (patternMatchesPaths && !patternMatchesContent) {
 		// Fast path for only matching file paths (or with a nil pattern, which matches all files,

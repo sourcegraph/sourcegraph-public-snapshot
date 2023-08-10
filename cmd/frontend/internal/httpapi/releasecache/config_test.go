@@ -81,7 +81,8 @@ func TestParseSiteConfig(t *testing.T) {
 						},
 					},
 				},
-			}} {
+			},
+		} {
 			t.Run(name, func(t *testing.T) {
 				config, err := parseSiteConfig(&conf.Unified{SiteConfiguration: tc})
 				assert.Nil(t, config)

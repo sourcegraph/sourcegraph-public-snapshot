@@ -361,7 +361,8 @@ func TestRewirer_Rewire(t *testing.T) {
 					OwnedByBatchChange: testBatchChangeID + 1,
 					// Now should be attached to both btypes.
 					AttachedTo: []int64{testBatchChangeID + 1, testBatchChangeID},
-				}},
+				},
+			},
 		},
 		{
 			name: "update branch spec",

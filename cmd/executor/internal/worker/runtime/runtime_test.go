@@ -234,7 +234,7 @@ contexts:
 current-context: foo-context
 kind: Config
 `
-	err = os.WriteFile(tempFile.Name(), []byte(content), 0644)
+	err = os.WriteFile(tempFile.Name(), []byte(content), 0o644)
 	require.NoError(t, err)
 
 	r, err := runtime.New(

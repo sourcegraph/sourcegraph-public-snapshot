@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -26,7 +27,7 @@ type ExtSvcQueryProcessor struct {
 func (d ExtSvcQueryProcessor) Process(ctx context.Context, payload Limit, dir string) {
 	externalServices, err := d.db.ExternalServices().List(
 		ctx,
-		database.ExternalServicesListOptions{LimitOffset: &database.LimitOffset{Limit: payload.getOrDefault(DefaultLimit)}},
+		database.ExternalServicesListOptions{LimitOffset: &dbtypes.LimitOffset{Limit: payload.getOrDefault(DefaultLimit)}},
 	)
 	if err != nil {
 		d.logger.Error("error during fetching external services from the DB", log.Error(err))
@@ -50,7 +51,7 @@ func (d ExtSvcQueryProcessor) Process(ctx context.Context, payload Limit, dir st
 	}
 
 	outputFile := path.Join(dir, "db-external-services.txt")
-	err = os.WriteFile(outputFile, bytes, 0644)
+	err = os.WriteFile(outputFile, bytes, 0o644)
 	if err != nil {
 		d.logger.Error("error writing to file", log.Error(err), log.String("filePath", outputFile))
 	}
@@ -111,7 +112,7 @@ type ExtSvcReposQueryProcessor struct {
 func (e ExtSvcReposQueryProcessor) Process(ctx context.Context, payload Limit, dir string) {
 	externalServiceRepos, err := e.db.ExternalServices().ListRepos(
 		ctx,
-		database.ExternalServiceReposListOptions{LimitOffset: &database.LimitOffset{Limit: payload.getOrDefault(DefaultLimit)}},
+		database.ExternalServiceReposListOptions{LimitOffset: &dbtypes.LimitOffset{Limit: payload.getOrDefault(DefaultLimit)}},
 	)
 	if err != nil {
 		e.logger.Error("error during fetching external service repos from the DB", log.Error(err))
@@ -125,7 +126,7 @@ func (e ExtSvcReposQueryProcessor) Process(ctx context.Context, payload Limit, d
 	}
 
 	outputFile := path.Join(dir, "db-external-service-repos.txt")
-	err = os.WriteFile(outputFile, bytes, 0644)
+	err = os.WriteFile(outputFile, bytes, 0o644)
 	if err != nil {
 		e.logger.Error("error writing to file", log.Error(err), log.String("filePath", outputFile))
 	}

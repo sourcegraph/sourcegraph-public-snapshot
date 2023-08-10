@@ -17,9 +17,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var ErrInvalidToken = errors.New("buildkite token is invalid")
-var ErrInvalidHeader = errors.New("Header of request is invalid")
-var ErrUnwantedEvent = errors.New("Unwanted event received")
+var (
+	ErrInvalidToken  = errors.New("buildkite token is invalid")
+	ErrInvalidHeader = errors.New("Header of request is invalid")
+	ErrUnwantedEvent = errors.New("Unwanted event received")
+)
 
 var nowFunc = time.Now
 

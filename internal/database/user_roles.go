@@ -203,7 +203,7 @@ func (r *userRoleStore) BulkAssignRolesToUser(ctx context.Context, opts BulkAssi
 		sqlf.Join(userRoleColumns, ", "),
 	)
 
-	var scanUserRoles = basestore.NewSliceScanner(scanUserRole)
+	scanUserRoles := basestore.NewSliceScanner(scanUserRole)
 	_, err := scanUserRoles(r.Query(ctx, q))
 	if err != nil {
 		// If there are no rows returned, it means that the user has already being assigned the role.
@@ -238,7 +238,7 @@ func (r *userRoleStore) BulkAssignSystemRolesToUser(ctx context.Context, opts Bu
 		sqlf.Join(userRoleColumns, ", "),
 	)
 
-	var scanUserRoles = basestore.NewSliceScanner(scanUserRole)
+	scanUserRoles := basestore.NewSliceScanner(scanUserRole)
 	_, err := scanUserRoles(r.Query(ctx, q))
 	if err != nil {
 		// If there are no rows returned, it means that the user has already being assigned the role.
@@ -427,7 +427,7 @@ func (r *userRoleStore) get(ctx context.Context, cond *sqlf.Query) ([]*types.Use
 		conds,
 	)
 
-	var scanUserRoles = basestore.NewSliceScanner(scanUserRole)
+	scanUserRoles := basestore.NewSliceScanner(scanUserRole)
 	return scanUserRoles(r.Query(ctx, q))
 }
 
@@ -444,7 +444,7 @@ func (r *userRoleStore) SetRolesForUser(ctx context.Context, opts SetRolesForUse
 		}
 
 		// We create a map of roles for easy lookup.
-		var userRolesMap = make(map[int32]int, len(userRoles))
+		userRolesMap := make(map[int32]int, len(userRoles))
 		for _, userRole := range userRoles {
 			userRolesMap[userRole.RoleID] = 1
 		}

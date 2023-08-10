@@ -74,7 +74,6 @@ func genJwtToken(appID string, keyPath string) (string, error) {
 		return "", errors.Wrap(err, "Failed to create token.")
 	}
 	return jwtString, nil
-
 }
 
 func getInstallAccessToken(ctx context.Context, ghc *github.Client) (*string, error) {

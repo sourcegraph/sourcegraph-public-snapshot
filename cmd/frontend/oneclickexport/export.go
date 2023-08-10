@@ -28,8 +28,7 @@ type DataExporter struct {
 	dbProcessors     map[string]Processor[Limit]
 }
 
-type ConfigRequest struct {
-}
+type ConfigRequest struct{}
 
 type DBQueryRequest struct {
 	TableName string `json:"tableName"`

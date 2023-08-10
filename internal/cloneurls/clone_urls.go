@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -51,7 +52,7 @@ func RepoSourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL 
 			extsvc.KindPhabricator,
 			extsvc.KindOther,
 		},
-		LimitOffset: &database.LimitOffset{
+		LimitOffset: &dbtypes.LimitOffset{
 			Limit: 50, // The number is randomly chosen
 		},
 	}

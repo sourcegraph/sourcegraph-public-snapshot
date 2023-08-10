@@ -32,7 +32,7 @@ func TestAutocompleteMembersSearch(t *testing.T) {
 	orgMembers.AutocompleteMembersSearchFunc.SetDefaultReturn(autocompleteResults, nil)
 
 	db := database.NewMockDB()
-	//db.OrgsFunc.SetDefaultReturn(orgs)
+	// db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 

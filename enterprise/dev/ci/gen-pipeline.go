@@ -22,9 +22,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 )
 
-var preview bool
-var wantYaml bool
-var docs bool
+var (
+	preview  bool
+	wantYaml bool
+	docs     bool
+)
 
 func init() {
 	flag.BoolVar(&preview, "preview", false, "Preview the pipeline steps")
@@ -45,7 +47,7 @@ func main() {
 		log.SentrySink{
 			ClientOptions: sentry.ClientOptions{
 				Dsn:        os.Getenv("CI_SENTRY_DSN"),
-				SampleRate: 1, //send all
+				SampleRate: 1, // send all
 			},
 		},
 	))

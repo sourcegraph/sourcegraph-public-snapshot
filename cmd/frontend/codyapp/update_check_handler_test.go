@@ -52,7 +52,7 @@ func TestAppVersionPlatformFormat(t *testing.T) {
 }
 
 func TestReadAppClientVersion(t *testing.T) {
-	var tt = []struct {
+	tt := []struct {
 		Name    string
 		Valid   bool
 		Target  string
@@ -94,7 +94,7 @@ func TestReadAppClientVersion(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.Name, func(t *testing.T) {
-			var v = url.Values{}
+			v := url.Values{}
 			v.Add("target", tc.Target)
 			v.Add("arch", tc.Arch)
 
@@ -113,7 +113,7 @@ func TestReadAppClientVersion(t *testing.T) {
 }
 
 func TestAppUpdateCheckHandler(t *testing.T) {
-	var resolver = StaticManifestResolver{
+	resolver := StaticManifestResolver{
 		Manifest: AppUpdateManifest{
 			Version: "3023.5.8", // set the year part of the version FAR ahead so that there is always a version to update to
 			Notes:   "This is a test",
@@ -143,7 +143,7 @@ func TestAppUpdateCheckHandler(t *testing.T) {
 		}
 	})
 	t.Run("with static manifest resolver, and older version", func(t *testing.T) {
-		var clientVersion = AppVersion{
+		clientVersion := AppVersion{
 			Target: "unknown-linux-gnu",
 			// this version has to be higher than 2023.6.13 since versions before that are not allowed to update!
 			Version: "2023.8.23+old.1234",
@@ -249,12 +249,11 @@ func TestGCSResolver(t *testing.T) {
 			t.Errorf("%s platform has an empty url", keyPlatform)
 		}
 	}
-
 }
 
 func clientVersionRequest(t *testing.T, target, arch, version string) (*http.Request, error) {
 	t.Helper()
-	var v = url.Values{}
+	v := url.Values{}
 	v.Add("target", target)
 	v.Add("arch", arch)
 	reqURL, err := url.Parse("http://localhost")

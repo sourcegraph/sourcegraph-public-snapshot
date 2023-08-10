@@ -68,7 +68,6 @@ func newExecutorQueuesHandler(
 			if _, err := w.Write([]byte("ok")); err != nil {
 				logger.Error("failed to test authentication", log.Error(err))
 			}
-
 		})
 		testRouter.Use(withInternalActor, executorAuth)
 

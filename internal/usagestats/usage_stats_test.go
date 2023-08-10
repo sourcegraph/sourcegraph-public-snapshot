@@ -639,7 +639,7 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 			IntegrationUserCount: 0,
 		},
 		{
-			StartTime: time.Date(2018, 3, 04, 0, 0, 0, 0, time.UTC),
+			StartTime: time.Date(2018, 3, 0o4, 0, 0, 0, 0, time.UTC),
 		},
 	}
 

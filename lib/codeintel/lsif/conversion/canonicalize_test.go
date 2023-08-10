@@ -8,8 +8,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
 )
 
-var newIDSet = datastructures.IDSetWith
-var newIDSetMap = datastructures.DefaultIDSetMapWith
+var (
+	newIDSet    = datastructures.IDSetWith
+	newIDSetMap = datastructures.DefaultIDSetMapWith
+)
 
 type idSet = datastructures.IDSet
 

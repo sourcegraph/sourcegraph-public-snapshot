@@ -15,8 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type FinishFunc func(ctx context.Context, store *basestore.Store, maybeErr error) error
-type FinishNFunc func(ctx context.Context, store *basestore.Store, maybeErr map[int32]error) error
+type (
+	FinishFunc  func(ctx context.Context, store *basestore.Store, maybeErr error) error
+	FinishNFunc func(ctx context.Context, store *basestore.Store, maybeErr map[int32]error) error
+)
 
 // PersistentRepoIterator represents a durable (persisted) iterator over a set of repositories. This iteration is not
 // concurrency safe and only one consumer should have access to this resource at a time.

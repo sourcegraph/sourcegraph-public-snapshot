@@ -76,8 +76,7 @@ mutation setUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) 
 		"verified": verified,
 	}
 	var resp struct {
-		Data struct {
-		} `json:"data"`
+		Data struct{} `json:"data"`
 	}
 	err := c.GraphQL("", query, variables, &resp)
 	if err != nil {

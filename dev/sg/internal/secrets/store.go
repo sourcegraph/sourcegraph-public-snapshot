@@ -85,7 +85,7 @@ func (s *Store) Write(w io.Writer) error {
 
 // SaveFile persists in a file the content of the store.
 func (s *Store) SaveFile() error {
-	f, err := os.OpenFile(s.filepath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	f, err := os.OpenFile(s.filepath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		return err
 	}
@@ -149,7 +149,6 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret, fallback
 
 	// Failed to get the secret normally, so lets try getting it with the fallback if it exists
 	if err != nil && len(fallbacks) > 0 {
-
 		for _, fallback := range fallbacks {
 			val, fallbackErr := fallback(ctx)
 

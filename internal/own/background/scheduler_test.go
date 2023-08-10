@@ -53,7 +53,6 @@ func TestOwnRepoIndexSchedulerJob_JobsAutoIndex(t *testing.T) {
 			verifyCount(t, ctx, db, job.jobType.Name, wantJobCountByName[job.jobType.Name])
 		})
 	}
-
 }
 
 func TestOwnRepoIndexSchedulerJob_AnalyticsEnabled(t *testing.T) {

@@ -48,7 +48,6 @@ func (l *LimitJob) Run(ctx context.Context, clients job.RuntimeClients, s stream
 		err = nil
 	}
 	return alert, err
-
 }
 
 func (l *LimitJob) Name() string {

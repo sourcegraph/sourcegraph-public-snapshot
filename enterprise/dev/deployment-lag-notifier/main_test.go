@@ -70,7 +70,6 @@ func duration(s string) time.Duration {
 }
 
 func TestCommitTooOld(t *testing.T) {
-
 	tt := []struct {
 		Name      string
 		Current   Commit

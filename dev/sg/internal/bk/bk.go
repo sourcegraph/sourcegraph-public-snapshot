@@ -52,7 +52,6 @@ func retrieveToken(ctx context.Context, out *std.Output) (string, error) {
 	}, func(_ context.Context) (string, error) {
 		return getTokenFromUser(out)
 	})
-
 	if err != nil {
 		return "", err
 	}

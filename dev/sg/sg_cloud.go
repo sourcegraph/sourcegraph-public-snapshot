@@ -120,7 +120,7 @@ func installCloudCLI(ctx context.Context) error {
 	}
 
 	// Make binary executable
-	if err := os.Chmod(finalInstallPath, 0755); err != nil {
+	if err := os.Chmod(finalInstallPath, 0o755); err != nil {
 		return errors.Wrap(err, "make mi2 executable")
 	}
 

@@ -12,8 +12,10 @@ type metricHooks struct {
 	metricSQLErrorTotal   prometheus.Counter
 }
 
-var _ sqlhooks.Hooks = &metricHooks{}
-var _ sqlhooks.OnErrorer = &metricHooks{}
+var (
+	_ sqlhooks.Hooks     = &metricHooks{}
+	_ sqlhooks.OnErrorer = &metricHooks{}
+)
 
 func (h *metricHooks) Before(ctx context.Context, query string, args ...any) (context.Context, error) {
 	return ctx, nil

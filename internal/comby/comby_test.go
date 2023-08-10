@@ -76,7 +76,6 @@ func TestMatchesInZip(t *testing.T) {
 	defer cancel()
 
 	files := map[string]string{
-
 		"README.md": `# Hello World
 
 Hello world example in go`,
@@ -106,7 +105,8 @@ func main() {
 				Matcher:         ".go",
 			},
 			want: `{"uri":"main.go","diff":"--- main.go\n+++ main.go\n@@ -2,6 +2,6 @@\n \n import \"fmt\"\n \n-func main() {\n+derp main() {\n \tfmt.Println(\"Hello foo\")\n }"}
-`},
+`,
+		},
 	}
 
 	for _, test := range cases {
@@ -224,7 +224,7 @@ func tempZipFromFiles(t *testing.T, files map[string]string) string {
 	}
 
 	path := filepath.Join(t.TempDir(), "test.zip")
-	if err := os.WriteFile(path, buf.Bytes(), 0600); err != nil {
+	if err := os.WriteFile(path, buf.Bytes(), 0o600); err != nil {
 		t.Fatal(err)
 	}
 

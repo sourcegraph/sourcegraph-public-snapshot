@@ -6,9 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-var (
-	pgConnectionUpdater = env.Get("PG_CONNECTION_UPDATER", "", "The postgres connection updater use for connecting to the database.")
-)
+var pgConnectionUpdater = env.Get("PG_CONNECTION_UPDATER", "", "The postgres connection updater use for connecting to the database.")
 
 // ConnectionUpdater is an interface to allow updating pgx connection config
 // before opening a new connection.

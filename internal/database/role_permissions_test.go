@@ -267,7 +267,6 @@ func TestRolePermissionGetByRoleID(t *testing.T) {
 			RoleID:       r.ID,
 			PermissionID: p.ID,
 		})
-
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -310,7 +309,6 @@ func TestRolePermissionGetByPermissionID(t *testing.T) {
 			RoleID:       r.ID,
 			PermissionID: p.ID,
 		})
-
 		if err != nil {
 			t.Fatal(err)
 		}

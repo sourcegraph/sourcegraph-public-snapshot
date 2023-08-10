@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -125,48 +125,63 @@ type changesetApplyPreviewConnectionStatsResolver struct {
 func (r *changesetApplyPreviewConnectionStatsResolver) Push() int32 {
 	return r.push
 }
+
 func (r *changesetApplyPreviewConnectionStatsResolver) Update() int32 {
 	return r.update
 }
+
 func (r *changesetApplyPreviewConnectionStatsResolver) Undraft() int32 {
 	return r.undraft
 }
+
 func (r *changesetApplyPreviewConnectionStatsResolver) Publish() int32 {
 	return r.publish
 }
+
 func (r *changesetApplyPreviewConnectionStatsResolver) PublishDraft() int32 {
 	return r.publishDraft
 }
+
 func (r *changesetApplyPreviewConnectionStatsResolver) Sync() int32 {
 	return r.sync
 }
+
 func (r *changesetApplyPreviewConnectionStatsResolver) Import() int32 {
 	return r._import
 }
+
 func (r *changesetApplyPreviewConnectionStatsResolver) Close() int32 {
 	return r.close
 }
+
 func (r *changesetApplyPreviewConnectionStatsResolver) Reopen() int32 {
 	return r.reopen
 }
+
 func (r *changesetApplyPreviewConnectionStatsResolver) Sleep() int32 {
 	return r.sleep
 }
+
 func (r *changesetApplyPreviewConnectionStatsResolver) Detach() int32 {
 	return r.detach
 }
+
 func (r *changesetApplyPreviewConnectionStatsResolver) Archive() int32 {
 	return r.archive
 }
+
 func (r *changesetApplyPreviewConnectionStatsResolver) Reattach() int32 {
 	return r.reattach
 }
+
 func (r *changesetApplyPreviewConnectionStatsResolver) Added() int32 {
 	return r.added
 }
+
 func (r *changesetApplyPreviewConnectionStatsResolver) Modified() int32 {
 	return r.modified
 }
+
 func (r *changesetApplyPreviewConnectionStatsResolver) Removed() int32 {
 	return r.removed
 }
@@ -314,7 +329,7 @@ func (rmf *rewirerMappingsFacade) compute(ctx context.Context, opts store.GetRew
 }
 
 type rewirerMappingPageOpts struct {
-	*database.LimitOffset
+	*dbtypes.LimitOffset
 	Op *btypes.ReconcilerOperation
 }
 

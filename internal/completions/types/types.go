@@ -8,8 +8,10 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-const HUMAN_MESSAGE_SPEAKER = "human"
-const ASISSTANT_MESSAGE_SPEAKER = "assistant"
+const (
+	HUMAN_MESSAGE_SPEAKER     = "human"
+	ASISSTANT_MESSAGE_SPEAKER = "assistant"
+)
 
 type Message struct {
 	Speaker string `json:"speaker"`

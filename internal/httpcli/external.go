@@ -27,8 +27,10 @@ var tlsExternalConfig struct {
 	*schema.TlsExternal
 }
 
-var outboundRequestLogLimit atomic.Int32
-var redactOutboundRequestHeaders atomic.Bool
+var (
+	outboundRequestLogLimit      atomic.Int32
+	redactOutboundRequestHeaders atomic.Bool
+)
 
 // SetTLSExternalConfig is called by the conf package whenever TLSExternalConfig changes.
 // This is needed to avoid circular imports.

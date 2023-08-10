@@ -127,20 +127,23 @@ func TestReadSiteConfigFile(t *testing.T) {
 		Files []string
 		Want  string
 		Err   string
-	}{{
-		Name:  "one",
-		Files: []string{`{"hello": "world"}`},
-		Want:  `{"hello": "world"}`,
-	}, {
-		Name: "two",
-		Files: []string{
-			`// leading comment
+	}{
+		{
+			Name:  "one",
+			Files: []string{`{"hello": "world"}`},
+			Want:  `{"hello": "world"}`,
+		},
+		{
+			Name: "two",
+			Files: []string{
+				`// leading comment
 {
   // first comment
   "first": "file",
 } // trailing comment
-`, `{"second": "file"}`},
-		Want: `// merged SITE_CONFIG_FILE
+`, `{"second": "file"}`,
+			},
+			Want: `// merged SITE_CONFIG_FILE
 {
   // BEGIN $tmp/0.json
   "first": "file",
@@ -149,7 +152,7 @@ func TestReadSiteConfigFile(t *testing.T) {
   "second": "file",
   // END $tmp/1.json
 }`,
-	},
+		},
 		{
 			Name: "three",
 			Files: []string{
@@ -162,7 +165,8 @@ func TestReadSiteConfigFile(t *testing.T) {
 }`,
 				`{
   "observability.alerts": [ {"level":"warning"}, { "level": "critical"} ]
-}`},
+}`,
+			},
 			Want: `// merged SITE_CONFIG_FILE
 {
   // BEGIN $tmp/0.json
@@ -199,7 +203,8 @@ func TestReadSiteConfigFile(t *testing.T) {
 				"{",
 			},
 			Err: "CloseBraceExpected",
-		}}
+		},
+	}
 
 	for _, c := range cases {
 		t.Run(c.Name, func(t *testing.T) {
@@ -207,7 +212,7 @@ func TestReadSiteConfigFile(t *testing.T) {
 			for i, b := range c.Files {
 				p := filepath.Join(dir, fmt.Sprintf("%d.json", i))
 				paths = append(paths, p)
-				if err := os.WriteFile(p, []byte(b), 0600); err != nil {
+				if err := os.WriteFile(p, []byte(b), 0o600); err != nil {
 					t.Fatal(err)
 				}
 			}

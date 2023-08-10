@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -1189,28 +1190,32 @@ func TestPermsStore_SetRepoPerms(t *testing.T) {
 		},
 		{
 			name: "add",
-			updates: []testUpdate{{
-				repoID: 1,
-				users: []authz.UserIDWithExternalAccountID{{
-					UserID:            1,
-					ExternalAccountID: 1,
-				}}}, {
-				repoID: 2,
-				users: []authz.UserIDWithExternalAccountID{{
-					UserID:            1,
-					ExternalAccountID: 1,
+			updates: []testUpdate{
+				{
+					repoID: 1,
+					users: []authz.UserIDWithExternalAccountID{{
+						UserID:            1,
+						ExternalAccountID: 1,
+					}},
 				}, {
-					UserID:            2,
-					ExternalAccountID: 2,
-				}}}, {
-				repoID: 3,
-				users: []authz.UserIDWithExternalAccountID{{
-					UserID:            3,
-					ExternalAccountID: 3,
+					repoID: 2,
+					users: []authz.UserIDWithExternalAccountID{{
+						UserID:            1,
+						ExternalAccountID: 1,
+					}, {
+						UserID:            2,
+						ExternalAccountID: 2,
+					}},
 				}, {
-					UserID:            4,
-					ExternalAccountID: 4,
-				}}},
+					repoID: 3,
+					users: []authz.UserIDWithExternalAccountID{{
+						UserID:            3,
+						ExternalAccountID: 3,
+					}, {
+						UserID:            4,
+						ExternalAccountID: 4,
+					}},
+				},
 			},
 			expectedPerms: []authz.Permission{
 				{RepoID: 1, UserID: 1, ExternalAccountID: 1, Source: authz.SourceRepoSync},
@@ -1239,36 +1244,41 @@ func TestPermsStore_SetRepoPerms(t *testing.T) {
 		},
 		{
 			name: "add and update",
-			updates: []testUpdate{{
-				repoID: 1,
-				users: []authz.UserIDWithExternalAccountID{{
-					UserID:            1,
-					ExternalAccountID: 1,
-				}}}, {
-				repoID: 1,
-				users: []authz.UserIDWithExternalAccountID{{
-					UserID:            2,
-					ExternalAccountID: 2,
+			updates: []testUpdate{
+				{
+					repoID: 1,
+					users: []authz.UserIDWithExternalAccountID{{
+						UserID:            1,
+						ExternalAccountID: 1,
+					}},
 				}, {
-					UserID:            3,
-					ExternalAccountID: 3,
-				}}}, {
-				repoID: 2,
-				users: []authz.UserIDWithExternalAccountID{{
-					UserID:            1,
-					ExternalAccountID: 1,
+					repoID: 1,
+					users: []authz.UserIDWithExternalAccountID{{
+						UserID:            2,
+						ExternalAccountID: 2,
+					}, {
+						UserID:            3,
+						ExternalAccountID: 3,
+					}},
 				}, {
-					UserID:            2,
-					ExternalAccountID: 2,
-				}}}, {
-				repoID: 2,
-				users: []authz.UserIDWithExternalAccountID{{
-					UserID:            3,
-					ExternalAccountID: 3,
+					repoID: 2,
+					users: []authz.UserIDWithExternalAccountID{{
+						UserID:            1,
+						ExternalAccountID: 1,
+					}, {
+						UserID:            2,
+						ExternalAccountID: 2,
+					}},
 				}, {
-					UserID:            4,
-					ExternalAccountID: 4,
-				}}},
+					repoID: 2,
+					users: []authz.UserIDWithExternalAccountID{{
+						UserID:            3,
+						ExternalAccountID: 3,
+					}, {
+						UserID:            4,
+						ExternalAccountID: 4,
+					}},
+				},
 			},
 			expectedPerms: []authz.Permission{
 				{RepoID: 1, UserID: 2, ExternalAccountID: 2, Source: authz.SourceRepoSync},
@@ -1312,7 +1322,8 @@ func TestPermsStore_SetRepoPerms(t *testing.T) {
 				}, {
 					UserID:            3,
 					ExternalAccountID: 3,
-				}}}, {
+				}},
+			}, {
 				repoID: 1,
 				users:  []authz.UserIDWithExternalAccountID{},
 			}},
@@ -2378,7 +2389,8 @@ func TestPermsStore_GrantPendingPermissions(t *testing.T) {
 								RepoID: 2,
 								Perm:   authz.Read,
 							},
-						}, {
+						},
+						{
 							accounts: &extsvc.Accounts{
 								ServiceType: authz.SourcegraphServiceType,
 								ServiceID:   authz.SourcegraphServiceID,
@@ -3983,7 +3995,7 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 			Name:   "TestPagination",
 			UserID: 555,
 			Args: &ListUserPermissionsArgs{
-				PaginationArgs: &PaginationArgs{First: pointers.Ptr(2), After: pointers.Ptr("'public_repo_5'"), OrderBy: OrderBy{{Field: "name"}}},
+				PaginationArgs: &dbtypes.PaginationArgs{First: pointers.Ptr(2), After: pointers.Ptr("'public_repo_5'"), OrderBy: dbtypes.OrderBy{{Field: "name"}}},
 			},
 			WantResults: []*listUserPermissionsResult{
 				{
@@ -4168,7 +4180,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			Name:   "TestPaginationWithPrivateRepo",
 			RepoID: 1,
 			Args: &ListRepoPermissionsArgs{
-				PaginationArgs: &PaginationArgs{First: pointers.Ptr(1), After: pointers.Ptr("555"), OrderBy: OrderBy{{Field: "users.id"}}, Ascending: true},
+				PaginationArgs: &dbtypes.PaginationArgs{First: pointers.Ptr(1), After: pointers.Ptr("555"), OrderBy: dbtypes.OrderBy{{Field: "users.id"}}, Ascending: true},
 			},
 			WantResults: []*listRepoPermissionsResult{
 				{

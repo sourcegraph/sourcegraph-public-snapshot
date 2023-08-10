@@ -51,7 +51,8 @@ func TestJobQueue(t *testing.T) {
 		SearchJob: SearchJob{
 			SeriesID:    "job 2",
 			SearchQuery: "our search 2",
-			PersistMode: string(store.RecordMode)},
+			PersistMode: string(store.RecordMode),
+		},
 	})
 	if err != nil {
 		t.Fatal(err)

@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -76,7 +77,7 @@ type OwnershipStatsStore interface {
 	// To find ownership for the whole instance, use empty TreeLocationOpts.
 	// To find ownership for the repo root, only specify RepoID in TreeLocationOpts.
 	// To find ownership for specific file tree, specify RepoID and Path in TreeLocationOpts.
-	QueryIndividualCounts(context.Context, TreeLocationOpts, *LimitOffset) ([]PathCodeownersCounts, error)
+	QueryIndividualCounts(context.Context, TreeLocationOpts, *dbtypes.LimitOffset) ([]PathCodeownersCounts, error)
 
 	// QueryAggregateCounts looks up ownership aggregate data for a file tree. At
 	// this point these include total count of files that are owned via CODEOWNERS
@@ -216,7 +217,7 @@ var treeCountsScanner = basestore.NewSliceScanner(func(s dbutil.Scanner) (PathCo
 	return cs, err
 })
 
-func (s *ownershipStats) QueryIndividualCounts(ctx context.Context, opts TreeLocationOpts, limitOffset *LimitOffset) ([]PathCodeownersCounts, error) {
+func (s *ownershipStats) QueryIndividualCounts(ctx context.Context, opts TreeLocationOpts, limitOffset *dbtypes.LimitOffset) ([]PathCodeownersCounts, error) {
 	qs := []*sqlf.Query{sqlf.Sprintf(aggregateOwnershipFmtstr, opts.Path)}
 	if repoID := opts.RepoID; repoID != 0 {
 		qs = append(qs, sqlf.Sprintf("AND p.repo_id = %s", repoID))

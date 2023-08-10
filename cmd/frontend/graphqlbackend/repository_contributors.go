@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -22,7 +23,8 @@ type repositoryContributorsArgs struct {
 func (r *RepositoryResolver) Contributors(args *struct {
 	repositoryContributorsArgs
 	graphqlutil.ConnectionResolverArgs
-}) (*graphqlutil.ConnectionResolver[*repositoryContributorResolver], error) {
+},
+) (*graphqlutil.ConnectionResolver[*repositoryContributorResolver], error) {
 	connectionStore := &repositoryContributorConnectionStore{
 		db:   r.db,
 		args: &args.repositoryContributorsArgs,
@@ -47,12 +49,12 @@ type repositoryContributorConnectionStore struct {
 	err     error
 }
 
-func (s *repositoryContributorConnectionStore) MarshalCursor(node *repositoryContributorResolver, _ database.OrderBy) (*string, error) {
+func (s *repositoryContributorConnectionStore) MarshalCursor(node *repositoryContributorResolver, _ dbtypes.OrderBy) (*string, error) {
 	position := strconv.Itoa(node.index)
 	return &position, nil
 }
 
-func (s *repositoryContributorConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *repositoryContributorConnectionStore) UnmarshalCursor(cursor string, _ dbtypes.OrderBy) (*string, error) {
 	return &cursor, nil
 }
 
@@ -62,7 +64,7 @@ func (s *repositoryContributorConnectionStore) ComputeTotal(ctx context.Context)
 	return &num, err
 }
 
-func (s *repositoryContributorConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*repositoryContributorResolver, error) {
+func (s *repositoryContributorConnectionStore) ComputeNodes(ctx context.Context, args *dbtypes.PaginationArgs) ([]*repositoryContributorResolver, error) {
 	results, err := s.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -108,7 +110,7 @@ func (s *repositoryContributorConnectionStore) compute(ctx context.Context) ([]*
 	return s.results, s.err
 }
 
-func OffsetBasedCursorSlice[T any](nodes []T, args *database.PaginationArgs) ([]T, int, error) {
+func OffsetBasedCursorSlice[T any](nodes []T, args *dbtypes.PaginationArgs) ([]T, int, error) {
 	start := 0
 	end := 0
 	totalFloat := float64(len(nodes))

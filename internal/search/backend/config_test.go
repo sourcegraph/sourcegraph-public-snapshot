@@ -172,7 +172,6 @@ func TestSiteConfigFingerprint_RoundTrip(t *testing.T) {
 			},
 		},
 		{
-
 			transportName: "HTTP headers",
 			roundTripper: func(t *testing.T, original *ConfigFingerprint) *ConfigFingerprint {
 				echoHandler := func(w http.ResponseWriter, r *http.Request) {

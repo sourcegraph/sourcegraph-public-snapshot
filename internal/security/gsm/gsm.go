@@ -40,7 +40,7 @@ func GetClient(ctx context.Context) (GSMClient, error) {
 // the secrets you want to use have been fetched.
 func NewSecretSet(ctx context.Context, client GSMClient, projectID string, requestedSecrets []SecretRequest) (SecretSet, error) {
 	var errs error
-	var secrets = make(SecretSet)
+	secrets := make(SecretSet)
 
 	for _, rs := range requestedSecrets {
 		value, err := getSecretFromGSM(ctx, client, rs.Name, projectID)
@@ -69,7 +69,6 @@ func getSecretFromGSM(ctx context.Context, client GSMClient, name string, projec
 	}
 
 	result, err := client.AccessSecretVersion(ctx, accessRequest)
-
 	if err != nil {
 		return nil, err
 	}

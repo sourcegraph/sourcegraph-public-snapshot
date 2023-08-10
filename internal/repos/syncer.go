@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -376,7 +377,7 @@ func (s *Syncer) syncRepo(
 		//
 		// This permits lazy-syncing of package repos in on-prem instances as well as in cloud.
 		OnlyCloudDefault: !codehost.IsPackageHost(),
-		LimitOffset:      &database.LimitOffset{Limit: 1},
+		LimitOffset:      &dbtypes.LimitOffset{Limit: 1},
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "listing external services")

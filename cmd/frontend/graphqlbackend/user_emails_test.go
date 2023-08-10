@@ -268,7 +268,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 }
 
 func TestPrimaryEmail(t *testing.T) {
-	var primaryEmailQuery = `query hasPrimaryEmail($id: ID!){
+	primaryEmailQuery := `query hasPrimaryEmail($id: ID!){
 		node(id: $id) {
 			... on User {
 				primaryEmail {

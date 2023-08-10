@@ -197,7 +197,6 @@ func TestParseAddress(t *testing.T) {
 			if diff := cmp.Diff(tc.expected.String(), u.String()); diff != "" {
 				t.Fatalf("unexpected diff (-want +got):\n%s", diff)
 			}
-
 		})
 	}
 }

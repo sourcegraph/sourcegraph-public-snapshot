@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -45,7 +46,7 @@ type ConfStore interface {
 	//
 	// 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
 	// responsible for ensuring this or that the response never makes it to a user.
-	ListSiteConfigs(context.Context, *PaginationArgs) ([]*SiteConfig, error)
+	ListSiteConfigs(context.Context, *dbtypes.PaginationArgs) ([]*SiteConfig, error)
 
 	// GetSiteConfig will return the total count of all configs of type "site".
 	//
@@ -164,7 +165,7 @@ WHERE
 (%s)
 `
 
-func (s *confStore) ListSiteConfigs(ctx context.Context, paginationArgs *PaginationArgs) ([]*SiteConfig, error) {
+func (s *confStore) ListSiteConfigs(ctx context.Context, paginationArgs *dbtypes.PaginationArgs) ([]*SiteConfig, error) {
 	where := []*sqlf.Query{
 		sqlf.Sprintf("(prev_redacted_contents IS NULL OR redacted_contents != prev_redacted_contents)"),
 		sqlf.Sprintf("redacted_contents IS NOT NULL"),

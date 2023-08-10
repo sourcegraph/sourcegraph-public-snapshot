@@ -42,7 +42,6 @@ type clusterScanner struct {
 
 // Starts a cluster scanner with the specified client and consumer. Does not block.
 func startClusterScannerWithClient(client *kubernetes.Clientset, ns string, consumer ScanConsumer) error {
-
 	cs := &clusterScanner{
 		client:    client.CoreV1(),
 		namespace: ns,
@@ -116,7 +115,6 @@ func (cs *clusterScanner) watchEndpointEvents(ctx context.Context) (bool, error)
 // scanCluster looks for endpoints belonging to services that have annotation sourcegraph.prometheus/scrape=true.
 // It derives the appropriate port from the prometheus.io/port annotation.
 func (cs *clusterScanner) scanCluster(ctx context.Context) {
-
 	// Get services from the current namespace
 	services, err := cs.client.Services(cs.namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {

@@ -102,7 +102,7 @@ func (checker *AppUpdateChecker) Handler() http.HandlerFunc {
 
 		checker.logger.Debug("found client platform in App Update Manifest", log.Object("platform", log.String("signature", platformLoc.Signature), log.String("url", platformLoc.URL)))
 
-		var notes = "A new Sourcegraph version is available! For more information see https://github.com/sourcegraph/sourcegraph/releases"
+		notes := "A new Sourcegraph version is available! For more information see https://github.com/sourcegraph/sourcegraph/releases"
 		if len(manifest.Notes) > 0 {
 			notes = manifest.Notes
 		}
@@ -134,7 +134,7 @@ func (checker *AppUpdateChecker) Handler() http.HandlerFunc {
 
 func readClientAppVersion(reqURL *url.URL) *AppVersion {
 	queryValues := reqURL.Query()
-	var appClientVersion = AppVersion{}
+	appClientVersion := AppVersion{}
 	for key, attr := range map[string]*string{
 		"target":          &appClientVersion.Target,
 		"current_version": &appClientVersion.Version,
@@ -181,7 +181,7 @@ func (checker *AppNoopUpdateChecker) Handler() http.HandlerFunc {
 
 func AppUpdateHandler(logger log.Logger) http.HandlerFunc {
 	// We store the Sourcegraph App manifest in a different GCS bucket, since buckets are globally unique we use different names
-	var bucket = ManifestBucket
+	bucket := ManifestBucket
 	if deploy.IsDev(deploy.Type()) {
 		bucket = ManifestBucketDev
 	}

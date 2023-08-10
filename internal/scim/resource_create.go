@@ -13,5 +13,4 @@ func (h *ResourceHandler) Create(r *http.Request, attributes scim.ResourceAttrib
 	}
 
 	return h.service.Create(r.Context(), attributes)
-
 }

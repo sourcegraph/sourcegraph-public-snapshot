@@ -12,7 +12,7 @@ import (
 )
 
 func TestLatestVersionHandler(t *testing.T) {
-	var resolver = StaticManifestResolver{
+	resolver := StaticManifestResolver{
 		Manifest: AppUpdateManifest{
 			Version: "3023.5.8", // set the year part of the version FAR ahead so that there is always a version to update to
 			Notes:   "This is a test",
@@ -34,7 +34,7 @@ func TestLatestVersionHandler(t *testing.T) {
 		},
 	}
 
-	var queries = []struct {
+	queries := []struct {
 		target      string
 		arch        string
 		expectedURL string

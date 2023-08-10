@@ -236,8 +236,10 @@ func swapNodePtr(other Node, newNode *sitter.Node) *Node {
 	return &ret
 }
 
-var unrecognizedFileExtensionError = errors.New("unrecognized file extension")
-var UnsupportedLanguageError = errors.New("unsupported language")
+var (
+	unrecognizedFileExtensionError = errors.New("unrecognized file extension")
+	UnsupportedLanguageError       = errors.New("unsupported language")
+)
 
 // Parses a file and returns info about it.
 func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCommitPath) (*Node, error) {

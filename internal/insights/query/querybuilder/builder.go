@@ -286,8 +286,10 @@ func ComputeInsightCommandQuery(query BasicQuery, mapType MapType, gitserverClie
 	return ComputeInsightQuery(searchquery.AddRegexpField(q.Parameters, searchquery.FieldContent, fmt.Sprintf("%s(%s -> $%s)", insightsComputeCommand, pattern, mapType))), nil
 }
 
-type BasicQuery string
-type ComputeInsightQuery string
+type (
+	BasicQuery          string
+	ComputeInsightQuery string
+)
 
 // These string functions just exist to provide a cleaner interface for clients
 func (q BasicQuery) String() string {

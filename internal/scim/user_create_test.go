@@ -154,7 +154,6 @@ func TestUserResourceHandler_Create(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 // createUserResourceAttributes creates a scim.ResourceAttributes object with the given username.

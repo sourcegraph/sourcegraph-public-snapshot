@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -127,7 +128,7 @@ func (r *schemaResolver) Repositories(ctx context.Context, args *repositoryArgs)
 
 	connectionOptions := graphqlutil.ConnectionResolverOptions{
 		MaxPageSize: &maxPageSize,
-		OrderBy:     database.OrderBy{{Field: string(ToDBRepoListColumn(orderBy))}, {Field: "id"}},
+		OrderBy:     dbtypes.OrderBy{{Field: string(ToDBRepoListColumn(orderBy))}, {Field: "id"}},
 		Ascending:   !args.Descending,
 	}
 
@@ -141,7 +142,7 @@ type repositoriesConnectionStore struct {
 	opt    database.ReposListOptions
 }
 
-func (s *repositoriesConnectionStore) MarshalCursor(node *RepositoryResolver, orderBy database.OrderBy) (*string, error) {
+func (s *repositoriesConnectionStore) MarshalCursor(node *RepositoryResolver, orderBy dbtypes.OrderBy) (*string, error) {
 	column := orderBy[0].Field
 	var value string
 
@@ -170,7 +171,7 @@ func (s *repositoriesConnectionStore) MarshalCursor(node *RepositoryResolver, or
 	return &cursor, nil
 }
 
-func (s *repositoriesConnectionStore) UnmarshalCursor(cursor string, orderBy database.OrderBy) (*string, error) {
+func (s *repositoriesConnectionStore) UnmarshalCursor(cursor string, orderBy dbtypes.OrderBy) (*string, error) {
 	repoCursor, err := UnmarshalRepositoryCursor(&cursor)
 	if err != nil {
 		return nil, err
@@ -223,7 +224,7 @@ func (s *repositoriesConnectionStore) ComputeTotal(ctx context.Context) (countpt
 	return i32ptr(int32(count)), err
 }
 
-func (s *repositoriesConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*RepositoryResolver, error) {
+func (s *repositoriesConnectionStore) ComputeNodes(ctx context.Context, args *dbtypes.PaginationArgs) ([]*RepositoryResolver, error) {
 	opt := s.opt
 	opt.PaginationArgs = args
 
@@ -278,7 +279,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			// 🚨 SECURITY: Don't allow non-admins to perform huge queries on Sourcegraph.com.
 			if isSiteAdmin := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil; !isSiteAdmin {
 				if opt2.LimitOffset == nil {
-					opt2.LimitOffset = &database.LimitOffset{Limit: 1000}
+					opt2.LimitOffset = &dbtypes.LimitOffset{Limit: 1000}
 				}
 			}
 		}

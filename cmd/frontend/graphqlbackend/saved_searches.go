@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -151,13 +152,13 @@ type savedSearchesConnectionStore struct {
 	orgID  *int32
 }
 
-func (s *savedSearchesConnectionStore) MarshalCursor(node *savedSearchResolver, _ database.OrderBy) (*string, error) {
+func (s *savedSearchesConnectionStore) MarshalCursor(node *savedSearchResolver, _ dbtypes.OrderBy) (*string, error) {
 	cursor := string(node.ID())
 
 	return &cursor, nil
 }
 
-func (s *savedSearchesConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *savedSearchesConnectionStore) UnmarshalCursor(cursor string, _ dbtypes.OrderBy) (*string, error) {
 	nodeID, err := unmarshalSavedSearchID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
@@ -178,7 +179,7 @@ func (s *savedSearchesConnectionStore) ComputeTotal(ctx context.Context) (*int32
 	return &total, nil
 }
 
-func (s *savedSearchesConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*savedSearchResolver, error) {
+func (s *savedSearchesConnectionStore) ComputeNodes(ctx context.Context, args *dbtypes.PaginationArgs) ([]*savedSearchResolver, error) {
 	allSavedSearches, err := s.db.SavedSearches().ListSavedSearchesByOrgOrUser(ctx, s.userID, s.orgID, args)
 	if err != nil {
 		return nil, err
@@ -194,7 +195,8 @@ func (s *savedSearchesConnectionStore) ComputeNodes(ctx context.Context, args *d
 
 func (r *schemaResolver) SendSavedSearchTestNotification(ctx context.Context, args *struct {
 	ID graphql.ID
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	return &EmptyResponse{}, nil
 }
 
@@ -205,7 +207,8 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 	NotifySlack bool
 	OrgID       *graphql.ID
 	UserID      *graphql.ID
-}) (*savedSearchResolver, error) {
+},
+) (*savedSearchResolver, error) {
 	var userID, orgID *int32
 	// 🚨 SECURITY: Make sure the current user has permission to create a saved search for the specified user or org.
 	if args.UserID != nil {
@@ -257,7 +260,8 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 	NotifySlack bool
 	OrgID       *graphql.ID
 	UserID      *graphql.ID
-}) (*savedSearchResolver, error) {
+},
+) (*savedSearchResolver, error) {
 	id, err := unmarshalSavedSearchID(args.ID)
 	if err != nil {
 		return nil, err
@@ -303,7 +307,8 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 
 func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 	ID graphql.ID
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	id, err := unmarshalSavedSearchID(args.ID)
 	if err != nil {
 		return nil, err

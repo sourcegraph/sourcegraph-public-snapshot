@@ -170,5 +170,4 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 			t.Errorf("Expected one build to be left over. Got %d, wanted %d", len(builds), 1)
 		}
 	})
-
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -523,14 +524,14 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 
 	testCases := []struct {
 		name                  string
-		paginationArgs        *database.PaginationArgs
+		paginationArgs        *dbtypes.PaginationArgs
 		expectedSiteConfigIDs []int32
 		// value of 0 in expectedPreviousSIteConfigIDs means nil in the test assertion.
 		expectedPreviousSiteConfigIDs []int32
 	}{
 		{
 			name: "first: 2",
-			paginationArgs: &database.PaginationArgs{
+			paginationArgs: &dbtypes.PaginationArgs{
 				First: pointers.Ptr(2),
 			},
 			// 5 is skipped because it is the same as 4.
@@ -539,7 +540,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		},
 		{
 			name: "first: 6 (exact number of items that exist in the database)",
-			paginationArgs: &database.PaginationArgs{
+			paginationArgs: &dbtypes.PaginationArgs{
 				First: pointers.Ptr(6),
 			},
 			expectedSiteConfigIDs:         []int32{6, 4, 3, 2, 1},
@@ -547,7 +548,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		},
 		{
 			name: "first: 20 (more items than what exists in the database)",
-			paginationArgs: &database.PaginationArgs{
+			paginationArgs: &dbtypes.PaginationArgs{
 				First: pointers.Ptr(20),
 			},
 			expectedSiteConfigIDs:         []int32{6, 4, 3, 2, 1},
@@ -555,7 +556,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		},
 		{
 			name: "last: 2",
-			paginationArgs: &database.PaginationArgs{
+			paginationArgs: &dbtypes.PaginationArgs{
 				Last: pointers.Ptr(2),
 			},
 			expectedSiteConfigIDs:         []int32{1, 2},
@@ -563,7 +564,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		},
 		{
 			name: "last: 6 (exact number of items that exist in the database)",
-			paginationArgs: &database.PaginationArgs{
+			paginationArgs: &dbtypes.PaginationArgs{
 				Last: pointers.Ptr(6),
 			},
 			expectedSiteConfigIDs:         []int32{1, 2, 3, 4, 6},
@@ -571,7 +572,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		},
 		{
 			name: "last: 20 (more items than what exists in the database)",
-			paginationArgs: &database.PaginationArgs{
+			paginationArgs: &dbtypes.PaginationArgs{
 				Last: pointers.Ptr(20),
 			},
 			expectedSiteConfigIDs:         []int32{1, 2, 3, 4, 6},
@@ -579,7 +580,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		},
 		{
 			name: "first: 2, after: 6",
-			paginationArgs: &database.PaginationArgs{
+			paginationArgs: &dbtypes.PaginationArgs{
 				First: pointers.Ptr(2),
 				After: toStringPtr(6),
 			},
@@ -588,7 +589,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		},
 		{
 			name: "first: 10, after: 6",
-			paginationArgs: &database.PaginationArgs{
+			paginationArgs: &dbtypes.PaginationArgs{
 				First: pointers.Ptr(10),
 				After: toStringPtr(6),
 			},
@@ -597,7 +598,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		},
 		{
 			name: "first: 2, after: 1",
-			paginationArgs: &database.PaginationArgs{
+			paginationArgs: &dbtypes.PaginationArgs{
 				First: pointers.Ptr(2),
 				After: toStringPtr(1),
 			},
@@ -606,7 +607,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		},
 		{
 			name: "last: 2, before: 2",
-			paginationArgs: &database.PaginationArgs{
+			paginationArgs: &dbtypes.PaginationArgs{
 				Last:   pointers.Ptr(2),
 				Before: toStringPtr(2),
 			},
@@ -615,7 +616,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		},
 		{
 			name: "last: 10, before: 2",
-			paginationArgs: &database.PaginationArgs{
+			paginationArgs: &dbtypes.PaginationArgs{
 				Last:   pointers.Ptr(10),
 				Before: toStringPtr(2),
 			},
@@ -624,7 +625,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		},
 		{
 			name: "last: 2, before: 6",
-			paginationArgs: &database.PaginationArgs{
+			paginationArgs: &dbtypes.PaginationArgs{
 				Last:   pointers.Ptr(2),
 				Before: toStringPtr(6),
 			},
@@ -678,44 +679,44 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 func TestModifyArgs(t *testing.T) {
 	testCases := []struct {
 		name             string
-		args             *database.PaginationArgs
-		expectedArgs     *database.PaginationArgs
+		args             *dbtypes.PaginationArgs
+		expectedArgs     *dbtypes.PaginationArgs
 		expectedModified bool
 	}{
 		{
 			name:             "first: 5 (first page)",
-			args:             &database.PaginationArgs{First: pointers.Ptr(5)},
-			expectedArgs:     &database.PaginationArgs{First: pointers.Ptr(6)},
+			args:             &dbtypes.PaginationArgs{First: pointers.Ptr(5)},
+			expectedArgs:     &dbtypes.PaginationArgs{First: pointers.Ptr(6)},
 			expectedModified: true,
 		},
 		{
 			name:             "first: 5, after: 10 (next page)",
-			args:             &database.PaginationArgs{First: pointers.Ptr(5), After: toStringPtr(10)},
-			expectedArgs:     &database.PaginationArgs{First: pointers.Ptr(6), After: toStringPtr(10)},
+			args:             &dbtypes.PaginationArgs{First: pointers.Ptr(5), After: toStringPtr(10)},
+			expectedArgs:     &dbtypes.PaginationArgs{First: pointers.Ptr(6), After: toStringPtr(10)},
 			expectedModified: true,
 		},
 		{
 			name:             "last: 5 (last page)",
-			args:             &database.PaginationArgs{Last: pointers.Ptr(5)},
-			expectedArgs:     &database.PaginationArgs{Last: pointers.Ptr(5)},
+			args:             &dbtypes.PaginationArgs{Last: pointers.Ptr(5)},
+			expectedArgs:     &dbtypes.PaginationArgs{Last: pointers.Ptr(5)},
 			expectedModified: false,
 		},
 		{
 			name:             "last: 5, before: 10 (previous page)",
-			args:             &database.PaginationArgs{Last: pointers.Ptr(5), Before: toStringPtr(10)},
-			expectedArgs:     &database.PaginationArgs{Last: pointers.Ptr(6), Before: toStringPtr(9)},
+			args:             &dbtypes.PaginationArgs{Last: pointers.Ptr(5), Before: toStringPtr(10)},
+			expectedArgs:     &dbtypes.PaginationArgs{Last: pointers.Ptr(6), Before: toStringPtr(9)},
 			expectedModified: true,
 		},
 		{
 			name:             "last: 5, before: 1 (edge case)",
-			args:             &database.PaginationArgs{Last: pointers.Ptr(5), Before: toStringPtr(1)},
-			expectedArgs:     &database.PaginationArgs{Last: pointers.Ptr(6), Before: toStringPtr(0)},
+			args:             &dbtypes.PaginationArgs{Last: pointers.Ptr(5), Before: toStringPtr(1)},
+			expectedArgs:     &dbtypes.PaginationArgs{Last: pointers.Ptr(6), Before: toStringPtr(0)},
 			expectedModified: true,
 		},
 		{
 			name:             "last: 5, before: 0 (same as last page but a mathematical  edge case)",
-			args:             &database.PaginationArgs{Last: pointers.Ptr(5), Before: toStringPtr(0)},
-			expectedArgs:     &database.PaginationArgs{Last: pointers.Ptr(5), Before: toStringPtr(0)},
+			args:             &dbtypes.PaginationArgs{Last: pointers.Ptr(5), Before: toStringPtr(0)},
+			expectedArgs:     &dbtypes.PaginationArgs{Last: pointers.Ptr(5), Before: toStringPtr(0)},
 			expectedModified: false,
 		},
 	}

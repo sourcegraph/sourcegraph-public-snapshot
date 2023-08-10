@@ -84,7 +84,6 @@ func TestParseAsPredicate(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestRepoHasDescriptionPredicate(t *testing.T) {

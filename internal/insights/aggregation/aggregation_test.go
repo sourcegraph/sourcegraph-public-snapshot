@@ -98,7 +98,6 @@ func symbolMatch(repo, path string, repoID int32, symbols ...string) result.Matc
 }
 
 func commitMatch(repo, author string, date time.Time, repoID, numRanges int32, content string) result.Match {
-
 	return &result.CommitMatch{
 		Commit: gitdomain.Commit{
 			Author:    gitdomain.Signature{Name: author},
@@ -116,7 +115,8 @@ func commitMatch(repo, author string, date time.Time, repoID, numRanges int32, c
 				{
 					Start: result.Location{Line: 2, Offset: 0, Column: 1},
 					End:   result.Location{Line: 2, Offset: 1, Column: 1},
-				}},
+				},
+			},
 		},
 	}
 }
@@ -165,7 +165,8 @@ func TestRepoAggregation(t *testing.T) {
 			"No results",
 			types.REPO_AGGREGATION_MODE,
 			streaming.SearchEvent{Results: []result.Match{}},
-			autogold.Expect(map[string]int{})},
+			autogold.Expect(map[string]int{}),
+		},
 		{
 			"Single file match multiple results",
 			types.REPO_AGGREGATION_MODE,
@@ -181,7 +182,8 @@ func TestRepoAggregation(t *testing.T) {
 				Results: []result.Match{
 					contentMatch("myRepo", "file.go", 1, "a", "b"),
 					contentMatch("myRepo", "file2.go", 1, "d", "e"),
-				}},
+				},
+			},
 			autogold.Expect(map[string]int{"myRepo": 4}),
 		},
 		{
@@ -191,7 +193,8 @@ func TestRepoAggregation(t *testing.T) {
 				Results: []result.Match{
 					contentMatch("myRepo", "file.go", 1, "a", "b"),
 					contentMatch("myRepo2", "file2.go", 2, "a", "b"),
-				}},
+				},
+			},
 			autogold.Expect(map[string]int{"myRepo": 2, "myRepo2": 2}),
 		},
 		{
@@ -201,7 +204,8 @@ func TestRepoAggregation(t *testing.T) {
 				Results: []result.Match{
 					commitMatch("myRepo", "Author A", sampleDate, 1, 2, "a"),
 					commitMatch("myRepo", "Author B", sampleDate, 1, 2, "b"),
-				}},
+				},
+			},
 			autogold.Expect(map[string]int{"myRepo": 4}),
 		},
 		{
@@ -211,7 +215,8 @@ func TestRepoAggregation(t *testing.T) {
 				Results: []result.Match{
 					repoMatch("myRepo", 1),
 					repoMatch("myRepo2", 2),
-				}},
+				},
+			},
 			autogold.Expect(map[string]int{"myRepo": 1, "myRepo2": 1}),
 		},
 		{
@@ -222,7 +227,8 @@ func TestRepoAggregation(t *testing.T) {
 					pathMatch("myRepo", "file1.go", 1),
 					pathMatch("myRepo", "file2.go", 1),
 					pathMatch("myRepoB", "file3.go", 2),
-				}},
+				},
+			},
 			autogold.Expect(map[string]int{"myRepo": 2, "myRepoB": 1}),
 		},
 		{
@@ -232,7 +238,8 @@ func TestRepoAggregation(t *testing.T) {
 				Results: []result.Match{
 					symbolMatch("myRepo", "file1.go", 1, "a", "b"),
 					symbolMatch("myRepo", "file2.go", 1, "c", "d"),
-				}},
+				},
+			},
 			autogold.Expect(map[string]int{"myRepo": 4}),
 		},
 		{
@@ -242,7 +249,8 @@ func TestRepoAggregation(t *testing.T) {
 				Results: []result.Match{
 					diffMatch("myRepo", "author-a", 1),
 					diffMatch("myRepo", "author-b", 1),
-				}},
+				},
+			},
 			autogold.Expect(map[string]int{"myRepo": 4}),
 		},
 		{
@@ -252,7 +260,8 @@ func TestRepoAggregation(t *testing.T) {
 				Results: []result.Match{
 					diffMatch("myRepo", "author-a", 1),
 					diffMatch("myRepo2", "author-b", 2),
-				}},
+				},
+			},
 			autogold.Expect(map[string]int{"myRepo": 2, "myRepo2": 2}),
 		},
 	}
@@ -276,7 +285,10 @@ func TestAuthorAggregation(t *testing.T) {
 	}{
 		{
 			"No results",
-			types.AUTHOR_AGGREGATION_MODE, streaming.SearchEvent{}, autogold.Expect(map[string]int{})},
+			types.AUTHOR_AGGREGATION_MODE,
+			streaming.SearchEvent{},
+			autogold.Expect(map[string]int{}),
+		},
 		{
 			"No author for content match",
 			types.AUTHOR_AGGREGATION_MODE,
@@ -322,7 +334,8 @@ func TestAuthorAggregation(t *testing.T) {
 					diffMatch("myRepo", "author-a", 1),
 					diffMatch("myRepo2", "author-a", 2),
 					diffMatch("myRepo2", "author-b", 2),
-				}},
+				},
+			},
 			autogold.Expect(map[string]int{"author-a": 4, "author-b": 2}),
 		},
 	}
@@ -346,7 +359,10 @@ func TestPathAggregation(t *testing.T) {
 	}{
 		{
 			"No results",
-			types.PATH_AGGREGATION_MODE, streaming.SearchEvent{}, autogold.Expect(map[string]int{})},
+			types.PATH_AGGREGATION_MODE,
+			streaming.SearchEvent{},
+			autogold.Expect(map[string]int{}),
+		},
 		{
 			"no path for commit",
 			types.PATH_AGGREGATION_MODE,
@@ -459,7 +475,8 @@ func TestCaptureGroupAggregation(t *testing.T) {
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
 			streaming.SearchEvent{},
 			"TEST",
-			autogold.Expect(map[string]int{})},
+			autogold.Expect(map[string]int{}),
+		},
 		{
 			"two keys from 1 chunk",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,

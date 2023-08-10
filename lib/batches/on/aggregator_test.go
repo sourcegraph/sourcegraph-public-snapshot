@@ -81,5 +81,4 @@ func TestAggregator(t *testing.T) {
 		revs := agg.Revisions()
 		assert.ElementsMatch(t, []Revision{"bar-revision", "explicit-revision"}, revs)
 	})
-
 }

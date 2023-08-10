@@ -63,7 +63,6 @@ func clearPreciseIndexesOnce(_ context.Context, client *gqltestutil.Client) (req
 		for _, preciseIndex := range purging {
 			// TODO - display repo@commit instead
 			fmt.Printf("[%5s] %s Waiting for precise index %s to be purged\n", internal.TimeSince(start), internal.EmojiLightbulb, preciseIndex.ID)
-
 		}
 
 		requery = true

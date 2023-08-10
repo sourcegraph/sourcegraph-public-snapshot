@@ -826,8 +826,9 @@ index d206c4c..bb06461 100644
 	})
 }
 
-const testDiffFiles = 3
-const testDiff = `diff --git INSTALL.md INSTALL.md
+const (
+	testDiffFiles = 3
+	testDiff      = `diff --git INSTALL.md INSTALL.md
 index e5af166..d44c3fc 100644
 --- INSTALL.md
 +++ INSTALL.md
@@ -884,6 +885,7 @@ index 9bd8209..d2acfa9 100644
  Line 10
 +Another line
 `
+)
 
 const testCopyDiff = `diff --git a/test.txt b/test2.txt
 similarity index 100%
@@ -1020,6 +1022,7 @@ func (d *dummyFileResolver) ByteSize(ctx context.Context) (int32, error) {
 	}
 	return int32(len([]byte(content))), nil
 }
+
 func (d *dummyFileResolver) TotalLines(ctx context.Context) (int32, error) {
 	content, err := d.content(ctx, &GitTreeContentPageArgs{})
 	if err != nil {

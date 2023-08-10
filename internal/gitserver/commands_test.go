@@ -2661,7 +2661,8 @@ func TestRead(t *testing.T) {
 }
 
 func runNewFileReaderTest(ctx context.Context, t *testing.T, repo api.RepoName, commitID api.CommitID, file string,
-	checker authz.SubRepoPermissionChecker, checkFn func(*testing.T, error, []byte)) {
+	checker authz.SubRepoPermissionChecker, checkFn func(*testing.T, error, []byte),
+) {
 	t.Helper()
 	rc, err := NewClient(database.NewMockDB()).NewFileReader(ctx, checker, repo, commitID, file)
 	if err != nil {

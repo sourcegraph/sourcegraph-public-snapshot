@@ -63,7 +63,6 @@ func (gs *GRPCServer) CreateCommitFromPatchBinary(ctx context.Context, req *prot
 	}
 
 	return resp.ToProto(), nil
-
 }
 
 func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_ExecServer) error {
@@ -188,7 +187,6 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 		return s.Err()
 	}
 	return nil
-
 }
 
 func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest) (*proto.GetObjectResponse, error) {
@@ -339,11 +337,9 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 }
 
 func (gs *GRPCServer) RepoClone(ctx context.Context, in *proto.RepoCloneRequest) (*proto.RepoCloneResponse, error) {
-
 	repo := protocol.NormalizeRepo(api.RepoName(in.GetRepo()))
 
 	if _, err := gs.Server.cloneRepo(ctx, repo, &cloneOptions{Block: false}); err != nil {
-
 		return &proto.RepoCloneResponse{Error: err.Error()}, nil
 	}
 

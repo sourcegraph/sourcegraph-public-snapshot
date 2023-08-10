@@ -74,7 +74,6 @@ func TestMultilineOccurrence2(t *testing.T) {
 		if kind == scip.SyntaxKind_IdentifierNamespace {
 			sawNamespaceIdentifier = true
 		}
-
 	}, map[int32]bool{
 		0: false,
 		1: false,

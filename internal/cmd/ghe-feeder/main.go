@@ -180,7 +180,7 @@ func main() {
 	for i := 0; i < *numWorkers; i++ {
 		name := fmt.Sprintf("worker-%d", i)
 		wkrScratchDir := filepath.Join(*scratchDir, name)
-		err := os.MkdirAll(wkrScratchDir, 0777)
+		err := os.MkdirAll(wkrScratchDir, 0o777)
 		if err != nil {
 			log15.Error("failed to create worker scratch dir", "scratchDir", *scratchDir, "error", err)
 			os.Exit(1)

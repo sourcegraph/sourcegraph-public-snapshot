@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -67,7 +68,7 @@ func ProvidersFromConfig(
 			extsvc.KindGitLab,
 			extsvc.KindPerforce,
 		},
-		LimitOffset: &database.LimitOffset{
+		LimitOffset: &dbtypes.LimitOffset{
 			Limit: 500, // The number is randomly chosen
 		},
 	}

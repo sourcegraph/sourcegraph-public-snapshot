@@ -107,7 +107,6 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	}
 
 	return s.store.GetByName(ctx, newName)
-
 }
 
 var metricIsRepoCloneable = promauto.NewCounterVec(prometheus.CounterOpts{

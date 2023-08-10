@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -73,7 +74,7 @@ type (
 )
 
 type PermissionListOpts struct {
-	PaginationArgs *PaginationArgs
+	PaginationArgs *dbtypes.PaginationArgs
 
 	RoleID int32
 	UserID int32

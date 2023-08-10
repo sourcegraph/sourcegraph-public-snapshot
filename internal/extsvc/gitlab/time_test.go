@@ -19,7 +19,7 @@ func TestTimeUnmarshal(t *testing.T) {
 		}{
 			{
 				input: "2020-06-26T20:54:05+00:00",
-				want:  time.Date(2020, 6, 26, 20, 54, 05, 0, time.UTC),
+				want:  time.Date(2020, 6, 26, 20, 54, 0o5, 0, time.UTC),
 			},
 			{
 				input: "2019-06-05T14:32:20.211Z",

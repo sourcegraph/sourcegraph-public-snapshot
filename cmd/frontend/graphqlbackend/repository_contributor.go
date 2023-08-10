@@ -42,7 +42,8 @@ func (r *repositoryContributorResolver) Repository() *RepositoryResolver { retur
 
 func (r *repositoryContributorResolver) Commits(args *struct {
 	First *int32
-}) *gitCommitConnectionResolver {
+},
+) *gitCommitConnectionResolver {
 	var revisionRange string
 	if r.args.RevisionRange != nil {
 		revisionRange = *r.args.RevisionRange

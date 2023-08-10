@@ -29,9 +29,11 @@ type GitLabSource struct {
 	au     auth.Authenticator
 }
 
-var _ ChangesetSource = &GitLabSource{}
-var _ DraftChangesetSource = &GitLabSource{}
-var _ ForkableChangesetSource = &GitLabSource{}
+var (
+	_ ChangesetSource         = &GitLabSource{}
+	_ DraftChangesetSource    = &GitLabSource{}
+	_ ForkableChangesetSource = &GitLabSource{}
+)
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
 func NewGitLabSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {

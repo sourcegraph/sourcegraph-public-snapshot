@@ -33,7 +33,7 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 	logger, exportLogs := logtest.Captured(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
-	var testCases = []struct {
+	testCases := []struct {
 		name  string
 		actor *actor.Actor // optional
 		event *SecurityEvent
@@ -46,17 +46,21 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 		},
 		{
 			name: "InvalidUser",
-			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB",
+			event: &SecurityEvent{
+				Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB",
 				// a UserID or AnonymousUserID is required to identify a user, unless internal
-				UserID: 0, AnonymousUserID: ""},
+				UserID: 0, AnonymousUserID: "",
+			},
 			err: `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_has_user" (SQLSTATE 23514)`,
 		},
 		{
 			name:  "InternalActor",
 			actor: &actor.Actor{Internal: true},
-			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB",
+			event: &SecurityEvent{
+				Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB",
 				// unset UserID and AnonymousUserID will error in other scenarios
-				UserID: 0, AnonymousUserID: ""},
+				UserID: 0, AnonymousUserID: "",
+			},
 			err: "<nil>",
 		},
 		{

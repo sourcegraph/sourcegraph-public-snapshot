@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -16,7 +17,7 @@ import (
 )
 
 type ListTeamsOpts struct {
-	*LimitOffset
+	*dbtypes.LimitOffset
 
 	// Only return teams past this cursor.
 	Cursor int32
@@ -77,7 +78,7 @@ type TeamMemberListCursor struct {
 }
 
 type ListTeamMembersOpts struct {
-	*LimitOffset
+	*dbtypes.LimitOffset
 
 	// Only return members past this cursor.
 	Cursor TeamMemberListCursor

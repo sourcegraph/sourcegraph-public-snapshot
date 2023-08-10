@@ -1788,11 +1788,9 @@ func (s *Server) p4execHTTP(w http.ResponseWriter, r *http.Request, req *protoco
 	w.Header().Set("X-Exec-Error", errorString(execStatus.Err))
 	w.Header().Set("X-Exec-Exit-Status", strconv.Itoa(execStatus.ExitStatus))
 	w.Header().Set("X-Exec-Stderr", execStatus.Stderr)
-
 }
 
 func (s *Server) p4Exec(ctx context.Context, logger log.Logger, req *protocol.P4ExecRequest, userAgent string, w io.Writer) execStatus {
-
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit
 	exitStatus := unsetExitStatus

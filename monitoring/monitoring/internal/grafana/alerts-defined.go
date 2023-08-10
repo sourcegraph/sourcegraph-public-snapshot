@@ -6,7 +6,7 @@ func NewContainerAlertsDefinedTable(target sdk.Target) *sdk.Panel {
 	alertsDefined := sdk.NewCustom("Alerts defined")
 	alertsDefined.Type = "table"
 
-	var panelTemplateLink = "/-/debug/grafana/d/${__data.fields.service_name}/${__data.fields.service_name}?viewPanel=${__data.fields.grafana_panel_id}"
+	panelTemplateLink := "/-/debug/grafana/d/${__data.fields.service_name}/${__data.fields.service_name}?viewPanel=${__data.fields.grafana_panel_id}"
 	alertsDefined.CustomPanel = &sdk.CustomPanel{
 		"fieldConfig": map[string]any{
 			"overrides": []*Override{

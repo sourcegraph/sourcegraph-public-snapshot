@@ -35,7 +35,6 @@ func azureDevOpsHandler(logger log.Logger, config *oauth2.Config, success, failu
 			&auth.OAuthBearerToken{Token: token.AccessToken},
 			nil,
 		)
-
 		if err != nil {
 			logger.Error("failed to create azuredevops.Client", log.String("error", err.Error()))
 			ctx = gologin.WithError(ctx, errors.Errorf("failed to create HTTP client for azuredevops with AuthURL %q", config.Endpoint.AuthURL))

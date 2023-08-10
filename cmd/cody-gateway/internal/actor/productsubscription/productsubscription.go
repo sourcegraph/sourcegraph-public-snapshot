@@ -50,9 +50,11 @@ type Source struct {
 	concurrencyConfig codygateway.ActorConcurrencyLimitConfig
 }
 
-var _ actor.Source = &Source{}
-var _ actor.SourceUpdater = &Source{}
-var _ actor.SourceSyncer = &Source{}
+var (
+	_ actor.Source        = &Source{}
+	_ actor.SourceUpdater = &Source{}
+	_ actor.SourceSyncer  = &Source{}
+)
 
 func NewSource(logger log.Logger, cache httpcache.Cache, dotcomClient graphql.Client, internalMode bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
 	return &Source{

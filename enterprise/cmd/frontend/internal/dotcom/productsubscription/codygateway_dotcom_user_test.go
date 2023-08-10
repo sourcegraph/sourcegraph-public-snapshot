@@ -108,7 +108,6 @@ func TestCodyGatewayDotcomUserResolver(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
 			// Create an admin context to use for the request
 			adminContext := actor.WithActor(context.Background(), actor.FromActualUser(adminUser))
 
@@ -208,7 +207,6 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
 			// Create a request context from the user
 			userContext := actor.WithActor(context.Background(), actor.FromActualUser(test.user))
 			requestContext := featureflag.WithFlags(userContext, featureflag.NewMemoryStore(test.features, nil, nil))
@@ -218,7 +216,6 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 			_, err := r.CodyGatewayDotcomUserByToken(requestContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: codyUserGatewayToken})
 
 			require.ErrorIs(t, err, test.wantErr)
-
 		})
 	}
 }

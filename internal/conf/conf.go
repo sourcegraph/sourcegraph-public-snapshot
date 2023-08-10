@@ -243,7 +243,7 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 				time.Sleep(1 * time.Second)
 				continue
 			}
-			if err := os.WriteFile(siteConfigEscapeHatchPath, []byte(config.Site), 0644); err != nil {
+			if err := os.WriteFile(siteConfigEscapeHatchPath, []byte(config.Site), 0o644); err != nil {
 				logger.Warn("failed to write site config file, trying again in 1s", sglog.Error(err))
 				time.Sleep(1 * time.Second)
 				continue
@@ -299,7 +299,7 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 				continue
 			}
 			if newDBConfig.Site != lastKnownDBContents {
-				if err := os.WriteFile(siteConfigEscapeHatchPath, []byte(newDBConfig.Site), 0644); err != nil {
+				if err := os.WriteFile(siteConfigEscapeHatchPath, []byte(newDBConfig.Site), 0o644); err != nil {
 					logger.Warn("failed to write site config file, trying again in 1s", sglog.Error(err))
 					time.Sleep(1 * time.Second)
 					continue

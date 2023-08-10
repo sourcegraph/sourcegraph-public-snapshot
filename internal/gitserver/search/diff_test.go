@@ -86,7 +86,6 @@ func TestDiffSearch(t *testing.T) {
 
 	require.Equal(t, expectedFormatted, formatted)
 	require.Equal(t, expectedRanges, ranges)
-
 }
 
 func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {

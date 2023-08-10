@@ -7,8 +7,10 @@ import (
 	"testing"
 )
 
-const testMetaDataVertex = `{"label": "metaData", "toolInfo": {"name": "test"}}`
-const testVertex = `{"id": "a", "type": "edge", "label": "textDocument/references", "outV": "b", "inV": "c"}`
+const (
+	testMetaDataVertex = `{"label": "metaData", "toolInfo": {"name": "test"}}`
+	testVertex         = `{"id": "a", "type": "edge", "label": "textDocument/references", "outV": "b", "inV": "c"}`
+)
 
 func TestReadIndexerName(t *testing.T) {
 	name, err := ReadIndexerName(generateTestIndex(testMetaDataVertex))

@@ -15,12 +15,14 @@ import (
 	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-var metricLabels = []string{"method", "success"}
-var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name:    "src_backend_client_request_duration_seconds",
-	Help:    "Total time spent on backend endpoints.",
-	Buckets: tracepkg.UserLatencyBuckets,
-}, metricLabels)
+var (
+	metricLabels    = []string{"method", "success"}
+	requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_backend_client_request_duration_seconds",
+		Help:    "Total time spent on backend endpoints.",
+		Buckets: tracepkg.UserLatencyBuckets,
+	}, metricLabels)
+)
 
 var requestGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "src_backend_client_requests",

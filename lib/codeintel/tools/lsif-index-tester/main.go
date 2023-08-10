@@ -60,9 +60,11 @@ type testSuiteResult struct {
 	FileResults []testFileResult
 }
 
-var directory string
-var raw_indexer string
-var debug bool
+var (
+	directory   string
+	raw_indexer string
+	debug       bool
+)
 
 // TODO: Do more monitoring of the process.
 // var monitor bool
@@ -365,6 +367,7 @@ func sortRange(left, right Range) int {
 
 	return 0
 }
+
 func sortPosition(left, right Position) int {
 	if left.Line > right.Line {
 		return -1
@@ -549,8 +552,8 @@ func transformLocationToResponse(location precise.LocationData) Location {
 			},
 		},
 	}
-
 }
+
 func readBundle(root string) (*precise.GroupedBundleDataMaps, error) {
 	bundle, err := conversion.CorrelateLocalGitRelative(context.Background(), path.Join(root, "dump.lsif"), root)
 	if err != nil {
@@ -580,7 +583,6 @@ func getFileContents(projectRoot, uri string) (string, error) {
 }
 
 func getLocationDiff(projectRoot string, expected, actual Location) (string, error) {
-
 	contents, err := getFileContents(projectRoot, actual.URI)
 	if err != nil {
 		return "", err

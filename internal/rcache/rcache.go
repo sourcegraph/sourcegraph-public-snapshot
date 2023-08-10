@@ -17,8 +17,10 @@ import (
 // change the key prefix that is used for all hash keys,
 // effectively resetting the cache at the same time the new code
 // is deployed.
-const dataVersion = "v2"
-const dataVersionToDelete = "v1"
+const (
+	dataVersion         = "v2"
+	dataVersionToDelete = "v1"
+)
 
 // DeleteOldCacheData deletes the rcache data in the given Redis instance
 // that's prefixed with dataVersionToDelete
@@ -241,6 +243,4 @@ func kv() redispool.KeyValue {
 	return redispool.Cache
 }
 
-var (
-	globalPrefix = dataVersion
-)
+var globalPrefix = dataVersion

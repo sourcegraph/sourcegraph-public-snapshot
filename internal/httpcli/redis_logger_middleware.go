@@ -126,7 +126,7 @@ func redisLoggerMiddleware() Middleware {
 // GetOutboundRequestLogItems returns all outbound request log items after the given key,
 // in ascending order, trimmed to maximum {limit} items. Example for `after`: "2021-01-01T00_00_00.000000".
 func GetOutboundRequestLogItems(ctx context.Context, after string) ([]*types.OutboundRequestLogItem, error) {
-	var limit = int(OutboundRequestLogLimit())
+	limit := int(OutboundRequestLogLimit())
 
 	if limit == 0 {
 		return []*types.OutboundRequestLogItem{}, nil
@@ -196,7 +196,7 @@ func getOutboundRequestLogItems(ctx context.Context, pred func(*types.OutboundRe
 }
 
 func redactSensitiveHeaders(headers http.Header) http.Header {
-	var cleanHeaders = make(http.Header)
+	cleanHeaders := make(http.Header)
 	for name, values := range headers {
 		if IsRiskyHeader(name, values) {
 			cleanHeaders[name] = []string{"REDACTED"}

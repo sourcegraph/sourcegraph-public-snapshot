@@ -62,7 +62,7 @@ git remote add --no-tags sourcegraph "$ORIGIN"
 git config --replace-all remote.origin.fetch '+HEAD:refs/remotes/sourcegraph/master'
 
 git fetch --depth 100 sourcegraph
-`), 0700); err != nil {
+`), 0o700); err != nil {
 		t.Fatal(err)
 	}
 

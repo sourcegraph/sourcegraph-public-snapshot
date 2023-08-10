@@ -299,7 +299,6 @@ diff in IDs: %s,\n
 			}
 		})
 	}
-
 }
 
 func TestIsRequiredOutOfBandMigration(t *testing.T) {

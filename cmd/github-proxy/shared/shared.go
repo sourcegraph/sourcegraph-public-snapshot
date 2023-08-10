@@ -102,7 +102,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			logger.Error("graceful termination timeout", log.Error(err))
 		}
 		cancel()
-
 	}()
 
 	if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {

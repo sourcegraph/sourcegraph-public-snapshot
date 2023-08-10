@@ -286,7 +286,6 @@ func retryAdapter(next func(config iterator.IterationConfig) (api.RepoID, bool, 
 			return finish(ctx, store, repoErr)
 		}
 	}
-
 }
 
 func (h *inProgressHandler) finish(ctx context.Context, ex *backfillExecution) (err error) {

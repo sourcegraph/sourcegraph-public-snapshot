@@ -29,9 +29,7 @@ func TestSetInferenceScript(t *testing.T) {
 		}
 
 		if !testCase.shouldFail && err != nil {
-
 			t.Fatalf("Expected [%s] script to save successfully, got an error instead: %s", testCase.script, err)
 		}
 	}
-
 }

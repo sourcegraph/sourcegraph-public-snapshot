@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -79,7 +80,7 @@ func TestScheduleRepositoriesForEmbeddingRepoNotFound(t *testing.T) {
 
 	pattern := "github.com/sourcegraph/sourcegraph"
 	first := 10
-	jobs, err := store.ListRepoEmbeddingJobs(ctx, repo.ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}, Query: &pattern})
+	jobs, err := store.ListRepoEmbeddingJobs(ctx, repo.ListOpts{PaginationArgs: &dbtypes.PaginationArgs{First: &first, OrderBy: dbtypes.OrderBy{{Field: "id"}}, Ascending: true}, Query: &pattern})
 	require.NoError(t, err)
 	require.Equal(t, "queued", jobs[0].State)
 }
@@ -111,7 +112,7 @@ func TestScheduleRepositoriesForEmbeddingInvalidDefaultBranch(t *testing.T) {
 
 	pattern := "github.com/sourcegraph/sourcegraph"
 	first := 10
-	jobs, err := store.ListRepoEmbeddingJobs(ctx, repo.ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}, Query: &pattern})
+	jobs, err := store.ListRepoEmbeddingJobs(ctx, repo.ListOpts{PaginationArgs: &dbtypes.PaginationArgs{First: &first, OrderBy: dbtypes.OrderBy{{Field: "id"}}, Ascending: true}, Query: &pattern})
 	require.NoError(t, err)
 	require.Equal(t, "queued", jobs[0].State)
 }
@@ -148,14 +149,14 @@ func TestScheduleRepositoriesForEmbeddingFailed(t *testing.T) {
 
 	pattern := "github.com/sourcegraph/sourcegraph"
 	first := 10
-	jobs, err := store.ListRepoEmbeddingJobs(ctx, repo.ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}, Query: &pattern})
+	jobs, err := store.ListRepoEmbeddingJobs(ctx, repo.ListOpts{PaginationArgs: &dbtypes.PaginationArgs{First: &first, OrderBy: dbtypes.OrderBy{{Field: "id"}}, Ascending: true}, Query: &pattern})
 	require.NoError(t, err)
 	require.Equal(t, "queued", jobs[0].State)
 
 	sgJobID := jobs[0].ID
 
 	pattern = "github.com/sourcegraph/zoekt"
-	jobs, err = store.ListRepoEmbeddingJobs(ctx, repo.ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}, Query: &pattern})
+	jobs, err = store.ListRepoEmbeddingJobs(ctx, repo.ListOpts{PaginationArgs: &dbtypes.PaginationArgs{First: &first, OrderBy: dbtypes.OrderBy{{Field: "id"}}, Ascending: true}, Query: &pattern})
 	require.NoError(t, err)
 	require.Equal(t, "queued", jobs[0].State)
 

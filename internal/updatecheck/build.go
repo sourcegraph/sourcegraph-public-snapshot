@@ -70,7 +70,6 @@ func calcNotifications(clientVersionString string, notifications []*schema.AppNo
 		})
 	}
 	return results
-
 }
 
 // handleNotifications is called on a Sourcegraph client instance to handle notification messages that

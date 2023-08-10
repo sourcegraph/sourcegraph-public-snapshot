@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -39,7 +40,7 @@ func (r *UserResolver) InvitableCollaborators(ctx context.Context) ([]*invitable
 			Field:      "stars",
 			Descending: true,
 		}},
-		LimitOffset: &database.LimitOffset{Limit: maxReposToScan},
+		LimitOffset: &dbtypes.LimitOffset{Limit: maxReposToScan},
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "Repos.List")

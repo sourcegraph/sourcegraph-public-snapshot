@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -137,7 +138,7 @@ func (s *phabricatorStore) getOneBySQL(ctx context.Context, query string, args .
 func (s *phabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*types.PhabricatorRepo, error) {
 	opt := ExternalServicesListOptions{
 		Kinds: []string{extsvc.KindPhabricator},
-		LimitOffset: &LimitOffset{
+		LimitOffset: &dbtypes.LimitOffset{
 			Limit: 500, // The number is randomly chosen
 		},
 	}

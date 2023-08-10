@@ -24,6 +24,7 @@ func (r *externalRepositoryResolver) ID(ctx context.Context) (string, error) {
 	}
 	return repo.ExternalRepo.ID, nil
 }
+
 func (r *externalRepositoryResolver) ServiceType(ctx context.Context) (string, error) {
 	repo, err := r.repository.repo(ctx)
 	if err != nil {
@@ -44,7 +45,8 @@ func (r *externalRepositoryResolver) ServiceID(ctx context.Context) (string, err
 
 func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
-}) (*ComputedExternalServiceConnectionResolver, error) {
+},
+) (*ComputedExternalServiceConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins may read external services (they have secrets).
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err

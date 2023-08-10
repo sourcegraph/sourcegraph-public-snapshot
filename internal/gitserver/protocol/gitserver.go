@@ -347,7 +347,6 @@ func (bl *BatchLogResult) ToProto() *proto.BatchLogResult {
 	}
 
 	return result
-
 }
 
 func (bl *BatchLogResult) FromProto(p *proto.BatchLogResult) {
@@ -887,7 +886,6 @@ func (r *GetObjectResponse) FromProto(p *proto.GetObjectResponse) {
 	*r = GetObjectResponse{
 		Object: gitObj,
 	}
-
 }
 
 type PerforceChangelist struct {

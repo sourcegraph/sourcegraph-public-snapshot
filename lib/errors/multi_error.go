@@ -20,8 +20,10 @@ type multiError struct {
 	errs []error
 }
 
-var _ MultiError = (*multiError)(nil)
-var _ Typed = (*multiError)(nil)
+var (
+	_ MultiError = (*multiError)(nil)
+	_ Typed      = (*multiError)(nil)
+)
 
 func combineNonNilErrors(err1 error, err2 error) MultiError {
 	multi1, ok1 := err1.(MultiError)

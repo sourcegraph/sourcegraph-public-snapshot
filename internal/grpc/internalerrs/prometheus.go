@@ -87,7 +87,6 @@ func newPrometheusServerStream(s grpc.ClientStream, serviceName, methodName stri
 			}
 		},
 	}
-
 }
 
 func doObservation(serviceName, methodName string, rpcErr error) {

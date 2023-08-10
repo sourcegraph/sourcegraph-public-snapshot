@@ -580,7 +580,6 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 	)
 
 	resp, err := c.send(ctx, "POST", path, nil, payload, pr)
-
 	if err != nil {
 		var code int
 		if resp != nil {

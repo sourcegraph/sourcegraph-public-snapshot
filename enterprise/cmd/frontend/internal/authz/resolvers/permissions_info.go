@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -56,7 +57,7 @@ func (r *permissionsInfoResolver) Unrestricted(_ context.Context) bool {
 var permissionsInfoRepositoryConnectionMaxPageSize = 100
 
 var permissionsInfoRepositoryConnectionOptions = &graphqlutil.ConnectionResolverOptions{
-	OrderBy:     database.OrderBy{{Field: "repo.name"}},
+	OrderBy:     dbtypes.OrderBy{{Field: "repo.name"}},
 	Ascending:   true,
 	MaxPageSize: &permissionsInfoRepositoryConnectionMaxPageSize,
 }
@@ -86,13 +87,13 @@ type permissionsInfoRepositoriesStore struct {
 	query  string
 }
 
-func (s *permissionsInfoRepositoriesStore) MarshalCursor(node graphqlbackend.PermissionsInfoRepositoryResolver, _ database.OrderBy) (*string, error) {
+func (s *permissionsInfoRepositoriesStore) MarshalCursor(node graphqlbackend.PermissionsInfoRepositoryResolver, _ dbtypes.OrderBy) (*string, error) {
 	cursor := node.Repository().Name()
 
 	return &cursor, nil
 }
 
-func (s *permissionsInfoRepositoriesStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *permissionsInfoRepositoriesStore) UnmarshalCursor(cursor string, _ dbtypes.OrderBy) (*string, error) {
 	cursorSQL := fmt.Sprintf("'%s'", cursor)
 
 	return &cursorSQL, nil
@@ -108,7 +109,7 @@ func (s *permissionsInfoRepositoriesStore) ComputeTotal(ctx context.Context) (*i
 	return &total, nil
 }
 
-func (s *permissionsInfoRepositoriesStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.PermissionsInfoRepositoryResolver, error) {
+func (s *permissionsInfoRepositoriesStore) ComputeNodes(ctx context.Context, args *dbtypes.PaginationArgs) ([]graphqlbackend.PermissionsInfoRepositoryResolver, error) {
 	permissions, err := s.db.Perms().ListUserPermissions(ctx, s.userID, &database.ListUserPermissionsArgs{Query: s.query, PaginationArgs: args})
 	if err != nil {
 		return nil, err
@@ -146,7 +147,7 @@ func (r permissionsInfoRepositoryResolver) UpdatedAt() *gqlutil.DateTime {
 var permissionsInfoUserConnectionMaxPageSize = 100
 
 var permissionsInfoUserConnectionOptions = &graphqlutil.ConnectionResolverOptions{
-	OrderBy:     database.OrderBy{{Field: "users.username"}},
+	OrderBy:     dbtypes.OrderBy{{Field: "users.username"}},
 	Ascending:   true,
 	MaxPageSize: &permissionsInfoUserConnectionMaxPageSize,
 }
@@ -178,13 +179,13 @@ type permissionsInfoUsersStore struct {
 	query  string
 }
 
-func (s *permissionsInfoUsersStore) MarshalCursor(node graphqlbackend.PermissionsInfoUserResolver, _ database.OrderBy) (*string, error) {
+func (s *permissionsInfoUsersStore) MarshalCursor(node graphqlbackend.PermissionsInfoUserResolver, _ dbtypes.OrderBy) (*string, error) {
 	cursor := node.User(s.ctx).Username()
 
 	return &cursor, nil
 }
 
-func (s *permissionsInfoUsersStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *permissionsInfoUsersStore) UnmarshalCursor(cursor string, _ dbtypes.OrderBy) (*string, error) {
 	cursorSQL := fmt.Sprintf("'%s'", cursor)
 
 	return &cursorSQL, nil
@@ -195,7 +196,7 @@ func (s *permissionsInfoUsersStore) ComputeTotal(ctx context.Context) (*int32, e
 	return nil, nil
 }
 
-func (s *permissionsInfoUsersStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.PermissionsInfoUserResolver, error) {
+func (s *permissionsInfoUsersStore) ComputeNodes(ctx context.Context, args *dbtypes.PaginationArgs) ([]graphqlbackend.PermissionsInfoUserResolver, error) {
 	permissions, err := s.db.Perms().ListRepoPermissions(ctx, s.repoID, &database.ListRepoPermissionsArgs{Query: s.query, PaginationArgs: args})
 	if err != nil {
 		return nil, err

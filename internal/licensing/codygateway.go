@@ -30,8 +30,7 @@ func NewCodyGatewayChatRateLimit(plan Plan, userCount *int, licenseTags []string
 	}
 	switch plan {
 	// TODO: This is just an example for now.
-	case PlanEnterprise1,
-		PlanEnterprise0:
+	case PlanEnterprise1, PlanEnterprise0:
 		return CodyGatewayRateLimit{
 			AllowedModels:   models,
 			Limit:           int64(50 * uc),
@@ -64,8 +63,7 @@ func NewCodyGatewayCodeRateLimit(plan Plan, userCount *int, licenseTags []string
 	}
 	switch plan {
 	// TODO: This is just an example for now.
-	case PlanEnterprise1,
-		PlanEnterprise0:
+	case PlanEnterprise1, PlanEnterprise0:
 		return CodyGatewayRateLimit{
 			AllowedModels:   models,
 			Limit:           int64(1000 * uc),
@@ -99,8 +97,7 @@ func NewCodyGatewayEmbeddingsRateLimit(plan Plan, userCount *int, licenseTags []
 	models := []string{"openai/text-embedding-ada-002"}
 	switch plan {
 	// TODO: This is just an example for now.
-	case PlanEnterprise1,
-		PlanEnterprise0:
+	case PlanEnterprise1, PlanEnterprise0:
 		return CodyGatewayRateLimit{
 			AllowedModels:   models,
 			Limit:           int64(20 * uc * tokensPerDollar / 30),

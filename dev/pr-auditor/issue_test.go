@@ -31,60 +31,61 @@ func TestGenerateExceptionIssue(t *testing.T) {
 		wantLabels       []string
 		wantBodyContains []string
 		wantBodyExcludes []string
-	}{{
-		name:    "not reviewed, not planned",
-		payload: payload,
-		result: checkResult{
-			Reviewed: false,
+	}{
+		{
+			name:    "not reviewed, not planned",
+			payload: payload,
+			result: checkResult{
+				Reviewed: false,
+			},
+			wantAssignees:    []string{"robert"},
+			wantLabels:       []string{"exception/review", "exception/test-plan", "bobheadxi/robert"},
+			wantBodyContains: []string{"some pull request", "has no test plan", "was not reviewed"},
+			wantBodyExcludes: []string{"protected"},
+		}, {
+			name:    "not reviewed, planned",
+			payload: payload,
+			result: checkResult{
+				Reviewed: false,
+				TestPlan: "A plan!",
+			},
+			wantAssignees:    []string{"robert"},
+			wantLabels:       []string{"exception/review", "bobheadxi/robert"},
+			wantBodyContains: []string{"some pull request", "has a test plan", "was not reviewed"},
+			wantBodyExcludes: []string{"protected"},
+		}, {
+			name:    "not planned, reviewed",
+			payload: payload,
+			result: checkResult{
+				Reviewed: true,
+			},
+			wantAssignees:    []string{"robert"},
+			wantLabels:       []string{"exception/test-plan", "bobheadxi/robert"},
+			wantBodyContains: []string{"some pull request", "has no test plan"},
+			wantBodyExcludes: []string{"protected"},
+		}, {
+			name:             "private repo, not planned, reviewed",
+			payload:          privatePayload,
+			result:           checkResult{},
+			wantAssignees:    []string{"robert"},
+			wantLabels:       []string{"exception/review", "exception/test-plan", "bobheadxi/robert"},
+			wantBodyExcludes: []string{"some pull request", "protected"},
+		}, {
+			name:             "reviewed, planned but protected",
+			payload:          protectedPayload,
+			result:           checkResult{ProtectedBranch: true},
+			wantAssignees:    []string{"robert"},
+			wantLabels:       []string{"exception/review", "exception/test-plan", "exception/protected-branch", "bobheadxi/robert"},
+			wantBodyContains: []string{"\"release\" is protected"},
+		}, {
+			name:              "reviewed, planned but protected",
+			payload:           protectedPayload,
+			additionalContext: "please use preprod branch",
+			result:            checkResult{ProtectedBranch: true},
+			wantAssignees:     []string{"robert"},
+			wantLabels:        []string{"exception/review", "exception/test-plan", "exception/protected-branch", "bobheadxi/robert"},
+			wantBodyContains:  []string{"please use preprod branch"},
 		},
-		wantAssignees:    []string{"robert"},
-		wantLabels:       []string{"exception/review", "exception/test-plan", "bobheadxi/robert"},
-		wantBodyContains: []string{"some pull request", "has no test plan", "was not reviewed"},
-		wantBodyExcludes: []string{"protected"},
-	}, {
-		name:    "not reviewed, planned",
-		payload: payload,
-		result: checkResult{
-			Reviewed: false,
-			TestPlan: "A plan!",
-		},
-		wantAssignees:    []string{"robert"},
-		wantLabels:       []string{"exception/review", "bobheadxi/robert"},
-		wantBodyContains: []string{"some pull request", "has a test plan", "was not reviewed"},
-		wantBodyExcludes: []string{"protected"},
-	}, {
-		name:    "not planned, reviewed",
-		payload: payload,
-		result: checkResult{
-			Reviewed: true,
-		},
-		wantAssignees:    []string{"robert"},
-		wantLabels:       []string{"exception/test-plan", "bobheadxi/robert"},
-		wantBodyContains: []string{"some pull request", "has no test plan"},
-		wantBodyExcludes: []string{"protected"},
-	}, {
-		name:             "private repo, not planned, reviewed",
-		payload:          privatePayload,
-		result:           checkResult{},
-		wantAssignees:    []string{"robert"},
-		wantLabels:       []string{"exception/review", "exception/test-plan", "bobheadxi/robert"},
-		wantBodyExcludes: []string{"some pull request", "protected"},
-	}, {
-		name:             "reviewed, planned but protected",
-		payload:          protectedPayload,
-		result:           checkResult{ProtectedBranch: true},
-		wantAssignees:    []string{"robert"},
-		wantLabels:       []string{"exception/review", "exception/test-plan", "exception/protected-branch", "bobheadxi/robert"},
-		wantBodyContains: []string{"\"release\" is protected"},
-	}, {
-		name:              "reviewed, planned but protected",
-		payload:           protectedPayload,
-		additionalContext: "please use preprod branch",
-		result:            checkResult{ProtectedBranch: true},
-		wantAssignees:     []string{"robert"},
-		wantLabels:        []string{"exception/review", "exception/test-plan", "exception/protected-branch", "bobheadxi/robert"},
-		wantBodyContains:  []string{"please use preprod branch"},
-	},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -12,7 +12,8 @@ func NewTypeDefinitionResult(id uint64) TypeDefinitionResult {
 				Type: ElementVertex,
 			},
 			Label: VertexTypeDefinitionResult,
-		}}
+		},
+	}
 }
 
 type TextDocumentTypeDefinition struct {

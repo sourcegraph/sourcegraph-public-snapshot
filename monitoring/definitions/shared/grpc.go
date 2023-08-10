@@ -60,7 +60,6 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 		Title:  "GRPC server metrics",
 		Hidden: true,
 		Rows: []monitoring.Row{
-
 			// Track QPS
 			{
 				monitoring.Observable{
@@ -123,7 +122,6 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 
 			// Track response time per method
 			{
-
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_p99_response_time_per_method", opts.HumanServiceName),
 					Description: "99th percentile response time per method over 2m",

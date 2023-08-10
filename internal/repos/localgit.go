@@ -101,7 +101,6 @@ func (s *LocalGitSource) Repos(ctx context.Context) []*types.Repo {
 func isBareRepo(path string) bool {
 	c := exec.Command("git", "-C", path, "rev-parse", "--is-bare-repository")
 	out, err := c.CombinedOutput()
-
 	if err != nil {
 		return false
 	}
@@ -167,7 +166,6 @@ func gitRemote(path string) string {
 	c := exec.Command("git", "remote", "get-url", "origin")
 	c.Dir = path
 	out, err := c.CombinedOutput()
-
 	if err != nil {
 		return ""
 	}

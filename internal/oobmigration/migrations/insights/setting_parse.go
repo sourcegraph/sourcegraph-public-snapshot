@@ -3,7 +3,6 @@ package insights
 import (
 	"encoding/json"
 	"fmt"
-
 	"strings"
 
 	"github.com/sourcegraph/log"

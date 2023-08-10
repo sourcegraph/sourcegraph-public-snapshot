@@ -33,7 +33,6 @@ func TestOutboundWebhookJobs(t *testing.T) {
 		payload := []byte(`"TEST"`)
 
 		t.Run("Create", func(t *testing.T) {
-
 			t.Run("bad key", func(t *testing.T) {
 				want := errors.New("bad key")
 				key := &et.BadKey{Err: want}

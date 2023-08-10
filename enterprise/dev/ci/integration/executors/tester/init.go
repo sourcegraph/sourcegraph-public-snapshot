@@ -46,7 +46,6 @@ func initAndAuthenticate() (*gqltestutil.Client, error) {
 }
 
 func ensureRepos(client *gqltestutil.Client) error {
-
 	var svcs []ExternalSvc
 	if err := json.Unmarshal([]byte(config.Repos), &svcs); err != nil {
 		return errors.Wrap(err, "cannot parse repos.json")

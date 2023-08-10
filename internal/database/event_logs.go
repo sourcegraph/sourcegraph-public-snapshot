@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -344,7 +345,7 @@ func (l *eventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (
 type EventLogsListOptions struct {
 	// UserID specifies the user whose events should be included.
 	UserID int32
-	*LimitOffset
+	*dbtypes.LimitOffset
 	EventName *string
 	// AfterID specifies a minimum event ID of listed events.
 	AfterID int
@@ -872,7 +873,6 @@ func (l *eventLogStore) UsersUsageCounts(ctx context.Context) (counts []types.Us
 			&dbutil.NullInt32{N: &c.SearchCount},
 			&dbutil.NullInt32{N: &c.CodeIntelCount},
 		)
-
 		if err != nil {
 			return nil, err
 		}
@@ -1245,7 +1245,7 @@ func (l *eventLogStore) AggregatedCodeIntelEvents(ctx context.Context) ([]types.
 }
 
 func (l *eventLogStore) aggregatedCodeIntelEvents(ctx context.Context, now time.Time) (events []types.CodeIntelAggregatedEvent, err error) {
-	var eventNames = []string{
+	eventNames := []string{
 		"codeintel.lsifHover",
 		"codeintel.lsifDefinitions",
 		"codeintel.lsifDefinitions.xrepo",
@@ -1318,7 +1318,7 @@ func (l *eventLogStore) AggregatedCodeIntelInvestigationEvents(ctx context.Conte
 }
 
 func (l *eventLogStore) aggregatedCodeIntelInvestigationEvents(ctx context.Context, now time.Time) (events []types.CodeIntelAggregatedInvestigationEvent, err error) {
-	var eventNames = []string{
+	eventNames := []string{
 		"CodeIntelligenceIndexerSetupInvestigated",
 		"CodeIntelligenceUploadErrorInvestigated",
 		"CodeIntelligenceIndexErrorInvestigated",

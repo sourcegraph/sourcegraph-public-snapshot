@@ -10,8 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
-var baseImageRegex = lazyregexp.New(`wolfi-images\/([\w-]+)[.]yaml`)
-var packageRegex = lazyregexp.New(`wolfi-packages\/([\w-]+)[.]yaml`)
+var (
+	baseImageRegex = lazyregexp.New(`wolfi-images\/([\w-]+)[.]yaml`)
+	packageRegex   = lazyregexp.New(`wolfi-packages\/([\w-]+)[.]yaml`)
+)
 
 // WolfiPackagesOperations rebuilds any packages whose configurations have changed
 func WolfiPackagesOperations(changedFiles []string) (*operations.Set, int) {
@@ -89,7 +91,6 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 	stepKey := sanitizeStepKey(fmt.Sprintf("build-base-image-%s", target))
 
 	return func(pipeline *bk.Pipeline) {
-
 		opts := []bk.StepOpt{
 			bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/wolfi/build-base-image.sh %s %s", target, tag)),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.

@@ -21,6 +21,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
@@ -402,7 +403,6 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 	t.Run("DeleteChangesetSpecs", func(t *testing.T) {
 		t.Run("ByBatchSpecID", func(t *testing.T) {
-
 			for i := 0; i < 3; i++ {
 				spec := &btypes.ChangesetSpec{
 					BatchSpecID: int64(i + 1),
@@ -642,7 +642,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		user := bt.CreateTestUser(t, s.DatabaseDB(), true)
 		ctx = actor.WithInternalActor(ctx)
 		batchSpec := bt.CreateBatchSpec(t, ctx, s, "get-rewirer-mappings", user.ID, 0)
-		var mappings = make(btypes.RewirerMappings, 3)
+		mappings := make(btypes.RewirerMappings, 3)
 		changesetSpecIDs := make([]int64, 0, cap(mappings))
 		for i := 0; i < cap(mappings); i++ {
 			spec := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
@@ -718,7 +718,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
 					opts := GetRewirerMappingsOpts{
 						BatchSpecID: batchSpec.ID,
-						LimitOffset: &database.LimitOffset{Limit: i},
+						LimitOffset: &dbtypes.LimitOffset{Limit: i},
 					}
 					ts, err := s.GetRewirerMappings(ctx, opts)
 					if err != nil {
@@ -778,7 +778,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
 					opts := GetRewirerMappingsOpts{
 						BatchSpecID: batchSpec.ID,
-						LimitOffset: &database.LimitOffset{Limit: 1, Offset: offset},
+						LimitOffset: &dbtypes.LimitOffset{Limit: 1, Offset: offset},
 					}
 					ts, err := s.GetRewirerMappings(ctx, opts)
 					if err != nil {
@@ -1473,7 +1473,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 				have, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
 					BatchSpecID:   newBatchSpec.ID,
 					BatchChangeID: batchChange.ID,
-					LimitOffset:   &database.LimitOffset{Limit: 1},
+					LimitOffset:   &dbtypes.LimitOffset{Limit: 1},
 					TextSearch:    tc.search,
 				})
 				if err != nil {
@@ -1493,7 +1493,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 				have, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
 					BatchSpecID:   newBatchSpec.ID,
 					BatchChangeID: batchChange.ID,
-					LimitOffset:   &database.LimitOffset{Offset: 1, Limit: 1},
+					LimitOffset:   &dbtypes.LimitOffset{Offset: 1, Limit: 1},
 					TextSearch:    tc.search,
 				})
 				if err != nil {

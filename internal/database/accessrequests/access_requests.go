@@ -1,4 +1,4 @@
-package database
+package accessrequests
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -80,7 +81,7 @@ type AccessRequestStore interface {
 	GetByID(context.Context, int32) (*types.AccessRequest, error)
 	GetByEmail(context.Context, string) (*types.AccessRequest, error)
 	Count(context.Context, *AccessRequestsFilterArgs) (int, error)
-	List(context.Context, *AccessRequestsFilterArgs, *PaginationArgs) (_ []*types.AccessRequest, err error)
+	List(context.Context, *AccessRequestsFilterArgs, *dbtypes.PaginationArgs) (_ []*types.AccessRequest, err error)
 	WithTransact(context.Context, func(AccessRequestStore) error) error
 	Done(error) error
 }
@@ -184,7 +185,6 @@ func (s *accessRequestStore) Create(ctx context.Context, accessRequest *types.Ac
 func (s *accessRequestStore) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
 	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE id = %s", sqlf.Join(accessRequestColumns, ","), id))
 	node, err := scanAccessRequest(row)
-
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &ErrAccessRequestNotFound{ID: id}
@@ -198,7 +198,6 @@ func (s *accessRequestStore) GetByID(ctx context.Context, id int32) (*types.Acce
 func (s *accessRequestStore) GetByEmail(ctx context.Context, email string) (*types.AccessRequest, error) {
 	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE email = %s", sqlf.Join(accessRequestColumns, ","), email))
 	node, err := scanAccessRequest(row)
-
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &ErrAccessRequestNotFound{Email: email}
@@ -212,7 +211,6 @@ func (s *accessRequestStore) GetByEmail(ctx context.Context, email string) (*typ
 func (s *accessRequestStore) Update(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
 	q := sqlf.Sprintf(accessRequestUpdateQuery, accessRequest.Status, *accessRequest.DecisionByUserID, accessRequest.ID, sqlf.Join(accessRequestColumns, ","))
 	updated, err := scanAccessRequest(s.QueryRow(ctx, q))
-
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &ErrAccessRequestNotFound{ID: accessRequest.ID}
@@ -228,13 +226,13 @@ func (s *accessRequestStore) Count(ctx context.Context, fArgs *AccessRequestsFil
 	return basestore.ScanInt(s.QueryRow(ctx, q))
 }
 
-func (s *accessRequestStore) List(ctx context.Context, fArgs *AccessRequestsFilterArgs, pArgs *PaginationArgs) ([]*types.AccessRequest, error) {
+func (s *accessRequestStore) List(ctx context.Context, fArgs *AccessRequestsFilterArgs, pArgs *dbtypes.PaginationArgs) ([]*types.AccessRequest, error) {
 	if fArgs == nil {
 		fArgs = &AccessRequestsFilterArgs{}
 	}
 	where := fArgs.SQL()
 	if pArgs == nil {
-		pArgs = &PaginationArgs{}
+		pArgs = &dbtypes.PaginationArgs{}
 	}
 	p := pArgs.SQL()
 

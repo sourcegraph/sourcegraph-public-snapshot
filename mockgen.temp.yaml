@@ -24,7 +24,6 @@
 - filename: internal/database/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/database
   interfaces:
-    - AccessRequestStore
     - AccessTokenStore
     - AssignedOwnersStore
     - AssignedTeamsStore
@@ -79,6 +78,10 @@
     - WebhookLogStore
     - WebhookStore
     - ZoektReposStore
+- filename: internal/database/accessrequests/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/database/accessrequests
+  interfaces:
+    - AccessRequestStore
 - filename: internal/gitserver/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/gitserver
   interfaces:

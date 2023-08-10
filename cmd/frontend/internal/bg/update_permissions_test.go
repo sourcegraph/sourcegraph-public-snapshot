@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/stretchr/testify/assert"
@@ -33,14 +34,14 @@ func TestUpdatePermissions(t *testing.T) {
 	adminRole, err := roleStore.Get(ctx, database.GetRoleOpts{Name: string(types.SiteAdministratorSystemRole)})
 	require.NoError(t, err)
 	permissionStore := db.Permissions()
-	adminPermissions, err := permissionStore.List(ctx, database.PermissionListOpts{RoleID: adminRole.ID, PaginationArgs: &database.PaginationArgs{}})
+	adminPermissions, err := permissionStore.List(ctx, database.PermissionListOpts{RoleID: adminRole.ID, PaginationArgs: &dbtypes.PaginationArgs{}})
 	require.NoError(t, err)
 	adminPermissions = clearTimeAndID(adminPermissions)
 	assert.ElementsMatch(t, allPerms, adminPermissions)
 	// USER should have all the permissions except OWNERSHIP.
 	userRole, err := roleStore.Get(ctx, database.GetRoleOpts{Name: string(types.UserSystemRole)})
 	require.NoError(t, err)
-	userPermissions, err := permissionStore.List(ctx, database.PermissionListOpts{RoleID: userRole.ID, PaginationArgs: &database.PaginationArgs{}})
+	userPermissions, err := permissionStore.List(ctx, database.PermissionListOpts{RoleID: userRole.ID, PaginationArgs: &dbtypes.PaginationArgs{}})
 	require.NoError(t, err)
 	userPermissions = clearTimeAndID(userPermissions)
 	assert.ElementsMatch(t, allPerms[:3], userPermissions, "unexpected number of permissions")

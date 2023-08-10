@@ -685,7 +685,7 @@ func bar() {
 	tarInputEventC := make(chan comby.TarInputEvent, 1)
 	hdr := tar.Header{
 		Name: "main.go",
-		Mode: 0600,
+		Mode: 0o600,
 		Size: int64(len(input["main.go"])),
 	}
 	tarInputEventC <- comby.TarInputEvent{

@@ -29,7 +29,8 @@ var (
 
 func (r *schemaResolver) InviteEmailToSourcegraph(ctx context.Context, args *struct {
 	Email string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	if disableEmailInvites {
 		return nil, errors.New("email invites disabled.")
 	}

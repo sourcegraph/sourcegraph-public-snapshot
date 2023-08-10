@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -221,7 +222,7 @@ func getMockDB(users []*types.UserForSCIM, usersEmails map[int32][]*database.Use
 }
 
 // applyLimitOffset returns a slice of users based on the limit and offset
-func applyLimitOffset(users []*types.UserForSCIM, limitOffset *database.LimitOffset) ([]*types.UserForSCIM, error) {
+func applyLimitOffset(users []*types.UserForSCIM, limitOffset *dbtypes.LimitOffset) ([]*types.UserForSCIM, error) {
 	// Return all users
 	if limitOffset == nil {
 		return users, nil

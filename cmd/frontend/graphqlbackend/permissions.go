@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -77,7 +78,7 @@ func (r *schemaResolver) Permissions(ctx context.Context, args *ListPermissionAr
 		&connectionStore,
 		&args.ConnectionResolverArgs,
 		&graphqlutil.ConnectionResolverOptions{
-			OrderBy: database.OrderBy{
+			OrderBy: dbtypes.OrderBy{
 				{Field: "permissions.id"},
 			},
 			// We want to be able to retrieve all permissions belonging to a user at once on startup,

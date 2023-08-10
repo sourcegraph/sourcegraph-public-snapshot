@@ -210,7 +210,7 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 		return resolvers, nil
 	}
 
-	var stepInfo = make(map[int]*btypes.StepInfo)
+	stepInfo := make(map[int]*btypes.StepInfo)
 	var entryExitCode *int
 	if r.execution != nil {
 		entry, ok := findExecutionLogEntry(r.execution, logKeySrc)

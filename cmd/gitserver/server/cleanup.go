@@ -534,7 +534,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 
 	if b, err := json.Marshal(stats); err != nil {
 		logger.Error("failed to marshal periodic stats", log.Error(err))
-	} else if err = os.WriteFile(filepath.Join(s.ReposDir, reposStatsName), b, 0666); err != nil {
+	} else if err = os.WriteFile(filepath.Join(s.ReposDir, reposStatsName), b, 0o666); err != nil {
 		logger.Error("failed to write periodic stats", log.Error(err))
 	}
 
@@ -1082,7 +1082,7 @@ func writeSGMLog(dir common.GitDir, m []byte) error {
 	return os.WriteFile(
 		dir.Path(sgmLog),
 		[]byte(fmt.Sprintf("%s\n\n%s%d\n\n%s\n", sgmLogHeader, sgmLogPrefix, bestEffortReadFailed(dir)+1, m)),
-		0600,
+		0o600,
 	)
 }
 
@@ -1168,7 +1168,7 @@ const gcLockFile = "gc.pid"
 
 func lockRepoForGC(dir common.GitDir) (error, func() error) {
 	// Setting permissions to 644 to mirror the permissions that git gc sets for gc.pid.
-	f, err := os.OpenFile(dir.Path(gcLockFile), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
+	f, err := os.OpenFile(dir.Path(gcLockFile), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
 	if err != nil {
 		content, err1 := os.ReadFile(dir.Path(gcLockFile))
 		if err1 != nil {

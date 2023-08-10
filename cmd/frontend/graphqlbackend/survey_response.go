@@ -89,7 +89,8 @@ type surveySubmissionForHubSpot struct {
 // SubmitSurvey records a new satisfaction (NPS) survey response by the current user.
 func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 	Input *SurveySubmissionInput
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	input := args.Input
 	var uid *int32
 	email := input.Email
@@ -154,7 +155,8 @@ type happinessFeedbackSubmissionForHubSpot struct {
 // SubmitHappinessFeedback records a new happiness feedback response by the current user.
 func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *struct {
 	Input *HappinessFeedbackSubmissionInput
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	data := happinessFeedbackSubmissionForHubSpot{
 		Feedback:    args.Input.Feedback,
 		CurrentPath: args.Input.CurrentPath,

@@ -39,7 +39,7 @@ Line 9
 Line 10
 `
 
-	var testDiff = []byte(`diff --git INSTALL.md INSTALL.md
+	testDiff := []byte(`diff --git INSTALL.md INSTALL.md
 index e5af166..d44c3fc 100644
 --- INSTALL.md
 +++ INSTALL.md

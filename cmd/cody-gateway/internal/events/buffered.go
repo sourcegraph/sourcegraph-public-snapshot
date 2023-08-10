@@ -39,8 +39,10 @@ type BufferedLogger struct {
 	flushedC chan struct{}
 }
 
-var _ Logger = &BufferedLogger{}
-var _ goroutine.BackgroundRoutine = &BufferedLogger{}
+var (
+	_ Logger                      = &BufferedLogger{}
+	_ goroutine.BackgroundRoutine = &BufferedLogger{}
+)
 
 // defaultTimeout is the default timeout to wait for an event to be submitted,
 // configured on NewBufferedLogger. The goal is to never block for long enough

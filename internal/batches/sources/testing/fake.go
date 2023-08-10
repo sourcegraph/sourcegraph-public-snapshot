@@ -217,6 +217,7 @@ func (s *FakeChangesetSource) ExternalServices() types.ExternalServices {
 
 	return types.ExternalServices{s.Svc}
 }
+
 func (s *FakeChangesetSource) LoadChangeset(ctx context.Context, c *sources.Changeset) error {
 	s.LoadChangesetCalled = true
 

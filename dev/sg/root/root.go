@@ -13,9 +13,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var once sync.Once
-var repositoryRootValue string
-var repositoryRootError error
+var (
+	once                sync.Once
+	repositoryRootValue string
+	repositoryRootError error
+)
 
 var ErrNotInsideSourcegraph = errors.New("not running inside sourcegraph/sourcegraph")
 

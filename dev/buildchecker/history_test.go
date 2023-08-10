@@ -9,7 +9,7 @@ import (
 )
 
 func TestGenerateHistory(t *testing.T) {
-	day := time.Date(2006, 01, 02, 0, 0, 0, 0, time.UTC)
+	day := time.Date(2006, 0o1, 0o2, 0, 0, 0, 0, time.UTC)
 	dayString := day.Format("2006-01-02")
 
 	tests := []struct {

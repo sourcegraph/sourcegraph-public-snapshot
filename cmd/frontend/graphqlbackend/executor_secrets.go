@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -200,8 +201,8 @@ type ExecutorSecretsListArgs struct {
 	After *string
 }
 
-func (o ExecutorSecretsListArgs) LimitOffset() (*database.LimitOffset, error) {
-	limit := &database.LimitOffset{Limit: int(o.First)}
+func (o ExecutorSecretsListArgs) LimitOffset() (*dbtypes.LimitOffset, error) {
+	limit := &dbtypes.LimitOffset{Limit: int(o.First)}
 	if o.After != nil {
 		offset, err := graphqlutil.DecodeIntCursor(o.After)
 		if err != nil {

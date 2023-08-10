@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
@@ -218,7 +219,8 @@ func TestOutboundWebhooks(t *testing.T) {
 					"mixed unscoped and scoped": {
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
-								EventTypes: []FilterEventType{{EventType: "bar"},
+								EventTypes: []FilterEventType{
+									{EventType: "bar"},
 									{EventType: "quux", Scope: pointers.Ptr("123")},
 								},
 							},
@@ -254,7 +256,7 @@ func TestOutboundWebhooks(t *testing.T) {
 				} {
 					t.Run(fmt.Sprintf("page %d", i+1), func(t *testing.T) {
 						have, err := store.List(ctx, OutboundWebhookListOpts{
-							LimitOffset: &LimitOffset{
+							LimitOffset: &dbtypes.LimitOffset{
 								Offset: i * 2,
 								Limit:  2,
 							},

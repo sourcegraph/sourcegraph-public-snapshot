@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -249,7 +250,7 @@ func TestTeams_GetListCount(t *testing.T) {
 		var lastCursor int32
 		for i := 0; i < len(allTeams); i++ {
 			t.Run(fmt.Sprintf("List 1 %s", allTeams[i].Name), func(t *testing.T) {
-				opts := ListTeamsOpts{LimitOffset: &LimitOffset{Limit: 1}, Cursor: lastCursor}
+				opts := ListTeamsOpts{LimitOffset: &dbtypes.LimitOffset{Limit: 1}, Cursor: lastCursor}
 				teams, c, err := store.ListTeams(internalCtx, opts)
 				if err != nil {
 					t.Fatal(err)
@@ -437,7 +438,7 @@ func TestTeams_GetListCount(t *testing.T) {
 			var lastCursor TeamMemberListCursor
 			for i := 0; i < len(wantMembers); i++ {
 				t.Run(fmt.Sprintf("List 1 %s", team.Name), func(t *testing.T) {
-					opts := ListTeamMembersOpts{LimitOffset: &LimitOffset{Limit: 1}, Cursor: lastCursor, TeamID: team.ID}
+					opts := ListTeamMembersOpts{LimitOffset: &dbtypes.LimitOffset{Limit: 1}, Cursor: lastCursor, TeamID: team.ID}
 					members, c, err := store.ListTeamMembers(internalCtx, opts)
 					if err != nil {
 						t.Fatal(err)

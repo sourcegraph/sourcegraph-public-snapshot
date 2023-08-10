@@ -579,7 +579,8 @@ func patternToCodeHostFilters(v string, negated bool) *[]query.Node {
 				Value:      value,
 				Negated:    negated,
 				Annotation: query.Annotation{},
-			}}
+			},
+		}
 	} else if len(pathElems) == 1 {
 		value = regexp.QuoteMeta(domain)
 		value = fmt.Sprintf("^%s/%s", value, strings.Join(pathElems, "/"))
@@ -589,7 +590,8 @@ func patternToCodeHostFilters(v string, negated bool) *[]query.Node {
 				Value:      value,
 				Negated:    negated,
 				Annotation: query.Annotation{},
-			}}
+			},
+		}
 	} else if len(pathElems) == 2 {
 		value = regexp.QuoteMeta(domain)
 		value = fmt.Sprintf("^%s/%s$", value, strings.Join(pathElems, "/"))
@@ -599,7 +601,8 @@ func patternToCodeHostFilters(v string, negated bool) *[]query.Node {
 				Value:      value,
 				Negated:    negated,
 				Annotation: query.Annotation{},
-			}}
+			},
+		}
 	} else if len(pathElems) == 4 && (pathElems[2] == "tree" || pathElems[2] == "commit") {
 		repoValue := regexp.QuoteMeta(domain)
 		repoValue = fmt.Sprintf("^%s/%s$", repoValue, strings.Join(pathElems[:2], "/"))

@@ -415,7 +415,7 @@ func TestBuildAndCalculate(t *testing.T) {
 		time.Date(2022, 8, 4, 0, 0, 0, 0, time.UTC),
 		time.Date(2022, 8, 25, 21, 7, 55, 558154, time.UTC),
 		time.Date(2022, 9, 15, 21, 12, 38, 902339, time.UTC),
-		time.Date(2022, 10, 06, 00, 00, 00, 00, time.UTC),
+		time.Date(2022, 10, 0o6, 0o0, 0o0, 0o0, 0o0, time.UTC),
 		time.Date(2022, 10, 27, 22, 25, 30, 390084, time.UTC),
 	}
 

@@ -705,7 +705,6 @@ func TestUsers_GetByUsername(t *testing.T) {
 			t.Errorf("got %s, but want %s", have.Username, want)
 		}
 	}
-
 }
 
 func TestUsers_GetByUsernames(t *testing.T) {
@@ -947,7 +946,7 @@ func TestUsers_RecoverUsers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	//Test reviving a user that does not exist
+	// Test reviving a user that does not exist
 	t.Run("fails on nonexistent user", func(t *testing.T) {
 		ru, err := db.Users().RecoverUsersList(ctx, []int32{65})
 		if err != nil {
@@ -957,7 +956,7 @@ func TestUsers_RecoverUsers(t *testing.T) {
 			t.Errorf("got %d recovered users, want 0", len(ru))
 		}
 	})
-	//Test reviving a user that does exist and hasn't not been deleted
+	// Test reviving a user that does exist and hasn't not been deleted
 	t.Run("fails on non-deleted user", func(t *testing.T) {
 		ru, err := db.Users().RecoverUsersList(ctx, []int32{user.ID})
 		if err == nil {
@@ -968,7 +967,7 @@ func TestUsers_RecoverUsers(t *testing.T) {
 		}
 	})
 
-	//Test reviving a user that does exist and does not have additional resources deleted in the same timeframe
+	// Test reviving a user that does exist and does not have additional resources deleted in the same timeframe
 	t.Run("revives user with no additional resources", func(t *testing.T) {
 		err := db.Users().Delete(ctx, user.ID)
 		if err != nil {
@@ -994,7 +993,7 @@ func TestUsers_RecoverUsers(t *testing.T) {
 			t.Errorf("got %d users, want 1", len(users))
 		}
 	})
-	//Test reviving a user that does exist and does have additional resources deleted in the same timeframe
+	// Test reviving a user that does exist and does have additional resources deleted in the same timeframe
 	t.Run("revives user and additional resources", func(t *testing.T) {
 		err := db.Users().Delete(ctx, otherUser.ID)
 		if err != nil {

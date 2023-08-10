@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -135,7 +136,7 @@ func getTotalReposCount(ctx context.Context, db database.DB) (_ int, err error) 
 func hasRepos(ctx context.Context, db database.DB) (_ bool, err error) {
 	defer recordOperation("hasRepos")(&err)
 	rs, err := db.Repos().List(ctx, database.ReposListOptions{
-		LimitOffset: &database.LimitOffset{Limit: 1},
+		LimitOffset: &dbtypes.LimitOffset{Limit: 1},
 	})
 	return len(rs) > 0, err
 }
@@ -751,8 +752,10 @@ func authProviderTypes() []string {
 	return types
 }
 
-const defaultUpdateCheckBaseURL = "https://sourcegraph.com"
-const updateCheckPath = "/.api/updates"
+const (
+	defaultUpdateCheckBaseURL = "https://sourcegraph.com"
+	updateCheckPath           = "/.api/updates"
+)
 
 func externalServiceKinds(ctx context.Context, db database.DB) (kinds []string, err error) {
 	defer recordOperation("externalServiceKinds")(&err)
@@ -799,7 +802,6 @@ func check(logger log.Logger, db database.DB) {
 
 	doCheck := func() (updateVersion string, err error) {
 		body, err := updateBodyFunc(ctx, logger, db)
-
 		if err != nil {
 			return "", err
 		}

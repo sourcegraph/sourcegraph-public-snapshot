@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -113,7 +114,7 @@ func TestPermissionList(t *testing.T) {
 
 	t.Run("all permissions", func(t *testing.T) {
 		ps, err := store.List(ctx, PermissionListOpts{
-			PaginationArgs: &PaginationArgs{
+			PaginationArgs: &dbtypes.PaginationArgs{
 				First: &firstParam,
 			},
 		})
@@ -126,7 +127,7 @@ func TestPermissionList(t *testing.T) {
 	t.Run("with pagination", func(t *testing.T) {
 		firstParam := 2
 		ps, err := store.List(ctx, PermissionListOpts{
-			PaginationArgs: &PaginationArgs{
+			PaginationArgs: &dbtypes.PaginationArgs{
 				First: &firstParam,
 			},
 		})
@@ -137,7 +138,7 @@ func TestPermissionList(t *testing.T) {
 
 	t.Run("role association", func(t *testing.T) {
 		ps, err := store.List(ctx, PermissionListOpts{
-			PaginationArgs: &PaginationArgs{
+			PaginationArgs: &dbtypes.PaginationArgs{
 				First: &firstParam,
 			},
 			RoleID: role.ID,
@@ -149,7 +150,7 @@ func TestPermissionList(t *testing.T) {
 
 	t.Run("user association", func(t *testing.T) {
 		ps, err := store.List(ctx, PermissionListOpts{
-			PaginationArgs: &PaginationArgs{
+			PaginationArgs: &dbtypes.PaginationArgs{
 				First: &firstParam,
 			},
 			UserID: user.ID,

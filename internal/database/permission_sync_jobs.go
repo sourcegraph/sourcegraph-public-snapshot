@@ -18,6 +18,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -486,7 +487,7 @@ type ListPermissionSyncJobOpts struct {
 	Query      string
 
 	// Cursor-based pagination arguments.
-	PaginationArgs *PaginationArgs
+	PaginationArgs *dbtypes.PaginationArgs
 }
 
 func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
@@ -548,12 +549,12 @@ func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
 
 func (s *permissionSyncJobStore) GetLatestFinishedSyncJob(ctx context.Context, opts ListPermissionSyncJobOpts) (*PermissionSyncJob, error) {
 	first := 1
-	opts.PaginationArgs = &PaginationArgs{
+	opts.PaginationArgs = &dbtypes.PaginationArgs{
 		First:     &first,
 		Ascending: false,
-		OrderBy: []OrderByOption{{
+		OrderBy: []dbtypes.OrderByOption{{
 			Field: "permission_sync_jobs.finished_at",
-			Nulls: OrderByNullsLast,
+			Nulls: dbtypes.OrderByNullsLast,
 		}},
 	}
 	jobs, err := s.List(ctx, opts)
@@ -576,8 +577,8 @@ FROM permission_sync_jobs
 func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error) {
 	conds := opts.sqlConds()
 
-	orderByID := []OrderByOption{{Field: "permission_sync_jobs.id"}}
-	paginationArgs := PaginationArgs{OrderBy: orderByID, Ascending: true}
+	orderByID := []dbtypes.OrderByOption{{Field: "permission_sync_jobs.id"}}
+	paginationArgs := dbtypes.PaginationArgs{OrderBy: orderByID, Ascending: true}
 	// If pagination args contain only one OrderBy statement for "id" column, then it
 	// is added by generic pagination logic and we can continue with OrderBy above
 	// because it fixes ambiguity error for "id" column in case of joins with
@@ -653,7 +654,7 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 	return syncJobs, nil
 }
 
-func paginationOrderByContainsOnlyIDColumn(pagination *PaginationArgs) bool {
+func paginationOrderByContainsOnlyIDColumn(pagination *dbtypes.PaginationArgs) bool {
 	if pagination == nil {
 		return false
 	}

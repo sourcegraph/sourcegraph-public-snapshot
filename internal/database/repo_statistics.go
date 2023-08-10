@@ -136,7 +136,7 @@ FROM gitserver_repos_statistics
 var scanGitserverReposStatistics = basestore.NewSliceScanner(scanGitserverReposStatistic)
 
 func scanGitserverReposStatistic(s dbutil.Scanner) (GitserverReposStatistic, error) {
-	var gs = GitserverReposStatistic{}
+	gs := GitserverReposStatistic{}
 	err := s.Scan(&gs.ShardID, &gs.Total, &gs.NotCloned, &gs.Cloning, &gs.Cloned, &gs.FailedFetch, &gs.Corrupted)
 	if err != nil {
 		return gs, err

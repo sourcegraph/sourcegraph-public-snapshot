@@ -20,12 +20,16 @@ import (
 
 // To avoid a circular dependency with the codemonitors/resolvers package
 // we have to redeclare the MonitorKind.
-const MonitorKind = "CodeMonitor"
-const utmSourceEmail = "code-monitoring-email"
-const priorityCritical = "CRITICAL"
+const (
+	MonitorKind      = "CodeMonitor"
+	utmSourceEmail   = "code-monitoring-email"
+	priorityCritical = "CRITICAL"
+)
 
-var MockSendEmailForNewSearchResult func(ctx context.Context, db database.DB, userID int32, data *TemplateDataNewSearchResults) error
-var MockExternalURL func() *url.URL
+var (
+	MockSendEmailForNewSearchResult func(ctx context.Context, db database.DB, userID int32, data *TemplateDataNewSearchResults) error
+	MockExternalURL                 func() *url.URL
+)
 
 func SendEmailForNewSearchResult(ctx context.Context, db database.DB, userID int32, data *TemplateDataNewSearchResults) error {
 	if MockSendEmailForNewSearchResult != nil {
@@ -64,9 +68,7 @@ type TemplateDataNewSearchResults struct {
 }
 
 func NewTemplateDataForNewSearchResults(args actionArgs, email *database.EmailAction) (d *TemplateDataNewSearchResults, err error) {
-	var (
-		priority string
-	)
+	var priority string
 
 	searchURL := getSearchURL(args.ExternalURL, args.Query, utmSourceEmail)
 	codeMonitorURL := getCodeMonitorURL(args.ExternalURL, email.Monitor, utmSourceEmail)

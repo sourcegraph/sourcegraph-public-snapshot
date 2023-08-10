@@ -140,7 +140,6 @@ func downloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Sto
 	defer dec.close()
 
 	rei, err := dec.decode()
-
 	if err != nil {
 		// If decoding fails, assume it is an old index and decode with a generic dec.
 		tr.AddEvent("failed to decode index, assuming that this is an old version and trying again", trace.Error(err))

@@ -35,12 +35,15 @@ type snippetAttributionConnectionResolver struct {
 func (c snippetAttributionConnectionResolver) TotalCount() int32 {
 	return int32(c.result.TotalCount)
 }
+
 func (c snippetAttributionConnectionResolver) LimitHit() bool {
 	return c.result.LimitHit
 }
+
 func (c snippetAttributionConnectionResolver) PageInfo() *graphqlutil.PageInfo {
 	return graphqlutil.HasNextPage(false)
 }
+
 func (c snippetAttributionConnectionResolver) Nodes() []graphqlbackend.SnippetAttributionResolver {
 	var nodes []graphqlbackend.SnippetAttributionResolver
 	for _, name := range c.result.RepositoryNames {

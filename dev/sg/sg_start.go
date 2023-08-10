@@ -284,7 +284,6 @@ func shouldUpdateDevPrivate(ctx context.Context, path, branch string) (bool, err
 		return false, err
 	}
 	return len(outputStr) > 0, err
-
 }
 
 func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.Config) error {

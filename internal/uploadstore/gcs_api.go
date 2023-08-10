@@ -35,21 +35,25 @@ type gcsComposer interface {
 	Run(ctx context.Context) (*storage.ObjectAttrs, error)
 }
 
-type gcsAPIShim struct{ client *storage.Client }
-type bucketHandleShim struct{ handle *storage.BucketHandle }
-type objectHandleShim struct{ handle *storage.ObjectHandle }
-type objectIteratorShim struct{ handle *storage.ObjectIterator }
+type (
+	gcsAPIShim         struct{ client *storage.Client }
+	bucketHandleShim   struct{ handle *storage.BucketHandle }
+	objectHandleShim   struct{ handle *storage.ObjectHandle }
+	objectIteratorShim struct{ handle *storage.ObjectIterator }
+)
 
 type composerShim struct {
 	handle  *storage.ObjectHandle
 	sources []*storage.ObjectHandle
 }
 
-var _ gcsAPI = &gcsAPIShim{}
-var _ gcsBucketHandle = &bucketHandleShim{}
-var _ gcsObjectHandle = &objectHandleShim{}
-var _ gcsObjectIterator = &objectIteratorShim{}
-var _ gcsComposer = &composerShim{}
+var (
+	_ gcsAPI            = &gcsAPIShim{}
+	_ gcsBucketHandle   = &bucketHandleShim{}
+	_ gcsObjectHandle   = &objectHandleShim{}
+	_ gcsObjectIterator = &objectIteratorShim{}
+	_ gcsComposer       = &composerShim{}
+)
 
 func (s *gcsAPIShim) Bucket(name string) gcsBucketHandle {
 	return &bucketHandleShim{handle: s.client.Bucket(name)}

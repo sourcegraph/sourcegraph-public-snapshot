@@ -12,9 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	EmptyRepoErr = errors.New("empty repository")
-)
+var EmptyRepoErr = errors.New("empty repository")
 
 const emptyRepoErrMessage = `git command [rev-list --reverse --date-order --max-parents=0 HEAD] failed (output: ""): exit status 129`
 

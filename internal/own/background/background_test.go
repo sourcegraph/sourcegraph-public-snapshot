@@ -38,7 +38,6 @@ func Test_Handle(t *testing.T) {
 		count, err := store.QueuedCount(ctx, false)
 		require.NoError(t, err)
 		assert.Equal(t, 1, count)
-
 	})
 	t.Run("verify signal that is disabled doesn't show up in queue", func(t *testing.T) {
 		store := makeWorkerStore(db, obsCtx)

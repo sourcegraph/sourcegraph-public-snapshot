@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -22,11 +22,11 @@ type ConnectionResolverStore[N any] interface {
 	// ComputeTotal returns the total count of all the items in the connection, independent of pagination arguments.
 	ComputeTotal(context.Context) (*int32, error)
 	// ComputeNodes returns the list of nodes based on the pagination args.
-	ComputeNodes(context.Context, *database.PaginationArgs) ([]N, error)
+	ComputeNodes(context.Context, *dbtypes.PaginationArgs) ([]N, error)
 	// MarshalCursor returns cursor for a node and is called for generating start and end cursors.
-	MarshalCursor(N, database.OrderBy) (*string, error)
+	MarshalCursor(N, dbtypes.OrderBy) (*string, error)
 	// UnmarshalCursor returns node id from after/before cursor string.
-	UnmarshalCursor(string, database.OrderBy) (*string, error)
+	UnmarshalCursor(string, dbtypes.OrderBy) (*string, error)
 }
 
 type ConnectionResolverArgs struct {
@@ -61,7 +61,7 @@ type ConnectionResolverOptions struct {
 	// Defaults to `true` when not set.
 	Reverse *bool
 	// Columns to order by.
-	OrderBy database.OrderBy
+	OrderBy dbtypes.OrderBy
 	// Order direction.
 	Ascending bool
 
@@ -108,12 +108,12 @@ type resolveOnce struct {
 	nodes sync.Once
 }
 
-func (r *ConnectionResolver[N]) paginationArgs() (*database.PaginationArgs, error) {
+func (r *ConnectionResolver[N]) paginationArgs() (*dbtypes.PaginationArgs, error) {
 	if r.args == nil {
 		return nil, nil
 	}
 
-	paginationArgs := database.PaginationArgs{
+	paginationArgs := dbtypes.PaginationArgs{
 		OrderBy:   r.options.OrderBy,
 		Ascending: r.options.Ascending,
 	}
@@ -230,7 +230,7 @@ type ConnectionPageInfo[N any] struct {
 	nodes             []N
 	store             ConnectionResolverStore[N]
 	args              *ConnectionResolverArgs
-	orderBy           database.OrderBy
+	orderBy           dbtypes.OrderBy
 }
 
 // HasNextPage returns value for connection.pageInfo.hasNextPage and is called by the graphql api.
@@ -284,11 +284,11 @@ func (p *ConnectionPageInfo[N]) StartCursor() (cursor *string, err error) {
 // NewConnectionResolver returns a new connection resolver built using the store and connection args.
 func NewConnectionResolver[N any](store ConnectionResolverStore[N], args *ConnectionResolverArgs, options *ConnectionResolverOptions) (*ConnectionResolver[N], error) {
 	if options == nil {
-		options = &ConnectionResolverOptions{OrderBy: database.OrderBy{{Field: "id"}}}
+		options = &ConnectionResolverOptions{OrderBy: dbtypes.OrderBy{{Field: "id"}}}
 	}
 
 	if len(options.OrderBy) == 0 {
-		options.OrderBy = database.OrderBy{{Field: "id"}}
+		options.OrderBy = dbtypes.OrderBy{{Field: "id"}}
 	}
 
 	return &ConnectionResolver[N]{

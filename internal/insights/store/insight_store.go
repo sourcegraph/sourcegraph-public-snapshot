@@ -368,7 +368,6 @@ func (s *InsightStore) CompleteJustInTimeConversionAttempt(ctx context.Context, 
 	nextSnapshot := NextSnapshot(s.Now())
 
 	return s.Exec(ctx, sqlf.Sprintf(completeJustInTimeConversionAttemptSql, nextRecording, nextSnapshot, series.ID))
-
 }
 
 const completeJustInTimeConversionAttemptSql = `

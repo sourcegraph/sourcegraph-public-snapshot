@@ -37,8 +37,10 @@ type Term interface {
 	String() string
 }
 
-type Literal string
-type Hole string
+type (
+	Literal string
+	Hole    string
+)
 
 func (Literal) term() {}
 func (t Literal) String() string {

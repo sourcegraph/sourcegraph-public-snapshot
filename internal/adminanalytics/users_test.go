@@ -33,7 +33,6 @@ func createEventLogs(db database.DB, rows []EventLogRow) error {
       VALUES
         ($1, '{}', '', $2, $3, 'WEB', 'version', $4)
     `, args.Name, args.UserId, args.AnonymousId, args.Time.Format(time.RFC3339))
-
 		if err != nil {
 			return err
 		}

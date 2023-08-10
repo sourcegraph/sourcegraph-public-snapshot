@@ -93,7 +93,8 @@ mutation {
 		alwaysNil
 	}
 }`,
-			}, {
+			},
+			{
 				name: "reindexRepository",
 				query: `
 mutation {
@@ -110,7 +111,8 @@ mutation {
 		alwaysNil
 	}
 }`,
-			}, {
+			},
+			{
 				name: "addUserToOrganization",
 				query: `
 mutation {
@@ -118,7 +120,8 @@ mutation {
 		alwaysNil
 	}
 }`,
-			}, {
+			},
+			{
 				name: "site.configuration",
 				query: `
 {
@@ -128,7 +131,8 @@ mutation {
 		}
 	}
 }`,
-			}, {
+			},
+			{
 				name: "site.accessTokens",
 				query: `
 {
@@ -138,7 +142,8 @@ mutation {
 		}
 	}
 }`,
-			}, {
+			},
+			{
 				name: "site.externalAccounts",
 				query: `
 {
@@ -150,13 +155,15 @@ mutation {
 		}
 	}
 }`,
-			}, {
+			},
+			{
 				name: "updateSiteConfiguration",
 				query: `
 mutation {
 	updateSiteConfiguration(input: "", lastID: 0)
 }`,
-			}, {
+			},
+			{
 				name: "deletePreciseIndex",
 				query: `
 mutation {
@@ -164,7 +171,8 @@ mutation {
 		alwaysNil
 	}
 }`,
-			}, {
+			},
+			{
 				name: "outOfBandMigrations",
 				query: `
 {
@@ -172,7 +180,8 @@ mutation {
 		id
 	}
 }`,
-			}, {
+			},
+			{
 				name: "setMigrationDirection",
 				query: `
 mutation {
@@ -180,7 +189,8 @@ mutation {
 		alwaysNil
 	}
 }`,
-			}, {
+			},
+			{
 				name: "createAccessToken.ScopeSiteAdminSudo",
 				query: `
 mutation CreateAccessToken($userID: ID!) {
@@ -191,7 +201,8 @@ mutation CreateAccessToken($userID: ID!) {
 				variables: map[string]any{
 					"userID": userClient.AuthenticatedUserID(),
 				},
-			}, {
+			},
+			{
 				name: "setRepositoryPermissionsForUsers",
 				query: `
 mutation {
@@ -202,7 +213,8 @@ mutation {
 		alwaysNil
 	}
 }`,
-			}, {
+			},
+			{
 				name: "scheduleRepositoryPermissionsSync",
 				query: `
 mutation {
@@ -210,7 +222,8 @@ mutation {
 		alwaysNil
 	}
 }`,
-			}, {
+			},
+			{
 				name:     "scheduleUserPermissionsSync",
 				errorStr: auth.ErrMustBeSiteAdminOrSameUser.Error(),
 				query: `
@@ -219,7 +232,8 @@ mutation {
 		alwaysNil
 	}
 }`,
-			}, {
+			},
+			{
 				name: "authorizedUserRepositories",
 				query: `
 {
@@ -227,13 +241,15 @@ mutation {
 		totalCount
 	}
 }`,
-			}, {
+			},
+			{
 				name: "usersWithPendingPermissions",
 				query: `
 {
 	usersWithPendingPermissions
 }`,
-			}, {
+			},
+			{
 				name: "authorizedUserRepositories",
 				query: `
 {
@@ -241,7 +257,8 @@ mutation {
 		totalCount
 	}
 }`,
-			}, {
+			},
+			{
 				name: "setUserEmailVerified",
 				query: `
 mutation {
@@ -253,7 +270,8 @@ mutation {
 		alwaysNil
 	}
 }`,
-			}, {
+			},
+			{
 				name: "setUserIsSiteAdmin",
 				query: `
 mutation {
@@ -261,7 +279,8 @@ mutation {
 		alwaysNil
 	}
 }`,
-			}, {
+			},
+			{
 				name: "invalidateSessionsByID",
 				query: `
 mutation {
@@ -269,7 +288,8 @@ mutation {
 		alwaysNil
 	}
 }`,
-			}, {
+			},
+			{
 				name: "triggerObservabilityTestAlert",
 				query: `
 mutation {
@@ -277,7 +297,8 @@ mutation {
 		alwaysNil
 	}
 }`,
-			}, {
+			},
+			{
 				name: "reloadSite",
 				query: `
 mutation {
@@ -285,7 +306,8 @@ mutation {
 		alwaysNil
 	}
 }`,
-			}, {
+			},
+			{
 				name: "organizations",
 				query: `
 {
@@ -295,7 +317,8 @@ mutation {
 		}
 	}
 }`,
-			}, {
+			},
+			{
 				name: "surveyResponses",
 				query: `
 {
@@ -305,7 +328,8 @@ mutation {
 		}
 	}
 }`,
-			}, {
+			},
+			{
 				name: "repositoryStats",
 				query: `
 {
@@ -313,7 +337,8 @@ mutation {
 		gitDirBytes
 	}
 }`,
-			}, {
+			},
+			{
 				name: "createUser",
 				query: `
 mutation {
@@ -321,7 +346,8 @@ mutation {
 		resetPasswordURL
 	}
 }`,
-			}, {
+			},
+			{
 				name: "deleteUser",
 				query: `
 mutation {
@@ -329,7 +355,8 @@ mutation {
 		alwaysNil
 	}
 }`,
-			}, {
+			},
+			{
 				name: "deleteOrganization",
 				query: `
 mutation {
@@ -337,7 +364,8 @@ mutation {
 		alwaysNil
 	}
 }`,
-			}, {
+			},
+			{
 				name: "randomizeUserPassword",
 				query: `
 mutation {

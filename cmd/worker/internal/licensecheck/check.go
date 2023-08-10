@@ -70,7 +70,6 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 	payload, err := json.Marshal(struct {
 		ClientSiteID string `json:"siteID"`
 	}{ClientSiteID: l.siteID})
-
 	if err != nil {
 		return err
 	}
@@ -155,7 +154,6 @@ func calcDurationSinceLastCalled(clock glock.Clock) (time.Duration, error) {
 // license validity from dotcom and stores the result in redis.
 // It re-runs the check if the license key changes.
 func StartLicenseCheck(originalCtx context.Context, logger log.Logger, db database.DB) {
-
 	if licenseCheckStarted {
 		logger.Info("license check already started")
 		return

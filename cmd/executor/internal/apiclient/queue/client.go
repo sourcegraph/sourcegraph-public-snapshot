@@ -38,8 +38,10 @@ type Client struct {
 }
 
 // Compile time validation.
-var _ workerutil.Store[types.Job] = &Client{}
-var _ cmdlogger.ExecutionLogEntryStore = &Client{}
+var (
+	_ workerutil.Store[types.Job]      = &Client{}
+	_ cmdlogger.ExecutionLogEntryStore = &Client{}
+)
 
 func New(observationCtx *observation.Context, options Options, metricsGatherer prometheus.Gatherer) (*Client, error) {
 	logger := log.Scoped("executor-api-queue-client", "The API client adapter for executors to use dbworkers over HTTP")
@@ -242,7 +244,6 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 	defer endObservation(1, observation.Args{})
 
 	req, err := c.client.NewJSONRequest(http.MethodPost, endpoint, payload)
-
 	if err != nil {
 		return nil, nil, err
 	}

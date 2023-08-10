@@ -79,8 +79,10 @@ func setItemToCache[T interface{}](cacheKey string, summary *T) error {
 	return setDataToCache(cacheKey, string(data), 0)
 }
 
-var dateRanges = []string{LastThreeMonths, LastMonth, LastWeek}
-var groupBys = []string{Weekly, Daily}
+var (
+	dateRanges = []string{LastThreeMonths, LastMonth, LastWeek}
+	groupBys   = []string{Weekly, Daily}
+)
 
 type CacheAll interface {
 	CacheAll(ctx context.Context) error

@@ -549,15 +549,19 @@ func (r *BackfillQueueItemResolver) IDInt32() int32 {
 func (r *BackfillQueueItemResolver) InsightViewTitle() string {
 	return r.InsightTitle
 }
+
 func (r *BackfillQueueItemResolver) Creator(ctx context.Context) (*UserResolver, error) {
 	return r.GetUserResolver(r.CreatorID)
 }
+
 func (r *BackfillQueueItemResolver) SeriesLabel() string {
 	return r.Label
 }
+
 func (r *BackfillQueueItemResolver) SeriesSearchQuery() string {
 	return r.Query
 }
+
 func (r *BackfillQueueItemResolver) BackfillQueueStatus() (BackfillQueueStatusResolver, error) {
 	return r.BackfillStatus, nil
 }
@@ -583,7 +587,7 @@ type AdminBackfillQueueArgs struct {
 	OrderBy    string
 	Descending bool
 
-	//filters
+	// filters
 	States     *[]string
 	TextSearch *string
 }

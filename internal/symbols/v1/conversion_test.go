@@ -182,7 +182,6 @@ func Test_Internal_Types_RepoCommitPath_ProtoRoundTrip(t *testing.T) {
 	var diff string
 
 	f := func(original types.RepoCommitPath) bool {
-
 		var originalProto RepoCommitPath
 		originalProto.FromInternal(&original)
 
@@ -291,6 +290,7 @@ func localCodeIntelSymbolWithinInt32(s types.Symbol) bool {
 
 	return true
 }
+
 func pointWithinInt32(p types.Point) bool {
 	return withinInt32(p.Row, p.Column)
 }

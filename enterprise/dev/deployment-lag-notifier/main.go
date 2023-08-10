@@ -200,5 +200,4 @@ func main() {
 	log.Printf("Now: %s\n", time.Now().String())
 	log.Printf("%s: %s\n", flags.Environment, currentCommit.Date.String())
 	log.Printf("main: %s\n", commitLog[0].Date.String())
-
 }

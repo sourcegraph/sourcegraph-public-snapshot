@@ -58,7 +58,6 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 		Title:          "No repositories found for your query within the context @user",
 		ProposedQueries: []*search.QueryDescription{
 			{
-
 				Description: "search in the global context",
 				Query:       "context:global repo:r1 foo",
 				PatternType: query.SearchTypeRegex,

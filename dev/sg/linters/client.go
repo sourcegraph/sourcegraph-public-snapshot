@@ -9,9 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	inlineTemplates = runScript("Inline templates", "dev/check/template-inlines.sh")
-)
+var inlineTemplates = runScript("Inline templates", "dev/check/template-inlines.sh")
 
 func checkUnversionedDocsLinks() *linter {
 	return runCheck("Literal unversioned docs links", func(ctx context.Context, out *std.Output, state *repo.State) error {

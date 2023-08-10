@@ -28,7 +28,7 @@ type Runtime interface {
 	NewRunner(ctx context.Context, logger cmdlogger.Logger, filesStore files.Store, options RunnerOptions) (runner.Runner, error)
 	// NewRunnerSpecs builds and returns the commands that the runner will execute.
 	NewRunnerSpecs(ws workspace.Workspace, job types.Job) ([]runner.Spec, error)
-	//CommandKey() string
+	// CommandKey() string
 }
 
 // RunnerOptions are the options to create a runner.

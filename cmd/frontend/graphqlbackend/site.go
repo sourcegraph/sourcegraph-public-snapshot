@@ -97,7 +97,7 @@ type SiteConfigurationArgs struct {
 }
 
 func (r *siteResolver) Configuration(ctx context.Context, args *SiteConfigurationArgs) (*siteConfigurationResolver, error) {
-	var returnSafeConfigsOnly = pointers.Deref(args.ReturnSafeConfigsOnly, false)
+	returnSafeConfigsOnly := pointers.Deref(args.ReturnSafeConfigsOnly, false)
 
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.

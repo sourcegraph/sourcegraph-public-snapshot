@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/own/types"
@@ -206,7 +207,7 @@ WHERE %s
 `
 
 type ListCodeownersOpts struct {
-	*LimitOffset
+	*dbtypes.LimitOffset
 
 	// Only return codeowners past this cursor (repoID).
 	Cursor int32

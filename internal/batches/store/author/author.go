@@ -10,7 +10,6 @@ import (
 )
 
 func GetChangesetAuthorForUser(ctx context.Context, userStore database.UserStore, userID int32) (author *batches.ChangesetSpecAuthor, err error) {
-
 	userEmailStore := database.UserEmailsWith(userStore)
 
 	email, _, err := userEmailStore.GetPrimaryEmail(ctx, userID)

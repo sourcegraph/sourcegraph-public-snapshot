@@ -1,17 +1,16 @@
 package graphqlbackend
 
 import (
+	"context"
+	"math/rand"
+	"sort"
 	"strings"
+	"sync"
+	"testing"
 
 	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-
-	"context"
-	"math/rand"
-	"sort"
-	"sync"
-	"testing"
 )
 
 func TestExternalServiceCollaborators_parallelRecentCommitters(t *testing.T) {

@@ -61,7 +61,6 @@ func getAnonDockerAuthToken(repo string) (string, error) {
 	var tr TokenResponse
 
 	err := json.Unmarshal([]byte(body), &tr)
-
 	if err != nil {
 		return "", err
 	}
@@ -71,7 +70,6 @@ func getAnonDockerAuthToken(repo string) (string, error) {
 
 func getImageManifest(image string, tag string) (string, error) {
 	token, err := getAnonDockerAuthToken(image)
-
 	if err != nil {
 		return "", err
 	}
@@ -98,9 +96,7 @@ func getImageManifest(image string, tag string) (string, error) {
 }
 
 func UpdateHashes(ctx *cli.Context) error {
-
 	root, err := root.RepositoryRoot()
-
 	if err != nil {
 		return err
 	}
@@ -147,7 +143,6 @@ func UpdateHashes(ctx *cli.Context) error {
 				if strings.HasPrefix(currentImage.Image, "index.docker.io") {
 					// fetch new digest for latest tag
 					newDigest, err := getImageManifest(strings.Replace(currentImage.Image, "index.docker.io/", "", 1), "latest")
-
 					if err != nil {
 						std.Out.WriteWarningf("%v", err)
 					}

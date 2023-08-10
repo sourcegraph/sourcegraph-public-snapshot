@@ -207,7 +207,7 @@ func (s *SquirrelService) breadcrumbWithOpts(node Node, message func() string, c
 	pc, _, _, ok := runtime.Caller(callerN)
 	details := runtime.FuncForPC(pc)
 	if ok && details != nil {
-		//TODO(burmudar): linter reports that caller is never used
+		// TODO(burmudar): linter reports that caller is never used
 		caller = details.Name()
 		caller = caller[strings.LastIndex(caller, ".")+1:] //nolint:staticcheck //ignore for now that this value is never used
 	}

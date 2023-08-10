@@ -550,7 +550,6 @@ func (r *ownershipResolver) Reasons(_ context.Context) ([]graphqlbackend.Ownersh
 					matchLineNumber: reason.codeownersRule.GetLineNumber(),
 				},
 			})
-
 		}
 		for _, p := range reason.assignedOwnerPath {
 			rs = append(rs, &ownershipReasonResolver{

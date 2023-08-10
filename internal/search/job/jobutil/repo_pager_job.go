@@ -98,7 +98,6 @@ func (p *repoPagerJob) Run(ctx context.Context, clients job.RuntimeClients, stre
 			p.repoOpts.UseIndex,
 			p.containsRefGlobs,
 		)
-
 		if err != nil {
 			return maxAlerter.Alert, err
 		}

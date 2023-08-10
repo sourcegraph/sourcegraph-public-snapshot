@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -183,7 +184,7 @@ func (s *membersConnectionStore) ComputeTotal(ctx context.Context) (*int32, erro
 	return &totalCount, nil
 }
 
-func (s *membersConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*UserResolver, error) {
+func (s *membersConnectionStore) ComputeNodes(ctx context.Context, args *dbtypes.PaginationArgs) ([]*UserResolver, error) {
 	users, err := s.db.Users().ListByOrg(ctx, s.orgID, args, s.query)
 	if err != nil {
 		return nil, err
@@ -197,7 +198,7 @@ func (s *membersConnectionStore) ComputeNodes(ctx context.Context, args *databas
 	return userResolvers, nil
 }
 
-func (s *membersConnectionStore) MarshalCursor(node *UserResolver, _ database.OrderBy) (*string, error) {
+func (s *membersConnectionStore) MarshalCursor(node *UserResolver, _ dbtypes.OrderBy) (*string, error) {
 	if node == nil {
 		return nil, errors.New(`node is nil`)
 	}
@@ -207,7 +208,7 @@ func (s *membersConnectionStore) MarshalCursor(node *UserResolver, _ database.Or
 	return &cursor, nil
 }
 
-func (s *membersConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *membersConnectionStore) UnmarshalCursor(cursor string, _ dbtypes.OrderBy) (*string, error) {
 	nodeID, err := UnmarshalUserID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err

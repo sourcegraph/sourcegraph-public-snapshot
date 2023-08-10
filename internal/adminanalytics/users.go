@@ -90,7 +90,6 @@ func (f *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) 
 	query := sqlf.Sprintf(frequencyQuery, dateRangeCond, sqlf.Join(getDefaultConds(), ") AND ("))
 
 	rows, err := f.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
-
 	if err != nil {
 		return nil, err
 	}

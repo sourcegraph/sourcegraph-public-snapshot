@@ -731,7 +731,6 @@ func TestLogCorruption(t *testing.T) {
 		if fromDB.CorruptionLogs[0].Reason != wanted {
 			t.Errorf("Wanted %q for last corruption log entry but got %q", wanted, fromDB.CorruptionLogs[9].Reason)
 		}
-
 	})
 	t.Run("large reason gets truncated", func(t *testing.T) {
 		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
@@ -1277,7 +1276,6 @@ func TestGitserverRepos_UpdatePoolRepoID_And_GetPoolRepoName(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, ok)
 		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
-
 	})
 
 	t.Run("pool relation exists lookup parent repo", func(t *testing.T) {

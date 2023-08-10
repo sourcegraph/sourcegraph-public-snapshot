@@ -7,8 +7,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const HUMAN_PROMPT = "\n\nHuman:"
-const ASSISTANT_PROMPT = "\n\nAssistant:"
+const (
+	HUMAN_PROMPT     = "\n\nHuman:"
+	ASSISTANT_PROMPT = "\n\nAssistant:"
+)
 
 func getPrompt(messages []types.Message) (string, error) {
 	prompt := make([]string, 0, len(messages))

@@ -968,7 +968,6 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 		wantRepos        []*Repository
 		err              string
 	}{
-
 		{
 			name: "found",
 			mockResponseBody: `

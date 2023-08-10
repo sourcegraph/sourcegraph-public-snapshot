@@ -9,6 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 )
 
 // ExecutorSecretAccessLog represents a row in the `executor_secret_access_logs` table.
@@ -54,7 +55,7 @@ type ExecutorSecretAccessLogStore interface {
 // ExecutorSecretAccessLogsListOpts provide the options when listing secret access
 // logs.
 type ExecutorSecretAccessLogsListOpts struct {
-	*LimitOffset
+	*dbtypes.LimitOffset
 
 	// ExecutorSecretID filters the access records by the given secret id.
 	ExecutorSecretID int64
@@ -81,7 +82,7 @@ func (opts *ExecutorSecretAccessLogsListOpts) limitSQL() *sqlf.Query {
 		return &sqlf.Query{}
 	}
 
-	return (&LimitOffset{Limit: opts.Limit + 1, Offset: opts.Offset}).SQL()
+	return (&dbtypes.LimitOffset{Limit: opts.Limit + 1, Offset: opts.Offset}).SQL()
 }
 
 type executorSecretAccessLogStore struct {

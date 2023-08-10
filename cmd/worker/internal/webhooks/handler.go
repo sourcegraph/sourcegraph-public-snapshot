@@ -15,8 +15,10 @@ type handler struct {
 	store database.WebhookLogStore
 }
 
-var _ goroutine.Handler = &handler{}
-var _ goroutine.ErrorHandler = &handler{}
+var (
+	_ goroutine.Handler      = &handler{}
+	_ goroutine.ErrorHandler = &handler{}
+)
 
 func (h *handler) Handle(ctx context.Context) error {
 	retention := calculateRetention(conf.Get())

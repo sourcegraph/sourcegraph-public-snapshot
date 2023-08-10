@@ -94,22 +94,26 @@ sg telemetry allowlist remove --migration --name my_migration_name EVENT_ONE EVE
 	Action: removeAllowList,
 }
 
-var createMigrationFiles bool
-var allowlistCreateMigrationFlag = &cli.BoolFlag{
-	Name:        "migration",
-	Usage:       "Create migration files with the generated SQL.",
-	Value:       false,
-	Destination: &createMigrationFiles,
-}
+var (
+	createMigrationFiles         bool
+	allowlistCreateMigrationFlag = &cli.BoolFlag{
+		Name:        "migration",
+		Usage:       "Create migration files with the generated SQL.",
+		Value:       false,
+		Destination: &createMigrationFiles,
+	}
+)
 
-var allowlistMigrationName string
-var allowlistMigrationNameOverrideFlag = &cli.StringFlag{
-	Name:        "name",
-	Usage:       "Specifies the name of the resulting migration.",
-	Required:    false,
-	Value:       "sg_telemetry_allowlist",
-	Destination: &allowlistMigrationName,
-}
+var (
+	allowlistMigrationName             string
+	allowlistMigrationNameOverrideFlag = &cli.StringFlag{
+		Name:        "name",
+		Usage:       "Specifies the name of the resulting migration.",
+		Required:    false,
+		Value:       "sg_telemetry_allowlist",
+		Destination: &allowlistMigrationName,
+	}
+)
 
 func addAllowList(ctx *cli.Context) (err error) {
 	events := ctx.Args().Slice()

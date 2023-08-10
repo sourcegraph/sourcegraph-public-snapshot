@@ -4,9 +4,8 @@
 package sysreq
 
 import (
-	"fmt"
-
 	"context"
+	"fmt"
 
 	"golang.org/x/sys/unix"
 )

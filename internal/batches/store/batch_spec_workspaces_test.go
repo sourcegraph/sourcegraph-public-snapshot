@@ -135,7 +135,6 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 				have, _, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
 					BatchSpecID: ws.BatchSpecID,
 				})
-
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -161,7 +160,6 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 				have, _, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
 					IDs: []int64{ws.ID},
 				})
-
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -314,7 +312,6 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 				have, err := s.CountBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
 					BatchSpecID: ws.BatchSpecID,
 				})
-
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -336,7 +333,6 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 				have, err := s.CountBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
 					IDs: []int64{ws.ID},
 				})
-
 				if err != nil {
 					t.Fatal(err)
 				}

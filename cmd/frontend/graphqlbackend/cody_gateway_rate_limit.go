@@ -42,7 +42,6 @@ type codyRateLimit struct {
 
 func (c *codyRateLimit) Feature() string {
 	return c.rl.Feature.DisplayName()
-
 }
 
 func (c *codyRateLimit) Limit() BigInt {

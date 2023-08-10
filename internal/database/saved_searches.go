@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -23,7 +24,7 @@ type SavedSearchStore interface {
 	ListAll(context.Context) ([]api.SavedQuerySpecAndConfig, error)
 	ListSavedSearchesByOrgID(ctx context.Context, orgID int32) ([]*types.SavedSearch, error)
 	ListSavedSearchesByUserID(ctx context.Context, userID int32) ([]*types.SavedSearch, error)
-	ListSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32, paginationArgs *PaginationArgs) ([]*types.SavedSearch, error)
+	ListSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32, paginationArgs *dbtypes.PaginationArgs) ([]*types.SavedSearch, error)
 	CountSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32) (int, error)
 	WithTransact(context.Context, func(SavedSearchStore) error) error
 	Update(context.Context, *types.SavedSearch) (*types.SavedSearch, error)
@@ -248,7 +249,7 @@ func (s *savedSearchStore) ListSavedSearchesByOrgID(ctx context.Context, orgID i
 // user is an admin. It is the caller's responsibility to ensure only admins or
 // members of the specified organization can access the returned saved
 // searches.
-func (s *savedSearchStore) ListSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32, paginationArgs *PaginationArgs) ([]*types.SavedSearch, error) {
+func (s *savedSearchStore) ListSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32, paginationArgs *dbtypes.PaginationArgs) ([]*types.SavedSearch, error) {
 	p := paginationArgs.SQL()
 
 	var where []*sqlf.Query

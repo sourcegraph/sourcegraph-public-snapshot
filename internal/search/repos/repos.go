@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -159,7 +160,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		TopicFilters:          topicFilters,
 		Cursors:               op.Cursors,
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
-		LimitOffset:  &database.LimitOffset{Limit: limit + 1},
+		LimitOffset:  &dbtypes.LimitOffset{Limit: limit + 1},
 		NoForks:      op.NoForks,
 		OnlyForks:    op.OnlyForks,
 		NoArchived:   op.NoArchived,
@@ -447,7 +448,6 @@ func (r *Resolver) normalizeRepoRefs(
 	}
 
 	return revs, nil
-
 }
 
 // filterHasCommitAfter filters the revisions on each of a set of RepositoryRevisions to ensure that
@@ -781,7 +781,7 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 		IncludePatterns: includePatterns,
 		ExcludePattern:  query.UnionRegExps(excludePatterns),
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
-		LimitOffset:     &database.LimitOffset{Limit: limit + 1},
+		LimitOffset:     &dbtypes.LimitOffset{Limit: limit + 1},
 		NoForks:         op.NoForks,
 		OnlyForks:       op.OnlyForks,
 		NoArchived:      op.NoArchived,

@@ -545,13 +545,11 @@ func TestOther_SrcExposeRequest(t *testing.T) {
 				Kind:   extsvc.KindOther,
 				Config: extsvc.NewUnencryptedConfig(string(config)),
 			}, httpcli.NewFactory(httpcli.NewMiddleware()), logtest.Scoped(t))
-
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			req, validSrcExposeConfig, err := source.srcExposeRequest()
-
 			if err != nil {
 				t.Fatal(err)
 			}

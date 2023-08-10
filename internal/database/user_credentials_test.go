@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -512,13 +513,13 @@ func TestUserCredentials_List(t *testing.T) {
 
 		t.Run("pagination for "+name, func(t *testing.T) {
 			o := opts
-			o.LimitOffset = &LimitOffset{Limit: 1}
+			o.LimitOffset = &dbtypes.LimitOffset{Limit: 1}
 			creds, next, err := fx.db.List(fx.userCtx, o)
 			assert.NoError(t, err)
 			assert.EqualValues(t, 1, next)
 			assert.Equal(t, []*UserCredential{githubCred}, creds)
 
-			o.LimitOffset = &LimitOffset{Limit: 1, Offset: next}
+			o.LimitOffset = &dbtypes.LimitOffset{Limit: 1, Offset: next}
 			creds, next, err = fx.db.List(fx.userCtx, o)
 			assert.NoError(t, err)
 			assert.Zero(t, next)

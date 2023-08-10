@@ -46,11 +46,12 @@ func TestNewPlanJob(t *testing.T) {
 		protocol   search.Protocol
 		searchType query.SearchType
 		want       autogold.Value
-	}{{
-		query:      `foo context:@userA`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteral,
-		want: autogold.Expect(`
+	}{
+		{
+			query:      `foo context:@userA`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeLiteral,
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )
@@ -83,11 +84,12 @@ func TestNewPlanJob(t *testing.T) {
           (PARALLEL
             NOOP
             NOOP))))))`),
-	}, {
-		query:      `foo context:global`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteral,
-		want: autogold.Expect(`
+		},
+		{
+			query:      `foo context:global`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeLiteral,
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )
@@ -111,11 +113,12 @@ func TestNewPlanJob(t *testing.T) {
           (REPOSCOMPUTEEXCLUDED
             (repoOpts.searchContextSpec . global))
           NOOP)))))`),
-	}, {
-		query:      `foo`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteral,
-		want: autogold.Expect(`
+		},
+		{
+			query:      `foo`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeLiteral,
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )
@@ -136,11 +139,12 @@ func TestNewPlanJob(t *testing.T) {
               (repoNamePatterns . [(?i)foo])))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
-	}, {
-		query:      `foo repo:sourcegraph/sourcegraph`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteral,
-		want: autogold.Expect(`
+		},
+		{
+			query:      `foo repo:sourcegraph/sourcegraph`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeLiteral,
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )
@@ -172,11 +176,12 @@ func TestNewPlanJob(t *testing.T) {
           (PARALLEL
             NOOP
             NOOP))))))`),
-	}, {
-		query:      `ok ok`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		},
+		{
+			query:      `ok ok`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )
@@ -197,11 +202,12 @@ func TestNewPlanJob(t *testing.T) {
               (repoNamePatterns . [(?i)(?:ok).*?(?:ok)])))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
-	}, {
-		query:      `ok @thing`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteral,
-		want: autogold.Expect(`
+		},
+		{
+			query:      `ok @thing`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeLiteral,
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )
@@ -222,11 +228,12 @@ func TestNewPlanJob(t *testing.T) {
               (repoNamePatterns . [(?i)ok ])))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
-	}, {
-		query:      `@nope`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		},
+		{
+			query:      `@nope`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )
@@ -242,11 +249,12 @@ func TestNewPlanJob(t *testing.T) {
             (type . text))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
-	}, {
-		query:      `repo:sourcegraph/sourcegraph rev:*refs/heads/*`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeLucky,
-		want: autogold.Expect(`
+		},
+		{
+			query:      `repo:sourcegraph/sourcegraph rev:*refs/heads/*`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeLucky,
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )
@@ -263,11 +271,12 @@ func TestNewPlanJob(t *testing.T) {
             (REPOSEARCH
               (repoOpts.repoFilters . [sourcegraph/sourcegraph@*refs/heads/*])
               (repoNamePatterns . [(?i)sourcegraph/sourcegraph]))))))))`),
-	}, {
-		query:      `repo:sourcegraph/sourcegraph@*refs/heads/*`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeLucky,
-		want: autogold.Expect(`
+		},
+		{
+			query:      `repo:sourcegraph/sourcegraph@*refs/heads/*`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeLucky,
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )
@@ -284,11 +293,12 @@ func TestNewPlanJob(t *testing.T) {
             (REPOSEARCH
               (repoOpts.repoFilters . [sourcegraph/sourcegraph@*refs/heads/*])
               (repoNamePatterns . [(?i)sourcegraph/sourcegraph]))))))))`),
-	}, {
-		query:      `foo @bar`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		},
+		{
+			query:      `foo @bar`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )
@@ -304,11 +314,12 @@ func TestNewPlanJob(t *testing.T) {
             (type . text))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
-	}, {
-		query:      `type:symbol test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		},
+		{
+			query:      `type:symbol test`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )
@@ -324,11 +335,12 @@ func TestNewPlanJob(t *testing.T) {
             (type . symbol))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
-	}, {
-		query:      `type:commit test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		},
+		{
+			query:      `type:commit test`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )
@@ -346,11 +358,12 @@ func TestNewPlanJob(t *testing.T) {
             (repoOpts.onlyCloned . true))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
-	}, {
-		query:      `type:diff test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		},
+		{
+			query:      `type:diff test`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )
@@ -368,11 +381,12 @@ func TestNewPlanJob(t *testing.T) {
             (repoOpts.onlyCloned . true))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
-	}, {
-		query:      `type:file type:commit test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		},
+		{
+			query:      `type:file type:commit test`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )
@@ -393,11 +407,12 @@ func TestNewPlanJob(t *testing.T) {
             (repoOpts.onlyCloned . true))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
-	}, {
-		query:      `type:file type:path type:repo type:commit type:symbol repo:test test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		},
+		{
+			query:      `type:file type:path type:repo type:commit type:symbol repo:test test`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )
@@ -450,11 +465,12 @@ func TestNewPlanJob(t *testing.T) {
                   (numRepos . 0)
                   (limit . 500))))
             NOOP))))))`),
-	}, {
-		query:      `type:file type:commit test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		},
+		{
+			query:      `type:file type:commit test`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )
@@ -475,11 +491,12 @@ func TestNewPlanJob(t *testing.T) {
             (repoOpts.onlyCloned . true))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
-	}, {
-		query:      `type:file type:path type:repo type:commit type:symbol repo:test test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		},
+		{
+			query:      `type:file type:path type:repo type:commit type:symbol repo:test test`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )
@@ -532,12 +549,13 @@ func TestNewPlanJob(t *testing.T) {
                   (numRepos . 0)
                   (limit . 500))))
             NOOP))))))`),
-	}, {
-		query:      `(type:commit or type:diff) (a or b)`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		// TODO this output doesn't look right. There shouldn't be any zoekt or repo jobs
-		want: autogold.Expect(`
+		},
+		{
+			query:      `(type:commit or type:diff) (a or b)`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			// TODO this output doesn't look right. There shouldn't be any zoekt or repo jobs
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )
@@ -572,11 +590,12 @@ func TestNewPlanJob(t *testing.T) {
             (OR
               NOOP
               NOOP)))))))`),
-	}, {
-		query:      `(type:repo a) or (type:file b)`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		},
+		{
+			query:      `(type:repo a) or (type:file b)`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )
@@ -602,11 +621,12 @@ func TestNewPlanJob(t *testing.T) {
               (type . text))
             REPOSCOMPUTEEXCLUDED
             NOOP))))))`),
-	}, {
-		query:      `type:symbol a or b`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		},
+		{
+			query:      `type:symbol a or b`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			want: autogold.Expect(`
 (LOG
   (ALERT
     (query . )
@@ -624,7 +644,7 @@ func TestNewPlanJob(t *testing.T) {
           (OR
             NOOP
             NOOP))))))`),
-	},
+		},
 		{
 			query:      `repo:contains.path(a) repo:contains.content(b)`,
 			protocol:   search.Streaming,
@@ -647,7 +667,8 @@ func TestNewPlanJob(t *testing.T) {
             (repoOpts.hasFileContent[0].path . a)
             (repoOpts.hasFileContent[1].content . b)
             (repoNamePatterns . [])))))))`),
-		}, {
+		},
+		{
 			query:      `repo:contains.file(path:a content:b)`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeRegex,
@@ -669,7 +690,8 @@ func TestNewPlanJob(t *testing.T) {
             (repoOpts.hasFileContent[0].path . a)
             (repoOpts.hasFileContent[0].content . b)
             (repoNamePatterns . [])))))))`),
-		}, {
+		},
+		{
 			query:      `repo:has(key:value)`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeRegex,
@@ -691,7 +713,8 @@ func TestNewPlanJob(t *testing.T) {
             (repoOpts.hasKVPs[0].key . key)
             (repoOpts.hasKVPs[0].value . value)
             (repoNamePatterns . [])))))))`),
-		}, {
+		},
+		{
 			query:      `repo:has.tag(tag)`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeRegex,
@@ -711,7 +734,8 @@ func TestNewPlanJob(t *testing.T) {
           (REPOSEARCH
             (repoOpts.hasKVPs[0].key . tag)
             (repoNamePatterns . [])))))))`),
-		}, {
+		},
+		{
 			query:      `repo:has.topic(mytopic)`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeRegex,
@@ -731,7 +755,8 @@ func TestNewPlanJob(t *testing.T) {
           (REPOSEARCH
             (repoOpts.hasTopics[0].topic . mytopic)
             (repoNamePatterns . [])))))))`),
-		}, {
+		},
+		{
 			query:      `repo:has.tag(tag) foo`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeRegex,
@@ -768,7 +793,8 @@ func TestNewPlanJob(t *testing.T) {
           (PARALLEL
             NOOP
             NOOP))))))`),
-		}, {
+		},
+		{
 			query:      `(...)`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeStructural,

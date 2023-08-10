@@ -15,8 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/team"
 )
 
-var RunSlackIntegrationTest = flag.Bool("RunSlackIntegrationTest", false, "Run Slack integration tests")
-var RunGitHubIntegrationTest = flag.Bool("RunGitHubIntegrationTest", false, "Run Github integration tests")
+var (
+	RunSlackIntegrationTest  = flag.Bool("RunSlackIntegrationTest", false, "Run Slack integration tests")
+	RunGitHubIntegrationTest = flag.Bool("RunGitHubIntegrationTest", false, "Run Github integration tests")
+)
 
 type TestJobLine struct {
 	title string

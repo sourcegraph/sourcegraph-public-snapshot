@@ -35,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -2113,7 +2114,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			t.Fatalf("List error: %s", err)
 		}
 		chs, _, err := db.CodeHosts().List(ctx, ListCodeHostsOpts{
-			LimitOffset: LimitOffset{
+			LimitOffset: dbtypes.LimitOffset{
 				Limit: 20,
 			},
 		})
@@ -2138,7 +2139,6 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 				}
 			}
 		}
-
 	})
 }
 
@@ -2678,7 +2678,7 @@ func TestExternalServiceStore_ListRepos(t *testing.T) {
 	require.Exactly(t, org.ID, have.OrgID, "orgID is incorrect")
 
 	// check that repos are found with given externalServiceID
-	haveRepos, err = db.ExternalServices().ListRepos(ctx, ExternalServiceReposListOptions{ExternalServiceID: 1, LimitOffset: &LimitOffset{Limit: 1}})
+	haveRepos, err = db.ExternalServices().ListRepos(ctx, ExternalServiceReposListOptions{ExternalServiceID: 1, LimitOffset: &dbtypes.LimitOffset{Limit: 1}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2688,7 +2688,7 @@ func TestExternalServiceStore_ListRepos(t *testing.T) {
 	}
 
 	// check that repos are limited
-	haveRepos, err = db.ExternalServices().ListRepos(ctx, ExternalServiceReposListOptions{ExternalServiceID: 1, LimitOffset: &LimitOffset{Limit: 0}})
+	haveRepos, err = db.ExternalServices().ListRepos(ctx, ExternalServiceReposListOptions{ExternalServiceID: 1, LimitOffset: &dbtypes.LimitOffset{Limit: 0}})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -105,7 +105,6 @@ func TestLockoutStore(t *testing.T) {
 
 		assert.EqualError(t, err, `signing key not provided, cannot validate JWT on unlock account URL. Please add "auth.unlockAccountLinkSigningKey" to site configuration.`)
 		assert.Empty(t, path)
-
 	})
 
 	t.Run("generates an account unlock url", func(t *testing.T) {
@@ -122,7 +121,6 @@ func TestLockoutStore(t *testing.T) {
 		assert.Empty(t, err)
 
 		assert.Contains(t, path, "http://example.com/unlock-account")
-
 	})
 
 	t.Run("generates an expected jwt token", func(t *testing.T) {
@@ -146,7 +144,6 @@ func TestLockoutStore(t *testing.T) {
 
 			return base64.StdEncoding.DecodeString(signingKey)
 		})
-
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -194,7 +191,6 @@ func TestLockoutStore(t *testing.T) {
 		if !valid {
 			t.Fatalf("provided token is invalid")
 		}
-
 	})
 
 	t.Run("fails verification on unlock account token", func(t *testing.T) {

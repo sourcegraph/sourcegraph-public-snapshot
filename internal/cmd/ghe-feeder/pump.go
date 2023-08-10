@@ -29,7 +29,7 @@ func extractOwnerRepoFromCSVLine(line string) string {
 		return ""
 	}
 
-	var ownerRepo = elems[5]
+	ownerRepo := elems[5]
 	return strings.Replace(ownerRepo, "-", "/", 1)
 }
 
@@ -132,7 +132,6 @@ func (prdc *producer) pump(ctx context.Context) error {
 			}
 			return nil
 		})
-
 		if err != nil {
 			return err
 		}
@@ -193,7 +192,6 @@ func numLinesTotal(skipNumLines int64) (int64, error) {
 			}
 			return nil
 		})
-
 		if err != nil {
 			return 0, err
 		}

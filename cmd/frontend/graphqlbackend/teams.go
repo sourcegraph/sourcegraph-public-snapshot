@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -90,7 +91,7 @@ func (r *teamConnectionResolver) compute(ctx context.Context) {
 			ExceptAncestorID: r.exceptAncestorID,
 		}
 		if r.limit != 0 {
-			opts.LimitOffset = &database.LimitOffset{Limit: r.limit}
+			opts.LimitOffset = &dbtypes.LimitOffset{Limit: r.limit}
 		}
 		teams, next, err := r.db.Teams().ListTeams(ctx, opts)
 		if err != nil {
@@ -307,7 +308,7 @@ func (r *teamMemberConnection) compute(ctx context.Context) {
 			Search: r.search,
 		}
 		if r.limit != 0 {
-			opts.LimitOffset = &database.LimitOffset{Limit: r.limit}
+			opts.LimitOffset = &dbtypes.LimitOffset{Limit: r.limit}
 		}
 		nodes, next, err := r.db.Teams().ListTeamMembers(ctx, opts)
 		if err != nil {

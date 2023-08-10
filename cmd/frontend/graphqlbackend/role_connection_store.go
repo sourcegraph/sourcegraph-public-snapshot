@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 )
 
 type roleConnectionStore struct {
@@ -15,13 +16,13 @@ type roleConnectionStore struct {
 	userID int32
 }
 
-func (rcs *roleConnectionStore) MarshalCursor(node RoleResolver, _ database.OrderBy) (*string, error) {
+func (rcs *roleConnectionStore) MarshalCursor(node RoleResolver, _ dbtypes.OrderBy) (*string, error) {
 	cursor := string(node.ID())
 
 	return &cursor, nil
 }
 
-func (rcs *roleConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (rcs *roleConnectionStore) UnmarshalCursor(cursor string, _ dbtypes.OrderBy) (*string, error) {
 	nodeID, err := UnmarshalRoleID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
@@ -44,7 +45,7 @@ func (rcs *roleConnectionStore) ComputeTotal(ctx context.Context) (*int32, error
 	return &total, nil
 }
 
-func (rcs *roleConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]RoleResolver, error) {
+func (rcs *roleConnectionStore) ComputeNodes(ctx context.Context, args *dbtypes.PaginationArgs) ([]RoleResolver, error) {
 	roles, err := rcs.db.Roles().List(ctx, database.RolesListOptions{
 		PaginationArgs: args,
 		System:         rcs.system,

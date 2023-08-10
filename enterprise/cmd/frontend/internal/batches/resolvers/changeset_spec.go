@@ -146,6 +146,7 @@ func (r *changesetDescriptionResolver) ToExistingChangesetReference() (graphqlba
 	}
 	return nil, false
 }
+
 func (r *changesetDescriptionResolver) ToGitBranchChangesetDescription() (graphqlbackend.GitBranchChangesetDescriptionResolver, bool) {
 	if r.spec.Type == btypes.ChangesetSpecTypeBranch {
 		return r, true
@@ -214,6 +215,7 @@ func (r *gitCommitDescriptionResolver) Message() string { return r.message }
 func (r *gitCommitDescriptionResolver) Subject() string {
 	return gitdomain.Message(r.message).Subject()
 }
+
 func (r *gitCommitDescriptionResolver) Body() *string {
 	body := gitdomain.Message(r.message).Body()
 	if body == "" {

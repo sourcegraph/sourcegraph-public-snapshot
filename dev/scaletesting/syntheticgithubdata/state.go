@@ -313,7 +313,6 @@ func (s *state) saveOrg(o *org) error {
 		o.Failed,
 		o.Created,
 		o.Login)
-
 	if err != nil {
 		return err
 	}
@@ -340,7 +339,6 @@ func (s *state) saveRepo(r *repo) error {
 		r.AssignedOrgs,
 		r.Complete,
 		r.Name)
-
 	if err != nil {
 		return err
 	}

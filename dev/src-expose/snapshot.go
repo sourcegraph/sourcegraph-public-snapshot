@@ -17,7 +17,7 @@ func snapshot(logger *log.Logger, src, dst string) error {
 	name := filepath.Base(src)
 
 	dst = filepath.Join(dst, ".git")
-	if err := os.MkdirAll(dst, 0755); err != nil {
+	if err := os.MkdirAll(dst, 0o755); err != nil {
 		return err
 	}
 

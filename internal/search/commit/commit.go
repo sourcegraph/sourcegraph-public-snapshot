@@ -37,8 +37,10 @@ type SearchJob struct {
 	CodeMonitorSearchWrapper CodeMonitorHook `json:"-"`
 }
 
-type DoSearchFunc func(*gitprotocol.SearchRequest) error
-type CodeMonitorHook func(context.Context, database.DB, GitserverClient, *gitprotocol.SearchRequest, api.RepoID, DoSearchFunc) error
+type (
+	DoSearchFunc    func(*gitprotocol.SearchRequest) error
+	CodeMonitorHook func(context.Context, database.DB, GitserverClient, *gitprotocol.SearchRequest, api.RepoID, DoSearchFunc) error
+)
 
 type GitserverClient interface {
 	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)

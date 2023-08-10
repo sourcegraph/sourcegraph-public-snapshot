@@ -40,7 +40,6 @@ func RepoCommitsChangelistsWith(logger log.Logger, other basestore.ShareableStor
 
 func (s *repoCommitsChangelistsStore) BatchInsertCommitSHAsWithPerforceChangelistID(ctx context.Context, repo_id api.RepoID, commitsMap []types.PerforceChangelist) error {
 	return s.WithTransact(ctx, func(tx *basestore.Store) error {
-
 		inserter := batch.NewInserter(ctx, tx.Handle(), "repo_commits_changelists", batch.MaxNumPostgresParameters, "repo_id", "commit_sha", "perforce_changelist_id")
 		for _, item := range commitsMap {
 			if err := inserter.Insert(
@@ -54,7 +53,6 @@ func (s *repoCommitsChangelistsStore) BatchInsertCommitSHAsWithPerforceChangelis
 		}
 		return inserter.Flush(ctx)
 	})
-
 }
 
 var getLatestForRepoFmtStr = `

@@ -193,7 +193,8 @@ func (s *Service) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
 			repo:   rc.repo,
 			commit: rc.commit,
 		},
-		done: done}
+		done: done,
+	}
 
 	// Route the index request to the indexer associated with the repo.
 	ix := int(fnv1.HashString32(rc.repo)) % len(s.indexRequestQueues)

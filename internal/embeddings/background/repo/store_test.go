@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -69,7 +70,7 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 	require.Equal(t, 0, count)
 
 	first := 10
-	jobs, err := store.ListRepoEmbeddingJobs(ctx, ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}})
+	jobs, err := store.ListRepoEmbeddingJobs(ctx, ListOpts{PaginationArgs: &dbtypes.PaginationArgs{First: &first, OrderBy: dbtypes.OrderBy{{Field: "id"}}, Ascending: true}})
 	require.NoError(t, err)
 
 	// only queued job exists
@@ -103,7 +104,7 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 	require.Equal(t, exists, true)
 
 	// Check that we get the correct repo embedding job if we filter by "state".
-	jobs, err = store.ListRepoEmbeddingJobs(ctx, ListOpts{State: &stateCompleted, PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}})
+	jobs, err = store.ListRepoEmbeddingJobs(ctx, ListOpts{State: &stateCompleted, PaginationArgs: &dbtypes.PaginationArgs{First: &first, OrderBy: dbtypes.OrderBy{{Field: "id"}}, Ascending: true}})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(jobs))
 	require.Equal(t, id2, jobs[0].ID)
@@ -173,7 +174,7 @@ func TestCancelRepoEmbeddingJob(t *testing.T) {
 	require.NoError(t, err)
 
 	first := 10
-	jobs, err := store.ListRepoEmbeddingJobs(ctx, ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}})
+	jobs, err := store.ListRepoEmbeddingJobs(ctx, ListOpts{PaginationArgs: &dbtypes.PaginationArgs{First: &first, OrderBy: dbtypes.OrderBy{{Field: "id"}}, Ascending: true}})
 	require.NoError(t, err)
 
 	// Expect to get the two repo embedding jobs in the list.

@@ -72,74 +72,75 @@ func (it *documentOneShotIterator) VisitAllDocuments(
 
 	var outerError error = nil
 
-	secondPassVisitor := scip.IndexVisitor{VisitDocument: func(currentDocument *scip.Document) {
-		path := currentDocument.RelativePath
-		if it.ignorePaths.Has(path) {
-			return
-		}
-		document := currentDocument
-		if docCount := it.indexSummary.documentCountByPath[path]; docCount > 1 {
-			samePathDocs := append(repeatedDocumentsByPath[path], document)
-			repeatedDocumentsByPath[path] = samePathDocs
-			if len(samePathDocs) != docCount {
-				// The document will be processed later when all other Documents
-				// with the same path are seen.
+	secondPassVisitor := scip.IndexVisitor{
+		VisitDocument: func(currentDocument *scip.Document) {
+			path := currentDocument.RelativePath
+			if it.ignorePaths.Has(path) {
 				return
 			}
-			flattenedDoc := scip.FlattenDocuments(samePathDocs)
-			delete(repeatedDocumentsByPath, path)
-			if len(flattenedDoc) != 1 {
-				logger.Warn("FlattenDocuments should return a single Document as input slice contains Documents"+
-					" with the same RelativePath",
-					log.String("path", path),
-					log.Int("obtainedCount", len(flattenedDoc)))
+			document := currentDocument
+			if docCount := it.indexSummary.documentCountByPath[path]; docCount > 1 {
+				samePathDocs := append(repeatedDocumentsByPath[path], document)
+				repeatedDocumentsByPath[path] = samePathDocs
+				if len(samePathDocs) != docCount {
+					// The document will be processed later when all other Documents
+					// with the same path are seen.
+					return
+				}
+				flattenedDoc := scip.FlattenDocuments(samePathDocs)
+				delete(repeatedDocumentsByPath, path)
+				if len(flattenedDoc) != 1 {
+					logger.Warn("FlattenDocuments should return a single Document as input slice contains Documents"+
+						" with the same RelativePath",
+						log.String("path", path),
+						log.Int("obtainedCount", len(flattenedDoc)))
+					return
+				}
+				document = flattenedDoc[0]
+			}
+
+			if ctx.Err() != nil {
+				outerError = ctx.Err()
 				return
 			}
-			document = flattenedDoc[0]
-		}
-
-		if ctx.Err() != nil {
-			outerError = ctx.Err()
-			return
-		}
-		if err := doIt(processDocument(document, it.indexSummary.externalSymbolsByName)); err != nil {
-			outerError = err
-			return
-		}
-
-		// While processing this document, stash the unique packages of each symbol name
-		// in the document. If there is an occurrence that defines that symbol, mark that
-		// package as being one that we define (rather than simply reference).
-
-		for _, symbol := range document.Symbols {
-			if pkg, ok := packageFromSymbol(symbol.Symbol); ok {
-				// no-op if key exists; add false if key is absent
-				packageSet[pkg] = packageSet[pkg] || false
+			if err := doIt(processDocument(document, it.indexSummary.externalSymbolsByName)); err != nil {
+				outerError = err
+				return
 			}
 
-			for _, relationship := range symbol.Relationships {
-				if pkg, ok := packageFromSymbol(relationship.Symbol); ok {
+			// While processing this document, stash the unique packages of each symbol name
+			// in the document. If there is an occurrence that defines that symbol, mark that
+			// package as being one that we define (rather than simply reference).
+
+			for _, symbol := range document.Symbols {
+				if pkg, ok := packageFromSymbol(symbol.Symbol); ok {
 					// no-op if key exists; add false if key is absent
 					packageSet[pkg] = packageSet[pkg] || false
 				}
-			}
-		}
 
-		for _, occurrence := range document.Occurrences {
-			if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {
-				continue
-			}
-
-			if pkg, ok := packageFromSymbol(occurrence.Symbol); ok {
-				if isDefinition := scip.SymbolRole_Definition.Matches(occurrence); isDefinition {
-					packageSet[pkg] = true
-				} else {
-					// no-op if key exists; add false if key is absent
-					packageSet[pkg] = packageSet[pkg] || false
+				for _, relationship := range symbol.Relationships {
+					if pkg, ok := packageFromSymbol(relationship.Symbol); ok {
+						// no-op if key exists; add false if key is absent
+						packageSet[pkg] = packageSet[pkg] || false
+					}
 				}
 			}
-		}
-	},
+
+			for _, occurrence := range document.Occurrences {
+				if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {
+					continue
+				}
+
+				if pkg, ok := packageFromSymbol(occurrence.Symbol); ok {
+					if isDefinition := scip.SymbolRole_Definition.Matches(occurrence); isDefinition {
+						packageSet[pkg] = true
+					} else {
+						// no-op if key exists; add false if key is absent
+						packageSet[pkg] = packageSet[pkg] || false
+					}
+				}
+			}
+		},
 	}
 	if err := secondPassVisitor.ParseStreaming(&it.indexReader); err != nil {
 		logger.Warn("error on second pass over SCIP index; should've hit it in the first pass",

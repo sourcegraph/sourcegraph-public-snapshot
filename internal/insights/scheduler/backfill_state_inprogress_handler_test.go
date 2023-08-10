@@ -231,7 +231,6 @@ func Test_BackfillWithRetry(t *testing.T) {
 	attemptCounts := make(map[int]int)
 	runner := &delegateBackfillRunner{
 		doSomething: func(ctx context.Context, req pipeline.BackfillRequest) error {
-
 			val := attemptCounts[int(req.Repo.ID)]
 			attemptCounts[int(req.Repo.ID)] += 1
 			if val > 2 {

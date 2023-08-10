@@ -76,7 +76,7 @@ func Test_parseRDSAuthToken(t *testing.T) {
 			want: &rdsAuthToken{
 				ExpiresIn: time.Duration(900) * time.Second,
 				// 2023-02-15T02:31:54Z
-				IssuedAt: time.Date(2023, 02, 15, 2, 31, 54, 0, time.UTC),
+				IssuedAt: time.Date(2023, 0o2, 15, 2, 31, 54, 0, time.UTC),
 			},
 		},
 		{
@@ -105,7 +105,7 @@ func Test_parseRDSAuthToken(t *testing.T) {
 }
 
 func Test_rdsAuthToken_isExpired(t1 *testing.T) {
-	now := time.Date(2020, 02, 15, 2, 31, 54, 0, time.UTC)
+	now := time.Date(2020, 0o2, 15, 2, 31, 54, 0, time.UTC)
 
 	tests := []struct {
 		name  string

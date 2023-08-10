@@ -12,32 +12,33 @@ func TestCodeHostOf(t *testing.T) {
 		repo      api.RepoName
 		codehosts []*CodeHost
 		want      *CodeHost
-	}{{
-		name:      "none",
-		repo:      "github.com/foo/bar",
-		codehosts: nil,
-		want:      nil,
-	}, {
-		name:      "out",
-		repo:      "github.com/foo/bar",
-		codehosts: []*CodeHost{GitLabDotCom},
-		want:      nil,
-	}, {
-		name:      "in",
-		repo:      "github.com/foo/bar",
-		codehosts: PublicCodeHosts,
-		want:      GitHubDotCom,
-	}, {
-		name:      "case-insensitive",
-		repo:      "GITHUB.COM/foo/bar",
-		codehosts: PublicCodeHosts,
-		want:      GitHubDotCom,
-	}, {
-		name:      "invalid",
-		repo:      "github.com.example.com/foo/bar",
-		codehosts: PublicCodeHosts,
-		want:      nil,
-	},
+	}{
+		{
+			name:      "none",
+			repo:      "github.com/foo/bar",
+			codehosts: nil,
+			want:      nil,
+		}, {
+			name:      "out",
+			repo:      "github.com/foo/bar",
+			codehosts: []*CodeHost{GitLabDotCom},
+			want:      nil,
+		}, {
+			name:      "in",
+			repo:      "github.com/foo/bar",
+			codehosts: PublicCodeHosts,
+			want:      GitHubDotCom,
+		}, {
+			name:      "case-insensitive",
+			repo:      "GITHUB.COM/foo/bar",
+			codehosts: PublicCodeHosts,
+			want:      GitHubDotCom,
+		}, {
+			name:      "invalid",
+			repo:      "github.com.example.com/foo/bar",
+			codehosts: PublicCodeHosts,
+			want:      nil,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			have := CodeHostOf(tc.repo, tc.codehosts...)

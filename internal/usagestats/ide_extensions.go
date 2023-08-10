@@ -50,7 +50,6 @@ func GetIDEExtensionsUsageStatistics(ctx context.Context, db database.DB) (*type
 	stats.IDEs = usageStatisticsByIdext
 
 	return &stats, nil
-
 }
 
 var ideExtensionsPeriodUsageQuery = `

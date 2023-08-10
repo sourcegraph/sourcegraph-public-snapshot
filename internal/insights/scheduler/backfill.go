@@ -11,9 +11,9 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	edb "github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/insights/scheduler/iterator"
 	"github.com/sourcegraph/sourcegraph/internal/insights/types"
@@ -28,6 +28,7 @@ type BackfillStore struct {
 func NewBackfillStore(edb edb.InsightsDB) *BackfillStore {
 	return newBackfillStoreWithClock(edb, glock.NewRealClock())
 }
+
 func newBackfillStoreWithClock(edb edb.InsightsDB, clock glock.Clock) *BackfillStore {
 	return &BackfillStore{Store: basestore.NewWithHandle(edb.Handle()), clock: clock}
 }
@@ -310,7 +311,7 @@ func (s *BackfillStore) LoadSeriesBackfillsDebugInfo(ctx context.Context, series
 }
 
 type BackfillQueueArgs struct {
-	PaginationArgs *database.PaginationArgs
+	PaginationArgs *dbtypes.PaginationArgs
 	States         *[]string
 	TextSearch     *string
 	ID             *int
@@ -364,12 +365,13 @@ func backfillWhere(args BackfillQueueArgs) []*sqlf.Query {
 
 func (s *BackfillStore) GetBackfillQueueInfo(ctx context.Context, args BackfillQueueArgs) (results []BackfillQueueItem, err error) {
 	where := backfillWhere(args)
-	pagination := database.PaginationArgs{
-		OrderBy: database.OrderBy{
+	pagination := dbtypes.PaginationArgs{
+		OrderBy: dbtypes.OrderBy{
 			{
 				Field: string(BackfillID),
 			},
-		}}
+		},
+	}
 	if args.PaginationArgs != nil {
 		pagination = *args.PaginationArgs
 	}

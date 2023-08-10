@@ -76,7 +76,6 @@ func (c *client) listAllProjects(ctx context.Context, cursor *Pagination) (ListP
 
 // ListProjects fetches a list of CODE projects from Gerrit.
 func (c *client) ListProjects(ctx context.Context, opts ListProjectsArgs) (projects ListProjectsResponse, nextPage bool, err error) {
-
 	if opts.Cursor == nil {
 		opts.Cursor = &Pagination{PerPage: 100, Page: 1}
 	}

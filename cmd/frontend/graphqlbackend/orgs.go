@@ -13,7 +13,8 @@ import (
 func (r *schemaResolver) Organizations(args *struct {
 	graphqlutil.ConnectionArgs
 	Query *string
-}) *orgConnectionResolver {
+},
+) *orgConnectionResolver {
 	var opt database.OrgsListOptions
 	if args.Query != nil {
 		opt.Query = *args.Query

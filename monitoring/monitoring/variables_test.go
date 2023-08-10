@@ -63,7 +63,7 @@ func TestVariableApplier(t *testing.T) {
 			},
 		})
 
-		var expression = `metric{bar="$bar"}[$foo]`
+		expression := `metric{bar="$bar"}[$foo]`
 
 		applied := vars.ApplySentinelValues(expression)
 		assert.Equal(t, `metric{bar="$bar"}[57m]`, applied) // sentinel value is 60-len(name)
@@ -88,7 +88,7 @@ func TestVariableApplier(t *testing.T) {
 			},
 		}, false)
 
-		var expression = `metric{bar="$bar"}[$foo]`
+		expression := `metric{bar="$bar"}[$foo]`
 
 		applied := vars.ApplySentinelValues(expression)
 		// no replacement for intervals

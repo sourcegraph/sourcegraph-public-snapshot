@@ -41,7 +41,6 @@ func (r *Resolver) SearchInsightLivePreview(ctx context.Context, args graphqlbac
 }
 
 func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend.SearchInsightPreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
-
 	err := isValidPreviewArgs(args)
 	if err != nil {
 		return nil, err
@@ -156,7 +155,8 @@ func (s *searchInsightLivePreviewSeriesResolver) Points(ctx context.Context) ([]
 				RepoList:    s.repoList,
 				RepoSearch:  s.repoSearch,
 				SearchQuery: querybuilder.BasicQuery(s.searchQuery),
-			}}
+			},
+		}
 		resolvers = append(resolvers, pointResolver)
 	}
 
@@ -214,9 +214,11 @@ func isValidPreviewArgs(args graphqlbackend.SearchInsightPreviewArgs) error {
 	return nil
 }
 
-const repoLimitExceededErrorCode = "RepoLimitExceeded"
-const noDataErrorCode = "NoData"
-const invalidArgsErrorCode = "InvalidArgs"
+const (
+	repoLimitExceededErrorCode = "RepoLimitExceeded"
+	noDataErrorCode            = "NoData"
+	invalidArgsErrorCode       = "InvalidArgs"
+)
 
 type livePreviewError struct {
 	Code    string `json:"code"`

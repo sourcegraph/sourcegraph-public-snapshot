@@ -97,7 +97,7 @@ func (r *batchSpecWorkspaceStepV1Resolver) Environment() ([]graphqlbackend.Batch
 	// the final env. Otherwise, we fall back to the preliminary set of env vars as determined by the
 	// resolve workspaces step.
 
-	var env = r.stepInfo.Environment
+	env := r.stepInfo.Environment
 
 	// Not yet resolved, do a server-side pass.
 	if env == nil {
@@ -366,6 +366,7 @@ var _ graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver = &batchSpecW
 func (r *batchSpecWorkspaceEnvironmentVariableResolver) Name() string {
 	return r.key
 }
+
 func (r *batchSpecWorkspaceEnvironmentVariableResolver) Value() *string {
 	return r.value
 }
@@ -380,6 +381,7 @@ var _ graphqlbackend.BatchSpecWorkspaceOutputVariableResolver = &batchSpecWorksp
 func (r *batchSpecWorkspaceOutputVariableResolver) Name() string {
 	return r.key
 }
+
 func (r *batchSpecWorkspaceOutputVariableResolver) Value() graphqlbackend.JSONValue {
 	return graphqlbackend.JSONValue{Value: r.value}
 }

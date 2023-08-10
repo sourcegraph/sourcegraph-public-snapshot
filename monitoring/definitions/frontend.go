@@ -739,7 +739,8 @@ func Frontend() *monitoring.Dashboard {
 											RefID:        "2",
 											Expr:         "sum(increase(src_search_ranking_result_clicked_count{type=\"filePathMatch\"}[6h])) / sum(increase(src_search_ranking_result_clicked_count[6h])) * 100",
 											LegendFormat: "filePathMatch",
-										}}
+										},
+									}
 									p.GraphPanel.Tooltip.Shared = true
 								}),
 							Owner:          monitoring.ObservableOwnerSearchCore,

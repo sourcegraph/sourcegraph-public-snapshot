@@ -29,7 +29,7 @@ func TestRedisFixAOF(t *testing.T) {
 	bad := b.Bytes()
 	bad = bad[:len(bad)-4]
 	aofPath := filepath.Join(dataDir, "appendonly.aof")
-	if err := os.WriteFile(aofPath, bad, 0600); err != nil {
+	if err := os.WriteFile(aofPath, bad, 0o600); err != nil {
 		t.Fatal(err)
 	}
 

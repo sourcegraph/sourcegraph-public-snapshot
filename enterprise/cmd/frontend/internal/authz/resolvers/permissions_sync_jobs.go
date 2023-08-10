@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -46,7 +47,7 @@ func (s *permissionsSyncJobConnectionStore) ComputeTotal(ctx context.Context) (*
 	return &total, nil
 }
 
-func (s *permissionsSyncJobConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.PermissionsSyncJobResolver, error) {
+func (s *permissionsSyncJobConnectionStore) ComputeNodes(ctx context.Context, args *dbtypes.PaginationArgs) ([]graphqlbackend.PermissionsSyncJobResolver, error) {
 	jobs, err := s.db.PermissionSyncJobs().List(ctx, s.getListArgs(args))
 	if err != nil {
 		return nil, err
@@ -94,7 +95,7 @@ func (s *permissionsSyncJobConnectionStore) resolveSubject(ctx context.Context, 
 	}, nil
 }
 
-func (s *permissionsSyncJobConnectionStore) MarshalCursor(node graphqlbackend.PermissionsSyncJobResolver, _ database.OrderBy) (*string, error) {
+func (s *permissionsSyncJobConnectionStore) MarshalCursor(node graphqlbackend.PermissionsSyncJobResolver, _ dbtypes.OrderBy) (*string, error) {
 	id, err := unmarshalPermissionsSyncJobID(node.ID())
 	if err != nil {
 		return nil, err
@@ -103,11 +104,11 @@ func (s *permissionsSyncJobConnectionStore) MarshalCursor(node graphqlbackend.Pe
 	return &cursor, nil
 }
 
-func (s *permissionsSyncJobConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *permissionsSyncJobConnectionStore) UnmarshalCursor(cursor string, _ dbtypes.OrderBy) (*string, error) {
 	return &cursor, nil
 }
 
-func (s *permissionsSyncJobConnectionStore) getListArgs(pageArgs *database.PaginationArgs) database.ListPermissionSyncJobOpts {
+func (s *permissionsSyncJobConnectionStore) getListArgs(pageArgs *dbtypes.PaginationArgs) database.ListPermissionSyncJobOpts {
 	opts := database.ListPermissionSyncJobOpts{WithPlaceInQueue: true}
 	if pageArgs != nil {
 		opts.PaginationArgs = pageArgs
@@ -294,6 +295,7 @@ type permissionSyncJobReasonResolver struct {
 func (p permissionSyncJobReasonResolver) Group() string {
 	return string(p.group)
 }
+
 func (p permissionSyncJobReasonResolver) Reason() *string {
 	if p.reason == "" {
 		return nil

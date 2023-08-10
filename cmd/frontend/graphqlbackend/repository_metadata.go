@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
@@ -210,7 +211,7 @@ func (r *repoMetaResolver) Keys(ctx context.Context, args *RepoMetadataKeysArgs)
 	reverse := false
 	connectionOptions := graphqlutil.ConnectionResolverOptions{
 		Reverse:   &reverse,
-		OrderBy:   database.OrderBy{{Field: string(database.RepoKVPListKeyColumn)}},
+		OrderBy:   dbtypes.OrderBy{{Field: string(database.RepoKVPListKeyColumn)}},
 		Ascending: true,
 	}
 	return graphqlutil.NewConnectionResolver[string](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
@@ -232,17 +233,17 @@ func (s *repoMetaKeysConnectionStore) ComputeTotal(ctx context.Context) (*int32,
 	return &totalCount, nil
 }
 
-func (s *repoMetaKeysConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]string, error) {
+func (s *repoMetaKeysConnectionStore) ComputeNodes(ctx context.Context, args *dbtypes.PaginationArgs) ([]string, error) {
 	return s.db.RepoKVPs().ListKeys(ctx, s.listOptions, *args)
 }
 
-func (s *repoMetaKeysConnectionStore) MarshalCursor(node string, _ database.OrderBy) (*string, error) {
+func (s *repoMetaKeysConnectionStore) MarshalCursor(node string, _ dbtypes.OrderBy) (*string, error) {
 	cursor := string(relay.MarshalID("RepositoryMetadataKeyCursor", node))
 
 	return &cursor, nil
 }
 
-func (s *repoMetaKeysConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *repoMetaKeysConnectionStore) UnmarshalCursor(cursor string, _ dbtypes.OrderBy) (*string, error) {
 	var value string
 	if err := relay.UnmarshalSpec(graphql.ID(cursor), &value); err != nil {
 		return nil, err
@@ -285,7 +286,7 @@ func (r *repoMetaKeyResolver) Values(ctx context.Context, args *RepoMetadataValu
 	reverse := false
 	connectionOptions := graphqlutil.ConnectionResolverOptions{
 		Reverse:   &reverse,
-		OrderBy:   database.OrderBy{{Field: string(database.RepoKVPListValueColumn)}},
+		OrderBy:   dbtypes.OrderBy{{Field: string(database.RepoKVPListValueColumn)}},
 		Ascending: true,
 	}
 	return graphqlutil.NewConnectionResolver[string](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
@@ -307,17 +308,17 @@ func (s *repoMetaValuesConnectionStore) ComputeTotal(ctx context.Context) (*int3
 	return &totalCount, nil
 }
 
-func (s *repoMetaValuesConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]string, error) {
+func (s *repoMetaValuesConnectionStore) ComputeNodes(ctx context.Context, args *dbtypes.PaginationArgs) ([]string, error) {
 	return s.db.RepoKVPs().ListValues(ctx, s.listOptions, *args)
 }
 
-func (s *repoMetaValuesConnectionStore) MarshalCursor(node string, _ database.OrderBy) (*string, error) {
+func (s *repoMetaValuesConnectionStore) MarshalCursor(node string, _ dbtypes.OrderBy) (*string, error) {
 	cursor := string(relay.MarshalID("RepositoryMetadataValueCursor", node))
 
 	return &cursor, nil
 }
 
-func (s *repoMetaValuesConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *repoMetaValuesConnectionStore) UnmarshalCursor(cursor string, _ dbtypes.OrderBy) (*string, error) {
 	var value string
 	if err := relay.UnmarshalSpec(graphql.ID(cursor), &value); err != nil {
 		return nil, err

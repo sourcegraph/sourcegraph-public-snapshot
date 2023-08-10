@@ -88,7 +88,6 @@ sg lint --help
 				lintTargets = append(lintTargets, t)
 				targets = append(targets, t.Name)
 			}
-
 		} else {
 			// Otherwise run requested set
 			allLintTargetsMap := make(map[string]linters.Target, len(linters.Targets))

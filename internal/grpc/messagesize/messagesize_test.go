@@ -9,12 +9,10 @@ import (
 )
 
 func TestGetMessageSizeBytesFromString(t *testing.T) {
-
 	t.Run("8 MB", func(t *testing.T) {
 		sizeString := "8MB"
 
 		size, err := getMessageSizeBytesFromString(sizeString, 0, math.MaxInt)
-
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}

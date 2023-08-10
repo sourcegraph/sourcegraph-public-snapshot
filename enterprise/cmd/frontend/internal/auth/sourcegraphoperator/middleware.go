@@ -16,6 +16,7 @@ import (
 	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -99,7 +100,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 				r.Context(),
 				database.ExternalAccountsListOptions{
 					UserID: result.User.ID,
-					LimitOffset: &database.LimitOffset{
+					LimitOffset: &dbtypes.LimitOffset{
 						Limit: 2,
 					},
 				},

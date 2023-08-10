@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -396,13 +397,13 @@ func TestListSiteConfigs(t *testing.T) {
 	s := db.Conf()
 	createDummySiteConfigs(t, ctx, s)
 
-	if _, err := s.ListSiteConfigs(ctx, &PaginationArgs{}); err != nil {
+	if _, err := s.ListSiteConfigs(ctx, &dbtypes.PaginationArgs{}); err != nil {
 		t.Error("Expected non-nil error but got nil")
 	}
 
 	testCases := []struct {
 		name        string
-		listOptions *PaginationArgs
+		listOptions *dbtypes.PaginationArgs
 		expectedIDs []int32
 	}{
 		{
@@ -411,49 +412,49 @@ func TestListSiteConfigs(t *testing.T) {
 		},
 		{
 			name: "first: 2 (subset of data)",
-			listOptions: &PaginationArgs{
+			listOptions: &dbtypes.PaginationArgs{
 				First: pointers.Ptr(2),
 			},
 			expectedIDs: []int32{5, 3},
 		},
 		{
 			name: "last: 2 (subset of data)",
-			listOptions: &PaginationArgs{
+			listOptions: &dbtypes.PaginationArgs{
 				Last: pointers.Ptr(2),
 			},
 			expectedIDs: []int32{1, 2},
 		},
 		{
 			name: "first: 5 (all of data)",
-			listOptions: &PaginationArgs{
+			listOptions: &dbtypes.PaginationArgs{
 				First: pointers.Ptr(5),
 			},
 			expectedIDs: []int32{5, 3, 2, 1},
 		},
 		{
 			name: "last: 5 (all of data)",
-			listOptions: &PaginationArgs{
+			listOptions: &dbtypes.PaginationArgs{
 				Last: pointers.Ptr(5),
 			},
 			expectedIDs: []int32{1, 2, 3, 5},
 		},
 		{
 			name: "first: 10 (more than data)",
-			listOptions: &PaginationArgs{
+			listOptions: &dbtypes.PaginationArgs{
 				First: pointers.Ptr(10),
 			},
 			expectedIDs: []int32{5, 3, 2, 1},
 		},
 		{
 			name: "last: 10 (more than data)",
-			listOptions: &PaginationArgs{
+			listOptions: &dbtypes.PaginationArgs{
 				Last: pointers.Ptr(10),
 			},
 			expectedIDs: []int32{1, 2, 3, 5},
 		},
 		{
 			name: "first: 2, after: 5",
-			listOptions: &PaginationArgs{
+			listOptions: &dbtypes.PaginationArgs{
 				First: pointers.Ptr(2),
 				After: pointers.Ptr("5"),
 			},
@@ -461,7 +462,7 @@ func TestListSiteConfigs(t *testing.T) {
 		},
 		{
 			name: "first: 6, after: 5 (overflow)",
-			listOptions: &PaginationArgs{
+			listOptions: &dbtypes.PaginationArgs{
 				First: pointers.Ptr(6),
 				After: pointers.Ptr("5"),
 			},
@@ -469,7 +470,7 @@ func TestListSiteConfigs(t *testing.T) {
 		},
 		{
 			name: "last: 2, after: 5",
-			listOptions: &PaginationArgs{
+			listOptions: &dbtypes.PaginationArgs{
 				Last:  pointers.Ptr(2),
 				After: pointers.Ptr("5"),
 			},
@@ -477,7 +478,7 @@ func TestListSiteConfigs(t *testing.T) {
 		},
 		{
 			name: "last: 6, after: 5 (overflow)",
-			listOptions: &PaginationArgs{
+			listOptions: &dbtypes.PaginationArgs{
 				Last:  pointers.Ptr(6),
 				After: pointers.Ptr("5"),
 			},
@@ -485,7 +486,7 @@ func TestListSiteConfigs(t *testing.T) {
 		},
 		{
 			name: "first: 2, before: 1",
-			listOptions: &PaginationArgs{
+			listOptions: &dbtypes.PaginationArgs{
 				First:  pointers.Ptr(2),
 				Before: pointers.Ptr("1"),
 			},
@@ -493,7 +494,7 @@ func TestListSiteConfigs(t *testing.T) {
 		},
 		{
 			name: "first: 6, before: 1 (overflow)",
-			listOptions: &PaginationArgs{
+			listOptions: &dbtypes.PaginationArgs{
 				First:  pointers.Ptr(6),
 				Before: pointers.Ptr("1"),
 			},
@@ -501,7 +502,7 @@ func TestListSiteConfigs(t *testing.T) {
 		},
 		{
 			name: "last: 2, before: 2",
-			listOptions: &PaginationArgs{
+			listOptions: &dbtypes.PaginationArgs{
 				Last:   pointers.Ptr(2),
 				Before: pointers.Ptr("2"),
 			},
@@ -509,7 +510,7 @@ func TestListSiteConfigs(t *testing.T) {
 		},
 		{
 			name: "last: 6, before: 2 (overflow)",
-			listOptions: &PaginationArgs{
+			listOptions: &dbtypes.PaginationArgs{
 				Last:   pointers.Ptr(6),
 				Before: pointers.Ptr("2"),
 			},

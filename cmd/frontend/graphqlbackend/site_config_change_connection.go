@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -20,7 +21,7 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeTotal(ctx context.Contex
 	return &c, err
 }
 
-func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*SiteConfigurationChangeResolver, error) {
+func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Context, args *dbtypes.PaginationArgs) ([]*SiteConfigurationChangeResolver, error) {
 	if args == nil {
 		return nil, errors.New("pagination args cannot be nil")
 	}
@@ -62,12 +63,12 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Contex
 	return resolvers, nil
 }
 
-func (s *SiteConfigurationChangeConnectionStore) MarshalCursor(node *SiteConfigurationChangeResolver, _ database.OrderBy) (*string, error) {
+func (s *SiteConfigurationChangeConnectionStore) MarshalCursor(node *SiteConfigurationChangeResolver, _ dbtypes.OrderBy) (*string, error) {
 	cursor := string(node.ID())
 	return &cursor, nil
 }
 
-func (s *SiteConfigurationChangeConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *SiteConfigurationChangeConnectionStore) UnmarshalCursor(cursor string, _ dbtypes.OrderBy) (*string, error) {
 	var id int
 	err := relay.UnmarshalSpec(graphql.ID(cursor), &id)
 	if err != nil {
@@ -82,7 +83,7 @@ func (s *SiteConfigurationChangeConnectionStore) UnmarshalCursor(cursor string, 
 // older item to get the diff of the oldes item in the list.
 //
 // A separate function so that this can be tested in isolation.
-func modifyArgs(args *database.PaginationArgs) (bool, error) {
+func modifyArgs(args *dbtypes.PaginationArgs) (bool, error) {
 	var modified bool
 	if args.First != nil {
 		*args.First += 1

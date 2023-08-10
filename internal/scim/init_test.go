@@ -76,7 +76,6 @@ func TestAuthMiddleware(t *testing.T) {
 			tc.testFunc(t, rr)
 		})
 	}
-
 }
 
 func TestLicenseMiddleware(t *testing.T) {
@@ -136,7 +135,6 @@ func TestLicenseMiddleware(t *testing.T) {
 			tc.testFunc(t, rr)
 		})
 	}
-
 }
 
 func TestHandler(t *testing.T) {
@@ -200,5 +198,4 @@ func TestHandler(t *testing.T) {
 			tc.testFunc(t, rr)
 		})
 	}
-
 }

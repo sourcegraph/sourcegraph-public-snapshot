@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -173,7 +174,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			name: "get 1 by id",
 			listOpts: ListCodeHostsOpts{
 				ID: int32(1),
-				LimitOffset: LimitOffset{
+				LimitOffset: dbtypes.LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -183,7 +184,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			name: "get 1 by url",
 			listOpts: ListCodeHostsOpts{
 				URL: "https://github.com/",
-				LimitOffset: LimitOffset{
+				LimitOffset: dbtypes.LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -192,7 +193,7 @@ func TestCodeHostStore_List(t *testing.T) {
 		{
 			name: "get all, non-deleted",
 			listOpts: ListCodeHostsOpts{
-				LimitOffset: LimitOffset{
+				LimitOffset: dbtypes.LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -202,7 +203,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			name: "get all, with deleted",
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
-				LimitOffset: LimitOffset{
+				LimitOffset: dbtypes.LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -213,7 +214,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Search:         "gitlab",
-				LimitOffset: LimitOffset{
+				LimitOffset: dbtypes.LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -224,7 +225,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Search:         "bitbucket",
-				LimitOffset: LimitOffset{
+				LimitOffset: dbtypes.LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -235,7 +236,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Cursor:         int32(2),
-				LimitOffset: LimitOffset{
+				LimitOffset: dbtypes.LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -246,7 +247,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Cursor:         int32(3),
-				LimitOffset: LimitOffset{
+				LimitOffset: dbtypes.LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -256,7 +257,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			name: "cursor test, use next",
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
-				LimitOffset: LimitOffset{
+				LimitOffset: dbtypes.LimitOffset{
 					Limit: 1,
 				},
 			},

@@ -115,7 +115,7 @@ func zoektSearch(ctx context.Context, client zoekt.Streamer, args *search.TextPa
 			for _, file := range event.Files {
 				hdr := tar.Header{
 					Name: file.FileName,
-					Mode: 0600,
+					Mode: 0o600,
 					Size: int64(len(file.Content)),
 				}
 				tarInput := comby.TarInputEvent{

@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"math"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -50,19 +53,22 @@ func main() {
 	math.MaxInt32
 	// And more...
 	signal.Notify(c, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
-
 }
+
 func foo() error {
 	return fmt.Errorf("foo error")
 }
+
 func defered() {
 	defer fmt.Println("deferred")
 }
+
 func concurrent() {
 	go func() {
 		fmt.Println("concurrent")
 	}()
 }
+
 func pointers() {
 	x := 5
 	fmt.Println(&x) // print memory address

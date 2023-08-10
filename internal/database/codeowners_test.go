@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 	owntypes "github.com/sourcegraph/sourcegraph/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -168,7 +169,7 @@ func TestCodeowners_GetListCount(t *testing.T) {
 		if diff := cmp.Diff(all, have, protocmp.Transform()); diff != "" {
 			t.Fatal(diff)
 		}
-		//require.Equal(t, all, have)
+		// require.Equal(t, all, have)
 		if cursor != 0 {
 			t.Fatal("incorrect cursor returned")
 		}
@@ -177,7 +178,7 @@ func TestCodeowners_GetListCount(t *testing.T) {
 		var lastCursor int32
 		for i := 0; i < len(all); i++ {
 			t.Run(fmt.Sprintf("list codeowners n#%d", i), func(t *testing.T) {
-				opts := ListCodeownersOpts{LimitOffset: &LimitOffset{Limit: 1}, Cursor: lastCursor}
+				opts := ListCodeownersOpts{LimitOffset: &dbtypes.LimitOffset{Limit: 1}, Cursor: lastCursor}
 				cf, c, err := store.ListCodeowners(ctx, opts)
 				if err != nil {
 					t.Fatal(err)

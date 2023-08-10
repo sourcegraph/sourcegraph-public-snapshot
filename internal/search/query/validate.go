@@ -237,41 +237,30 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	}
 
 	switch field {
-	case
-		FieldDefault:
+	case FieldDefault:
 		// Search patterns are not validated here, as it depends on the search type.
-	case
-		FieldCase:
+	case FieldCase:
 		return satisfies(isSingular, isBoolean, isNotNegated)
-	case
-		FieldRepo:
+	case FieldRepo:
 		return satisfies(isValidRepoRegexp)
-	case
-		FieldContext:
+	case FieldContext:
 		return satisfies(isSingular, isNotNegated)
-	case
-		FieldFile:
+	case FieldFile:
 		return satisfies(isValidRegexp)
-	case
-		FieldLang:
+	case FieldLang:
 		return satisfies(isLanguage)
-	case
-		FieldType:
+	case FieldType:
 		return satisfies(isNotNegated)
 	case
 		FieldPatternType,
 		FieldContent,
 		FieldVisibility:
 		return satisfies(isSingular, isNotNegated)
-	case
-		FieldRepoHasFile:
+	case FieldRepoHasFile:
 		return satisfies(isValidRegexp)
-	case
-		FieldRepoHasCommitAfter:
+	case FieldRepoHasCommitAfter:
 		return satisfies(isSingular, isNotNegated)
-	case
-		FieldBefore,
-		FieldAfter:
+	case FieldBefore, FieldAfter:
 		return satisfies(isNotNegated, isValidGitDate)
 	case
 		FieldAuthor,
@@ -283,20 +272,15 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		FieldFork,
 		FieldArchived:
 		return satisfies(isSingular, isNotNegated, isYesNoOnly)
-	case
-		FieldCount:
+	case FieldCount:
 		return satisfies(isSingular, isNumber, isNotNegated)
-	case
-		FieldCombyRule:
+	case FieldCombyRule:
 		return satisfies(isSingular, isNotNegated)
-	case
-		FieldTimeout:
+	case FieldTimeout:
 		return satisfies(isSingular, isNotNegated, isDuration)
-	case
-		FieldRev:
+	case FieldRev:
 		return satisfies(isSingular, isNotNegated)
-	case
-		FieldSelect:
+	case FieldSelect:
 		return satisfies(isSingular, isNotNegated, isValidSelect)
 	default:
 		return isUnrecognizedField()

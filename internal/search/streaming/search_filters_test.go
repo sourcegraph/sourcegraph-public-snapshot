@@ -26,12 +26,15 @@ func TestSearchFiltersUpdate(t *testing.T) {
 					Results: []result.Match{
 						&result.CommitMatch{
 							Repo:           repo,
-							MessagePreview: &result.MatchedString{MatchedRanges: make([]result.Range, 2)}},
+							MessagePreview: &result.MatchedString{MatchedRanges: make([]result.Range, 2)},
+						},
 						&result.CommitMatch{
 							Repo:           repo,
-							MessagePreview: &result.MatchedString{MatchedRanges: make([]result.Range, 1)}},
+							MessagePreview: &result.MatchedString{MatchedRanges: make([]result.Range, 1)},
+						},
 					},
-				}},
+				},
+			},
 			wantFilterName:  "repo:^foo$",
 			wantFilterKind:  "repo",
 			wantFilterCount: 3,
@@ -73,7 +76,6 @@ func TestSearchFiltersUpdate(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-
 			s := &SearchFilters{}
 			for _, event := range c.events {
 				s.Update(event)

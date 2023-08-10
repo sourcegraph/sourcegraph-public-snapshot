@@ -111,7 +111,8 @@ func TestNewRoutesAndReceivers(t *testing.T) {
 			},
 			wantReceivers: 3,
 			wantRoutes:    2,
-		}, {
+		},
+		{
 			name: "one custom route",
 			args: args{
 				newAlerts: []*schema.ObservabilityAlerts{{
@@ -127,7 +128,8 @@ func TestNewRoutesAndReceivers(t *testing.T) {
 			},
 			wantReceivers: 4,
 			wantRoutes:    3,
-		}, {
+		},
+		{
 			name: "multiple alerts on same owner-level combination",
 			args: args{
 				newAlerts: []*schema.ObservabilityAlerts{{

@@ -55,8 +55,10 @@ func TestCreateAndGetNotebook(t *testing.T) {
 	blocks := NotebookBlocks{
 		{ID: "1", Type: NotebookQueryBlockType, QueryInput: &NotebookQueryBlockInput{"repo:a b"}},
 		{ID: "2", Type: NotebookMarkdownBlockType, MarkdownInput: &NotebookMarkdownBlockInput{"# Title"}},
-		{ID: "3", Type: NotebookFileBlockType, FileInput: &NotebookFileBlockInput{
-			RepositoryName: "github.com/sourcegraph/sourcegraph", FilePath: "client/web/file.tsx"},
+		{
+			ID: "3", Type: NotebookFileBlockType, FileInput: &NotebookFileBlockInput{
+				RepositoryName: "github.com/sourcegraph/sourcegraph", FilePath: "client/web/file.tsx",
+			},
 		},
 		{ID: "4", Type: NotebookSymbolBlockType, SymbolInput: &NotebookSymbolBlockInput{
 			RepositoryName:      "github.com/sourcegraph/sourcegraph",
@@ -221,8 +223,10 @@ func TestListingAndCountingNotebooks(t *testing.T) {
 		{ID: "1", Type: NotebookQueryBlockType, QueryInput: &NotebookQueryBlockInput{"repo:a b"}},
 		{ID: "2", Type: NotebookMarkdownBlockType, MarkdownInput: &NotebookMarkdownBlockInput{"# Title"}},
 		{ID: "3", Type: NotebookQueryBlockType, QueryInput: &NotebookQueryBlockInput{"repo:sourcegraph file:client/web/file.tsx"}},
-		{ID: "4", Type: NotebookFileBlockType, FileInput: &NotebookFileBlockInput{
-			RepositoryName: "github.com/sourcegraph/sourcegraph", FilePath: "client/web/file.tsx"},
+		{
+			ID: "4", Type: NotebookFileBlockType, FileInput: &NotebookFileBlockInput{
+				RepositoryName: "github.com/sourcegraph/sourcegraph", FilePath: "client/web/file.tsx",
+			},
 		},
 		{ID: "5", Type: NotebookMarkdownBlockType, MarkdownInput: &NotebookMarkdownBlockInput{"Lorem ipsum dolor sit amet, consectetur adipiscing elit."}},
 		{ID: "6", Type: NotebookMarkdownBlockType, MarkdownInput: &NotebookMarkdownBlockInput{"Donec in auctor odio."}},

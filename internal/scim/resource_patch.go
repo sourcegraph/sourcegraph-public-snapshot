@@ -34,7 +34,7 @@ func (h *ResourceHandler) Patch(r *http.Request, id string, operations []scim.Pa
 				return scim.Resource{}, opErr
 			}
 		}
-		var now = time.Now()
+		now := time.Now()
 		resource.Meta.LastModified = &now
 		return resource, nil
 	})
@@ -156,7 +156,7 @@ func (h *ResourceHandler) applyOperation(op scim.PatchOperation, resource *scim.
 					filterMatched = true
 					newlyChanged := applyAttributeChange(item, attributeToSet, v, op.Op)
 					if newlyChanged {
-						attributeItems[i] = item //attribute items are updated
+						attributeItems[i] = item // attribute items are updated
 						matchedItems = append(matchedItems, item)
 					}
 				}
@@ -312,7 +312,6 @@ func buildFilterString(valueExpression filter.Expression, attrName string) strin
 	default:
 		return fmt.Sprintf("%s[%v]", attrName, t)
 	}
-
 }
 
 type multiValueReplaceNotFoundStrategy func(
@@ -330,7 +329,8 @@ func standardMultiValueReplaceNotFoundStrategy(
 	_ string,
 	_ interface{},
 	_ string,
-	_ filter.Expression) ([]interface{}, error) {
+	_ filter.Expression,
+) ([]interface{}, error) {
 	return nil, scimerrors.ScimErrorNoTarget
 }
 

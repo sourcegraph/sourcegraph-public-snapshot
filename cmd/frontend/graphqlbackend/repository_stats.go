@@ -42,7 +42,6 @@ func (r *repositoryStatsResolver) GitDirBytes(ctx context.Context) (BigInt, erro
 		return 0, err
 	}
 	return BigInt(gitDirBytes), nil
-
 }
 
 func (r *repositoryStatsResolver) computeGitDirBytes(ctx context.Context) (int64, error) {

@@ -248,7 +248,6 @@ func mapToLoggerField(m map[string]any) []log.Field {
 	LogFields := []log.Field{}
 
 	for i, v := range m {
-
 		LogFields = append(LogFields, log.String(i, fmt.Sprint(v)))
 	}
 

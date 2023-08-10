@@ -4,8 +4,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type operations struct {
-}
+type operations struct{}
 
 // var m = new(metrics.SingletonREDMetrics)
 

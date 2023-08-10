@@ -196,7 +196,6 @@ func (s *Service) deleteObject(ctx context.Context, bucketName, objectName strin
 }
 
 func (s *Service) listObjects(_ context.Context, bucketName string) ([]objectMetadata, error) {
-
 	// Ensure the bucket cannot be created/deleted while we look at it.
 	bucketLock := s.bucketLock(bucketName)
 	bucketLock.RLock()

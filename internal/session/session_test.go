@@ -277,10 +277,12 @@ func TestCookieMiddleware(t *testing.T) {
 		{
 			req:      httptest.NewRequest("GET", "/", nil),
 			expActor: &actor.Actor{},
-		}, {
+		},
+		{
 			req:      authedReqs[0],
 			expActor: actors[0],
-		}, {
+		},
+		{
 			req:      authedReqs[1],
 			expActor: &actor.Actor{},
 			deleted:  true,
@@ -304,7 +306,6 @@ func TestCookieMiddleware(t *testing.T) {
 				t.Errorf("got deleted %v, want %v", deleted, testcase.deleted)
 			}
 		})
-
 	}
 }
 

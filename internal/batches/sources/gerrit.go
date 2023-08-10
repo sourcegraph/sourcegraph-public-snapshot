@@ -266,7 +266,7 @@ func (s GerritSource) MergeChangeset(ctx context.Context, cs *Changeset, _ bool)
 
 func (s GerritSource) BuildCommitOpts(repo *types.Repo, changeset *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
 	opts := BuildCommitOptsCommon(repo, spec, pushOpts)
-	pushRef := strings.Replace(gitdomain.EnsureRefPrefix(spec.BaseRef), "refs/heads", "refs/for", 1) //Magical Gerrit ref for pushing changes.
+	pushRef := strings.Replace(gitdomain.EnsureRefPrefix(spec.BaseRef), "refs/heads", "refs/for", 1) // Magical Gerrit ref for pushing changes.
 	opts.PushRef = &pushRef
 	changeID := changeset.ExternalID
 	if changeID == "" {

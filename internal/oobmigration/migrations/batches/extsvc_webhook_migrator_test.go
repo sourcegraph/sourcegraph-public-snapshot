@@ -23,7 +23,7 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	var testExtSvcs = []struct {
+	testExtSvcs := []struct {
 		kind        string
 		hasWebhooks bool
 		cfg         any

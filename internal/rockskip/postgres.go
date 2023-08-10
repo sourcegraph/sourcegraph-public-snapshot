@@ -345,8 +345,10 @@ func statusADToColumn(status StatusAD) string {
 	}
 }
 
-var RW_LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols-rw"))
-var INDEXING_LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols-indexing"))
+var (
+	RW_LOCKS_NAMESPACE       = int32(fnv1.HashString32("symbols-rw"))
+	INDEXING_LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols-indexing"))
+)
 
 func lock(ctx context.Context, db dbutil.DB, threadStatus *ThreadStatus, namespace int32, name, repo, lockFn, unlockFn string) (func() error, error) {
 	key := int32(fnv1.HashString32(repo))

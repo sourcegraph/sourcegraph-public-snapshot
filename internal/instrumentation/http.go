@@ -102,10 +102,12 @@ func HTTPMiddleware(operation string, next http.Handler, opts ...otelhttp.Option
 //
 // To achieve that, it shims the default TracerProvider with samplingRetainTracerProvider to inject
 // the attribute at the beginning of the span, which is mandatory to perform sampling.
-type samplingRetainTracerProvider struct{}
-type samplingRetainTracer struct {
-	tracer trace.Tracer
-}
+type (
+	samplingRetainTracerProvider struct{}
+	samplingRetainTracer         struct {
+		tracer trace.Tracer
+	}
+)
 
 func (p *samplingRetainTracerProvider) Tracer(instrumentationName string, opts ...trace.TracerOption) trace.Tracer {
 	return &samplingRetainTracer{tracer: otel.GetTracerProvider().Tracer(instrumentationName, opts...)}

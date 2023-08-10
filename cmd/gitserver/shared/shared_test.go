@@ -204,7 +204,6 @@ func TestMethodSpecificUnaryInterceptor(t *testing.T) {
 			if diff := cmp.Diff(test.expectedInterceptorCalled, interceptorCalled); diff != "" {
 				t.Fatalf("unexpected interceptor called value (-want +got):\n%s", diff)
 			}
-
 		})
 	}
 }

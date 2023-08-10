@@ -151,7 +151,6 @@ func computeExternalState(c *btypes.Changeset, history []changesetStatesAtTime, 
 
 // computeSingleChangesetExternalState computes the reviewState for a github changeset
 func computeGitHubReviewState(c *btypes.Changeset) btypes.ChangesetReviewState {
-
 	// GitHub only stores the ReviewDecision in PullRequest metadata, not
 	// in events, so we need to handle it separtely. We want to respect the
 	// CODEOWNERS review as the mergeable state, not any other approval.
@@ -170,7 +169,6 @@ func computeGitHubReviewState(c *btypes.Changeset) btypes.ChangesetReviewState {
 // computeReviewState computes the review state for the changeset and its
 // associated events. The events should be presorted.
 func computeReviewState(c *btypes.Changeset, history []changesetStatesAtTime) (btypes.ChangesetReviewState, error) {
-
 	if c.ExternalServiceType == extsvc.TypeGitHub {
 		return computeGitHubReviewState(c), nil
 	}
@@ -238,7 +236,6 @@ func parseBitbucketServerBuildState(s string) btypes.ChangesetCheckState {
 	default:
 		return btypes.ChangesetCheckStateUnknown
 	}
-
 }
 
 func computeBitbucketCloudBuildState(lastSynced time.Time, apr *bbcs.AnnotatedPullRequest, events []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
@@ -756,7 +753,6 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 					}
 				}
 			}
-
 		}
 	case *protocol.PerforceChangelist:
 		states[btypes.ChangesetReviewStatePending] = true
@@ -790,7 +786,7 @@ func selectReviewState(states map[btypes.ChangesetReviewState]bool) btypes.Chang
 // computeDiffStat computes the up to date diffstat for the changeset, based on
 // the values in c.SyncState.
 func computeDiffStat(ctx context.Context, client gitserver.Client, c *btypes.Changeset, repo api.RepoName) (*diff.Stat, error) {
-	//Code hosts that don't push to branches (like Gerrit), can just skip this.
+	// Code hosts that don't push to branches (like Gerrit), can just skip this.
 	if c.SyncState.BaseRefOid == c.SyncState.HeadRefOid {
 		return c.DiffStat(), nil
 	}

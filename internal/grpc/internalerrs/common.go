@@ -205,7 +205,6 @@ func findNonUTF8StringFields(m proto.Message) ([]string, error) {
 
 		return nil
 	})
-
 	if err != nil {
 		return nil, errors.Wrap(err, "iterating over proto message")
 	}
@@ -225,7 +224,6 @@ func massageIntoStatusErr(err error) (s *status.Status, ok bool) {
 
 	if errors.Is(err, context.Canceled) {
 		return status.New(codes.Canceled, context.Canceled.Error()), true
-
 	}
 
 	if errors.Is(err, context.DeadlineExceeded) {

@@ -118,7 +118,6 @@ func TestQueryAnalyzerCost(t *testing.T) {
 				RepositoryByteSizes:  tc.repositoryByteSizesQ2,
 			})
 			tc.compare(t, cost1, cost2)
-
 		})
 	}
 }

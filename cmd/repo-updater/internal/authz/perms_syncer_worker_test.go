@@ -21,8 +21,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const errorMsg = "Sorry, wrong number."
-const allProvidersFailedMsg = "All providers failed to sync permissions."
+const (
+	errorMsg              = "Sorry, wrong number."
+	allProvidersFailedMsg = "All providers failed to sync permissions."
+)
 
 func TestPermsSyncerWorker_Handle(t *testing.T) {
 	ctx := context.Background()
@@ -484,6 +486,7 @@ func (d *dummyPermsSyncer) syncRepoPerms(_ context.Context, repoID api.RepoID, n
 	}
 	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, database.CodeHostStatusesSet{}, nil
 }
+
 func (d *dummyPermsSyncer) syncUserPerms(_ context.Context, userID int32, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
 	d.Lock()
 	defer d.Unlock()
@@ -535,6 +538,7 @@ func (d *dummySyncerWithErrors) syncRepoPerms(_ context.Context, repoID api.Repo
 
 	return &result, codeHostStates, nil
 }
+
 func (d *dummySyncerWithErrors) syncUserPerms(_ context.Context, userID int32, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
 	d.Lock()
 	defer d.Unlock()

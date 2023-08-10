@@ -12,8 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var redisStoreConfTmpl = template.Must(template.New("redis-store.conf").Parse(assets.RedisStoreConf))
-var redisCacheConfTmpl = template.Must(template.New("redis-cache.conf").Parse(assets.RedisCacheConf))
+var (
+	redisStoreConfTmpl = template.Must(template.New("redis-store.conf").Parse(assets.RedisStoreConf))
+	redisCacheConfTmpl = template.Must(template.New("redis-cache.conf").Parse(assets.RedisCacheConf))
+)
 
 type redisProcfileConfig struct {
 	envVar  string
@@ -75,19 +77,18 @@ func tryCreateRedisConf(c redisProcfileConfig) (string, error) {
 		Dir:  dataDir,
 		Port: c.port,
 	})
-
 	if err != nil {
 		return "", err
 	}
 
-	err = os.MkdirAll(dataDir, os.FileMode(0755))
+	err = os.MkdirAll(dataDir, os.FileMode(0o755))
 	if err != nil {
 		return "", err
 	}
 
 	// Always replace redis.conf
 	path := filepath.Join(os.Getenv("CONFIG_DIR"), c.name+".conf")
-	return path, os.WriteFile(path, b.Bytes(), 0644)
+	return path, os.WriteFile(path, b.Bytes(), 0o644)
 }
 
 func redisProcFileEntry(name, conf string) string {

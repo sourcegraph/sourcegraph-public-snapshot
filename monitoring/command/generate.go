@@ -230,5 +230,4 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 			return monitoring.Generate(logger, options, dashboards...)
 		},
 	}
-
 }

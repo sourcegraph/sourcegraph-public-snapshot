@@ -81,7 +81,8 @@ func TestChangesetEvent(t *testing.T) {
 			},
 		}
 
-		cases = append(cases, testCase{"github",
+		cases = append(cases, testCase{
+			"github",
 			Changeset{
 				ID: 23,
 				Metadata: &github.PullRequest{
@@ -148,7 +149,8 @@ func TestChangesetEvent(t *testing.T) {
 			CreatedAt:     now,
 		}
 
-		cases = append(cases, testCase{"github-blank-review-requested",
+		cases = append(cases, testCase{
+			"github-blank-review-requested",
 			Changeset{
 				ID: 23,
 				Metadata: &github.PullRequest{
@@ -204,7 +206,8 @@ func TestChangesetEvent(t *testing.T) {
 			Action: bitbucketserver.MergedActivityAction,
 		}}
 
-		cases = append(cases, testCase{"bitbucketserver",
+		cases = append(cases, testCase{
+			"bitbucketserver",
 			Changeset{
 				ID: 24,
 				Metadata: &bitbucketserver.PullRequest{
@@ -347,7 +350,8 @@ func TestChangesetEvent(t *testing.T) {
 			},
 		}
 
-		cases = append(cases, testCase{"azuredevops",
+		cases = append(cases, testCase{
+			"azuredevops",
 			Changeset{
 				ID: 24,
 				Metadata: &adobatches.AnnotatedPullRequest{

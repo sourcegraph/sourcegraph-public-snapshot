@@ -27,8 +27,10 @@ type TeammateResolver interface {
 	ResolveByCommitAuthor(ctx context.Context, org, repo, commit string) (*Teammate, error)
 }
 
-const teamDataURL = "https://raw.githubusercontent.com/sourcegraph/handbook/main/data/team.yml"
-const teamDataGitHubURL = "https://github.com/sourcegraph/handbook/blob/main/data/team.yml"
+const (
+	teamDataURL       = "https://raw.githubusercontent.com/sourcegraph/handbook/main/data/team.yml"
+	teamDataGitHubURL = "https://github.com/sourcegraph/handbook/blob/main/data/team.yml"
+)
 
 type Teammate struct {
 	// Key is the key for this teammate in team.yml

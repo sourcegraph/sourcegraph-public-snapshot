@@ -19,16 +19,24 @@ func TestGetProviderFromGatewayModel(t *testing.T) {
 		expectProvider string
 		expectModel    string
 	}{
-		{gatewayModel: "anthropic/claude-v1",
-			expectProvider: "anthropic", expectModel: "claude-v1"},
-		{gatewayModel: "openai/gpt4",
-			expectProvider: "openai", expectModel: "gpt4"},
+		{
+			gatewayModel:   "anthropic/claude-v1",
+			expectProvider: "anthropic", expectModel: "claude-v1",
+		},
+		{
+			gatewayModel:   "openai/gpt4",
+			expectProvider: "openai", expectModel: "gpt4",
+		},
 
 		// Edge cases
-		{gatewayModel: "claude-v1",
-			expectProvider: "", expectModel: "claude-v1"},
-		{gatewayModel: "openai/unexpectednamewith/slash",
-			expectProvider: "openai", expectModel: "unexpectednamewith/slash"},
+		{
+			gatewayModel:   "claude-v1",
+			expectProvider: "", expectModel: "claude-v1",
+		},
+		{
+			gatewayModel:   "openai/unexpectednamewith/slash",
+			expectProvider: "openai", expectModel: "unexpectednamewith/slash",
+		},
 	} {
 		t.Run(tc.gatewayModel, func(t *testing.T) {
 			p, m := getProviderFromGatewayModel(tc.gatewayModel)

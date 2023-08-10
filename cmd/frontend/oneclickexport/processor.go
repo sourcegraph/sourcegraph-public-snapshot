@@ -22,8 +22,10 @@ type Processor[T any] interface {
 	ProcessorType() string
 }
 
-var _ Processor[ConfigRequest] = &SiteConfigProcessor{}
-var _ Processor[ConfigRequest] = &CodeHostConfigProcessor{}
+var (
+	_ Processor[ConfigRequest] = &SiteConfigProcessor{}
+	_ Processor[ConfigRequest] = &CodeHostConfigProcessor{}
+)
 
 type SiteConfigProcessor struct {
 	logger log.Logger
@@ -41,7 +43,7 @@ func (s SiteConfigProcessor) Process(_ context.Context, _ ConfigRequest, dir str
 	configBytes := []byte(siteConfig.Site)
 
 	outputFile := path.Join(dir, "site-config.json")
-	err = os.WriteFile(outputFile, configBytes, 0644)
+	err = os.WriteFile(outputFile, configBytes, 0o644)
 	if err != nil {
 		s.logger.Error("error writing to file", log.Error(err), log.String("filePath", outputFile))
 	}
@@ -88,7 +90,7 @@ func (c CodeHostConfigProcessor) Process(ctx context.Context, _ ConfigRequest, d
 	}
 
 	outputFile := path.Join(dir, "code-host-config.json")
-	err = os.WriteFile(outputFile, configBytes, 0644)
+	err = os.WriteFile(outputFile, configBytes, 0o644)
 	if err != nil {
 		c.logger.Error("error writing to file", log.Error(err), log.String("filePath", outputFile))
 	}

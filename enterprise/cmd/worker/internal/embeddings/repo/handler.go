@@ -295,7 +295,6 @@ func (r *revisionFetcher) validateRevision(ctx context.Context) error {
 	// if the revision is empty then fetch from gitserver to determine this job's failure message
 	if r.revision == "" {
 		_, _, err := r.gitserver.GetDefaultBranch(ctx, r.repo, false)
-
 		if err != nil {
 			return err
 		}

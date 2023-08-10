@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -44,7 +45,7 @@ type ListRecentViewSignalOpts struct {
 	IncludeAllPaths bool
 	// MinThreshold is a lower bound of views entry per path per user to be considered.
 	MinThreshold int
-	LimitOffset  *LimitOffset
+	LimitOffset  *dbtypes.LimitOffset
 }
 
 type RecentViewSummary struct {

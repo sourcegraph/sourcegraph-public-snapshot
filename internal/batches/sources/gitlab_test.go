@@ -27,8 +27,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var mockVersion = semver.MustParse("12.0.0-pre")
-var mockVersion2 = semver.MustParse("14.10.0-pre")
+var (
+	mockVersion  = semver.MustParse("12.0.0-pre")
+	mockVersion2 = semver.MustParse("14.10.0-pre")
+)
 
 func TestGitLabSource(t *testing.T) {
 	t.Run("determineVersion", func(t *testing.T) {
@@ -1453,12 +1455,15 @@ func TestGitlabSource_GetFork(t *testing.T) {
 				},
 				forkRepo: &gitlab.Project{
 					ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
-					ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: user + "/user-bar"}},
+					ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: user + "/user-bar"},
+				},
 				namespace:     nil,
 				wantNamespace: user,
 				wantName:      user + "-bar",
-				client: &mockGitlabClientFork{fork: &gitlab.Project{ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
-					ProjectCommon: gitlab.ProjectCommon{ID: 2, PathWithNamespace: user + "/user-bar"}}},
+				client: &mockGitlabClientFork{fork: &gitlab.Project{
+					ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
+					ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: user + "/user-bar"},
+				}},
 			},
 			"with namespace": {
 				targetRepo: &types.Repo{
@@ -1477,14 +1482,16 @@ func TestGitlabSource_GetFork(t *testing.T) {
 				},
 				forkRepo: &gitlab.Project{
 					ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
-					ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/" + org + "-bar"}},
+					ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/" + org + "-bar"},
+				},
 				namespace:     &org,
 				wantNamespace: org,
 				wantName:      org + "-bar",
 				client: &mockGitlabClientFork{
 					fork: &gitlab.Project{
 						ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
-						ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/" + org + "-bar"}},
+						ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/" + org + "-bar"},
+					},
 					wantOrg: &org,
 				},
 			},
@@ -1505,7 +1512,8 @@ func TestGitlabSource_GetFork(t *testing.T) {
 				},
 				forkRepo: &gitlab.Project{
 					ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
-					ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/custom-bar"}},
+					ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/custom-bar"},
+				},
 				namespace:     &org,
 				wantNamespace: org,
 				name:          pointers.Ptr("custom-bar"),
@@ -1513,7 +1521,8 @@ func TestGitlabSource_GetFork(t *testing.T) {
 				client: &mockGitlabClientFork{
 					fork: &gitlab.Project{
 						ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
-						ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/custom-bar"}},
+						ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/custom-bar"},
+					},
 					wantOrg: &org,
 				},
 			},

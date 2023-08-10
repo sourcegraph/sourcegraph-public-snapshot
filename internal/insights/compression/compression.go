@@ -35,8 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/insights/store"
 )
 
-type NoopFilter struct {
-}
+type NoopFilter struct{}
 
 type DataFrameFilter interface {
 	Filter(ctx context.Context, sampleTimes []time.Time, name api.RepoName) BackfillPlan
@@ -125,6 +124,7 @@ func (g *gitserverFilter) Filter(ctx context.Context, sampleTimes []time.Time, n
 		RecordCount: len(nodes),
 	}
 }
+
 func (n *NoopFilter) Filter(ctx context.Context, sampleTimes []time.Time, name api.RepoName) BackfillPlan {
 	return uncompressedPlan(sampleTimes)
 }

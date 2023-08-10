@@ -576,7 +576,6 @@ func TestUpdateUser(t *testing.T) {
 		`,
 			},
 		})
-
 	})
 
 	t.Run("success", func(t *testing.T) {
@@ -689,7 +688,8 @@ func TestUser_Organizations(t *testing.T) {
 						Message:       wantErr,
 						ResolverError: errors.New(wantErr),
 					},
-				}},
+				},
+			},
 		})
 	}
 

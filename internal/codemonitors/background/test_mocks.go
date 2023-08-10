@@ -28,7 +28,8 @@ var diffResultMock = result.CommitMatch{
 			Start: result.Location{Line: 4, Offset: 91, Column: 1},
 			End:   result.Location{Line: 4, Offset: 98, Column: 8},
 		}},
-	}}
+	},
+}
 
 var diffDisplayResultMock = toDisplayResult(&diffResultMock, externalURLMock)
 

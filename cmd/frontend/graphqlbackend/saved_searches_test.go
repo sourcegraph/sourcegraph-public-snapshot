@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -25,7 +26,7 @@ func TestSavedSearches(t *testing.T) {
 	users.GetByIDFunc.SetDefaultReturn(&types.User{SiteAdmin: true, ID: key}, nil)
 
 	ss := database.NewMockSavedSearchStore()
-	ss.ListSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32, paginationArgs *database.PaginationArgs) ([]*types.SavedSearch, error) {
+	ss.ListSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32, paginationArgs *dbtypes.PaginationArgs) ([]*types.SavedSearch, error) {
 		return []*types.SavedSearch{{ID: key, Description: "test query", Query: "test type:diff patternType:regexp", UserID: userID, OrgID: nil}}, nil
 	})
 	ss.CountSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32) (int, error) {
@@ -71,7 +72,7 @@ func TestSavedSearchesForSameUser(t *testing.T) {
 	users.GetByIDFunc.SetDefaultReturn(&types.User{SiteAdmin: false, ID: key}, nil)
 
 	ss := database.NewMockSavedSearchStore()
-	ss.ListSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32, paginationArgs *database.PaginationArgs) ([]*types.SavedSearch, error) {
+	ss.ListSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32, paginationArgs *dbtypes.PaginationArgs) ([]*types.SavedSearch, error) {
 		return []*types.SavedSearch{{ID: key, Description: "test query", Query: "test type:diff patternType:regexp", UserID: userID, OrgID: nil}}, nil
 	})
 	ss.CountSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32) (int, error) {
@@ -118,7 +119,7 @@ func TestSavedSearchesForDifferentUser(t *testing.T) {
 	users.GetByIDFunc.SetDefaultReturn(&types.User{SiteAdmin: false, ID: userID}, nil)
 
 	ss := database.NewMockSavedSearchStore()
-	ss.ListSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32, paginationArgs *database.PaginationArgs) ([]*types.SavedSearch, error) {
+	ss.ListSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32, paginationArgs *dbtypes.PaginationArgs) ([]*types.SavedSearch, error) {
 		return []*types.SavedSearch{{ID: key, Description: "test query", Query: "test type:diff patternType:regexp", UserID: userID, OrgID: nil}}, nil
 	})
 	ss.CountSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32) (int, error) {
@@ -153,7 +154,7 @@ func TestSavedSearchesForDifferentOrg(t *testing.T) {
 	})
 
 	ss := database.NewMockSavedSearchStore()
-	ss.ListSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32, paginationArgs *database.PaginationArgs) ([]*types.SavedSearch, error) {
+	ss.ListSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32, paginationArgs *dbtypes.PaginationArgs) ([]*types.SavedSearch, error) {
 		return []*types.SavedSearch{{ID: key, Description: "test query", Query: "test type:diff patternType:regexp", UserID: nil, OrgID: &key}}, nil
 	})
 	ss.CountSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32) (int, error) {

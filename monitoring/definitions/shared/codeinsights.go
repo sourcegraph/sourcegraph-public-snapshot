@@ -68,7 +68,6 @@ func (codeInsights) NewInsightsQueryRunnerWorkerGroup(containerName string) moni
 // src_query_runner_worker_reset_failures_total
 // src_query_runner_worker_reset_errors_total
 func (codeInsights) NewInsightsQueryRunnerResetterGroup(containerName string) monitoring.Group {
-
 	return WorkerutilResetter.NewGroup(containerName, monitoring.ObservableOwnerCodeInsights, ResetterGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       namespace,

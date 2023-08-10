@@ -7,8 +7,10 @@ import (
 	"syscall"
 )
 
-var hooks []func()
-var mux sync.Mutex
+var (
+	hooks []func()
+	mux   sync.Mutex
+)
 
 // Register adds a hook to be executed before program exit. The most recently added hooks
 // are called first.

@@ -336,7 +336,6 @@ func TestComputeInsightCommandQuery(t *testing.T) {
 }
 
 func TestIsSingleRepoQuery(t *testing.T) {
-
 	tests := []struct {
 		name       string
 		inputQuery string
@@ -389,13 +388,11 @@ func TestIsSingleRepoQuery(t *testing.T) {
 			if diff := cmp.Diff(test.want, got); diff != "" {
 				t.Errorf("%s failed (want/got): %s", test.name, diff)
 			}
-
 		})
 	}
 }
 
 func TestIsSingleRepoQueryMultipleSteps(t *testing.T) {
-
 	tests := []struct {
 		name       string
 		inputQuery string
@@ -424,13 +421,11 @@ func TestIsSingleRepoQueryMultipleSteps(t *testing.T) {
 			if diff := cmp.Diff(false, got); diff != "" {
 				t.Errorf("%s failed (want/got): %s", test.name, diff)
 			}
-
 		})
 	}
 }
 
 func TestAggregationQuery(t *testing.T) {
-
 	tests := []struct {
 		name       string
 		inputQuery string

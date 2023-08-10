@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -271,7 +272,7 @@ func (r *codeownersIngestedFileConnectionResolver) compute(ctx context.Context) 
 			Cursor: r.cursor,
 		}
 		if r.limit != 0 {
-			opts.LimitOffset = &database.LimitOffset{Limit: r.limit}
+			opts.LimitOffset = &dbtypes.LimitOffset{Limit: r.limit}
 		}
 		codeownersFiles, next, err := r.codeownersStore.ListCodeowners(ctx, opts)
 		if err != nil {
@@ -292,7 +293,7 @@ func (r *codeownersIngestedFileConnectionResolver) Nodes(ctx context.Context) ([
 	if r.err != nil {
 		return nil, r.err
 	}
-	var resolvers = make([]graphqlbackend.CodeownersIngestedFileResolver, 0, len(r.codeownersFiles))
+	resolvers := make([]graphqlbackend.CodeownersIngestedFileResolver, 0, len(r.codeownersFiles))
 	for _, cf := range r.codeownersFiles {
 		resolvers = append(resolvers, &codeownersIngestedFileResolver{
 			codeownersFile: cf,

@@ -138,8 +138,10 @@ func FormatDiffFiles(res []DiffFile) string {
 	return buf.String()
 }
 
-var escaper = strings.NewReplacer(" ", `\ `)
-var unescaper = strings.NewReplacer(`\ `, " ")
+var (
+	escaper   = strings.NewReplacer(" ", `\ `)
+	unescaper = strings.NewReplacer(`\ `, " ")
+)
 
 func ParseDiffString(diff string) (res []DiffFile, err error) {
 	const (
@@ -197,8 +199,10 @@ func ParseDiffString(diff string) (res []DiffFile, err error) {
 	return res, nil
 }
 
-var errInvalidDiff = errors.New("invalid diff format")
-var splitRegex = lazyregexp.New(`(.*[^\\]) (.*)`)
+var (
+	errInvalidDiff = errors.New("invalid diff format")
+	splitRegex     = lazyregexp.New(`(.*[^\\]) (.*)`)
+)
 
 func splitDiffFiles(fileLine string) (oldFile, newFile string, err error) {
 	match := splitRegex.FindStringSubmatch(fileLine)

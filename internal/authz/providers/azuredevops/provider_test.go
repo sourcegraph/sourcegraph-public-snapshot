@@ -665,7 +665,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				tc.account,
 				authz.FetchPermsOptions{},
 			)
-
 			if err != nil {
 				if diff := cmp.Diff(tc.error, err.Error()); diff != "" {
 					t.Fatalf("Mismatched error, (-want, +got)\n%s", diff)
@@ -847,7 +846,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			account,
 			authz.FetchPermsOptions{},
 		)
-
 		if err != nil {
 			t.Fatalf("Unexpected error, (-want, +got)\n%s", err)
 		}

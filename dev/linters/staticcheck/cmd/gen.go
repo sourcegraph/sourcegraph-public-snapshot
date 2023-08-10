@@ -107,7 +107,7 @@ func writeTemplate(targetFile, templateDef string) error {
 	name := targetFile
 	tmpl := template.Must(template.New(name).Parse(templateDef))
 
-	f, err := os.OpenFile(targetFile, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0666)
+	f, err := os.OpenFile(targetFile, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0o666)
 	if err != nil {
 		return err
 	}
@@ -149,5 +149,4 @@ func main() {
 		fmt.Fprintln(os.Stderr, "failed to render Anazlyers definiton template")
 		panic(err)
 	}
-
 }

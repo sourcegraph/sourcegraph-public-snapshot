@@ -9,15 +9,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	evalStore = redispool.Store
-)
+var evalStore = redispool.Store
 
 func getEvaluatedFlagSetFromCache(flagsSet *FlagSet) EvaluatedFlagSet {
 	evaluatedFlagSet := EvaluatedFlagSet{}
 
 	visitorID, err := getVisitorIDForActor(flagsSet.actor)
-
 	if err != nil {
 		return evaluatedFlagSet
 	}
@@ -35,7 +32,6 @@ func setEvaluatedFlagToCache(a *actor.Actor, flagName string, value bool) {
 	var visitorID string
 
 	visitorID, err := getVisitorIDForActor(a)
-
 	if err != nil {
 		return
 	}

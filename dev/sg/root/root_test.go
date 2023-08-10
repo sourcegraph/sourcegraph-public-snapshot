@@ -29,7 +29,6 @@ func TestCreateSGHome(t *testing.T) {
 }
 
 func TestWalkGitIgnoreFunc(t *testing.T) {
-
 	tests := []struct {
 		name            string
 		gitIgnore       string
@@ -52,7 +51,6 @@ func TestWalkGitIgnoreFunc(t *testing.T) {
 		},
 
 		{
-
 			name: "gitignore: ignore baz.txt only",
 			gitIgnore: `
 bar/baz.txt
@@ -70,7 +68,6 @@ bar/baz.txt
 		},
 
 		{
-
 			name: "gitignore: ignore bar folder entirely",
 			gitIgnore: `
 bar
@@ -86,7 +83,6 @@ bar
 		},
 
 		{
-
 			name: "gitignore: ignore bar folder entirely / additional lines: ignore .git",
 			gitIgnore: `
 bar
@@ -123,12 +119,12 @@ bar
 				fileName := filepath.Join(root, f.name)
 
 				dir := filepath.Dir(fileName)
-				err := os.MkdirAll(dir, 0777)
+				err := os.MkdirAll(dir, 0o777)
 				if err != nil {
 					t.Fatalf("failed to create directory %q: %q", dir, err)
 				}
 
-				err = os.WriteFile(fileName, []byte(f.contents), 0777)
+				err = os.WriteFile(fileName, []byte(f.contents), 0o777)
 				if err != nil {
 					t.Fatalf("failed to create file %q: %q", fileName, err)
 				}

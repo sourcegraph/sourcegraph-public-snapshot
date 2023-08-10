@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -290,7 +291,7 @@ type AccessTokensListOptions struct {
 	SubjectUserID  int32 // only list access tokens with this user as the subject
 	LastUsedAfter  *time.Time
 	LastUsedBefore *time.Time
-	*LimitOffset
+	*dbtypes.LimitOffset
 }
 
 func (o AccessTokensListOptions) sqlConditions() []*sqlf.Query {
@@ -315,7 +316,7 @@ func (s *accessTokenStore) List(ctx context.Context, opt AccessTokensListOptions
 	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
-func (s *accessTokenStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*AccessToken, error) {
+func (s *accessTokenStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *dbtypes.LimitOffset) ([]*AccessToken, error) {
 	q := sqlf.Sprintf(`
 SELECT id, subject_user_id, scopes, note, creator_user_id, internal, created_at, last_used_at FROM access_tokens
 WHERE (%s)

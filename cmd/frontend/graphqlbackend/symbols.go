@@ -33,7 +33,8 @@ func (r *GitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (
 func (r *GitTreeEntryResolver) Symbol(ctx context.Context, args *struct {
 	Line      int32
 	Character int32
-}) (*symbolResolver, error) {
+},
+) (*symbolResolver, error) {
 	symbolMatch, err := symbol.GetMatchAtLineCharacter(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoMatch.RepoName(), api.CommitID(r.commit.oid), r.Path(), int(args.Line), int(args.Character))
 	if err != nil || symbolMatch == nil {
 		return nil, err

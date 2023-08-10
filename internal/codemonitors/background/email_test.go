@@ -93,7 +93,6 @@ func TestEmail(t *testing.T) {
 			err := template.Html.Execute(&buf, templateData)
 			require.NoError(t, err)
 			autogold.ExpectFile(t, autogold.Raw(buf.String()))
-
 		})
 
 		t.Run("text", func(t *testing.T) {
@@ -184,5 +183,4 @@ func TestEmail(t *testing.T) {
 			require.Equal(t, "Sourcegraph code monitor My test monitor detected 6 new results", buf.String())
 		})
 	})
-
 }

@@ -204,7 +204,6 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 	perms, err := p.FetchRepoPerms(context.Background(), &extsvc.Repository{
 		URI: "bitbucket.org/user/repo",
 	}, authz.FetchPermsOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -131,9 +131,7 @@ func TestValidation(t *testing.T) {
 			if diff := cmp.Diff(c.want, err.Error()); diff != "" {
 				t.Fatal(diff)
 			}
-
 		})
-
 	}
 }
 

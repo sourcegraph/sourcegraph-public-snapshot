@@ -414,7 +414,6 @@ func (c *Client) ExternalServiceRepositories(ctx context.Context, args protocol.
 	}
 
 	resp, err := c.httpPost(ctx, "external-service-repositories", args)
-
 	if err != nil {
 		return nil, err
 	}

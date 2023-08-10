@@ -103,7 +103,7 @@ func TestOrgInvitations(t *testing.T) {
 	}
 	var invitations []*OrgInvitation
 	for _, oi := range invitationsConfig {
-		var expiryTime = time.Now().Add(48 * time.Hour)
+		expiryTime := time.Now().Add(48 * time.Hour)
 		if oi.ExpiresAt != nil {
 			expiryTime = *oi.ExpiresAt
 		}

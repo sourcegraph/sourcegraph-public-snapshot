@@ -79,7 +79,6 @@ func (g *GitLabCodeHost) AddSSHKey(ctx context.Context) (int64, error) {
 		Key:       &keyData,
 		ExpiresAt: &expireTime,
 	}, nil)
-
 	if err != nil {
 		return 0, nil
 	}

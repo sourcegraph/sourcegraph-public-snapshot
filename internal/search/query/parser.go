@@ -840,7 +840,6 @@ func (p *parser) ParsePattern(label labels) Pattern {
 	}
 	p.pos += advance
 	return newPattern(value, label, newRange(start, p.pos))
-
 }
 
 // ParseParameter returns a leaf node corresponding to the syntax

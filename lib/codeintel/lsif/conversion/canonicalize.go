@@ -72,7 +72,7 @@ func canonicalizeDocumentsInDefinitionReferences(definitionReferenceData map[int
 		// iterating over canonicalIDs.
 
 		// Copy out keys first instead of (incorrectly) iterating over documentRanges while modifying it
-		var documentIDs = documentRanges.UnorderedKeys()
+		documentIDs := documentRanges.UnorderedKeys()
 		for _, documentID := range documentIDs {
 			canonicalID, ok := canonicalIDs[documentID]
 			if !ok {

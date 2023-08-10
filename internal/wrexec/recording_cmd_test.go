@@ -43,7 +43,6 @@ func isRecordingForCmd(t *testing.T, recording *wrexec.RecordedCommand, cmd *ose
 	}
 
 	return true
-
 }
 
 func isValidRecording(t *testing.T, cmd *osexec.Cmd, recording *wrexec.RecordedCommand) (bool, error) {
@@ -292,5 +291,4 @@ func TestRecordingCmd(t *testing.T) {
 			t.Error("expected recording 1 and recording 2 to be different, but they're equal")
 		}
 	})
-
 }

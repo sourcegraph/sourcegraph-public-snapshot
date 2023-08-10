@@ -98,7 +98,7 @@ func newLatestVersion(logger log.Logger, resolver UpdateManifestResolver) *lates
 }
 
 func LatestVersionHandler(logger log.Logger) http.HandlerFunc {
-	var bucket = ManifestBucket
+	bucket := ManifestBucket
 
 	if deploy.IsDev(deploy.Type()) {
 		bucket = ManifestBucketDev

@@ -12,8 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/batches/search"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -583,7 +583,7 @@ type GetRewirerMappingsOpts struct {
 	BatchSpecID   int64
 	BatchChangeID int64
 
-	LimitOffset  *database.LimitOffset
+	LimitOffset  *dbtypes.LimitOffset
 	TextSearch   []search.TextSearchTerm
 	CurrentState *btypes.ChangesetState
 }

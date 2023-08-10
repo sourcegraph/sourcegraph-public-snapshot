@@ -117,7 +117,8 @@ func toKeyPath(gqlKeyPath []*keyPathSegment) (jsonx.Path, error) {
 
 func (r *settingsMutation) EditSettings(ctx context.Context, args *struct {
 	Edit *settingsEdit
-}) (*updateSettingsPayload, error) {
+},
+) (*updateSettingsPayload, error) {
 	keyPath, err := toKeyPath(args.Edit.KeyPath)
 	if err != nil {
 		return nil, err
@@ -141,7 +142,8 @@ func (r *settingsMutation) EditSettings(ctx context.Context, args *struct {
 
 func (r *settingsMutation) EditConfiguration(ctx context.Context, args *struct {
 	Edit *settingsEdit
-}) (*updateSettingsPayload, error) {
+},
+) (*updateSettingsPayload, error) {
 	return r.EditSettings(ctx, args)
 }
 
@@ -162,7 +164,8 @@ func (r *settingsMutation) editSettings(ctx context.Context, keyPath jsonx.Path,
 
 func (r *settingsMutation) OverwriteSettings(ctx context.Context, args *struct {
 	Contents string
-}) (*updateSettingsPayload, error) {
+},
+) (*updateSettingsPayload, error) {
 	_, err := settingsCreateIfUpToDate(ctx, r.db, r.subject, r.input.LastID, actor.FromContext(ctx).UID, args.Contents)
 	if err != nil {
 		return nil, err

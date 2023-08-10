@@ -25,7 +25,6 @@ func (m *mockClient) Close() error {
 }
 
 func TestFetchGSM(t *testing.T) {
-
 	testcases := []struct {
 		name     string
 		client   *mockClient
@@ -91,5 +90,4 @@ func TestFetchGSM(t *testing.T) {
 			}
 		})
 	}
-
 }

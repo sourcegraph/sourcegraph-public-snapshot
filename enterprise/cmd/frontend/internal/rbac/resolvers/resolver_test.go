@@ -338,13 +338,13 @@ func TestSetRoles(t *testing.T) {
 	r3, err := db.Roles().Create(ctx, "TEST-ROLE-3", false)
 	require.NoError(t, err)
 
-	var marshalledRoles = []graphql.ID{
+	marshalledRoles := []graphql.ID{
 		gql.MarshalRoleID(r1.ID),
 		gql.MarshalRoleID(r2.ID),
 		gql.MarshalRoleID(r3.ID),
 	}
 
-	var roles = []*types.Role{r1, r2, r3}
+	roles := []*types.Role{r1, r2, r3}
 
 	userWithoutARole := createUserWithRoles(ctx, t, db)
 	userWithAllRoles := createUserWithRoles(ctx, t, db, roles...)
@@ -455,7 +455,7 @@ func createUserWithRoles(ctx context.Context, t *testing.T, db database.DB, role
 	user := createTestUser(t, db, false)
 
 	if len(roles) > 0 {
-		var opts = database.BulkAssignRolesToUserOpts{UserID: user.ID}
+		opts := database.BulkAssignRolesToUserOpts{UserID: user.ID}
 		for _, role := range roles {
 			opts.Roles = append(opts.Roles, role.ID)
 		}
@@ -495,7 +495,7 @@ func createRoleWithPermissions(ctx context.Context, t *testing.T, db database.DB
 	require.NoError(t, err)
 
 	if len(permissions) > 0 {
-		var opts = database.BulkAssignPermissionsToRoleOpts{RoleID: role.ID}
+		opts := database.BulkAssignPermissionsToRoleOpts{RoleID: role.ID}
 		for _, permission := range permissions {
 			opts.Permissions = append(opts.Permissions, permission.ID)
 		}

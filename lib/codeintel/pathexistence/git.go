@@ -23,7 +23,6 @@ func GitGetChildren(gitFunc GitFunc, commit string, dirnames []string) (map[stri
 			cleanDirectoriesForLsTree(dirnames)...,
 		)...,
 	)
-
 	if err != nil {
 		return nil, errors.Wrap(err, "Running ls-tree")
 	}

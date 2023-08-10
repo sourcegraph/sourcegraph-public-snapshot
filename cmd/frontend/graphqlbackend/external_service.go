@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -356,7 +357,7 @@ func (r *externalServiceSyncJobConnectionResolver) compute(ctx context.Context) 
 			ExternalServiceID: r.externalServiceID,
 		}
 		if r.args.First != nil {
-			opts.LimitOffset = &database.LimitOffset{
+			opts.LimitOffset = &dbtypes.LimitOffset{
 				Limit: int(*r.args.First),
 			}
 		}

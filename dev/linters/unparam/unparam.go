@@ -19,7 +19,6 @@ func init() {
 		Requires:         []*analysis.Analyzer{buildssa.Analyzer}, // required since unparam requires the result
 		RunDespiteErrors: false,
 	})
-
 }
 
 // Test is a test function to check that this linter works

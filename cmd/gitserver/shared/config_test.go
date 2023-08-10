@@ -65,7 +65,6 @@ func TestConfig_PercentFree(t *testing.T) {
 			config.Load()
 
 			err := config.Validate()
-
 			if err != nil {
 				if !tt.wantErr {
 					t.Fatalf("unexpected validation error: %s", err)

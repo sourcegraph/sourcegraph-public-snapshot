@@ -342,7 +342,6 @@ func fromRanges(rs result.Ranges) []streamhttp.Range {
 }
 
 func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) *streamhttp.EventContentMatch {
-
 	var (
 		eventLineMatches  []streamhttp.EventLineMatch
 		eventChunkMatches []streamhttp.ChunkMatch

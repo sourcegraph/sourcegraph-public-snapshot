@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/go-diff/diff"
@@ -23,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
@@ -122,7 +122,7 @@ func (r *batchSpecResolver) ApplyPreview(ctx context.Context, args *graphqlbacke
 		return nil, err
 	}
 	opts := store.GetRewirerMappingsOpts{
-		LimitOffset: &database.LimitOffset{
+		LimitOffset: &dbtypes.LimitOffset{
 			Limit: int(args.First),
 		},
 		CurrentState: (*btypes.ChangesetState)(args.CurrentState),
@@ -321,7 +321,7 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 			RepoIDs:             repoIDs,
 			OnlyWithoutWebhooks: args.OnlyWithoutWebhooks,
 		},
-		limitOffset: database.LimitOffset{
+		limitOffset: dbtypes.LimitOffset{
 			Limit:  int(args.First),
 			Offset: offset,
 		},

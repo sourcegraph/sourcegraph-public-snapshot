@@ -110,7 +110,6 @@ func TestUsers_BuiltinAuth(t *testing.T) {
 	if err.Error() != want {
 		t.Fatalf("Want %q, got %q", want, err.Error())
 	}
-
 }
 
 func TestUsers_BuiltinAuth_VerifiedEmail(t *testing.T) {

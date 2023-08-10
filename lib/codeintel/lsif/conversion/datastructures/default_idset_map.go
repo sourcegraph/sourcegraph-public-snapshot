@@ -87,7 +87,7 @@ func (sm *DefaultIDSetMap) UnorderedKeys() []int {
 	case mapStateInline:
 		return []int{sm.inlineKey}
 	case mapStateHeap:
-		var out = make([]int, 0, sm.Len())
+		out := make([]int, 0, sm.Len())
 		for k := range sm.m {
 			out = append(out, k)
 		}

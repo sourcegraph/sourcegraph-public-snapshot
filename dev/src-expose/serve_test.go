@@ -148,7 +148,7 @@ func gitInitRepos(t *testing.T, names ...string) string {
 
 	for _, name := range names {
 		p := filepath.Join(root, name)
-		if err := os.MkdirAll(p, 0755); err != nil {
+		if err := os.MkdirAll(p, 0o755); err != nil {
 			t.Fatal(err)
 		}
 		p = filepath.Join(p, ".git")

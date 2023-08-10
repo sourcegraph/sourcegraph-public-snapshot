@@ -152,7 +152,8 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 						File: result.File{
 							Path: "code.go",
 						},
-					}},
+					},
+				},
 			})
 			return nil, nil
 		})

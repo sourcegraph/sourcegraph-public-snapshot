@@ -2,8 +2,9 @@ package jobutil
 
 import (
 	"context"
-	"github.com/grafana/regexp"
 	"sync"
+
+	"github.com/grafana/regexp"
 
 	"go.opentelemetry.io/otel/attribute"
 
@@ -138,7 +139,6 @@ func getFileContributors(ctx context.Context, client gitserver.Client, fm *resul
 		Path:  fm.Path,
 	}
 	contributors, err := client.ContributorCount(ctx, fm.Repo.Name, opts)
-
 	if err != nil {
 		return nil, err
 	}

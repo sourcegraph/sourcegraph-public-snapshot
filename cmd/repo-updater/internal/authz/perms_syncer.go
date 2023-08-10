@@ -699,7 +699,6 @@ func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32,
 		UserID:            userID,
 		ExternalAccountID: acctID,
 	}, repoIDs, authz.SourceUserSync)
-
 	if err != nil {
 		logger.Warn("saving perms to DB", log.Error(err))
 		return nil, err

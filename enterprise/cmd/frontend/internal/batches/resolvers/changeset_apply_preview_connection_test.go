@@ -22,6 +22,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
@@ -242,7 +243,7 @@ func TestRewirerMappings(t *testing.T) {
 			},
 			"no ops, first 3": {
 				opts: rewirerMappingPageOpts{
-					LimitOffset: &database.LimitOffset{Limit: 3},
+					LimitOffset: &dbtypes.LimitOffset{Limit: 3},
 				},
 				want: rewirerMappingPage{
 					Mappings:   rmf.All[0:3],
@@ -251,7 +252,7 @@ func TestRewirerMappings(t *testing.T) {
 			},
 			"no ops, last 2": {
 				opts: rewirerMappingPageOpts{
-					LimitOffset: &database.LimitOffset{Limit: 3, Offset: 3},
+					LimitOffset: &dbtypes.LimitOffset{Limit: 3, Offset: 3},
 				},
 				want: rewirerMappingPage{
 					Mappings:   rmf.All[3:],
@@ -260,7 +261,7 @@ func TestRewirerMappings(t *testing.T) {
 			},
 			"no ops, last 2 without limit": {
 				opts: rewirerMappingPageOpts{
-					LimitOffset: &database.LimitOffset{Offset: 3},
+					LimitOffset: &dbtypes.LimitOffset{Offset: 3},
 				},
 				want: rewirerMappingPage{
 					Mappings:   rmf.All[3:],
@@ -269,7 +270,7 @@ func TestRewirerMappings(t *testing.T) {
 			},
 			"no ops, negative limit": {
 				opts: rewirerMappingPageOpts{
-					LimitOffset: &database.LimitOffset{Limit: -1},
+					LimitOffset: &dbtypes.LimitOffset{Limit: -1},
 				},
 				want: rewirerMappingPage{
 					Mappings:   btypes.RewirerMappings{},
@@ -278,7 +279,7 @@ func TestRewirerMappings(t *testing.T) {
 			},
 			"no ops, negative offset": {
 				opts: rewirerMappingPageOpts{
-					LimitOffset: &database.LimitOffset{Offset: -1},
+					LimitOffset: &dbtypes.LimitOffset{Offset: -1},
 				},
 				want: rewirerMappingPage{
 					Mappings:   btypes.RewirerMappings{},
@@ -287,7 +288,7 @@ func TestRewirerMappings(t *testing.T) {
 			},
 			"no ops, out of bounds offset": {
 				opts: rewirerMappingPageOpts{
-					LimitOffset: &database.LimitOffset{Offset: 5},
+					LimitOffset: &dbtypes.LimitOffset{Offset: 5},
 				},
 				want: rewirerMappingPage{
 					Mappings:   btypes.RewirerMappings{},
@@ -314,7 +315,7 @@ func TestRewirerMappings(t *testing.T) {
 			},
 			"extant op, high limit": {
 				opts: rewirerMappingPageOpts{
-					LimitOffset: &database.LimitOffset{Limit: 5},
+					LimitOffset: &dbtypes.LimitOffset{Limit: 5},
 					Op:          pointers.Ptr(btypes.ReconcilerOperationPublish),
 				},
 				want: rewirerMappingPage{
@@ -324,7 +325,7 @@ func TestRewirerMappings(t *testing.T) {
 			},
 			"extant op, low limit": {
 				opts: rewirerMappingPageOpts{
-					LimitOffset: &database.LimitOffset{Limit: 1},
+					LimitOffset: &dbtypes.LimitOffset{Limit: 1},
 					Op:          pointers.Ptr(btypes.ReconcilerOperationPublish),
 				},
 				want: rewirerMappingPage{
@@ -334,7 +335,7 @@ func TestRewirerMappings(t *testing.T) {
 			},
 			"extant op, low limit and offset": {
 				opts: rewirerMappingPageOpts{
-					LimitOffset: &database.LimitOffset{Limit: 1, Offset: 1},
+					LimitOffset: &dbtypes.LimitOffset{Limit: 1, Offset: 1},
 					Op:          pointers.Ptr(btypes.ReconcilerOperationPublish),
 				},
 				want: rewirerMappingPage{

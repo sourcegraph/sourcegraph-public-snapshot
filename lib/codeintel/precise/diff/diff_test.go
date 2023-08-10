@@ -13,10 +13,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
-var dumpPath = "./testdata/project1/dump.lsif"
-var dumpPermutedPath = "./testdata/project1/dump-permuted.lsif"
-var dumpOldPath = "./testdata/project1/dump-old.lsif"
-var dumpNewPath = "./testdata/project1/dump-new.lsif"
+var (
+	dumpPath         = "./testdata/project1/dump.lsif"
+	dumpPermutedPath = "./testdata/project1/dump-permuted.lsif"
+	dumpOldPath      = "./testdata/project1/dump-old.lsif"
+	dumpNewPath      = "./testdata/project1/dump-new.lsif"
+)
 
 func TestNoDiffOnPermutedDumps(t *testing.T) {
 	cwd, _ := os.Getwd()

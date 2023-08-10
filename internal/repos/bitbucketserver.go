@@ -31,9 +31,11 @@ type BitbucketServerSource struct {
 	logger  log.Logger
 }
 
-var _ Source = &BitbucketServerSource{}
-var _ UserSource = &BitbucketServerSource{}
-var _ VersionSource = &BitbucketServerSource{}
+var (
+	_ Source        = &BitbucketServerSource{}
+	_ UserSource    = &BitbucketServerSource{}
+	_ VersionSource = &BitbucketServerSource{}
+)
 
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
 // rl is optional

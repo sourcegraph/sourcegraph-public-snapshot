@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
 
@@ -482,7 +483,6 @@ func addPublicationStatesToOptions(in *[]graphqlbackend.ChangesetSpecPublication
 				errs = errors.Append(errs, err)
 			}
 		}
-
 	}
 
 	return errs
@@ -882,7 +882,7 @@ func (r *Resolver) BatchChangesCodeHosts(ctx context.Context, args *graphqlbacke
 		return nil, err
 	}
 
-	limitOffset := database.LimitOffset{
+	limitOffset := dbtypes.LimitOffset{
 		Limit: int(args.First),
 	}
 	if args.After != nil {
@@ -1624,7 +1624,6 @@ func (r *Resolver) CreateEmptyBatchChange(ctx context.Context, args *graphqlback
 		NamespaceOrgID:  oid,
 		Name:            args.Name,
 	})
-
 	if err != nil {
 		// Render pretty error.
 		if err == store.ErrInvalidBatchChangeName {
@@ -1660,7 +1659,6 @@ func (r *Resolver) UpsertEmptyBatchChange(ctx context.Context, args *graphqlback
 		NamespaceOrgID:  oid,
 		Name:            args.Name,
 	})
-
 	if err != nil {
 		return nil, err
 	}

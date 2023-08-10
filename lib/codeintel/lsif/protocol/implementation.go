@@ -12,7 +12,8 @@ func NewImplementationResult(id uint64) ImplementationResult {
 				Type: ElementVertex,
 			},
 			Label: VertexImplementationResult,
-		}}
+		},
+	}
 }
 
 type TextDocumentImplementation struct {

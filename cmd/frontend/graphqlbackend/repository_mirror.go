@@ -320,7 +320,8 @@ func (r *updateQueueResolver) Total() int32 {
 func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, args *struct {
 	Repository *graphql.ID
 	Name       *string
-}) (*checkMirrorRepositoryConnectionResult, error) {
+},
+) (*checkMirrorRepositoryConnectionResult, error) {
 	// 🚨 SECURITY: This is an expensive operation and the errors may contain secrets,
 	// so only site admins may run it.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
@@ -367,7 +368,8 @@ func (r *checkMirrorRepositoryConnectionResult) Error() *string {
 
 func (r *schemaResolver) UpdateMirrorRepository(ctx context.Context, args *struct {
 	Repository graphql.ID
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	// 🚨 SECURITY: There is no reason why non-site-admins would need to run this operation.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err

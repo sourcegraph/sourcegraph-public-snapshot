@@ -672,7 +672,6 @@ func scanBatchSpec(c *btypes.BatchSpec, s dbutil.Scanner) error {
 		&c.CreatedAt,
 		&c.UpdatedAt,
 	)
-
 	if err != nil {
 		return errors.Wrap(err, "scanning batch spec")
 	}

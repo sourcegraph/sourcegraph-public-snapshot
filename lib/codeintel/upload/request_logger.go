@@ -30,7 +30,8 @@ const (
 func NewRequestLogger(w io.Writer, verbosity RequestLoggerVerbosity) RequestLogger {
 	return &requestLogger{
 		writer:    w,
-		verbosity: verbosity}
+		verbosity: verbosity,
+	}
 }
 
 func (l *requestLogger) LogRequest(req *http.Request) {

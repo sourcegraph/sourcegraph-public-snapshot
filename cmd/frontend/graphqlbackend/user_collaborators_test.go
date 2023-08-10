@@ -1,12 +1,12 @@
 package graphqlbackend
 
 import (
-	"github.com/hexops/autogold/v2"
-
 	"context"
 	"sort"
 	"sync"
 	"testing"
+
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"

@@ -161,7 +161,7 @@ FROM (
 		return db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	}
 
-	var contributorEvents = []*sqlf.Query{
+	contributorEvents := []*sqlf.Query{
 		sqlf.Sprintf("%q", "BatchSpecCreated"),
 		sqlf.Sprintf("%q", "BatchChangeCreated"),
 		sqlf.Sprintf("%q", "BatchChangeCreatedOrUpdated"),
@@ -174,7 +174,7 @@ FROM (
 		return nil, err
 	}
 
-	var usersEvents = []*sqlf.Query{
+	usersEvents := []*sqlf.Query{
 		sqlf.Sprintf("%q", "BatchSpecCreated"),
 		sqlf.Sprintf("%q", "BatchChangeCreated"),
 		sqlf.Sprintf("%q", "BatchChangeCreatedOrUpdated"),

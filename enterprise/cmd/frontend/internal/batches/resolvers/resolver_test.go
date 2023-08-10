@@ -645,7 +645,6 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			}
 		}
 	})
-
 }
 
 const mutationCreateChangesetSpecs = `
@@ -952,9 +951,7 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 		if have, want := errs[0].Message, expError; !strings.Contains(have, "The batch change name can only contain word characters, dots and dashes.") {
 			t.Fatalf("wrong error. want to contain=%q, have=%q", want, have)
 		}
-
 	})
-
 }
 
 const mutationCreateEmptyBatchChange = `
@@ -1043,7 +1040,6 @@ func TestUpsertEmptyBatchChange(t *testing.T) {
 			t.Fatalf("wrong error. want=%q, have=%q", want, have)
 		}
 	})
-
 }
 
 const mutationUpsertEmptyBatchChange = `
@@ -1460,7 +1456,6 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
 			// Create enough changeset specs to hit the license check.
 			changesetSpecs := make([]*btypes.ChangesetSpec, test.numChangesets)
 			for i := range changesetSpecs {

@@ -266,9 +266,7 @@ func (s *Store) Add(event *Event) {
 			),
 			log.Int("totalSteps", len(build.Steps)),
 		)
-
 	}
-
 }
 
 func (s *Store) Set(build *Build) {

@@ -95,7 +95,7 @@ func TestClient_ListRepos(t *testing.T) {
 
 			path := fmt.Sprintf("testdata/golden/ListRepos-%s.json", tc.name)
 			if *update {
-				if err = os.WriteFile(path, bs, 0640); err != nil {
+				if err = os.WriteFile(path, bs, 0o640); err != nil {
 					t.Fatalf("failed to update golden file %q: %s", path, err)
 				}
 			}
@@ -159,7 +159,7 @@ func TestClient_GetRawDiff(t *testing.T) {
 
 			path := "testdata/golden/GetRawDiff-" + strconv.Itoa(tc.id)
 			if *update {
-				if err = os.WriteFile(path, []byte(diff), 0640); err != nil {
+				if err = os.WriteFile(path, []byte(diff), 0o640); err != nil {
 					t.Fatalf("failed to update golden file %q: %s", path, err)
 				}
 			}

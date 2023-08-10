@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -357,9 +358,9 @@ func (s *gitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, opt
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	var limitOffset *LimitOffset
+	var limitOffset *dbtypes.LimitOffset
 	if options.BatchSize > 0 {
-		limitOffset = &LimitOffset{Limit: options.BatchSize}
+		limitOffset = &dbtypes.LimitOffset{Limit: options.BatchSize}
 	}
 
 	q := sqlf.Sprintf(iterateRepoGitserverQuery, sqlf.Join(preds, "AND"), limitOffset.SQL())

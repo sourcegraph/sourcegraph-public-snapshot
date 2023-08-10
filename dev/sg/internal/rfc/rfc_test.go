@@ -148,7 +148,8 @@ func (th *mockConfig) AuthCodeURL(state string, opts ...oauth2.AuthCodeOption) s
 }
 
 func (th *mockConfig) Exchange(ctx context.Context, code string,
-	opts ...oauth2.AuthCodeOption) (*oauth2.Token, error) {
+	opts ...oauth2.AuthCodeOption,
+) (*oauth2.Token, error) {
 	if code != th.code {
 		return nil, fmt.Errorf("Code mismatch. Wanted '%s' but got '%s", th.code, code)
 	}

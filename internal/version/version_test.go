@@ -98,6 +98,7 @@ func Test_monthsFromDays(t *testing.T) {
 		})
 	}
 }
+
 func TestHowLongOutOfDate(t *testing.T) {
 	tests := []struct {
 		name           string

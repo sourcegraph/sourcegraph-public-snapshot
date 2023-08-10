@@ -32,7 +32,6 @@ func getWebIntegrationFileNames() []string {
 
 		return nil
 	})
-
 	if err != nil {
 		panic(err)
 	}

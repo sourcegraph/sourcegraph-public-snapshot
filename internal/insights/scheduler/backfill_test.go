@@ -129,7 +129,6 @@ func Test_ResetBackfill(t *testing.T) {
 	jsonifiedAfterReset, err := json.Marshal(iteratorAfterReset)
 	require.NoError(t, err)
 	autogold.Expect(`{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"0001-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0,"TotalCount":4,"SuccessCount":0,"Cursor":0}`).Equal(t, string(jsonifiedAfterReset))
-
 }
 
 func setupChangePriority(t *testing.T) (types.InsightSeries, *BackfillStore) {
@@ -222,7 +221,6 @@ func Test_MakeLowestPriorityNoOp(t *testing.T) {
 	}
 	require.Equal(t, expectedID, gotID, "backfill2 should still have the highest cost (lowest priority)")
 	require.Equal(t, expectedCost, gotCost, "backfill2 should still have the same cost")
-
 }
 
 func Test_MakeLowestOneBackfill(t *testing.T) {
@@ -242,7 +240,6 @@ func Test_MakeLowestOneBackfill(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, allBackfills, 1, "only one backfill")
 	require.Equal(t, expectedCost, allBackfills[0].EstimatedCost, "estimated cost should not change when no other backfills")
-
 }
 
 func Test_MakeHighestPriority(t *testing.T) {

@@ -14,8 +14,10 @@ import (
 // batchSpecResolutionMaxNumRetries sets the number of retries for batch spec
 // resolutions to 0. We don't want to retry automatically and instead wait for
 // user input
-const batchSpecResolutionMaxNumRetries = 0
-const batchSpecResolutionMaxNumResets = 60
+const (
+	batchSpecResolutionMaxNumRetries = 0
+	batchSpecResolutionMaxNumResets  = 60
+)
 
 var batchSpecResolutionWorkerOpts = dbworkerstore.Options[*types.BatchSpecResolutionJob]{
 	Name:              "batch_changes_batch_spec_resolution_worker_store",

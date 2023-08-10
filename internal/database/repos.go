@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -130,7 +131,7 @@ func (s *repoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err 
 
 	repos, err := s.listRepos(ctx, tr, ReposListOptions{
 		IDs:            []api.RepoID{id},
-		LimitOffset:    &LimitOffset{Limit: 1},
+		LimitOffset:    &dbtypes.LimitOffset{Limit: 1},
 		IncludeBlocked: true,
 	})
 	if err != nil {
@@ -152,7 +153,6 @@ var counterAccessGranted = promauto.NewCounter(prometheus.CounterOpts{
 })
 
 func logPrivateRepoAccessGranted(ctx context.Context, db DB, ids []api.RepoID) {
-
 	a := actor.FromContext(ctx)
 	arg, _ := json.Marshal(struct {
 		Resource string       `json:"resource"`
@@ -199,7 +199,7 @@ func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 
 	repos, err := s.listRepos(ctx, tr, ReposListOptions{
 		Names:          []string{string(nameOrURI)},
-		LimitOffset:    &LimitOffset{Limit: 1},
+		LimitOffset:    &dbtypes.LimitOffset{Limit: 1},
 		IncludeBlocked: true,
 	})
 	if err != nil {
@@ -215,7 +215,7 @@ func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 	// exists.
 	repos, err = s.listRepos(ctx, tr, ReposListOptions{
 		URIs:           []string{string(nameOrURI)},
-		LimitOffset:    &LimitOffset{Limit: 1},
+		LimitOffset:    &dbtypes.LimitOffset{Limit: 1},
 		IncludeBlocked: true,
 	})
 	if err != nil {
@@ -238,7 +238,7 @@ func (s *repoStore) GetByHashedName(ctx context.Context, repoHashedName api.Repo
 
 	repos, err := s.listRepos(ctx, tr, ReposListOptions{
 		HashedName:     string(repoHashedName),
-		LimitOffset:    &LimitOffset{Limit: 1},
+		LimitOffset:    &dbtypes.LimitOffset{Limit: 1},
 		IncludeBlocked: true,
 	})
 	if err != nil {
@@ -727,9 +727,9 @@ type ReposListOptions struct {
 	ExcludeSources bool
 
 	// cursor-based pagination args
-	PaginationArgs *PaginationArgs
+	PaginationArgs *dbtypes.PaginationArgs
 
-	*LimitOffset
+	*dbtypes.LimitOffset
 }
 
 type RepoKVPFilter struct {
@@ -1282,7 +1282,7 @@ func containsSizeField(orderBy RepoListOrderBy) bool {
 	return false
 }
 
-func containsOrderBySizeField(orderBy OrderBy) bool {
+func containsOrderBySizeField(orderBy dbtypes.OrderBy) bool {
 	for _, field := range orderBy {
 		if field.Field == string(RepoListSize) {
 			return true

@@ -204,7 +204,6 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 			},
 			{
 				{
-
 					Name:        fmt.Sprintf("%s_disk_average_queue_size", opts.DiskTitle),
 					Description: "average queue size over 1m (per instance)",
 					Query:       diskStatsQuery("node_disk_io_time_weighted_seconds_total"),

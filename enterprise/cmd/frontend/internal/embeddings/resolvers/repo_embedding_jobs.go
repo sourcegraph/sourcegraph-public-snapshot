@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	repobg "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -68,7 +69,7 @@ func (s *repoEmbeddingJobsConnectionStore) ComputeTotal(ctx context.Context) (*i
 	return &total, nil
 }
 
-func (s *repoEmbeddingJobsConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.RepoEmbeddingJobResolver, error) {
+func (s *repoEmbeddingJobsConnectionStore) ComputeNodes(ctx context.Context, args *dbtypes.PaginationArgs) ([]graphqlbackend.RepoEmbeddingJobResolver, error) {
 	opts := repobg.ListOpts{PaginationArgs: args, Query: s.args.Query, State: s.args.State}
 	if s.args.Repo != nil {
 		err := withRepoID(&opts, *s.args.Repo)
@@ -92,7 +93,7 @@ func (s *repoEmbeddingJobsConnectionStore) ComputeNodes(ctx context.Context, arg
 	return resolvers, nil
 }
 
-func (s *repoEmbeddingJobsConnectionStore) MarshalCursor(node graphqlbackend.RepoEmbeddingJobResolver, _ database.OrderBy) (*string, error) {
+func (s *repoEmbeddingJobsConnectionStore) MarshalCursor(node graphqlbackend.RepoEmbeddingJobResolver, _ dbtypes.OrderBy) (*string, error) {
 	if node == nil {
 		return nil, errors.New("node is nil")
 	}
@@ -100,7 +101,7 @@ func (s *repoEmbeddingJobsConnectionStore) MarshalCursor(node graphqlbackend.Rep
 	return &cursor, nil
 }
 
-func (s *repoEmbeddingJobsConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *repoEmbeddingJobsConnectionStore) UnmarshalCursor(cursor string, _ dbtypes.OrderBy) (*string, error) {
 	nodeID, err := unmarshalRepoEmbeddingJobID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err

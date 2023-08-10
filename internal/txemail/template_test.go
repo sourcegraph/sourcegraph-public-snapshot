@@ -16,7 +16,7 @@ func TestParseTemplate(t *testing.T) {
 		Text    string
 		HTML    string
 	}
-	var emailData = struct {
+	emailData := struct {
 		A string
 		B string
 	}{

@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -121,7 +122,7 @@ type ExecutorSecretAccessLogListArgs struct {
 func (r *executorSecretResolver) AccessLogs(args ExecutorSecretAccessLogListArgs) (*executorSecretAccessLogConnectionResolver, error) {
 	// Namespace access is already enforced when the secret resolver is used,
 	// so access to the access logs is acceptable as well.
-	limit := &database.LimitOffset{Limit: int(args.First)}
+	limit := &dbtypes.LimitOffset{Limit: int(args.First)}
 	if args.After != nil {
 		offset, err := graphqlutil.DecodeIntCursor(args.After)
 		if err != nil {

@@ -78,7 +78,8 @@ func (s *userUsageStatisticsResolver) LastActiveCodeHostIntegrationTime() *strin
 func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 	Event        string
 	UserCookieID string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	return nil, nil
 }
 
@@ -304,7 +305,8 @@ type codySurveySubmissionForHubSpot struct {
 func (r *schemaResolver) SubmitCodySurvey(ctx context.Context, args *struct {
 	IsForWork     bool
 	IsForPersonal bool
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	if !envvar.SourcegraphDotComMode() {
 		return nil, errors.New("Cody survey is not supported outside sourcegraph.com")
 	}

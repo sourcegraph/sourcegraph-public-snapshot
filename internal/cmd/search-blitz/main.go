@@ -165,9 +165,7 @@ func (t *tsvLogger) Log(a ...any) {
 	_, _ = t.buf.WriteTo(t.w)
 }
 
-var (
-	tsv *tsvLogger
-)
+var tsv *tsvLogger
 
 func main() {
 	logDir := os.Getenv(envLogDir)

@@ -92,7 +92,7 @@ func Main() {
 	// Load $CONFIG_DIR/env before we set any defaults
 	{
 		configDir := SetDefaultEnv("CONFIG_DIR", "/etc/sourcegraph")
-		err := os.MkdirAll(configDir, 0755)
+		err := os.MkdirAll(configDir, 0o755)
 		if err != nil {
 			log.Fatalf("failed to ensure CONFIG_DIR exists: %s", err)
 		}

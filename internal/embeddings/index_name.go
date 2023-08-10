@@ -21,6 +21,7 @@ func GetRepoEmbeddingIndexNameDeprecated(repoName api.RepoName) RepoEmbeddingInd
 	hash := md5.Sum([]byte(repoName))
 	return RepoEmbeddingIndexName(fmt.Sprintf(`%s_%s.embeddingindex`, fsSafeRepoName, hex.EncodeToString(hash[:])))
 }
+
 func GetRepoEmbeddingIndexName(repoID api.RepoID) RepoEmbeddingIndexName {
 	return RepoEmbeddingIndexName(fmt.Sprintf(`%d.embeddingindex`, repoID))
 }

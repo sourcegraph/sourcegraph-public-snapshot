@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -295,7 +296,7 @@ func (s *userCredentialsStore) GetByScope(ctx context.Context, scope UserCredent
 // UserCredentialsListOpts provide the options when listing credentials. At
 // least one field in Scope must be set.
 type UserCredentialsListOpts struct {
-	*LimitOffset
+	*dbtypes.LimitOffset
 	Scope     UserCredentialScope
 	ForUpdate bool
 
@@ -311,7 +312,7 @@ func (opts *UserCredentialsListOpts) sql() *sqlf.Query {
 		return &sqlf.Query{}
 	}
 
-	return (&LimitOffset{Limit: opts.Limit + 1, Offset: opts.Offset}).SQL()
+	return (&dbtypes.LimitOffset{Limit: opts.Limit + 1, Offset: opts.Offset}).SQL()
 }
 
 // List returns all user credentials matching the given options.

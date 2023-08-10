@@ -46,7 +46,8 @@ type markdownOptions struct {
 func (*schemaResolver) RenderMarkdown(args *struct {
 	Markdown string
 	Options  *markdownOptions
-}) (string, error) {
+},
+) (string, error) {
 	return markdown.Render(args.Markdown)
 }
 
@@ -55,7 +56,8 @@ func (*schemaResolver) HighlightCode(ctx context.Context, args *struct {
 	FuzzyLanguage  string
 	DisableTimeout bool
 	IsLightTheme   *bool
-}) (string, error) {
+},
+) (string, error) {
 	language := highlight.SyntectLanguageMap[strings.ToLower(args.FuzzyLanguage)]
 	filePath := "file." + language
 	response, _, err := highlight.Code(ctx, highlight.Params{

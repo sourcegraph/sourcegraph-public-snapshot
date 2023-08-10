@@ -50,9 +50,11 @@ type GitCommitClient interface {
 
 var _ GitCommitClient = (*gitserver.GitCommitClient)(nil)
 
-type SearchJobGenerator func(ctx context.Context, req requestContext) (*requestContext, []*queryrunner.SearchJob, error)
-type SearchRunner func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob) (*requestContext, []store.RecordSeriesPointArgs, error)
-type ResultsPersister func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs) (*requestContext, error)
+type (
+	SearchJobGenerator func(ctx context.Context, req requestContext) (*requestContext, []*queryrunner.SearchJob, error)
+	SearchRunner       func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob) (*requestContext, []store.RecordSeriesPointArgs, error)
+	ResultsPersister   func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs) (*requestContext, error)
+)
 
 type BackfillerConfig struct {
 	CommitClient    GitCommitClient
@@ -72,7 +74,6 @@ func NewDefaultBackfiller(config BackfillerConfig) Backfiller {
 	searchRunner := makeRunSearchFunc(config.SearchHandlers, config.SearchRunnerWorkerLimit, config.SearchRateLimiter)
 	persister := makeSaveResultsFunc(logger, config.InsightStore)
 	return newBackfiller(searchJobGenerator, searchRunner, persister, glock.NewRealClock())
-
 }
 
 func newBackfiller(jobGenerator SearchJobGenerator, searchRunner SearchRunner, resultsPersister ResultsPersister, clock glock.Clock) Backfiller {
@@ -82,7 +83,6 @@ func newBackfiller(jobGenerator SearchJobGenerator, searchRunner SearchRunner, r
 		persister:          resultsPersister,
 		clock:              clock,
 	}
-
 }
 
 type backfiller struct {
@@ -97,7 +97,6 @@ type backfiller struct {
 var backfillMetrics = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "insights_repo_backfill", metrics.WithLabels("step"))
 
 func (b *backfiller) Run(ctx context.Context, req BackfillRequest) error {
-
 	// setup
 	startingReqContext := requestContext{backfillRequest: &req}
 	start := b.clock.Now()
@@ -334,5 +333,4 @@ func makeSaveResultsFunc(logger log.Logger, insightStore store.Interface) Result
 		err := insightStore.RecordSeriesPoints(ctx, points)
 		return reqContext, err
 	}
-
 }

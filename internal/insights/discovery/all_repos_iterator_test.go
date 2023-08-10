@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -54,22 +55,22 @@ func TestAllReposIterator(t *testing.T) {
 	// Were the RepoStore.List calls as we expected?
 	autogold.Expect([]database.ReposListOptions{
 		{
-			LimitOffset: &database.LimitOffset{Limit: 1000},
+			LimitOffset: &dbtypes.LimitOffset{Limit: 1000},
 		},
 		{
-			LimitOffset: &database.LimitOffset{
+			LimitOffset: &dbtypes.LimitOffset{
 				Limit:  1000,
 				Offset: 3,
 			},
 		},
 		{
-			LimitOffset: &database.LimitOffset{
+			LimitOffset: &dbtypes.LimitOffset{
 				Limit:  1000,
 				Offset: 6,
 			},
 		},
 		{
-			LimitOffset: &database.LimitOffset{
+			LimitOffset: &dbtypes.LimitOffset{
 				Limit:  1000,
 				Offset: 9,
 			},
@@ -102,22 +103,22 @@ func TestAllReposIterator(t *testing.T) {
 		autogold.Expect([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}).Equal(t, each)
 		autogold.Expect([]database.ReposListOptions{
 			{
-				LimitOffset: &database.LimitOffset{Limit: 1000},
+				LimitOffset: &dbtypes.LimitOffset{Limit: 1000},
 			},
 			{
-				LimitOffset: &database.LimitOffset{
+				LimitOffset: &dbtypes.LimitOffset{
 					Limit:  1000,
 					Offset: 3,
 				},
 			},
 			{
-				LimitOffset: &database.LimitOffset{
+				LimitOffset: &dbtypes.LimitOffset{
 					Limit:  1000,
 					Offset: 6,
 				},
 			},
 			{
-				LimitOffset: &database.LimitOffset{
+				LimitOffset: &dbtypes.LimitOffset{
 					Limit:  1000,
 					Offset: 9,
 				},

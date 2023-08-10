@@ -341,7 +341,6 @@ func (s *store) SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, traver
 		return nil
 	})
 	return a, b, err
-
 }
 
 const softDeleteExpiredUploadsViaTraversalQuery = `

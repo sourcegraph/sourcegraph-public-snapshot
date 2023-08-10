@@ -25,7 +25,6 @@ func GetExtensionsUsageStatistics(ctx context.Context, db database.DB) (*types.E
 
 	usageStatisticsByExtension := []*types.ExtensionUsageStatistics{}
 	rows, err := db.QueryContext(ctx, extensionsQuery, timeNow())
-
 	if err != nil {
 		return nil, err
 	}

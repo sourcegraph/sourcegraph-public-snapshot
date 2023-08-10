@@ -51,8 +51,10 @@ func (t timeInterval) IsValid() bool {
 
 type stepDirection int
 
-const forward stepDirection = 1
-const backward stepDirection = -1
+const (
+	forward  stepDirection = 1
+	backward stepDirection = -1
+)
 
 func (t timeInterval) step(start time.Time, direction stepDirection) time.Time {
 	switch t.Unit {

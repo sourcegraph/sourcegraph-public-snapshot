@@ -61,7 +61,6 @@ func main() {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
-
 }
 
 func initSourcegraph() {
@@ -125,6 +124,7 @@ func initSourcegraph() {
 
 	log.Println("Instance initialized, SOURCEGRAPH_SUDO_TOKEN set in", profile)
 }
+
 func mustMarshalJSONString(v any) string {
 	str, err := jsoniter.MarshalToString(v)
 	if err != nil {
@@ -186,7 +186,6 @@ func addReposCommand() {
 				Repos: externalsvcs[i].Config.Repos,
 			}),
 		})
-
 		if err != nil {
 			log.Fatal(err)
 		}

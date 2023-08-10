@@ -1,6 +1,6 @@
 package graphqlutil
 
-import "github.com/sourcegraph/sourcegraph/internal/database"
+import "github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 
 // ConnectionArgs is the common set of arguments to GraphQL fields that return connections (lists).
 type ConnectionArgs struct {
@@ -8,9 +8,9 @@ type ConnectionArgs struct {
 }
 
 // Set is a convenience method for setting the DB limit and offset in a DB XyzListOptions struct.
-func (a ConnectionArgs) Set(o **database.LimitOffset) {
+func (a ConnectionArgs) Set(o **dbtypes.LimitOffset) {
 	if a.First != nil {
-		*o = &database.LimitOffset{Limit: int(*a.First)}
+		*o = &dbtypes.LimitOffset{Limit: int(*a.First)}
 	}
 }
 

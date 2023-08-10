@@ -259,7 +259,6 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 				basicJob = orderRacingJobs(basicJob)
 			}
 		}
-
 	}
 
 	return basicJob, nil

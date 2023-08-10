@@ -71,7 +71,6 @@ func TestSchemaValidationUUID(t *testing.T) {
 			t.Fatalf("wrong error message: %s", diff)
 		}
 	})
-
 }
 
 // validateAgainstSchema does roughly what we do in

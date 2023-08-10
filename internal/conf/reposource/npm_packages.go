@@ -106,8 +106,10 @@ type NpmPackageSerializationHelper struct {
 	Name  string
 }
 
-var _ json.Marshaler = &NpmPackageName{}
-var _ json.Unmarshaler = &NpmPackageName{}
+var (
+	_ json.Marshaler   = &NpmPackageName{}
+	_ json.Unmarshaler = &NpmPackageName{}
+)
 
 func (pkg *NpmPackageName) MarshalJSON() ([]byte, error) {
 	return json.Marshal(NpmPackageSerializationHelper{pkg.scope, pkg.name})

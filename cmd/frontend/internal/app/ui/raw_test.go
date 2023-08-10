@@ -217,7 +217,6 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 			t.Errorf("Want %q in body, but got %q", mockGitServerResponse, body)
 		}
 	})
-
 }
 
 func Test_serveRawWithContentTypePlain(t *testing.T) {

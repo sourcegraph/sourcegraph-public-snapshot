@@ -64,7 +64,8 @@ func (r *schemaResolver) RecoverUsers(ctx context.Context, args *RecoverUsersReq
 func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	User graphql.ID
 	Hard *bool
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	return r.DeleteUsers(ctx, &struct {
 		Users []graphql.ID
 		Hard  *bool
@@ -77,7 +78,8 @@ func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 	Users []graphql.ID
 	Hard  *bool
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can delete users.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -194,7 +196,8 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 
 func (r *schemaResolver) DeleteOrganization(ctx context.Context, args *struct {
 	Organization graphql.ID
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	// 🚨 SECURITY: For On-premise, only site admins can soft delete orgs.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -229,7 +232,8 @@ var errRefuseToSetCurrentUserSiteAdmin = errors.New("refusing to set current use
 func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	UserID    graphql.ID
 	SiteAdmin bool
-}) (response *EmptyResponse, err error) {
+},
+) (response *EmptyResponse, err error) {
 	// Set default values for event args.
 	eventArgs := roleChangeEventArgs{
 		From: "role_user",
@@ -288,13 +292,15 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 
 func (r *schemaResolver) InvalidateSessionsByID(ctx context.Context, args *struct {
 	UserID graphql.ID
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	return r.InvalidateSessionsByIDs(ctx, &struct{ UserIDs []graphql.ID }{UserIDs: []graphql.ID{args.UserID}})
 }
 
 func (r *schemaResolver) InvalidateSessionsByIDs(ctx context.Context, args *struct {
 	UserIDs []graphql.ID
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the site admin can invalidate the sessions of a user
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err

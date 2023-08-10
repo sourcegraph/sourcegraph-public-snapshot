@@ -12,8 +12,10 @@ import (
 // AllAnalyzers contains staticcheck and gosimple Analyzers
 var AllAnalyzers = append(staticcheck.Analyzers, simple.Analyzers...)
 
-var AnalyzerName = ""
-var Analyzer *analysis.Analyzer = GetAnalyzerByName(AnalyzerName)
+var (
+	AnalyzerName                    = ""
+	Analyzer     *analysis.Analyzer = GetAnalyzerByName(AnalyzerName)
+)
 
 func GetAnalyzerByName(name string) *analysis.Analyzer {
 	for _, a := range AllAnalyzers {

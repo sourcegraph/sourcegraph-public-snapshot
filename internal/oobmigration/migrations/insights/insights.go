@@ -362,6 +362,7 @@ func grantTiple(userID, orgID *int32) []any {
 func hashID(query string) string {
 	return fmt.Sprintf("s:%s", fmt.Sprintf("%X", sha256.Sum256([]byte(query))))
 }
+
 func nextSnapshot(current time.Time) time.Time {
 	year, month, day := current.In(time.UTC).Date()
 	return time.Date(year, month, day+1, 0, 0, 0, 0, time.UTC)

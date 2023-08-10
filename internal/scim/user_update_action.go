@@ -119,8 +119,8 @@ func (u *updateUserEmailData) changed(before, after *scim.Resource) bool {
 	}
 	// Check rest of the emails
 	return !slices.Equal(otherEmailsBefore, otherEmailsAfter)
-
 }
+
 func (u *updateUserEmailData) Update(ctx context.Context, before, after *scim.Resource) error {
 	// Only update if emails changed
 	if !u.changed(before, after) {

@@ -10,6 +10,7 @@ import (
 	"gotest.tools/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -107,7 +108,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 			RepoID: repo1.ID,
 			Path:   "file1",
 		}
-		var limitOffset *LimitOffset
+		var limitOffset *dbtypes.LimitOffset
 		got, err := db.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
 		require.NoError(t, err)
 		want := []PathCodeownersCounts{
@@ -120,7 +121,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 		opts := TreeLocationOpts{
 			RepoID: repo1.ID,
 		}
-		var limitOffset *LimitOffset
+		var limitOffset *dbtypes.LimitOffset
 		got, err := db.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
 		require.NoError(t, err)
 		want := []PathCodeownersCounts{
@@ -131,7 +132,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 	})
 	t.Run("query whole instance", func(t *testing.T) {
 		opts := TreeLocationOpts{}
-		var limitOffset *LimitOffset
+		var limitOffset *dbtypes.LimitOffset
 		got, err := db.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
 		require.NoError(t, err)
 		want := []PathCodeownersCounts{

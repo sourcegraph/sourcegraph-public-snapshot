@@ -10,6 +10,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -154,7 +155,6 @@ func (s *orgInvitationStore) GetPendingByOrgID(ctx context.Context, orgID int32)
 	results, err := s.list(ctx, []*sqlf.Query{
 		sqlf.Sprintf("org_id=%d AND responded_at IS NULL AND revoked_at IS NULL AND expires_at > now()", orgID),
 	}, nil)
-
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +220,7 @@ func (s *orgInvitationStore) GetPendingByID(ctx context.Context, id int64) (*Org
 type OrgInvitationsListOptions struct {
 	OrgID           int32 // only list org invitations for this org
 	RecipientUserID int32 // only list org invitations with this user as the recipient
-	*LimitOffset
+	*dbtypes.LimitOffset
 }
 
 func (o OrgInvitationsListOptions) sqlConditions() []*sqlf.Query {
@@ -245,7 +245,7 @@ func (s *orgInvitationStore) List(ctx context.Context, opt OrgInvitationsListOpt
 	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
-func (s *orgInvitationStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*OrgInvitation, error) {
+func (s *orgInvitationStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *dbtypes.LimitOffset) ([]*OrgInvitation, error) {
 	q := sqlf.Sprintf(`
 SELECT id, org_id, sender_user_id, recipient_user_id, recipient_email, created_at, notified_at, responded_at, response_type, revoked_at, expires_at FROM org_invitations
 WHERE (%s) AND deleted_at IS NULL

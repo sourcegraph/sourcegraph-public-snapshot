@@ -181,7 +181,6 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 	// Create a commit and push it
 	// Figure out which authenticator we should use to modify the changeset.
 	css, err := e.changesetSource(ctx)
-
 	if err != nil {
 		return afterDone, err
 	}

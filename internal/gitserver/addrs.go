@@ -158,8 +158,10 @@ func (t *testConnAndErr) GRPCClient() (proto.GitserverServiceClient, error) {
 	return t.clientFunc(t.conn), t.err
 }
 
-var _ ClientSource = &testGitserverConns{}
-var _ AddressWithClient = &testConnAndErr{}
+var (
+	_ ClientSource      = &testGitserverConns{}
+	_ AddressWithClient = &testConnAndErr{}
+)
 
 const repoAddressCacheTTL = 15 * time.Minute
 
@@ -450,5 +452,7 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 	}
 }
 
-var _ ClientSource = &atomicGitServerConns{}
-var _ AddressWithClient = &connAndErr{}
+var (
+	_ ClientSource      = &atomicGitServerConns{}
+	_ AddressWithClient = &connAndErr{}
+)

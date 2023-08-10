@@ -13,12 +13,14 @@ type GeneratedTimeSeries struct {
 	SeriesId string
 }
 
-type timeCounts map[time.Time]int
-type previewExecutor struct {
-	repoStore database.RepoStore
-	filter    compression.DataFrameFilter
-	clock     func() time.Time
-}
+type (
+	timeCounts      map[time.Time]int
+	previewExecutor struct {
+		repoStore database.RepoStore
+		filter    compression.DataFrameFilter
+		clock     func() time.Time
+	}
+)
 
 func generateTimes(plan compression.BackfillPlan) map[time.Time]int {
 	times := make(map[time.Time]int)

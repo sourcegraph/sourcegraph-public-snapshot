@@ -10,8 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/codeintel-qa/internal"
 )
 
-var m sync.Mutex
-var durations = map[string][]float64{}
+var (
+	m         sync.Mutex
+	durations = map[string][]float64{}
+)
 
 // queryGraphQL performs a GraphQL request and stores its latency not the global durations
 // map. If the verbose flag is set, a line with the request's latency is printed.

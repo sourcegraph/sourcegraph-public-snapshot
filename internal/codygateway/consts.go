@@ -7,8 +7,10 @@ const (
 	ActorSourceDotcomUser          ActorSource = "dotcom-user"
 )
 
-const CompletionsEventFeatureMetadataField = "feature"
-const EmbeddingsTokenUsageMetadataField = "tokens_used"
+const (
+	CompletionsEventFeatureMetadataField = "feature"
+	EmbeddingsTokenUsageMetadataField    = "tokens_used"
+)
 
 const CompletionsEventFeatureEmbeddings = "embeddings"
 

@@ -94,7 +94,8 @@ func findNextRfcID(ctx context.Context, out *std.Output) (int, error) {
 }
 
 func updateContent(ctx context.Context, newFile *drive.File, nextRfcID int, title string,
-	driveSpec DriveSpec, out *std.Output) error {
+	driveSpec DriveSpec, out *std.Output,
+) error {
 	docService, err := getDocsService(ctx, ScopePermissionsReadWrite, out)
 	if err != nil {
 		return errors.Wrap(err, "Cannot create docs client")
@@ -214,7 +215,8 @@ func updateContent(ctx context.Context, newFile *drive.File, nextRfcID int, titl
 }
 
 func createMainDoc(ctx context.Context, title string, template Template, driveSpec DriveSpec,
-	out *std.Output) (*drive.File, int, error) {
+	out *std.Output,
+) (*drive.File, int, error) {
 	srv, err := getService(ctx, ScopePermissionsReadWrite, out)
 	if err != nil {
 		return nil, 0, err
@@ -261,7 +263,8 @@ func createMainDoc(ctx context.Context, title string, template Template, driveSp
 }
 
 func leaveBreadcrumbForPrivateOnPublic(ctx context.Context, rfcDoc *drive.File, nextRfcID int,
-	out *std.Output) (*drive.File, error) {
+	out *std.Output,
+) (*drive.File, error) {
 	srv, err := getService(ctx, ScopePermissionsReadWrite, out)
 	if err != nil {
 		return nil, err

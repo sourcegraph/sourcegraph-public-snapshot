@@ -30,9 +30,7 @@ const SourceVersion = "v2"
 // followed by a 64-character hex-encoded SHA256 hash
 const tokenLength = 4 + 64
 
-var (
-	defaultUpdateInterval = 15 * time.Minute
-)
+var defaultUpdateInterval = 15 * time.Minute
 
 type Source struct {
 	log               log.Logger

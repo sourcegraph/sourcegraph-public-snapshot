@@ -27,7 +27,6 @@ type DiffFetcher struct {
 // NewDiffFetcher starts a git diff-tree subprocess that waits, listening on stdin
 // for comimt hashes to generate patches for.
 func NewDiffFetcher(dir string) (*DiffFetcher, error) {
-
 	return &DiffFetcher{dir: dir}, nil
 }
 

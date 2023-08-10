@@ -55,7 +55,8 @@ func (r *schemaResolver) OutOfBandMigrations(ctx context.Context) ([]*outOfBandM
 func (r *schemaResolver) SetMigrationDirection(ctx context.Context, args *struct {
 	ID           graphql.ID
 	ApplyReverse bool
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins may modify out-of-band migrations
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -109,6 +110,7 @@ func (r *outOfBandMigrationResolver) Progress() float64 { return r.m.Progress }
 func (r *outOfBandMigrationResolver) Created() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.m.Created}
 }
+
 func (r *outOfBandMigrationResolver) LastUpdated() *gqlutil.DateTime {
 	return gqlutil.DateTimeOrNil(r.m.LastUpdated)
 }

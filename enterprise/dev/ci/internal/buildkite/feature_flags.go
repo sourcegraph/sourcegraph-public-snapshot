@@ -1,7 +1,6 @@
 package buildkite
 
-type featureFlags struct {
-}
+type featureFlags struct{}
 
 // FeatureFlags are for experimenting with CI pipeline features. Use sparingly!
 var FeatureFlags = featureFlags{}

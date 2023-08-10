@@ -103,7 +103,8 @@ func (r *Resolver) insertTestMonitorWithOpts(ctx context.Context, t *testing.T, 
 			Enabled:    true,
 			Priority:   "NORMAL",
 			Recipients: []graphql.ID{defaultOwner},
-			Header:     "test header"}},
+			Header:     "test header",
+		}},
 	}
 
 	options := options{

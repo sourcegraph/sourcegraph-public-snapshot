@@ -39,7 +39,8 @@ func TestSearchWithFiltering(t *testing.T) {
 				Name: "foo2",
 				Path: "file2",
 			},
-		}}
+		},
+	}
 
 	mockServer := &mockSymbolsServer{
 		mockSearchGRPC: func(_ context.Context, _ *proto.SearchRequest) (*proto.SearchResponse, error) {

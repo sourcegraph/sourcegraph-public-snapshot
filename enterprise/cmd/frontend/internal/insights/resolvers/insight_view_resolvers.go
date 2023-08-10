@@ -27,21 +27,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var _ graphqlbackend.InsightViewResolver = &insightViewResolver{}
-var _ graphqlbackend.LineChartInsightViewPresentation = &lineChartInsightViewPresentation{}
-var _ graphqlbackend.LineChartDataSeriesPresentationResolver = &lineChartDataSeriesPresentationResolver{}
-var _ graphqlbackend.SearchInsightDataSeriesDefinitionResolver = &searchInsightDataSeriesDefinitionResolver{}
-var _ graphqlbackend.InsightRepositoryScopeResolver = &insightRepositoryScopeResolver{}
-var _ graphqlbackend.InsightRepositoryDefinition = &insightRepositoryDefinitionResolver{}
-var _ graphqlbackend.InsightIntervalTimeScope = &insightIntervalTimeScopeResolver{}
-var _ graphqlbackend.InsightViewFiltersResolver = &insightViewFiltersResolver{}
-var _ graphqlbackend.InsightViewPayloadResolver = &insightPayloadResolver{}
-var _ graphqlbackend.InsightTimeScope = &insightTimeScopeUnionResolver{}
-var _ graphqlbackend.InsightPresentation = &insightPresentationUnionResolver{}
-var _ graphqlbackend.InsightDataSeriesDefinition = &insightDataSeriesDefinitionUnionResolver{}
-var _ graphqlbackend.InsightViewConnectionResolver = &InsightViewQueryConnectionResolver{}
-var _ graphqlbackend.InsightViewSeriesDisplayOptionsResolver = &insightViewSeriesDisplayOptionsResolver{}
-var _ graphqlbackend.InsightViewSeriesSortOptionsResolver = &insightViewSeriesSortOptionsResolver{}
+var (
+	_ graphqlbackend.InsightViewResolver                       = &insightViewResolver{}
+	_ graphqlbackend.LineChartInsightViewPresentation          = &lineChartInsightViewPresentation{}
+	_ graphqlbackend.LineChartDataSeriesPresentationResolver   = &lineChartDataSeriesPresentationResolver{}
+	_ graphqlbackend.SearchInsightDataSeriesDefinitionResolver = &searchInsightDataSeriesDefinitionResolver{}
+	_ graphqlbackend.InsightRepositoryScopeResolver            = &insightRepositoryScopeResolver{}
+	_ graphqlbackend.InsightRepositoryDefinition               = &insightRepositoryDefinitionResolver{}
+	_ graphqlbackend.InsightIntervalTimeScope                  = &insightIntervalTimeScopeResolver{}
+	_ graphqlbackend.InsightViewFiltersResolver                = &insightViewFiltersResolver{}
+	_ graphqlbackend.InsightViewPayloadResolver                = &insightPayloadResolver{}
+	_ graphqlbackend.InsightTimeScope                          = &insightTimeScopeUnionResolver{}
+	_ graphqlbackend.InsightPresentation                       = &insightPresentationUnionResolver{}
+	_ graphqlbackend.InsightDataSeriesDefinition               = &insightDataSeriesDefinitionUnionResolver{}
+	_ graphqlbackend.InsightViewConnectionResolver             = &InsightViewQueryConnectionResolver{}
+	_ graphqlbackend.InsightViewSeriesDisplayOptionsResolver   = &insightViewSeriesDisplayOptionsResolver{}
+	_ graphqlbackend.InsightViewSeriesSortOptionsResolver      = &insightViewSeriesSortOptionsResolver{}
+)
 
 type insightViewResolver struct {
 	view                  *types.Insight
@@ -218,10 +220,11 @@ func (i *insightViewResolver) computeDataSeries(ctx context.Context) ([]graphqlb
 }
 
 func (i *insightViewResolver) Dashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) graphqlbackend.InsightsDashboardConnectionResolver {
-	return &dashboardConnectionResolver{baseInsightResolver: i.baseInsightResolver,
-		orgStore:         i.postgresDB.Orgs(),
-		args:             args,
-		withViewUniqueID: &i.view.UniqueID,
+	return &dashboardConnectionResolver{
+		baseInsightResolver: i.baseInsightResolver,
+		orgStore:            i.postgresDB.Orgs(),
+		args:                args,
+		withViewUniqueID:    &i.view.UniqueID,
 	}
 }
 
@@ -391,7 +394,6 @@ func (r *insightRepositoryDefinitionResolver) ToRepositorySearchScope() (graphql
 		search:   emptyIfNil(r.series.RepositoryCriteria),
 		allRepos: allRepos,
 	}, true
-
 }
 
 type reposSearchScope struct {
@@ -690,7 +692,7 @@ func updateCaptureGroupInsight(ctx context.Context, input graphqlbackend.LineCha
 }
 
 func updateSearchOrComputeInsight(ctx context.Context, input graphqlbackend.UpdateLineChartSearchInsightInput, existingSeries []types.InsightViewSeries, view types.InsightView, tx *store.InsightStore, seriesFillStrategy fillSeriesStrategy) error {
-	var existingSeriesMap = make(map[string]types.InsightViewSeries)
+	existingSeriesMap := make(map[string]types.InsightViewSeries)
 	for _, existing := range existingSeries {
 		if !seriesFound(existing, input.DataSeries) {
 			if err := tx.RemoveSeriesFromView(ctx, existing.SeriesID, view.ID); err != nil {

@@ -26,7 +26,6 @@ func ValidateRemoteAddr(raddr string) bool {
 	if err == nil {
 		raddr = host
 		_, err := strconv.Atoi(port)
-
 		// return false if port is not an int
 		if err != nil {
 			return false
@@ -70,7 +69,6 @@ const maxPasswordRunes = 256
 
 // ValidatePassword: Validates that a password meets the required criteria
 func ValidatePassword(passwd string) error {
-
 	if conf.PasswordPolicyEnabled() {
 		return validatePasswordUsingPolicy(passwd)
 	}
@@ -118,7 +116,7 @@ func validatePasswordUsingPolicy(passwd string) error {
 		case unicode.IsLetter(c) || c == ' ':
 			chars++
 		default:
-			//ignore
+			// ignore
 		}
 	}
 	// Check for blank password

@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
@@ -25,7 +26,7 @@ func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 		rolePermissionStore := tx.RolePermissions()
 
 		dbPerms, err := permissionStore.List(ctx, database.PermissionListOpts{
-			PaginationArgs: &database.PaginationArgs{},
+			PaginationArgs: &dbtypes.PaginationArgs{},
 		})
 		if err != nil {
 			return errors.Wrap(err, "fetching permissions from database")
@@ -79,7 +80,6 @@ func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 
 		return nil
 	})
-
 	if err != nil {
 		scopedLog.Error("failed to update RBAC permissions", log.Error(err))
 	}

@@ -97,7 +97,6 @@ func TestClient_doWithBaseURL(t *testing.T) {
 				StatusCode: http.StatusOK,
 				Body:       io.NopCloser(bytes.NewReader([]byte(body))),
 			}, nil
-
 		},
 	}
 

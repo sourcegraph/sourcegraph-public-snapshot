@@ -111,5 +111,4 @@ func TestRetentionUsageStatistics(t *testing.T) {
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatal(diff)
 	}
-
 }

@@ -184,7 +184,6 @@ func isBareRepo(path string) bool {
 	c := exec.Command("git", "--git-dir", path, "rev-parse", "--is-bare-repository")
 	c.Dir = path
 	out, err := c.CombinedOutput()
-
 	if err != nil {
 		return false
 	}
@@ -198,7 +197,6 @@ func isGitRepo(path string) bool {
 	c := exec.Command("git", "rev-parse", "--git-dir")
 	c.Dir = path
 	out, err := c.CombinedOutput()
-
 	if err != nil {
 		return false
 	}
@@ -212,7 +210,6 @@ func gitRemote(path string) string {
 	c := exec.Command("git", "remote", "get-url", "origin")
 	c.Dir = path
 	out, err := c.CombinedOutput()
-
 	if err != nil {
 		return ""
 	}

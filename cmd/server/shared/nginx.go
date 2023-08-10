@@ -38,7 +38,7 @@ func nginxWriteFiles(configDir string) (string, error) {
 
 	// Does not exist
 	if err != nil {
-		err = os.WriteFile(path, []byte(assets.NginxConf), 0600)
+		err = os.WriteFile(path, []byte(assets.NginxConf), 0o600)
 		if err != nil {
 			return "", err
 		}
@@ -47,7 +47,7 @@ func nginxWriteFiles(configDir string) (string, error) {
 	// We always write the files in the nginx directory, since those are
 	// controlled by Sourcegraph and can change between versions.
 	nginxDir := filepath.Join(configDir, "nginx")
-	if err := os.MkdirAll(nginxDir, 0755); err != nil {
+	if err := os.MkdirAll(nginxDir, 0o755); err != nil {
 		return "", err
 	}
 	includeConfs, err := assets.NginxDir.ReadDir("nginx")
@@ -59,7 +59,7 @@ func nginxWriteFiles(configDir string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		err = os.WriteFile(filepath.Join(nginxDir, p.Name()), data, 0600)
+		err = os.WriteFile(filepath.Join(nginxDir, p.Name()), data, 0o600)
 		if err != nil {
 			return "", err
 		}

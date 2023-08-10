@@ -481,7 +481,7 @@ func (s *gitHubAppsStore) SyncInstallations(ctx context.Context, app ghtypes.Git
 		return errs
 	}
 
-	var dbInstallsMap = make(map[int]struct{}, len(dbInstallations))
+	dbInstallsMap := make(map[int]struct{}, len(dbInstallations))
 	for _, in := range dbInstallations {
 		dbInstallsMap[in.InstallationID] = struct{}{}
 	}

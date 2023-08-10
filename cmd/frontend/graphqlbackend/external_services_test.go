@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -929,7 +930,7 @@ func TestExternalServices_PageInfo(t *testing.T) {
 		{
 			name: "less results than the limit",
 			opt: database.ExternalServicesListOptions{
-				LimitOffset: &database.LimitOffset{
+				LimitOffset: &dbtypes.LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -941,7 +942,7 @@ func TestExternalServices_PageInfo(t *testing.T) {
 		{
 			name: "same number of results as the limit, and no more",
 			opt: database.ExternalServicesListOptions{
-				LimitOffset: &database.LimitOffset{
+				LimitOffset: &dbtypes.LimitOffset{
 					Limit: 1,
 				},
 			},
@@ -956,7 +957,7 @@ func TestExternalServices_PageInfo(t *testing.T) {
 		{
 			name: "same number of results as the limit, and has more",
 			opt: database.ExternalServicesListOptions{
-				LimitOffset: &database.LimitOffset{
+				LimitOffset: &dbtypes.LimitOffset{
 					Limit: 1,
 				},
 			},

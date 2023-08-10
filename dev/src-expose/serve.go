@@ -219,7 +219,6 @@ func (s *Serve) configureRepos() []string {
 
 		return nil
 	})
-
 	if err != nil {
 		// Our WalkFunc doesn't return any errors, so neither should filepath.Walk
 		panic(err)
@@ -264,10 +263,10 @@ func configurePostUpdateHook(logger *log.Logger, gitDir string) error {
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Dir(postUpdatePath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(postUpdatePath), 0o755); err != nil {
 		return errors.Wrap(err, "create git hooks dir")
 	}
-	if err := os.WriteFile(postUpdatePath, postUpdateHook, 0755); err != nil {
+	if err := os.WriteFile(postUpdatePath, postUpdateHook, 0o755); err != nil {
 		return errors.Wrap(err, "setting post-update hook")
 	}
 

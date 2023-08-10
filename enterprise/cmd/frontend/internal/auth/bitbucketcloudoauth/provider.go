@@ -21,8 +21,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-const sessionKey = "bitbucketcloudoauth@0"
-const defaultBBCloudURL = "https://bitbucket.org"
+const (
+	sessionKey        = "bitbucketcloudoauth@0"
+	defaultBBCloudURL = "https://bitbucket.org"
+)
 
 func parseProvider(logger log.Logger, p *schema.BitbucketCloudAuthProvider, db database.DB, sourceCfg schema.AuthProviders) (provider *oauth.Provider, messages []string) {
 	rawURL := p.Url

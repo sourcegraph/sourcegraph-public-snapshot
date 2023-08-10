@@ -43,14 +43,14 @@ func testFastWalk(t *testing.T, files map[string]string, callback func(path stri
 	symlinks := map[string]string{}
 	for path, contents := range files {
 		file := filepath.Join(tempdir, "/src", path)
-		if err := os.MkdirAll(filepath.Dir(file), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(file), 0o755); err != nil {
 			t.Fatal(err)
 		}
 		var err error
 		if strings.HasPrefix(contents, "LINK:") {
 			symlinks[file] = filepath.FromSlash(strings.TrimPrefix(contents, "LINK:"))
 		} else {
-			err = os.WriteFile(file, []byte(contents), 0644)
+			err = os.WriteFile(file, []byte(contents), 0o644)
 		}
 		if err != nil {
 			t.Fatal(err)
@@ -62,7 +62,7 @@ func testFastWalk(t *testing.T, files map[string]string, callback func(path stri
 	for file, dst := range symlinks {
 		err = os.Symlink(dst, file)
 		if err != nil {
-			if writeErr := os.WriteFile(file, []byte(dst), 0644); writeErr == nil {
+			if writeErr := os.WriteFile(file, []byte(dst), 0o644); writeErr == nil {
 				// Couldn't create symlink, but could write the file.
 				// Probably this filesystem doesn't support symlinks.
 				// (Perhaps we are on an older Windows and not running as administrator.)

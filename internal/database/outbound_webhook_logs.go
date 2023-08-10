@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -26,7 +27,7 @@ type OutboundWebhookLogStore interface {
 }
 
 type OutboundWebhookLogListOpts struct {
-	*LimitOffset
+	*dbtypes.LimitOffset
 	OnlyErrors        bool
 	OutboundWebhookID int64
 }

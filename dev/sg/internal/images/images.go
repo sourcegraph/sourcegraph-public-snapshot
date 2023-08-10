@@ -58,7 +58,7 @@ func UpdateK8s(path string, creds credentials.Credentials, pinTag string) error 
 		ErrorIfNonResources:   false,
 		OmitReaderAnnotations: false,
 		SetAnnotations:        nil,
-		NoDeleteFiles:         true, //modify in place
+		NoDeleteFiles:         true, // modify in place
 		WrapBareSeqNode:       false,
 	}
 
@@ -144,7 +144,7 @@ func UpdateHelm(path string, creds credentials.Credentials, pinTag string) error
 		valuesFileString = strings.ReplaceAll(valuesFileString, oldImgDefaultTag, newImgDefaultTag)
 	}
 
-	if err := os.WriteFile(valuesFilePath, []byte(valuesFileString), 0644); err != nil {
+	if err := os.WriteFile(valuesFilePath, []byte(valuesFileString), 0o644); err != nil {
 		return errors.Newf("WriteFile: %w", err)
 	}
 
@@ -201,7 +201,7 @@ func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string)
 		}
 	}
 
-	var lookupImage = func(node *yaml.RNode) error {
+	lookupImage := func(node *yaml.RNode) error {
 		image := node.Field("image")
 		if image == nil {
 			return errors.Newf("couldn't find image for container %s: %w", node.GetName(), ErrNoImage{r.GetKind(), r.GetName()})
@@ -228,7 +228,6 @@ func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string)
 		return initContainers.VisitElements(lookupImage)
 	}
 	return nil
-
 }
 
 type ImageReference struct {
@@ -539,7 +538,6 @@ func (i *imageRepository) fetchDigest(tag string) (digest.Digest, error) {
 		return "", err
 	}
 	return g, nil
-
 }
 
 const dockerImageTagsURL = "https://index.docker.io/v2/%s/tags/list"

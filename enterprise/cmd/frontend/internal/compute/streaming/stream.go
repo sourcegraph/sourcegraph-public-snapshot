@@ -249,7 +249,6 @@ func batchEvents(source <-chan Event, delay time.Duration) <-chan Event {
 				}
 			}
 		}
-
 	}()
 	return results
 }

@@ -22,7 +22,6 @@ import (
 func newTestStore(t *testing.T) *gitHubAppsStore {
 	logger := logtest.Scoped(t)
 	return &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
-
 }
 
 func TestCreateGitHubApp(t *testing.T) {

@@ -90,5 +90,7 @@ func (s *svc) Start(ctx context.Context, observationCtx *observation.Context, re
 	return nil
 }
 
-var Service = &svc{}
-var _ service.Service = Service
+var (
+	Service                 = &svc{}
+	_       service.Service = Service
+)

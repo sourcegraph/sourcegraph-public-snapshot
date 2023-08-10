@@ -53,7 +53,6 @@ func NewFileHandler(db database.DB, store BatchesStore, operations *Operations) 
 func (h *FileHandler) Get() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		responseBody, statusCode, err := h.get(r)
-
 		if err != nil {
 			http.Error(w, err.Error(), statusCode)
 			return
@@ -100,7 +99,6 @@ func (h *FileHandler) get(r *http.Request) (_ io.Reader, statusCode int, err err
 func (h *FileHandler) Exists() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		statusCode, err := h.exists(r)
-
 		if err != nil {
 			http.Error(w, err.Error(), statusCode)
 			return
@@ -158,7 +156,6 @@ func (h *FileHandler) Upload() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
 		responseBody, statusCode, err := h.upload(r)
-
 		if err != nil {
 			http.Error(w, err.Error(), statusCode)
 			return

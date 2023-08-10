@@ -18,8 +18,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var ErrNotebookNotFound = errors.New("notebook not found")
-var ErrNotebookStarNotFound = errors.New("notebook star not found")
+var (
+	ErrNotebookNotFound     = errors.New("notebook not found")
+	ErrNotebookStarNotFound = errors.New("notebook star not found")
+)
 
 type NotebooksOrderByOption uint8
 

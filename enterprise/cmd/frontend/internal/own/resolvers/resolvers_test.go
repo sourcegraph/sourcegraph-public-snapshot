@@ -364,7 +364,7 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 	logger := logtest.Scoped(t)
 	repo := &types.Repo{Name: "repo-name", ID: 42}
 	team := &types.Team{Name: "fake-team", DisplayName: "The Fake Team"}
-	var parameterRevision = "revision-parameter"
+	parameterRevision := "revision-parameter"
 	var resolvedRevision api.CommitID = "revision-resolved"
 	git := fakeGitserver{
 		files: repoFiles{
@@ -451,7 +451,7 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 	logger := logtest.Scoped(t)
 	repo := &types.Repo{Name: "repo-name", ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}, ID: 42}
 	const ghTeamName = "sourcegraph/own"
-	var parameterRevision = "revision-parameter"
+	parameterRevision := "revision-parameter"
 	var resolvedRevision api.CommitID = "revision-resolved"
 	git := fakeGitserver{
 		files: repoFiles{
@@ -1318,7 +1318,8 @@ func Test_SignalConfigurations(t *testing.T) {
 				}`,
 		Variables: map[string]any{"input": map[string]any{
 			"configs": []any{map[string]any{
-				"name": owntypes.SignalRecentContributors, "enabled": true, "excludedRepoPatterns": []any{"github.com/*"}}},
+				"name": owntypes.SignalRecentContributors, "enabled": true, "excludedRepoPatterns": []any{"github.com/*"},
+			}},
 		}},
 	}
 

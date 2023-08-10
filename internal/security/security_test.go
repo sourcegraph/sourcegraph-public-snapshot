@@ -53,8 +53,10 @@ func setMockPasswordPolicyConfig(opts mockPolicyOpts) {
 
 func TestGetPasswordPolicy(t *testing.T) {
 	t.Run("fetch correct policy", func(t *testing.T) {
-		setMockPasswordPolicyConfig(mockPolicyOpts{policyEnabled: true, authPolicyEnabled: true,
-			minPasswordLength: 15, specialChars: 2, reqNumber: true, reqCase: true})
+		setMockPasswordPolicyConfig(mockPolicyOpts{
+			policyEnabled: true, authPolicyEnabled: true,
+			minPasswordLength: 15, specialChars: 2, reqNumber: true, reqCase: true,
+		})
 		p := conf.AuthPasswordPolicy()
 
 		assert.True(t, p.Enabled)
@@ -100,8 +102,9 @@ func TestFetchPasswordPolicyReturnsNil(t *testing.T) {
 		assert.ErrorContains(t, ValidatePassword("abshort"), "Your password may not be less than 9 or be more than 256 characters.")
 	})
 }
+
 func TestPasswordPolicy(t *testing.T) {
-	var passwordTests = []passwordTest{
+	passwordTests := []passwordTest{
 		{"Sup3rstr0ngbutn0teno0ugh", "Your password must include at least 2 special character(s)."},
 		{"id0hav3symb0lsn0w!!works?", "Your password must include one uppercase letter."},
 		{"Andn0w?!!", fmt.Sprintf("Your password may not be less than 15 characters.")},
@@ -109,8 +112,10 @@ func TestPasswordPolicy(t *testing.T) {
 	}
 
 	t.Run("correctly detects deviating passwords", func(t *testing.T) {
-		setMockPasswordPolicyConfig(mockPolicyOpts{policyEnabled: false, minPasswordLength: 15,
-			authPolicyEnabled: true, specialChars: 2, reqNumber: true, reqCase: true})
+		setMockPasswordPolicyConfig(mockPolicyOpts{
+			policyEnabled: false, minPasswordLength: 15,
+			authPolicyEnabled: true, specialChars: 2, reqNumber: true, reqCase: true,
+		})
 
 		for _, p := range passwordTests {
 			assert.ErrorContains(t, ValidatePassword(p.password), p.errorStr)
@@ -119,23 +124,27 @@ func TestPasswordPolicy(t *testing.T) {
 
 	t.Run("detects correct passwords", func(t *testing.T) {
 		// test with all options enabled and a length limit
-		setMockPasswordPolicyConfig(mockPolicyOpts{policyEnabled: false, minPasswordLength: 12,
+		setMockPasswordPolicyConfig(mockPolicyOpts{
+			policyEnabled: false, minPasswordLength: 12,
 			authPolicyEnabled: true, specialChars: 2,
-			reqNumber: true, reqCase: true})
+			reqNumber: true, reqCase: true,
+		})
 		password := "tH1smustCert@!inlybe0kthen?"
 		assert.Nil(t, ValidatePassword(password))
 
 		// test with only a password length limit
-		setMockPasswordPolicyConfig(mockPolicyOpts{policyEnabled: false, minPasswordLength: 15,
+		setMockPasswordPolicyConfig(mockPolicyOpts{
+			policyEnabled: false, minPasswordLength: 15,
 			authPolicyEnabled: true, specialChars: 0,
-			reqNumber: false, reqCase: false})
+			reqNumber: false, reqCase: false,
+		})
 		password = "thisshouldnowpassaswell"
 		assert.Nil(t, ValidatePassword(password))
 	})
 }
 
 func TestAddrValidation(t *testing.T) {
-	var addrTests = []addrTest{
+	addrTests := []addrTest{
 		{"127/0.0.1", false},
 		{"-oFooBaz", false},
 		{"sourcegraph com", false},
@@ -159,5 +168,4 @@ func TestAddrValidation(t *testing.T) {
 			assert.True(t, ValidateRemoteAddr(a.addr) == a.pass)
 		})
 	}
-
 }

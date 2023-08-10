@@ -15,9 +15,11 @@ import (
 
 // initialBufSize is the initial size of the buffer that PipeOutput uses to
 // read lines.
-const initialBufSize = 4 * 1024 // 4k
-// maxTokenSize is the max size of a token that PipeOutput reads.
-const maxTokenSize = 100 * 1024 * 1024 // 100mb
+const (
+	initialBufSize = 4 * 1024 // 4k
+	// maxTokenSize is the max size of a token that PipeOutput reads.
+	maxTokenSize = 100 * 1024 * 1024 // 100mb
+)
 
 type pipe func(w io.Writer, r io.Reader) error
 

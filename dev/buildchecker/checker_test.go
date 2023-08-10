@@ -20,6 +20,7 @@ func (m *mockBranchLocker) Unlock(context.Context) (func() error, error) {
 	m.calledUnlock += 1
 	return func() error { return nil }, nil
 }
+
 func (m *mockBranchLocker) Lock(context.Context, []CommitInfo, string) (func() error, error) {
 	m.calledLock += 1
 	return func() error { return nil }, nil
@@ -96,7 +97,7 @@ func TestCheckBuilds(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var lock = &mockBranchLocker{}
+			lock := &mockBranchLocker{}
 			res, err := CheckBuilds(ctx, lock, slackUser, tt.builds, testOptions)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.wantLocked, res.LockBranch, "should lock")
@@ -111,7 +112,7 @@ func TestCheckBuilds(t *testing.T) {
 	}
 
 	t.Run("only return oldest N failed commits", func(t *testing.T) {
-		var lock = &mockBranchLocker{}
+		lock := &mockBranchLocker{}
 		res, err := CheckBuilds(ctx, lock, slackUser, append(failSet,
 			// 2 builds == FailuresThreshold
 			buildkite.Build{

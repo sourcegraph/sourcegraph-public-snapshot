@@ -12,8 +12,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -199,7 +199,7 @@ type EmbeddableRepoOpts struct {
 }
 
 type ListOpts struct {
-	*database.PaginationArgs
+	*dbtypes.PaginationArgs
 	Query *string
 	State *string
 	Repo  *api.RepoID

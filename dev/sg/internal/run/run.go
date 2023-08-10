@@ -55,7 +55,7 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 	// will create .bin directory. Some binaries (like docsite) get downloaded instead of built and therefore
 	// need the directory to exist before hand.
 	binDir := filepath.Join(repoRoot, ".bin")
-	if err := os.Mkdir(binDir, 0755); err != nil && !os.IsExist(err) {
+	if err := os.Mkdir(binDir, 0o755); err != nil && !os.IsExist(err) {
 		return err
 	}
 
@@ -408,7 +408,6 @@ func (c *cmdRunner) waitForInstallation(ctx context.Context, cmdNames map[string
 			messageCount += 1
 		}
 	}
-
 }
 
 // failedRun is returned by run when a command failed to run and run exits
@@ -542,7 +541,7 @@ var installFuncs = map[string]installFunc{
 
 		// Make sure the data folder exists.
 		disk := env["JAEGER_DISK"]
-		if err := os.MkdirAll(disk, 0755); err != nil {
+		if err := os.MkdirAll(disk, 0o755); err != nil {
 			return err
 		}
 

@@ -677,7 +677,6 @@ func sonarcloudScan() operations.Operation {
 			bk.Cmd("dev/ci/sonarcloud-scan.sh"),
 		)
 	}
-
 }
 
 // Ask trivy, a security scanning tool, to scan the candidate image

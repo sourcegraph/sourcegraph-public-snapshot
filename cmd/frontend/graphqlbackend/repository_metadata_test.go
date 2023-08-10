@@ -263,5 +263,4 @@ func TestRepositoryMetadata(t *testing.T) {
 		require.Error(t, err)
 		require.Equal(t, err, &rbac.ErrNotAuthorized{Permission: string(rbac.RepoMetadataWritePermission)})
 	})
-
 }

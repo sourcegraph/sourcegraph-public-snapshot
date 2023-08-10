@@ -28,10 +28,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	// The metric generated here will be named as "src_gitlab_requests_total".
-	requestCounter = metrics.NewRequestMeter("gitlab", "Total number of requests sent to the GitLab API.")
-)
+// The metric generated here will be named as "src_gitlab_requests_total".
+var requestCounter = metrics.NewRequestMeter("gitlab", "Total number of requests sent to the GitLab API.")
 
 // TokenType is the type of an access token.
 type TokenType string

@@ -36,7 +36,6 @@ func TestAccessTokens(t *testing.T) {
 		t.Run("testAccessToken_Lookup_deletedUser", testAccessTokens_Lookup_deletedUser)
 		t.Run("testAccessTokens_tokenSHA256Hash", testAccessTokens_tokenSHA256Hash)
 	})
-
 }
 
 // 🚨 SECURITY: This tests the routine that creates access tokens and returns the token secret value
@@ -233,7 +232,6 @@ func testAccessTokens_CreateInternal_DoesNotCaptureSecurityEvent(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertSecurityEventCount(t, db, SecurityEventAccessTokenCreated, 0)
-
 }
 
 // This test is run in TestAccessTokens

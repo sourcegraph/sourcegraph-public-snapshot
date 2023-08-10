@@ -15,5 +15,4 @@ func TestSearchQueryLimit(t *testing.T) {
 			t.Error("both limiters should be the same instance")
 		}
 	})
-
 }

@@ -142,6 +142,7 @@ func (p *ParallelJob) Children() []job.Describer {
 	}
 	return res
 }
+
 func (p *ParallelJob) MapChildren(fn job.MapFunc) job.Job {
 	cp := *p
 	cp.children = make([]job.Job, len(p.children))

@@ -69,7 +69,6 @@ func parseAndPartialEval(input string, ctx *StepContext) (*template.Template, er
 		Funcs(builtins).
 		Funcs(ctx.ToFuncMap()).
 		Parse(input)
-
 	if err != nil {
 		return nil, err
 	}

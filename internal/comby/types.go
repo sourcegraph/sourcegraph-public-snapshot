@@ -15,9 +15,11 @@ type TarInputEvent struct {
 	Content []byte
 }
 
-type ZipPath string
-type DirPath string
-type FileContent []byte
+type (
+	ZipPath     string
+	DirPath     string
+	FileContent []byte
+)
 
 func (ZipPath) input()     {}
 func (DirPath) input()     {}

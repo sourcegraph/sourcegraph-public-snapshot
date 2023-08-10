@@ -12,7 +12,6 @@ import (
 )
 
 func TestGetChangesetAuthorForUser(t *testing.T) {
-
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -30,7 +29,6 @@ func TestGetChangesetAuthorForUser(t *testing.T) {
 	})
 
 	t.Run("User exists but doesn't have an email", func(t *testing.T) {
-
 		user, err := userStore.Create(ctx, database.NewUser{
 			Username: "mary",
 		})
@@ -48,7 +46,6 @@ func TestGetChangesetAuthorForUser(t *testing.T) {
 	})
 
 	t.Run("User exists and has an e-mail but doesn't have a display name", func(t *testing.T) {
-
 		user, err := userStore.Create(ctx, database.NewUser{
 			Username:        "jane",
 			Email:           "jane1@doe.com",
@@ -65,7 +62,6 @@ func TestGetChangesetAuthorForUser(t *testing.T) {
 	})
 
 	t.Run("User exists", func(t *testing.T) {
-
 		user, err := userStore.Create(ctx, database.NewUser{
 			Username:        "johnny",
 			Email:           "john@test.com",

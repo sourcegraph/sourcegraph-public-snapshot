@@ -12,13 +12,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 )
 
 type batchChangesCodeHostConnectionResolver struct {
 	userID                *int32
 	onlyWithoutCredential bool
 	opts                  store.ListCodeHostsOpts
-	limitOffset           database.LimitOffset
+	limitOffset           dbtypes.LimitOffset
 	store                 *store.Store
 	db                    database.DB
 	logger                log.Logger
@@ -160,8 +161,7 @@ type idType struct {
 	externalServiceType string
 }
 
-type emptyBatchChangesCodeHostConnectionResolver struct {
-}
+type emptyBatchChangesCodeHostConnectionResolver struct{}
 
 var _ graphqlbackend.BatchChangesCodeHostConnectionResolver = &emptyBatchChangesCodeHostConnectionResolver{}
 

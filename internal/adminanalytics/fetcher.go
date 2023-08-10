@@ -49,7 +49,6 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 	}
 
 	rows, err := f.db.QueryContext(ctx, f.nodesQuery.Query(sqlf.PostgresBindVar), f.nodesQuery.Args()...)
-
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +110,6 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 	}
 
 	return allNodes, nil
-
 }
 
 func bod(t time.Time) time.Time {

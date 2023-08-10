@@ -8,7 +8,7 @@ import (
 )
 
 func TestBatchSpecWorkspaceOutputLinesResolver(t *testing.T) {
-	var lines = make([]string, 100)
+	lines := make([]string, 100)
 	for i := range lines {
 		lines[i] = fmt.Sprintf("Hello world: %d", i+1)
 	}

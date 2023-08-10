@@ -114,7 +114,8 @@ func QueryForFileContentArgs(opt query.RepoHasFileContentArgs, caseSensitive boo
 }
 
 func toZoektPattern(
-	expression query.Node, isCaseSensitive, patternMatchesContent, patternMatchesPath bool, typ search.IndexedRequestType) (zoekt.Q, error) {
+	expression query.Node, isCaseSensitive, patternMatchesContent, patternMatchesPath bool, typ search.IndexedRequestType,
+) (zoekt.Q, error) {
 	var fold func(node query.Node) (zoekt.Q, error)
 	fold = func(node query.Node) (zoekt.Q, error) {
 		switch n := node.(type) {

@@ -10,12 +10,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
 
-var historicalOnce sync.Once
-var historicalLogger log.Logger
-var historicalLimiter *ratelimit.InstrumentedLimiter
+var (
+	historicalOnce    sync.Once
+	historicalLogger  log.Logger
+	historicalLimiter *ratelimit.InstrumentedLimiter
+)
 
 func HistoricalWorkRate() *ratelimit.InstrumentedLimiter {
-
 	historicalOnce.Do(func() {
 		historicalLogger = log.Scoped("insights.historical.ratelimiter", "")
 		defaultRateLimit := rate.Limit(20.0)

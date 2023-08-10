@@ -113,7 +113,6 @@ func Pre(
 	// Mount any paths on the local system to the docker container. The paths have already been validated during parsing.
 	for _, mount := range step.Mount {
 		workspaceFilePath, err := getAbsoluteMountPath(workspaceFilesPath, mount.Path)
-
 		if err != nil {
 			return errors.Wrap(err, "getAbsoluteMountPath")
 		}
@@ -205,7 +204,7 @@ func createFilesToMount(workingDirectory string, stepIdx int, step batcheslib.St
 
 	// Create temp files with the rendered content of step.Files so that we
 	// can mount them into the container.
-	//filesToMount := make(map[string]*os.File, len(files))
+	// filesToMount := make(map[string]*os.File, len(files))
 	filesToMount := make(map[string]string, len(files))
 	for name, content := range files {
 		fp, err := os.CreateTemp(tempDir, "")

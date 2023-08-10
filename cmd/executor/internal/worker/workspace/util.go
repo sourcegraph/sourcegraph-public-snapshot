@@ -10,8 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger"
 )
 
-const loopDevPath = "/var/lib/firecracker/loop-devices"
-const mountpointsPath = "/var/lib/firecracker/mountpoints"
+const (
+	loopDevPath     = "/var/lib/firecracker/loop-devices"
+	mountpointsPath = "/var/lib/firecracker/mountpoints"
+)
 
 // MakeLoopFile defaults to makeTemporaryLoopFile and can be replaced for testing
 // with deterministic paths.

@@ -17,11 +17,13 @@ type ParserConfiguration struct {
 	Engine  map[string]ParserType
 }
 
-var parserConfigMutex sync.Mutex
-var parserConfig = ParserConfiguration{
-	Default: ctags_config.UniversalCtags,
-	Engine:  map[string]ctags_config.ParserType{},
-}
+var (
+	parserConfigMutex sync.Mutex
+	parserConfig      = ParserConfiguration{
+		Default: ctags_config.UniversalCtags,
+		Engine:  map[string]ctags_config.ParserType{},
+	}
+)
 
 func init() {
 	// Validation only: Do NOT set any values in the configuration in this function.

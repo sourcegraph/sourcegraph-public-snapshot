@@ -14,8 +14,10 @@ func NewEmptyExitErr(code int) error {
 
 type emptyExitErr struct{ code int }
 
-var _ error = &emptyExitErr{}
-var _ cli.ExitCoder = &emptyExitErr{}
+var (
+	_ error         = &emptyExitErr{}
+	_ cli.ExitCoder = &emptyExitErr{}
+)
 
 func (e *emptyExitErr) Error() string { return "" }
 func (e *emptyExitErr) ExitCode() int { return e.code }

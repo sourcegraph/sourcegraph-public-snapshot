@@ -123,11 +123,13 @@ func newFlushCollectSender(opts *zoekt.SearchOptions, endpoints []string, maxSiz
 	collectSender := newCollectSender(opts)
 	timerCancel := make(chan struct{})
 
-	flushSender := &flushCollectSender{collectSender: collectSender,
-		sender:       sender,
-		firstResults: firstResults,
-		maxSizeBytes: maxSizeBytes,
-		timerCancel:  timerCancel}
+	flushSender := &flushCollectSender{
+		collectSender: collectSender,
+		sender:        sender,
+		firstResults:  firstResults,
+		maxSizeBytes:  maxSizeBytes,
+		timerCancel:   timerCancel,
+	}
 
 	// As an escape hatch, stop collecting after twice the FlushWallTime. This protects against
 	// cases where an endpoint stops being responsive so we never receive its results.

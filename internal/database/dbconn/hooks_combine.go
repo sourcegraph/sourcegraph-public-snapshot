@@ -12,8 +12,10 @@ type hookCollection struct {
 	errorHooks  []sqlhooks.ErrorHook
 }
 
-var _ sqlhooks.Hooks = &hookCollection{}
-var _ sqlhooks.OnErrorer = &hookCollection{}
+var (
+	_ sqlhooks.Hooks     = &hookCollection{}
+	_ sqlhooks.OnErrorer = &hookCollection{}
+)
 
 func combineHooks(hooks ...sqlhooks.Hooks) sqlhooks.Hooks {
 	beforeHooks := make([]sqlhooks.Hook, 0, len(hooks))

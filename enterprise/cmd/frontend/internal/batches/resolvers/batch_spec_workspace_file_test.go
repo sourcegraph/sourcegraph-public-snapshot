@@ -28,18 +28,23 @@ func (m *mockFileResolver) Binary(ctx context.Context) (bool, error) {
 	args := m.Called(ctx)
 	return args.Bool(0), args.Error(1)
 }
+
 func (m *mockFileResolver) ByteSize(ctx context.Context) (int32, error) {
 	return 0, errors.New("not implemented")
 }
+
 func (m *mockFileResolver) TotalLines(ctx context.Context) (int32, error) {
 	return 0, errors.New("not implemented")
 }
+
 func (m *mockFileResolver) Content(ctx context.Context, args *graphqlbackend.GitTreeContentPageArgs) (string, error) {
 	return "", errors.New("not implemented")
 }
+
 func (m *mockFileResolver) RichHTML(ctx context.Context, args *graphqlbackend.GitTreeContentPageArgs) (string, error) {
 	return "", errors.New("not implemented")
 }
+
 func (m *mockFileResolver) URL(ctx context.Context) (string, error) {
 	return "", errors.New("not implemented")
 }
@@ -53,6 +58,7 @@ func (r *mockFileResolver) ChangelistURL(_ context.Context) (*string, error) {
 func (m *mockFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	return nil, errors.New("not implemented")
 }
+
 func (m *mockFileResolver) Highlight(ctx context.Context, highlightArgs *graphqlbackend.HighlightArgs) (*graphqlbackend.HighlightedFileResolver, error) {
 	args := m.Called(ctx, highlightArgs)
 	if args.Get(0) != nil {
@@ -64,9 +70,11 @@ func (m *mockFileResolver) Highlight(ctx context.Context, highlightArgs *graphql
 func (m *mockFileResolver) ToGitBlob() (*graphqlbackend.GitTreeEntryResolver, bool) {
 	return nil, false
 }
+
 func (m *mockFileResolver) ToVirtualFile() (*graphqlbackend.VirtualFileResolver, bool) {
 	return nil, false
 }
+
 func (m *mockFileResolver) ToBatchSpecWorkspaceFile() (graphqlbackend.BatchWorkspaceFileResolver, bool) {
 	return nil, false
 }
@@ -86,9 +94,9 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 	}
 
 	t.Run("non binary file", func(t *testing.T) {
-		var ctx = context.Background()
-		var highlightResolver = &graphqlbackend.HighlightedFileResolver{}
-		var highlightArgs = &graphqlbackend.HighlightArgs{}
+		ctx := context.Background()
+		highlightResolver := &graphqlbackend.HighlightedFileResolver{}
+		highlightArgs := &graphqlbackend.HighlightArgs{}
 
 		resolver := &batchSpecWorkspaceFileResolver{
 			batchSpecRandID: batchSpecRandID,
@@ -231,9 +239,9 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 	})
 
 	t.Run("binary file", func(t *testing.T) {
-		var ctx = context.Background()
-		var highlightArgs = &graphqlbackend.HighlightArgs{}
-		var highlightErr = errors.New("cannot highlight binary file")
+		ctx := context.Background()
+		highlightArgs := &graphqlbackend.HighlightArgs{}
+		highlightErr := errors.New("cannot highlight binary file")
 
 		resolver := &batchSpecWorkspaceFileResolver{
 			batchSpecRandID: batchSpecRandID,

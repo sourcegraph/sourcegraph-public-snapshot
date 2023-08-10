@@ -7,8 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
-
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 )
 
 const testTotalCount = int32(10)
@@ -23,12 +22,12 @@ func (n testConnectionNode) ID() graphql.ID {
 
 type testConnectionStore struct {
 	t                      *testing.T
-	expectedPaginationArgs *database.PaginationArgs
+	expectedPaginationArgs *dbtypes.PaginationArgs
 	ComputeTotalCalled     int
 	ComputeNodesCalled     int
 }
 
-func (s *testConnectionStore) testPaginationArgs(args *database.PaginationArgs) {
+func (s *testConnectionStore) testPaginationArgs(args *dbtypes.PaginationArgs) {
 	if s.expectedPaginationArgs == nil {
 		return
 	}
@@ -45,7 +44,7 @@ func (s *testConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) 
 	return &total, nil
 }
 
-func (s *testConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*testConnectionNode, error) {
+func (s *testConnectionStore) ComputeNodes(ctx context.Context, args *dbtypes.PaginationArgs) ([]*testConnectionNode, error) {
 	s.ComputeNodesCalled = s.ComputeNodesCalled + 1
 	s.testPaginationArgs(args)
 
@@ -54,13 +53,13 @@ func (s *testConnectionStore) ComputeNodes(ctx context.Context, args *database.P
 	return nodes, nil
 }
 
-func (*testConnectionStore) MarshalCursor(n *testConnectionNode, _ database.OrderBy) (*string, error) {
+func (*testConnectionStore) MarshalCursor(n *testConnectionNode, _ dbtypes.OrderBy) (*string, error) {
 	cursor := string(n.ID())
 
 	return &cursor, nil
 }
 
-func (*testConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (*testConnectionStore) UnmarshalCursor(cursor string, _ dbtypes.OrderBy) (*string, error) {
 	return &cursor, nil
 }
 
@@ -98,25 +97,25 @@ func withBeforeCA(before string, a *ConnectionResolverArgs) *ConnectionResolverA
 	return a
 }
 
-func withFirstPA(first int, a *database.PaginationArgs) *database.PaginationArgs {
+func withFirstPA(first int, a *dbtypes.PaginationArgs) *dbtypes.PaginationArgs {
 	a.First = &first
 
 	return a
 }
 
-func withLastPA(last int, a *database.PaginationArgs) *database.PaginationArgs {
+func withLastPA(last int, a *dbtypes.PaginationArgs) *dbtypes.PaginationArgs {
 	a.Last = &last
 
 	return a
 }
 
-func withAfterPA(after string, a *database.PaginationArgs) *database.PaginationArgs {
+func withAfterPA(after string, a *dbtypes.PaginationArgs) *dbtypes.PaginationArgs {
 	a.After = &after
 
 	return a
 }
 
-func withBeforePA(before string, a *database.PaginationArgs) *database.PaginationArgs {
+func withBeforePA(before string, a *dbtypes.PaginationArgs) *dbtypes.PaginationArgs {
 	a.Before = &before
 
 	return a
@@ -167,9 +166,9 @@ func testResolverNodesResponse(t *testing.T, resolver *ConnectionResolver[*testC
 	}
 }
 
-func buildPaginationArgs() *database.PaginationArgs {
-	args := database.PaginationArgs{
-		OrderBy: database.OrderBy{{Field: "id"}},
+func buildPaginationArgs() *dbtypes.PaginationArgs {
+	args := dbtypes.PaginationArgs{
+		OrderBy: dbtypes.OrderBy{{Field: "id"}},
 	}
 
 	return &args
@@ -182,7 +181,7 @@ func TestConnectionNodes(t *testing.T) {
 		options        *ConnectionResolverOptions
 
 		wantError          bool
-		wantPaginationArgs *database.PaginationArgs
+		wantPaginationArgs *dbtypes.PaginationArgs
 		wantNodes          int
 	}{
 		{

@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
@@ -334,7 +335,7 @@ func TestWebhookList(t *testing.T) {
 	})
 
 	t.Run("with pagination", func(t *testing.T) {
-		webhooks, err := store.List(ctx, WebhookListOptions{LimitOffset: &LimitOffset{Limit: 2, Offset: 1}})
+		webhooks, err := store.List(ctx, WebhookListOptions{LimitOffset: &dbtypes.LimitOffset{Limit: 2, Offset: 1}})
 		assert.NoError(t, err)
 		assert.Len(t, webhooks, 2)
 		assert.Equal(t, webhooks[0].ID, int32(2))
@@ -346,7 +347,7 @@ func TestWebhookList(t *testing.T) {
 	})
 
 	t.Run("with pagination and filtering by code host kind", func(t *testing.T) {
-		webhooks, err := store.List(ctx, WebhookListOptions{Kind: extsvc.KindGitHub, LimitOffset: &LimitOffset{Limit: 3, Offset: 2}})
+		webhooks, err := store.List(ctx, WebhookListOptions{Kind: extsvc.KindGitHub, LimitOffset: &dbtypes.LimitOffset{Limit: 3, Offset: 2}})
 		assert.NoError(t, err)
 		assert.Len(t, webhooks, 3)
 		for _, wh := range webhooks {

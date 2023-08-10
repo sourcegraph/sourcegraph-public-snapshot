@@ -45,8 +45,10 @@ type SnapshotContent struct {
 	Symbols []SymbolCount
 }
 
-var generatedFilename = "/files/findme.txt"
-var generatedFolder = "/files"
+var (
+	generatedFilename = "/files/findme.txt"
+	generatedFolder   = "/files"
+)
 
 var inputFile = flag.String("manifest", "", "path to a manifest json file describing what should be generated")
 
@@ -151,7 +153,7 @@ func preparePath(snapshot SnapshotContent) error {
 	if _, err := os.Stat(snapshot.Repo + generatedFolder); errors.Is(err, os.ErrNotExist) {
 		// the race here is fine
 		log.Printf("Creating path: %v", snapshot.Repo+generatedFolder)
-		return os.MkdirAll(snapshot.Repo+generatedFolder, 0755)
+		return os.MkdirAll(snapshot.Repo+generatedFolder, 0o755)
 	}
 	log.Printf("path found: %v", snapshot.Repo+generatedFolder)
 	return nil
@@ -162,7 +164,7 @@ func buildPath(snapshot SnapshotContent) string {
 }
 
 func writeContent(path string, content string) error {
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755)
 	if err != nil {
 		return errors.Wrap(err, "failed to open file")
 	}

@@ -63,8 +63,10 @@ type CommentStyle struct {
 	codeFenceName string
 }
 
-var javaStyleStripRegex = regexp.MustCompile(`^//|^\s*\*/?|^/\*\*|\*/$`)
-var javaStyleIgnoreRegex = regexp.MustCompile(`^\s*(/\*\*|\*/)\s*$`)
+var (
+	javaStyleStripRegex  = regexp.MustCompile(`^//|^\s*\*/?|^/\*\*|\*/$`)
+	javaStyleIgnoreRegex = regexp.MustCompile(`^\s*(/\*\*|\*/)\s*$`)
+)
 
 // Mapping from language name to language specification.
 var langToLangSpec = map[string]LangSpec{

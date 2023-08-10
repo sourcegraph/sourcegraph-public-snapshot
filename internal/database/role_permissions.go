@@ -202,7 +202,7 @@ func (rp *rolePermissionStore) get(ctx context.Context, w *sqlf.Query) ([]*types
 		w,
 	)
 
-	var scanRolePermissions = basestore.NewSliceScanner(scanRolePermission)
+	scanRolePermissions := basestore.NewSliceScanner(scanRolePermission)
 	return scanRolePermissions(rp.Query(ctx, q))
 }
 
@@ -303,7 +303,7 @@ func (rp *rolePermissionStore) SetPermissionsForRole(ctx context.Context, opts S
 		}
 
 		// We create a map of permissions for easy lookup.
-		var rolePermsMap = make(map[int32]int, len(rolePermissions))
+		rolePermsMap := make(map[int32]int, len(rolePermissions))
 		for _, rolePermission := range rolePermissions {
 			rolePermsMap[rolePermission.PermissionID] = 1
 		}
@@ -451,7 +451,7 @@ func (rp *rolePermissionStore) BulkAssignPermissionsToSystemRoles(ctx context.Co
 		sqlf.Join(rolePermissionColumns, ", "),
 	)
 
-	var scanRolePermissions = basestore.NewSliceScanner(scanRolePermission)
+	scanRolePermissions := basestore.NewSliceScanner(scanRolePermission)
 	_, err := scanRolePermissions(rp.Query(ctx, q))
 	if err != nil {
 		// If there are no rows returned, it means that the role has already being assigned this permission.

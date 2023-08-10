@@ -54,7 +54,7 @@ echo "$@" >>${DIR}/p4.log
 	if err != nil {
 		return "", errors.Wrap(err, "setupMockP4Executable")
 	}
-	if err := os.WriteFile(filepath.Join(tempdir, "p4"), []byte(mockP4Script), 0755); err != nil {
+	if err := os.WriteFile(filepath.Join(tempdir, "p4"), []byte(mockP4Script), 0o755); err != nil {
 		return "", errors.Wrap(err, "setupMockP4Executable")
 	}
 	os.Setenv("PATH", fmt.Sprintf("%s%c%s", tempdir, os.PathListSeparator, os.Getenv("PATH")))

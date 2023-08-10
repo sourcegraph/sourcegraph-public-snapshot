@@ -1082,7 +1082,7 @@ func checkGolden(t *testing.T, name string, got any) {
 
 	path := "testdata/golden/" + name
 	if *update {
-		if err = os.WriteFile(path, data, 0640); err != nil {
+		if err = os.WriteFile(path, data, 0o640); err != nil {
 			t.Fatalf("failed to update golden file %q: %s", path, err)
 		}
 	}
@@ -1150,7 +1150,6 @@ func TestAuth(t *testing.T) {
 			}, nil); err == nil {
 				t.Error("unexpected nil error")
 			}
-
 		})
 
 		t.Run("OAuth 1", func(t *testing.T) {

@@ -64,28 +64,36 @@ type UpsertableWebhookEvent interface {
 }
 
 // Type guards:
-var _ UpsertableWebhookEvent = (*MergeRequestCloseEvent)(nil)
-var _ UpsertableWebhookEvent = (*MergeRequestMergeEvent)(nil)
-var _ UpsertableWebhookEvent = (*MergeRequestReopenEvent)(nil)
-var _ UpsertableWebhookEvent = (*MergeRequestDraftEvent)(nil)
-var _ UpsertableWebhookEvent = (*MergeRequestUndraftEvent)(nil)
+var (
+	_ UpsertableWebhookEvent = (*MergeRequestCloseEvent)(nil)
+	_ UpsertableWebhookEvent = (*MergeRequestMergeEvent)(nil)
+	_ UpsertableWebhookEvent = (*MergeRequestReopenEvent)(nil)
+	_ UpsertableWebhookEvent = (*MergeRequestDraftEvent)(nil)
+	_ UpsertableWebhookEvent = (*MergeRequestUndraftEvent)(nil)
+)
 
-type MergeRequestApprovedEvent struct{ MergeRequestEventCommon }
-type MergeRequestUnapprovedEvent struct{ MergeRequestEventCommon }
-type MergeRequestUpdateEvent struct{ MergeRequestEventCommon }
+type (
+	MergeRequestApprovedEvent   struct{ MergeRequestEventCommon }
+	MergeRequestUnapprovedEvent struct{ MergeRequestEventCommon }
+	MergeRequestUpdateEvent     struct{ MergeRequestEventCommon }
+)
 
-type MergeRequestCloseEvent struct{ MergeRequestEventCommon }
-type MergeRequestMergeEvent struct{ MergeRequestEventCommon }
-type MergeRequestReopenEvent struct{ MergeRequestEventCommon }
-type MergeRequestUndraftEvent struct{ MergeRequestEventCommon }
-type MergeRequestDraftEvent struct{ MergeRequestEventCommon }
+type (
+	MergeRequestCloseEvent   struct{ MergeRequestEventCommon }
+	MergeRequestMergeEvent   struct{ MergeRequestEventCommon }
+	MergeRequestReopenEvent  struct{ MergeRequestEventCommon }
+	MergeRequestUndraftEvent struct{ MergeRequestEventCommon }
+	MergeRequestDraftEvent   struct{ MergeRequestEventCommon }
+)
 
 func (e *MergeRequestApprovedEvent) ToEventCommon() *MergeRequestEventCommon {
 	return &e.MergeRequestEventCommon
 }
+
 func (e *MergeRequestUnapprovedEvent) ToEventCommon() *MergeRequestEventCommon {
 	return &e.MergeRequestEventCommon
 }
+
 func (e *MergeRequestUpdateEvent) ToEventCommon() *MergeRequestEventCommon {
 	return &e.MergeRequestEventCommon
 }

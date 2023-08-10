@@ -40,7 +40,8 @@ func TestParseURL(t *testing.T) {
 					Path:     path,
 					User:     userinfo,
 					RawQuery: rawquery,
-				}},
+				},
+			},
 			wantStr: str,
 		}
 	}

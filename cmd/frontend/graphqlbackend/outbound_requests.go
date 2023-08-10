@@ -82,7 +82,6 @@ func (r *schemaResolver) outboundRequestByID(ctx context.Context, id graphql.ID)
 
 func (r *outboundRequestConnectionResolver) Nodes(ctx context.Context) ([]*OutboundRequestResolver, error) {
 	resolvers, err := r.compute(ctx)
-
 	if err != nil {
 		return nil, err
 	}

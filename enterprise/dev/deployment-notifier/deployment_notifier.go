@@ -23,9 +23,7 @@ var (
 	maxCommitsPageCount = 5
 )
 
-var (
-	ErrNoRelevantChanges = errors.New("no services changed, nothing to notify")
-)
+var ErrNoRelevantChanges = errors.New("no services changed, nothing to notify")
 
 type DeploymentNotifier struct {
 	dd               DeploymentDiffer
@@ -143,7 +141,7 @@ func makeServicesPerPullRequest(prServicesSet map[int]map[string]struct{}) map[i
 
 // getNewCommits returns a slice of commits starting from the target commit up to the currently deployed commit.
 func (dn *DeploymentNotifier) getNewCommits(ctx context.Context, oldCommit string, newCommit string) ([]*github.RepositoryCommit, error) {
-	var page = 1
+	page := 1
 	var commits []*github.RepositoryCommit
 	for page != 0 && page != maxCommitsPageCount {
 		cs, resp, err := dn.ghc.Repositories.ListCommits(ctx, repoOwner, repoName, &github.CommitsListOptions{

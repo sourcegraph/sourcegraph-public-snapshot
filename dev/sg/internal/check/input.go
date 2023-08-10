@@ -39,7 +39,7 @@ func getChoice(in io.Reader, out *std.Output, choices map[int]string) (int, erro
 
 func getNumberOutOf(in io.Reader, out *std.Output, numbers []int) (int, error) {
 	var strs []string
-	var idx = make(map[int]struct{})
+	idx := make(map[int]struct{})
 	for _, num := range numbers {
 		strs = append(strs, fmt.Sprintf("%d", num+1))
 		idx[num+1] = struct{}{}

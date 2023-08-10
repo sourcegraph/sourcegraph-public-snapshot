@@ -70,7 +70,6 @@ func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.
 		user:          user,
 		verifiedEmail: verified,
 	}, nil
-
 }
 
 type dotcomCodyUserResolver struct {

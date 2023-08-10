@@ -10,6 +10,7 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
@@ -149,7 +150,7 @@ type dbLicensesListOptions struct {
 	WithSiteIDsOnly       bool   // only list licenses that have a site id assigned
 	Revoked               *bool  // only return revoked or non-revoked licenses
 	Expired               *bool  // only return expired or non-expired licenses
-	*database.LimitOffset
+	*dbtypes.LimitOffset
 }
 
 func (o dbLicensesListOptions) sqlConditions() []*sqlf.Query {
@@ -184,7 +185,7 @@ func (s dbLicenses) Active(ctx context.Context, subscriptionID string) (*dbLicen
 	// Return newest license.
 	licenses, err := s.List(ctx, dbLicensesListOptions{
 		ProductSubscriptionID: subscriptionID,
-		LimitOffset:           &database.LimitOffset{Limit: 1},
+		LimitOffset:           &dbtypes.LimitOffset{Limit: 1},
 	})
 	if err != nil {
 		return nil, err
@@ -219,7 +220,7 @@ func (s dbLicenses) List(ctx context.Context, opt dbLicensesListOptions) ([]*dbL
 	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
-func (s dbLicenses) list(ctx context.Context, conds []*sqlf.Query, limitOffset *database.LimitOffset) ([]*dbLicense, error) {
+func (s dbLicenses) list(ctx context.Context, conds []*sqlf.Query, limitOffset *dbtypes.LimitOffset) ([]*dbLicense, error) {
 	q := sqlf.Sprintf(`
 SELECT
 	id,

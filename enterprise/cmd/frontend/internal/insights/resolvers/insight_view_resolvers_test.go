@@ -412,7 +412,6 @@ func TestRemoveClosePoints(t *testing.T) {
 }
 
 func TestInsightRepoScopeResolver(t *testing.T) {
-
 	makeSeries := func(repoList []string, search string) types.InsightViewSeries {
 		repoSearch := &search
 		if search == "" {
@@ -427,7 +426,6 @@ func TestInsightRepoScopeResolver(t *testing.T) {
 			Repositories:        repoList,
 			RepositoryCriteria:  repoSearch,
 		}
-
 	}
 
 	type tcResult struct {
@@ -483,5 +481,4 @@ func TestInsightRepoScopeResolver(t *testing.T) {
 			tc.want.Equal(t, string(resultStr))
 		})
 	}
-
 }

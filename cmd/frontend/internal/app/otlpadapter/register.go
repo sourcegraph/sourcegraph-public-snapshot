@@ -51,7 +51,7 @@ func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol,
 	componentName := "otlpadapter"
 
 	// otelSignals declares the signals we support redirection for.
-	var otelSignals = []adaptedSignal{
+	otelSignals := []adaptedSignal{
 		{
 			PathPrefix: "/v1/traces",
 			CreateAdapter: func() (*signalAdapter, error) {

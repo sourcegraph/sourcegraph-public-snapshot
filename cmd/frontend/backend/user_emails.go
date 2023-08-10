@@ -445,7 +445,6 @@ func deleteStalePerforceExternalAccounts(ctx context.Context, db database.DB, us
 	}
 
 	return nil
-
 }
 
 // checkEmailAbuse performs abuse prevention checks to prevent email abuse, i.e. users using emails

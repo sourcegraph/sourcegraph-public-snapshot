@@ -30,7 +30,8 @@ func (r *siteResolver) Analytics(ctx context.Context) (*siteAnalyticsResolver, e
 func (r *siteAnalyticsResolver) Search(ctx context.Context, args *struct {
 	DateRange *string
 	Grouping  *string
-}) *adminanalytics.Search {
+},
+) *adminanalytics.Search {
 	return &adminanalytics.Search{Ctx: ctx, DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
 }
 
@@ -39,7 +40,8 @@ func (r *siteAnalyticsResolver) Search(ctx context.Context, args *struct {
 func (r *siteAnalyticsResolver) Notebooks(ctx context.Context, args *struct {
 	DateRange *string
 	Grouping  *string
-}) *adminanalytics.Notebooks {
+},
+) *adminanalytics.Notebooks {
 	return &adminanalytics.Notebooks{Ctx: ctx, DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
 }
 
@@ -48,7 +50,8 @@ func (r *siteAnalyticsResolver) Notebooks(ctx context.Context, args *struct {
 func (r *siteAnalyticsResolver) Users(ctx context.Context, args *struct {
 	DateRange *string
 	Grouping  *string
-}) (*adminanalytics.Users, error) {
+},
+) (*adminanalytics.Users, error) {
 	return &adminanalytics.Users{Ctx: ctx, DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}, nil
 }
 
@@ -57,7 +60,8 @@ func (r *siteAnalyticsResolver) Users(ctx context.Context, args *struct {
 func (r *siteAnalyticsResolver) CodeIntel(ctx context.Context, args *struct {
 	DateRange *string
 	Grouping  *string
-}) *adminanalytics.CodeIntel {
+},
+) *adminanalytics.CodeIntel {
 	return &adminanalytics.CodeIntel{Ctx: ctx, DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
 }
 
@@ -65,7 +69,8 @@ func (r *siteAnalyticsResolver) CodeIntel(ctx context.Context, args *struct {
 
 func (r *siteAnalyticsResolver) CodeIntelByLanguage(ctx context.Context, args *struct {
 	DateRange *string
-}) ([]*adminanalytics.CodeIntelByLanguage, error) {
+},
+) ([]*adminanalytics.CodeIntelByLanguage, error) {
 	return adminanalytics.GetCodeIntelByLanguage(ctx, r.db, r.cache, *args.DateRange)
 }
 
@@ -73,7 +78,8 @@ func (r *siteAnalyticsResolver) CodeIntelByLanguage(ctx context.Context, args *s
 
 func (r *siteAnalyticsResolver) CodeIntelTopRepositories(ctx context.Context, args *struct {
 	DateRange *string
-}) ([]*adminanalytics.CodeIntelTopRepositories, error) {
+},
+) ([]*adminanalytics.CodeIntelTopRepositories, error) {
 	return adminanalytics.GetCodeIntelTopRepositories(ctx, r.db, r.cache, *args.DateRange)
 }
 
@@ -90,7 +96,8 @@ func (r *siteAnalyticsResolver) Repos(ctx context.Context) (*adminanalytics.Repo
 func (r *siteAnalyticsResolver) BatchChanges(ctx context.Context, args *struct {
 	DateRange *string
 	Grouping  *string
-}) *adminanalytics.BatchChanges {
+},
+) *adminanalytics.BatchChanges {
 	return &adminanalytics.BatchChanges{Ctx: ctx, DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
 }
 
@@ -99,7 +106,8 @@ func (r *siteAnalyticsResolver) BatchChanges(ctx context.Context, args *struct {
 func (r *siteAnalyticsResolver) Extensions(ctx context.Context, args *struct {
 	DateRange *string
 	Grouping  *string
-}) *adminanalytics.Extensions {
+},
+) *adminanalytics.Extensions {
 	return &adminanalytics.Extensions{Ctx: ctx, DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
 }
 
@@ -108,6 +116,7 @@ func (r *siteAnalyticsResolver) Extensions(ctx context.Context, args *struct {
 func (r *siteAnalyticsResolver) CodeInsights(ctx context.Context, args *struct {
 	DateRange *string
 	Grouping  *string
-}) *adminanalytics.CodeInsights {
+},
+) *adminanalytics.CodeInsights {
 	return &adminanalytics.CodeInsights{Ctx: ctx, DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
 }

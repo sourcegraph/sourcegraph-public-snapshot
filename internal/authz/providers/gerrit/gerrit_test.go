@@ -16,7 +16,6 @@ import (
 )
 
 func TestProvider_ValidateConnection(t *testing.T) {
-
 	testCases := []struct {
 		name       string
 		clientFunc func() gerrit.Client
@@ -73,7 +72,6 @@ func TestProvider_ValidateConnection(t *testing.T) {
 			if diff := cmp.Diff(errMessage, tc.wantErr); diff != "" {
 				t.Fatalf("warnings did not match: %s", diff)
 			}
-
 		})
 	}
 }

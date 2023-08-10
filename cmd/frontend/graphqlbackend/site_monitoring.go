@@ -20,7 +20,8 @@ func (r *MonitoringAlert) Average() float64    { return 0 }
 
 func (r *siteResolver) MonitoringStatistics(ctx context.Context, args *struct {
 	Days *int32
-}) (*siteMonitoringStatisticsResolver, error) {
+},
+) (*siteMonitoringStatisticsResolver, error) {
 	prom, err := srcprometheus.NewClient(srcprometheus.PrometheusURL)
 	if err != nil {
 		return nil, err // clients should check for ErrPrometheusUnavailable

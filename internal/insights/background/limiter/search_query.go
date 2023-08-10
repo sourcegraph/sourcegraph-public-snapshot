@@ -11,12 +11,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
 
-var searchOnce sync.Once
-var searchLogger log.Logger
-var searchLimiter *ratelimit.InstrumentedLimiter
+var (
+	searchOnce    sync.Once
+	searchLogger  log.Logger
+	searchLimiter *ratelimit.InstrumentedLimiter
+)
 
 func SearchQueryRate() *ratelimit.InstrumentedLimiter {
-
 	searchOnce.Do(func() {
 		searchLogger = log.Scoped("insights.search.ratelimiter", "")
 		defaultRateLimit := rate.Limit(20.0)

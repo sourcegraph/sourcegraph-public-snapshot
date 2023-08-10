@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -232,7 +233,7 @@ func copyOpts(opts database.WebhookListOptions) database.WebhookListOptions {
 		Cursor: opts.Cursor,
 	}
 	if opts.LimitOffset != nil {
-		limitOffset := database.LimitOffset{
+		limitOffset := dbtypes.LimitOffset{
 			Limit:  opts.Limit,
 			Offset: opts.Offset,
 		}

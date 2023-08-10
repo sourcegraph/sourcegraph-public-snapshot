@@ -23,7 +23,8 @@ var testMetricCritical = promauto.NewGaugeVec(prometheus.GaugeOpts{
 
 func (r *schemaResolver) TriggerObservabilityTestAlert(ctx context.Context, args *struct {
 	Level string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Do not allow arbitrary users to set off alerts.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err

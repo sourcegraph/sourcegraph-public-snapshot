@@ -50,7 +50,6 @@ func (tc *tracedClient) MakeRequest(
 
 	// Do the request
 	err := tc.c.MakeRequest(ctx, req, resp)
-
 	// Assess the result
 	if err != nil {
 		span.RecordError(err)

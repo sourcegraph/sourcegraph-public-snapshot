@@ -437,7 +437,8 @@ func TestResultQueueSettingsFromConfig(t *testing.T) {
 		{
 			name: "MaxReorderQueueSize",
 			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
-				MaxReorderQueueSize: &dummy}}},
+				MaxReorderQueueSize: &dummy,
+			}}},
 			wantMaxQueueDepth:      dummy,
 			wantMaxQueueMatchCount: -1,
 			wantMaxSizeBytes:       -1,

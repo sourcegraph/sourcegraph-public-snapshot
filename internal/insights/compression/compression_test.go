@@ -39,7 +39,6 @@ func TestQueryExecution_ToRecording(t *testing.T) {
 }
 
 func Test_GitserverFilter(t *testing.T) {
-
 	tests := []struct {
 		name              string
 		want              autogold.Value
@@ -70,8 +69,10 @@ func Test_GitserverFilter(t *testing.T) {
 			name:              "no commits return for any points",
 			want:              autogold.Expect(`{"Executions":[{"Revision":"","RecordingTime":"2021-01-01T00:00:00Z","SharedRecordings":null},{"Revision":"","RecordingTime":"2021-02-01T00:00:00Z","SharedRecordings":null}],"RecordCount":2}`),
 			fakeCommitFetcher: buildFakeFetcher(),
-			times: []time.Time{time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
-				time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)},
+			times: []time.Time{
+				time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+				time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
+			},
 		},
 	}
 	for _, test := range tests {

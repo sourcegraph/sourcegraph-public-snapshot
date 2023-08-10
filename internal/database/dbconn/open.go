@@ -130,9 +130,11 @@ type extendedConn struct {
 	queryerContext driver.QueryerContext
 }
 
-var _ driver.Pinger = &extendedConn{}
-var _ driver.SessionResetter = &extendedConn{}
-var _ driver.NamedValueChecker = &extendedConn{}
+var (
+	_ driver.Pinger            = &extendedConn{}
+	_ driver.SessionResetter   = &extendedConn{}
+	_ driver.NamedValueChecker = &extendedConn{}
+)
 
 // Open returns a conn wrapped through extendedConn, implementing the
 // Ping, ResetSession and CheckNamedValue optional methods that the

@@ -54,6 +54,7 @@ func (r *externalAccountResolver) AccountID() string   { return r.account.Accoun
 func (r *externalAccountResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.account.CreatedAt}
 }
+
 func (r *externalAccountResolver) UpdatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.account.UpdatedAt}
 }

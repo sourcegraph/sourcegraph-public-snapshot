@@ -258,9 +258,11 @@ type mock struct {
 func (m mock) UserFromContext(ctx context.Context) (*schema.Settings, error) {
 	return m.settings, nil
 }
+
 func (m mock) ForSubject(ctx context.Context, subject api.SettingsSubject) (*schema.Settings, error) {
 	return m.settings, nil
 }
+
 func (m mock) RelevantSubjects(ctx context.Context, subject api.SettingsSubject) ([]api.SettingsSubject, error) {
 	return nil, nil
 }

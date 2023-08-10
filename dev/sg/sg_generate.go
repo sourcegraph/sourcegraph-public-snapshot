@@ -17,9 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var (
-	generateQuiet bool
-)
+var generateQuiet bool
 
 var generateCommand = &cli.Command{
 	Name:      "generate",

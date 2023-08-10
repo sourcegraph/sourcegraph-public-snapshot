@@ -2,9 +2,8 @@ package redispool
 
 import (
 	"context"
-	"time"
-
 	"fmt"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"

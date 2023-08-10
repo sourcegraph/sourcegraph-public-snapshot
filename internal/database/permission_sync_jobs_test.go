@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -260,12 +261,12 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 		},
 		{
 			name:     "User name search with pagination",
-			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser, PaginationArgs: &PaginationArgs{First: pointers.Ptr(1)}},
+			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser, PaginationArgs: &dbtypes.PaginationArgs{First: pointers.Ptr(1)}},
 			wantJobs: jobs[2:3],
 		},
 		{
 			name:     "User name search with default OrderBy",
-			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser, PaginationArgs: &PaginationArgs{OrderBy: OrderBy{{Field: "id"}}}},
+			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser, PaginationArgs: &dbtypes.PaginationArgs{OrderBy: dbtypes.OrderBy{{Field: "id"}}}},
 			wantJobs: jobs[2:3],
 		},
 	}
@@ -749,27 +750,27 @@ func TestPermissionSyncJobs_Pagination(t *testing.T) {
 
 	paginationTests := []struct {
 		name           string
-		paginationArgs PaginationArgs
+		paginationArgs dbtypes.PaginationArgs
 		wantJobs       []*PermissionSyncJob
 	}{
 		{
 			name:           "After",
-			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, After: pointers.Ptr("1")},
+			paginationArgs: dbtypes.PaginationArgs{OrderBy: []dbtypes.OrderByOption{{Field: "user_id"}}, Ascending: true, After: pointers.Ptr("1")},
 			wantJobs:       []*PermissionSyncJob{},
 		},
 		{
 			name:           "Before",
-			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, Before: pointers.Ptr("2")},
+			paginationArgs: dbtypes.PaginationArgs{OrderBy: []dbtypes.OrderByOption{{Field: "user_id"}}, Ascending: true, Before: pointers.Ptr("2")},
 			wantJobs:       jobs,
 		},
 		{
 			name:           "First",
-			paginationArgs: PaginationArgs{Ascending: true, First: pointers.Ptr(5)},
+			paginationArgs: dbtypes.PaginationArgs{Ascending: true, First: pointers.Ptr(5)},
 			wantJobs:       jobs[:5],
 		},
 		{
 			name:           "OrderBy",
-			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "queued_at"}}, Ascending: false},
+			paginationArgs: dbtypes.PaginationArgs{OrderBy: []dbtypes.OrderByOption{{Field: "queued_at"}}, Ascending: false},
 			wantJobs:       reverse(jobs),
 		},
 	}
@@ -1086,5 +1087,4 @@ func getSampleCodeHostStates() []PermissionSyncCodeHostState {
 			Message:      "unsuccessful unsuccess :(",
 		},
 	}
-
 }

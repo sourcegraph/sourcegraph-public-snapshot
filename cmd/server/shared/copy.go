@@ -31,7 +31,7 @@ func copyConfigs() error {
 			return errors.Wrapf(err, "failed to copy %s -> %s", src, dst)
 		}
 
-		if err := os.WriteFile(dst, data, 0600); err != nil {
+		if err := os.WriteFile(dst, data, 0o600); err != nil {
 			return errors.Wrapf(err, "failed to copy %s -> %s", src, dst)
 		}
 	}

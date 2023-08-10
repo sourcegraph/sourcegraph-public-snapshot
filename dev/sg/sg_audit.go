@@ -23,8 +23,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var auditFormatFlag string
-var auditPRGitHubToken string
+var (
+	auditFormatFlag    string
+	auditPRGitHubToken string
+)
 
 var auditCommand = &cli.Command{
 	Name:      "audit",
@@ -133,7 +135,7 @@ func presentIssues(ctx context.Context, ghc *github.Client, slack *slack.Client,
 		if assignee == nil {
 			return nil, errors.Newf("missing assignee in %s", issue.GetHTMLURL())
 		}
-		var title = issue.GetTitle()
+		title := issue.GetTitle()
 		title = strings.ReplaceAll(title, "[", "")
 		title = strings.ReplaceAll(title, "]", "")
 

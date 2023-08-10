@@ -161,8 +161,10 @@ type PullRequestUpdateInput struct {
 	// ADO does not seem to support updating Source ref name, only TargetRefName which needs to be explicitly enabled.
 }
 
-type PullRequestStatus string
-type PullRequestMergeStrategy string
+type (
+	PullRequestStatus        string
+	PullRequestMergeStrategy string
+)
 
 type PullRequestMergeOptions struct {
 	ConflictAuthorshipCommits  *bool `json:"conflictAuthorshipCommits"`

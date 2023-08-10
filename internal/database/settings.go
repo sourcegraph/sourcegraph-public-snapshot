@@ -134,7 +134,6 @@ func (o *settingsStore) GetLatestSchemaSettings(ctx context.Context, subject api
 	}
 
 	return &v, nil
-
 }
 
 // ListAll lists ALL settings (across all users, orgs, etc).

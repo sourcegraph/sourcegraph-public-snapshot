@@ -9,12 +9,13 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // SurveyResponseListOptions specifies the options for listing survey responses.
 type SurveyResponseListOptions struct {
-	*LimitOffset
+	*dbtypes.LimitOffset
 }
 
 type SurveyResponseStore struct {

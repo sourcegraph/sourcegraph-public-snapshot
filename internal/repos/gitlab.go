@@ -38,10 +38,12 @@ type GitLabSource struct {
 	logger              log.Logger
 }
 
-var _ Source = &GitLabSource{}
-var _ UserSource = &GitLabSource{}
-var _ AffiliatedRepositorySource = &GitLabSource{}
-var _ VersionSource = &GitLabSource{}
+var (
+	_ Source                     = &GitLabSource{}
+	_ UserSource                 = &GitLabSource{}
+	_ AffiliatedRepositorySource = &GitLabSource{}
+	_ VersionSource              = &GitLabSource{}
+)
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
 func NewGitLabSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
@@ -190,7 +192,6 @@ func (s GitLabSource) GetRepo(ctx context.Context, pathWithNamespace string) (*t
 		PathWithNamespace: pathWithNamespace,
 		CommonOp:          gitlab.CommonOp{NoCache: true},
 	})
-
 	if err != nil {
 		return nil, err
 	}

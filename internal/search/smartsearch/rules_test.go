@@ -44,7 +44,6 @@ func Test_unquotePatterns(t *testing.T) {
 			autogold.ExpectFile(t, autogold.Raw(test(c)))
 		})
 	}
-
 }
 
 func Test_unorderedPatterns(t *testing.T) {
@@ -62,7 +61,6 @@ func Test_unorderedPatterns(t *testing.T) {
 			autogold.ExpectFile(t, autogold.Raw(test(c)))
 		})
 	}
-
 }
 
 func Test_langPatterns(t *testing.T) {
@@ -81,7 +79,6 @@ func Test_langPatterns(t *testing.T) {
 			autogold.ExpectFile(t, autogold.Raw(test(c)))
 		})
 	}
-
 }
 
 func Test_symbolPatterns(t *testing.T) {
@@ -100,7 +97,6 @@ func Test_symbolPatterns(t *testing.T) {
 			autogold.ExpectFile(t, autogold.Raw(test(c)))
 		})
 	}
-
 }
 
 func Test_typePatterns(t *testing.T) {
@@ -120,7 +116,6 @@ func Test_typePatterns(t *testing.T) {
 			autogold.ExpectFile(t, autogold.Raw(test(c)))
 		})
 	}
-
 }
 
 func Test_regexpPatterns(t *testing.T) {

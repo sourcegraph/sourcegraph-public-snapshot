@@ -123,8 +123,8 @@ func printDeployedVersion(e environment, commits int) error {
 		author := elems[2]
 		message := elems[3]
 
-		var emoji = "  "
-		var style = output.StylePending
+		emoji := "  "
+		style := output.StylePending
 		if sha[0:len(buildSha)] == buildSha {
 			emoji = "🚀"
 			style = output.StyleLogo

@@ -59,6 +59,7 @@ func (s *overrideStore) GetUserFlags(ctx context.Context, userID int32) (map[str
 func (s *overrideStore) GetAnonymousUserFlags(ctx context.Context, anonUID string) (map[string]bool, error) {
 	return s.override(s.store.GetAnonymousUserFlags(ctx, anonUID))
 }
+
 func (s *overrideStore) GetGlobalFeatureFlags(ctx context.Context) (map[string]bool, error) {
 	return s.override(s.store.GetGlobalFeatureFlags(ctx))
 }

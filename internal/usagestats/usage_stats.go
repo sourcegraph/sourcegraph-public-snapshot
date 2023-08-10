@@ -15,9 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-var (
-	timeNow = time.Now
-)
+var timeNow = time.Now
 
 // GetArchive generates and returns a usage statistics ZIP archive containing the CSV
 // files defined in RFC 145, or an error in case of failure.

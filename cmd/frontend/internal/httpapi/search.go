@@ -219,7 +219,6 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		repoIDs:     indexedIDs,
 		fingerprint: clientFingerprint,
 	})
-
 	if err != nil {
 		var parameterErr *parameterError
 		code := http.StatusInternalServerError

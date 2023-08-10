@@ -13,8 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 )
 
-var (
-	updateAggregatedUsersStatisticsQuery = `
+var updateAggregatedUsersStatisticsQuery = `
 	INSERT INTO aggregated_user_statistics (user_id, user_last_active_at, user_events_count)
 	SELECT
 		user_id,
@@ -39,7 +38,6 @@ var (
 			user_events_count = EXCLUDED.user_events_count,
 			updated_at = NOW();
 	`
-)
 
 func updateAggregatedUsersStatisticsTable(ctx context.Context, db database.DB) error {
 	if _, err := db.ExecContext(ctx, updateAggregatedUsersStatisticsQuery); err != nil {

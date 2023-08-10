@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/insights/background/queryrunner"
@@ -28,9 +29,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var _ graphqlbackend.InsightSeriesMetadataPayloadResolver = &insightSeriesMetadataPayloadResolver{}
-var _ graphqlbackend.InsightSeriesMetadataResolver = &insightSeriesMetadataResolver{}
-var _ graphqlbackend.InsightSeriesQueryStatusResolver = &insightSeriesQueryStatusResolver{}
+var (
+	_ graphqlbackend.InsightSeriesMetadataPayloadResolver = &insightSeriesMetadataPayloadResolver{}
+	_ graphqlbackend.InsightSeriesMetadataResolver        = &insightSeriesMetadataResolver{}
+	_ graphqlbackend.InsightSeriesQueryStatusResolver     = &insightSeriesQueryStatusResolver{}
+)
 
 func (r *Resolver) UpdateInsightSeries(ctx context.Context, args *graphqlbackend.UpdateInsightSeriesArgs) (graphqlbackend.InsightSeriesMetadataPayloadResolver, error) {
 	actr := actor.FromContext(ctx)
@@ -417,11 +420,12 @@ func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlb
 		store,
 		&args.ConnectionResolverArgs,
 		&graphqlutil.ConnectionResolverOptions{
-			OrderBy: database.OrderBy{
+			OrderBy: dbtypes.OrderBy{
 				{Field: string(orderByToDBBackfillColumn(orderBy))}, // user selected or default
 				{Field: string(scheduler.BackfillID)},               // key field to support paging
 			},
-			Ascending: !args.Descending})
+			Ascending: !args.Descending,
+		})
 	if err != nil {
 		return nil, err
 	}
@@ -450,7 +454,7 @@ func (a *adminBackfillQueueConnectionStore) ComputeTotal(ctx context.Context) (*
 	return i32Ptr(&count), nil
 }
 
-func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*graphqlbackend.BackfillQueueItemResolver, error) {
+func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, args *dbtypes.PaginationArgs) ([]*graphqlbackend.BackfillQueueItemResolver, error) {
 	filterArgs := scheduler.BackfillQueueArgs{PaginationArgs: args}
 	if a.args != nil {
 		filterArgs.States = a.args.States
@@ -492,7 +496,7 @@ func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, ar
 }
 
 // MarshalCursor returns cursor for a node and is called for generating start and end cursors.
-func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.BackfillQueueItemResolver, orderBy database.OrderBy) (*string, error) {
+func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.BackfillQueueItemResolver, orderBy dbtypes.OrderBy) (*string, error) {
 	// This is the enum the client requested ordering by
 	column := orderBy[0].Field
 
@@ -511,11 +515,10 @@ func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.B
 	)
 
 	return &cursor, nil
-
 }
 
 // UnmarshalCursor returns node id from after/before cursor string.
-func (a *adminBackfillQueueConnectionStore) UnmarshalCursor(cursor string, orderBy database.OrderBy) (*string, error) {
+func (a *adminBackfillQueueConnectionStore) UnmarshalCursor(cursor string, orderBy dbtypes.OrderBy) (*string, error) {
 	backfillCursor, err := unmarshalBackfillItemCursor(&cursor)
 	if err != nil {
 		return nil, err
@@ -589,6 +592,7 @@ func (r *backfillStatusResolver) StartedAt() *gqlutil.DateTime {
 func (r *backfillStatusResolver) CompletedAt() *gqlutil.DateTime {
 	return gqlutil.DateTimeOrNil(r.queueItem.BackfillCompletedAt)
 }
+
 func (r *backfillStatusResolver) Errors() *[]string {
 	return r.queueItem.Errors
 }

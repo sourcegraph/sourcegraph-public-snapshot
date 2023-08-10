@@ -13,7 +13,7 @@ import (
 )
 
 func TestRoundTrip(t *testing.T) {
-	var tcs = []struct {
+	tcs := []struct {
 		name   string
 		config schema.MountedEncryptionKey
 		setup  func(t *testing.T)
@@ -37,7 +37,7 @@ func TestRoundTrip(t *testing.T) {
 				Filepath: "/tmp/testroundtrip_testkey_file",
 			},
 			setup: func(t *testing.T) {
-				require.NoError(t, os.WriteFile("/tmp/testroundtrip_testkey_file", []byte(rand.String(32)), 0644))
+				require.NoError(t, os.WriteFile("/tmp/testroundtrip_testkey_file", []byte(rand.String(32)), 0o644))
 
 				t.Cleanup(func() {
 					os.Remove("/tmp/testroundtrip_testkey_file")
@@ -56,7 +56,7 @@ func TestRoundTrip(t *testing.T) {
 			k, err := NewKey(ctx, tc.config)
 			require.NoError(t, err)
 
-			var plaintext = theScriptOfBeeMovie
+			plaintext := theScriptOfBeeMovie
 
 			ciphertext, err := k.Encrypt(ctx, []byte(plaintext))
 			require.NoError(t, err)
@@ -67,10 +67,8 @@ func TestRoundTrip(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.Equal(t, plaintext, secret.Secret())
-
 		})
 	}
-
 }
 
 var theScriptOfBeeMovie = `According to all known laws

@@ -553,7 +553,6 @@ func TestParse(t *testing.T) {
 
 	// The space-looking character below is U+00A0.
 	autogold.Expect(value{Grammar: `(concat "00" "000")`, Heuristic: `(concat "00" "(000)")`}).Equal(t, test(`00 (000)`))
-
 }
 
 func TestScanDelimited(t *testing.T) {

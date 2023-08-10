@@ -7,12 +7,13 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type ListCodeHostsOpts struct {
-	LimitOffset
+	dbtypes.LimitOffset
 
 	// Only list code hosts with the given ID. This makes if effectively a getByID.
 	ID int32
@@ -107,7 +108,7 @@ func (errCodeHostNotFound) NotFound() bool {
 }
 
 func (s *codeHostStore) GetByID(ctx context.Context, id int32) (*types.CodeHost, error) {
-	chs, _, err := s.List(ctx, ListCodeHostsOpts{LimitOffset: LimitOffset{Limit: 1}, ID: id})
+	chs, _, err := s.List(ctx, ListCodeHostsOpts{LimitOffset: dbtypes.LimitOffset{Limit: 1}, ID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +122,7 @@ func (s *codeHostStore) GetByURL(ctx context.Context, url string) (*types.CodeHo
 	// We would normally parse the URL here to verify its valid, but some code hosts have connections that
 	// have multiple URLs and in the code host table, they are represented by a code_hosts.url of:
 	// python/gomodules/etc...
-	chs, _, err := s.List(ctx, ListCodeHostsOpts{LimitOffset: LimitOffset{Limit: 1}, URL: url})
+	chs, _, err := s.List(ctx, ListCodeHostsOpts{LimitOffset: dbtypes.LimitOffset{Limit: 1}, URL: url})
 	if err != nil {
 		return nil, err
 	}

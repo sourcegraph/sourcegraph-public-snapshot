@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -439,7 +440,6 @@ func TestRepos_GetByIDs_EmptyIDs(t *testing.T) {
 	if len(repos) != 0 {
 		t.Fatalf("got %d repos, but want 0", len(repos))
 	}
-
 }
 
 func TestRepos_GetRepoDescriptionsByIDs(t *testing.T) {
@@ -937,7 +937,7 @@ func TestRepos_List_pagination(t *testing.T) {
 		{limit: 4, offset: 4, exp: nil},
 	}
 	for _, test := range tests {
-		repos, err := db.Repos().List(ctx, ReposListOptions{LimitOffset: &LimitOffset{Limit: test.limit, Offset: test.offset}})
+		repos, err := db.Repos().List(ctx, ReposListOptions{LimitOffset: &dbtypes.LimitOffset{Limit: test.limit, Offset: test.offset}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1582,7 +1582,7 @@ func TestRepos_ListMinimalRepos_pagination(t *testing.T) {
 		{limit: 4, offset: 4, exp: nil},
 	}
 	for _, test := range tests {
-		repos, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{LimitOffset: &LimitOffset{Limit: test.limit, Offset: test.offset}})
+		repos, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{LimitOffset: &dbtypes.LimitOffset{Limit: test.limit, Offset: test.offset}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2450,7 +2450,7 @@ func TestRepos_Count(t *testing.T) {
 	t.Run("order and limit options are ignored", func(t *testing.T) {
 		opts := ReposListOptions{
 			OrderBy:     []RepoListSort{{Field: RepoListID}},
-			LimitOffset: &LimitOffset{Limit: 1},
+			LimitOffset: &dbtypes.LimitOffset{Limit: 1},
 		}
 		if count, err := db.Repos().Count(ctx, opts); err != nil {
 			t.Fatal(err)

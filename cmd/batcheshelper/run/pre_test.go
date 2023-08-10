@@ -101,7 +101,7 @@ func TestPre(t *testing.T) {
 				defer f.Close()
 				stat, err := f.Stat()
 				require.NoError(t, err)
-				assert.Equal(t, os.FileMode(0755), stat.Mode().Perm())
+				assert.Equal(t, os.FileMode(0o755), stat.Mode().Perm())
 			},
 		},
 		{

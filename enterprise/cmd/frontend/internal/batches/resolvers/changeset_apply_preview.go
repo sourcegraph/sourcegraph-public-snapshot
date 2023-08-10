@@ -104,10 +104,12 @@ type hiddenApplyPreviewTargetsResolver struct {
 	preloadedNextSync time.Time
 }
 
-var _ graphqlbackend.HiddenApplyPreviewTargetsResolver = &hiddenApplyPreviewTargetsResolver{}
-var _ graphqlbackend.HiddenApplyPreviewTargetsAttachResolver = &hiddenApplyPreviewTargetsResolver{}
-var _ graphqlbackend.HiddenApplyPreviewTargetsUpdateResolver = &hiddenApplyPreviewTargetsResolver{}
-var _ graphqlbackend.HiddenApplyPreviewTargetsDetachResolver = &hiddenApplyPreviewTargetsResolver{}
+var (
+	_ graphqlbackend.HiddenApplyPreviewTargetsResolver       = &hiddenApplyPreviewTargetsResolver{}
+	_ graphqlbackend.HiddenApplyPreviewTargetsAttachResolver = &hiddenApplyPreviewTargetsResolver{}
+	_ graphqlbackend.HiddenApplyPreviewTargetsUpdateResolver = &hiddenApplyPreviewTargetsResolver{}
+	_ graphqlbackend.HiddenApplyPreviewTargetsDetachResolver = &hiddenApplyPreviewTargetsResolver{}
+)
 
 func (r *hiddenApplyPreviewTargetsResolver) ToHiddenApplyPreviewTargetsAttach() (graphqlbackend.HiddenApplyPreviewTargetsAttachResolver, bool) {
 	if r.mapping.Changeset == nil {
@@ -115,12 +117,14 @@ func (r *hiddenApplyPreviewTargetsResolver) ToHiddenApplyPreviewTargetsAttach() 
 	}
 	return nil, false
 }
+
 func (r *hiddenApplyPreviewTargetsResolver) ToHiddenApplyPreviewTargetsUpdate() (graphqlbackend.HiddenApplyPreviewTargetsUpdateResolver, bool) {
 	if r.mapping.Changeset != nil && r.mapping.ChangesetSpec != nil {
 		return r, true
 	}
 	return nil, false
 }
+
 func (r *hiddenApplyPreviewTargetsResolver) ToHiddenApplyPreviewTargetsDetach() (graphqlbackend.HiddenApplyPreviewTargetsDetachResolver, bool) {
 	if r.mapping.ChangesetSpec == nil {
 		return r, true
@@ -321,10 +325,12 @@ type visibleApplyPreviewTargetsResolver struct {
 	preloadedNextSync time.Time
 }
 
-var _ graphqlbackend.VisibleApplyPreviewTargetsResolver = &visibleApplyPreviewTargetsResolver{}
-var _ graphqlbackend.VisibleApplyPreviewTargetsAttachResolver = &visibleApplyPreviewTargetsResolver{}
-var _ graphqlbackend.VisibleApplyPreviewTargetsUpdateResolver = &visibleApplyPreviewTargetsResolver{}
-var _ graphqlbackend.VisibleApplyPreviewTargetsDetachResolver = &visibleApplyPreviewTargetsResolver{}
+var (
+	_ graphqlbackend.VisibleApplyPreviewTargetsResolver       = &visibleApplyPreviewTargetsResolver{}
+	_ graphqlbackend.VisibleApplyPreviewTargetsAttachResolver = &visibleApplyPreviewTargetsResolver{}
+	_ graphqlbackend.VisibleApplyPreviewTargetsUpdateResolver = &visibleApplyPreviewTargetsResolver{}
+	_ graphqlbackend.VisibleApplyPreviewTargetsDetachResolver = &visibleApplyPreviewTargetsResolver{}
+)
 
 func (r *visibleApplyPreviewTargetsResolver) ToVisibleApplyPreviewTargetsAttach() (graphqlbackend.VisibleApplyPreviewTargetsAttachResolver, bool) {
 	if r.mapping.Changeset == nil {
@@ -332,12 +338,14 @@ func (r *visibleApplyPreviewTargetsResolver) ToVisibleApplyPreviewTargetsAttach(
 	}
 	return nil, false
 }
+
 func (r *visibleApplyPreviewTargetsResolver) ToVisibleApplyPreviewTargetsUpdate() (graphqlbackend.VisibleApplyPreviewTargetsUpdateResolver, bool) {
 	if r.mapping.Changeset != nil && r.mapping.ChangesetSpec != nil {
 		return r, true
 	}
 	return nil, false
 }
+
 func (r *visibleApplyPreviewTargetsResolver) ToVisibleApplyPreviewTargetsDetach() (graphqlbackend.VisibleApplyPreviewTargetsDetachResolver, bool) {
 	if r.mapping.ChangesetSpec == nil {
 		return r, true
@@ -368,24 +376,31 @@ var _ graphqlbackend.ChangesetSpecDeltaResolver = &changesetSpecDeltaResolver{}
 func (c *changesetSpecDeltaResolver) TitleChanged() bool {
 	return c.delta.TitleChanged
 }
+
 func (c *changesetSpecDeltaResolver) BodyChanged() bool {
 	return c.delta.BodyChanged
 }
+
 func (c *changesetSpecDeltaResolver) Undraft() bool {
 	return c.delta.Undraft
 }
+
 func (c *changesetSpecDeltaResolver) BaseRefChanged() bool {
 	return c.delta.BaseRefChanged
 }
+
 func (c *changesetSpecDeltaResolver) DiffChanged() bool {
 	return c.delta.DiffChanged
 }
+
 func (c *changesetSpecDeltaResolver) CommitMessageChanged() bool {
 	return c.delta.CommitMessageChanged
 }
+
 func (c *changesetSpecDeltaResolver) AuthorNameChanged() bool {
 	return c.delta.AuthorNameChanged
 }
+
 func (c *changesetSpecDeltaResolver) AuthorEmailChanged() bool {
 	return c.delta.AuthorEmailChanged
 }

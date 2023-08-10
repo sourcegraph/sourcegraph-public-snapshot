@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -41,7 +42,7 @@ func (r *schemaResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphq
 		&connectionStore,
 		&args.ConnectionResolverArgs,
 		&graphqlutil.ConnectionResolverOptions{
-			OrderBy: database.OrderBy{
+			OrderBy: dbtypes.OrderBy{
 				{Field: "roles.system"},
 				{Field: "roles.created_at"},
 			},

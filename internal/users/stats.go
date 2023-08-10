@@ -140,8 +140,7 @@ NOT EXISTS (
 	return conds, nil
 }
 
-var (
-	statsCTEQuery = `
+var statsCTEQuery = `
 	WITH aggregated_stats AS (
 		SELECT
 			users.id AS id,
@@ -160,7 +159,6 @@ var (
 	)
 	%s
 	`
-)
 
 func (s *UsersStats) TotalCount(ctx context.Context) (float64, error) {
 	var totalCount float64
@@ -224,7 +222,6 @@ func (s *UsersStats) ListUsers(ctx context.Context, filters *UsersStatsListUsers
 	SELECT id, username, display_name, primary_email, created_at, last_active_at, deleted_at, site_admin, scim_controlled, events_count FROM aggregated_stats WHERE %s ORDER BY %s NULLS LAST LIMIT %s OFFSET %s`, sqlf.Join(conds, "AND"), orderBy, limit, offset))
 
 	rows, err := s.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
-
 	if err != nil {
 		return nil, err
 	}

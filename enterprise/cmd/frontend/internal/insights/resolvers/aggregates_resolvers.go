@@ -33,23 +33,29 @@ const (
 )
 
 // Possible reasons that grouping is disabled
-const invalidQueryMsg = "Grouping is disabled because the search query is not valid."
-const fileUnsupportedFieldValueFmt = `Grouping by file is not available for searches with "%s:%s".`
-const authNotCommitDiffMsg = "Grouping by author is only available for diff and commit searches."
-const repoMetadataNotRepoSelectMsg = "Grouping by repo metadata is only available for repository searches."
-const cgInvalidQueryMsg = "Grouping by capture group is only available for regexp searches that contain a capturing group."
-const cgMultipleQueryPatternMsg = "Grouping by capture group does not support search patterns with the following: and, or, negation."
-const cgUnsupportedSelectFmt = `Grouping by capture group is not available for searches with "%s:%s".`
+const (
+	invalidQueryMsg              = "Grouping is disabled because the search query is not valid."
+	fileUnsupportedFieldValueFmt = `Grouping by file is not available for searches with "%s:%s".`
+	authNotCommitDiffMsg         = "Grouping by author is only available for diff and commit searches."
+	repoMetadataNotRepoSelectMsg = "Grouping by repo metadata is only available for repository searches."
+	cgInvalidQueryMsg            = "Grouping by capture group is only available for regexp searches that contain a capturing group."
+	cgMultipleQueryPatternMsg    = "Grouping by capture group does not support search patterns with the following: and, or, negation."
+	cgUnsupportedSelectFmt       = `Grouping by capture group is not available for searches with "%s:%s".`
+)
 
 // Possible reasons that grouping would fail
-const shardTimeoutMsg = "The query was unable to complete in the allocated time."
-const generalTimeoutMsg = "The query was unable to complete in the allocated time."
-const proactiveResultLimitMsg = "The query exceeded the number of results allowed over this time period."
+const (
+	shardTimeoutMsg         = "The query was unable to complete in the allocated time."
+	generalTimeoutMsg       = "The query was unable to complete in the allocated time."
+	proactiveResultLimitMsg = "The query exceeded the number of results allowed over this time period."
+)
 
 // These should be very rare
-const unknownAggregationModeMsg = "The requested grouping is not supported."                    // example if a request with mode = NOT_A_REAL_MODE came in, should fail at graphql level
-const unableToModifyQueryMsg = "The search query was unable to be updated to support grouping." // if the query was valid but we were unable to add timeout: & count:all
-const unableToCountGroupsMsg = "The search results were unable to be grouped successfully."     // if there was a failure while adding up the results
+const (
+	unknownAggregationModeMsg = "The requested grouping is not supported."                       // example if a request with mode = NOT_A_REAL_MODE came in, should fail at graphql level
+	unableToModifyQueryMsg    = "The search query was unable to be updated to support grouping." // if the query was valid but we were unable to add timeout: & count:all
+	unableToCountGroupsMsg    = "The search results were unable to be grouped successfully."     // if there was a failure while adding up the results
+)
 
 type searchAggregateResolver struct {
 	postgresDB database.DB
@@ -191,7 +197,6 @@ func getProactiveResultLimit() int {
 		configLimit = defaultproactiveResultsLimit
 	}
 	return min(configLimit, maxProactiveResultsLimit)
-
 }
 
 func min(x, y int) int {
@@ -200,6 +205,7 @@ func min(x, y int) int {
 	}
 	return y
 }
+
 func getExtendedTimeout(ctx context.Context, db database.DB) int {
 	searchLimit := limits.SearchLimits(conf.Get()).MaxTimeoutSeconds
 
@@ -271,9 +277,11 @@ type AggregationGroup struct {
 func (r *AggregationGroup) Label() string {
 	return r.label
 }
+
 func (r *AggregationGroup) Count() int32 {
 	return int32(r.count)
 }
+
 func (r *AggregationGroup) Query() (*string, error) {
 	return r.query, nil
 }
@@ -348,7 +356,6 @@ func (r *aggregationModeAvailabilityResolver) ReasonUnavailable() (*string, erro
 		return &notAvailable.reason, nil
 	}
 	return nil, nil
-
 }
 
 func getNotAvailableReason(query, patternType string, mode types.SearchAggregationMode) (*notAvailableReason, error) {
@@ -550,9 +557,11 @@ type searchAggregationNotAvailableResolver struct {
 func (r *searchAggregationNotAvailableResolver) Reason() string {
 	return r.reason
 }
+
 func (r *searchAggregationNotAvailableResolver) ReasonType() string {
 	return string(r.reasonType)
 }
+
 func (r *searchAggregationNotAvailableResolver) Mode() string {
 	return string(r.mode)
 }
@@ -571,19 +580,19 @@ func (r *searchAggregationModeResultResolver) Groups() ([]graphqlbackend.Aggrega
 }
 
 func (r *searchAggregationModeResultResolver) OtherResultCount() (*int32, error) {
-	var count = int32(r.results.otherResultCount)
+	count := int32(r.results.otherResultCount)
 	return &count, nil
 }
 
 // OtherGroupCount - used for exhaustive aggregations to indicate count of additional groups
 func (r *searchAggregationModeResultResolver) OtherGroupCount() (*int32, error) {
-	var count = int32(r.results.otherGroupCount)
+	count := int32(r.results.otherGroupCount)
 	return &count, nil
 }
 
 // ApproximateOtherGroupCount - used for nonexhaustive aggregations to indicate approx count of additional groups
 func (r *searchAggregationModeResultResolver) ApproximateOtherGroupCount() (*int32, error) {
-	var count = int32(r.results.otherGroupCount)
+	count := int32(r.results.otherGroupCount)
 	return &count, nil
 }
 

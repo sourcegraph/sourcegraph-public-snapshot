@@ -265,7 +265,6 @@ func (s BitbucketServerSource) ReopenChangeset(ctx context.Context, c *Changeset
 	reopened, err := s.callAndRetryIfOutdated(ctx, c, s.client.ReopenPullRequest)
 	if err != nil {
 		return err
-
 	}
 
 	return c.Changeset.SetMetadata(reopened)

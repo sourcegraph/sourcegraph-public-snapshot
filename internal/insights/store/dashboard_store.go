@@ -394,6 +394,7 @@ INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) (
 	ORDER BY ids.ordering
 ) ON CONFLICT DO NOTHING;
 `
+
 const updateDashboardSql = `
 UPDATE dashboard SET title = %s WHERE id = %s;
 `

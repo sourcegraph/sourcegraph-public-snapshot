@@ -607,23 +607,24 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		symbols = append(symbols, res.Symbol)
 	}
 
-	want := []result.Symbol{{
-		Name:      "a",
-		Line:      10,
-		Character: 7,
-	}, {
-		Name:      "b",
-		Line:      10,
-		Character: 17,
-	}, {
-		Name:      "c",
-		Line:      15,
-		Character: 7,
-	}, {
-		Name:      "baz",
-		Line:      20,
-		Character: 37,
-	},
+	want := []result.Symbol{
+		{
+			Name:      "a",
+			Line:      10,
+			Character: 7,
+		}, {
+			Name:      "b",
+			Line:      10,
+			Character: 17,
+		}, {
+			Name:      "c",
+			Line:      15,
+			Character: 7,
+		}, {
+			Name:      "baz",
+			Line:      20,
+			Character: 37,
+		},
 	}
 	for i := range want {
 		want[i].Kind = "kind"

@@ -14,12 +14,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var token string
-var date string
-var pipeline string
-var slack string
-var shortDateFormat = "2006-01-02"
-var longDateFormat = "2006-01-02 15:04 (MST)"
+var (
+	token           string
+	date            string
+	pipeline        string
+	slack           string
+	shortDateFormat = "2006-01-02"
+	longDateFormat  = "2006-01-02 15:04 (MST)"
+)
 
 func init() {
 	flag.StringVar(&token, "buildkite.token", "", "mandatory buildkite token")

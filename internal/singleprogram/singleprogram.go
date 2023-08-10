@@ -115,7 +115,7 @@ func Init(logger log.Logger) CleanupFunc {
 	writeFileIfNotExists := func(path string, data []byte) {
 		var err error
 		if _, err = os.Stat(path); os.IsNotExist(err) {
-			err = os.WriteFile(path, data, 0600)
+			err = os.WriteFile(path, data, 0o600)
 		}
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "unable to write file %s: %s\n", path, err)
@@ -192,7 +192,7 @@ func Init(logger log.Logger) CleanupFunc {
 			// TODO(single-binary): stop relying on a ctags Docker image
 			if haveDocker {
 				ctagsPath = filepath.Join(cacheDir, "universal-ctags-dev")
-				writeFile(ctagsPath, []byte(universalCtagsDevScript), 0700)
+				writeFile(ctagsPath, []byte(universalCtagsDevScript), 0o700)
 				setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
 			}
 		}
@@ -264,8 +264,8 @@ func SetupAppConfigDir() (string, error) {
 }
 
 func setupAppDir(root string, defaultDirFn func() (string, error)) (string, error) {
-	var base = root
-	var dir = ""
+	base := root
+	dir := ""
 	var err error
 	if base == "" {
 		dir = appDirectory
@@ -279,7 +279,7 @@ func setupAppDir(root string, defaultDirFn func() (string, error)) (string, erro
 	}
 
 	path := filepath.Join(base, dir)
-	return path, os.MkdirAll(path, 0700)
+	return path, os.MkdirAll(path, 0o700)
 }
 
 // Effectively runs:

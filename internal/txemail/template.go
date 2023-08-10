@@ -58,7 +58,8 @@ func ParseTemplate(input txtypes.Templates) (*txtypes.ParsedTemplates, error) {
 func renderTemplate(t *txtypes.ParsedTemplates, data any, m *email.Email) error {
 	render := func(tmpl interface {
 		Execute(io.Writer, any) error
-	}) ([]byte, error) {
+	},
+	) ([]byte, error) {
 		var buf bytes.Buffer
 		if err := tmpl.Execute(&buf, data); err != nil {
 			return nil, err

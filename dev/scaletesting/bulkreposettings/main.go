@@ -248,7 +248,6 @@ func (m *MockRepoFetcher) Next(_ context.Context) []*store.Repo {
 	// advance the start index
 	m.start += m.iterSize
 	return results
-
 }
 
 type GithubRepoFetcher struct {
@@ -354,5 +353,4 @@ func main() {
 	if err := app.RunContext(context.Background(), os.Args); err != nil {
 		logger.Fatal("failed to run", log.Error(err))
 	}
-
 }

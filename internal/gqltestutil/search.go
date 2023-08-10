@@ -638,6 +638,7 @@ func (s *SearchStreamClient) SearchFiles(query string) (*SearchFileResults, erro
 	})
 	return &results, err
 }
+
 func (s *SearchStreamClient) SearchAll(query string) ([]*AnyResult, error) {
 	var results []any
 	err := s.search(query, streamhttp.FrontendStreamDecoder{

@@ -72,7 +72,6 @@ func TestRecordedCommandsResolver(t *testing.T) {
 				}
 			`,
 		})
-
 	})
 
 	t.Run("no recorded commands for repository", func(t *testing.T) {
@@ -118,7 +117,6 @@ func TestRecordedCommandsResolver(t *testing.T) {
 					}
 				`,
 		})
-
 	})
 
 	t.Run("one recorded command for repository", func(t *testing.T) {
@@ -183,7 +181,6 @@ func TestRecordedCommandsResolver(t *testing.T) {
 				}
 			`,
 		})
-
 	})
 
 	t.Run("paginated recorded commands", func(t *testing.T) {

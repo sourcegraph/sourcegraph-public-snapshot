@@ -61,15 +61,18 @@ func (r *organizationInvitationResolver) Recipient(ctx context.Context) (*UserRe
 	}
 	return UserByIDInt32(ctx, r.db, r.v.RecipientUserID)
 }
+
 func (r *organizationInvitationResolver) RecipientEmail() (*string, error) {
 	if r.v.RecipientEmail == "" {
 		return nil, nil
 	}
 	return &r.v.RecipientEmail, nil
 }
+
 func (r *organizationInvitationResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.v.CreatedAt}
 }
+
 func (r *organizationInvitationResolver) NotifiedAt() *gqlutil.DateTime {
 	return gqlutil.DateTimeOrNil(r.v.NotifiedAt)
 }

@@ -61,7 +61,6 @@ func (bc *BazelCommand) watch(ctx context.Context) (<-chan struct{}, error) {
 					restart <- struct{}{}
 				}
 			}
-
 		}
 	}()
 

@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/syncx"
@@ -92,7 +93,7 @@ func (r *schemaResolver) OutboundWebhooks(ctx context.Context, args ListOutbound
 	}
 
 	opts := database.OutboundWebhookListOpts{
-		LimitOffset: &database.LimitOffset{
+		LimitOffset: &dbtypes.LimitOffset{
 			Limit: int(args.First),
 		},
 	}
@@ -397,7 +398,7 @@ func (r *outboundWebhookResolver) Logs(ctx context.Context, args OutboundWebhook
 	}
 
 	opts := database.OutboundWebhookLogListOpts{
-		LimitOffset: &database.LimitOffset{
+		LimitOffset: &dbtypes.LimitOffset{
 			Limit: int(args.First),
 		},
 		OnlyErrors:        false,

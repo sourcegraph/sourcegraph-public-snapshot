@@ -24,8 +24,10 @@ type procInfo struct {
 }
 
 // process informations named with proc.
-var procs map[string]*procInfo
-var procM sync.Mutex
+var (
+	procs map[string]*procInfo
+	procM sync.Mutex
+)
 
 var maxProcNameLength int
 

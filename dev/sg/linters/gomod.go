@@ -14,7 +14,7 @@ import (
 func goModGuards() *linter {
 	const header = "go.mod version guards"
 
-	var goModFiles = map[string]map[string]*semver.Version{
+	goModFiles := map[string]map[string]*semver.Version{
 		"go.mod": {
 			// Any version past this version is not yet released in any version of Alertmanager,
 			// and causes incompatibility in prom-wrapper.
@@ -34,7 +34,7 @@ func goModGuards() *linter {
 		},
 	}
 
-	var lintGoMod = func(diffHunks []repo.DiffHunk, maxVersions map[string]*semver.Version) error {
+	lintGoMod := func(diffHunks []repo.DiffHunk, maxVersions map[string]*semver.Version) error {
 		failedLibs := map[string]error{}
 		for _, hunk := range diffHunks {
 			for _, l := range hunk.AddedLines {

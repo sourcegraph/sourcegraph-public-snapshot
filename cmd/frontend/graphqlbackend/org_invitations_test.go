@@ -84,7 +84,6 @@ func TestCreateJWT(t *testing.T) {
 
 			return base64.StdEncoding.DecodeString(signingKey)
 		})
-
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -141,7 +140,6 @@ func TestOrgInvitationURL(t *testing.T) {
 
 			return base64.StdEncoding.DecodeString(signingKey)
 		})
-
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -363,11 +361,11 @@ func TestPendingInvitations(t *testing.T) {
 	orgMembers := database.NewMockOrgMemberStore()
 	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(&types.OrgMembership{}, nil)
 
-	//orgs := database.NewMockOrgStore()
-	//orgName := "acme"
-	//mockedOrg := types.Org{ID: 1, Name: orgName}
-	//orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
-	//orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
+	// orgs := database.NewMockOrgStore()
+	// orgName := "acme"
+	// mockedOrg := types.Org{ID: 1, Name: orgName}
+	// orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
+	// orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
 	invitations := []*database.OrgInvitation{
 		{
@@ -384,7 +382,7 @@ func TestPendingInvitations(t *testing.T) {
 	orgInvitations.GetPendingByOrgIDFunc.SetDefaultReturn(invitations, nil)
 
 	db := database.NewMockDB()
-	//db.OrgsFunc.SetDefaultReturn(orgs)
+	// db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 	db.OrgInvitationsFunc.SetDefaultReturn(orgInvitations)

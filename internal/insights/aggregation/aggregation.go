@@ -33,15 +33,19 @@ type SearchResultsAggregator interface {
 	ResultLimitHit(limit int) bool
 }
 
-type AggregationTabulator func(*AggregationMatchResult, error)
-type OnMatches func(matches []result.Match)
+type (
+	AggregationTabulator func(*AggregationMatchResult, error)
+	OnMatches            func(matches []result.Match)
+)
 
-type AggregationCountFunc func(result.Match, *sTypes.Repo) (map[MatchKey]int, error)
-type MatchKey struct {
-	Repo   string
-	RepoID int32
-	Group  string
-}
+type (
+	AggregationCountFunc func(result.Match, *sTypes.Repo) (map[MatchKey]int, error)
+	MatchKey             struct {
+		Repo   string
+		RepoID int32
+		Group  string
+	}
+)
 
 func countRepo(r result.Match, _ *sTypes.Repo) (map[MatchKey]int, error) {
 	if r.RepoName().Name != "" {
@@ -125,7 +129,7 @@ func matchContent(event result.Match) []string {
 	switch match := event.(type) {
 	case *result.FileMatch:
 		capacity := len(match.ChunkMatches)
-		var content = make([]string, 0, capacity)
+		content := make([]string, 0, capacity)
 		if len(match.ChunkMatches) > 0 { // This File match with the subtype of text results
 			for _, cm := range match.ChunkMatches {
 				for _, range_ := range cm.Ranges {
@@ -229,7 +233,6 @@ func (r *searchAggregationResults) ShardTimeoutOccurred() bool {
 }
 
 func (r *searchAggregationResults) ResultLimitHit(limit int) bool {
-
 	return limit <= r.resultCount
 }
 
@@ -287,7 +290,6 @@ func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
 				combined[groupKey] = current + count
 			}
 		}
-
 	}
 	for key, count := range combined {
 		r.tabulator(&AggregationMatchResult{Key: key, Count: count}, nil)

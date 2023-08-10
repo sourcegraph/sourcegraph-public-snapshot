@@ -103,7 +103,7 @@ func createAppTokenFile(ctx context.Context, db database.DB, appTokenFilePath st
 		return err
 	}
 
-	err = os.WriteFile(appTokenFilePath, appTokenFileBody, 0644)
+	err = os.WriteFile(appTokenFilePath, appTokenFileBody, 0o644)
 	if err != nil {
 		return err
 	}

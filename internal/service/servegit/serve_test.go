@@ -128,7 +128,6 @@ func TestReposHandler_EmptyResults(t *testing.T) {
 			testReposHandler(t, h, tc.want, tc.root)
 		})
 	}
-
 }
 
 func testReposHandler(t *testing.T, h http.Handler, repos []Repo, root string) {
@@ -220,7 +219,7 @@ func gitInitRepos(t *testing.T, names ...string) string {
 
 	for _, name := range names {
 		p := filepath.Join(root, name)
-		if err := os.MkdirAll(p, 0755); err != nil {
+		if err := os.MkdirAll(p, 0o755); err != nil {
 			t.Fatal(err)
 		}
 

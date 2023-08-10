@@ -366,8 +366,8 @@ func TestGitCommitAncestors(t *testing.T) {
 		ctx context.Context,
 		authz authz.SubRepoPermissionChecker,
 		repo api.RepoName,
-		opt gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
-
+		opt gitserver.CommitsOptions,
+	) ([]*gitdomain.Commit, error) {
 		// Offset the returned list of commits based on the value of the Skip option.
 		return commits[opt.Skip:], nil
 	})

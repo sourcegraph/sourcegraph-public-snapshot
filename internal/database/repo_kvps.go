@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -18,9 +19,9 @@ type RepoKVPStore interface {
 	With(basestore.ShareableStore) RepoKVPStore
 	Get(context.Context, api.RepoID, string) (KeyValuePair, error)
 	CountKeys(context.Context, RepoKVPListKeysOptions) (int, error)
-	ListKeys(context.Context, RepoKVPListKeysOptions, PaginationArgs) ([]string, error)
+	ListKeys(context.Context, RepoKVPListKeysOptions, dbtypes.PaginationArgs) ([]string, error)
 	CountValues(context.Context, RepoKVPListValuesOptions) (int, error)
-	ListValues(context.Context, RepoKVPListValuesOptions, PaginationArgs) ([]string, error)
+	ListValues(context.Context, RepoKVPListValuesOptions, dbtypes.PaginationArgs) ([]string, error)
 	Create(context.Context, api.RepoID, KeyValuePair) error
 	Update(context.Context, api.RepoID, KeyValuePair) (KeyValuePair, error)
 	Delete(context.Context, api.RepoID, string) error
@@ -101,7 +102,7 @@ func (s *repoKVPStore) CountKeys(ctx context.Context, options RepoKVPListKeysOpt
 	return basestore.ScanInt(s.QueryRow(ctx, sqlf.Sprintf(q, sqlf.Join(where, ") AND ("))))
 }
 
-func (s *repoKVPStore) ListKeys(ctx context.Context, options RepoKVPListKeysOptions, orderOptions PaginationArgs) ([]string, error) {
+func (s *repoKVPStore) ListKeys(ctx context.Context, options RepoKVPListKeysOptions, orderOptions dbtypes.PaginationArgs) ([]string, error) {
 	where := options.SQL()
 	p := orderOptions.SQL()
 	if p.Where != nil {
@@ -132,7 +133,7 @@ func (s *repoKVPStore) CountValues(ctx context.Context, options RepoKVPListValue
 	return basestore.ScanInt(s.QueryRow(ctx, sqlf.Sprintf(q, sqlf.Join(where, ") AND ("))))
 }
 
-func (s *repoKVPStore) ListValues(ctx context.Context, options RepoKVPListValuesOptions, orderOptions PaginationArgs) ([]string, error) {
+func (s *repoKVPStore) ListValues(ctx context.Context, options RepoKVPListValuesOptions, orderOptions dbtypes.PaginationArgs) ([]string, error) {
 	where := options.SQL()
 	p := orderOptions.SQL()
 	if p.Where != nil {
@@ -154,7 +155,6 @@ func (s *repoKVPStore) Update(ctx context.Context, repoID api.RepoID, kvp KeyVal
 	`
 
 	kvp, err := scanKVP(s.QueryRow(ctx, sqlf.Sprintf(q, kvp.Value, repoID, kvp.Key)))
-
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return kvp, errors.Newf(`metadata key %q does not exist for the given repository`, kvp.Key)

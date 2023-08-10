@@ -76,7 +76,6 @@ func TestClient_Archive_ProtoRoundTrip(t *testing.T) {
 	var diff string
 
 	fn := func(original gitserver.ArchiveOptions) bool {
-
 		var converted gitserver.ArchiveOptions
 		converted.FromProto(original.ToProto("test"))
 
@@ -292,7 +291,6 @@ func TestClient_BatchLog_ProtoRoundTrip(t *testing.T) {
 			t.Errorf("BatchChangesLogResponse proto roundtrip failed (-want +got):\n%s", diff)
 		}
 	})
-
 }
 
 func TestClient_RepoCloneProgress_ProtoRoundTrip(t *testing.T) {
@@ -454,7 +452,6 @@ func TestClient_Remove(t *testing.T) {
 			t.Fatal("grpc client called")
 		}
 	})
-
 }
 
 func TestClient_ArchiveReader(t *testing.T) {
@@ -695,7 +692,6 @@ func TestClient_ArchiveReader(t *testing.T) {
 			}
 
 		}
-
 	})
 }
 
@@ -751,10 +747,10 @@ filemode=true
 	}
 	for name, data := range files {
 		name = filepath.Join(dir, name)
-		if err := os.MkdirAll(filepath.Dir(name), 0700); err != nil {
+		if err := os.MkdirAll(filepath.Dir(name), 0o700); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(name, []byte(data), 0600); err != nil {
+		if err := os.WriteFile(name, []byte(data), 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -766,7 +762,7 @@ func createSimpleGitRepo(t *testing.T, root string) string {
 	t.Helper()
 	dir := filepath.Join(root, "remotes", "simple")
 
-	if err := os.MkdirAll(dir, 0700); err != nil {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
 		t.Fatal(err)
 	}
 
@@ -885,7 +881,6 @@ func TestClient_P4ExecGRPC(t *testing.T) {
 				t.Fatalf("Mismatch (-want +got):\n%s", diff)
 			}
 		})
-
 	}
 
 	t.Run("GRPC", func(t *testing.T) {
@@ -926,9 +921,7 @@ func TestClient_P4ExecGRPC(t *testing.T) {
 				t.Fatal("GRPC should be called")
 			}
 		}
-
 	})
-
 }
 
 func TestClient_P4Exec(t *testing.T) {
@@ -1013,7 +1006,6 @@ func TestClient_P4Exec(t *testing.T) {
 				t.Fatalf("Mismatch (-want +got):\n%s", diff)
 			}
 		})
-
 	}
 	t.Run("HTTP", func(t *testing.T) {
 		db := database.NewMockDB()
@@ -1044,7 +1036,6 @@ func TestClient_P4Exec(t *testing.T) {
 				t.Fatal("handler shoulde be called")
 			}
 		}
-
 	})
 }
 
@@ -1129,7 +1120,6 @@ func TestClient_ResolveRevisions(t *testing.T) {
 			require.Equal(t, test.want, got)
 		})
 	}
-
 }
 
 func TestClient_BatchLogGRPC(t *testing.T) {
@@ -1164,7 +1154,6 @@ func TestClient_BatchLogGRPC(t *testing.T) {
 						CommandOutput: fmt.Sprintf("out<%s: %s@%s>", addrs[0], repoCommit.Repo, repoCommit.CommitID),
 						CommandError:  "",
 					})
-
 				}
 
 				var resp protocol.BatchLogResponse
@@ -1400,6 +1389,7 @@ func TestClient_ReposStats(t *testing.T) {
 
 	assert.Equal(t, wantStats, *gotStatsMap[gitserverAddr])
 }
+
 func TestClient_ReposStatsGRPC(t *testing.T) {
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
@@ -1445,7 +1435,6 @@ func TestClient_ReposStatsGRPC(t *testing.T) {
 }
 
 func TestClient_IsRepoCloneableGRPC(t *testing.T) {
-
 	type test struct {
 		name          string
 		repo          api.RepoName
@@ -1499,7 +1488,6 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 				t.Errorf("unexpected error: %s", err)
 			}
 		})
-
 	}
 
 	t.Run("GRPC", func(t *testing.T) {
@@ -1593,7 +1581,6 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 			}
 		}
 	})
-
 }
 
 type mockClient struct {

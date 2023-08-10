@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -238,7 +239,7 @@ type ExternalServiceReposListOptions ExternalServicesGetSyncJobsOptions
 type ExternalServicesGetSyncJobsOptions struct {
 	ExternalServiceID int64
 
-	*LimitOffset
+	*dbtypes.LimitOffset
 }
 
 // ExternalServicesListOptions contains options for listing external services.
@@ -264,7 +265,7 @@ type ExternalServicesListOptions struct {
 	// Only include external services that belong to the given CodeHost.
 	CodeHostID int32
 
-	*LimitOffset
+	*dbtypes.LimitOffset
 
 	// When true, soft-deleted external services will also be included in the results.
 	IncludeDeleted bool
@@ -1208,7 +1209,7 @@ func (errSyncJobNotFound) NotFound() bool {
 }
 
 func (e *externalServiceStore) GetSyncJobByID(ctx context.Context, id int64) (*types.ExternalServiceSyncJob, error) {
-	q := sqlf.Sprintf(getSyncJobsQueryFmtstr, sqlf.Sprintf("id = %s", id), (&LimitOffset{Limit: 1}).SQL())
+	q := sqlf.Sprintf(getSyncJobsQueryFmtstr, sqlf.Sprintf("id = %s", id), (&dbtypes.LimitOffset{Limit: 1}).SQL())
 
 	job, err := scanExternalServiceSyncJob(e.QueryRow(ctx, q))
 	if err != nil {

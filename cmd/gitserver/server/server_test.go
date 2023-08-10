@@ -374,7 +374,6 @@ func TestServer_handleP4Exec(t *testing.T) {
 		})
 
 		t.Run("disallowed command", func(t *testing.T) {
-
 			updateRunCommandMock(defaultMockRunCommand)
 
 			_, client, closeFunc := startServer(t)
@@ -418,11 +417,9 @@ func TestServer_handleP4Exec(t *testing.T) {
 				t.Fatalf("expected context cancelation error, got %v", err)
 			}
 		})
-
 	})
 
 	t.Run("HTTP", func(t *testing.T) {
-
 		tests := []Test{
 			{
 				Name:         "Command",

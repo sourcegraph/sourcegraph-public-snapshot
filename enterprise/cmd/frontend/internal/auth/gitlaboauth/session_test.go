@@ -264,7 +264,6 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 			c, ci := c, ci
 
 			t.Run(ci.description, func(t *testing.T) {
-
 				gitlab.MockListGroups = func(ctx context.Context, page int) (groups []*gitlab.Group, hasNextPage bool, err error) {
 					return ci.glUserGroups, false, ci.glUserGroupsErr
 				}

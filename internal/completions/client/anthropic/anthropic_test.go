@@ -41,7 +41,7 @@ func getMockClient(responseBody []byte) types.CompletionsClient {
 }
 
 func TestValidAnthropicStream(t *testing.T) {
-	var mockAnthropicResponseLines = []string{
+	mockAnthropicResponseLines := []string{
 		`{"completion": "Sure!"}`,
 		`{"completion": "Sure! The Fibonacci sequence is defined as:\n\nF0 = 0\nF1 = 1\nFn = Fn-1 + Fn-2\n\nSo in Python, you can write it like this:\ndef fibonacci(n):\n    if n < 2:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)\n\nOr iteratively:\ndef fibonacci(n):\n    a, b = 0, 1\n    for i in range(n):\n        a, b = b, a + b\n    return a\n\nSo for example:\nprint(fibonacci(8))  # 21"}`,
 		`2023.28.2 8:54`, // To test skipping over non-JSON data.
@@ -62,7 +62,7 @@ func TestValidAnthropicStream(t *testing.T) {
 }
 
 func TestInvalidAnthropicStream(t *testing.T) {
-	var mockAnthropicInvalidResponseLines = []string{`{]`}
+	mockAnthropicInvalidResponseLines := []string{`{]`}
 
 	mockClient := getMockClient(linesToResponse(mockAnthropicInvalidResponseLines))
 	err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error { return nil })

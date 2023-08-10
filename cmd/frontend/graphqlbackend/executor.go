@@ -38,9 +38,11 @@ func (e *ExecutorResolver) QueueName() *string {
 	}
 	return &queueName
 }
+
 func (e *ExecutorResolver) QueueNames() *[]string {
 	return &e.executor.QueueNames
 }
+
 func (e *ExecutorResolver) Active() bool {
 	// TODO: Read the value of the executor worker heartbeat interval in here.
 	heartbeatInterval := 5 * time.Second
@@ -56,6 +58,7 @@ func (e *ExecutorResolver) SrcCliVersion() string   { return e.executor.SrcCliVe
 func (e *ExecutorResolver) FirstSeenAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: e.executor.FirstSeenAt}
 }
+
 func (e *ExecutorResolver) LastSeenAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: e.executor.LastSeenAt}
 }

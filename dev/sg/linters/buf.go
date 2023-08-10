@@ -65,7 +65,6 @@ var bufFormat = &linter{
 		}
 
 		return nil
-
 	},
 
 	Fix: func(ctx context.Context, cio check.IO, args *repo.State) error {
@@ -110,7 +109,6 @@ var bufFormat = &linter{
 		}
 
 		return nil
-
 	},
 }
 

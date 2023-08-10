@@ -84,11 +84,11 @@ func writeMigrationFiles(contents map[string]string) (err error) {
 	}()
 
 	for path, contents := range contents {
-		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			return err
 		}
 
-		if err := os.WriteFile(path, []byte(contents), os.FileMode(0644)); err != nil {
+		if err := os.WriteFile(path, []byte(contents), os.FileMode(0o644)); err != nil {
 			return err
 		}
 	}

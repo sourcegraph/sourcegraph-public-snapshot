@@ -82,7 +82,7 @@ func delete(ctx context.Context, cfg config) {
 					Org:          *t.Organization.Login,
 					Failed:       "",
 					Created:      true,
-					TotalMembers: 0, //not important for deleting but subsequent use of state will be problematic
+					TotalMembers: 0, // not important for deleting but subsequent use of state will be problematic
 				}
 				if err := store.saveTeam(t); err != nil {
 					log.Fatalf("Failed to store teams in state: %s", err)

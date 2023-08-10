@@ -61,7 +61,6 @@ func GetSearchHandlers() map[types.GenerationMethod]InsightsHandler {
 		types.SearchCompute:  makeComputeHandler(computeSearchStream),
 		types.Search:         makeSearchHandler(searchStream),
 	}
-
 }
 
 func toRecording(record *SearchJob, value float64, recordTime time.Time, repoName string, repoID api.RepoID, capture *string) []store.RecordSeriesPointArgs {
@@ -87,8 +86,10 @@ func toRecording(record *SearchJob, value float64, recordTime time.Time, repoNam
 	return args
 }
 
-type streamComputeProvider func(context.Context, string) (*streaming.ComputeTabulationResult, error)
-type streamSearchProvider func(context.Context, string) (*streaming.TabulationResult, error)
+type (
+	streamComputeProvider func(context.Context, string) (*streaming.ComputeTabulationResult, error)
+	streamSearchProvider  func(context.Context, string) (*streaming.TabulationResult, error)
+)
 
 func generateComputeRecordingsStream(ctx context.Context, job *SearchJob, recordTime time.Time, provider streamComputeProvider, logger log.Logger) (_ []store.RecordSeriesPointArgs, err error) {
 	streamResults, err := provider(ctx, job.SearchQuery)
@@ -264,5 +265,4 @@ func filterRecordingsBySeriesRepos(ctx context.Context, repoStore discovery.Repo
 		}
 	}
 	return filteredRecords, nil
-
 }

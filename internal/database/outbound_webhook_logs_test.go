@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -119,7 +120,7 @@ func TestOutboundWebhookLogs(t *testing.T) {
 					opts: OutboundWebhookLogListOpts{
 						OnlyErrors:        true,
 						OutboundWebhookID: webhook.ID,
-						LimitOffset:       &LimitOffset{Limit: 1},
+						LimitOffset:       &dbtypes.LimitOffset{Limit: 1},
 					},
 					want: []*types.OutboundWebhookLog{networkErrorLog},
 				},
@@ -127,7 +128,7 @@ func TestOutboundWebhookLogs(t *testing.T) {
 					opts: OutboundWebhookLogListOpts{
 						OnlyErrors:        true,
 						OutboundWebhookID: webhook.ID,
-						LimitOffset:       &LimitOffset{Limit: 1, Offset: 1},
+						LimitOffset:       &dbtypes.LimitOffset{Limit: 1, Offset: 1},
 					},
 					want: []*types.OutboundWebhookLog{serverErrorLog},
 				},
@@ -135,7 +136,7 @@ func TestOutboundWebhookLogs(t *testing.T) {
 					opts: OutboundWebhookLogListOpts{
 						OnlyErrors:        true,
 						OutboundWebhookID: webhook.ID,
-						LimitOffset:       &LimitOffset{Limit: 1, Offset: 2},
+						LimitOffset:       &dbtypes.LimitOffset{Limit: 1, Offset: 2},
 					},
 					want: []*types.OutboundWebhookLog{},
 				},

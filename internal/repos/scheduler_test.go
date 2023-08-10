@@ -1542,7 +1542,6 @@ func Test_updateQueue_Less(t *testing.T) {
 }
 
 func TestGetCustomInterval(t *testing.T) {
-
 	for _, tc := range []struct {
 		name     string
 		c        *conf.Unified

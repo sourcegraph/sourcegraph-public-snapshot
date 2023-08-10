@@ -243,7 +243,6 @@ func (c *Client) GetTeammateForCommit(commit string) (*team.Teammate, error) {
 		return nil, err
 	}
 	return result, nil
-
 }
 
 func (c *Client) createMessageBlocks(info *BuildNotification, author string) []slack.Block {

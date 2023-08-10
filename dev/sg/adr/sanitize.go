@@ -1,9 +1,9 @@
 package adr
 
 import (
-	"github.com/grafana/regexp"
-
 	"strings"
+
+	"github.com/grafana/regexp"
 )
 
 var nonAlphaNumericOrDash = regexp.MustCompile("[^a-z0-9-]+")

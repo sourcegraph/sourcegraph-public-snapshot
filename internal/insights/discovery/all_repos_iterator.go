@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -46,7 +47,7 @@ type AllReposIterator struct {
 	counter *prometheus.CounterVec
 
 	// Internal fields below.
-	cachedPageRequests map[database.LimitOffset]cachedPageRequest
+	cachedPageRequests map[dbtypes.LimitOffset]cachedPageRequest
 }
 
 func NewAllReposIterator(repoStore RepoStore, clock func() time.Time, sourcegraphDotComMode bool, repositoryListCacheTime time.Duration, counterOpts *prometheus.CounterOpts) *AllReposIterator {
@@ -72,7 +73,7 @@ func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName st
 	// Regular deployments of Sourcegraph.
 	//
 	// We paginate 1,000 repositories out of the DB at a time.
-	limitOffset := database.LimitOffset{
+	limitOffset := dbtypes.LimitOffset{
 		Limit:  1000,
 		Offset: 0,
 	}
@@ -103,9 +104,9 @@ func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName st
 
 // cachedRepoStoreList calls a.repoStore.List to do a paginated list of repositories, and caches the
 // results in-memory for some time.
-func (a *AllReposIterator) cachedRepoStoreList(ctx context.Context, page database.LimitOffset) ([]*types.Repo, error) {
+func (a *AllReposIterator) cachedRepoStoreList(ctx context.Context, page dbtypes.LimitOffset) ([]*types.Repo, error) {
 	if a.cachedPageRequests == nil {
-		a.cachedPageRequests = map[database.LimitOffset]cachedPageRequest{}
+		a.cachedPageRequests = map[dbtypes.LimitOffset]cachedPageRequest{}
 	}
 	cacheEntry, ok := a.cachedPageRequests[page]
 	if ok && a.timeSince(cacheEntry.age) < a.RepositoryListCacheTime {

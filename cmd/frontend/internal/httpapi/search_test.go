@@ -55,7 +55,6 @@ func TestServeConfiguration(t *testing.T) {
 	rankingService := &fakeRankingService{}
 
 	t.Run("gRPC", func(t *testing.T) {
-
 		// Set up the GRPC server
 		grpcServer := searchIndexerGRPCServer{
 			server: &searchIndexerServer{
@@ -250,7 +249,6 @@ func TestServeConfiguration(t *testing.T) {
 			t.Fatalf("mismatch (-want, +got):\n%s", d)
 		}
 	})
-
 }
 
 func TestReposIndex(t *testing.T) {
@@ -352,11 +350,9 @@ func TestReposIndex(t *testing.T) {
 				if d := cmp.Diff(expectedRepoIDs, receivedRepoIDs, cmpopts.EquateEmpty()); d != "" {
 					t.Fatalf("ids mismatch (-want +got):\n%s", d)
 				}
-
 			})
 
 			t.Run("REST", func(t *testing.T) {
-
 				srv := &searchIndexerServer{
 					ListIndexable: fakeListIndexable(tc.indexable),
 					RepoStore: &fakeRepoStore{
@@ -450,9 +446,11 @@ type fakeRankingService struct{}
 func (*fakeRankingService) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {
 	return map[api.RepoID]time.Time{}, nil
 }
+
 func (*fakeRankingService) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error) {
 	return nil, nil
 }
+
 func (*fakeRankingService) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ citypes.RepoPathRanks, err error) {
 	return citypes.RepoPathRanks{}, nil
 }
@@ -510,7 +508,6 @@ func TestRepoRankFromConfig(t *testing.T) {
 }
 
 func TestIndexStatusUpdate(t *testing.T) {
-
 	t.Run("REST", func(t *testing.T) {
 		logger := logtest.Scoped(t)
 

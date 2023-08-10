@@ -35,8 +35,10 @@ type BasicAuthWithSSH struct {
 	Passphrase string
 }
 
-var _ Authenticator = &BasicAuthWithSSH{}
-var _ AuthenticatorWithSSH = &BasicAuthWithSSH{}
+var (
+	_ Authenticator        = &BasicAuthWithSSH{}
+	_ AuthenticatorWithSSH = &BasicAuthWithSSH{}
+)
 
 func (basic *BasicAuthWithSSH) SSHPrivateKey() (privateKey, passphrase string) {
 	return basic.PrivateKey, basic.Passphrase

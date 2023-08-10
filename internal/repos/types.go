@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -66,7 +67,7 @@ func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context, ids ...int64) er
 // SyncLimitersSince is the same as SyncRateLimiters but will only sync rate limiters
 // for external service that have been update after `updateAfter`.
 func (r *RateLimitSyncer) SyncLimitersSince(ctx context.Context, updateAfter time.Time, ids ...int64) error {
-	cursor := database.LimitOffset{
+	cursor := dbtypes.LimitOffset{
 		Limit: r.pageSize,
 	}
 	for {

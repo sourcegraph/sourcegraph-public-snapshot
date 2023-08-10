@@ -55,6 +55,7 @@ func (h *HighlightedFileResolver) HTML() string {
 
 	return string(html)
 }
+
 func (h *HighlightedFileResolver) LSIF() string {
 	if h.response == nil {
 		return "{}"
@@ -73,6 +74,7 @@ func (h *HighlightedFileResolver) LSIF() string {
 
 	return lsif
 }
+
 func (h *HighlightedFileResolver) LineRanges(args *struct{ Ranges []highlight.LineRange }) ([][]string, error) {
 	if h.response != nil && h.response.LSIF() != nil {
 		return h.response.LinesForRanges(args.Ranges)

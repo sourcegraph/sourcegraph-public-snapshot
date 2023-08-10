@@ -49,10 +49,10 @@ type generator struct {
 
 // generate generates the sitemap files to the specified directory.
 func (g *generator) generate(ctx context.Context) error {
-	if err := os.MkdirAll(g.outDir, 0700); err != nil {
+	if err := os.MkdirAll(g.outDir, 0o700); err != nil {
 		return errors.Wrap(err, "MkdirAll")
 	}
-	if err := os.MkdirAll(filepath.Dir(g.queryDatabase), 0700); err != nil {
+	if err := os.MkdirAll(filepath.Dir(g.queryDatabase), 0o700); err != nil {
 		return errors.Wrap(err, "MkdirAll")
 	}
 

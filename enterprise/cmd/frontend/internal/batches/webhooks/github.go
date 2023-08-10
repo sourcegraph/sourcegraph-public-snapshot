@@ -18,20 +18,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	// githubEvents is the set of events this webhook handler listens to
-	// you can find info about what these events contain here:
-	// https://docs.github.com/en/free-pro-team@latest/developers/webhooks-and-events/webhook-events-and-payloads
-	githubEvents = []string{
-		"issue_comment",
-		"pull_request",
-		"pull_request_review",
-		"pull_request_review_comment",
-		"status",
-		"check_suite",
-		"check_run",
-	}
-)
+// githubEvents is the set of events this webhook handler listens to
+// you can find info about what these events contain here:
+// https://docs.github.com/en/free-pro-team@latest/developers/webhooks-and-events/webhook-events-and-payloads
+var githubEvents = []string{
+	"issue_comment",
+	"pull_request",
+	"pull_request_review",
+	"pull_request_review_comment",
+	"status",
+	"check_suite",
+	"check_run",
+}
 
 // GitHubWebhook receives GitHub organization webhook events that are
 // relevant to Batch Changes, normalizes those events into ChangesetEvents

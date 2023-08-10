@@ -29,7 +29,7 @@ func fetchTarFromGithubWithPaths(ctx context.Context, repo api.RepoName, commit 
 		return r, nil
 	}
 
-	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return nil, err
 	}
 
@@ -45,7 +45,7 @@ func fetchTarFromGithubWithPaths(ctx context.Context, repo api.RepoName, commit 
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.Errorf("github repo archive: URL %s returned HTTP %d", url, resp.StatusCode)
 	}
-	f, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	f, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		return nil, err
 	}

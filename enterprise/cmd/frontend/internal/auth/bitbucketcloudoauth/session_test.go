@@ -27,9 +27,11 @@ type emailResponse struct {
 	Values []bitbucketcloud.UserEmail `json:"values"`
 }
 
-var returnUsername string
-var returnAccountID string
-var returnEmails emailResponse
+var (
+	returnUsername  string
+	returnAccountID string
+	returnEmails    emailResponse
+)
 
 func createTestServer() *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +49,6 @@ func createTestServer() *httptest.Server {
 			json.NewEncoder(w).Encode(returnEmails)
 			return
 		}
-
 	}))
 }
 

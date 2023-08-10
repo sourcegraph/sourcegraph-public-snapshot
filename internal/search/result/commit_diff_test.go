@@ -51,7 +51,6 @@ func TestParseDiffString(t *testing.T) {
 
 	formatted := FormatDiffFiles(res)
 	require.Equal(t, input, formatted)
-
 }
 
 func TestCommitDiffMatch(t *testing.T) {

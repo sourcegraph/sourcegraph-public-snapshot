@@ -8,6 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -47,7 +48,7 @@ func (r *recentViewsIndexer) handle(ctx context.Context, checker authz.SubRepoPe
 	if err != nil {
 		return errors.Wrap(err, "getting latest processed event ID")
 	}
-	events, err := r.db.EventLogs().ListAll(ctx, database.EventLogsListOptions{LimitOffset: &database.LimitOffset{Limit: 5000}, EventName: &viewBlobEventName, AfterID: bookmark})
+	events, err := r.db.EventLogs().ListAll(ctx, database.EventLogsListOptions{LimitOffset: &dbtypes.LimitOffset{Limit: 5000}, EventName: &viewBlobEventName, AfterID: bookmark})
 	if err != nil {
 		return errors.Wrap(err, "getting event logs")
 	}

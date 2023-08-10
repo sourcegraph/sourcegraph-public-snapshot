@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
@@ -80,7 +81,7 @@ type UserStore interface {
 	List(context.Context, *UsersListOptions) (_ []*types.User, err error)
 	ListForSCIM(context.Context, *UsersListOptions) (_ []*types.UserForSCIM, err error)
 	ListDates(context.Context) ([]types.UserDates, error)
-	ListByOrg(ctx context.Context, orgID int32, paginationArgs *PaginationArgs, query *string) ([]*types.User, error)
+	ListByOrg(ctx context.Context, orgID int32, paginationArgs *dbtypes.PaginationArgs, query *string) ([]*types.User, error)
 	RandomizePasswordAndClearPasswordResetRateLimit(context.Context, int32) error
 	RecoverUsersList(context.Context, []int32) (_ []int32, err error)
 	RenewPasswordResetCode(context.Context, int32) (string, error)
@@ -1065,7 +1066,7 @@ type UsersListOptions struct {
 	// internally there are valid reasons to include them.
 	includeDeleted bool
 
-	*LimitOffset
+	*dbtypes.LimitOffset
 }
 
 func (u *userStore) List(ctx context.Context, opt *UsersListOptions) (_ []*types.User, err error) {
@@ -1122,7 +1123,7 @@ func (u *userStore) ListDates(ctx context.Context) (dates []types.UserDates, _ e
 	return dates, nil
 }
 
-func (u *userStore) ListByOrg(ctx context.Context, orgID int32, paginationArgs *PaginationArgs, query *string) ([]*types.User, error) {
+func (u *userStore) ListByOrg(ctx context.Context, orgID int32, paginationArgs *dbtypes.PaginationArgs, query *string) ([]*types.User, error) {
 	where := []*sqlf.Query{
 		sqlf.Sprintf(orgMembershipCond, orgID),
 		sqlf.Sprintf("u.deleted_at IS NULL"),

@@ -12,8 +12,10 @@ func (f MultiFactoryFunc[K, V]) Load(ctx context.Context, id K) ([]V, error) {
 	return f(ctx, id)
 }
 
-type FactoryFunc[K, V any] func(ctx context.Context, id K) (V, error)
-type FallibleFactoryFunc[K, V any] func(ctx context.Context, id K) (*V, error)
+type (
+	FactoryFunc[K, V any]         func(ctx context.Context, id K) (V, error)
+	FallibleFactoryFunc[K, V any] func(ctx context.Context, id K) (*V, error)
+)
 
 func NewMultiFactoryFromFactoryFunc[K, V any](f FactoryFunc[K, V]) MultiFactory[K, V] {
 	return MultiFactoryFunc[K, V](func(ctx context.Context, id K) ([]V, error) {

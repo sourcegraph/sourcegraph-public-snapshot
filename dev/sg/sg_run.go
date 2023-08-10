@@ -32,7 +32,6 @@ func init() {
 			cmd.Context = ctx
 		},
 	)
-
 }
 
 var runCommand = &cli.Command{

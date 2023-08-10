@@ -50,9 +50,11 @@ func anonymiseProtection(r io.Reader, w io.Writer) error {
 	return nil
 }
 
-var h = sha256.New()
-var groupRegexp = regexp.MustCompile("group ([\\w]*)")
-var userRegexp = regexp.MustCompile("user (\\w)*")
+var (
+	h           = sha256.New()
+	groupRegexp = regexp.MustCompile("group ([\\w]*)")
+	userRegexp  = regexp.MustCompile("user (\\w)*")
+)
 
 func anonymiseLine(line string) string {
 	start := strings.Index(line, "//")

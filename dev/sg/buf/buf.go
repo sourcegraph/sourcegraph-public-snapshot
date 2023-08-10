@@ -29,7 +29,6 @@ func (d dependency) String() string { return string(d) }
 // InstallDependencies installs the dependencies required to run the buf cli.
 func InstallDependencies(ctx context.Context, output output.Writer) error {
 	rootDir, err := root.RepositoryRoot()
-
 	if err != nil {
 		return errors.Wrap(err, "finding repository root")
 	}
@@ -42,7 +41,6 @@ func InstallDependencies(ctx context.Context, output output.Writer) error {
 				"GOBIN": gobin,
 			}).
 			Run().StreamLines(output.Verbose)
-
 		if err != nil {
 			commandString := fmt.Sprintf("go install %s", d)
 			return errors.Wrapf(err, "running %q", commandString)

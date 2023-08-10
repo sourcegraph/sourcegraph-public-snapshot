@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -74,7 +75,7 @@ func TestRoleList(t *testing.T) {
 
 	t.Run("all roles", func(t *testing.T) {
 		allRoles, err := store.List(ctx, RolesListOptions{
-			PaginationArgs: &PaginationArgs{
+			PaginationArgs: &dbtypes.PaginationArgs{
 				First: &firstParam,
 			},
 		})
@@ -86,7 +87,7 @@ func TestRoleList(t *testing.T) {
 
 	t.Run("system roles", func(t *testing.T) {
 		allSystemRoles, err := store.List(ctx, RolesListOptions{
-			PaginationArgs: &PaginationArgs{
+			PaginationArgs: &dbtypes.PaginationArgs{
 				First: &firstParam,
 			},
 			System: true,
@@ -98,7 +99,7 @@ func TestRoleList(t *testing.T) {
 	t.Run("with pagination", func(t *testing.T) {
 		firstParam := 2
 		roles, err := store.List(ctx, RolesListOptions{
-			PaginationArgs: &PaginationArgs{
+			PaginationArgs: &dbtypes.PaginationArgs{
 				First: &firstParam,
 			},
 		})
@@ -109,7 +110,7 @@ func TestRoleList(t *testing.T) {
 
 	t.Run("user roles", func(t *testing.T) {
 		userRoles, err := store.List(ctx, RolesListOptions{
-			PaginationArgs: &PaginationArgs{
+			PaginationArgs: &dbtypes.PaginationArgs{
 				First: &firstParam,
 			},
 			UserID: user.ID,

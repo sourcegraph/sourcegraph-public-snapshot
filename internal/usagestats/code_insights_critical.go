@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -22,7 +23,7 @@ func totalCountCritical(ctx context.Context, db database.DB) (types.CodeInsights
 	store := db.EventLogs()
 	name := InsightsTotalCountCriticalPingName
 	all, err := store.ListAll(ctx, database.EventLogsListOptions{
-		LimitOffset: &database.LimitOffset{
+		LimitOffset: &dbtypes.LimitOffset{
 			Limit:  1,
 			Offset: 0,
 		},

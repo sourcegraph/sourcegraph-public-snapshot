@@ -35,7 +35,6 @@ func NewSlackClient(url string) *SlackClient {
 
 // PostMessage posts a bytes.Buffer to the given Slack webhook URL with markdown enabled
 func (s *SlackClient) PostMessage(b bytes.Buffer) error {
-
 	type slackRequest struct {
 		Text     string `json:"text"`
 		Markdown bool   `json:"mrkdwn"`
@@ -96,7 +95,7 @@ type TemplateData struct {
 func createMessage(td TemplateData) (bytes.Buffer, error) {
 	var msg bytes.Buffer
 
-	var slackTemplate = `:warning: *{{.Environment}}*'s version may be out of date.
+	slackTemplate := `:warning: *{{.Environment}}*'s version may be out of date.
 Current version: ` + "`{{ .Version }}`" + ` was committed *{{ .VersionAge }} hours ago*.
 
 *Alerts*:

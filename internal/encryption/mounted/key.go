@@ -21,7 +21,6 @@ func NewKey(ctx context.Context, k schema.MountedEncryptionKey) (*Key, error) {
 	var secret []byte
 	if k.EnvVarName != "" && k.Filepath == "" {
 		secret = []byte(os.Getenv(k.EnvVarName))
-
 	} else if k.Filepath != "" && k.EnvVarName == "" {
 		keyBytes, err := os.ReadFile(k.Filepath)
 		if err != nil {

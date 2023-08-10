@@ -80,7 +80,6 @@ func NewHandler(
 	handleStatus func(http.ResponseWriter, *http.Request),
 	ctagsBinary string,
 ) http.Handler {
-
 	searchFuncWrapper := func(ctx context.Context, args search.SymbolsParameters) (result.Symbols, error) {
 		// Massage the arguments to ensure that First is set to a reasonable value.
 		if args.First < 0 || args.First > maxNumSymbolResults {

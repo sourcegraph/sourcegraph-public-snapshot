@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -350,7 +351,7 @@ func (s *webhookStore) List(ctx context.Context, opt WebhookListOptions) ([]*typ
 type WebhookListOptions struct {
 	Kind   string
 	Cursor *types.Cursor
-	*LimitOffset
+	*dbtypes.LimitOffset
 }
 
 // parseWebhookCursorCond returns the WHERE conditions for the given cursor

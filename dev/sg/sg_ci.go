@@ -198,71 +198,72 @@ sg ci build --force --commit my-commit main-dry-run
 sg ci build --help
 `,
 	Category: CategoryDev,
-	Subcommands: []*cli.Command{{
-		Name:    "preview",
-		Aliases: []string{"plan"},
-		Usage:   "Preview the pipeline that would be run against the currently checked out branch",
-		Flags: []cli.Flag{
-			&ciBranchFlag,
-			&cli.StringFlag{
-				Name:  "format",
-				Usage: "Output format for the preview (one of 'markdown', 'json', or 'yaml')",
-				Value: "markdown",
+	Subcommands: []*cli.Command{
+		{
+			Name:    "preview",
+			Aliases: []string{"plan"},
+			Usage:   "Preview the pipeline that would be run against the currently checked out branch",
+			Flags: []cli.Flag{
+				&ciBranchFlag,
+				&cli.StringFlag{
+					Name:  "format",
+					Usage: "Output format for the preview (one of 'markdown', 'json', or 'yaml')",
+					Value: "markdown",
+				},
+			},
+			Action: func(cmd *cli.Context) error {
+				std.Out.WriteLine(output.Styled(output.StyleSuggestion,
+					"If the current branch were to be pushed, the following pipeline would be run:"))
+
+				target, err := getBuildTarget(cmd)
+				if err != nil {
+					return err
+				}
+				if target.targetType != buildTargetTypeBranch {
+					// Should never happen because we only register the branch flag
+					return errors.New("target is not a branch")
+				}
+
+				message, err := run.TrimResult(run.GitCmd("show", "--format=%B"))
+				if err != nil {
+					return err
+				}
+
+				var previewCmd *sgrun.Command
+				env := map[string]string{
+					"BUILDKITE_BRANCH":  target.target, // this must be a branch
+					"BUILDKITE_MESSAGE": message,
+				}
+				switch cmd.String("format") {
+				case "markdown":
+					previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -preview").
+						Env(env)
+					out, err := root.Run(previewCmd).String()
+					if err != nil {
+						return err
+					}
+					return std.Out.WriteMarkdown(out)
+				case "json":
+					previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go").
+						Env(env)
+					out, err := root.Run(previewCmd).String()
+					if err != nil {
+						return err
+					}
+					return std.Out.WriteCode("json", out)
+				case "yaml":
+					previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -yaml").
+						Env(env)
+					out, err := root.Run(previewCmd).String()
+					if err != nil {
+						return err
+					}
+					return std.Out.WriteCode("yaml", out)
+				default:
+					return errors.Newf("unsupported format type: %q", cmd.String("format"))
+				}
 			},
 		},
-		Action: func(cmd *cli.Context) error {
-			std.Out.WriteLine(output.Styled(output.StyleSuggestion,
-				"If the current branch were to be pushed, the following pipeline would be run:"))
-
-			target, err := getBuildTarget(cmd)
-			if err != nil {
-				return err
-			}
-			if target.targetType != buildTargetTypeBranch {
-				// Should never happen because we only register the branch flag
-				return errors.New("target is not a branch")
-			}
-
-			message, err := run.TrimResult(run.GitCmd("show", "--format=%B"))
-			if err != nil {
-				return err
-			}
-
-			var previewCmd *sgrun.Command
-			env := map[string]string{
-				"BUILDKITE_BRANCH":  target.target, // this must be a branch
-				"BUILDKITE_MESSAGE": message,
-			}
-			switch cmd.String("format") {
-			case "markdown":
-				previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -preview").
-					Env(env)
-				out, err := root.Run(previewCmd).String()
-				if err != nil {
-					return err
-				}
-				return std.Out.WriteMarkdown(out)
-			case "json":
-				previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go").
-					Env(env)
-				out, err := root.Run(previewCmd).String()
-				if err != nil {
-					return err
-				}
-				return std.Out.WriteCode("json", out)
-			case "yaml":
-				previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -yaml").
-					Env(env)
-				out, err := root.Run(previewCmd).String()
-				if err != nil {
-					return err
-				}
-				return std.Out.WriteCode("yaml", out)
-			default:
-				return errors.Newf("unsupported format type: %q", cmd.String("format"))
-			}
-		},
-	},
 		{
 			Name:      "bazel",
 			Usage:     "Fires a CI build running a given bazel command",
@@ -449,7 +450,8 @@ sg ci build --help
 
 				return nil
 			},
-		}, {
+		},
+		{
 			Name:      "build",
 			ArgsUsage: "[runtype] <argument>",
 			Usage:     "Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks or with special run types)",
@@ -512,7 +514,7 @@ sg ci build docker-images-candidates-notest
 					}
 				}
 
-				var rt = runtype.PullRequest
+				rt := runtype.PullRequest
 				// 🚨 SECURITY: We do a simple check to see if commit is in origin, this is
 				// non blocking but we ask for confirmation to double check that the user
 				// is aware that potentially unknown code is going to get run on our infra.
@@ -596,7 +598,8 @@ sg ci build docker-images-candidates-notest
 				std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Created build: %s", *build.WebURL))
 				return nil
 			},
-		}, {
+		},
+		{
 			Name:  "logs",
 			Usage: "Get logs from CI builds (e.g. to grep locally)",
 			Description: `Get logs from CI builds, and output them in stdout or push them to Loki. By default only gets failed jobs - to change this, use the '--state' flag.
@@ -769,7 +772,8 @@ From there, you can start exploring logs with the Grafana explore panel.
 
 				return nil
 			},
-		}, {
+		},
+		{
 			Name:        "docs",
 			Usage:       "Render reference documentation for build pipeline types",
 			Description: "An online version of the rendered documentation is also available in https://docs.sourcegraph.com/dev/background-information/ci/reference.",
@@ -781,7 +785,8 @@ From there, you can start exploring logs with the Grafana explore panel.
 				}
 				return std.Out.WriteMarkdown(out)
 			},
-		}, {
+		},
+		{
 			Name:      "open",
 			ArgsUsage: "[pipeline]",
 			Usage:     "Open Sourcegraph's Buildkite page in browser",
@@ -794,7 +799,8 @@ From there, you can start exploring logs with the Grafana explore panel.
 				}
 				return open.URL(buildkiteURL)
 			},
-		}, {
+		},
+		{
 			Name:      "search-failures",
 			ArgsUsage: "[text to search for]",
 			Usage:     "Open Sourcegraph's CI failures Grafana logs page in browser",
@@ -814,7 +820,8 @@ From there, you can start exploring logs with the Grafana explore panel.
 				grafanaURL := buildGrafanaURL(text, stepName)
 				return open.URL(grafanaURL)
 			},
-		}},
+		},
+	},
 }
 
 func buildGrafanaURL(text string, stepName string) string {

@@ -245,7 +245,6 @@ func (c *client) GetChangeReviews(ctx context.Context, changeID string) (*[]Revi
 
 // MoveChange moves a Gerrit change to a different destination branch.
 func (c *client) MoveChange(ctx context.Context, changeID string, input MoveChangePayload) (*Change, error) {
-
 	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID), "move")
 	if err != nil {
 		return nil, err
@@ -277,7 +276,6 @@ func (c *client) MoveChange(ctx context.Context, changeID string, input MoveChan
 
 // SetCommitMessage changes the commit message of a Gerrit change.
 func (c *client) SetCommitMessage(ctx context.Context, changeID string, input SetCommitMessagePayload) error {
-
 	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID), "message")
 	if err != nil {
 		return err

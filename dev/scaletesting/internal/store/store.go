@@ -93,7 +93,6 @@ func (s *Store) SaveRepo(r *Repo) error {
 		r.GitURL,
 		r.ToGitURL,
 		r.Name)
-
 	if err != nil {
 		return err
 	}

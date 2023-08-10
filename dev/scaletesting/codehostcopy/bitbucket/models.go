@@ -34,8 +34,10 @@ type Project struct {
 	Type   string `json:"type"`
 }
 
-type User struct{}
-type Group struct{}
+type (
+	User  struct{}
+	Group struct{}
+)
 
 type State struct {
 	Users    []User    `json:"users"`

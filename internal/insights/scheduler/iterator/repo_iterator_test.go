@@ -21,8 +21,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
-type testFunc func(context.Context, api.RepoID, FinishFunc) bool
-type testPageFunc func(context.Context, []api.RepoID, FinishNFunc) bool
+type (
+	testFunc     func(context.Context, api.RepoID, FinishFunc) bool
+	testPageFunc func(context.Context, []api.RepoID, FinishNFunc) bool
+)
 
 func testForNextAndFinish(t *testing.T, store *basestore.Store, itr *PersistentRepoIterator, config IterationConfig, seen []api.RepoID, do testFunc) (*PersistentRepoIterator, []api.RepoID) {
 	ctx := context.Background()
@@ -257,7 +259,7 @@ func TestForNextAndFinish(t *testing.T) {
 		autogold.Expect(`{"Id":6,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0.4,"TotalCount":5,"SuccessCount":2,"Cursor":2}`).Equal(t, string(jsonify))
 	})
 
-	//test paging
+	// test paging
 	t.Run("iterate page with no errors and no interruptions", func(t *testing.T) {
 		clock := glock.NewMockClock()
 		clock.SetCurrent(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC))
@@ -688,7 +690,6 @@ func TestReset(t *testing.T) {
 	require.NoError(t, err, "load should not error")
 	resetJson, _ := json.Marshal(reloaded)
 	autogold.Expect(`{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"0001-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0,"TotalCount":5,"SuccessCount":0,"Cursor":0}`).Equal(t, string(resetJson))
-
 }
 
 func TestEmptyIterator(t *testing.T) {
@@ -714,7 +715,6 @@ func TestEmptyIterator(t *testing.T) {
 	})
 	jsonify, _ := json.Marshal(got)
 	autogold.Expect(`{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"0001-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":1,"TotalCount":0,"SuccessCount":0,"Cursor":0}`).Equal(t, string(jsonify))
-
 }
 
 func addError(ctx context.Context, itr *PersistentRepoIterator, store *basestore.Store, t *testing.T) {

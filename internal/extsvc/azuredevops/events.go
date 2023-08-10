@@ -86,12 +86,14 @@ type PullRequestEvent struct {
 	CreatedDate time.Time               `json:"createdDate"`
 }
 
-type PullRequestMergedEvent PullRequestEvent
-type PullRequestUpdatedEvent PullRequestEvent
-type PullRequestApprovedEvent PullRequestEvent
-type PullRequestApprovedWithSuggestionsEvent PullRequestEvent
-type PullRequestRejectedEvent PullRequestEvent
-type PullRequestWaitingForAuthorEvent PullRequestEvent
+type (
+	PullRequestMergedEvent                  PullRequestEvent
+	PullRequestUpdatedEvent                 PullRequestEvent
+	PullRequestApprovedEvent                PullRequestEvent
+	PullRequestApprovedWithSuggestionsEvent PullRequestEvent
+	PullRequestRejectedEvent                PullRequestEvent
+	PullRequestWaitingForAuthorEvent        PullRequestEvent
+)
 
 type PullRequestEventMessage struct {
 	Text string `json:"text"`

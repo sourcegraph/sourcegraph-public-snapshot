@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -107,7 +108,7 @@ type ExecutorSecretStore interface {
 // ExecutorSecretsListOpts provide the options when listing secrets. If no namespace
 // scoping is provided, only global credentials are returned (no namespace set).
 type ExecutorSecretsListOpts struct {
-	*LimitOffset
+	*dbtypes.LimitOffset
 
 	// Keys, if set limits the returned secrets to the list of provided keys.
 	Keys []string
@@ -152,7 +153,7 @@ func (opts *ExecutorSecretsListOpts) limitSQL() *sqlf.Query {
 		return &sqlf.Query{}
 	}
 
-	return (&LimitOffset{Limit: opts.Limit + 1, Offset: opts.Offset}).SQL()
+	return (&dbtypes.LimitOffset{Limit: opts.Limit + 1, Offset: opts.Offset}).SQL()
 }
 
 type executorSecretStore struct {

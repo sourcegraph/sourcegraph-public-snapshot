@@ -35,6 +35,7 @@ func AuthPublic() bool { return envvar.SourcegraphDotComMode() }
 // allows signup. AuthAllowSignup returns true if auth.providers' builtin provider has allowSignup
 // true (in site config).
 func AuthAllowSignup() bool { return authAllowSignup(Get()) }
+
 func authAllowSignup(c *Unified) bool {
 	for _, p := range c.AuthProviders {
 		if p.Builtin != nil && p.Builtin.AllowSignup {

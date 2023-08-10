@@ -13,7 +13,8 @@ func (r *siteResolver) UsageStatistics(ctx context.Context, args *struct {
 	Days   *int32
 	Weeks  *int32
 	Months *int32
-}) (*siteUsageStatisticsResolver, error) {
+},
+) (*siteUsageStatisticsResolver, error) {
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}

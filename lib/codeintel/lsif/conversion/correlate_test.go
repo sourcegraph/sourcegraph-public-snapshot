@@ -295,7 +295,6 @@ func TestCorrelateConflictingDocumentProperties(t *testing.T) {
 	_, err = correlateFromReader(context.Background(), bytes.NewReader(badDump), "")
 	if err == nil {
 		t.Fatalf("Expected an error")
-
 	} else if !strings.Contains(err.Error(), wantErr) {
 		t.Errorf("Expected a different error.")
 		t.Errorf("wanted: %s", wantErr)

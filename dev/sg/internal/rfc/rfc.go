@@ -72,7 +72,8 @@ func (d *DriveSpec) Query(q string) string {
 
 // Retrieve a token, saves the token, then returns the generated client.
 func getClientWeb(ctx context.Context, scope ScopePermissions, config *oauth2.Config,
-	out *std.Output) (*http.Client, error) {
+	out *std.Output,
+) (*http.Client, error) {
 	sec, err := secrets.FromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -220,7 +221,8 @@ func (th *tokenHandlerImpl) AuthCodeURL(state string, opts ...oauth2.AuthCodeOpt
 }
 
 func (th *tokenHandlerImpl) Exchange(ctx context.Context, code string,
-	opts ...oauth2.AuthCodeOption) (*oauth2.Token, error) {
+	opts ...oauth2.AuthCodeOption,
+) (*oauth2.Token, error) {
 	return th.config.Exchange(ctx, code, opts...)
 }
 
@@ -394,9 +396,11 @@ func Open(ctx context.Context, number string, driveSpec DriveSpec, out *std.Outp
 //
 //	RFC 123 WIP: Foobar
 //	RFC 123 PRIVATE WIP: Foobar
-var rfcTitleRegex = regexp.MustCompile(`RFC\s(\d+):*\s([\w\s]+):\s(.*)$`)
-var rfcIDRegex = regexp.MustCompile(`RFC\s(\d+)`)
-var rfcDocRegex = regexp.MustCompile(`(RFC.*)(number)(.*:.*)(title)`)
+var (
+	rfcTitleRegex = regexp.MustCompile(`RFC\s(\d+):*\s([\w\s]+):\s(.*)$`)
+	rfcIDRegex    = regexp.MustCompile(`RFC\s(\d+)`)
+	rfcDocRegex   = regexp.MustCompile(`(RFC.*)(number)(.*:.*)(title)`)
+)
 
 func rfcTitlesPrinter(out *std.Output) func(r *drive.FileList) error {
 	return func(r *drive.FileList) error {
@@ -454,5 +458,4 @@ func rfcTitlesPrinter(out *std.Output) func(r *drive.FileList) error {
 
 		return nil
 	}
-
 }

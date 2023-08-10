@@ -246,7 +246,7 @@ func (wkr *worker) cloneRepo(ctx context.Context, owner, repo string) error {
 		}()
 
 		ownerDir := filepath.Join(wkr.scratchDir, owner)
-		err := os.MkdirAll(ownerDir, 0777)
+		err := os.MkdirAll(ownerDir, 0o777)
 		if err != nil {
 			wkr.logger.Error("failed to create owner dir", "ownerDir", ownerDir, "error", err)
 			return err

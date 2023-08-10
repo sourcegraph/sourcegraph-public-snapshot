@@ -44,43 +44,55 @@ func TestEmptySpecIDMigrator(t *testing.T) {
 	}{
 		// A batch change that only has one spec, which is an empty one. The ID of the
 		// spec should not change.
-		{bcName: "test-batch-change-0",
+		{
+			bcName:          "test-batch-change-0",
 			initialEmptyIDs: []int64{1001},
 			nonEmptyIDs:     []int64{},
-			wantEmptyID:     1001},
+			wantEmptyID:     1001,
+		},
 		// A batch change that has one non-empty spec that suceeds the empty one. Since
 		// the empty spec is already ordered first, its ID should not change.
-		{bcName: "test-batch-change-1",
+		{
+			bcName:          "test-batch-change-1",
 			initialEmptyIDs: []int64{1011},
 			nonEmptyIDs:     []int64{1012},
-			wantEmptyID:     1011},
+			wantEmptyID:     1011,
+		},
 		// A batch change that has one non-empty spec that precedes the empty one. Since
 		// the empty spec is out-of-order, it should be assigned the first available ID
 		// lower than 1012, which in this case is 1011.
-		{bcName: "test-batch-change-2",
+		{
+			bcName:          "test-batch-change-2",
 			initialEmptyIDs: []int64{1022},
 			nonEmptyIDs:     []int64{1021},
-			wantEmptyID:     1020},
+			wantEmptyID:     1020,
+		},
 		// A batch change that has multiple non-empty specs that suceed the empty one.
 		// Since the empty spec is already ordered first, its ID should not change.
-		{bcName: "test-batch-change-3",
+		{
+			bcName:          "test-batch-change-3",
 			initialEmptyIDs: []int64{1031},
 			nonEmptyIDs:     []int64{1032, 1033, 1034},
-			wantEmptyID:     1031},
+			wantEmptyID:     1031,
+		},
 		// Two batch changes that have multiple, interweaving, non-empty and empty specs.
-		{bcName: "test-batch-change-4",
+		{
+			bcName:          "test-batch-change-4",
 			initialEmptyIDs: []int64{1045, 1051},
 			nonEmptyIDs:     []int64{1043, 1048, 1050},
 			// Since neither empty spec was in order, once they have been de-duped, we
 			// expect the remaining empty spec to be assigned the first available ID lower
 			// than 1043, which is 1041.
-			wantEmptyID: 1041},
-		{bcName: "test-batch-change-5",
+			wantEmptyID: 1041,
+		},
+		{
+			bcName:          "test-batch-change-5",
 			initialEmptyIDs: []int64{1040, 1099},
 			nonEmptyIDs:     []int64{1042, 1044, 1047},
 			// Since one of the empty specs was in order, we expect it to not change, but
 			// the other spec to be de-duped.
-			wantEmptyID: 1040},
+			wantEmptyID: 1040,
+		},
 	}
 
 	for _, tc := range testData {

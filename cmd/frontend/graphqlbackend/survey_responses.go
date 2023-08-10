@@ -15,7 +15,8 @@ type surveyResponseConnectionResolver struct {
 
 func (r *schemaResolver) SurveyResponses(args *struct {
 	graphqlutil.ConnectionArgs
-}) *surveyResponseConnectionResolver {
+},
+) *surveyResponseConnectionResolver {
 	var opt database.SurveyResponseListOptions
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &surveyResponseConnectionResolver{db: r.db, opt: opt}

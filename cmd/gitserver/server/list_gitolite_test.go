@@ -100,7 +100,6 @@ func Test_Gitolite_listRepos(t *testing.T) {
 						t.Errorf("unexpected error diff:\n%s", diff)
 					}
 				} else {
-
 					t.Fatal(err)
 				}
 			}

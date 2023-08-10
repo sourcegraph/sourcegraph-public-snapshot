@@ -31,7 +31,6 @@ func RepoUpdater() *monitoring.Dashboard {
 		Description: "Manages interaction with code hosts, instructs Gitserver to update repositories.",
 		Variables: []monitoring.ContainerVariable{
 			{
-
 				Label: "Instance",
 				Name:  "instance",
 				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
@@ -270,7 +269,6 @@ func RepoUpdater() *monitoring.Dashboard {
 						},
 					},
 					{
-
 						{
 							Name:           "repo_success_syncs_total",
 							Description:    "total number of repo permissions syncs",

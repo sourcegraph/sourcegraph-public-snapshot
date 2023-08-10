@@ -509,7 +509,6 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	if p.Format == gosyntect.FormatJSONSCIP || filetypeQuery.Engine.isTreesitterBased() {
 		document := new(scip.Document)
 		data, err := base64.StdEncoding.DecodeString(resp.Data)
-
 		if err != nil {
 			return unhighlightedCode(err, code)
 		}

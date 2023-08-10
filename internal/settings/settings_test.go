@@ -26,7 +26,6 @@ func TestRelevantSettings(t *testing.T) {
 		org, err := db.Orgs().Create(ctx, name, nil)
 		require.NoError(t, err)
 		return org
-
 	}
 
 	createUser := func(name string, orgs ...int32) *types.User {
@@ -89,7 +88,8 @@ func TestRelevantSettings(t *testing.T) {
 	}, {
 		subject: api.SettingsSubject{User: &user3.ID},
 		expected: []api.SettingsSubject{
-			{Default: true}, {Site: true},
+			{Default: true},
+			{Site: true},
 			{Org: &org1.ID},
 			{Org: &org2.ID},
 			{User: &user3.ID},
@@ -111,101 +111,102 @@ func TestMergeSettings(t *testing.T) {
 		left     *schema.Settings
 		right    *schema.Settings
 		expected *schema.Settings
-	}{{
-		name:     "nil left",
-		left:     nil,
-		right:    &schema.Settings{},
-		expected: &schema.Settings{},
-	}, {
-		name: "empty left",
-		left: &schema.Settings{},
-		right: &schema.Settings{
-			SearchDefaultMode: "test",
-		},
-		expected: &schema.Settings{
-			SearchDefaultMode: "test",
-		},
-	}, {
-		name: "merge bool ptr",
-		left: &schema.Settings{
-			AlertsHideObservabilitySiteAlerts: pointers.Ptr(true),
-		},
-		right: &schema.Settings{
-			SearchDefaultMode: "test",
-		},
-		expected: &schema.Settings{
-			SearchDefaultMode:                 "test",
-			AlertsHideObservabilitySiteAlerts: pointers.Ptr(true),
-		},
-	}, {
-		name: "merge bool",
-		left: &schema.Settings{
-			AlertsShowPatchUpdates:              false,
-			BasicCodeIntelGlobalSearchesEnabled: true,
-		},
-		right: &schema.Settings{
-			AlertsShowPatchUpdates:              true,
-			BasicCodeIntelGlobalSearchesEnabled: false, // This is the zero value, so will not override a previous non-zero value
-		},
-		expected: &schema.Settings{
-			AlertsShowPatchUpdates:              true,
-			BasicCodeIntelGlobalSearchesEnabled: true,
-		},
-	}, {
-		name: "merge int",
-		left: &schema.Settings{
-			SearchContextLines:                        0,
-			CodeIntelligenceAutoIndexPopularRepoLimit: 1,
-		},
-		right: &schema.Settings{
-			SearchContextLines:                        1,
-			CodeIntelligenceAutoIndexPopularRepoLimit: 0, // This is the zero value, so will not override a previous non-zero value
-		},
-		expected: &schema.Settings{
-			SearchContextLines:                        1,
-			CodeIntelligenceAutoIndexPopularRepoLimit: 1, // This is the zero value, so will not override a previous non-zero value
-		},
-	}, {
-		name: "deep merge struct pointer",
-		left: &schema.Settings{
-			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
-				CodeMonitoringWebHooks: pointers.Ptr(true),
+	}{
+		{
+			name:     "nil left",
+			left:     nil,
+			right:    &schema.Settings{},
+			expected: &schema.Settings{},
+		}, {
+			name: "empty left",
+			left: &schema.Settings{},
+			right: &schema.Settings{
+				SearchDefaultMode: "test",
+			},
+			expected: &schema.Settings{
+				SearchDefaultMode: "test",
+			},
+		}, {
+			name: "merge bool ptr",
+			left: &schema.Settings{
+				AlertsHideObservabilitySiteAlerts: pointers.Ptr(true),
+			},
+			right: &schema.Settings{
+				SearchDefaultMode: "test",
+			},
+			expected: &schema.Settings{
+				SearchDefaultMode:                 "test",
+				AlertsHideObservabilitySiteAlerts: pointers.Ptr(true),
+			},
+		}, {
+			name: "merge bool",
+			left: &schema.Settings{
+				AlertsShowPatchUpdates:              false,
+				BasicCodeIntelGlobalSearchesEnabled: true,
+			},
+			right: &schema.Settings{
+				AlertsShowPatchUpdates:              true,
+				BasicCodeIntelGlobalSearchesEnabled: false, // This is the zero value, so will not override a previous non-zero value
+			},
+			expected: &schema.Settings{
+				AlertsShowPatchUpdates:              true,
+				BasicCodeIntelGlobalSearchesEnabled: true,
+			},
+		}, {
+			name: "merge int",
+			left: &schema.Settings{
+				SearchContextLines:                        0,
+				CodeIntelligenceAutoIndexPopularRepoLimit: 1,
+			},
+			right: &schema.Settings{
+				SearchContextLines:                        1,
+				CodeIntelligenceAutoIndexPopularRepoLimit: 0, // This is the zero value, so will not override a previous non-zero value
+			},
+			expected: &schema.Settings{
+				SearchContextLines:                        1,
+				CodeIntelligenceAutoIndexPopularRepoLimit: 1, // This is the zero value, so will not override a previous non-zero value
+			},
+		}, {
+			name: "deep merge struct pointer",
+			left: &schema.Settings{
+				ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
+					CodeMonitoringWebHooks: pointers.Ptr(true),
+				},
+			},
+			right: &schema.Settings{
+				ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
+					ShowMultilineSearchConsole: pointers.Ptr(false),
+				},
+			},
+			expected: &schema.Settings{
+				ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
+					CodeMonitoringWebHooks:     pointers.Ptr(true),
+					ShowMultilineSearchConsole: pointers.Ptr(false),
+				},
+			},
+		}, {
+			name: "overwriting merge",
+			left: &schema.Settings{
+				AlertsHideObservabilitySiteAlerts: pointers.Ptr(true),
+			},
+			right: &schema.Settings{
+				AlertsHideObservabilitySiteAlerts: pointers.Ptr(false),
+			},
+			expected: &schema.Settings{
+				AlertsHideObservabilitySiteAlerts: pointers.Ptr(false),
+			},
+		}, {
+			name: "deep merge slice",
+			left: &schema.Settings{
+				SearchScopes: []*schema.SearchScope{{Name: "test1"}},
+			},
+			right: &schema.Settings{
+				SearchScopes: []*schema.SearchScope{{Name: "test2"}},
+			},
+			expected: &schema.Settings{
+				SearchScopes: []*schema.SearchScope{{Name: "test1"}, {Name: "test2"}},
 			},
 		},
-		right: &schema.Settings{
-			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
-				ShowMultilineSearchConsole: pointers.Ptr(false),
-			},
-		},
-		expected: &schema.Settings{
-			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
-				CodeMonitoringWebHooks:     pointers.Ptr(true),
-				ShowMultilineSearchConsole: pointers.Ptr(false),
-			},
-		},
-	}, {
-		name: "overwriting merge",
-		left: &schema.Settings{
-			AlertsHideObservabilitySiteAlerts: pointers.Ptr(true),
-		},
-		right: &schema.Settings{
-			AlertsHideObservabilitySiteAlerts: pointers.Ptr(false),
-		},
-		expected: &schema.Settings{
-			AlertsHideObservabilitySiteAlerts: pointers.Ptr(false),
-		},
-	}, {
-		name: "deep merge slice",
-		left: &schema.Settings{
-			SearchScopes: []*schema.SearchScope{{Name: "test1"}},
-		},
-		right: &schema.Settings{
-			SearchScopes: []*schema.SearchScope{{Name: "test2"}},
-		},
-		expected: &schema.Settings{
-			SearchScopes: []*schema.SearchScope{{Name: "test1"}, {Name: "test2"}},
-		},
-	},
 	}
 
 	for _, tc := range cases {

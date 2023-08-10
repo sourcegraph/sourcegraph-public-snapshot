@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -121,7 +122,7 @@ func (r *embeddingsSetupProgressResolver) getProgressForRepo(ctx context.Context
 	hasFailedJob := false
 	hasPendingJob := false
 	embeddingsStore := repo.NewRepoEmbeddingJobsStore(r.db)
-	jobs, err := embeddingsStore.ListRepoEmbeddingJobs(ctx, repo.ListOpts{Repo: &current.ID, PaginationArgs: &database.PaginationArgs{First: pointers.Ptr(10)}})
+	jobs, err := embeddingsStore.ListRepoEmbeddingJobs(ctx, repo.ListOpts{Repo: &current.ID, PaginationArgs: &dbtypes.PaginationArgs{First: pointers.Ptr(10)}})
 	if err != nil {
 		return progress, err
 	}

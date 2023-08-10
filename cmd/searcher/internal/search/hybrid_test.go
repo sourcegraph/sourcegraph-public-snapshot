@@ -230,7 +230,8 @@ Hello world example in go
 func newZoekt(t *testing.T, repo *zoekt.Repository, files map[string]struct {
 	body string
 	typ  fileType
-}) string {
+},
+) string {
 	var docs []zoekt.Document
 	for name, file := range files {
 		docs = append(docs, zoekt.Document{

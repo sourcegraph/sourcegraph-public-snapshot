@@ -59,7 +59,7 @@ func (r *blankRepo) init(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(filepath.Join(r.path, "README.md"), []byte("blank repo"), 0755)
+	err = os.WriteFile(filepath.Join(r.path, "README.md"), []byte("blank repo"), 0o755)
 	if err != nil {
 		return err
 	}

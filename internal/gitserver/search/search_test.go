@@ -264,7 +264,6 @@ func TestSearch(t *testing.T) {
 		require.True(t, utf8.ValidString(match.Author.Name))
 		require.True(t, utf8.ValidString(match.Author.Email))
 		require.True(t, utf8.ValidString(match.Message.Content))
-
 	})
 }
 

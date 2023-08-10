@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/accessrequests"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -22,7 +23,7 @@ type DB interface {
 	dbutil.DB
 	basestore.ShareableStore
 
-	AccessRequests() AccessRequestStore
+	AccessRequests() accessrequests.AccessRequestStore
 	AccessTokens() AccessTokenStore
 	Authz() AuthzStore
 	BitbucketProjectPermissions() BitbucketProjectPermissionsStore
@@ -137,8 +138,8 @@ func (d *db) AccessTokens() AccessTokenStore {
 	return AccessTokensWith(d.Store, d.logger.Scoped("AccessTokenStore", ""))
 }
 
-func (d *db) AccessRequests() AccessRequestStore {
-	return AccessRequestsWith(d.Store, d.logger.Scoped("AccessRequestStore", ""))
+func (d *db) AccessRequests() accessrequests.AccessRequestStore {
+	return accessrequests.AccessRequestsWith(d.Store, d.logger.Scoped("AccessRequestStore", ""))
 }
 
 func (d *db) BitbucketProjectPermissions() BitbucketProjectPermissionsStore {

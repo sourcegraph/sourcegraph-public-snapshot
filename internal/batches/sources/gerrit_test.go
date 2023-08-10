@@ -776,7 +776,6 @@ func TestGerritSource_MergeChangeset(t *testing.T) {
 		err := s.MergeChangeset(ctx, cs, true)
 		assert.Nil(t, err)
 		assertGerritChangesetMatchesPullRequest(t, cs, pr)
-
 	})
 
 	t.Run("success with no squash", func(t *testing.T) {
@@ -795,7 +794,6 @@ func TestGerritSource_MergeChangeset(t *testing.T) {
 		err := s.MergeChangeset(ctx, cs, false)
 		assert.Nil(t, err)
 		assertGerritChangesetMatchesPullRequest(t, cs, pr)
-
 	})
 }
 

@@ -59,7 +59,7 @@ var helpCommand = &cli.Command{
 			}
 			output = filepath.Join(rootDir, output)
 
-			if err := os.WriteFile(output, []byte(generatedSgReferenceHeader+"\n\n"+doc), 0644); err != nil {
+			if err := os.WriteFile(output, []byte(generatedSgReferenceHeader+"\n\n"+doc), 0o644); err != nil {
 				return errors.Wrapf(err, "failed to write reference to %q", output)
 			}
 			return nil

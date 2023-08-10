@@ -77,7 +77,6 @@ func TestOwnSearchEventNames(t *testing.T) {
 			if diff := cmp.Diff(wantEventNames, eventStore.loggedEventNames()); diff != "" {
 				t.Errorf("logged events, -want+got: %s", diff)
 			}
-
 		})
 	}
 }

@@ -1023,7 +1023,6 @@ func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model st
 func anthropicDefaultMaxPromptTokens(model string) int {
 	if strings.HasSuffix(model, "-100k") {
 		return 100_000
-
 	}
 	if model == "claude-2" {
 		// TODO: Technically, v2 also uses a 100k window, but we should validate

@@ -17,8 +17,10 @@ type RepoRevisionAggregator struct {
 	results []*RuleRevisions
 }
 
-type RepoID any
-type Revision any
+type (
+	RepoID   any
+	Revision any
+)
 
 func NewRepoRevisionAggregator() *RepoRevisionAggregator {
 	return &RepoRevisionAggregator{

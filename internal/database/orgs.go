@@ -9,6 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -76,8 +77,7 @@ func (o *orgStore) GetByUserID(ctx context.Context, userID int32) ([]*types.Org,
 // onlyOrgsWithRepositories parameter determines, if the function returns all organizations
 // or only those with repositories attached
 func (o *orgStore) getByUserID(ctx context.Context, userID int32, onlyOrgsWithRepositories bool) ([]*types.Org, error) {
-	queryString :=
-		`SELECT orgs.id, orgs.name, orgs.display_name, orgs.created_at, orgs.updated_at
+	queryString := `SELECT orgs.id, orgs.name, orgs.display_name, orgs.created_at, orgs.updated_at
 		FROM org_members
 		LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id
 		WHERE user_id=$1
@@ -151,7 +151,7 @@ type OrgsListOptions struct {
 	// Query specifies a search query for organizations.
 	Query string
 
-	*LimitOffset
+	*dbtypes.LimitOffset
 }
 
 func (o *orgStore) List(ctx context.Context, opt *OrgsListOptions) ([]*types.Org, error) {

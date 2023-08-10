@@ -39,7 +39,6 @@ func (f *Filter) Less(o *Filter) bool {
 	}
 	// Order alphabetically for equal scores.
 	return strings.Compare(f.Value, o.Value) < 0
-
 }
 
 // filters is a map of filter values to the Filter.

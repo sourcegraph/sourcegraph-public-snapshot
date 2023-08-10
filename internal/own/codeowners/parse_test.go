@@ -481,7 +481,8 @@ own/codeowners/* @own-pms
 				{Handle: "own-pms"},
 			},
 			LineNumber: 14,
-		}}
+		},
+	}
 	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
 }
 

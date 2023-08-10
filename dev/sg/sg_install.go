@@ -117,7 +117,7 @@ func installAction(cmd *cli.Context) error {
 	}
 
 	// Create new file
-	newFile, err := os.OpenFile(location, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+	newFile, err := os.OpenFile(location, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o755)
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Failed: %s", err))
 		return err
@@ -182,7 +182,7 @@ func updateProfiles(homeDir, sgDir string) error {
 	exportLine := fmt.Sprintf("\nexport PATH=%s:$PATH\n", sgDir)
 	lineWrittenTo := []string{}
 	for _, p := range paths {
-		f, err := os.OpenFile(p, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		f, err := os.OpenFile(p, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err != nil {
 			return errors.Wrapf(err, "failed to open %s", p)
 		}

@@ -12,7 +12,7 @@ import (
 func TestNextSync(t *testing.T) {
 	t.Parallel()
 
-	clock := func() time.Time { return time.Date(2020, 01, 01, 01, 01, 01, 01, time.UTC) }
+	clock := func() time.Time { return time.Date(2020, 0o1, 0o1, 0o1, 0o1, 0o1, 0o1, time.UTC) }
 	tests := []struct {
 		name string
 		h    *btypes.ChangesetSyncData

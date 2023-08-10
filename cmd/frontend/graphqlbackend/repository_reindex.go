@@ -12,7 +12,8 @@ import (
 // ReindexRepository will trigger Zoekt indexserver to reindex the repository.
 func (r *schemaResolver) ReindexRepository(ctx context.Context, args *struct {
 	Repository graphql.ID
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	// 🚨 SECURITY: There is no reason why non-site-admins would need to run this operation.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err

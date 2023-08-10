@@ -56,7 +56,7 @@ func TestMarshalBatchChange(t *testing.T) {
 	response, err := marshalBatchChange(ctx, client, mbID)
 	require.NoError(t, err)
 
-	var have = &batchChange{}
+	have := &batchChange{}
 	err = json.Unmarshal(response, have)
 	require.NoError(t, err)
 

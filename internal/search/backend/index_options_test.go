@@ -18,7 +18,6 @@ import (
 func TestZoektIndexOptions_RoundTrip(t *testing.T) {
 	var diff string
 	f := func(original ZoektIndexOptions) bool {
-
 		var converted ZoektIndexOptions
 		converted.FromProto(original.ToProto())
 

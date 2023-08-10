@@ -175,7 +175,9 @@ func TestIsEnabled(t *testing.T) {
 						InternalTraffic: true,
 						GitserverAccess: true,
 						GraphQL:         true,
-					}}},
+					},
+				},
+			},
 			expected: map[AuditLogSetting]bool{GitserverAccess: true, InternalTraffic: true, GraphQL: true},
 		},
 	}
@@ -211,7 +213,9 @@ func useAuditLogLevel(level string) {
 				GitserverAccess: true,
 				GraphQL:         true,
 				SeverityLevel:   level,
-			}}}})
+			},
+		},
+	}})
 }
 
 func auditLogMessage(t *testing.T) []logtest.CapturedLog {

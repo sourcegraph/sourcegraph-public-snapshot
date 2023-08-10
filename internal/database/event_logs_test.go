@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtypes"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -37,9 +38,9 @@ func TestSanitizeEventURL(t *testing.T) {
 		externalURL string
 		output      string
 	}{{
-		input:       "https://about.sourcegraph.com/test", //CI:URL_OK
+		input:       "https://about.sourcegraph.com/test", // CI:URL_OK
 		externalURL: "https://sourcegraph.com",
-		output:      "https://about.sourcegraph.com/test", //CI:URL_OK
+		output:      "https://about.sourcegraph.com/test", // CI:URL_OK
 	}, {
 		input:       "https://test.sourcegraph.com/test",
 		externalURL: "https://sourcegraph.com",
@@ -88,7 +89,7 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	var testCases = []struct {
+	testCases := []struct {
 		name  string
 		event *Event
 		err   string // Stringified error
@@ -1011,7 +1012,8 @@ func TestEventLogs_AggregatedCodeIntelInvestigationEvents(t *testing.T) {
 		"CodeIntelligenceIndexerSetupInvestigated", // duplicate
 		"CodeIntelligenceUploadErrorInvestigated",
 		"CodeIntelligenceIndexErrorInvestigated",
-		"unknown event"}
+		"unknown event",
+	}
 	users := []uint32{1, 2}
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -1315,8 +1317,10 @@ func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
 	// time that falls too near the edge of a week.
 	now := time.Unix(1589581800, 0).UTC()
 
-	codyEventNames := []string{"CodyVSCodeExtension:recipe:rewrite-to-functional:executed",
-		"CodyVSCodeExtension:recipe:explain-code-high-level:executed"}
+	codyEventNames := []string{
+		"CodyVSCodeExtension:recipe:rewrite-to-functional:executed",
+		"CodyVSCodeExtension:recipe:explain-code-high-level:executed",
+	}
 	users := []uint32{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
 
 	days := []time.Time{
@@ -1429,7 +1433,8 @@ func TestEventLogs_ListAll(t *testing.T) {
 			URL:       "http://sourcegraph.com",
 			Source:    "test",
 			Timestamp: startDate,
-		}, {
+		},
+		{
 			UserID:    2,
 			Name:      "codeintel",
 			URL:       "http://sourcegraph.com",
@@ -1449,7 +1454,8 @@ func TestEventLogs_ListAll(t *testing.T) {
 			URL:       "http://sourcegraph.com",
 			Source:    "test",
 			Timestamp: startDate,
-		}}
+		},
+	}
 
 	for _, event := range events {
 		if err := db.EventLogs().Insert(ctx, event); err != nil {
@@ -1464,7 +1470,7 @@ func TestEventLogs_ListAll(t *testing.T) {
 	})
 
 	t.Run("listed one ViewRepository event", func(t *testing.T) {
-		opts := EventLogsListOptions{EventName: pointers.Ptr("ViewRepository"), LimitOffset: &LimitOffset{Limit: 1}}
+		opts := EventLogsListOptions{EventName: pointers.Ptr("ViewRepository"), LimitOffset: &dbtypes.LimitOffset{Limit: 1}}
 		have, err := db.EventLogs().ListAll(ctx, opts)
 		require.NoError(t, err)
 		assert.Len(t, have, 1)

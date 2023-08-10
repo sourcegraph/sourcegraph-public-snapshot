@@ -7,8 +7,10 @@ var modelsWithoutNewlines = map[string]struct{}{
 	"openai/text-embedding-ada-002": {},
 }
 
-const E5_QUERY_PREFIX = "query: "
-const E5_DOCUMENT_PREFIX = "passage: "
+const (
+	E5_QUERY_PREFIX    = "query: "
+	E5_DOCUMENT_PREFIX = "passage: "
+)
 
 func isE5LikeModel(model string) bool {
 	parts := strings.Split(model, "/")

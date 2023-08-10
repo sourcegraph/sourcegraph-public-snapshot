@@ -177,7 +177,8 @@ func TestOrgMembers_MemberCount(t *testing.T) {
 	}{
 		{"org with single member", org1.ID, 1},
 		{"org with two members", org2.ID, 2},
-		{"org with one deleted member", org3.ID, 1}} {
+		{"org with one deleted member", org3.ID, 1},
+	} {
 		t.Run(test.name, func(*testing.T) {
 			got, err := db.OrgMembers().MemberCount(ctx, test.orgID)
 			if err != nil {
@@ -187,9 +188,7 @@ func TestOrgMembers_MemberCount(t *testing.T) {
 				t.Errorf("want %v, got %v", test.want, got)
 			}
 		})
-
 	}
-
 }
 
 func TestOrgMembers_AutocompleteMembersSearch(t *testing.T) {

@@ -29,9 +29,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var EmailInvitesFeatureFlag = "org-email-invites"
-var SigningKeyMessage = "signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration."
-var DefaultExpiryDuration = 48 * time.Hour
+var (
+	EmailInvitesFeatureFlag = "org-email-invites"
+	SigningKeyMessage       = "signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration."
+	DefaultExpiryDuration   = 48 * time.Hour
+)
 
 func getUserToInviteToOrganization(ctx context.Context, db database.DB, username string, orgID int32) (userToInvite *types.User, userEmailAddress string, err error) {
 	userToInvite, err = db.Users().GetByUsername(ctx, username)
@@ -115,7 +117,8 @@ func checkEmail(ctx context.Context, db database.DB, inviteEmail string) (bool, 
 
 func (r *schemaResolver) PendingInvitations(ctx context.Context, args *struct {
 	Organization graphql.ID
-}) ([]*organizationInvitationResolver, error) {
+},
+) ([]*organizationInvitationResolver, error) {
 	actor := sgactor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("no current user")
@@ -132,7 +135,6 @@ func (r *schemaResolver) PendingInvitations(ctx context.Context, args *struct {
 	}
 
 	pendingInvites, err := r.db.OrgInvitations().GetPendingByOrgID(ctx, orgID)
-
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +161,8 @@ func newExpiryTime() time.Time {
 
 func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 	Token string
-}) (*organizationInvitationResolver, error) {
+},
+) (*organizationInvitationResolver, error) {
 	actor := sgactor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("no current user")
@@ -171,7 +174,6 @@ func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 	token, err := jwt.ParseWithClaims(args.Token, &orgInvitationClaims{}, func(token *jwt.Token) (any, error) {
 		return base64.StdEncoding.DecodeString(conf.SiteConfig().OrganizationInvitations.SigningKey)
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS512.Name}))
-
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +204,8 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	Organization graphql.ID
 	Username     *string
 	Email        *string
-}) (*inviteUserToOrganizationResult, error) {
+},
+) (*inviteUserToOrganizationResult, error) {
 	if args.Email == nil && args.Username == nil {
 		return nil, errors.New("either username or email must be defined")
 	}
@@ -290,7 +293,8 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, args *struct {
 	OrganizationInvitation graphql.ID
 	ResponseType           string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	a := sgactor.FromContext(ctx)
 	if !a.IsAuthenticated() {
 		return nil, errors.New("no current user")
@@ -353,7 +357,8 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 
 func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Context, args *struct {
 	OrganizationInvitation graphql.ID
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	id, err := UnmarshalOrgInvitationID(args.OrganizationInvitation)
 	if err != nil {
 		return nil, err
@@ -423,7 +428,8 @@ func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Co
 
 func (r *schemaResolver) RevokeOrganizationInvitation(ctx context.Context, args *struct {
 	OrganizationInvitation graphql.ID
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	id, err := UnmarshalOrgInvitationID(args.OrganizationInvitation)
 	if err != nil {
 		return nil, err
