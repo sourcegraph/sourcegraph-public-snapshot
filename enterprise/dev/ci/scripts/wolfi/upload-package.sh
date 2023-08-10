@@ -60,13 +60,17 @@ for apk in "${apks[@]}"; do
   echo "   * Uploading package and index fragment to repo"
   gsutil -u "$GCP_PROJECT" -h "Cache-Control:no-cache" cp "$apk" "$index_fragment" "$dest_path"
 
-  # Show package usage message on branches
-  if [[ "$IS_MAIN" != "true" ]]; then
-    package_name=$(echo "$apk" | sed -E 's/(-[0-9].*)//')
+  # Concat package names for u
+  package_usage_list="$package_usage_list    - ${package_name}@branch\n"
+done
 
-    # TODO: Update keyring when keys change: https://storage.googleapis.com/package-repository/packages/${BRANCH_PATH}/melange.rsa.pub
-    if [[ -n "$BUILDKITE" ]]; then
-      echo -e "   * To use this package locally, add the following lines to your base image config:\n\n
+# Show package usage message on branches
+if [[ "$IS_MAIN" != "true" ]]; then
+  package_name=$(echo "$apk" | sed -E 's/(-[0-9].*)//')
+
+  # TODO: Update keyring when keys change: https://storage.googleapis.com/package-repository/packages/${BRANCH_PATH}/melange.rsa.pub
+  if [[ -n "$BUILDKITE" ]]; then
+    echo -e "To use this package locally, add the following lines to your base image config:
 \`\`\`
 contents:
   keyring:
@@ -74,12 +78,10 @@ contents:
   repositories:
     - '@branch https://storage.googleapis.com/package-repository/packages/${BRANCH_PATH}'
   packages:
-    - ${package_name}@branch
-  \`\`\`\n\n" | ../../../enterprise/dev/ci/scripts/annotate.sh -s "custom-repo" -m
-    fi
+$package_usage_list
+  \`\`\`" | ../../../enterprise/dev/ci/scripts/annotate.sh -s "custom-repo" -m
   fi
-
-done
+fi
 
 if [[ "$error" == "true" ]]; then
   exit 222 # Soft fail
