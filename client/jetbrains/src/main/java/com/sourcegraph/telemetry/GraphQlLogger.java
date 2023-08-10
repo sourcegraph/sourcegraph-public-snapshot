@@ -30,6 +30,15 @@ public class GraphQlLogger {
     }
   }
 
+  public static void logAutocompleteSuggestedEvent(
+      @NotNull Project project, long latencyMs, long displayDurationMs) {
+    String eventName = "CodyJetBrainsPlugin:completion:suggested";
+    JsonObject eventParameters = new JsonObject();
+    eventParameters.addProperty("latency", latencyMs);
+    eventParameters.addProperty("displayDuration", displayDurationMs);
+    logEvent(project, createEvent(project, eventName, eventParameters), null);
+  }
+
   public static void logCodyEvent(
       @NotNull Project project, @NotNull String componentName, @NotNull String action) {
     var eventName = "CodyJetBrainsPlugin:" + componentName + ":" + action;

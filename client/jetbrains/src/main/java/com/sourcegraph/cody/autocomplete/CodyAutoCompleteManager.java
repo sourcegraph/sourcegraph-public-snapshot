@@ -35,6 +35,7 @@ public class CodyAutoCompleteManager {
   // TODO: figure out how to avoid the ugly nested `Future<CompletableFuture<T>>` type.
   private final AtomicReference<Optional<Future<CompletableFuture<Void>>>> currentJob =
       new AtomicReference<>(Optional.empty());
+  private @Nullable Autocompletion currentAutocompletion = null;
 
   public static @NotNull CodyAutoCompleteManager getInstance() {
     return ApplicationManager.getApplication().getService(CodyAutoCompleteManager.class);
@@ -42,7 +43,22 @@ public class CodyAutoCompleteManager {
 
   @RequiresEdt
   public void clearAutoCompleteSuggestions(@NotNull Editor editor) {
+    // Log "suggested" event and clear current autocompletion
+    Optional.ofNullable(editor.getProject())
+        .ifPresent(
+            p -> {
+              if (currentAutocompletion != null && currentAutocompletion.getStatus() != AutocompletionStatus.TRIGGERED_NOT_DISPLAYED) {
+                currentAutocompletion.markCompletionHidden();
+                GraphQlLogger.logAutocompleteSuggestedEvent(
+                    p, currentAutocompletion.getLatencyMs(), currentAutocompletion.getDisplayDurationMs());
+                currentAutocompletion = null;
+              }
+            });
+
+    // Cancel any running job
     cancelCurrentJob();
+
+    // Clear any existing inline elements
     InlayModelUtils.getAllInlaysForEditor(editor).stream()
         .filter(inlay -> inlay.getRenderer() instanceof CodyAutoCompleteElementRenderer)
         .forEach(Disposer::dispose);
@@ -68,7 +84,9 @@ public class CodyAutoCompleteManager {
       return;
     }
 
-    /* Log the event */
+    // Save autocompletion
+    currentAutocompletion = Autocompletion.createAndMarkTriggered();
+
     Project project = editor.getProject();
     if (project != null) {
       GraphQlLogger.logCodyEvent(project, "completion", "started");
@@ -170,10 +188,9 @@ public class CodyAutoCompleteManager {
                           /* Clear existing completions */
                           this.clearAutoCompleteSuggestions(editor);
 
-                          /* Log the event */
-                          Optional.ofNullable(editor.getProject())
-                              .ifPresent(
-                                  p -> GraphQlLogger.logCodyEvent(p, "completion", "suggested"));
+                          if (currentAutocompletion != null) {
+                            currentAutocompletion.markCompletionDisplayed();
+                          }
 
                           /* Display autocomplete */
                           AutoCompleteText autoCompleteText =
