@@ -48,9 +48,9 @@ for apk in "${apks[@]}"; do
   # Check whether this version of the package already exists in the main package repo
   echo "   * Checking if this package version already exists in the production repo..."
   if gsutil -q -u "$GCP_PROJECT" stat "${dest_path_main}${apk}"; then
-    echo -e "The production package repository already contains a package with this version: \`$apk\`\n\n
--> Production repository file path: \`${dest_path_main}${apk}\`\n\n
-Resolve this issue by incrementing the \`epoch\` field in the package's YAML file.\n" |
+    echo -e "The production package repository already contains a package with this version: \`$apk\`\\n
+    -> Production repository file path: \`${dest_path_main}${apk}\`\\n\\n
+Resolve this issue by incrementing the \`epoch\` field in the package's YAML file.\\n\\n" |
       ../../../enterprise/dev/ci/scripts/annotate.sh -s "package-version-exists" -m -t "error"
 
     # Soft fail at the end - we still want to allow the package to be uploaded for cases like a Buildkite pipeline being rerun
