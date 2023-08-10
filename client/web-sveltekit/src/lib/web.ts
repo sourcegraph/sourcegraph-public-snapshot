@@ -16,11 +16,6 @@ export {
 export { isValidLineRange } from '@sourcegraph/web/src/repo/blob/codemirror/utils'
 export { blobPropsFacet } from '@sourcegraph/web/src/repo/blob/codemirror'
 export { defaultSearchModeFromSettings } from '@sourcegraph/web/src/util/settings'
-export { GlobalNotebooksArea, type GlobalNotebooksAreaProps } from '@sourcegraph/web/src/notebooks/GlobalNotebooksArea'
-export {
-    CodeInsightsRouter,
-    type CodeInsightsRouterProps,
-} from '@sourcegraph/web/src/enterprise/insights/CodeInsightsRouter'
 
 export type { FeatureFlagName } from '@sourcegraph/web/src/featureFlags/featureFlags'
 

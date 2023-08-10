@@ -39,7 +39,7 @@ const config = defineConfig(({ mode }) => ({
         proxy: {
             // Proxy requests to specific endpoints to a real Sourcegraph
             // instance.
-            '^(/sign-in|/.assets|/-|/.api|/search/stream|/users)': {
+            '^(/sign-in|/.assets|/-|/.api|/search/stream|/users|/notebooks|/insights)': {
                 target: process.env.SOURCEGRAPH_API_URL || 'https://sourcegraph.com',
                 changeOrigin: true,
                 secure: false,

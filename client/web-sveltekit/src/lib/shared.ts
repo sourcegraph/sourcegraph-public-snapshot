@@ -22,7 +22,6 @@ export {
     RevisionNotFoundError,
 } from '@sourcegraph/shared/src/backend/errors'
 export { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
-export type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 export { SectionID as SearchSidebarSectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 export { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 export {
@@ -62,7 +61,6 @@ export { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 export { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 export { getGlobalSearchContextFilter, findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 export { omitFilter, appendFilter } from '@sourcegraph/shared/src/search/query/transformer'
-export type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 export {
     type SettingsCascade,
     type SettingsSubject,
