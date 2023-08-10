@@ -30,6 +30,7 @@ import { CodyPageIcon } from '../../chat/CodyPageIcon'
 import { isCodyEnabled, isEmailVerificationNeededForCody, isSignInRequiredForCody } from '../../isCodyEnabled'
 import { useCodySidebar } from '../../sidebar/Provider'
 import { CodyChatStore } from '../../useCodyChat'
+import { GettingStarted } from '../GettingStarted'
 import { ScopeSelector } from '../ScopeSelector'
 
 import styles from './ChatUi.module.scss'
@@ -85,6 +86,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
             toggleIncludeInferredFile,
             fetchRepositoryNames,
             isSourcegraphApp,
+            wrapperClassName: 'mt-2',
         }),
         [
             scope,
@@ -428,31 +430,4 @@ const CodyNotEnabledIcon: React.FunctionComponent<{ className?: string }> = ({ c
             fill="#A305E1"
         />
     </svg>
-)
-
-const GettingStarted: React.FunctionComponent<{
-    onSubmit: (query: string, submitType: 'example') => void
-}> = ({ onSubmit }) => (
-    <div className={styles.gettingStartedContainer}>
-        <div className={styles.gettingStartedContent}>
-            <div className={styles.gettingStartedColumn}>
-                <Text>Examples</Text>
-                <ul>
-                    {['example 1', 'example 2', 'example 3'].map(example => (
-                        <li key={example}>
-                            <button type="submit" onClick={() => onSubmit(example, 'example')}>
-                                {example}
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-            </div>
-            <div className={styles.gettingStartedColumn}>
-                <Text>Capabilities</Text>
-            </div>
-            <div className={styles.gettingStartedColumn}>
-                <Text>Limitations</Text>
-            </div>
-        </div>
-    </div>
 )

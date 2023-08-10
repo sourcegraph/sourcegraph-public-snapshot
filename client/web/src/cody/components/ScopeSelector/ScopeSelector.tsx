@@ -21,6 +21,8 @@ interface ScopeSelectorProps {
     toggleIncludeInferredFile: () => void
     fetchRepositoryNames: (count: number) => Promise<string[]>
     isSourcegraphApp: boolean
+    wrapperClassName?: string
+    renderHint?: (repos: IRepo[]) => React.ReactNode
 }
 
 export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function ScopeSelectorComponent({
@@ -30,6 +32,8 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     toggleIncludeInferredFile,
     fetchRepositoryNames,
     isSourcegraphApp,
+    wrapperClassName,
+    renderHint,
 }) {
     const [loadReposStatus, { data: newReposStatusData, previousData: previousReposStatusData }] = useLazyQuery<
         ReposStatusResult,
@@ -109,27 +113,30 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     }, [scope, setScope, fetchRepositoryNames, isSourcegraphApp])
 
     return (
-        <div className={styles.wrapper}>
-            <div className="d-flex text-truncate">
-                <RepositoriesSelectorPopover
-                    includeInferredRepository={scope.includeInferredRepository}
-                    includeInferredFile={scope.includeInferredFile}
-                    inferredRepository={inferredRepository}
-                    inferredFilePath={activeEditor?.filePath || null}
-                    additionalRepositories={additionalRepositories}
-                    addRepository={addRepository}
-                    resetScope={!isSourcegraphApp ? resetScope : null}
-                    removeRepository={removeRepository}
-                    toggleIncludeInferredRepository={toggleIncludeInferredRepository}
-                    toggleIncludeInferredFile={toggleIncludeInferredFile}
-                />
-                {scope.includeInferredFile && activeEditor?.filePath && (
-                    <div className={classNames('d-flex align-items-center', styles.filepathText)}>
-                        <div className={styles.separator} />
-                        {getFileName(activeEditor.filePath)}
-                    </div>
-                )}
+        <>
+            <div className={classNames(styles.wrapper, wrapperClassName)}>
+                <div className="d-flex text-truncate w-100">
+                    <RepositoriesSelectorPopover
+                        includeInferredRepository={scope.includeInferredRepository}
+                        includeInferredFile={scope.includeInferredFile}
+                        inferredRepository={inferredRepository}
+                        inferredFilePath={activeEditor?.filePath || null}
+                        additionalRepositories={additionalRepositories}
+                        addRepository={addRepository}
+                        resetScope={!isSourcegraphApp ? resetScope : null}
+                        removeRepository={removeRepository}
+                        toggleIncludeInferredRepository={toggleIncludeInferredRepository}
+                        toggleIncludeInferredFile={toggleIncludeInferredFile}
+                    />
+                    {scope.includeInferredFile && activeEditor?.filePath && (
+                        <div className={classNames('d-flex align-items-center', styles.filepathText)}>
+                            <div className={styles.separator} />
+                            {getFileName(activeEditor.filePath)}
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
+            {renderHint?.(additionalRepositories)}
+        </>
     )
 })

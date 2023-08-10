@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react'
 
 import {
     mdiChevronUp,
+    mdiChevronDown,
     mdiMinusCircleOutline,
     mdiCheck,
     mdiCloseCircle,
@@ -20,7 +21,6 @@ import {
     Popover,
     PopoverTrigger,
     PopoverContent,
-    Position,
     Button,
     Card,
     Text,
@@ -154,20 +154,18 @@ export const RepositoriesSelectorPopover: React.FC<{
             <Popover isOpen={isPopoverOpen} onOpenChange={onOpenChange}>
                 <PopoverTrigger
                     as={Button}
-                    outline={false}
+                    variant="secondary"
+                    size="sm"
+                    outline={true}
                     className={classNames(
-                        'd-flex justify-content-between p-0 pr-1 align-items-center w-100',
+                        'd-flex p-1 align-items-center w-100 text-muted font-weight-normal',
                         styles.repositoryNamesText
                     )}
                 >
                     <div className="mr-1">
                         <EmbeddingStatusIndicator repos={netRepositories} />
                     </div>
-                    <div
-                        className={classNames('text-truncate mr-1', {
-                            'text-muted': !netRepositories.length,
-                        })}
-                    >
+                    <div className="text-truncate mr-1">
                         {netRepositories.length > 1 ? (
                             <>
                                 {netRepositories.length} Repositories (
@@ -176,13 +174,17 @@ export const RepositoriesSelectorPopover: React.FC<{
                         ) : netRepositories.length ? (
                             getFileName(netRepositories[0].name)
                         ) : (
-                            'Add repositories...'
+                            'Add repositories to the chat context'
                         )}
                     </div>
-                    <Icon aria-hidden={true} svgPath={mdiChevronUp} />
+                    <Icon
+                        aria-hidden={true}
+                        svgPath={isPopoverOpen ? mdiChevronUp : mdiChevronDown}
+                        className="ml-auto"
+                    />
                 </PopoverTrigger>
 
-                <PopoverContent position={Position.topStart}>
+                <PopoverContent>
                     <Card
                         className={classNames(
                             'd-flex flex-column justify-content-between',
@@ -517,7 +519,7 @@ const getEmbeddingStatus = ({
             status: RepoEmbeddingStatus.INDEXED,
             tooltip: 'Repository is indexed',
             icon: mdiDatabaseCheckOutline,
-            className: '',
+            className: styles.iconGreen,
         }
     }
 
@@ -526,7 +528,7 @@ const getEmbeddingStatus = ({
             status: RepoEmbeddingStatus.NOT_INDEXED,
             tooltip: 'Repository is not indexed',
             icon: mdiDatabaseRemoveOutline,
-            className: 'text-warning',
+            className: classNames('text-warning', styles.iconYellow),
         }
     }
 
@@ -537,45 +539,47 @@ const getEmbeddingStatus = ({
                 status: RepoEmbeddingStatus.QUEUED,
                 tooltip: 'Repository is queued for indexing',
                 icon: mdiDatabaseClockOutline,
-                className: 'text-warning',
+                className: classNames('text-warning', styles.iconYellow),
             }
         case 'PROCESSING':
             return {
                 status: RepoEmbeddingStatus.INDEXING,
                 tooltip: 'Repository is being indexed',
                 icon: mdiDatabaseRefreshOutline,
-                className: 'text-warning',
+                className: classNames('text-warning', styles.iconYellow),
             }
         case 'COMPLETED':
             return {
                 status: RepoEmbeddingStatus.INDEXED,
                 tooltip: 'Repository is indexed',
                 icon: mdiDatabaseCheckOutline,
-                className: '',
+                className: styles.iconGreen,
             }
         case 'ERRORED':
             return {
                 status: RepoEmbeddingStatus.FAILED,
                 tooltip: `Repository indexing failed: ${job.failureMessage || 'unknown error'}`,
                 icon: mdiDatabaseRemoveOutline,
-                className: 'text-danger',
+                className: classNames('text-danger', styles.iconRed),
             }
         case 'FAILED':
             return {
                 status: RepoEmbeddingStatus.FAILED,
                 tooltip: `Repository indexing failed: ${job.failureMessage || 'unknown error'}`,
                 icon: mdiDatabaseRemoveOutline,
-                className: 'text-danger',
+                className: classNames('text-danger', styles.iconRed),
             }
         default:
             return {
                 status: RepoEmbeddingStatus.NOT_INDEXED,
                 tooltip: 'Repository is not indexed',
                 icon: mdiDatabaseRemoveOutline,
-                className: 'text-warning',
+                className: classNames('text-warning', styles.iconYellow),
             }
     }
 }
+
+export const isRepoIndexed = (repo: IRepo): boolean => getEmbeddingStatus(repo).status === RepoEmbeddingStatus.INDEXED
 
 const EmbeddingExistsIcon: React.FC<{
     repo: IRepo
@@ -635,8 +639,9 @@ const EmbeddingStatusIndicator: React.FC<{ repos: IRepo[] }> = React.memo(functi
         return (
             <Tooltip content="Indexing failed for some repositories">
                 <Icon
+                    color="var(--red)"
                     aria-label="Database icon"
-                    className="align-center text-danger"
+                    className={classNames('align-center text-danger', styles.iconRed)}
                     svgPath={mdiDatabaseRemoveOutline}
                 />
             </Tooltip>
@@ -648,7 +653,7 @@ const EmbeddingStatusIndicator: React.FC<{ repos: IRepo[] }> = React.memo(functi
             <Tooltip content="Some repositories are being indexed">
                 <Icon
                     aria-label="Database icon"
-                    className="align-center text-warning"
+                    className={classNames('align-center text-warning', styles.iconYellow)}
                     svgPath={mdiDatabaseRefreshOutline}
                 />
             </Tooltip>
@@ -660,7 +665,7 @@ const EmbeddingStatusIndicator: React.FC<{ repos: IRepo[] }> = React.memo(functi
             <Tooltip content="Some repositories are queued for indexing">
                 <Icon
                     aria-label="Database icon"
-                    className="align-center text-warning"
+                    className={classNames('align-center text-warning', styles.iconYellow)}
                     svgPath={mdiDatabaseClockOutline}
                 />
             </Tooltip>
@@ -672,7 +677,7 @@ const EmbeddingStatusIndicator: React.FC<{ repos: IRepo[] }> = React.memo(functi
             <Tooltip content="Some repositories are not indexed">
                 <Icon
                     aria-label="Database icon"
-                    className="align-center text-warning"
+                    className={classNames('align-center text-warning', styles.iconYellow)}
                     svgPath={mdiDatabaseRemoveOutline}
                 />
             </Tooltip>
@@ -683,7 +688,7 @@ const EmbeddingStatusIndicator: React.FC<{ repos: IRepo[] }> = React.memo(functi
         <Tooltip content="All repositories are indexed">
             <Icon
                 aria-label="Database icon with a check mark"
-                className="align-center"
+                className={classNames('align-center', styles.iconGreen)}
                 svgPath={mdiDatabaseCheckOutline}
             />
         </Tooltip>
