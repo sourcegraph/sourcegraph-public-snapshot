@@ -73,9 +73,9 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	}})
 	defer endObservation(1, observation.Args{})
 
-	var logBuf *bytes.Buffer
+	logBuf := new(bytes.Buffer)
 	debug := func(format string, args ...any) {
-		s := fmt.Sprintf(format+"\n", args...)
+		s := fmt.Sprintf(format, args...)
 		fmt.Print(s)
 		logBuf.WriteString(s)
 	}
