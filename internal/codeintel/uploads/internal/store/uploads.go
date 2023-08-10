@@ -585,6 +585,7 @@ ranked_uploads AS (
 		-- within a repository by commit date. We'll choose the oldest commit
 		-- date as the canonical choice used to resolve the current definitions
 		-- request.
+		repo.stars,
 		` + packageRankingQueryFragment + ` AS rank
 	FROM lsif_uploads u
 	JOIN lsif_packages p ON p.dump_id = u.id
@@ -599,7 +600,7 @@ canonical_uploads AS (
 	SELECT ru.id
 	FROM ranked_uploads ru
 	WHERE ru.rank = 1
-	ORDER BY ru.id
+	ORDER BY ru.stars DESC, ru.id
 	LIMIT %s
 )
 SELECT
