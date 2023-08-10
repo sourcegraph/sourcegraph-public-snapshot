@@ -54,7 +54,12 @@ export const ExternalServiceGroup: FC<ExternalServiceGroupProps> = ({
             {isOpen && (
                 <ul className={styles.externalServiceGroupBody}>
                     {services.map((service, index) => (
-                        <li key={index} className={styles.externalServiceGroupNode}>
+                        <li
+                            key={index}
+                            className={classNames(styles.externalServiceGroupNode, {
+                                [styles.externalServiceGroupEnabledNode]: service.enabled,
+                            })}
+                        >
                             <ExternalServiceGroupNode service={service} renderServiceIcon={renderServiceIcon} />
                         </li>
                     ))}
