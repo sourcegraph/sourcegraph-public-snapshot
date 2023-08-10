@@ -371,7 +371,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 	}
 
 	count, err := r.db.Repos().Count(ctx, r.opt)
-	return i32ptr(int32(count)), err
+	return pointers.Ptr(int32(count)), err
 }
 
 func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
