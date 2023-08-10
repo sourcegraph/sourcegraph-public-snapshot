@@ -1,6 +1,7 @@
 package dependencies
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -8,6 +9,7 @@ import (
 
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -23,13 +25,18 @@ const stalledIndexMaxAge = time.Second * 25
 // "queued" on its next reset.
 const indexMaxNumResets = 3
 
+var (
+	indexLookbackWindow = env.Get("CODEINTEL_AUTOINDEXING_CANDIDATE_JOB_WINDOW", "1d", "The window from the latest enqueued job to consider when finding candidate jobs to run")
+	repoDequeueCooldown = env.Get("CODEINTEL_AUTOINDEXING_COOLDOWN_DEBUFF", "6h", "How soon a repository should be on cooldown after a successful index before it can be a candidate when the most recently queued job is outside the lookback window.")
+)
+
 var IndexWorkerStoreOptions = dbworkerstore.Options[uploadsshared.Index]{
 	Name:              "codeintel_index",
 	TableName:         "lsif_indexes",
-	ViewName:          "lsif_indexes_with_repository_name u",
+	ViewName:          fmt.Sprintf("lsif_indexes_enqueue_candidates('%s'::interval, '%s'::interval) u", indexLookbackWindow, repoDequeueCooldown),
 	ColumnExpressions: indexColumnsWithNullRank,
 	Scan:              dbworkerstore.BuildWorkerScan(scanIndex),
-	OrderByExpression: sqlf.Sprintf("(u.enqueuer_user_id > 0) DESC, u.queued_at, u.id"),
+	OrderByExpression: sqlf.Sprintf("u.enqueuer_user_id = 0, u.queued_at, u.id"),
 	StalledMaxAge:     stalledIndexMaxAge,
 	MaxNumResets:      indexMaxNumResets,
 }
@@ -46,19 +53,19 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.num_resets"),
 	sqlf.Sprintf("u.num_failures"),
 	sqlf.Sprintf("u.repository_id"),
-	sqlf.Sprintf(`u.repository_name`),
-	sqlf.Sprintf(`u.docker_steps`),
-	sqlf.Sprintf(`u.root`),
-	sqlf.Sprintf(`u.indexer`),
-	sqlf.Sprintf(`u.indexer_args`),
-	sqlf.Sprintf(`u.outfile`),
-	sqlf.Sprintf(`u.execution_logs`),
+	sqlf.Sprintf("u.repository_name"),
+	sqlf.Sprintf("u.docker_steps"),
+	sqlf.Sprintf("u.root"),
+	sqlf.Sprintf("u.indexer"),
+	sqlf.Sprintf("u.indexer_args"),
+	sqlf.Sprintf("u.outfile"),
+	sqlf.Sprintf("u.execution_logs"),
 	sqlf.Sprintf("NULL"),
-	sqlf.Sprintf(`u.local_steps`),
-	sqlf.Sprintf(`(SELECT MAX(id) FROM lsif_uploads WHERE associated_index_id = u.id) AS associated_upload_id`),
-	sqlf.Sprintf(`u.should_reindex`),
-	sqlf.Sprintf(`u.requested_envvars`),
-	sqlf.Sprintf(`u.enqueuer_user_id`),
+	sqlf.Sprintf("u.local_steps"),
+	sqlf.Sprintf("(SELECT MAX(id) FROM lsif_uploads WHERE associated_index_id = u.id) AS associated_upload_id"),
+	sqlf.Sprintf("u.should_reindex"),
+	sqlf.Sprintf("u.requested_envvars"),
+	sqlf.Sprintf("u.enqueuer_user_id"),
 }
 
 func scanIndex(s dbutil.Scanner) (index uploadsshared.Index, err error) {

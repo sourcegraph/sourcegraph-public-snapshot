@@ -7,10 +7,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/derision-test/glock"
+
 	sqlf "github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/prometheus/statsd_exporter/pkg/clock"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -50,6 +53,68 @@ func Test_AutoIndexingManualEnqueuedDequeueOrder(t *testing.T) {
 				{ID: 3, RepositoryID: 1, EnqueuerUserID: 1},
 			},
 			nextID: 3,
+		},
+	} {
+		t.Run(fmt.Sprint(i), func(t *testing.T) {
+			if _, err := db.ExecContext(context.Background(), "TRUNCATE lsif_indexes RESTART IDENTITY CASCADE"); err != nil {
+				t.Fatal(err)
+			}
+			insertIndexes(t, db, test.indexes...)
+			job, _, err := workerstore.Dequeue(context.Background(), "borgir", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if job.ID != test.nextID {
+				t.Fatalf("unexpected next index job candidate (got=%d,want=%d)", job.ID, test.nextID)
+			}
+		})
+	}
+}
+
+func Test_AutoIndexingDequeueOrder(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	raw := dbtest.NewDB(log.NoOp(), t)
+	db := database.NewDB(log.NoOp(), raw)
+
+	clock := glock.NewMockClock()
+	tim, _ := time.ParseInLocation(time.DateTime, "2023-08-18 17:12:00", time.UTC)
+	tim = tim.Truncate(time.Microsecond)
+	clock.SetCurrent(tim)
+
+	opts := IndexWorkerStoreOptions
+	opts.Clock = clock
+	workerstore := store.New(&observation.TestContext, db.Handle(), opts)
+
+	for i, test := range []struct {
+		indexes []shared.Index
+		nextID  int
+	}{
+		{
+			indexes: []shared.Index{
+				{ID: 1, RepositoryID: 1, QueuedAt: clock.Now().Add(-time.Hour * 23)},
+				{ID: 2, RepositoryID: 4, QueuedAt: clock.Now()},
+			},
+			nextID: 1,
+		},
+		{
+			indexes: []shared.Index{
+				{ID: 1, RepositoryID: 1, QueuedAt: clock.Now().Add(-time.Hour * 4), State: "completed", FinishedAt: dbutil.NullTimeColumn(clock.Now().Add(-time.Hour * 3))},
+				{ID: 2, RepositoryID: 1, QueuedAt: clock.Now().Add(-time.Hour * 25)},
+				{ID: 3, RepositoryID: 2, QueuedAt: clock.Now()},
+			},
+			nextID: 3,
+		},
+		{
+			indexes: []shared.Index{
+				{ID: 1, RepositoryID: 1, QueuedAt: clock.Now().Add(-time.Hour)},
+				{},
+				{},
+			},
+			nextID: 0,
 		},
 	} {
 		t.Run(fmt.Sprint(i), func(t *testing.T) {

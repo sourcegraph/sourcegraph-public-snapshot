@@ -238,8 +238,8 @@ type Options[T workerutil.Record] struct {
 	// Setting this value to zero will disable retries entirely.
 	MaxNumRetries int
 
-	// clock is used to mock out the wall clock used for heartbeat updates.
-	clock glock.Clock
+	// Clock is used to mock out the wall Clock used for heartbeat updates.
+	Clock glock.Clock
 }
 
 // ResultsetScanFn is a function that scans row values from a resultset into
@@ -264,8 +264,8 @@ func newStore[T workerutil.Record](observationCtx *observation.Context, handle b
 		options.ViewName = options.TableName
 	}
 
-	if options.clock == nil {
-		options.clock = glock.NewRealClock()
+	if options.Clock == nil {
+		options.Clock = glock.NewRealClock()
 	}
 
 	alternateColumnNames := map[string]string{}
@@ -1033,7 +1033,7 @@ func (s *store[T]) formatQuery(query string, args ...any) *sqlf.Query {
 }
 
 func (s *store[T]) now() time.Time {
-	return s.options.clock.Now().UTC()
+	return s.options.Clock.Now().UTC()
 }
 
 const fetchDebugInformationForJob = `
@@ -1142,17 +1142,27 @@ func makeColumnPrefixes(name string) []string {
 	parts := strings.Split(name, " ")
 
 	switch len(parts) {
+	case 0:
+		return []string{""}
 	case 1:
 		// name = TableName
 		// prefixes = <empty> and `TableName.`
 		return []string{"", parts[0] + "."}
 	case 2:
-		// name = TableName alias
-		// prefixes = <empty>, `TableName.`, and `alias.`
-		return []string{"", parts[0] + ".", parts[1] + "."}
-
+		switch i := strings.IndexRune(parts[0], '('); i {
+		case -1:
+			// name = TableName alias
+			// prefixes = <empty>, `TableName.`, and `alias.`
+			return []string{"", parts[0] + ".", parts[1] + "."}
+		default:
+			// name = FuncCall(one_param) alias
+			// prefixes = <empty>, `FuncCall.`, and `alias.`
+			return []string{"", parts[0][:i] + ".", parts[len(parts)-1] + "."}
+		}
 	default:
-		return []string{""}
+		// name = FuncCall(one_param, two_param, ...) alias
+		// prefixes = <empty>, `FuncCall.`, and `alias.`
+		return []string{"", parts[0][:strings.IndexRune(parts[0], '(')] + ".", parts[len(parts)-1] + "."}
 	}
 }
 

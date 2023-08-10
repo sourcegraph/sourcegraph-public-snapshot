@@ -38,13 +38,13 @@ def _migration_impl(ctx):
             db = ctx.attr.db,
             output_file = ctx.outputs.out.path,
         ),
-        tools = ctx.attr._sg[DefaultInfo].default_runfiles.files
+        tools = ctx.attr._sg[DefaultInfo].default_runfiles.files,
     )
 
 migration = rule(
     implementation = _migration_impl,
     attrs = {
-        "srcs": attr.label_list(allow_files= True, mandatory= True),
+        "srcs": attr.label_list(allow_files = True, mandatory = True),
         "db": attr.string(mandatory = True),
         "out": attr.output(mandatory = True),
         "_sg": attr.label(executable = True, default = "//dev/sg:sg", cfg = "exec"),
@@ -80,11 +80,10 @@ def _describe_impl(ctx):
 describe = rule(
     implementation = _describe_impl,
     attrs = {
-        "srcs": attr.label_list(allow_files= True, mandatory= True),
+        "srcs": attr.label_list(allow_files = True, mandatory = True),
         "db": attr.string(mandatory = True),
         "format": attr.string(mandatory = True),
         "out": attr.output(mandatory = True),
         "_sg": attr.label(executable = True, default = "//dev/sg:sg", cfg = "exec"),
     },
 )
-
