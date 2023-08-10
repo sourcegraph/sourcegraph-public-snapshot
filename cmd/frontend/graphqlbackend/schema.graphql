@@ -7330,6 +7330,13 @@ type Site implements SettingsSubject {
     Site-admin only.
     """
     codyGatewayRateLimitStatus: [CodyGatewayRateLimitStatus!]
+
+    gitServerInfo: GitServerInfo!
+}
+
+type GitServerInfo {
+    addresses: [String!]!
+    freespace: Int!
 }
 
 """

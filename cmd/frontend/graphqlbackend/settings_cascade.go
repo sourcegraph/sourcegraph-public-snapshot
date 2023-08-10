@@ -62,7 +62,7 @@ func (r *schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, 
 		return nil, err
 	}
 	if user == nil {
-		return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{site: NewSiteResolver(log.Scoped("settings", "ViewerSettings"), r.db)}}, nil
+		return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{site: NewSiteResolver(log.Scoped("settings", "ViewerSettings"), r.db, r.gitserverClient)}}, nil
 	}
 	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{user: user}}, nil
 }

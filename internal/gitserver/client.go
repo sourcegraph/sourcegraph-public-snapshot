@@ -448,6 +448,12 @@ type Client interface {
 	RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (bool, error)) error
 
 	Addrs() []string
+
+	FreeSpace() int32
+}
+
+func (c *clientImplementor) FreeSpace() int32 {
+	return 12
 }
 
 func (c *clientImplementor) Addrs() []string {
