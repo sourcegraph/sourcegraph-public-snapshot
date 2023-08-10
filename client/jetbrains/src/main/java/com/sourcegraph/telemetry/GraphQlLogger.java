@@ -16,7 +16,8 @@ import org.jetbrains.annotations.Nullable;
 public class GraphQlLogger {
   private static final Logger logger = Logger.getInstance(GraphQlLogger.class);
 
-  public static void logInstallEvent(@NotNull Project project, @NotNull Consumer<Boolean> callback) {
+  public static void logInstallEvent(
+      @NotNull Project project, @NotNull Consumer<Boolean> callback) {
     if (ConfigUtil.getAnonymousUserId() != null) {
       var event = createEvent(project, "CodyInstalled", new JsonObject());
       logEvent(project, event, (responseStatusCode) -> callback.accept(responseStatusCode == 200));
@@ -46,21 +47,21 @@ public class GraphQlLogger {
   }
 
   @NotNull
-  private static Event createEvent(@NotNull Project project, @NotNull String eventName,
-      @NotNull JsonObject eventParameters) {
+  private static Event createEvent(
+      @NotNull Project project, @NotNull String eventName, @NotNull JsonObject eventParameters) {
     var updatedEventParameters = addProjectSpecificEventParameters(eventParameters, project);
     String anonymousUserId = ConfigUtil.getAnonymousUserId();
     return new Event(
-            eventName,
-            anonymousUserId != null ? anonymousUserId : "",
-            "",
-            updatedEventParameters,
-            updatedEventParameters);
+        eventName,
+        anonymousUserId != null ? anonymousUserId : "",
+        "",
+        updatedEventParameters,
+        updatedEventParameters);
   }
 
   @NotNull
-  private static JsonObject addProjectSpecificEventParameters(@NotNull JsonObject eventParameters,
-      @NotNull Project project) {
+  private static JsonObject addProjectSpecificEventParameters(
+      @NotNull JsonObject eventParameters, @NotNull Project project) {
     var updatedEventParameters = eventParameters.deepCopy();
     updatedEventParameters.addProperty("serverEndpoint", ConfigUtil.getSourcegraphUrl(project));
     return updatedEventParameters;

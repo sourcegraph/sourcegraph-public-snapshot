@@ -47,10 +47,14 @@ public class CodyAutoCompleteManager {
     Optional.ofNullable(editor.getProject())
         .ifPresent(
             p -> {
-              if (currentAutocompletion != null && currentAutocompletion.getStatus() != AutocompletionStatus.TRIGGERED_NOT_DISPLAYED) {
+              if (currentAutocompletion != null
+                  && currentAutocompletion.getStatus()
+                      != AutocompletionStatus.TRIGGERED_NOT_DISPLAYED) {
                 currentAutocompletion.markCompletionHidden();
                 GraphQlLogger.logAutocompleteSuggestedEvent(
-                    p, currentAutocompletion.getLatencyMs(), currentAutocompletion.getDisplayDurationMs());
+                    p,
+                    currentAutocompletion.getLatencyMs(),
+                    currentAutocompletion.getDisplayDurationMs());
                 currentAutocompletion = null;
               }
             });
@@ -127,19 +131,14 @@ public class CodyAutoCompleteManager {
   }
 
   /**
-   * Asynchronously triggers auto-complete for the given editor and offset. Details:
-   * - Calls provideInlineAutoCompleteItems() on the provider to get autocomplete items.
-   * - Filters and processes the results:
-   *   - Removes undesired characters
-   *   - Normalizes indentation
-   *   - Finds the first non-empty insertText item
-   * - If an item is found:
-   *   - Clears existing autocomplete items
-   *   - Logs a "completion suggested" event
-   *   - Renders the autocomplete item as inline, after line, and block elements
-   *   - Adds the rendered elements to the editor's InlayModel
-   * - Returns a CompletableFuture<Void> that completes when the autocomplete is rendered.
-   * - Catches any unexpected exceptions and logs a warning.
+   * Asynchronously triggers auto-complete for the given editor and offset. Details: - Calls
+   * provideInlineAutoCompleteItems() on the provider to get autocomplete items. - Filters and
+   * processes the results: - Removes undesired characters - Normalizes indentation - Finds the
+   * first non-empty insertText item - If an item is found: - Clears existing autocomplete items -
+   * Logs a "completion suggested" event - Renders the autocomplete item as inline, after line, and
+   * block elements - Adds the rendered elements to the editor's InlayModel - Returns a
+   * CompletableFuture<Void> that completes when the autocomplete is rendered. - Catches any
+   * unexpected exceptions and logs a warning.
    *
    * @param editor The editor instance to provide autocomplete for.
    * @param offset The character offset in the editor to trigger autocomplete at.

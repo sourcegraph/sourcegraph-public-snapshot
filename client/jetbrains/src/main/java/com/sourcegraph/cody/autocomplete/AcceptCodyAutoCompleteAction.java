@@ -34,11 +34,10 @@ public class AcceptCodyAutoCompleteAction extends EditorAction {
     }
 
     /**
-     * Applies the autocomplete to the document at a caret:
-     *   1. Replaces the string between the caret offset and its line end with the current completion
-     *   2. Moves the caret to the start and end offsets with the completion text.
-     * If there are multiple carets, uses the first one.
-     * If there are no completions at the caret, does nothing.
+     * Applies the autocomplete to the document at a caret: 1. Replaces the string between the caret
+     * offset and its line end with the current completion 2. Moves the caret to the start and end
+     * offsets with the completion text. If there are multiple carets, uses the first one. If there
+     * are no completions at the caret, does nothing.
      */
     @Override
     protected void doExecute(

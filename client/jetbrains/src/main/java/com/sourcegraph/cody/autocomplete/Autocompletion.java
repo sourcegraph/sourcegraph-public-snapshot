@@ -13,8 +13,7 @@ public class Autocompletion {
     return autocompletion;
   }
 
-  private Autocompletion() {
-  }
+  private Autocompletion() {}
 
   public void markCompletionDisplayed() {
     this.completionDisplayedTimestampMs = System.currentTimeMillis();

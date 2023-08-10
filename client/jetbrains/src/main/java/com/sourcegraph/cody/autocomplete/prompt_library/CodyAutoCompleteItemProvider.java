@@ -86,7 +86,6 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
    * @param context Additional context about the auto-complete invocation.
    * @param token A cancellation token to abort the operation.
    */
-
   private CompletableFuture<InlineAutoCompleteList> provideInlineAutoCompleteItemsInner(
       TextDocument document,
       Position position,
