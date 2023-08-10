@@ -5,10 +5,10 @@ import { of } from 'rxjs'
 
 import { Container, Link, H2, H3 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { CallToActionBanner } from '../../components/CallToActionBanner'
 import { FilteredConnection } from '../../components/FilteredConnection'
-import {
+import type {
     CodeMonitorFields,
     ListAllCodeMonitorsResult,
     ListAllCodeMonitorsVariables,
@@ -17,8 +17,8 @@ import {
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
-import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
-import { CodeMonitoringPageProps } from './CodeMonitoringPage'
+import { CodeMonitorNode, type CodeMonitorNodeProps } from './CodeMonitoringNode'
+import type { CodeMonitoringPageProps } from './CodeMonitoringPage'
 
 interface CodeMonitorListProps
     extends Required<

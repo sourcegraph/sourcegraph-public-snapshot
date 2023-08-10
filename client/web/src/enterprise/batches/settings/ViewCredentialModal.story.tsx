@@ -1,8 +1,8 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { WebStory } from '../../../components/WebStory'
-import { BatchChangesCredentialFields, ExternalServiceKind } from '../../../graphql-operations'
+import { type BatchChangesCredentialFields, ExternalServiceKind } from '../../../graphql-operations'
 
 import { ViewCredentialModal } from './ViewCredentialModal'
 

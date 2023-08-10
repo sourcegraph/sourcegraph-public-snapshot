@@ -1,18 +1,18 @@
-import { ApolloClient } from '@apollo/client'
-import { FuzzyFinderSymbolsResult, FuzzyFinderSymbolsVariables } from 'src/graphql-operations'
+import type { ApolloClient } from '@apollo/client'
+import type { FuzzyFinderSymbolsResult, FuzzyFinderSymbolsVariables } from 'src/graphql-operations'
 import gql from 'tagged-template-noop'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { isSettingsValid, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { isSettingsValid, type SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
-import { SearchValue } from '../../fuzzyFinder/SearchValue'
-import { UserHistory } from '../useUserHistory'
+import type { SearchValue } from '../../fuzzyFinder/SearchValue'
+import type { UserHistory } from '../useUserHistory'
 
-import { emptyFuzzyCache, PersistableQueryResult } from './FuzzyLocalCache'
+import { emptyFuzzyCache, type PersistableQueryResult } from './FuzzyLocalCache'
 import { FuzzyQuery } from './FuzzyQuery'
-import { FuzzyRepoRevision, fuzzyRepoRevisionSearchFilter } from './FuzzyRepoRevision'
+import { type FuzzyRepoRevision, fuzzyRepoRevisionSearchFilter } from './FuzzyRepoRevision'
 
 export const FUZZY_SYMBOLS_QUERY = gql`
     fragment FileMatchFields on FileMatch {

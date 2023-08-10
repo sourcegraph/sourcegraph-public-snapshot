@@ -1,6 +1,6 @@
 import { startCase } from 'lodash'
 
-import { DOMFunctionsTest, testDOMFunctions } from '../shared/codeHostTestUtils'
+import { type DOMFunctionsTest, testDOMFunctions } from '../shared/codeHostTestUtils'
 
 import { diffDomFunctions, diffusionDOMFns } from './domFunctions'
 

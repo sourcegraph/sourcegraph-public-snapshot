@@ -4,7 +4,7 @@ import { mdiAlertCircle, mdiChevronDown, mdiInformationOutline } from '@mdi/js'
 
 import { Button, Popover, PopoverContent, PopoverTrigger, Position, Icon } from '@sourcegraph/wildcard'
 
-import { StreamingProgressProps } from './StreamingProgress'
+import type { StreamingProgressProps } from './StreamingProgress'
 import { CountContent, getProgressText } from './StreamingProgressCount'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 

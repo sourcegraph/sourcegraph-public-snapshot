@@ -1,4 +1,4 @@
-import { useEffect, RefObject } from 'react'
+import { useEffect, type RefObject } from 'react'
 
 interface UseAutoFocusParameters {
     autoFocus?: boolean

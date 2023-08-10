@@ -1,14 +1,14 @@
-import { of, Subscription } from 'rxjs'
+import { of, type Subscription } from 'rxjs'
 import { map, switchMap, throttleTime } from 'rxjs/operators'
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import { SearchMode } from '@sourcegraph/shared/src/search'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 
-import { ExtensionCoreAPI } from '../contract'
+import type { ExtensionCoreAPI } from '../contract'
 import { SearchPatternType } from '../graphql-operations'
-import { VSCEStateMachine } from '../state'
+import type { VSCEStateMachine } from '../state'
 import { focusSearchPanel } from '../webview/commands'
 
 import { isOlderThan, observeInstanceVersionNumber } from './instanceVersion'

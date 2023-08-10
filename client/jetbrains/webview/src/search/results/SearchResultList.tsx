@@ -1,7 +1,7 @@
 import React, { createRef, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import { isAnyDropdownOpen } from '../GlobalKeyboardListeners'
 

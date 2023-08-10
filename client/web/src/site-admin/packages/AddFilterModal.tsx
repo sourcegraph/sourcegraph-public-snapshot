@@ -1,10 +1,10 @@
 import { Modal, PageHeader } from '@sourcegraph/wildcard'
 
-import { FilteredConnectionFilterValue } from '../../components/FilteredConnection'
+import type { FilteredConnectionFilterValue } from '../../components/FilteredConnection'
 
 import {
     AddPackageFilterModalContent,
-    AddPackageFilterModalContentProps,
+    type AddPackageFilterModalContentProps,
 } from './modal-content/AddPackageFilterModalContent'
 
 import styles from './PackagesModal.module.scss'

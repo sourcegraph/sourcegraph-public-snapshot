@@ -1,9 +1,9 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { createBrowserHistory } from 'history'
 import { EMPTY, NEVER, of } from 'rxjs'
 
 import { SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
-import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import type { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     HIGHLIGHTED_FILE_LINES_LONG_REQUEST,
@@ -11,11 +11,11 @@ import {
     REPO_MATCH_RESULTS_WITH_METADATA,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
 import { useNavbarQueryState } from '../../stores'
 
-import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
+import { StreamingSearchResults, type StreamingSearchResultsProps } from './StreamingSearchResults'
 
 const history = createBrowserHistory()
 history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })

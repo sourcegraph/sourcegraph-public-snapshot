@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { MdiReactIconComponentType } from 'mdi-react'
+import type { MdiReactIconComponentType } from 'mdi-react'
 import JsonIcon from 'mdi-react/CodeJsonIcon'
 import GraphqlIcon from 'mdi-react/GraphqlIcon'
 import LanguageCIcon from 'mdi-react/LanguageCIcon'
@@ -24,7 +24,7 @@ import PowershellIcon from 'mdi-react/PowershellIcon'
 import SassIcon from 'mdi-react/SassIcon'
 import WebIcon from 'mdi-react/WebIcon'
 
-import { IconProps } from './icons'
+import type { IconProps } from './icons'
 
 interface Props extends IconProps {
     language: string

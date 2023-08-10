@@ -1,6 +1,6 @@
-import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
+import { type FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { ApolloError } from '@apollo/client'
+import type { ApolloError } from '@apollo/client'
 import { mdiCheck, mdiDelete, mdiGraveStone } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
@@ -8,10 +8,10 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useLazyQuery } from '@sourcegraph/http-client'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { displayRepoName, RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
     Badge,
@@ -32,7 +32,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../components/PageTitle'
-import {
+import type {
     CodeIntelligenceConfigurationPolicyFields,
     PreviewGitObjectFilterResult,
     PreviewGitObjectFilterVariables,
@@ -45,7 +45,7 @@ import { useDeletePolicies } from '../hooks/useDeletePolicies'
 import { usePolicyConfigurationByID } from '../hooks/usePolicyConfigurationById'
 import {
     convertGitObjectFilterResult,
-    GitObjectPreviewResult,
+    type GitObjectPreviewResult,
     PREVIEW_GIT_OBJECT_FILTER,
 } from '../hooks/usePreviewGitObjectFilter'
 import { useSavePolicyConfiguration } from '../hooks/useSavePolicyConfiguration'

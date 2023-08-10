@@ -1,8 +1,8 @@
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
-import { BatchChangesLicenseInfo } from '@sourcegraph/shared/src/testing/batches'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import type { BatchChangesLicenseInfo } from '@sourcegraph/shared/src/testing/batches'
 
-import { TemporarySettingsResult } from './graphql-operations'
+import type { TemporarySettingsResult } from './graphql-operations'
 
 export type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 'pure-docker' | 'dev' | 'helm'
 

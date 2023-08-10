@@ -1,6 +1,6 @@
 import type { EditorView } from '@codemirror/view'
 
-import {
+import type {
     ActiveTextEditor,
     ActiveTextEditorDiagnostic,
     ActiveTextEditorSelection,

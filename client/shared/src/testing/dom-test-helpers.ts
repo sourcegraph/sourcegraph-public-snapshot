@@ -1,4 +1,4 @@
-import { Driver } from './driver'
+import type { Driver } from './driver'
 
 /**
  * Checks that given element has page focus.

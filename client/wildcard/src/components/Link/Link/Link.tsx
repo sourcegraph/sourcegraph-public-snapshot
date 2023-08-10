@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { ForwardReferenceExoticComponent } from '../../../types'
+import type { ForwardReferenceExoticComponent } from '../../../types'
 import { AnchorLink } from '../AnchorLink'
 
 export interface LinkProps

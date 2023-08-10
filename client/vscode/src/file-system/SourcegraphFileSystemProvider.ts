@@ -3,8 +3,8 @@ import * as vscode from 'vscode'
 
 import { getBlobContent } from '../backend/blobContent'
 import { getFiles } from '../backend/files'
-import { getRepositoryMetadata, RepositoryMetadata } from '../backend/repositoryMetadata'
-import { LocationNode } from '../code-intel/location'
+import { getRepositoryMetadata, type RepositoryMetadata } from '../backend/repositoryMetadata'
+import type { LocationNode } from '../code-intel/location'
 import { log } from '../log'
 import { endpointHostnameSetting } from '../settings/endpointSetting'
 

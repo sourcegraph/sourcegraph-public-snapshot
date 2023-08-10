@@ -1,6 +1,6 @@
 import CogOutlineIcon from 'mdi-react/CogOutlineIcon'
 
-import { RepoSettingsSideBarGroups } from './RepoSettingsSidebar'
+import type { RepoSettingsSideBarGroups } from './RepoSettingsSidebar'
 
 export const settingsGroup = {
     header: { label: 'Settings', icon: CogOutlineIcon },

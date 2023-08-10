@@ -1,8 +1,8 @@
-import { Range } from '@sourcegraph/extension-api-types'
+import type { Range } from '@sourcegraph/extension-api-types'
 
-import { LocationFields } from '../graphql-operations'
+import type { LocationFields } from '../graphql-operations'
 
-import { Result } from './searchBased'
+import type { Result } from './searchBased'
 
 export interface Location {
     repo: string

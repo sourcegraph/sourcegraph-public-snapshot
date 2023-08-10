@@ -1,4 +1,4 @@
-import { Suspense, PropsWithChildren, FC } from 'react'
+import { Suspense, type PropsWithChildren, type FC } from 'react'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 

@@ -10,24 +10,24 @@ import { EXTERNAL_SERVICE_IDS_AND_NAMES } from '../components/externalServices/b
 import {
     buildFilterArgs,
     FilterControl,
-    FilteredConnectionFilter,
-    FilteredConnectionFilterValue,
+    type FilteredConnectionFilter,
+    type FilteredConnectionFilterValue,
 } from '../components/FilteredConnection'
 import { usePageSwitcherPagination } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { getFilterFromURL, getUrlQuery } from '../components/FilteredConnection/utils'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import {
-    ExternalServiceIDsAndNamesResult,
-    ExternalServiceIDsAndNamesVariables,
-    RepositoriesResult,
-    RepositoriesVariables,
+    type ExternalServiceIDsAndNamesResult,
+    type ExternalServiceIDsAndNamesVariables,
+    type RepositoriesResult,
+    type RepositoriesVariables,
     RepositoryOrderBy,
-    SiteAdminRepositoryFields,
-    StatusAndRepoStatsResult,
+    type SiteAdminRepositoryFields,
+    type StatusAndRepoStatsResult,
 } from '../graphql-operations'
 import { PageRoutes } from '../routes.constants'
 
-import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
+import { ValueLegendList, type ValueLegendListProps } from './analytics/components/ValueLegendList'
 import { REPOSITORIES_QUERY, REPO_PAGE_POLL_INTERVAL, STATUS_AND_REPO_STATS } from './backend'
 import { RepositoryNode } from './RepositoryNode'
 

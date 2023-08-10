@@ -1,33 +1,33 @@
-import React, { MouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import React, { type MouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
 import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronRight, mdiFilterOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
+import type * as H from 'history'
 import { capitalize, uniqBy } from 'lodash'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Observable, of } from 'rxjs'
+import { type Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { CodeExcerpt } from '@sourcegraph/branded'
-import { HoveredToken } from '@sourcegraph/codeintellify'
-import { ErrorLike, logger, pluralize } from '@sourcegraph/common'
+import type { HoveredToken } from '@sourcegraph/codeintellify'
+import { type ErrorLike, logger, pluralize } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-classes'
 import { useQuery } from '@sourcegraph/http-client'
-import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
+import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import type { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 import { findLanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/languages'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    RepoSpec,
-    RevisionSpec,
-    FileSpec,
-    ResolvedRevisionSpec,
+    type RepoSpec,
+    type RevisionSpec,
+    type FileSpec,
+    type ResolvedRevisionSpec,
     parseQueryAndHash,
     toPrettyBlobURL,
 } from '@sourcegraph/shared/src/util/url'
@@ -50,14 +50,23 @@ import {
     useSessionStorage,
 } from '@sourcegraph/wildcard'
 
-import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
+import type {
+    ReferencesPanelHighlightedBlobResult,
+    ReferencesPanelHighlightedBlobVariables,
+} from '../graphql-operations'
 import { CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
 import * as BlobAPI from '../repo/blob/use-blob-store'
-import { HoverThresholdProps } from '../repo/RepoContainer'
+import type { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
 
-import { CodeIntelligenceProps } from '.'
-import { Location, LocationGroup, locationGroupQuality, buildRepoLocationGroups, RepoLocationGroup } from './location'
+import type { CodeIntelligenceProps } from '.'
+import {
+    type Location,
+    type LocationGroup,
+    locationGroupQuality,
+    buildRepoLocationGroups,
+    type RepoLocationGroup,
+} from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { newSettingsGetter } from './settings'
 import { findSearchToken } from './token'

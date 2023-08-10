@@ -4,9 +4,9 @@ import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { Alert, AlertProps, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Alert, type AlertProps, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { HoverOverlayBaseProps } from '../HoverOverlay.types'
+import type { HoverOverlayBaseProps } from '../HoverOverlay.types'
 
 import { HoverOverlayContent } from './HoverOverlayContent'
 

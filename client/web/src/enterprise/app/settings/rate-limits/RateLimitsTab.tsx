@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import classNames from 'classnames'
 import { formatRelative, parseISO } from 'date-fns'
@@ -6,7 +6,7 @@ import { formatRelative, parseISO } from 'date-fns'
 import { useQuery, gql } from '@sourcegraph/http-client'
 import { Text, Container, PageHeader, LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { CodyGatewayRateLimitStatusResult } from '../../../../graphql-operations'
+import type { CodyGatewayRateLimitStatusResult } from '../../../../graphql-operations'
 
 import styles from './RateLimitsTab.module.scss'
 

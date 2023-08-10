@@ -1,4 +1,4 @@
-import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
+import { type FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { mdiDelete, mdiGraph, mdiHistory, mdiRecycle, mdiRedo, mdiTimerSand } from '@mdi/js'
@@ -6,12 +6,12 @@ import classNames from 'classnames'
 import { Navigate, useLocation, useParams, useNavigate } from 'react-router-dom'
 import { takeWhile } from 'rxjs/operators'
 
-import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { type ErrorLike, isErrorLike } from '@sourcegraph/common'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
-    AlertProps,
+    type AlertProps,
     Button,
     Card,
     CardBody,
@@ -33,7 +33,7 @@ import {
     useObservable,
 } from '@sourcegraph/wildcard'
 
-import { PreciseIndexFields, PreciseIndexState } from '../../../../graphql-operations'
+import { type PreciseIndexFields, PreciseIndexState } from '../../../../graphql-operations'
 import { FlashMessage } from '../../configuration/components/FlashMessage'
 import { AuditLogPanel } from '../components/AuditLog'
 import { PreciseIndexLastUpdated } from '../components/CodeIntelLastUpdated'
@@ -41,7 +41,7 @@ import { DependenciesList, DependentsList } from '../components/Dependencies'
 import { IndexTimeline } from '../components/IndexTimeline'
 import { ProjectDescription } from '../components/ProjectDescription'
 import { RetentionList } from '../components/RetentionList'
-import { queryDependencyGraph as defaultQueryDependencyGraph } from '../hooks/queryDependencyGraph'
+import type { queryDependencyGraph as defaultQueryDependencyGraph } from '../hooks/queryDependencyGraph'
 import { queryPreciseIndex as defaultQueryPreciseIndex } from '../hooks/queryPreciseIndex'
 import { useDeletePreciseIndex as defaultUseDeletePreciseIndex } from '../hooks/useDeletePreciseIndex'
 import { useReindexPreciseIndex as defaultUseReindexPreciseIndex } from '../hooks/useReindexPreciseIndex'

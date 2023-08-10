@@ -1,19 +1,19 @@
 import {
-    Ref,
+    type Ref,
     forwardRef,
     useRef,
-    ReactNode,
-    ReactElement,
-    InputHTMLAttributes,
-    MouseEvent,
-    PropsWithChildren,
+    type ReactNode,
+    type ReactElement,
+    type InputHTMLAttributes,
+    type MouseEvent,
+    type PropsWithChildren,
     createContext,
     useContext,
-    KeyboardEvent,
-    FocusEvent,
+    type KeyboardEvent,
+    type FocusEvent,
     useState,
     useCallback,
-    HTMLAttributes,
+    type HTMLAttributes,
     useMemo,
     useLayoutEffect,
 } from 'react'
@@ -27,9 +27,9 @@ import { useMergeRefs } from 'use-callback-ref'
 
 import { useMeasure } from '../../hooks'
 import { Button } from '../Button'
-import { Input, InputStatus } from '../Form'
+import { Input, type InputStatus } from '../Form'
 import { Icon } from '../Icon'
-import { PopoverContent, Position, TetherInstanceAPI } from '../Popover'
+import { PopoverContent, Position, type TetherInstanceAPI } from '../Popover'
 
 import {
     Combobox,
@@ -38,8 +38,8 @@ import {
     ComboboxOptionGroup,
     ComboboxOption,
     ComboboxOptionText,
-    ComboboxProps,
-    ComboboxOptionProps,
+    type ComboboxProps,
+    type ComboboxOptionProps,
 } from './Combobox'
 
 import styles from './MultiCombobox.module.scss'

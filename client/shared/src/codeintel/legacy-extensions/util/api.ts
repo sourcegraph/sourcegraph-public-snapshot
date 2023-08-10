@@ -2,7 +2,7 @@ import { once } from 'lodash'
 import gql from 'tagged-template-noop'
 
 import { searchContext } from '../../searchContext'
-import * as sourcegraph from '../api'
+import type * as sourcegraph from '../api'
 import { cache } from '../util'
 
 import { graphqlIdToRepoId, queryGraphQL } from './graphql'
