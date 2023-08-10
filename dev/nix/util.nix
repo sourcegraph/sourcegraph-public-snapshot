@@ -22,7 +22,7 @@
     assert lib.assertMsg (lib.isDerivation drv) "unNixifyDylibs expects a derivation, got ${builtins.typeOf drv}";
     assert lib.assertMsg (drv ? "overrideAttrs") "unNixifyDylibs expects an overridable derivation";
 
-    drv.overrideAttrs (oldAttrs: {
+    drv.overrideAttrs (oldAttrs: lib.optionalAttrs pkgs.hostPlatform.isMacOS {
       nativeBuildInputs = (oldAttrs.nativeBuildInputs or [ ]) ++
         map (drv: drv.__spliced.buildHost or drv)
           (with (pkgs.__splicedPackages or pkgs); [
@@ -32,7 +32,7 @@
             gnugrep
           ]);
 
-      postFixup = (oldAttrs.postFixup or "") + lib.optionalString pkgs.hostPlatform.isMacOS ''
+      postFixup = (oldAttrs.postFixup or "") + ''
         for bin in $(find $out/bin -type f); do
           for lib in $(otool -L $bin | tail -n +2 | cut -d' ' -f1 | grep nix); do
             echo "patching dylib from "$lib" to "@rpath/$(basename $lib)""
