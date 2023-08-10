@@ -393,28 +393,23 @@ func (r *P4ExecRequest) FromProto(p *proto.P4ExecRequest) {
 
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
 type RepoUpdateRequest struct {
-	Repo  api.RepoName  `json:"repo"`  // identifying URL for repo
-	Since time.Duration `json:"since"` // debounce interval for queries, used only with request-repo-update
-
-	// CloneFromShard is the hostname of the gitserver instance that is the current owner of the
-	// repository. If this is set, then the RepoUpdateRequest is to migrate the repo from
-	// that gitserver instance to the new home of the repo.
-	CloneFromShard string `json:"cloneFromShard"`
+	// Repo identifies URL for repo.
+	Repo api.RepoName `json:"repo"`
+	// Since is a debounce interval for queries, used only with request-repo-update.
+	Since time.Duration `json:"since"`
 }
 
 func (r *RepoUpdateRequest) ToProto() *proto.RepoUpdateRequest {
 	return &proto.RepoUpdateRequest{
-		Repo:           string(r.Repo),
-		Since:          durationpb.New(r.Since),
-		CloneFromShard: r.CloneFromShard,
+		Repo:  string(r.Repo),
+		Since: durationpb.New(r.Since),
 	}
 }
 
 func (r *RepoUpdateRequest) FromProto(p *proto.RepoUpdateRequest) {
 	*r = RepoUpdateRequest{
-		Repo:           api.RepoName(p.GetRepo()),
-		Since:          p.GetSince().AsDuration(),
-		CloneFromShard: p.GetCloneFromShard(),
+		Repo:  api.RepoName(p.GetRepo()),
+		Since: p.GetSince().AsDuration(),
 	}
 }
 

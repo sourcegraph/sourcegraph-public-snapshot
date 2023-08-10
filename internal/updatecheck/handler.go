@@ -1,6 +1,7 @@
 package updatecheck
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,7 +20,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -67,18 +67,30 @@ func getLatestRelease(deployType string) pingResponse {
 	}
 }
 
-// HandlerWithLog creates a HTTP handler that responds with information about software updates for Sourcegraph. Using the given logger, a scoped
-// logger is created and the handler that is returned uses the logger internally.
-func HandlerWithLog(logger log.Logger) func(w http.ResponseWriter, r *http.Request) {
-	scopedLog := logger.Scoped("updatecheck.handler", "handler that responds with information about software updates")
-	return func(w http.ResponseWriter, r *http.Request) {
-		handler(scopedLog, w, r)
+// HandlerWithLog creates an HTTP handler that responds with information about
+// software updates for Sourcegraph. Using the given logger, a scoped logger is
+// created and the handler that is returned uses the logger internally.
+func HandlerWithLog(logger log.Logger) (http.HandlerFunc, error) {
+	logger = logger.Scoped("updatecheck.handler", "handler that responds with information about software updates")
+
+	var pubsubClient pubsub.TopicClient
+	if pubSubPingsTopicID == "" {
+		pubsubClient = pubsub.NewNoopTopicClient()
+	} else {
+		var err error
+		pubsubClient, err = pubsub.NewDefaultTopicClient(pubSubPingsTopicID)
+		if err != nil {
+			return nil, errors.Errorf("create Pub/Sub client: %v", err)
+		}
 	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		handler(logger, pubsubClient, w, r)
+	}, nil
 }
 
 // handler is an HTTP handler that responds with information about software updates
 // for Sourcegraph.
-func handler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
+func handler(logger log.Logger, pubsubClient pubsub.TopicClient, w http.ResponseWriter, r *http.Request) {
 	requestCounter.Inc()
 
 	pr, err := readPingRequest(r)
@@ -108,7 +120,7 @@ func handler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
 	hasUpdate, err := canUpdate(pr.ClientVersionString, pingResponse, pr.DeployType)
 
 	// Always log, even on malformed version strings
-	logPing(logger, r, pr, hasUpdate)
+	logPing(logger, pubsubClient, r, pr, hasUpdate)
 
 	if err != nil {
 		http.Error(w, pr.ClientVersionString+" is a bad version string: "+err.Error(), http.StatusBadRequest)
@@ -291,7 +303,7 @@ func readPingRequestFromQuery(q url.Values) (*pingRequest, error) {
 }
 
 func readPingRequestFromBody(body io.ReadCloser) (*pingRequest, error) {
-	defer body.Close()
+	defer func() { _ = body.Close() }()
 	contents, err := io.ReadAll(body)
 	if err != nil {
 		return nil, err
@@ -376,7 +388,7 @@ type pingPayload struct {
 	RepoMetadataUsage             json.RawMessage `json:"repo_metadata_usage"`
 }
 
-func logPing(logger log.Logger, r *http.Request, pr *pingRequest, hasUpdate bool) {
+func logPing(logger log.Logger, pubsubClient pubsub.TopicClient, r *http.Request, pr *pingRequest, hasUpdate bool) {
 	logger = logger.Scoped("logPing", "logs ping requests")
 	defer func() {
 		if r := recover(); r != nil {
@@ -384,6 +396,15 @@ func logPing(logger log.Logger, r *http.Request, pr *pingRequest, hasUpdate bool
 			errorCounter.Inc()
 		}
 	}()
+
+	// Sync the initial administrator email in HubSpot.
+	if strings.Contains(pr.InitialAdminEmail, "@") {
+		// Hubspot requires the timestamp to be rounded to the nearest day at midnight.
+		now := time.Now().UTC()
+		rounded := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		millis := rounded.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
+		go hubspotutil.SyncUser(pr.InitialAdminEmail, "", &hubspot.ContactProperties{IsServerAdmin: true, LatestPing: millis, HasAgreedToToS: pr.TosAccepted})
+	}
 
 	var clientAddr string
 	if v := r.Header.Get("x-forwarded-for"); v != "" {
@@ -395,23 +416,15 @@ func logPing(logger log.Logger, r *http.Request, pr *pingRequest, hasUpdate bool
 	message, err := marshalPing(pr, hasUpdate, clientAddr, time.Now())
 	if err != nil {
 		errorCounter.Inc()
-		logger.Warn("failed to Marshal payload", log.Error(err))
-	} else if pubsub.Enabled() {
-		err := pubsub.Publish(pubSubPingsTopicID, string(message))
-		if err != nil {
-			errorCounter.Inc()
-			logger.Scoped("pubsub.Publish", "").
-				Warn("failed to Publish", log.String("message", string(message)), log.Error(err))
-		}
+		logger.Error("failed to marshal payload", log.Error(err))
+		return
 	}
 
-	// Sync the initial administrator email in HubSpot.
-	if pr.InitialAdminEmail != "" && strings.Contains(pr.InitialAdminEmail, "@") {
-		// Hubspot requires the timestamp to be rounded to the nearest day at midnight.
-		now := time.Now().UTC()
-		rounded := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-		millis := rounded.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
-		go hubspotutil.SyncUser(pr.InitialAdminEmail, "", &hubspot.ContactProperties{IsServerAdmin: true, LatestPing: millis, HasAgreedToToS: pr.TosAccepted})
+	err = pubsubClient.Publish(context.Background(), message)
+	if err != nil {
+		errorCounter.Inc()
+		logger.Error("failed to publish", log.String("message", string(message)), log.Error(err))
+		return
 	}
 }
 
@@ -474,7 +487,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		EverFindRefs:                  strconv.FormatBool(pr.EverFindRefs),
 		ActiveToday:                   strconv.FormatBool(pr.ActiveToday),
 		Timestamp:                     now.UTC().Format(time.RFC3339),
-		HasCodyEnabled:                strconv.FormatBool(conf.CodyEnabled()),
+		HasCodyEnabled:                strconv.FormatBool(pr.HasCodyEnabled),
 		CodyUsage:                     codyUsage,
 		RepoMetadataUsage:             pr.RepoMetadataUsage,
 	})

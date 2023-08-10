@@ -57,7 +57,7 @@ type Syncer struct {
 // RunOptions contains options customizing Run behaviour.
 type RunOptions struct {
 	EnqueueInterval func() time.Duration // Defaults to 1 minute
-	IsCloud         bool                 // Defaults to false
+	IsDotCom        bool                 // Defaults to false
 	MinSyncInterval func() time.Duration // Defaults to 1 minute
 	DequeueInterval time.Duration        // Default to 10 seconds
 }
@@ -74,7 +74,7 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 		opts.DequeueInterval = 10 * time.Second
 	}
 
-	if !opts.IsCloud {
+	if !opts.IsDotCom {
 		s.initialUnmodifiedDiffFromStore(ctx, store)
 	}
 
@@ -99,7 +99,7 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 
 	for ctx.Err() == nil {
 		if !conf.Get().DisableAutoCodeHostSyncs {
-			err := store.EnqueueSyncJobs(ctx, opts.IsCloud)
+			err := store.EnqueueSyncJobs(ctx, opts.IsDotCom)
 			if err != nil {
 				s.ObsvCtx.Logger.Error("enqueuing sync jobs", log.Error(err))
 			}

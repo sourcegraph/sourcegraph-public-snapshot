@@ -30,7 +30,6 @@
 <style lang="scss">
     img,
     div {
-        flex: 1;
         isolation: isolate;
         display: inline-flex;
         border-radius: 50%;

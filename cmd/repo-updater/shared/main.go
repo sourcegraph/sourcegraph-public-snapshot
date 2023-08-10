@@ -39,8 +39,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
-	ghaauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
@@ -177,9 +175,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		}
 	}
 
-	ghAppsStore := db.GitHubApps().WithEncryptionKey(kr.GitHubAppKey)
-	auth.FromConnection = ghaauth.CreateEnterpriseFromConnection(ghAppsStore, kr.GitHubAppKey)
-
 	permsStore := database.Perms(observationCtx.Logger, db, timeutil.Now)
 	permsSyncer := authz.NewPermsSyncer(observationCtx.Logger.Scoped("PermsSyncer", "repository and user permissions syncer"), db, store, permsStore, timeutil.Now)
 
@@ -206,7 +201,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	go func() {
 		err := syncer.Run(ctx, store, repos.RunOptions{
 			EnqueueInterval: repos.ConfRepoListUpdateInterval,
-			IsCloud:         envvar.SourcegraphDotComMode(),
+			IsDotCom:        envvar.SourcegraphDotComMode(),
 			MinSyncInterval: repos.ConfRepoListUpdateInterval,
 		})
 		if err != nil {

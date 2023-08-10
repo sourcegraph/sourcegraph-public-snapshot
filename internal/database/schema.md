@@ -1379,6 +1379,9 @@ Referenced by:
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
+    "event_logs_name_is_cody_active_event" btree (iscodyactiveevent(name))
+    "event_logs_name_is_cody_explanation_event" btree (iscodyexplanationevent(name))
+    "event_logs_name_is_cody_generation_event" btree (iscodygenerationevent(name))
     "event_logs_name_timestamp" btree (name, "timestamp" DESC)
     "event_logs_source" btree (source)
     "event_logs_timestamp" btree ("timestamp")
@@ -3543,6 +3546,8 @@ Foreign-key constraints:
  text_chunks_embedded | integer |           | not null | 0
  text_files_skipped   | jsonb   |           | not null | '{}'::jsonb
  text_bytes_embedded  | integer |           | not null | 0
+ code_chunks_excluded | integer |           | not null | 0
+ text_chunks_excluded | integer |           | not null | 0
 Indexes:
     "repo_embedding_job_stats_pkey" PRIMARY KEY, btree (job_id)
 Foreign-key constraints:

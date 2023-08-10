@@ -62,6 +62,15 @@ type ConfStore interface {
 // the edit has been rejected.
 var ErrNewerEdit = errors.New("someone else has already applied a newer edit")
 
+// ConfStoreWith instantiates and returns a new ConfStore using
+// the other store handle.
+func ConfStoreWith(other basestore.ShareableStore) ConfStore {
+	return &confStore{
+		Store:  basestore.NewWithHandle(other.Handle()),
+		logger: log.Scoped("confStore", "database confStore"),
+	}
+}
+
 type confStore struct {
 	*basestore.Store
 	logger log.Logger

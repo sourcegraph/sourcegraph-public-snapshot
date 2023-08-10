@@ -17,8 +17,11 @@ const response: FetchOwnershipResult = {
     node: {
         __typename: 'Repository',
         commit: {
+            __typename: 'GitCommit',
             blob: {
+                __typename: 'GitBlob',
                 ownership: {
+                    __typename: 'OwnershipConnection',
                     totalOwners: 4,
                     nodes: [
                         {
@@ -149,6 +152,7 @@ const response: FetchOwnershipResult = {
                 },
             },
         },
+        changelist: null,
     },
 }
 

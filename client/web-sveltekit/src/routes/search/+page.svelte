@@ -10,7 +10,8 @@
 
     export let data: PageData
 
-    $: queryState = queryStateStore(data.queryOptions ?? {}, $settings)
+    const queryState = queryStateStore(data.queryOptions ?? {}, $settings)
+    $: queryState.set(data.queryOptions ?? {})
     $: queryState.setSettings($settings)
 </script>
 

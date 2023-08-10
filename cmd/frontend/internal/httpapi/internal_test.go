@@ -9,14 +9,11 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
 
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
-	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )
 
 func TestGitServiceHandlers(t *testing.T) {
@@ -70,29 +67,4 @@ func newTestInternalRouter() *mux.Router {
 	// Magic incantation from newInternalHTTPHandler
 	sr := mux.NewRouter().PathPrefix("/.internal/").Subrouter()
 	return apirouter.NewInternal(sr)
-}
-
-func TestDecodeSendEmail(t *testing.T) {
-	m := newTestInternalRouter()
-	m.Get(apirouter.SendEmail).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		msg, err := decodeSendEmail(r)
-
-		assert.NoError(t, err)
-		assert.Equal(t, msg.Source, "testdecode")
-		assert.Contains(t, msg.To, "foobar@foobar.com")
-
-		w.WriteHeader(http.StatusOK)
-	})
-
-	ts := httptest.NewServer(m)
-	t.Cleanup(ts.Close)
-
-	client := *internalapi.Client
-	client.URL = ts.URL
-
-	// Do not worry about error here, run assertions in the test handler
-	err := client.SendEmail(context.Background(), "testdecode", txtypes.Message{
-		To: []string{"foobar@foobar.com"},
-	})
-	assert.NoError(t, err)
 }

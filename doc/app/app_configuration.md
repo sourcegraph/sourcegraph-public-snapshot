@@ -24,3 +24,5 @@ You must create your own key with Anthropic [here](https://console.anthropic.com
   },
 }
 ```
+
+> WARNING: When using OpenAI models for completions, only chat completions will work - code completions are currently unsupported.
