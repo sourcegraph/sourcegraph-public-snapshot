@@ -64,6 +64,7 @@ melange build "$name.yaml" --arch x86_64 --generate-index false
 # Upload package as build artifact
 buildkite-agent artifact upload packages/*/*
 
-# Upload package to repo
+# Upload package to repo, and finish with same exit code
 popd
 ./enterprise/dev/ci/scripts/wolfi/upload-package.sh
+exit $?
