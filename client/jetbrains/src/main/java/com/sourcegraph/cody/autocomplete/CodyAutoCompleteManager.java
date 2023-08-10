@@ -56,7 +56,14 @@ public class CodyAutoCompleteManager {
         && isEditorSupported(editor);
   }
 
+  /**
+   * Triggers auto-complete suggestions for the given editor at the specified offset.
+   *
+   * @param editor The editor instance to provide autocomplete for.
+   * @param offset The character offset in the editor to trigger auto-complete at.
+   */
   public void triggerAutoComplete(@NotNull Editor editor, int offset) {
+    // Check if auto-complete is enabled via the config
     if (!ConfigUtil.isCodyAutoCompleteEnabled()) {
       return;
     }
@@ -81,9 +88,14 @@ public class CodyAutoCompleteManager {
             200,
             0.6,
             0.1);
+
+    // Gets AutoCompleteDocumentContext for the current offset
     TextDocument textDocument = new IntelliJTextDocument(editor, project);
     AutoCompleteDocumentContext autoCompleteDocumentContext =
         textDocument.getAutoCompleteContext(offset);
+
+    // If the context has a valid completion trigger, cancel any running job
+    // and asynchronously trigger the auto-complete
     if (autoCompleteDocumentContext.isCompletionTriggerValid()) {
       Callable<CompletableFuture<Void>> callable =
           () ->
@@ -96,6 +108,28 @@ public class CodyAutoCompleteManager {
     }
   }
 
+  /**
+   * Asynchronously triggers auto-complete for the given editor and offset. Details:
+   * - Calls provideInlineAutoCompleteItems() on the provider to get autocomplete items.
+   * - Filters and processes the results:
+   *   - Removes undesired characters
+   *   - Normalizes indentation
+   *   - Finds the first non-empty insertText item
+   * - If an item is found:
+   *   - Clears existing autocomplete items
+   *   - Logs a "completion suggested" event
+   *   - Renders the autocomplete item as inline, after line, and block elements
+   *   - Adds the rendered elements to the editor's InlayModel
+   * - Returns a CompletableFuture<Void> that completes when the autocomplete is rendered.
+   * - Catches any unexpected exceptions and logs a warning.
+   *
+   * @param editor The editor instance to provide autocomplete for.
+   * @param offset The character offset in the editor to trigger autocomplete at.
+   * @param token The CancellationToken to allow cancelling the autocomplete job.
+   * @param provider The CodyAutoCompleteItemProvider to generate autocomplete items.
+   * @param textDocument The TextDocument representing the editor content.
+   * @param autoCompleteDocumentContext The context for the autocomplete request.
+   */
   private CompletableFuture<Void> triggerAutoCompleteAsync(
       @NotNull Editor editor,
       int offset,
@@ -141,7 +175,7 @@ public class CodyAutoCompleteManager {
                               .ifPresent(
                                   p -> GraphQlLogger.logCodyEvent(p, "completion", "suggested"));
 
-                          /* display autocomplete */
+                          /* Display autocomplete */
                           AutoCompleteText autoCompleteText =
                               item.toAutoCompleteText(
                                   autoCompleteDocumentContext.getSameLineSuffix().trim());
