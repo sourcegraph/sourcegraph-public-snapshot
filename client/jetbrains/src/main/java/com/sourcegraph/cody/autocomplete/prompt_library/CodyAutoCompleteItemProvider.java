@@ -48,6 +48,8 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
     private final int responseTokens;
     private final Project project;
     private final EmbeddingsSearcher searcher;
+    VirtualFile currentFile;
+    String repoName;
 
     public CodyAutoCompleteItemProvider(
             Project project,
@@ -61,6 +63,9 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
             int responseTokens,
             double prefixPercentage,
             double suffixPercentage) {
+
+        this.currentFile = EditorUtil.getCurrentFile(project);
+        this.repoName = RepoUtil.findRepositoryName(project, currentFile);
         this.project = project;
         this.searcher = searcher;
         this.webviewErrorMessenger = webviewErrorMessenger;
@@ -83,6 +88,7 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
         try {
             return provideInlineAutoCompleteItemsInner(document, position, context, token);
         } catch (Exception e) {
+            logger.error("E: Autocomplete", e);
             if (e.getMessage().equals("aborted")) {
                 return emptyResult();
             }
@@ -111,8 +117,8 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
         DocContext docContext = getCurrentDocContext(
                 document, position, tokToChar(maxPrefixTokens), tokToChar(maxSuffixTokens));
 
-
         if (docContext == null) {
+            System.out.println("E: No doc context");
             return emptyResult();
         }
 
@@ -120,13 +126,11 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
         String suffix = docContext.suffix;
         String precedingLine = docContext.prevLine;
 
-
         // Use embeddings for the current file to provide context.
-       List<ContextMessage> embeddings = Collections.emptyList();
+        List<ContextMessage> embeddings = Collections.emptyList();
         try {
-        VirtualFile currentFile = EditorUtil.getCurrentFile(project);
-        String repoName = RepoUtil.findRepositoryName(project, currentFile);
-        embeddings = searcher.getContextMessages(repoName, prefix + suffix, 2, 2)
+            embeddings = searcher.getContextMessages(repoName, prefix + suffix, 2, 2);
+            System.out.printf("Got embeddings %d\n", embeddings.size());
         } catch (IOException e) {
             Log.error("Embeddings", "Failed to fetch", e);
         }
@@ -141,18 +145,7 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
 
         int remainingChars = tokToChar(promptTokens);
 
-        AutoCompleteProvider completionNoSnippets = endOfLineProvider(
-                completionsClient,
-                remainingChars,
-                responseTokens,
-                List.of(),
-                prefix,
-                suffix,
-                "\n",
-                1,
-                document);
-        int emptyPromptLength = completionNoSnippets.emptyPromptLength();
-
+        // TODO Make sure we're not overflowing prompt
         List<ReferenceSnippet> similarCode = new ArrayList<>();
         for (ContextMessage m : embeddings) {
             ReferenceSnippet r = new ReferenceSnippet(m.getFile().getFileName(), new JaccardMatch(1, m.getText()));
@@ -167,7 +160,6 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
         }
 
         if (precedingLine.trim().equals("")) {
-            // waitMs = 500;
             completers.add(
                     endOfLineProvider(
                             completionsClient,
@@ -217,6 +209,7 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
         // }
 
         if (abortController.isCancelled()) {
+            System.out.println("E: Aborted!");
             return emptyResult();
         }
         List<CompletableFuture<List<Completion>>> promises = completers.stream()
@@ -324,6 +317,7 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
         Optional<String> completionsServerEndpoint = Optional
                 .ofNullable(UserLevelConfig.getAutoCompleteServerEndpoint());
         if (providerType == AutoCompleteProviderType.UNSTABLE_CODEGEN) {
+            System.out.println("Picking CODEGEN");
             return completionsServerEndpoint
                     .map(
                             endpoint -> (AutoCompleteProvider) new UnstableCodegenEndOfLineAutoCompleteProvider(
@@ -333,6 +327,7 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
                                     Optional.of(
                                             "Error: Cody: missing completions server endpoint, falling back to anthropic completions provider")));
         } else
+            System.out.println("E: Picking Anthropic");
             return fallbackDefaultProvider.apply(Optional.empty());
     }
 }

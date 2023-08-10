@@ -94,7 +94,8 @@ public class RepoUtil {
   @Nullable
   private static String getSimpleRepositoryName(
       @NotNull Project project, @NotNull VirtualFile file) {
-    Repository repository = VcsRepositoryManager.getInstance(project).getRepositoryForFile(file);
+      // Need Quick invocation as we're running this in UI thread :yikes:
+    Repository repository = VcsRepositoryManager.getInstance(project).getRepositoryForFileQuick(file);
     if (repository == null) {
       return null;
     }

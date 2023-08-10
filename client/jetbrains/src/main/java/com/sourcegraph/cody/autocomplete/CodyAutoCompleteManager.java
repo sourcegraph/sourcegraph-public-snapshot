@@ -62,7 +62,9 @@ public class CodyAutoCompleteManager {
     }
 
     public void triggerAutoComplete(@NotNull Editor editor, int offset) {
+        System.out.println("Triggering autocomplete.");
         if (!ConfigUtil.isCodyAutoCompleteEnabled()) {
+            System.out.println("E: Autocomplete disabled.");
             return;
         }
 
@@ -80,6 +82,7 @@ public class CodyAutoCompleteManager {
         String accessToken = ConfigUtil.getProjectAccessToken(project);
         EmbeddingsSearcher searcher = new EmbeddingsSearcher(instanceUrl, accessToken,
                 ConfigUtil.getCustomRequestHeaders(project));
+        System.out.println("Got searcher.");
 
         CodyAutoCompleteItemProvider provider = new CodyAutoCompleteItemProvider(
                 project,
@@ -96,6 +99,7 @@ public class CodyAutoCompleteManager {
         TextDocument textDocument = new IntelliJTextDocument(editor, project);
         AutoCompleteDocumentContext autoCompleteDocumentContext = textDocument.getAutoCompleteContext(offset);
         if (autoCompleteDocumentContext.isCompletionTriggerValid()) {
+            System.out.println("Completion valid");
             Callable<CompletableFuture<Void>> callable = () -> triggerAutoCompleteAsync(
                     editor, offset, token, provider, textDocument, autoCompleteDocumentContext);
             // debouncing the autocomplete trigger
@@ -112,6 +116,7 @@ public class CodyAutoCompleteManager {
             @NotNull CodyAutoCompleteItemProvider provider,
             @NotNull TextDocument textDocument,
             @NotNull AutoCompleteDocumentContext autoCompleteDocumentContext) {
+        System.out.println("Trigger autocomplete async");
         return provider
                 .provideInlineAutoCompleteItems(
                         textDocument,
