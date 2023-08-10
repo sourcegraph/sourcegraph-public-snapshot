@@ -285,6 +285,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 
 		s := &Server{
 			Logger:                  logger,
+			ReposDir:                "/testroot",
 			ObservationCtx:          observation.TestContextTB(t),
 			skipCloneForTests:       true,
 			DB:                      database.NewMockDB(),
@@ -696,6 +697,8 @@ func addCommitToRepo(cmd func(string, ...string) string) string {
 }
 
 func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, db database.DB) *Server {
+	t.Helper()
+
 	if db == nil {
 		mDB := database.NewMockDB()
 		mDB.GitserverReposFunc.SetDefaultReturn(database.NewMockGitserverRepoStore())
@@ -712,6 +715,7 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 	logger := logtest.Scoped(t)
 	obctx := observation.TestContextTB(t)
 
+	cloneQueue := NewCloneQueue(obctx, list.New())
 	s := &Server{
 		Logger:           logger,
 		ObservationCtx:   obctx,
@@ -721,7 +725,7 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
 		DB:                      db,
-		CloneQueue:              NewCloneQueue(obctx, list.New()),
+		CloneQueue:              cloneQueue,
 		ctx:                     ctx,
 		locker:                  &RepositoryLocker{},
 		cloneLimiter:            limiter.NewMutable(1),
@@ -732,7 +736,9 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		DeduplicatedForksSet:    types.NewRepoURICache(nil),
 	}
 
-	s.StartClonePipeline(ctx)
+	p := s.NewClonePipeline(logtest.Scoped(t), cloneQueue)
+	p.Start()
+	t.Cleanup(p.Stop)
 	return s
 }
 
@@ -743,7 +749,9 @@ func TestCloneRepo(t *testing.T) {
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	db.FeatureFlags().CreateBool(ctx, "clone-progress-logging", true)
+	if _, err := db.FeatureFlags().CreateBool(ctx, "clone-progress-logging", true); err != nil {
+		t.Fatal(err)
+	}
 	dbRepo := &types.Repo{
 		Name:        repoName,
 		Description: "Test",
@@ -782,7 +790,7 @@ func TestCloneRepo(t *testing.T) {
 	reposDir := t.TempDir()
 	s := makeTestServer(ctx, t, reposDir, remote, db)
 
-	_, err := s.cloneRepo(ctx, repoName, nil)
+	_, err := s.CloneRepo(ctx, repoName, CloneOptions{})
 	require.NoError(t, err)
 
 	// Wait until the clone is done. Please do not use this code snippet
@@ -806,7 +814,7 @@ func TestCloneRepo(t *testing.T) {
 	}
 
 	// Test blocking with a failure (already exists since we didn't specify overwrite)
-	_, err = s.cloneRepo(context.Background(), repoName, &cloneOptions{Block: true})
+	_, err = s.CloneRepo(context.Background(), repoName, CloneOptions{Block: true})
 	if !errors.Is(err, os.ErrExist) {
 		t.Fatalf("expected clone repo to fail with already exists: %s", err)
 	}
@@ -815,7 +823,7 @@ func TestCloneRepo(t *testing.T) {
 	// Test blocking with overwrite. First add random file to GIT_DIR. If the
 	// file is missing after cloning we know the directory was replaced
 	mkFiles(t, string(dst), "HELLO")
-	_, err = s.cloneRepo(context.Background(), repoName, &cloneOptions{Block: true, Overwrite: true})
+	_, err = s.CloneRepo(context.Background(), repoName, CloneOptions{Block: true, Overwrite: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -908,7 +916,7 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			s.GetVCSSyncer = tc.getVCSSyncer
-			_, _ = s.cloneRepo(ctx, repoName, &cloneOptions{
+			_, _ = s.CloneRepo(ctx, repoName, CloneOptions{
 				Block: true,
 			})
 			assertRepoState(types.CloneStatusNotCloned, 0, tc.wantErr)
@@ -1261,7 +1269,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		cmd("rm", ".git/HEAD")
 
 		s := makeTestServer(ctx, t, reposDir, remote, nil)
-		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", nil); err == nil {
+		if _, err := s.CloneRepo(ctx, "example.com/foo/bar", CloneOptions{}); err == nil {
 			t.Fatal("expected an error, got none")
 		}
 	})
@@ -1279,7 +1287,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		cmd("sh", "-c", ": > .git/HEAD")
 
 		s := makeTestServer(ctx, t, reposDir, remote, nil)
-		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", nil); err == nil {
+		if _, err := s.CloneRepo(ctx, "example.com/foo/bar", CloneOptions{}); err == nil {
 			t.Fatal("expected an error, got none")
 		}
 	})
@@ -1302,7 +1310,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			}
 		}
 		t.Cleanup(func() { testRepoCorrupter = nil })
-		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", nil); err != nil {
+		if _, err := s.CloneRepo(ctx, "example.com/foo/bar", CloneOptions{}); err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
@@ -1340,7 +1348,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			cmd("sh", "-c", fmt.Sprintf(": > %s/HEAD", tmpDir))
 		}
 		t.Cleanup(func() { testRepoCorrupter = nil })
-		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", nil); err != nil {
+		if _, err := s.CloneRepo(ctx, "example.com/foo/bar", CloneOptions{}); err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
@@ -1420,7 +1428,7 @@ func TestHostnameMatch(t *testing.T) {
 				Hostname:       tc.hostname,
 				DB:             database.NewMockDB(),
 			}
-			have := s.hostnameMatch(tc.addr)
+			have := hostnameMatch(s.Hostname, tc.addr)
 			if have != tc.shouldMatch {
 				t.Fatalf("Want %v, got %v", tc.shouldMatch, have)
 			}
@@ -1466,7 +1474,7 @@ func TestSyncRepoState(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.cloneRepo(ctx, repoName, &cloneOptions{Block: true})
+	_, err = s.CloneRepo(ctx, repoName, CloneOptions{Block: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1833,20 +1841,19 @@ func mustEncodeJSONResponse(value any) string {
 
 func TestIgnorePath(t *testing.T) {
 	reposDir := "/data/repos"
-	s := Server{ReposDir: reposDir}
 
 	for _, tc := range []struct {
 		path         string
 		shouldIgnore bool
 	}{
-		{path: filepath.Join(reposDir, tempDirName), shouldIgnore: true},
+		{path: filepath.Join(reposDir, TempDirName), shouldIgnore: true},
 		{path: filepath.Join(reposDir, P4HomeName), shouldIgnore: true},
 		// Double check handling of trailing space
 		{path: filepath.Join(reposDir, P4HomeName+"   "), shouldIgnore: true},
 		{path: filepath.Join(reposDir, "sourcegraph/sourcegraph"), shouldIgnore: false},
 	} {
 		t.Run("", func(t *testing.T) {
-			assert.Equal(t, tc.shouldIgnore, s.ignorePath(tc.path))
+			assert.Equal(t, tc.shouldIgnore, ignorePath(reposDir, tc.path))
 		})
 	}
 }

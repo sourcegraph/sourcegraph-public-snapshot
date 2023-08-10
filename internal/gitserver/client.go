@@ -50,6 +50,7 @@ const git = "git"
 var (
 	clientFactory  = httpcli.NewInternalClientFactory("gitserver")
 	defaultDoer, _ = clientFactory.Doer()
+	// defaultLimiter limits concurrent HTTP requests per running process to gitserver.
 	defaultLimiter = limiter.New(500)
 )
 
