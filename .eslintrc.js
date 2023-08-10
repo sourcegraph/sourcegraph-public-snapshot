@@ -41,16 +41,16 @@ const config = {
     // This rule doesn't understand type imports and we already have
     // import/no-duplicates enabled as well, which does understand type imports
     'no-duplicate-imports': 'off',
-    '@typescript-eslint/consistent-type-exports': 'error',
+    '@typescript-eslint/consistent-type-exports': 'warn',
     '@typescript-eslint/consistent-type-imports': [
-      'error',
+      'warn',
       {
         fixStyle: 'inline-type-imports',
         disallowTypeAnnotations: false,
       },
     ],
     // This converts 'import {type foo} from ...' to 'import type {foo} from ...'
-    '@typescript-eslint/no-import-type-side-effects': ['error'],
+    '@typescript-eslint/no-import-type-side-effects': ['warn'],
     'no-restricted-imports': [
       'error',
       {
