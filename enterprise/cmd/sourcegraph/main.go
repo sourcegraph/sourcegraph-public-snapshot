@@ -10,12 +10,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
 
 	blobstore_shared "github.com/sourcegraph/sourcegraph/cmd/blobstore/shared"
+	executor_singlebinary "github.com/sourcegraph/sourcegraph/cmd/executor/singlebinary"
 	githubproxy_shared "github.com/sourcegraph/sourcegraph/cmd/github-proxy/shared"
 	precise_code_intel_worker_shared "github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/shared"
 	repoupdater_shared "github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
 	searcher_shared "github.com/sourcegraph/sourcegraph/cmd/searcher/shared"
 	embeddings_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings/shared"
-	executor_singlebinary "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/singlebinary"
 	frontend_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/shared"
 	gitserver_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/gitserver/shared"
 	symbols_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols/shared"
