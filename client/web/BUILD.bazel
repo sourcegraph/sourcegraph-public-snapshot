@@ -1972,6 +1972,7 @@ ts_project(
         "src/site-admin/SiteAdminMigrationsPage.test.ts",
         "src/site-admin/init/SiteInitPage.test.tsx",
         "src/site-admin/outbound-webhooks/mocks.ts",
+        "src/site-admin/setup-checklist/hooks/useSetupChecklist.test.tsx",
         "src/site/LicenseExpirationAlert.test.tsx",
         "src/stores/navbarSearchQueryState.test.ts",
         "src/stores/notepad.test.ts",
