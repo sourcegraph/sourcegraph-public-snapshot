@@ -2,6 +2,9 @@ package com.sourcegraph.cody.autocomplete;
 
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * A class that stores the state and timing information of an autocompletion.
+ */
 public class Autocompletion {
   private long completionTriggeredTimestampMs;
   private long completionDisplayedTimestampMs;
