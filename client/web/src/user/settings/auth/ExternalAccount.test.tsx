@@ -4,10 +4,11 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import type { AuthProvider } from '../../../jscontext'
 
 import { ExternalAccountConnectionDetails } from './ExternalAccount'
+import type { NormalizedExternalAccount } from './ExternalAccountsSignIn'
 
-const mockAccount = {
+const mockAccount: NormalizedExternalAccount = {
     name: 'Github',
-    icon: GithubIcon,
+    icon: ({ className }) => <GithubIcon className={className} />,
 }
 
 describe('ExternalAccountConnectionDetails', () => {
