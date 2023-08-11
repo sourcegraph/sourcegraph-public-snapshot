@@ -30,7 +30,7 @@ repos:
       name: prettier
       description: ''
       entry: |
-        command -v pnpm >/dev/null 2>&1 && \
+        hash pnpm >/dev/null 2>&1 && \
           pnpm prettier --write --list-different --ignore-unknown --config prettier.config.js || \
           {BAZEL_BINDIR=. && bazel run //:prettier --run_under="cd $PWD &&" -- --list-different --ignore-unknown --config prettier.config.js}
       language: system
