@@ -89,15 +89,6 @@ var Targets = []Target{
 		},
 	},
 	{
-		Name:        "shell",
-		Description: "Check shell code for linting errors, formatting, etc",
-		Checks: []*linter{
-			shFmt,
-			shellCheck,
-			bashSyntax,
-		},
-	},
-	{
 		Name:        "protobuf",
 		Description: "Check protobuf code for linting errors, formatting, etc",
 		Checks: []*linter{
@@ -105,15 +96,6 @@ var Targets = []Target{
 			bufGenerate,
 			bufLint,
 		},
-	},
-	Formatting,
-}
-
-var Formatting = Target{
-	Name:        "format",
-	Description: "Check client code and docs for formatting errors",
-	Checks: []*linter{
-		prettier,
 	},
 }
 
