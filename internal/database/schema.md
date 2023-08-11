@@ -2338,9 +2338,11 @@ Stores the configuration used for code intel index jobs for a repository.
  cancel                 | boolean                  |           | not null | false
  should_reindex         | boolean                  |           | not null | false
  requested_envvars      | text[]                   |           |          | 
+ enqueuer_user_id       | integer                  |           | not null | 0
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
     "lsif_indexes_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
+    "lsif_indexes_dequeue_order_idx" btree ((enqueuer_user_id = 0), queued_at DESC, id)
     "lsif_indexes_queued_at_id" btree (queued_at DESC, id)
     "lsif_indexes_repository_id_commit" btree (repository_id, commit)
     "lsif_indexes_state" btree (state)

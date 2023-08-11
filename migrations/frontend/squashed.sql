@@ -3230,6 +3230,7 @@ CREATE TABLE lsif_indexes (
     cancel boolean DEFAULT false NOT NULL,
     should_reindex boolean DEFAULT false NOT NULL,
     requested_envvars text[],
+    enqueuer_user_id integer DEFAULT 0 NOT NULL,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -6104,6 +6105,8 @@ CREATE UNIQUE INDEX lsif_dependency_repos_unique_scheme_name ON lsif_dependency_
 CREATE INDEX lsif_dependency_syncing_jobs_state ON lsif_dependency_syncing_jobs USING btree (state);
 
 CREATE INDEX lsif_indexes_commit_last_checked_at ON lsif_indexes USING btree (commit_last_checked_at) WHERE (state <> 'deleted'::text);
+
+CREATE INDEX lsif_indexes_dequeue_order_idx ON lsif_indexes USING btree (((enqueuer_user_id = 0)), queued_at DESC, id);
 
 CREATE INDEX lsif_indexes_queued_at_id ON lsif_indexes USING btree (queued_at DESC, id);
 
