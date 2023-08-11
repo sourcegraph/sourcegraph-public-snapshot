@@ -26,7 +26,7 @@ jobs:
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
-          path: './result/bin/ctags'
+          path: './result/bin/'
           destination: 'universal_ctags/x86_64-darwin/'
   aarch64-darwin:
     name: Build ctags
@@ -47,7 +47,7 @@ jobs:
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
-          path: './result/bin/ctags'
+          path: './result/bin/'
           destination: 'universal_ctags/aarch64-darwin'
   x86_64-linux:
     name: Build ctags
@@ -68,6 +68,6 @@ jobs:
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
-          path: './result/bin/ctags'
+          path: './result/bin/'
           destination: 'universal_ctags/x86_64-linux'
           glob: 'ctags-*'
