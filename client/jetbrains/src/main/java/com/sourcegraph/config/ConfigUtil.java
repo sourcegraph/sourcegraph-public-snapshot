@@ -25,7 +25,11 @@ public class ConfigUtil {
     return new ConnectionConfiguration()
         .setServerEndpoint(getSourcegraphUrl(project))
         .setAccessToken(getProjectAccessToken(project))
-        .setCustomHeaders(getCustomRequestHeadersAsMap(project));
+        .setCustomHeaders(getCustomRequestHeadersAsMap(project))
+        .setAutocompleteAdvancedProvider(UserLevelConfig.getAutoCompleteProviderType().toString())
+        .setAutocompleteAdvancedServerEndpoint(UserLevelConfig.getAutoCompleteServerEndpoint())
+        .setAutocompleteAdvancedAccessToken(UserLevelConfig.getAutoCompleteAccessToken())
+        .setAutocompleteAdvancedEmbeddings(UserLevelConfig.getAutocompleteAdvancedEmbeddings());
   }
 
   @NotNull

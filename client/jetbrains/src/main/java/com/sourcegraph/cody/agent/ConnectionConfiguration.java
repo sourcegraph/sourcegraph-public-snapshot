@@ -7,6 +7,10 @@ public class ConnectionConfiguration {
   public String serverEndpoint;
   public String accessToken;
   public Map<String, String> customHeaders;
+  public String autocompleteAdvancedProvider;
+  public String autocompleteAdvancedServerEndpoint;
+  public String autocompleteAdvancedAccessToken;
+  public boolean autocompleteAdvancedEmbeddings;
 
   public ConnectionConfiguration setServerEndpoint(String serverEndpoint) {
     this.serverEndpoint = serverEndpoint;
@@ -22,4 +26,24 @@ public class ConnectionConfiguration {
     this.customHeaders = customHeaders;
     return this;
   }
+
+    public ConnectionConfiguration setAutocompleteAdvancedProvider(String autocompleteAdvancedProvider) {
+        this.autocompleteAdvancedProvider = autocompleteAdvancedProvider;
+        return this;
+    }
+
+    public ConnectionConfiguration setAutocompleteAdvancedServerEndpoint(String autocompleteAdvancedServerEndpoint) {
+        this.autocompleteAdvancedServerEndpoint = autocompleteAdvancedServerEndpoint;
+        return this;
+    }
+
+    public ConnectionConfiguration setAutocompleteAdvancedAccessToken(String autocompleteAdvancedAccessToken) {
+        this.autocompleteAdvancedAccessToken = autocompleteAdvancedAccessToken;
+        return this;
+    }
+
+    public ConnectionConfiguration setAutocompleteAdvancedEmbeddings(boolean autocompleteAdvancedEmbeddings) {
+        this.autocompleteAdvancedEmbeddings = autocompleteAdvancedEmbeddings;
+        return this;
+    }
 }
