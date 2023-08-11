@@ -32,7 +32,7 @@ describe('useSetupChecklist', () => {
             expect(getLicenseSetupStatus(args, now)).toBeUndefined()
         })
 
-        it('returns reason if isValid license', () => {
+        it('returns reason if license is invalid', () => {
             const reason = getLicenseSetupStatus(toArgs({ productSubscription: { license: { isValid: false } } }), now)
             expect(reason).toBeDefined()
             expect(reason).toMatchSnapshot()
