@@ -87,7 +87,7 @@ func readDefinition(fs fs.FS, schemaBasePath string, version int, filename strin
 		return Definition{}, err
 	}
 
-	return hydrateMetadataFromFile(fs, schemaBasePath, metadataFilename, Definition{
+	return hydrateMetadataFromFile(fs, schemaBasePath, upFilename, metadataFilename, Definition{
 		ID:        version,
 		UpQuery:   upQuery,
 		DownQuery: downQuery,
@@ -132,6 +132,7 @@ func hydrateMetadataFromFile(fs fs.FS, schemaBasePath, metadataFilename string, 
 	definition.Parents = parents
 
 	schemaPath := filepath.Join(schemaBasePath, strconv.Itoa(definition.ID))
+	upPath := filepath.Join(schemaBasePath, upFilename)
 	metadataPath := filepath.Join(schemaBasePath, metadataFilename)
 
 	if _, ok := parseIndexMetadata(definition.DownQuery.Query(sqlf.PostgresBindVar)); ok {
@@ -145,7 +146,8 @@ func hydrateMetadataFromFile(fs fs.FS, schemaBasePath, metadataFilename string, 
 		}
 	}
 
-	if indexMetadata, ok := parseIndexMetadata(definition.UpQuery.Query(sqlf.PostgresBindVar)); ok {
+	upQueryText := definition.UpQuery.Query(sqlf.PostgresBindVar)
+	if indexMetadata, ok := parseIndexMetadata(upQueryText); ok {
 		if !payload.CreateIndexConcurrently {
 			return Definition{}, instructionalError{
 				class:       "malformed concurrent index creation",
@@ -153,6 +155,18 @@ func hydrateMetadataFromFile(fs fs.FS, schemaBasePath, metadataFilename string, 
 				instructions: strings.Join([]string{
 					fmt.Sprintf("Add `createIndexConcurrently: true` to the metadata file '%s'.", metadataPath),
 				}, " "),
+			}
+		} else {
+			for _, line := range strings.Split(createIndexConcurrentlyPattern.ReplaceAllLiteralString(upQueryText, ""), "\n") {
+				if strings.TrimSpace(strings.Split(line, "--")[0]) != "" {
+					return Definition{}, instructionalError{
+						class:       "malformed concurrent index creation",
+						description: fmt.Sprintf("did not expect up query of migration at '%s' to contain additional statements", schemaPath),
+						instructions: strings.Join([]string{
+							fmt.Sprintf("Split the index creation from '%s' into a new migration file.", upPath),
+						}, " "),
+					}
+				}
 			}
 		}
 
