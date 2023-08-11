@@ -1,12 +1,12 @@
-import { ReactElement, SVGProps, useMemo, useState } from 'react'
+import { type ReactElement, type SVGProps, useMemo, useState } from 'react'
 
 import { Group } from '@visx/group'
-import Pie, { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
+import Pie, { type PieArcDatum } from '@visx/shape/lib/shapes/Pie'
 import classNames from 'classnames'
 import { noop } from 'rxjs'
 
 import { MaybeLink } from '../../core'
-import { CategoricalLikeChart } from '../../types'
+import type { CategoricalLikeChart } from '../../types'
 
 import { PieArc } from './components/PieArc'
 

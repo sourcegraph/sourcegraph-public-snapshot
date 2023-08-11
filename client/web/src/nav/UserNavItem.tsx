@@ -1,4 +1,4 @@
-import { useCallback, useMemo, ChangeEventHandler, FC } from 'react'
+import { useCallback, useMemo, type ChangeEventHandler, type FC } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiCogOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
@@ -8,7 +8,7 @@ import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useTheme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import {
     Menu,
@@ -26,7 +26,7 @@ import {
     ProductStatusBadge,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 
 import { AppUserConnectDotComAccount } from './AppUserConnectDotComAccount'

@@ -3,22 +3,22 @@ import React from 'react'
 import {
     Tab as ReachTab,
     TabList as ReachTabList,
-    TabListProps as ReachTabListProps,
+    type TabListProps as ReachTabListProps,
     TabPanel as ReachTabPanel,
-    TabPanelProps as ReachTabPanelProps,
+    type TabPanelProps as ReachTabPanelProps,
     TabPanels as ReachTabPanels,
-    TabPanelsProps as ReachTabPanelsProps,
-    TabProps as ReachTabProps,
+    type TabPanelsProps as ReachTabPanelsProps,
+    type TabProps as ReachTabProps,
     Tabs as ReachTabs,
-    TabsProps as ReachTabsProps,
+    type TabsProps as ReachTabsProps,
     useTabsContext,
 } from '@reach/tabs'
 import classNames from 'classnames'
 
 import { useElementObscuredArea } from '../../hooks'
-import { ForwardReferenceComponent } from '../../types'
+import type { ForwardReferenceComponent } from '../../types'
 
-import { TabPanelIndexContext, TabsState, TabsStateContext, useTabsState } from './context'
+import { TabPanelIndexContext, type TabsState, TabsStateContext, useTabsState } from './context'
 import { useScrollBackToActive } from './useScrollBackToActive'
 import { useShouldPanelRender } from './useShouldPanelRender'
 

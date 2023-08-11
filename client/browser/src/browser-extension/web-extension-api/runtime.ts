@@ -1,6 +1,6 @@
 import { isBackground, isInPage } from '../../shared/context'
 
-import { BackgroundPageApi } from './types'
+import type { BackgroundPageApi } from './types'
 
 const messageSender =
     <T extends keyof BackgroundPageApi>(type: T): BackgroundPageApi[T] =>

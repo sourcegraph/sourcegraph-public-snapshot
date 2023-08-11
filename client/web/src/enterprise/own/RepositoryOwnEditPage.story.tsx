@@ -1,5 +1,5 @@
-import { MockedResponse } from '@apollo/client/testing'
-import { Meta, Story } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import type { Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -7,9 +7,9 @@ import { getDocumentNode } from '@sourcegraph/http-client'
 import { WebStory } from '../../components/WebStory'
 import {
     ExternalServiceKind,
-    GetIngestedCodeownersResult,
-    GetIngestedCodeownersVariables,
-    RepositoryFields,
+    type GetIngestedCodeownersResult,
+    type GetIngestedCodeownersVariables,
+    type RepositoryFields,
     RepositoryType,
 } from '../../graphql-operations'
 

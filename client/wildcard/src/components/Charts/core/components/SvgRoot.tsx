@@ -1,33 +1,33 @@
 import {
     createContext,
-    Dispatch,
-    FC,
+    type Dispatch,
+    type FC,
     forwardRef,
-    ReactElement,
-    ReactNode,
-    SetStateAction,
-    SVGProps,
+    type ReactElement,
+    type ReactNode,
+    type SetStateAction,
+    type SVGProps,
     useContext,
     useMemo,
     useRef,
     useState,
 } from 'react'
 
-import { AxisScale, TickRendererProps } from '@visx/axis'
+import type { AxisScale, TickRendererProps } from '@visx/axis'
 import { Group } from '@visx/group'
 import { scaleLinear } from '@visx/scale'
-import { ScaleTime } from 'd3-scale'
+import type { ScaleTime } from 'd3-scale'
 import { noop } from 'lodash'
 import { useMergeRefs } from 'use-callback-ref'
 import useResizeObserver from 'use-resize-observer'
 
 // In order to resolve cyclic deps in tests
 // see https://github.com/sourcegraph/sourcegraph/pull/40209#pullrequestreview-1069334480
-import { createRectangle, EMPTY_RECTANGLE, Rectangle } from '../../../Popover'
+import { createRectangle, EMPTY_RECTANGLE, type Rectangle } from '../../../Popover'
 
 import { AxisBottom, AxisLeft } from './axis/Axis'
-import { getMaxTickWidth, Tick, TickProps } from './axis/Tick'
-import { GetScaleTicksOptions, getXScaleTicks } from './axis/tick-formatters'
+import { getMaxTickWidth, Tick, type TickProps } from './axis/Tick'
+import { type GetScaleTicksOptions, getXScaleTicks } from './axis/tick-formatters'
 
 const DEFAULT_PADDING = { top: 16, right: 36, bottom: 0, left: 0 }
 

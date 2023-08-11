@@ -1,7 +1,7 @@
 import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../graphql-operations'
 import { getSanitizedSeries } from '../../../../../components'
-import { MinimalSearchBasedInsightData, InsightType } from '../../../../../core'
-import { CreateInsightFormFields } from '../types'
+import { type MinimalSearchBasedInsightData, InsightType } from '../../../../../core'
+import type { CreateInsightFormFields } from '../types'
 
 /**
  * Function converter from form shape insight to insight as it is

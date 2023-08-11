@@ -4,7 +4,7 @@ import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { isPackagesEnabled } from './flags'
 import { PermissionsSyncJobsTable } from './permissions-center/PermissionsSyncJobsTable'
-import { SiteAdminAreaRoute } from './SiteAdminArea'
+import type { SiteAdminAreaRoute } from './SiteAdminArea'
 
 const AnalyticsOverviewPage = lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage')
 const AnalyticsSearchPage = lazyComponent(() => import('./analytics/AnalyticsSearchPage'), 'AnalyticsSearchPage')

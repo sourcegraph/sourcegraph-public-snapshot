@@ -1,6 +1,6 @@
 import { useMemo, useContext } from 'react'
 
-import { context, trace, Span, Context, Attributes, ROOT_CONTEXT } from '@opentelemetry/api'
+import { context, trace, type Span, type Context, type Attributes, ROOT_CONTEXT } from '@opentelemetry/api'
 
 import { sharedSpanStore, areOnTheSameTrace } from '../../sdk'
 import { TraceContext, reactManualTracer, ReactAttributes } from '../constants'

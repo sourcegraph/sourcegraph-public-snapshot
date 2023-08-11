@@ -1,11 +1,11 @@
 import { useCallback, useMemo, useRef } from 'react'
 
-import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
+import type { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
 
-import { GraphQLResult, useQuery } from '@sourcegraph/http-client'
+import { type GraphQLResult, useQuery } from '@sourcegraph/http-client'
 import { useSearchParameters, useInterval } from '@sourcegraph/wildcard'
 
-import { Connection, ConnectionQueryArguments } from '../ConnectionType'
+import type { Connection, ConnectionQueryArguments } from '../ConnectionType'
 import { asGraphQLResult, hasNextPage, parseQueryInt } from '../utils'
 
 import { useShowMorePaginationUrl } from './useShowMorePaginationUrl'

@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { ForwardReferenceComponent, H3 } from '../../..'
+import { type ForwardReferenceComponent, H3 } from '../../..'
 
 import styles from './CardTitle.module.scss'
 

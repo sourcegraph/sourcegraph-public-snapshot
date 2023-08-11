@@ -1,11 +1,11 @@
 import type { Extension } from '@codemirror/state'
-import { EditorView } from '@codemirror/view'
+import type { EditorView } from '@codemirror/view'
 import { mdiClockOutline } from '@mdi/js'
 import { formatDistanceToNow, parseISO } from 'date-fns'
 import { Fzf, type FzfOptions } from 'fzf'
 
 import { pluralize } from '@sourcegraph/common'
-import { type RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
+import type { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 
 import { type ModeDefinition, modesFacet, setMode } from '../modes'
 import { queryRenderer } from '../optionRenderer'

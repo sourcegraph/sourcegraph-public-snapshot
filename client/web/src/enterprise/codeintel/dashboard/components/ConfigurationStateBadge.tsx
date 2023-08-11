@@ -3,7 +3,7 @@ import classNames from 'classnames'
 
 import { Badge, Icon, Link, Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
 
-import { CodeIntelIndexerFields } from '../../../../graphql-operations'
+import type { CodeIntelIndexerFields } from '../../../../graphql-operations'
 
 interface ConfigurationStateBadgeProps {
     indexer: CodeIntelIndexerFields

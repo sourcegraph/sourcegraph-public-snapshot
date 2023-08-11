@@ -1,9 +1,9 @@
-import { ApolloClient, gql } from '@apollo/client'
-import { from, Observable } from 'rxjs'
+import { type ApolloClient, gql } from '@apollo/client'
+import { from, type Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { UpdateDashboardResult, UpdateDashboardVariables } from '../../../../../../graphql-operations'
-import { DashboardUpdateInput, DashboardUpdateResult } from '../../code-insights-backend-types'
+import type { UpdateDashboardResult, UpdateDashboardVariables } from '../../../../../../graphql-operations'
+import type { DashboardUpdateInput, DashboardUpdateResult } from '../../code-insights-backend-types'
 
 import { serializeDashboardOwners } from './create-dashboard/create-dashboard'
 

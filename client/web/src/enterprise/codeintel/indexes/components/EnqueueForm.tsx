@@ -1,6 +1,6 @@
-import { FunctionComponent, useCallback, useState } from 'react'
+import { type FunctionComponent, useCallback, useState } from 'react'
 
-import { Subject } from 'rxjs'
+import type { Subject } from 'rxjs'
 
 import { Alert, Button, ErrorAlert, Input, Label, Link } from '@sourcegraph/wildcard'
 

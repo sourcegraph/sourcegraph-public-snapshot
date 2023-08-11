@@ -1,4 +1,4 @@
-import { context, Context, Tracer, ROOT_CONTEXT } from '@opentelemetry/api'
+import { context, type Context, type Tracer, ROOT_CONTEXT } from '@opentelemetry/api'
 
 import { sharedSpanStore } from '../sdk'
 

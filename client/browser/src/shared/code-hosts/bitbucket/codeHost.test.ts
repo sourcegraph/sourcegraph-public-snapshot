@@ -1,4 +1,4 @@
-import { LineOrPositionOrRange } from '@sourcegraph/common'
+import type { LineOrPositionOrRange } from '@sourcegraph/common'
 
 import { testCodeHostMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
 

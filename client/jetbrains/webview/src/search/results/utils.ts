@@ -1,4 +1,4 @@
-import { LineMatch, SearchMatch, MatchedSymbol } from '@sourcegraph/shared/src/search/stream'
+import type { LineMatch, SearchMatch, MatchedSymbol } from '@sourcegraph/shared/src/search/stream'
 
 const SUPPORTED_TYPES = new Set(['commit', 'content', 'path', 'symbol', 'repo'])
 const ID_SEPERATOR = '-#-'

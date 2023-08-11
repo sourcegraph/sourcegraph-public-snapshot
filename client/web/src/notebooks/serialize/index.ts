@@ -1,16 +1,16 @@
-import { Observable, of } from 'rxjs'
+import { type Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
-import { Block, BlockInit, BlockInput, FileBlockInput, SerializableBlock, SymbolBlockInput } from '..'
+import type { Block, BlockInit, BlockInput, FileBlockInput, SerializableBlock, SymbolBlockInput } from '..'
 import {
-    CreateNotebookBlockInput,
+    type CreateNotebookBlockInput,
     NotebookBlockType,
     SymbolKind,
-    HighlightLineRange,
-    NotebookFields,
+    type HighlightLineRange,
+    type NotebookFields,
 } from '../../graphql-operations'
 import { parseBrowserRepoURL } from '../../util/url'
 

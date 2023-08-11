@@ -1,10 +1,10 @@
-import React, { FC, useEffect, useState, useCallback } from 'react'
+import React, { type FC, useEffect, useState, useCallback } from 'react'
 
 import { mdiChevronDown, mdiInformationOutline } from '@mdi/js'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
     PageHeader,
@@ -15,7 +15,7 @@ import {
     Link,
     Input,
     Badge,
-    BadgeProps,
+    type BadgeProps,
     useDebounce,
     PageSwitcher,
     Icon,
@@ -23,13 +23,13 @@ import {
     PopoverContent,
     Popover,
     Position,
-    PopoverOpenEvent,
+    type PopoverOpenEvent,
     Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { PageTitle } from '../../../components/PageTitle'
-import {
+import type {
     SettingsAreaRepositoryFields,
     RepoPermissionsInfoResult,
     RepoPermissionsInfoVariables,
@@ -40,7 +40,7 @@ import { useURLSyncedState } from '../../../hooks'
 import { ActionContainer } from '../../../repo/settings/components/ActionContainer'
 import { scheduleRepositoryPermissionsSync } from '../../../site-admin/backend'
 import { PermissionsSyncJobsTable } from '../../../site-admin/permissions-center/PermissionsSyncJobsTable'
-import { Table, IColumn } from '../../../site-admin/UserManagement/components/Table'
+import { Table, type IColumn } from '../../../site-admin/UserManagement/components/Table'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import { RepoPermissionsInfoQuery } from './backend'

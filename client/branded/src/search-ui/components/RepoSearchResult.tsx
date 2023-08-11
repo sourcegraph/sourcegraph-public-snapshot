@@ -5,8 +5,8 @@ import classNames from 'classnames'
 
 import { highlightNode } from '@sourcegraph/common'
 import { codeHostSubstrLength, displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { BuildSearchQueryURLParameters, QueryState } from '@sourcegraph/shared/src/search'
-import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
+import type { BuildSearchQueryURLParameters, QueryState } from '@sourcegraph/shared/src/search'
+import { getRepoMatchLabel, getRepoMatchUrl, type RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { RepoMetadata } from './RepoMetadata'

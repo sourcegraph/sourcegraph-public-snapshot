@@ -1,7 +1,7 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 import sinon from 'sinon'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
 
 import { CreateCodeMonitorPage } from './CreateCodeMonitorPage'

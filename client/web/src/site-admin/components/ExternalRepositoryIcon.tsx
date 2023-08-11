@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { externalRepoIcon } from '../../components/externalServices/externalServices'
-import { ExternalRepositoryFields } from '../../graphql-operations'
+import type { ExternalRepositoryFields } from '../../graphql-operations'
 
 export const ExternalRepositoryIcon: React.FunctionComponent<
     React.PropsWithChildren<{

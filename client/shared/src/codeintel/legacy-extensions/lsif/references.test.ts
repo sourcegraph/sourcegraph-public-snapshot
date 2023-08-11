@@ -4,10 +4,10 @@ import * as assert from 'assert'
 import * as sinon from 'sinon'
 
 import * as sourcegraph from '../api'
-import { QueryGraphQLFn } from '../util/graphql'
+import type { QueryGraphQLFn } from '../util/graphql'
 
-import { GenericLSIFResponse } from './api'
-import { ReferencesResponse, MAX_REFERENCE_PAGE_REQUESTS, referencesForPosition } from './references'
+import type { GenericLSIFResponse } from './api'
+import { type ReferencesResponse, MAX_REFERENCE_PAGE_REQUESTS, referencesForPosition } from './references'
 import {
     gatherValues,
     makeEnvelope,

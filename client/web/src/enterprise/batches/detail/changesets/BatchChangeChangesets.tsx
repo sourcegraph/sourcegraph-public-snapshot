@@ -16,22 +16,22 @@ import {
     SummaryContainer,
 } from '../../../../components/FilteredConnection/ui'
 import {
-    ExternalChangesetFields,
-    HiddenExternalChangesetFields,
-    Scalars,
-    BatchChangeChangesetsResult,
-    BatchChangeChangesetsVariables,
+    type ExternalChangesetFields,
+    type HiddenExternalChangesetFields,
+    type Scalars,
+    type BatchChangeChangesetsResult,
+    type BatchChangeChangesetsVariables,
     BatchChangeState,
 } from '../../../../graphql-operations'
 import { MultiSelectContext, MultiSelectContextProvider } from '../../MultiSelectContext'
 import {
-    queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
+    type queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryAllChangesetIDs as _queryAllChangesetIDs,
     CHANGESETS,
 } from '../backend'
 
 import { BatchChangeChangesetsHeader } from './BatchChangeChangesetsHeader'
-import { ChangesetFilters, ChangesetFilterRow } from './ChangesetFilterRow'
+import { type ChangesetFilters, ChangesetFilterRow } from './ChangesetFilterRow'
 import { ChangesetNode } from './ChangesetNode'
 import { ChangesetSelectRow } from './ChangesetSelectRow'
 import { EmptyArchivedChangesetListElement } from './EmptyArchivedChangesetListElement'

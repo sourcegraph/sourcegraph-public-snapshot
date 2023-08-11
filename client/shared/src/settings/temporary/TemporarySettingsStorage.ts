@@ -1,14 +1,14 @@
-import { ApolloClient, gql } from '@apollo/client'
+import { type ApolloClient, gql } from '@apollo/client'
 import { isEqual } from 'lodash'
-import { Observable, of, Subscription, from, ReplaySubject, Subscriber } from 'rxjs'
+import { Observable, of, type Subscription, from, ReplaySubject, type Subscriber } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
 import { fromObservableQuery } from '@sourcegraph/http-client'
 
-import { GetTemporarySettingsResult } from '../../graphql-operations'
+import type { GetTemporarySettingsResult } from '../../graphql-operations'
 
-import { TemporarySettings } from './TemporarySettings'
+import type { TemporarySettings } from './TemporarySettings'
 
 export class TemporarySettingsStorage {
     private settingsBackend: SettingsBackend = new LocalStorageSettingsBackend()

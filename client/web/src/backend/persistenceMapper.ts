@@ -1,4 +1,4 @@
-import { QueryFieldPolicy } from '@sourcegraph/shared/src/graphql-operations'
+import type { QueryFieldPolicy } from '@sourcegraph/shared/src/graphql-operations'
 
 /**
  * Hardcoded names of the queries which will be persisted to the local storage.

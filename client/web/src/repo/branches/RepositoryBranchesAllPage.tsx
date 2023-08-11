@@ -1,14 +1,14 @@
-import { FC, useCallback, useEffect } from 'react'
+import { type FC, useCallback, useEffect } from 'react'
 
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
+import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { GitRefType, GitRefConnectionFields, GitRefFields } from '../../graphql-operations'
+import { GitRefType, type GitRefConnectionFields, type GitRefFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { GitReferenceNode, queryGitReferences } from '../GitReference'
 
-import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
+import type { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
 
 interface Props extends RepositoryBranchesAreaPageProps {}
 

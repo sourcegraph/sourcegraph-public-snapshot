@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { addMinutes, formatRFC3339 } from 'date-fns'
 import { Route, Routes } from 'react-router-dom'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
@@ -9,7 +9,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../components/WebStory'
-import { WebhookLogFields } from '../graphql-operations'
+import type { WebhookLogFields } from '../graphql-operations'
 
 import { WEBHOOK_BY_ID } from './backend'
 import { createWebhookMock, TIMESTAMP_MOCK } from './fixtures'
