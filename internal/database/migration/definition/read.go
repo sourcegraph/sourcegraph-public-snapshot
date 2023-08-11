@@ -96,7 +96,7 @@ func readDefinition(fs fs.FS, schemaBasePath string, version int, filename strin
 
 // hydrateMetadataFromFile populates the given definition with metdata parsed
 // from the given file. The mutated definition is returned.
-func hydrateMetadataFromFile(fs fs.FS, schemaBasePath, metadataFilename string, definition Definition) (_ Definition, _ error) {
+func hydrateMetadataFromFile(fs fs.FS, schemaBasePath, upFilename, metadataFilename string, definition Definition) (_ Definition, _ error) {
 	file, err := fs.Open(metadataFilename)
 	if err != nil {
 		return Definition{}, err
@@ -156,17 +156,13 @@ func hydrateMetadataFromFile(fs fs.FS, schemaBasePath, metadataFilename string, 
 					fmt.Sprintf("Add `createIndexConcurrently: true` to the metadata file '%s'.", metadataPath),
 				}, " "),
 			}
-		} else {
-			for _, line := range strings.Split(createIndexConcurrentlyPattern.ReplaceAllLiteralString(upQueryText, ""), "\n") {
-				if strings.TrimSpace(strings.Split(line, "--")[0]) != "" {
-					return Definition{}, instructionalError{
-						class:       "malformed concurrent index creation",
-						description: fmt.Sprintf("did not expect up query of migration at '%s' to contain additional statements", schemaPath),
-						instructions: strings.Join([]string{
-							fmt.Sprintf("Split the index creation from '%s' into a new migration file.", upPath),
-						}, " "),
-					}
-				}
+		} else if removeConcurrentIndexCreation(upQueryText) != "" {
+			return Definition{}, instructionalError{
+				class:       "malformed concurrent index creation",
+				description: fmt.Sprintf("did not expect up query of migration at '%s' to contain additional statements", schemaPath),
+				instructions: strings.Join([]string{
+					fmt.Sprintf("Split the index creation from '%s' into a new migration file.", upPath),
+				}, " "),
 			}
 		}
 
@@ -255,6 +251,28 @@ func parseIndexMetadata(queryText string) (*IndexMetadata, bool) {
 		TableName: matches[2],
 		IndexName: matches[1],
 	}, true
+}
+
+var createIndexConcurrentlyFullPattern = lazyregexp.New(createIndexConcurrentlyPattern.Re().String() + `[^;]+;`)
+
+func removeConcurrentIndexCreation(query string) string {
+	if matches := createIndexConcurrentlyFullPattern.FindStringSubmatch(query); len(matches) > 0 {
+		query = strings.Replace(query, matches[0], "", 1)
+	}
+
+	return removeComments(query)
+}
+
+func removeComments(query string) string {
+	filtered := []string{}
+	for _, line := range strings.Split(query, "\n") {
+		l := strings.TrimSpace(strings.Split(line, "--")[0])
+		if l != "" {
+			filtered = append(filtered, l)
+		}
+	}
+
+	return strings.TrimSpace(strings.Join(filtered, "\n"))
 }
 
 var alterExtensionPattern = lazyregexp.New(`(CREATE|COMMENT ON|DROP)\s+EXTENSION`)
