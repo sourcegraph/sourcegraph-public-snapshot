@@ -67,130 +67,123 @@ func mockExplicitPermsConfig(enabled bool) func() {
 }
 
 // 🚨 SECURITY: Tests are necessary to ensure security.
-// func TestAuthzQueryConds(t *testing.T) {
-// 	cmpOpts := cmp.AllowUnexported(sqlf.Query{})
-//
-// 	logger := logtest.Scoped(t)
-// 	db := NewDB(logger, dbtest.NewDB(logger, t))
-//
-// 	t.Run("When permissions user mapping is enabled", func(t *testing.T) {
-// 		authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
-// 		cleanup := mockExplicitPermsConfig(true)
-// 		t.Cleanup(func() {
-// 			authz.SetProviders(true, nil)
-// 			cleanup()
-// 		})
-//
-// 		got, err := AuthzQueryConds(context.Background(), db)
-// 		require.Nil(t, err, "unexpected error, should have passed without conflict")
-//
-// 		want := authzQuery(false, int32(0))
-// 		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
-// 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
-// 		}
-// 	})
-//
-// 	t.Run("When permissions user mapping is enabled, unrestricted repos work correctly", func(t *testing.T) {
-// 		authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
-// 		cleanup := mockExplicitPermsConfig(true)
-// 		t.Cleanup(func() {
-// 			authz.SetProviders(true, nil)
-// 			cleanup()
-// 		})
-//
-// 		got, err := AuthzQueryConds(context.Background(), db)
-// 		require.NoError(t, err)
-// 		want := authzQuery(false, int32(0))
-// 		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
-// 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
-// 		}
-// 		require.Contains(t, got.Query(sqlf.PostgresBindVar), ExternalServiceUnrestrictedCondition.Query(sqlf.PostgresBindVar))
-// 	})
-//
-// 	tests := []struct {
-// 		name                string
-// 		setup               func(t *testing.T) (context.Context, DB)
-// 		authzAllowByDefault bool
-// 		wantQuery           *sqlf.Query
-// 	}{
-// 		{
-// 			name: "internal actor bypass checks",
-// 			setup: func(t *testing.T) (context.Context, DB) {
-// 				return actor.WithInternalActor(context.Background()), db
-// 			},
-// 			wantQuery: authzQuery(true, int32(0)),
-// 		},
-// 		{
-// 			name: "no authz provider and not allow by default",
-// 			setup: func(t *testing.T) (context.Context, DB) {
-// 				return context.Background(), db
-// 			},
-// 			wantQuery: authzQuery(false, int32(0)),
-// 		},
-// 		{
-// 			name: "no authz provider but allow by default",
-// 			setup: func(t *testing.T) (context.Context, DB) {
-// 				return context.Background(), db
-// 			},
-// 			authzAllowByDefault: true,
-// 			wantQuery:           authzQuery(true, int32(0)),
-// 		},
-// 		{
-// 			name: "authenticated user is a site admin",
-// 			setup: func(_ *testing.T) (context.Context, DB) {
-// 				users := NewMockUserStoreFrom(db.Users())
-// 				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-// 				mockDB := NewMockDBFrom(db)
-// 				mockDB.UsersFunc.SetDefaultReturn(users)
-// 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
-// 			},
-// 			wantQuery: authzQuery(true, int32(1)),
-// 		},
-// 		{
-// 			name: "authenticated user is a site admin and AuthzEnforceForSiteAdmins is set",
-// 			setup: func(t *testing.T) (context.Context, DB) {
-// 				users := NewMockUserStoreFrom(db.Users())
-// 				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-// 				mockDB := NewMockDBFrom(db)
-// 				mockDB.UsersFunc.SetDefaultReturn(users)
-// 				conf.Get().AuthzEnforceForSiteAdmins = true
-// 				t.Cleanup(func() {
-// 					conf.Get().AuthzEnforceForSiteAdmins = false
-// 				})
-// 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
-// 			},
-// 			wantQuery: authzQuery(false, int32(1)),
-// 		},
-// 		{
-// 			name: "authenticated user is not a site admin",
-// 			setup: func(_ *testing.T) (context.Context, DB) {
-// 				users := NewMockUserStoreFrom(db.Users())
-// 				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-// 				mockDB := NewMockDBFrom(db)
-// 				mockDB.UsersFunc.SetDefaultReturn(users)
-// 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
-// 			},
-// 			wantQuery: authzQuery(false, int32(1)),
-// 		},
-// 	}
-//
-// 	for _, test := range tests {
-// 		t.Run(test.name, func(t *testing.T) {
-// 			authz.SetProviders(test.authzAllowByDefault, nil)
-// 			defer authz.SetProviders(true, nil)
-//
-// 			ctx, mockDB := test.setup(t)
-// 			q, err := AuthzQueryConds(ctx, mockDB)
-// 			if err != nil {
-// 				t.Fatal(err)
-// 			}
-//
-// 			if diff := cmp.Diff(test.wantQuery, q, cmpOpts); diff != "" {
-// 				t.Fatalf("Mismatch (-want +got):\n%s", diff)
-// 			}
-// 		})
-// 	}
-// }
+func TestAuthzQueryConds(t *testing.T) {
+	cmpOpts := cmp.AllowUnexported(sqlf.Query{})
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+
+	t.Run("When permissions user mapping is enabled", func(t *testing.T) {
+		authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
+		cleanup := mockExplicitPermsConfig(true)
+		t.Cleanup(func() {
+			authz.SetProviders(true, nil)
+			cleanup()
+		})
+
+		got, err := AuthzQueryConds(context.Background(), db)
+		require.Nil(t, err, "unexpected error, should have passed without conflict")
+
+		want := authzQuery(false, int32(0))
+		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("When permissions user mapping is enabled, unrestricted repos work correctly", func(t *testing.T) {
+		authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
+		cleanup := mockExplicitPermsConfig(true)
+		t.Cleanup(func() {
+			authz.SetProviders(true, nil)
+			cleanup()
+		})
+
+		got, err := AuthzQueryConds(context.Background(), db)
+		require.NoError(t, err)
+		want := authzQuery(false, int32(0))
+		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+		require.Contains(t, got.Query(sqlf.PostgresBindVar), ExternalServiceUnrestrictedCondition.Query(sqlf.PostgresBindVar))
+	})
+
+	u, err := db.Users().Create(context.Background(), NewUser{Username: "testuser"})
+	require.NoError(t, err)
+	tests := []struct {
+		name                string
+		setup               func(t *testing.T) (context.Context, DB)
+		authzAllowByDefault bool
+		wantQuery           *sqlf.Query
+	}{
+		{
+			name: "internal actor bypass checks",
+			setup: func(t *testing.T) (context.Context, DB) {
+				return actor.WithInternalActor(context.Background()), db
+			},
+			wantQuery: authzQuery(true, int32(0)),
+		},
+		{
+			name: "no authz provider and not allow by default",
+			setup: func(t *testing.T) (context.Context, DB) {
+				return context.Background(), db
+			},
+			wantQuery: authzQuery(false, int32(0)),
+		},
+		{
+			name: "no authz provider but allow by default",
+			setup: func(t *testing.T) (context.Context, DB) {
+				return context.Background(), db
+			},
+			authzAllowByDefault: true,
+			wantQuery:           authzQuery(true, int32(0)),
+		},
+		{
+			name: "authenticated user is a site admin",
+			setup: func(_ *testing.T) (context.Context, DB) {
+				require.NoError(t, db.Users().SetIsSiteAdmin(context.Background(), u.ID, true))
+				return actor.WithActor(context.Background(), &actor.Actor{UID: u.ID}), db
+			},
+			wantQuery: authzQuery(true, int32(1)),
+		},
+		{
+			name: "authenticated user is a site admin and AuthzEnforceForSiteAdmins is set",
+			setup: func(t *testing.T) (context.Context, DB) {
+				require.NoError(t, db.Users().SetIsSiteAdmin(context.Background(), u.ID, true))
+				conf.Get().AuthzEnforceForSiteAdmins = true
+				t.Cleanup(func() {
+					conf.Get().AuthzEnforceForSiteAdmins = false
+				})
+				return actor.WithActor(context.Background(), &actor.Actor{UID: u.ID}), db
+			},
+			wantQuery: authzQuery(false, int32(1)),
+		},
+		{
+			name: "authenticated user is not a site admin",
+			setup: func(_ *testing.T) (context.Context, DB) {
+				require.NoError(t, db.Users().SetIsSiteAdmin(context.Background(), u.ID, false))
+				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), db
+			},
+			wantQuery: authzQuery(false, int32(1)),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			authz.SetProviders(test.authzAllowByDefault, nil)
+			defer authz.SetProviders(true, nil)
+
+			ctx, mockDB := test.setup(t)
+			q, err := AuthzQueryConds(ctx, mockDB)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(test.wantQuery, q, cmpOpts); diff != "" {
+				t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
 
 func execQuery(t *testing.T, ctx context.Context, db DB, q *sqlf.Query) {
 	t.Helper()
