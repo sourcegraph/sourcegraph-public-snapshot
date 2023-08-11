@@ -180,6 +180,25 @@ func (r *siteResolver) ExternalServicesCounts(ctx context.Context) (*externalSer
 	return &externalServicesCountsResolver{db: r.db}, nil
 }
 
+func (r *siteResolver) SMTPConfigured(ctx context.Context) (bool, error) {
+	// 🚨 SECURITY: Only admins can view repositories counts
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return false, err
+	}
+
+	cfg := conf.SiteConfig()
+	hasSMTP := cfg.EmailSmtp != nil
+	hasSMTPAuth := cfg.EmailSmtp != nil && cfg.EmailSmtp.Authentication != "none"
+	if hasSMTP && cfg.EmailAddress == "" {
+		return false, nil
+	}
+	if hasSMTPAuth && (cfg.EmailSmtp.Username == "" && cfg.EmailSmtp.Password == "") {
+		return false, nil
+	}
+
+	return true, nil
+}
+
 type externalServicesCountsResolver struct {
 	remoteExternalServicesCount int32
 	localExternalServicesCount  int32

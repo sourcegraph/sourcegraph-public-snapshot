@@ -15,12 +15,14 @@ const QUERY = gql`
                     tags
                 }
             }
+            smtpConfigured
         }
     }
 `
 export enum SetupChecklistItem {
     AddLicense = 'Add license',
     ConnectCodeHost = 'Connect code host',
+    ConfigureSMTP = 'Configure SMTP',
 }
 
 interface UseSetupChecklistReturnType {
@@ -34,6 +36,8 @@ export function useSetupChecklist(): UseSetupChecklistReturnType {
 
     const codeHostsCounts = data?.site?.externalServicesCounts?.remoteExternalServicesCount ?? 0
     const license = data?.site?.productSubscription?.license
+    const smtpConfigured = data?.site?.smtpConfigured
+
     return {
         data: [
             {
@@ -54,6 +58,13 @@ export function useSetupChecklist(): UseSetupChecklistReturnType {
                 path: '/site-admin/external-services/new',
                 info: <div>Add a codehost and sync its repositories</div>,
                 configured: codeHostsCounts > 0,
+            },
+            {
+                id: SetupChecklistItem.ConfigureSMTP,
+                name: 'Configure SMTP',
+                path: '/site-admin/configuration?tab=0',
+                info: <div>Configure SMTP so that Sourcegraph can send emails</div>,
+                configured: smtpConfigured,
             },
         ],
         loading,

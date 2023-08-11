@@ -7181,6 +7181,10 @@ type Site implements SettingsSubject {
     """
     externalServicesCounts: ExternalServicesCounts!
     """
+    True if SMTP has been configured correctly for sending emails from Sourcegraph instance.
+    """
+    smtpConfigured: Boolean!
+    """
     Whether the site is over the limit for free user accounts, and a warning needs to be shown to all users.
     Only applies if the site does not have a valid license.
     """
