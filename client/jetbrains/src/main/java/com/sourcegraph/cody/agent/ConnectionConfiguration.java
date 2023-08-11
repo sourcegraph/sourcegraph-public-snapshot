@@ -50,4 +50,29 @@ public class ConnectionConfiguration {
     this.autocompleteAdvancedEmbeddings = autocompleteAdvancedEmbeddings;
     return this;
   }
+
+  @Override
+  public String toString() {
+    return "ConnectionConfiguration{"
+        + "serverEndpoint='"
+        + serverEndpoint
+        + '\''
+        + ", accessToken='"
+        + accessToken
+        + '\''
+        + ", customHeaders="
+        + customHeaders
+        + ", autocompleteAdvancedProvider='"
+        + autocompleteAdvancedProvider
+        + '\''
+        + ", autocompleteAdvancedServerEndpoint='"
+        + autocompleteAdvancedServerEndpoint
+        + '\''
+        + ", autocompleteAdvancedAccessToken='"
+        + autocompleteAdvancedAccessToken
+        + '\''
+        + ", autocompleteAdvancedEmbeddings="
+        + autocompleteAdvancedEmbeddings
+        + '}';
+  }
 }

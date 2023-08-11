@@ -47,7 +47,7 @@ public class UserLevelConfig {
     Properties properties = readProperties();
     String currentKey = "cody.autocomplete.advanced.serverEndpoint";
     @Deprecated(since = "3.0.4")
-    String oldKey = "cody.completions.advanced.serverEndpoint";
+    String oldKey = "cody.autocomplete.advanced.serverEndpoint";
     return Optional.ofNullable(properties.getProperty(currentKey, null))
         .orElse(properties.getProperty(oldKey, null)); // fallback to the old key
   }
@@ -55,7 +55,7 @@ public class UserLevelConfig {
   @Nullable
   public static String getAutoCompleteAccessToken() {
     Properties properties = readProperties();
-    return properties.getProperty("cody.completions.advanced.accessToken", null);
+    return properties.getProperty("cody.autocomplete.advanced.accessToken", null);
   }
 
   @Nullable

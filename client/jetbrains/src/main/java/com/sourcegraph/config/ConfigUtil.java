@@ -26,7 +26,8 @@ public class ConfigUtil {
         .setServerEndpoint(getSourcegraphUrl(project))
         .setAccessToken(getProjectAccessToken(project))
         .setCustomHeaders(getCustomRequestHeadersAsMap(project))
-        .setAutocompleteAdvancedProvider(UserLevelConfig.getAutoCompleteProviderType().toString())
+        .setAutocompleteAdvancedProvider(
+            UserLevelConfig.getAutoCompleteProviderType().vscodeSettingString())
         .setAutocompleteAdvancedServerEndpoint(UserLevelConfig.getAutoCompleteServerEndpoint())
         .setAutocompleteAdvancedAccessToken(UserLevelConfig.getAutoCompleteAccessToken())
         .setAutocompleteAdvancedEmbeddings(UserLevelConfig.getAutocompleteAdvancedEmbeddings());

@@ -60,6 +60,7 @@ public class AcceptCodyAutoCompleteAction extends EditorAction {
       boolean isAgentCompletion = server != null;
 
       if (isAgentCompletion) {
+        GraphQlLogger.logCodyEvent(project, "completion", "accepted");
         acceptAgentAutocomplete(editor, maybeCaret);
       } else {
         Optional.ofNullable(maybeCaret)
