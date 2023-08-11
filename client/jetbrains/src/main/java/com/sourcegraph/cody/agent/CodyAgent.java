@@ -102,6 +102,7 @@ public class CodyAgent implements Disposable {
                       .get();
               logger.info("connected to Cody agent " + info.name);
               server.initialized();
+              server.configurationDidChange(ConfigUtil.getAgentConfiguration(this.project));
               this.subscribeToFocusEvents();
               this.initialized.complete(server);
             } catch (Exception e) {
