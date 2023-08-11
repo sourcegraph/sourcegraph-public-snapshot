@@ -1,9 +1,13 @@
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createSyncLoadedController'
 
-import { createPlatformContext, SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
+import {
+    createPlatformContext,
+    type SourcegraphIntegrationURLs,
+    type BrowserPlatformContext,
+} from '../../platform/context'
 
-import { CodeHost } from './codeHost'
+import type { CodeHost } from './codeHost'
 
 /**
  * Initializes extensions for a page. It creates the {@link PlatformContext} and extensions controller.

@@ -2,12 +2,12 @@ import React, { useCallback, useMemo, useEffect } from 'react'
 
 import classNames from 'classnames'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Modal, Button, Checkbox, H3 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 
-import { NotebookShareOptionsDropdown, ShareOption } from './NotebookShareOptionsDropdown'
+import { NotebookShareOptionsDropdown, type ShareOption } from './NotebookShareOptionsDropdown'
 
 import styles from './ShareNotebookModal.module.scss'
 

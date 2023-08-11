@@ -1,9 +1,9 @@
 import { memoize } from 'lodash'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
-import { getGraphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
+import { getGraphQLClient, type GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
 
-import { WebGraphQlOperations } from '../graphql-operations'
+import type { WebGraphQlOperations } from '../graphql-operations'
 
 import { getPersistentCache } from './getPersistentCache'
 

@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 
 import { mdiGithub, mdiGitlab, mdiBitbucket } from '@mdi/js'
-import { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, Story, DecoratorFn } from '@storybook/react'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { Button, Popover, PopoverTrigger, Icon } from '@sourcegraph/wildcard'

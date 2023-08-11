@@ -1,6 +1,6 @@
-import { ApolloError, gql, useQuery } from '@apollo/client'
+import { type ApolloError, gql, useQuery } from '@apollo/client'
 
-import { CodeGraphInferenceScriptResult } from '../../../../graphql-operations'
+import type { CodeGraphInferenceScriptResult } from '../../../../graphql-operations'
 
 interface UseInferenceScriptResult {
     inferenceScript: string

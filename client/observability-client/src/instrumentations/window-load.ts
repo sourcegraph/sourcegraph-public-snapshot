@@ -1,4 +1,4 @@
-import { Span, trace, context, Context } from '@opentelemetry/api'
+import { type Span, trace, context, type Context } from '@opentelemetry/api'
 import { otperformance } from '@opentelemetry/core'
 import { PerformanceTimingNames } from '@opentelemetry/sdk-trace-web'
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions'

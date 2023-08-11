@@ -3,9 +3,9 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { useWildcardTheme } from '../../hooks'
-import { ForwardReferenceComponent } from '../../types'
+import type { ForwardReferenceComponent } from '../../types'
 
-import { ALERT_VARIANTS } from './constants'
+import type { ALERT_VARIANTS } from './constants'
 import { getAlertStyle } from './utils'
 
 import styles from './Alert.module.scss'

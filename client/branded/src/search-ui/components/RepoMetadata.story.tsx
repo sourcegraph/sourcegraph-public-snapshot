@@ -1,9 +1,9 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 
 import { Card, Grid, H2, H3 } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
-import { RepoMetadataItem, RepoMetadata } from './RepoMetadata'
+import { type RepoMetadataItem, RepoMetadata } from './RepoMetadata'
 
 const config: Meta = {
     title: 'branded/search-ui/RepoMetadata',

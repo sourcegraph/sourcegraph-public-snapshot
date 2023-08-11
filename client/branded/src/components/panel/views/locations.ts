@@ -1,6 +1,6 @@
 import { isEqual, uniqWith } from 'lodash'
 
-import { Location } from '@sourcegraph/extension-api-types'
+import type { Location } from '@sourcegraph/extension-api-types'
 
 /**
  * Grouped locations returned by {@link groupLocations}.

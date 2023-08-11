@@ -1,13 +1,13 @@
-import { ProxyMarked, proxyMarker, Remote } from 'comlink'
-import { Observer, of } from 'rxjs'
-import { Hover } from 'sourcegraph'
+import { type ProxyMarked, proxyMarker, type Remote } from 'comlink'
+import { type Observer, of } from 'rxjs'
+import type { Hover } from 'sourcegraph'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import type { HoverMerged } from '@sourcegraph/client-api'
+import type { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 
-import { SettingsCascade } from '../../../settings/settings'
-import { ClientAPI } from '../../client/api/api'
+import type { SettingsCascade } from '../../../settings/settings'
+import type { ClientAPI } from '../../client/api/api'
 import { pretendProxySubscribable, pretendRemote } from '../../util'
 
 import { initializeExtensionHostTest } from './test-helpers'

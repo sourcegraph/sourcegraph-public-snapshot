@@ -3,15 +3,15 @@ import { useState, useCallback, useEffect } from 'react'
 import { mdiEmail } from '@mdi/js'
 import classNames from 'classnames'
 
-import { asError, ErrorLike } from '@sourcegraph/common'
+import { asError, type ErrorLike } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Checkbox, Form, H3, Modal, Text, Button, Icon, AnchorLink } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { CodyColorIcon } from '../../cody/chat/CodyPageIcon'
 import { LoaderButton } from '../../components/LoaderButton'
-import {
+import type {
     SubmitCodySurveyResult,
     SubmitCodySurveyVariables,
     SetCompletedPostSignupVariables,

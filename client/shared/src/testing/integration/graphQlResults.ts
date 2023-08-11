@@ -1,5 +1,5 @@
-import { AuthenticatedUser } from '../../auth'
-import { SharedGraphQlOperations } from '../../graphql-operations'
+import type { AuthenticatedUser } from '../../auth'
+import type { SharedGraphQlOperations } from '../../graphql-operations'
 
 export const testUserID = 'TestUserID'
 export const settingsID = 123

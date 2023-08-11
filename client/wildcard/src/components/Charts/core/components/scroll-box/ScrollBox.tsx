@@ -1,4 +1,4 @@
-import { FunctionComponent, HTMLAttributes, useRef } from 'react'
+import { type FunctionComponent, type HTMLAttributes, useRef } from 'react'
 
 import classNames from 'classnames'
 

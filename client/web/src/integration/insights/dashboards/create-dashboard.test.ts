@@ -1,9 +1,9 @@
 import assert from 'assert'
 
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from '../../context'
 import { overrideInsightsGraphQLApi } from '../utils/override-insights-graphql-api'
 
 describe('[Code Insight] Dashboard', () => {

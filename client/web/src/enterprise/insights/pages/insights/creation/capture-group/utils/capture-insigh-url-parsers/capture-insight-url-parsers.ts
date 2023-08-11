@@ -1,4 +1,4 @@
-import { CaptureGroupFormFields } from '../../types'
+import type { CaptureGroupFormFields } from '../../types'
 
 type UnsupportedFields = 'step' | 'stepValue' | 'repoQuery' | 'repoMode'
 

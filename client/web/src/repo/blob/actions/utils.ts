@@ -1,7 +1,7 @@
-import * as H from 'history'
+import type * as H from 'history'
 
 import { findLineKeyInSearchParameters } from '@sourcegraph/common'
-import { RenderMode } from '@sourcegraph/shared/src/util/url'
+import type { RenderMode } from '@sourcegraph/shared/src/util/url'
 
 const URL_QUERY_PARAM = 'view'
 

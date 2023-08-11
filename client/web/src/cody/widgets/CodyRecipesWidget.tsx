@@ -8,8 +8,8 @@ import { TranslateToLanguage } from '@sourcegraph/cody-shared/dist/chat/recipes/
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
-import { CodeMirrorEditor } from '../components/CodeMirrorEditor'
-import { useCodySidebar } from '../sidebar/Provider'
+import type { CodeMirrorEditor } from '../components/CodeMirrorEditor'
+import type { useCodySidebar } from '../sidebar/Provider'
 
 import { Recipe } from './components/Recipe'
 import { RecipeAction } from './components/RecipeAction'

@@ -1,8 +1,8 @@
-import React, { HTMLAttributes } from 'react'
+import React, { type HTMLAttributes } from 'react'
 
 import classNames from 'classnames'
 
-import { Tabs, TabsProps } from '@sourcegraph/wildcard'
+import { Tabs, type TabsProps } from '@sourcegraph/wildcard'
 
 import styles from './ConnectionPopover.module.scss'
 

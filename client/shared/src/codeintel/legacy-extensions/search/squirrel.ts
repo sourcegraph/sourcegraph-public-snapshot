@@ -3,8 +3,8 @@
 import { sortBy } from 'lodash'
 
 import * as sourcegraph from '../api'
-import { PromiseProviders } from '../providers'
-import { API, Range, RepoCommitPath } from '../util/api'
+import type { PromiseProviders } from '../providers'
+import type { API, Range, RepoCommitPath } from '../util/api'
 import { parseGitURI } from '../util/uri'
 
 export const mkSquirrel = (api: API): PromiseProviders => ({

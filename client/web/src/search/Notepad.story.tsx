@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react'
 
-import { ComponentStory, ComponentMeta } from '@storybook/react'
+import type { ComponentStory, ComponentMeta } from '@storybook/react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 
 import { WebStory } from '../components/WebStory'
 import { useNotepadState } from '../stores'
-import { NotepadEntry, NotepadStore } from '../stores/notepad'
+import type { NotepadEntry, NotepadStore } from '../stores/notepad'
 
 import { NotepadContainer } from './Notepad'
 

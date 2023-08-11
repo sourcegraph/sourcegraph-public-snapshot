@@ -1,10 +1,10 @@
-import React, { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import React, { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import FocusLock from 'react-focus-lock'
 
-import { ForwardReferenceComponent } from '../..'
+import type { ForwardReferenceComponent } from '../..'
 
 import styles from './Collapse.module.scss'
 

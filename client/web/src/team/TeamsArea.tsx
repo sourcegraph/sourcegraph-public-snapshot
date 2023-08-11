@@ -5,7 +5,7 @@ import { Routes, Route } from 'react-router-dom'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { RouteError } from '../components/ErrorBoundary'
 import { NotFoundPage } from '../components/HeroPage'

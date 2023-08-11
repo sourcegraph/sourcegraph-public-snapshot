@@ -1,4 +1,10 @@
-import { forwardRef, ForwardRefExoticComponent, ReactNode, RefAttributes, TextareaHTMLAttributes } from 'react'
+import {
+    forwardRef,
+    type ForwardRefExoticComponent,
+    type ReactNode,
+    type RefAttributes,
+    type TextareaHTMLAttributes,
+} from 'react'
 
 import classNames from 'classnames'
 

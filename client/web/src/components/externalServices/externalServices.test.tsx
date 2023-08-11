@@ -1,6 +1,6 @@
 import { ExternalServiceKind } from '../../graphql-operations'
 
-import { ExternalServiceFieldsWithConfig } from './backend'
+import type { ExternalServiceFieldsWithConfig } from './backend'
 import { codeHostExternalServices, gitHubAppConfig, resolveExternalServiceCategory } from './externalServices'
 
 describe('gitHubAppConfig', () => {

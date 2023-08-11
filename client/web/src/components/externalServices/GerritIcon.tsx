@@ -1,4 +1,4 @@
-import { MdiReactIconComponentType } from 'mdi-react'
+import type { MdiReactIconComponentType } from 'mdi-react'
 
 export const GerritIcon: MdiReactIconComponentType = props => (
     <svg

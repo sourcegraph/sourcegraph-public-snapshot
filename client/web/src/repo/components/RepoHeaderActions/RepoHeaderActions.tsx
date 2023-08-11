@@ -4,13 +4,13 @@ import classNames from 'classnames'
 
 import {
     ButtonLink,
-    ButtonLinkProps,
-    ForwardReferenceComponent,
+    type ButtonLinkProps,
+    type ForwardReferenceComponent,
     MenuButton,
     MenuItem,
     MenuLink,
-    MenuItemProps,
-    MenuLinkProps,
+    type MenuItemProps,
+    type MenuLinkProps,
 } from '@sourcegraph/wildcard'
 
 import styles from './RepoHeaderActions.module.scss'

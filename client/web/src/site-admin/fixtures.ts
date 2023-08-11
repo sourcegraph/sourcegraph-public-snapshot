@@ -1,8 +1,8 @@
 import { formatRFC3339, subMinutes } from 'date-fns'
 
-import { ExternalServiceKind, ExternalServiceSyncJobState } from '@sourcegraph/shared/src/graphql-operations'
+import { type ExternalServiceKind, ExternalServiceSyncJobState } from '@sourcegraph/shared/src/graphql-operations'
 
-import { ListExternalServiceFields, WebhookFields } from '../graphql-operations'
+import type { ListExternalServiceFields, WebhookFields } from '../graphql-operations'
 
 export const TIMESTAMP_MOCK = new Date(2021, 10, 8, 16, 40, 30)
 

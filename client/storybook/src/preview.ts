@@ -1,10 +1,10 @@
 import 'focus-visible'
 
-import { ReactElement } from 'react'
+import type { ReactElement } from 'react'
 
 import { configureActions } from '@storybook/addon-actions'
 import { withConsole } from '@storybook/addon-console'
-import { DecoratorFn, Parameters } from '@storybook/react'
+import type { DecoratorFn, Parameters } from '@storybook/react'
 import { withDesign } from 'storybook-addon-designs'
 
 import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'

@@ -2,15 +2,15 @@ import React, { useEffect, useMemo, useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import { CodyClientScope } from '@sourcegraph/cody-shared/dist/chat/useClient'
+import type { CodyClientScope } from '@sourcegraph/cody-shared/dist/chat/useClient'
 import { useLazyQuery } from '@sourcegraph/http-client'
 
-import { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
+import type { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { EventName } from '../../../util/constants'
 
 import { ReposStatusQuery } from './backend'
-import { RepositoriesSelectorPopover, getFileName, IRepo } from './RepositoriesSelectorPopover'
+import { RepositoriesSelectorPopover, getFileName, type IRepo } from './RepositoriesSelectorPopover'
 
 import styles from './ScopeSelector.module.scss'
 

@@ -19,7 +19,7 @@ import {
 } from '../../../../components/FilteredConnection/ui'
 import { PageTitle } from '../../../../components/PageTitle'
 import { useScrollToLocationHash } from '../../../../components/useScrollToLocationHash'
-import {
+import type {
     DotComProductSubscriptionResult,
     DotComProductSubscriptionVariables,
     ArchiveProductSubscriptionResult,

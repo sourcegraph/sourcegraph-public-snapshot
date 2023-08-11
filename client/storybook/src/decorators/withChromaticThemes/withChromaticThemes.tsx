@@ -1,6 +1,6 @@
-import { ReactElement } from 'react'
+import type { ReactElement } from 'react'
 
-import { DecoratorFunction } from '@storybook/addons'
+import type { DecoratorFunction } from '@storybook/addons'
 
 import { ChromaticRoot } from './ChromaticRoot'
 

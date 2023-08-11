@@ -1,4 +1,4 @@
-import { FuzzyFileQuery, parseFuzzyFileQuery } from './FuzzyFiles'
+import { type FuzzyFileQuery, parseFuzzyFileQuery } from './FuzzyFiles'
 
 function checkFuzzyFileQuery(query: string, expectedValue: FuzzyFileQuery): void {
     test(query, () => {
