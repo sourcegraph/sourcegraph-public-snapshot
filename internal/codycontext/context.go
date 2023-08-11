@@ -179,13 +179,13 @@ func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetCo
 	ctx, _, endObservation := c.getEmbeddingsContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	defer endObservation(1, observation.Args{})
 
-	if featureflag.FromContext(ctx).GetBoolOr("qdrant", false) {
-		return c.getEmbeddingsContextFromQdrant(ctx, args)
-	}
-
 	if len(args.Repos) == 0 || (args.CodeResultsCount == 0 && args.TextResultsCount == 0) {
 		// Don't bother doing an API request if we can't actually have any results.
 		return nil, nil
+	}
+
+	if featureflag.FromContext(ctx).GetBoolOr("qdrant", false) {
+		return c.getEmbeddingsContextFromQdrant(ctx, args)
 	}
 
 	repoNames := make([]api.RepoName, len(args.Repos))

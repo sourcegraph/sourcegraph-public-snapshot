@@ -29,10 +29,22 @@ type qdrantDB struct {
 var _ VectorDB = (*qdrantDB)(nil)
 
 type SearchParams struct {
-	ModelID   string
-	RepoIDs   []api.RepoID
-	Query     []float32
+	// RepoIDs is the set of repos to search.
+	// If empty, all repos are searched.
+	RepoIDs []api.RepoID
+
+	// The ID of the model that the query was embedded with.
+	// Embeddings for other models will not be searched.
+	ModelID string
+
+	// Query is the embedding for the search query.
+	// Its dimensions must match the model dimensions.
+	Query []float32
+
+	// The maximum number of code results to return
 	CodeLimit int
+
+	// The maximum number of text results to return
 	TextLimit int
 }
 
