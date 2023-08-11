@@ -483,10 +483,10 @@ func watchSyncer(
 	}
 }
 
-// newUnclonedReposManager will periodically list the uncloned repositories on gitserver
-// and update the scheduler with the list. It also ensures that if any of our
-// indexable repos are missing from the cloned list they will be added for
-// cloning ASAP.
+// newUnclonedReposManager creates a background routine that will periodically list
+// the uncloned repositories on gitserver and update the scheduler with the list.
+// It also ensures that if any of our indexable repos are missing from the cloned
+// list they will be added for cloning ASAP.
 func newUnclonedReposManager(ctx context.Context, logger log.Logger, isSourcegraphDotCom bool, sched *repos.UpdateScheduler, store repos.Store) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
