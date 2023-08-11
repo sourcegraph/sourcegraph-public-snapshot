@@ -189,15 +189,19 @@ func validTarget(ctx context.Context, target string) bool {
 	return true
 }
 
-func validateTargets(ctx context.Context, targets []string) ([]string, []string) {
+func validateTargets(ctx context.Context, pending output.Pending, targets []string) ([]string, []string) {
 	valid := make([]string, 0)
 	invalid := make([]string, 0)
 	for _, target := range targets {
+		pending.Updatef("checking target %s", target)
 		if strings.HasSuffix(target, "...") {
+			pending.WriteLine(output.Emoji("⚠️", fmt.Sprintf("%s is not fully qualified", target)))
 			invalid = append(invalid, fmt.Sprintf("%s is not fully qualified - please provide a fully qualified target", target))
 		} else if validTarget(ctx, target) {
+			pending.WriteLine(output.Emoji("☑️", fmt.Sprintf("%s is valid", target)))
 			valid = append(valid, target)
 		} else {
+			pending.WriteLine(output.Emoji("⚠️", fmt.Sprintf("%s is invalid", target)))
 			invalid = append(invalid, target)
 		}
 	}
@@ -250,13 +254,13 @@ func quarantineTarget(ctx *cli.Context) error {
 
 	qMap := toQuarantineMap(tests)
 	targets := ctx.Args().Slice()
-	pending := std.Out.Pending(output.Emojif("🔍", "validating targets by running 'bazel query <target>'"))
-	targets, invalid := validateTargets(ctx.Context, targets)
+	pending := std.Out.Pending(output.Emojif("🔍", "Validating targets by running 'bazel query <target>'"))
+	targets, invalid := validateTargets(ctx.Context, pending, targets)
 	if len(invalid) > 0 {
-		pending.Complete(output.Emoji("🚧", "some targets are invalid"))
-		return errors.Newf("The following targets are invalid according to bazel: \n%s", strings.Join(invalid, "\n-"))
+		pending.Complete(output.Emoji("🚧", "Cannot add targets to quarantine since some of them are invalid"))
+		return errors.Newf("The following targets are invalid according to bazel: %s", strings.Join(invalid, " "))
 	}
-	pending.Complete(output.Emoji("✅", "all targets are valid"))
+	pending.Complete(output.Emoji("✅", "All targets are valid"))
 
 	if ctx.Bool("remove") {
 		removeTargets(qMap, targets...)
