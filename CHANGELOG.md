@@ -17,10 +17,14 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+### Removed
+
+## 5.1.1
+
+### Fixed
+
 - Fixed `src snapshot validate`. [#1010](https://github.com/sourcegraph/src-cli/pull/1010)
 - Fixed `src code-intel upload` not respecting `-insecure-skip-verify`. [#1012](https://github.com/sourcegraph/src-cli/pull/1012)
-
-### Removed
 
 ## 5.1.0
 
