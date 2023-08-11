@@ -28,3 +28,45 @@ jobs:
         with:
           path: './result/bin/ctags'
           destination: 'universal_ctags/x86_64-darwin/ctags'
+  aarch64-darwin:
+    name: Build ctags
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v4
+      - id: auth
+        name: '🔓 Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+      - id: nix-build
+        name: Run `nix build`
+        run: |
+          nix build .#ctags
+      - id: 'upload-file'
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: './result/bin/ctags'
+          destination: 'universal_ctags/aarch64-darwin/ctags'
+  x86_64-linux:
+    name: Build ctags
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v4
+      - id: auth
+        name: '🔓 Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+      - id: nix-build
+        name: Run `nix build`
+        run: |
+          nix build .#ctags-aarch64-darwin
+      - id: 'upload-file'
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: './result/bin/ctags'
+          destination: 'universal_ctags/x86_64-linux/ctags'
