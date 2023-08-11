@@ -21,7 +21,7 @@ export CGO_ENABLED=0
 if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
 
   TARGETS=(
-    //enterprise/cmd/batcheshelper
+    //cmd/batcheshelper
     //enterprise/cmd/executor
   )
   ./dev/ci/bazel.sh build "${TARGETS[@]}"
@@ -47,8 +47,8 @@ pkg="github.com/sourcegraph/sourcegraph/enterprise/cmd/executor"
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist,shell -o "$OUTPUT/$(basename $pkg)" "$pkg"
 popd 1>/dev/null
 
-pushd ./enterprise/cmd/batcheshelper 1>/dev/null
-pkg="github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper"
+pushd ./cmd/batcheshelper 1>/dev/null
+pkg="github.com/sourcegraph/sourcegraph/cmd/batcheshelper"
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
 popd 1>/dev/null
 
