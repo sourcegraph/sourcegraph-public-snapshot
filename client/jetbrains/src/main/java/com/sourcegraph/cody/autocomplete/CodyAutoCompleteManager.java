@@ -240,7 +240,10 @@ public class CodyAutoCompleteManager {
     String multilineInsertText =
         item.insertText.lines().skip(1).collect(Collectors.joining(System.lineSeparator()));
     Patch<String> patch = CodyAutoCompleteManager.diff(originalText, insertTextFirstLine);
-    if (patch.getDeltas().stream().anyMatch(delta -> delta.getType() == Delta.TYPE.DELETE)) {
+    if (patch.getDeltas().stream()
+        .anyMatch(
+            delta ->
+                delta.getType() == Delta.TYPE.DELETE || delta.getType() == Delta.TYPE.CHANGE)) {
       // Skip completions that require deleting code. This can be removed once we filter out
       // completion items that introduce deletions.
       return;
