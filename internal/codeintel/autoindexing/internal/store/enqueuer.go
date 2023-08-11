@@ -189,7 +189,8 @@ INSERT INTO lsif_indexes (
 	indexer_args,
 	outfile,
 	execution_logs,
-	requested_envvars
+	requested_envvars,
+	enqueuer_user_id
 )
 VALUES %s
 RETURNING id
