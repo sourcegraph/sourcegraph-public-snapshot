@@ -6,10 +6,11 @@ import type { SettingsCascade, AuthenticatedUser, TemporarySettingsStorage } fro
 import type { FeatureFlag } from './featureflags'
 import type { GraphQLClient } from './graphql'
 
+export { isLightTheme } from './theme'
+
 export interface SourcegraphContext {
     settings: Readable<SettingsCascade['final'] | null>
     user: Readable<AuthenticatedUser | null>
-    isLightTheme: Readable<boolean>
     temporarySettingsStorage: Readable<TemporarySettingsStorage>
     featureFlags: Readable<FeatureFlag[]>
     client: Readable<GraphQLClient>
@@ -18,9 +19,8 @@ export interface SourcegraphContext {
 export const KEY = '__sourcegraph__'
 
 export function getStores(): SourcegraphContext {
-    const { settings, user, isLightTheme, temporarySettingsStorage, featureFlags, client } =
-        getContext<SourcegraphContext>(KEY)
-    return { settings, user, isLightTheme, temporarySettingsStorage, featureFlags, client }
+    const { settings, user, temporarySettingsStorage, featureFlags, client } = getContext<SourcegraphContext>(KEY)
+    return { settings, user, temporarySettingsStorage, featureFlags, client }
 }
 
 export const user = {
@@ -34,13 +34,6 @@ export const settings = {
     subscribe(subscriber: (settings: SettingsCascade['final'] | null) => void) {
         const { settings } = getStores()
         return settings.subscribe(subscriber)
-    },
-}
-
-export const isLightTheme = {
-    subscribe(subscriber: (isLightTheme: boolean) => void) {
-        const { isLightTheme } = getStores()
-        return isLightTheme.subscribe(subscriber)
     },
 }
 

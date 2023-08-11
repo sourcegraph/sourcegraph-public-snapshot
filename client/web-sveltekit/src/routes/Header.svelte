@@ -3,9 +3,10 @@
 
     import { mark } from '$lib/images'
     import type { AuthenticatedUser } from '$lib/shared'
-    import UserAvatar from '$lib/UserAvatar.svelte'
 
     import HeaderNavLink from './HeaderNavLink.svelte'
+    import { Button } from '$lib/wildcard'
+    import UserMenu from './UserMenu.svelte'
 
     export let authenticatedUser: AuthenticatedUser | null | undefined
 </script>
@@ -23,14 +24,11 @@
     </nav>
     <div class="user">
         {#if authenticatedUser}
-            <UserAvatar user={authenticatedUser} />
-            <!--
-                Needs data-sveltekit-reload to force hitting the server and
-                proxying the request to the Sourcegraph instance.
-            -->
-            <a href="/-/sign-out" data-sveltekit-reload>Sign out</a>
+            <UserMenu {authenticatedUser} />
         {:else}
-            <a href="/sign-in" data-sveltekit-reload>Sign in</a>
+            <Button variant="secondary" outline>
+                <a slot="custom" let:className class={className} href="/sign-in" data-sveltekit-reload>Sign in</a>
+            </Button>
         {/if}
     </div>
 </header>
