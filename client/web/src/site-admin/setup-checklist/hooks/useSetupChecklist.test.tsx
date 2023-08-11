@@ -1,4 +1,4 @@
-import { add, endOfYear, endOfYesterday, sub } from 'date-fns'
+import { add, endOfYesterday, sub } from 'date-fns'
 import { cloneDeep, merge } from 'lodash'
 
 import { getLicenseSetupStatus } from './useSetupChecklist'
