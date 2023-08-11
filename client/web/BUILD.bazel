@@ -228,6 +228,7 @@ ts_project(
         "src/cody/components/CodyMarketingPage/CodyMarketingPage.tsx",
         "src/cody/components/CodyMarketingPage/index.ts",
         "src/cody/components/FileContentEditor.ts",
+        "src/cody/components/GettingStarted.tsx",
         "src/cody/components/HistoryList/HistoryList.tsx",
         "src/cody/components/HistoryList/index.tsx",
         "src/cody/components/RepoContainerEditor.ts",
