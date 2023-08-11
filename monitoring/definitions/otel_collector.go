@@ -95,9 +95,52 @@ func OtelCollector() *monitoring.Dashboard {
 								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
 							`,
 						},
+						{
+							Name:        "otelcol_exporter_queue_capacity",
+							Description: "exporter queue capacity",
+							Panel:       monitoring.Panel().LegendFormat("exporter: {{exporter}}"),
+							Owner:       monitoring.ObservableOwnerDevOps,
+							Query:       "sum by (exporter) (rate(otelcol_exporter_queue_capacity{job=~\"^.*\"}[1m]))",
+							NoAlert:     true,
+							Interpretation: `
+								Shows the the capacity of the retry queue (in batches).
+								`,
+						},
+						{
+							Name:        "otelcol_exporter_queue_size",
+							Description: "exporter queue size",
+							Panel:       monitoring.Panel().LegendFormat("exporter: {{exporter}}"),
+							Owner:       monitoring.ObservableOwnerDevOps,
+							Query:       "sum by (exporter) (rate(otelcol_exporter_queue_size{job=~\"^.*\"}[1m]))",
+							NoAlert:     true,
+							Interpretation: `
+							Shows the current size of retry queue
+								`,
+						},
 					},
 				},
 			},
+			{
+				Title:  "Processors",
+				Hidden: false,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:        "otelcol_processor_dropped_spans",
+							Description: "spans dropped per processor per minute",
+							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("processor: {{processor}}"),
+							Owner:       monitoring.ObservableOwnerDevOps,
+							Query:       "sum by (processor) (rate(otelcol_processor_dropped_spans[1m]))",
+							Warning:     monitoring.Alert().Greater(0).For(5 * time.Minute),
+
+							Interpretation: `
+								Shows the rate of spans dropped by the configured processor
+							`,
+						},
+					},
+				},
+			},
+
 			{
 				Title:  "Collector resource usage",
 				Hidden: false,
