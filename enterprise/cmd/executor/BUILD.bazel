@@ -33,9 +33,24 @@ go_binary(
     },
 )
 
+go_binary(
+    name = "executor_sh",
+    basename = "executor",
+    embed = [":executor_lib"],
+    gotags = [
+        "shell",
+    ],
+    visibility = ["//visibility:public"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
+)
+
 pkg_tar(
     name = "tar_executor",
     srcs = [":executor"],
+    visibility = ["//cmd/bundled-executor:__pkg__"],
 )
 
 pkg_tar(
