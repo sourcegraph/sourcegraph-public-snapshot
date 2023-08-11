@@ -81,6 +81,31 @@ CREATE TYPE persistmode AS ENUM (
     'snapshot'
 );
 
+CREATE FUNCTION addr_for_repo(repo_name text, addrs text[]) RETURNS text
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    md5_hash     BYTEA;
+    server_index BIGINT;
+BEGIN
+    -- Compute the MD5 hash of the repo name.
+    md5_hash := decode(md5(repo_name), 'hex');
+
+    -- Convert the first 8 bytes of the MD5 hash to a BIGINT.
+    server_index := get_byte(md5_hash, 0)::BIGINT << 56 |
+                    get_byte(md5_hash, 1)::BIGINT << 48 |
+                    get_byte(md5_hash, 2)::BIGINT << 40 |
+                    get_byte(md5_hash, 3)::BIGINT << 32 |
+                    get_byte(md5_hash, 4)::BIGINT << 24 |
+                    get_byte(md5_hash, 5)::BIGINT << 16 |
+                    get_byte(md5_hash, 6)::BIGINT << 8 |
+                    get_byte(md5_hash, 7)::BIGINT;
+
+    -- Use modulo to get the index and fetch the address from the array.
+    RETURN addrs[(server_index % array_length(addrs, 1)) + 1];
+END;
+$$;
+
 CREATE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
@@ -4423,6 +4448,65 @@ COMMENT ON COLUMN repo_statistics.failed_fetch IS 'Number of repositories that a
 
 COMMENT ON COLUMN repo_statistics.corrupted IS 'Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table';
 
+CREATE TABLE repo_update_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    failure_message text,
+    queued_at timestamp with time zone DEFAULT now(),
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
+    repo_id integer NOT NULL,
+    priority integer DEFAULT 0 NOT NULL,
+    overwrite_clone boolean DEFAULT false NOT NULL,
+    last_fetched timestamp with time zone,
+    last_changed timestamp with time zone,
+    update_interval_seconds integer
+);
+
+CREATE SEQUENCE repo_update_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE repo_update_jobs_id_seq OWNED BY repo_update_jobs.id;
+
+CREATE VIEW repo_update_jobs_with_repo_name AS
+ SELECT j.id,
+    j.state,
+    j.failure_message,
+    j.queued_at,
+    j.started_at,
+    j.finished_at,
+    j.process_after,
+    j.num_resets,
+    j.num_failures,
+    j.last_heartbeat_at,
+    j.execution_logs,
+    j.worker_hostname,
+    j.cancel,
+    j.repo_id,
+    j.priority,
+    j.overwrite_clone,
+    j.last_fetched,
+    j.last_changed,
+    j.update_interval_seconds,
+    r.name AS repository_name,
+    g.pool_repo_id
+   FROM ((repo_update_jobs j
+     JOIN gitserver_repos g ON ((g.repo_id = j.repo_id)))
+     JOIN repo r ON ((r.id = COALESCE(g.pool_repo_id, j.repo_id))))
+  WHERE (r.deleted_at IS NULL);
+
 CREATE TABLE role_permissions (
     role_id integer NOT NULL,
     permission_id integer NOT NULL,
@@ -5179,6 +5263,8 @@ ALTER TABLE ONLY repo_embedding_jobs ALTER COLUMN id SET DEFAULT nextval('repo_e
 
 ALTER TABLE ONLY repo_paths ALTER COLUMN id SET DEFAULT nextval('repo_paths_id_seq'::regclass);
 
+ALTER TABLE ONLY repo_update_jobs ALTER COLUMN id SET DEFAULT nextval('repo_update_jobs_id_seq'::regclass);
+
 ALTER TABLE ONLY roles ALTER COLUMN id SET DEFAULT nextval('roles_id_seq'::regclass);
 
 ALTER TABLE ONLY saved_searches ALTER COLUMN id SET DEFAULT nextval('saved_searches_id_seq'::regclass);
@@ -5660,6 +5746,9 @@ ALTER TABLE ONLY repo_permissions
 
 ALTER TABLE ONLY repo
     ADD CONSTRAINT repo_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY repo_update_jobs
+    ADD CONSTRAINT repo_update_jobs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY role_permissions
     ADD CONSTRAINT role_permissions_pkey PRIMARY KEY (permission_id, role_id);
@@ -6203,6 +6292,12 @@ CREATE INDEX repo_private ON repo USING btree (private);
 CREATE INDEX repo_stars_desc_id_desc_idx ON repo USING btree (stars DESC NULLS LAST, id DESC) WHERE ((deleted_at IS NULL) AND (blocked IS NULL));
 
 CREATE INDEX repo_stars_idx ON repo USING btree (stars DESC NULLS LAST);
+
+CREATE INDEX repo_update_jobs_priority_process_after_idx ON repo_update_jobs USING btree (priority, process_after, id);
+
+CREATE UNIQUE INDEX repo_update_jobs_repo_id_queued_idx ON repo_update_jobs USING btree (repo_id) WHERE (state = 'queued'::text);
+
+CREATE INDEX repo_update_jobs_state_idx ON repo_update_jobs USING btree (state);
 
 CREATE INDEX repo_uri_idx ON repo USING btree (uri);
 
@@ -6809,6 +6904,9 @@ ALTER TABLE ONLY repo_paths
 
 ALTER TABLE ONLY repo_paths
     ADD CONSTRAINT repo_paths_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY repo_update_jobs
+    ADD CONSTRAINT repo_update_jobs_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY role_permissions
     ADD CONSTRAINT role_permissions_permission_id_fkey FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE DEFERRABLE;

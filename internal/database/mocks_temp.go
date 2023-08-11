@@ -13796,6 +13796,9 @@ type MockDB struct {
 	// RepoStatisticsFunc is an instance of a mock function object
 	// controlling the behavior of the method RepoStatistics.
 	RepoStatisticsFunc *DBRepoStatisticsFunc
+	// RepoUpdateJobsFunc is an instance of a mock function object
+	// controlling the behavior of the method RepoUpdateJobs.
+	RepoUpdateJobsFunc *DBRepoUpdateJobsFunc
 	// ReposFunc is an instance of a mock function object controlling the
 	// behavior of the method Repos.
 	ReposFunc *DBReposFunc
@@ -14086,6 +14089,11 @@ func NewMockDB() *MockDB {
 		},
 		RepoStatisticsFunc: &DBRepoStatisticsFunc{
 			defaultHook: func() (r0 RepoStatisticsStore) {
+				return
+			},
+		},
+		RepoUpdateJobsFunc: &DBRepoUpdateJobsFunc{
+			defaultHook: func() (r0 RepoUpdateJobStore) {
 				return
 			},
 		},
@@ -14421,6 +14429,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.RepoStatistics")
 			},
 		},
+		RepoUpdateJobsFunc: &DBRepoUpdateJobsFunc{
+			defaultHook: func() RepoUpdateJobStore {
+				panic("unexpected invocation of MockDB.RepoUpdateJobs")
+			},
+		},
 		ReposFunc: &DBReposFunc{
 			defaultHook: func() RepoStore {
 				panic("unexpected invocation of MockDB.Repos")
@@ -14660,6 +14673,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		RepoStatisticsFunc: &DBRepoStatisticsFunc{
 			defaultHook: i.RepoStatistics,
+		},
+		RepoUpdateJobsFunc: &DBRepoUpdateJobsFunc{
+			defaultHook: i.RepoUpdateJobs,
 		},
 		ReposFunc: &DBReposFunc{
 			defaultHook: i.Repos,
@@ -19317,6 +19333,105 @@ func (c DBRepoStatisticsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBRepoStatisticsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBRepoUpdateJobsFunc describes the behavior when the RepoUpdateJobs
+// method of the parent MockDB instance is invoked.
+type DBRepoUpdateJobsFunc struct {
+	defaultHook func() RepoUpdateJobStore
+	hooks       []func() RepoUpdateJobStore
+	history     []DBRepoUpdateJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoUpdateJobs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) RepoUpdateJobs() RepoUpdateJobStore {
+	r0 := m.RepoUpdateJobsFunc.nextHook()()
+	m.RepoUpdateJobsFunc.appendCall(DBRepoUpdateJobsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RepoUpdateJobs
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBRepoUpdateJobsFunc) SetDefaultHook(hook func() RepoUpdateJobStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoUpdateJobs method of the parent MockDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBRepoUpdateJobsFunc) PushHook(hook func() RepoUpdateJobStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBRepoUpdateJobsFunc) SetDefaultReturn(r0 RepoUpdateJobStore) {
+	f.SetDefaultHook(func() RepoUpdateJobStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBRepoUpdateJobsFunc) PushReturn(r0 RepoUpdateJobStore) {
+	f.PushHook(func() RepoUpdateJobStore {
+		return r0
+	})
+}
+
+func (f *DBRepoUpdateJobsFunc) nextHook() func() RepoUpdateJobStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBRepoUpdateJobsFunc) appendCall(r0 DBRepoUpdateJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBRepoUpdateJobsFuncCall objects describing
+// the invocations of this function.
+func (f *DBRepoUpdateJobsFunc) History() []DBRepoUpdateJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBRepoUpdateJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBRepoUpdateJobsFuncCall is an object that describes an invocation of
+// method RepoUpdateJobs on an instance of MockDB.
+type DBRepoUpdateJobsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 RepoUpdateJobStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBRepoUpdateJobsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBRepoUpdateJobsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

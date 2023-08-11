@@ -3497,6 +3497,7 @@ Referenced by:
     TABLE "repo_commits_changelists" CONSTRAINT "repo_commits_changelists_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "repo_kvps" CONSTRAINT "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "repo_paths" CONSTRAINT "repo_paths_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "repo_update_jobs" CONSTRAINT "repo_update_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "sub_repo_permissions" CONSTRAINT "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -3685,6 +3686,39 @@ Indexes:
 **soft_deleted**: Number of repositories that are soft-deleted and not blocked
 
 **total**: Number of repositories that are not soft-deleted and not blocked
+
+# Table "public.repo_update_jobs"
+```
+         Column          |           Type           | Collation | Nullable |                   Default                    
+-------------------------+--------------------------+-----------+----------+----------------------------------------------
+ id                      | integer                  |           | not null | nextval('repo_update_jobs_id_seq'::regclass)
+ state                   | text                     |           |          | 'queued'::text
+ failure_message         | text                     |           |          | 
+ queued_at               | timestamp with time zone |           |          | now()
+ started_at              | timestamp with time zone |           |          | 
+ finished_at             | timestamp with time zone |           |          | 
+ process_after           | timestamp with time zone |           |          | 
+ num_resets              | integer                  |           | not null | 0
+ num_failures            | integer                  |           | not null | 0
+ last_heartbeat_at       | timestamp with time zone |           |          | 
+ execution_logs          | json[]                   |           |          | 
+ worker_hostname         | text                     |           | not null | ''::text
+ cancel                  | boolean                  |           | not null | false
+ repo_id                 | integer                  |           | not null | 
+ priority                | integer                  |           | not null | 0
+ overwrite_clone         | boolean                  |           | not null | false
+ last_fetched            | timestamp with time zone |           |          | 
+ last_changed            | timestamp with time zone |           |          | 
+ update_interval_seconds | integer                  |           |          | 
+Indexes:
+    "repo_update_jobs_pkey" PRIMARY KEY, btree (id)
+    "repo_update_jobs_repo_id_queued_idx" UNIQUE, btree (repo_id) WHERE state = 'queued'::text
+    "repo_update_jobs_priority_process_after_idx" btree (priority, process_after, id)
+    "repo_update_jobs_state_idx" btree (state)
+Foreign-key constraints:
+    "repo_update_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+
+```
 
 # Table "public.role_permissions"
 ```
@@ -4846,6 +4880,38 @@ Foreign-key constraints:
              LEFT JOIN users namespace_user ON ((batch_changes.namespace_user_id = namespace_user.id)))
              LEFT JOIN orgs namespace_org ON ((batch_changes.namespace_org_id = namespace_org.id)))
           WHERE ((c.batch_change_ids ? (batch_changes.id)::text) AND (namespace_user.deleted_at IS NULL) AND (namespace_org.deleted_at IS NULL)))));
+```
+
+# View "public.repo_update_jobs_with_repo_name"
+
+## View query:
+
+```sql
+ SELECT j.id,
+    j.state,
+    j.failure_message,
+    j.queued_at,
+    j.started_at,
+    j.finished_at,
+    j.process_after,
+    j.num_resets,
+    j.num_failures,
+    j.last_heartbeat_at,
+    j.execution_logs,
+    j.worker_hostname,
+    j.cancel,
+    j.repo_id,
+    j.priority,
+    j.overwrite_clone,
+    j.last_fetched,
+    j.last_changed,
+    j.update_interval_seconds,
+    r.name AS repository_name,
+    g.pool_repo_id
+   FROM ((repo_update_jobs j
+     JOIN gitserver_repos g ON ((g.repo_id = j.repo_id)))
+     JOIN repo r ON ((r.id = COALESCE(g.pool_repo_id, j.repo_id))))
+  WHERE (r.deleted_at IS NULL);
 ```
 
 # View "public.site_config"
