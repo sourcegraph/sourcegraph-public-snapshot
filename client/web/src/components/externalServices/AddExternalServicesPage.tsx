@@ -155,7 +155,7 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                 {Object.values(nonCodeHostExternalServices).length > 0 && (
                     <ExternalServiceGroup
                         name="Dependencies"
-                        services={transformExternalServices(nonCodeHostExternalServices, allowedCodeHosts)}
+                        services={transformNonCodeHostExternalServices(nonCodeHostExternalServices, allowedCodeHosts)}
                         renderIcon={true}
                     />
                 )}
@@ -213,12 +213,10 @@ interface ExternalServicesGroup {
     renderIcon: boolean
 }
 
-type GroupedServiceDisplayName = 'GitHub' | 'GitLab' | 'Bitbucket' | 'Other code hosts'
-
 const computeExternalServicesGroup = (
     services: Record<string, AddExternalServiceOptions>,
     allowedCodeHosts: Set<AddExternalServiceOptions> | null
-): Record<GroupedServiceDisplayName, ExternalServicesGroup> => {
+): Record<string, ExternalServicesGroup> => {
     const groupedServices: Record<string, ExternalServicesGroup> = {
         github: {
             label: 'GitHub',
@@ -252,31 +250,22 @@ const computeExternalServicesGroup = (
                   tooltip: 'Upgrade your license to Sourcegraph Enterprise to add repositories from other code hosts',
               }
             : {}
-        switch (service.kind) {
-            case ExternalServiceKind.GITHUB:
-                groupedServices.github.services.push({ ...service, serviceID, enabled: !isDisabled, ...otherProps })
-                break
-            case ExternalServiceKind.GITLAB:
-                groupedServices.gitlab.services.push({ ...service, serviceID, enabled: !isDisabled, ...otherProps })
-                break
-            case ExternalServiceKind.BITBUCKETCLOUD:
-            case ExternalServiceKind.BITBUCKETSERVER:
-                groupedServices.bitbucket.services.push({ ...service, serviceID, enabled: !isDisabled, ...otherProps })
-                break
-            default:
-                groupedServices.other.services.push({
-                    ...service,
-                    serviceID,
-                    enabled: !isDisabled,
-                    ...otherProps,
-                })
+        let key = 'other'
+        if (service.kind === ExternalServiceKind.GITHUB || service.kind === ExternalServiceKind.GITLAB) {
+            key = service.kind.toLowerCase()
+        } else if (
+            service.kind === ExternalServiceKind.BITBUCKETCLOUD ||
+            service.kind === ExternalServiceKind.BITBUCKETSERVER
+        ) {
+            key = 'bitbucket'
         }
+        groupedServices[key].services.push({ ...service, serviceID, enabled: !isDisabled, ...otherProps })
     }
 
     return groupedServices
 }
 
-const transformExternalServices = (
+const transformNonCodeHostExternalServices = (
     services: Record<string, AddExternalServiceOptions>,
     allowedCodeHosts: Set<AddExternalServiceOptions> | null
 ): AddExternalServiceOptionsWithID[] =>
