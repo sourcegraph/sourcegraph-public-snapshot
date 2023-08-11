@@ -131,21 +131,7 @@ public class CodyAutoCompleteManager {
   }
 
   /**
-   * Asynchronously triggers auto-complete for the given editor and offset. Details: - Calls
-   * provideInlineAutoCompleteItems() on the provider to get autocomplete items. - Filters and
-   * processes the results: - Removes undesired characters - Normalizes indentation - Finds the
-   * first non-empty insertText item - If an item is found: - Clears existing autocomplete items -
-   * Logs a "completion suggested" event - Renders the autocomplete item as inline, after line, and
-   * block elements - Adds the rendered elements to the editor's InlayModel - Returns a
-   * CompletableFuture<Void> that completes when the autocomplete is rendered. - Catches any
-   * unexpected exceptions and logs a warning.
-   *
-   * @param editor The editor instance to provide autocomplete for.
-   * @param offset The character offset in the editor to trigger autocomplete at.
-   * @param token The CancellationToken to allow cancelling the autocomplete job.
-   * @param provider The CodyAutoCompleteItemProvider to generate autocomplete items.
-   * @param textDocument The TextDocument representing the editor content.
-   * @param autoCompleteDocumentContext The context for the autocomplete request.
+   * Asynchronously triggers auto-complete for the given editor and offset.
    */
   private CompletableFuture<Void> triggerAutoCompleteAsync(
       @NotNull Editor editor,
