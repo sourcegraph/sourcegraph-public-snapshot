@@ -32,6 +32,7 @@ import { useCodySidebar } from '../../sidebar/Provider'
 import type { CodyChatStore } from '../../useCodyChat'
 import { GettingStarted } from '../GettingStarted'
 import { ScopeSelector } from '../ScopeSelector'
+import type { ScopeSelectorProps } from '../ScopeSelector/ScopeSelector'
 
 import styles from './ChatUi.module.scss'
 
@@ -78,7 +79,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
     const onSubmit = useCallback((text: string) => submitMessage(text), [submitMessage])
     const onEdit = useCallback((text: string) => editMessage(text), [editMessage])
 
-    const scopeSelectorProps = useMemo(
+    const scopeSelectorProps: ScopeSelectorProps = useMemo(
         () => ({
             scope,
             setScope,

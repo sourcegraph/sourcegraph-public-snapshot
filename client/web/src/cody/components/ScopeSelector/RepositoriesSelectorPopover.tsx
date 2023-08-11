@@ -30,11 +30,8 @@ import {
     useDebounce,
 } from '@sourcegraph/wildcard'
 
-import type {
-    RepositoryOrderBy,
-    ReposSelectorSearchResult,
-    ReposSelectorSearchVariables,
-} from '../../../graphql-operations'
+import { RepositoryOrderBy } from '../../../graphql-operations'
+import type { ReposSelectorSearchResult, ReposSelectorSearchVariables } from '../../../graphql-operations'
 import { ExternalRepositoryIcon } from '../../../site-admin/components/ExternalRepositoryIcon'
 
 import { ReposSelectorSearchQuery } from './backend'

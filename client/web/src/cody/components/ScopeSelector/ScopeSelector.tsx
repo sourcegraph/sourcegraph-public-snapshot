@@ -15,13 +15,13 @@ import { RepositoriesSelectorPopover, getFileName, type IRepo } from './Reposito
 
 import styles from './ScopeSelector.module.scss'
 
-interface ScopeSelectorProps {
+export interface ScopeSelectorProps {
     scope: CodyClientScope
     setScope: (scope: CodyClientScope) => void
     toggleIncludeInferredRepository: () => void
     toggleIncludeInferredFile: () => void
     fetchRepositoryNames: (count: number) => Promise<string[]>
-    isSourcegraphApp: boolean
+    isSourcegraphApp?: boolean
     wrapperClassName?: string
     shouldShowRepoExamples?: boolean
     renderHint?: (repos: IRepo[]) => React.ReactNode

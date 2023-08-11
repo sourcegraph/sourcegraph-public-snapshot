@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 
 import { H4, H5, RadioButton, Text, Button, Grid, Icon, Link } from '@sourcegraph/wildcard'
 
 import { parseBrowserRepoURL } from '../../util/url'
-import { CodyChatStore } from '../useCodyChat'
+import type { CodyChatStore } from '../useCodyChat'
 
 import { ScopeSelector } from './ScopeSelector'
-import { IRepo, isRepoIndexed } from './ScopeSelector/RepositoriesSelectorPopover'
+import type { IRepo } from './ScopeSelector/RepositoriesSelectorPopover'
+import { isRepoIndexed } from './ScopeSelector/RepositoriesSelectorPopover'
 
 import styles from './GettingStarted.module.scss'
 
@@ -40,8 +41,8 @@ export const GettingStarted: React.FC<
     when content height chages, the top position remains the same and only the bottom position changes.
     */
     const [contentVerticalOffset, setContentVerticalOffset] = useState<string>(DEFAULT_VERTICAL_OFFSET)
-    const containerRef = useRef<HTMLDivElement>()
-    const contentRef = useRef<HTMLDivElement>()
+    const containerRef = useRef<HTMLDivElement>(null)
+    const contentRef = useRef<HTMLDivElement>(null)
     useEffect(() => {
         const updateVerticalOffset = (): void =>
             setContentVerticalOffset(() => {
