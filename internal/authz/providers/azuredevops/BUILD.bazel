@@ -10,6 +10,7 @@ go_library(
         "//internal/authz",
         "//internal/authz/types",
         "//internal/database",
+        "//internal/database/oauthtoken",
         "//internal/extsvc",
         "//internal/extsvc/auth",
         "//internal/extsvc/azuredevops",

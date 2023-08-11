@@ -1,4 +1,4 @@
-package database_test
+package oauthtoken
 
 import (
 	"bytes"
@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -87,7 +86,7 @@ func TestExternalServiceTokenRefresher(t *testing.T) {
 		return nil
 	})
 
-	newToken, err := database.ExternalServiceTokenRefresher(db, 2, "refresh_token")(ctx, doer, oauthutil.OAuthContext{})
+	newToken, err := externalServiceTokenRefresher(db, 2, "refresh_token")(ctx, doer, oauthutil.OAuthContext{})
 	require.NoError(t, err)
 	assert.Equal(t, expectedNewToken, newToken.Token)
 }
@@ -142,7 +141,7 @@ func TestExternalAccountTokenRefresher(t *testing.T) {
 	}
 
 	expectedNewToken := "new-token"
-	newToken, err := database.ExternalAccountTokenRefresher(externalAccounts, 1, originalToken)(ctx, doer, oauthutil.OAuthContext{})
+	newToken, err := externalAccountTokenRefresher(externalAccounts, 1, originalToken)(ctx, doer, oauthutil.OAuthContext{})
 	require.NoError(t, err)
 	assert.Equal(t, expectedNewToken, newToken.Token)
 }
