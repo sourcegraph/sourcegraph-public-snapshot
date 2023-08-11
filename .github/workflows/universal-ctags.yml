@@ -64,7 +64,7 @@ jobs:
       - id: nix-build
         name: Run `nix build`
         run: |
-          nix build .#ctags-aarch64-darwin
+          nix build .#ctags
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
