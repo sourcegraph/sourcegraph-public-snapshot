@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import historyApiFallback from 'connect-history-api-fallback'
-import express, { RequestHandler } from 'express'
+import express, { type RequestHandler } from 'express'
 import expressStaticGzip from 'express-static-gzip'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import signale from 'signale'

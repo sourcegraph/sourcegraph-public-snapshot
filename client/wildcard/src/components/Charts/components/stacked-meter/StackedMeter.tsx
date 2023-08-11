@@ -1,4 +1,4 @@
-import { ReactElement } from 'react'
+import type { ReactElement } from 'react'
 
 import { Group } from '@visx/group'
 import { scaleLinear } from '@visx/scale'

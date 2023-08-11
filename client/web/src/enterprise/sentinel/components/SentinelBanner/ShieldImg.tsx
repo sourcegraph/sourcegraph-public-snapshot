@@ -1,4 +1,4 @@
-import React, { FC } from 'react'
+import React, { type FC } from 'react'
 
 /* eslint-disable react/forbid-dom-props */
 export const ShieldLogo: FC<React.PropsWithChildren<React.SVGAttributes<SVGSVGElement>>> = () => (

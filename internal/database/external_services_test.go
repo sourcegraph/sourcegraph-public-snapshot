@@ -463,8 +463,8 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		{
 			name: "update with authorization",
 			update: &ExternalServiceUpdate{
-				DisplayName: strptr("GITHUB (updated) #1"),
-				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}, "webhooks": [{"org": "org", "secret": "secret"}]}`),
+				DisplayName: pointers.Ptr("GITHUB (updated) #1"),
+				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}, "webhooks": [{"org": "org", "secret": "secret"}]}`),
 			},
 			wantUnrestricted: false,
 			wantCloudDefault: false,
@@ -473,8 +473,8 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		{
 			name: "update without authorization",
 			update: &ExternalServiceUpdate{
-				DisplayName: strptr("GITHUB (updated) #2"),
-				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+				DisplayName: pointers.Ptr("GITHUB (updated) #2"),
+				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 			},
 			wantUnrestricted: false,
 			wantCloudDefault: false,
@@ -483,8 +483,8 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		{
 			name: "update with authorization in comments",
 			update: &ExternalServiceUpdate{
-				DisplayName: strptr("GITHUB (updated) #3"),
-				Config: strptr(`
+				DisplayName: pointers.Ptr("GITHUB (updated) #3"),
+				Config: pointers.Ptr(`
 {
 	"url": "https://github.com",
 	"repositoryQuery": ["none"],
@@ -499,9 +499,9 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		{
 			name: "set cloud_default true",
 			update: &ExternalServiceUpdate{
-				DisplayName:  strptr("GITHUB (updated) #4"),
-				CloudDefault: boolptr(true),
-				Config: strptr(`
+				DisplayName:  pointers.Ptr("GITHUB (updated) #4"),
+				CloudDefault: pointers.Ptr(true),
+				Config: pointers.Ptr(`
 {
 	"url": "https://github.com",
 	"repositoryQuery": ["none"],
@@ -517,8 +517,8 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		{
 			name: "update token_expires_at",
 			update: &ExternalServiceUpdate{
-				DisplayName:    strptr("GITHUB (updated) #5"),
-				Config:         strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+				DisplayName:    pointers.Ptr("GITHUB (updated) #5"),
+				Config:         pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 				TokenExpiresAt: pointers.Ptr(time.Now()),
 			},
 			wantCloudDefault:   true,
@@ -527,22 +527,22 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		{
 			name: "update with empty config",
 			update: &ExternalServiceUpdate{
-				Config: strptr(``),
+				Config: pointers.Ptr(``),
 			},
 			wantError: true,
 		},
 		{
 			name: "update with comment config",
 			update: &ExternalServiceUpdate{
-				Config: strptr(`// {}`),
+				Config: pointers.Ptr(`// {}`),
 			},
 			wantError: true,
 		},
 		{
 			name: "update last_sync_at",
 			update: &ExternalServiceUpdate{
-				DisplayName: strptr("GITHUB (updated) #6"),
-				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+				DisplayName: pointers.Ptr("GITHUB (updated) #6"),
+				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 				LastSyncAt:  pointers.Ptr(now),
 			},
 			wantCloudDefault:   true,
@@ -552,8 +552,8 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		{
 			name: "update next_sync_at",
 			update: &ExternalServiceUpdate{
-				DisplayName: strptr("GITHUB (updated) #7"),
-				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+				DisplayName: pointers.Ptr("GITHUB (updated) #7"),
+				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 				LastSyncAt:  pointers.Ptr(now),
 				NextSyncAt:  pointers.Ptr(now),
 			},

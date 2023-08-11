@@ -3,18 +3,18 @@ import { trimStart } from 'lodash'
 import { createRoot } from 'react-dom/client'
 import { defer, fromEvent, of } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
-import { Omit } from 'utility-types'
+import type { Omit } from 'utility-types'
 
-import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
-import { LineOrPositionOrRange } from '@sourcegraph/common'
+import { AdjustmentDirection, type PositionAdjuster } from '@sourcegraph/codeintellify'
+import type { LineOrPositionOrRange } from '@sourcegraph/common'
 import { observeSystemIsLightTheme } from '@sourcegraph/shared/src/deprecated-theme-utils'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import {
-    FileSpec,
-    RepoSpec,
-    ResolvedRevisionSpec,
-    RevisionSpec,
+    type FileSpec,
+    type RepoSpec,
+    type ResolvedRevisionSpec,
+    type RevisionSpec,
     toAbsoluteBlobURL,
 } from '@sourcegraph/shared/src/util/url'
 
@@ -24,10 +24,10 @@ import { SourcegraphIconButton } from '../../components/SourcegraphIconButton'
 import { fetchBlobContentLines } from '../../repo/backend'
 import { getPlatformName } from '../../util/context'
 import { querySelectorAllOrSelf, querySelectorOrSelf } from '../../util/dom'
-import { CodeHost, MountGetter } from '../shared/codeHost'
-import { CodeView, toCodeViewResolver } from '../shared/codeViews'
+import type { CodeHost, MountGetter } from '../shared/codeHost'
+import { type CodeView, toCodeViewResolver } from '../shared/codeViews'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../shared/util/selections'
-import { ViewResolver } from '../shared/views'
+import type { ViewResolver } from '../shared/views'
 
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'

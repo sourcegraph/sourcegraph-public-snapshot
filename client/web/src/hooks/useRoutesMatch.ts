@@ -1,4 +1,4 @@
-import { RouteObject, matchPath, useLocation } from 'react-router-dom'
+import { type RouteObject, matchPath, useLocation } from 'react-router-dom'
 
 /**
  * Match the current pathname against a list of route patterns

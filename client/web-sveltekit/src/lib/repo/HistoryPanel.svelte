@@ -88,7 +88,7 @@
                     {/if}
                 </td>
                 <td><Timestamp date={new Date(commit.author.date)} /></td>
-                <td><a href={commit.url}>{commit.abbreviatedOID}</a></td>
+                <td><a href={commit.canonicalURL}>{commit.abbreviatedOID}</a></td>
                 <td>
                     {#if selected}
                         <Tooltip tooltip="Hide comparison">

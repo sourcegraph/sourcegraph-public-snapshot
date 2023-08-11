@@ -4,6 +4,10 @@ set -euf -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
 
+MAIN_BRANCH="main"
+BRANCH="${BUILDKITE_BRANCH:-'default-branch'}"
+IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
+
 tmpdir=$(mktemp -d -t wolfi-bin.XXXXXXXX)
 function cleanup() {
   echo "Removing $tmpdir"
@@ -66,13 +70,13 @@ docker load <"$tarball"
 # Push to internal dev repo
 docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
 docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
-# TODO(will): Limit to main branch when Wolfi CI is running on main
 docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:latest"
 docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:latest"
 
-# Push to dockerhub
-# TODO(will): Limit to main branch when Wolfi CI is running on main
-docker tag "$image_name" "sourcegraph/wolfi-${name}-base:$tag"
-docker push "sourcegraph/wolfi-${name}-base:$tag"
-docker tag "$image_name" "sourcegraph/wolfi-${name}-base:latest"
-docker push "sourcegraph/wolfi-${name}-base:latest"
+# Push to Dockerhub only on main branch
+if [[ "$IS_MAIN" == "true" ]]; then
+  docker tag "$image_name" "sourcegraph/wolfi-${name}-base:$tag"
+  docker push "sourcegraph/wolfi-${name}-base:$tag"
+  docker tag "$image_name" "sourcegraph/wolfi-${name}-base:latest"
+  docker push "sourcegraph/wolfi-${name}-base:latest"
+fi

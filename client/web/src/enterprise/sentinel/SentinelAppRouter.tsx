@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 
 import { SentinelLandingPage } from './SentinelLandingPage'

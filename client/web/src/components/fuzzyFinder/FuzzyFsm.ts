@@ -1,6 +1,6 @@
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
-import { FuzzySearch, FuzzySearchConstructorParameters, SearchIndexing } from '../../fuzzyFinder/FuzzySearch'
-import { SearchValue } from '../../fuzzyFinder/SearchValue'
+import type { FuzzySearch, FuzzySearchConstructorParameters, SearchIndexing } from '../../fuzzyFinder/FuzzySearch'
+import type { SearchValue } from '../../fuzzyFinder/SearchValue'
 import { WordSensitiveFuzzySearch } from '../../fuzzyFinder/WordSensitiveFuzzySearch'
 
 // The default value of 80k filenames is picked from the following observations:

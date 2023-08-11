@@ -3,10 +3,10 @@ import * as React from 'react'
 import classNames from 'classnames'
 import type { NavigateFunction } from 'react-router-dom'
 
-import { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
+import type { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { Button, Modal, Select, H3, Form } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 
 import styles from './SavedSearchModal.module.scss'
 

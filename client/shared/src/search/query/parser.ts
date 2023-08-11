@@ -1,5 +1,5 @@
-import { ScanResult, scanSearchQuery } from './scanner'
-import { Token, KeywordKind, CharacterRange, PatternKind } from './token'
+import { type ScanResult, scanSearchQuery } from './scanner'
+import { type Token, KeywordKind, type CharacterRange, type PatternKind } from './token'
 
 export interface Pattern {
     type: 'pattern'

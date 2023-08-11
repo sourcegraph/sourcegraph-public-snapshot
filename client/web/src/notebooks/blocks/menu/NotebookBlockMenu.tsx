@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Button, ButtonLink, ButtonProps } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, type ButtonProps } from '@sourcegraph/wildcard'
 
 import styles from './NotebookBlockMenu.module.scss'
 

@@ -296,8 +296,11 @@ function colorize(line: string): string {
 export function createHighlightedFileResult(ranges: HighlightedFileVariables['ranges']): HighlightedFileResult {
     return {
         repository: {
+            id: faker.string.uuid(),
             commit: {
-                file: {
+                id: faker.string.uuid(),
+                blob: {
+                    canonicalURL: faker.internet.url(),
                     isDirectory: false,
                     highlight: {
                         aborted: false,

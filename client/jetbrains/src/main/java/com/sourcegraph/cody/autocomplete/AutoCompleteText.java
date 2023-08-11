@@ -17,6 +17,21 @@ public class AutoCompleteText {
   @NotNull public final String sameLineAfterSuffixText;
   @NotNull public final String blockText;
 
+  @Override
+  public String toString() {
+    return "AutoCompleteText{"
+        + "sameLineBeforeSuffixText='"
+        + sameLineBeforeSuffixText
+        + '\''
+        + ", sameLineAfterSuffixText='"
+        + sameLineAfterSuffixText
+        + '\''
+        + ", blockText='"
+        + blockText
+        + '\''
+        + '}';
+  }
+
   public AutoCompleteText(
       @NotNull String sameLineBeforeSuffixText,
       @NotNull String sameLineAfterSuffixText,
@@ -91,7 +106,7 @@ public class AutoCompleteText {
         ? Optional.empty()
         : Optional.of(
             new CodyAutoCompleteSingleLineRenderer(
-                this.sameLineBeforeSuffixText, editor, AutoCompleteRendererType.INLINE));
+                this.sameLineBeforeSuffixText, null, editor, AutoCompleteRendererType.INLINE));
   }
 
   public Optional<CodyAutoCompleteSingleLineRenderer> getAfterLineEndRenderer(
@@ -100,12 +115,15 @@ public class AutoCompleteText {
         ? Optional.empty()
         : Optional.of(
             new CodyAutoCompleteSingleLineRenderer(
-                this.sameLineAfterSuffixText, editor, AutoCompleteRendererType.AFTER_LINE_END));
+                this.sameLineAfterSuffixText,
+                null,
+                editor,
+                AutoCompleteRendererType.AFTER_LINE_END));
   }
 
   public Optional<CodyAutoCompleteBlockElementRenderer> getBlockRenderer(@NotNull Editor editor) {
     return this.blockText.isBlank()
         ? Optional.empty()
-        : Optional.of(new CodyAutoCompleteBlockElementRenderer(this.blockText, editor));
+        : Optional.of(new CodyAutoCompleteBlockElementRenderer(this.blockText, null, editor));
   }
 }

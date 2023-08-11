@@ -1,8 +1,8 @@
 import {
     Annotation,
     EditorSelection,
-    Extension,
-    Range,
+    type Extension,
+    type Range,
     RangeSet,
     RangeSetBuilder,
     StateEffect,
@@ -15,10 +15,10 @@ import {
     GutterMarker,
     layer,
     lineNumbers,
-    PluginValue,
+    type PluginValue,
     RectangleMarker,
     ViewPlugin,
-    ViewUpdate,
+    type ViewUpdate,
 } from '@codemirror/view'
 import classNames from 'classnames'
 

@@ -1,14 +1,14 @@
-import { EditorView, repositionTooltips, TooltipView, ViewUpdate } from '@codemirror/view'
+import { type EditorView, repositionTooltips, type TooltipView, type ViewUpdate } from '@codemirror/view'
 import classNames from 'classnames'
-import { createRoot, Root } from 'react-dom/client'
-import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
+import { createRoot, type Root } from 'react-dom/client'
+import { combineLatest, type Observable, Subject, type Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
 import { addLineRangeQueryParameter, isErrorLike, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
-import { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
+import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
-import { WebHoverOverlay, WebHoverOverlayProps } from '../../../components/WebHoverOverlay'
-import { updateBrowserHistoryIfChanged, BlobPropsFacet } from '../CodeMirrorBlob'
+import { WebHoverOverlay, type WebHoverOverlayProps } from '../../../components/WebHoverOverlay'
+import { updateBrowserHistoryIfChanged, type BlobPropsFacet } from '../CodeMirrorBlob'
 
 import { blobPropsFacet } from './index'
 import { CodeMirrorContainer } from './react-interop'

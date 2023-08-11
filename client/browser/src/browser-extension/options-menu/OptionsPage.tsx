@@ -10,12 +10,12 @@ import {
     mdiClose,
 } from '@mdi/js'
 import classNames from 'classnames'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
-import { InputValidationState, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
+import { type InputValidationState, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
 import {
     Combobox,
     ComboboxInput,
@@ -31,7 +31,7 @@ import {
     InputStatus,
 } from '@sourcegraph/wildcard'
 
-import { CurrentUserResult } from '../../graphql-operations'
+import type { CurrentUserResult } from '../../graphql-operations'
 import { getPlatformName, isDefaultSourcegraphUrl } from '../../shared/util/context'
 
 import { OptionsPageContainer } from './components/OptionsPageContainer'

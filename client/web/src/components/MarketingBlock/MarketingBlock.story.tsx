@@ -1,5 +1,5 @@
 import { mdiArrowRight } from '@mdi/js'
-import { DecoratorFn, Meta } from '@storybook/react'
+import type { DecoratorFn, Meta } from '@storybook/react'
 
 import { Link, Icon, H2, H3, Grid } from '@sourcegraph/wildcard'
 

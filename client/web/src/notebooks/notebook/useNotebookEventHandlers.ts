@@ -3,9 +3,9 @@ import { useCallback, useEffect, useMemo } from 'react'
 import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
-import { BlockDirection, BlockProps } from '..'
+import type { BlockDirection, BlockProps } from '..'
 
-import { Notebook } from '.'
+import type { Notebook } from '.'
 
 interface UseNotebookEventHandlersProps
     extends Pick<

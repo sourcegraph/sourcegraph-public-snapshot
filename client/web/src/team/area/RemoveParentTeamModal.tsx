@@ -4,7 +4,7 @@ import { logger } from '@sourcegraph/common'
 import { Button, ErrorAlert, Form, H3, Modal, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../components/LoaderButton'
-import { Scalars } from '../../graphql-operations'
+import type { Scalars } from '../../graphql-operations'
 
 import { useRemoveParentTeam } from './backend'
 

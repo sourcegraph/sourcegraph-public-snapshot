@@ -1,15 +1,23 @@
 /* eslint-disable jsdoc/check-indentation */
-import React, { forwardRef, MutableRefObject, RefObject, useEffect, useImperativeHandle, useMemo, useRef } from 'react'
+import React, {
+    forwardRef,
+    type MutableRefObject,
+    type RefObject,
+    useEffect,
+    useImperativeHandle,
+    useMemo,
+    useRef,
+} from 'react'
 
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import {
-    ChangeSpec,
+    type ChangeSpec,
     Compartment,
     EditorState,
-    EditorStateConfig,
-    Extension,
+    type EditorStateConfig,
+    type Extension,
     StateEffect,
-    StateEffectType,
+    type StateEffectType,
     StateField,
 } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'

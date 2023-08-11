@@ -1,11 +1,11 @@
-import { ProxyMarked, proxyMarker, Remote } from 'comlink'
-import { BehaviorSubject, Observer } from 'rxjs'
-import { DocumentHighlight } from 'sourcegraph'
+import { type ProxyMarked, proxyMarker, type Remote } from 'comlink'
+import { BehaviorSubject, type Observer } from 'rxjs'
+import type { DocumentHighlight } from 'sourcegraph'
 
 import { Range } from '@sourcegraph/extension-api-classes'
 
-import { SettingsCascade } from '../../../settings/settings'
-import { ClientAPI } from '../../client/api/api'
+import type { SettingsCascade } from '../../../settings/settings'
+import type { ClientAPI } from '../../client/api/api'
 import { pretendRemote } from '../../util'
 import { proxySubscribable } from '../api/common'
 

@@ -5,7 +5,7 @@ import { gql } from '@sourcegraph/http-client'
 import { Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
-import { EditUserProfilePage as EditUserProfilePageFragment } from '../../../graphql-operations'
+import type { EditUserProfilePage as EditUserProfilePageFragment } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { ScimAlert } from '../ScimAlert'
 

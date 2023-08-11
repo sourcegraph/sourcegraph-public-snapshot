@@ -193,19 +193,6 @@ func Hoist(nodes []Node) ([]Node, error) {
 	return append(toNodes(scopeParameters), NewOperator(pattern, expression.Kind)...), nil
 }
 
-// partition partitions nodes into left and right groups. A node is put in the
-// left group if fn evaluates to true, or in the right group if fn evaluates to false.
-func partition(nodes []Node, fn func(node Node) bool) (left, right []Node) {
-	for _, node := range nodes {
-		if fn(node) {
-			left = append(left, node)
-		} else {
-			right = append(right, node)
-		}
-	}
-	return left, right
-}
-
 // distribute applies the distributed property to the parameters of basic
 // queries. See the BuildPlan function for context. Its first argument takes
 // the current set of prefixes to prepend to each term in an or-expression.
@@ -297,39 +284,6 @@ func conjunction(left, right Basic) Basic {
 //	(repo:a (b OR c)) OR (repo:b (b OR c))
 func BuildPlan(query []Node) Plan {
 	return distribute([]Basic{}, query)
-}
-
-func substituteOrForRegexp(nodes []Node) []Node {
-	isPattern := func(node Node) bool {
-		if pattern, ok := node.(Pattern); ok && !pattern.Negated {
-			return true
-		}
-		return false
-	}
-	newNode := []Node{}
-	for _, node := range nodes {
-		switch v := node.(type) {
-		case Operator:
-			if v.Kind == Or {
-				patterns, rest := partition(v.Operands, isPattern)
-				var values []string
-				for _, node := range patterns {
-					values = append(values, node.(Pattern).Value)
-				}
-				valueString := "(?:" + strings.Join(values, ")|(?:") + ")"
-				newNode = append(newNode, Pattern{Value: valueString})
-				if len(rest) > 0 {
-					rest = substituteOrForRegexp(rest)
-					newNode = NewOperator(append(newNode, rest...), Or)
-				}
-			} else {
-				newNode = append(newNode, NewOperator(substituteOrForRegexp(v.Operands), v.Kind)...)
-			}
-		case Parameter, Pattern:
-			newNode = append(newNode, node)
-		}
-	}
-	return newNode
 }
 
 // fuzzyRegexp interpolates patterns with .*? regular expressions and

@@ -1,20 +1,20 @@
-import { FC, useCallback, useEffect, useMemo } from 'react'
+import { type FC, useCallback, useEffect, useMemo } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, useObservable, FORM_ERROR, FormChangeEvent } from '@sourcegraph/wildcard'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Link, PageHeader, useObservable, FORM_ERROR, type FormChangeEvent } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
 import { CodeInsightsPage, CodeInsightsCreationActions, CodeInsightCreationMode } from '../../../../components'
-import { MinimalSearchBasedInsightData } from '../../../../core'
+import type { MinimalSearchBasedInsightData } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks'
 import { CodeInsightTrackType } from '../../../../pings'
 
 import {
     SearchInsightCreationContent,
-    SearchInsightCreationContentProps,
+    type SearchInsightCreationContentProps,
 } from './components/SearchInsightCreationContent'
-import { CreateInsightFormFields } from './types'
+import type { CreateInsightFormFields } from './types'
 import { getSanitizedSearchInsight } from './utils/insight-sanitizer'
 import { useSearchInsightInitialValues } from './utils/use-initial-values'
 

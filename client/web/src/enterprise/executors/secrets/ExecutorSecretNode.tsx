@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { Badge, Button, Icon, H3, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
-import { ExecutorSecretFields, Scalars } from '../../../graphql-operations'
+import type { ExecutorSecretFields, Scalars } from '../../../graphql-operations'
 
 import { RemoveSecretModal } from './RemoveSecretModal'
 import { SecretAccessLogsModal } from './SecretAccessLogsModal'

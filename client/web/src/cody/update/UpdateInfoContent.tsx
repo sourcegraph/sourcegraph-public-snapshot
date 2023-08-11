@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import { Button, Icon, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { ChangelogModal } from './ReviewAndInstallModal'
-import { UpdateInfo } from './updater'
+import type { UpdateInfo } from './updater'
 
 import styles from './UpdateInfoContent.module.scss'
 

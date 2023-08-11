@@ -1,8 +1,8 @@
-import { MutationTuple } from '@apollo/client'
+import type { MutationTuple } from '@apollo/client'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
 
-import { CreateTeamResult, CreateTeamVariables } from '../graphql-operations'
+import type { CreateTeamResult, CreateTeamVariables } from '../graphql-operations'
 
 export function useCreateTeam(): MutationTuple<CreateTeamResult, CreateTeamVariables> {
     return useMutation<CreateTeamResult, CreateTeamVariables>(

@@ -2,7 +2,7 @@ import React from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { SaveToolbar, SaveToolbarProps } from '../../../../components/SaveToolbar'
+import { SaveToolbar, type SaveToolbarProps } from '../../../../components/SaveToolbar'
 
 import { ConfigurationInferButton } from './ConfigurationInferButton'
 

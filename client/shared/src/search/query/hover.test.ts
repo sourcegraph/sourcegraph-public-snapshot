@@ -3,8 +3,8 @@ import { editor, Position } from 'monaco-editor'
 import { SearchPatternType } from '../../graphql-operations'
 
 import { getHoverResult } from './hover'
-import { ScanResult, scanSearchQuery, ScanSuccess } from './scanner'
-import { Token } from './token'
+import { type ScanResult, scanSearchQuery, type ScanSuccess } from './scanner'
+import type { Token } from './token'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value, null, 2),

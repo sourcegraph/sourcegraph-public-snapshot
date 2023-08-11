@@ -1,4 +1,4 @@
-import { FC, useEffect } from 'react'
+import { type FC, useEffect } from 'react'
 
 import classNames from 'classnames'
 
@@ -7,14 +7,14 @@ import { Container } from '@sourcegraph/wildcard'
 
 import {
     PermissionsSyncJobsSearchType,
-    PermissionsSyncJobsStatsResult,
-    PermissionsSyncJobsStatsVariables,
+    type PermissionsSyncJobsStatsResult,
+    type PermissionsSyncJobsStatsVariables,
     PermissionsSyncJobState,
 } from '../../graphql-operations'
 import { ValueLegendItem } from '../analytics/components/ValueLegendList'
 
 import { PERMISSIONS_SYNC_JOBS_STATS } from './backend'
-import { Filters, PERMISSIONS_SYNC_JOBS_POLL_INTERVAL } from './PermissionsSyncJobsTable'
+import { type Filters, PERMISSIONS_SYNC_JOBS_POLL_INTERVAL } from './PermissionsSyncJobsTable'
 
 import styles from './styles.module.scss'
 

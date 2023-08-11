@@ -4,7 +4,7 @@ import { mdiLanguageMarkdownOutline, mdiMagnify, mdiCodeTags, mdiFunction } from
 
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { BlockInput } from '..'
+import type { BlockInput } from '..'
 
 import { EMPTY_FILE_BLOCK_INPUT, EMPTY_SYMBOL_BLOCK_INPUT } from './useCommandPaletteOptions'
 
