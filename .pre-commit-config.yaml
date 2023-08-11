@@ -10,6 +10,14 @@ repos:
     hooks:
       - id: buildifier
       - id: buildifier-lint
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.9.0
+    hooks:
+    - id: shellcheck
+  - repo: https://github.com/pecigonzalo/pre-commit-shfmt
+    rev: 069d7b3826f1c1ab00ef37260dae39bafeee131f
+    hooks:
+      - id: shell-fmt-docker
   - repo: local
     hooks:
     - id: prettier
