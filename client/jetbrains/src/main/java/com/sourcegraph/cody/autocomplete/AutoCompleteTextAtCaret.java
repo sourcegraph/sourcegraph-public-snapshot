@@ -8,7 +8,6 @@ import org.jetbrains.annotations.Nullable;
 public class AutoCompleteTextAtCaret {
   @NotNull public final AutoCompleteText autoCompleteText;
   @NotNull public final Caret caret;
-  @Nullable public InlineAutoCompleteItem completionItem;
 
   public AutoCompleteTextAtCaret(@NotNull Caret caret, @NotNull AutoCompleteText autoCompleteText) {
     this.caret = caret;
@@ -19,9 +18,7 @@ public class AutoCompleteTextAtCaret {
       @NotNull Caret caret,
       @NotNull String sameLineBeforeSuffixText,
       @NotNull String sameLineAfterSuffixText,
-      @NotNull String blockText,
-      @Nullable InlineAutoCompleteItem completionItem) {
+      @NotNull String blockText) {
     this(caret, new AutoCompleteText(sameLineBeforeSuffixText, sameLineAfterSuffixText, blockText));
-    this.completionItem = completionItem;
   }
 }

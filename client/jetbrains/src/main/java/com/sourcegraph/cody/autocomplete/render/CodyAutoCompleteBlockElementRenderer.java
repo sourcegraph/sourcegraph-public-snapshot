@@ -9,13 +9,14 @@ import java.awt.*;
 import java.util.Comparator;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** Implements the logic to render an autocomplete item inline in the editor. */
 public class CodyAutoCompleteBlockElementRenderer extends CodyAutoCompleteElementRenderer {
 
   public CodyAutoCompleteBlockElementRenderer(
       @NotNull String text,
-      @NotNull InlineAutoCompleteItem completionItem,
+      @Nullable InlineAutoCompleteItem completionItem,
       @NotNull Editor editor) {
     super(text, completionItem, editor, AutoCompleteRendererType.BLOCK);
   }

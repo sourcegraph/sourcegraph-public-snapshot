@@ -99,8 +99,6 @@ public class CodyAutoCompleteManager {
       return;
     }
 
-    /* Log the event */
-    // Save autocompletion
     final Project project = editor.getProject();
     if (project == null) {
       return;
@@ -217,7 +215,6 @@ public class CodyAutoCompleteManager {
                       /* display autocomplete */
                       if (isAgentAutocomplete) {
                         displayAgentAutocomplete(editor, offset, item, inlayModel);
-                        //                      } else {
                       } else {
                         displayAutocomplete(
                             editor, offset, autoCompleteDocumentContext, item, inlayModel);
@@ -230,6 +227,12 @@ public class CodyAutoCompleteManager {
         });
   }
 
+  /**
+   * Render inlay hints for unprocessed autocomplete results from the agent.
+   *
+   * <p>The reason we have a custom code path to render hints for agent autocompletions is because
+   * we can use `insertText` directly and the `range` encloses the entire line.
+   */
   private void displayAgentAutocomplete(
       @NotNull Editor editor, int offset, InlineAutoCompleteItem item, InlayModel inlayModel) {
     TextRange range = EditorUtils.getTextRange(editor.getDocument(), item.range);
@@ -237,26 +240,32 @@ public class CodyAutoCompleteManager {
     String insertTextFirstLine = item.insertText.lines().findFirst().orElse("");
     String multilineInsertText =
         item.insertText.lines().skip(1).collect(Collectors.joining(System.lineSeparator()));
+
+    // Run Myer's diff between the existing text in the document and the first line of the
+    // `insertText` that is returned from the agent.
+    // The diff algorithm returns a list of "deltas" that give us the minimal number of additions we
+    // need to make to the document.
     Patch<String> patch = CodyAutoCompleteManager.diff(originalText, insertTextFirstLine);
-    if (patch.getDeltas().stream()
-        .anyMatch(
-            delta ->
-                delta.getType() == Delta.TYPE.DELETE || delta.getType() == Delta.TYPE.CHANGE)) {
-      // Skip completions that require deleting code. This can be removed once we filter out
-      // completion items that introduce deletions.
+    if (!patch.getDeltas().stream().allMatch(delta -> delta.getType() == Delta.TYPE.INSERT)) {
+      // Skip completions that need to delete or change characters in the existing document. We only
+      // want completions to add changes to the document.
       return;
     }
+
+    // Insert one inlay hint per delta in the first line.
     for (Delta<String> delta : patch.getDeltas()) {
-      if (Objects.requireNonNull(delta.getType()) == Delta.TYPE.INSERT) {
-        String text = String.join("", delta.getRevised().getLines());
-        inlayModel.addInlineElement(
-            range.getStartOffset() + delta.getOriginal().getPosition(),
-            true,
-            new CodyAutoCompleteSingleLineRenderer(
-                text, item, editor, AutoCompleteRendererType.INLINE));
-      }
+      String text = String.join("", delta.getRevised().getLines());
+      inlayModel.addInlineElement(
+          range.getStartOffset() + delta.getOriginal().getPosition(),
+          true,
+          new CodyAutoCompleteSingleLineRenderer(
+              text, item, editor, AutoCompleteRendererType.INLINE));
     }
 
+    // Insert remaining lines of multiline completions as a single block element under the
+    // (potentially false?) assumption that we don't need to compute diffs for them. My
+    // understanding of multiline completions is that they are only supposed to be triggered in
+    // situations where we insert a large block of code in an empty block.
     if (!multilineInsertText.isEmpty()) {
       inlayModel.addBlockElement(
           offset,
@@ -284,15 +293,15 @@ public class CodyAutoCompleteManager {
     AutoCompleteText autoCompleteText =
         item.toAutoCompleteText(autoCompleteDocumentContext.getSameLineSuffix().trim());
     autoCompleteText
-        .getInlineRenderer(item, editor)
+        .getInlineRenderer(editor)
         .ifPresent(inlineRenderer -> inlayModel.addInlineElement(offset, true, inlineRenderer));
     autoCompleteText
-        .getAfterLineEndRenderer(item, editor)
+        .getAfterLineEndRenderer(editor)
         .ifPresent(
             afterLineEndRenderer ->
                 inlayModel.addAfterLineEndElement(offset, true, afterLineEndRenderer));
     autoCompleteText
-        .getBlockRenderer(item, editor)
+        .getBlockRenderer(editor)
         .ifPresent(
             blockRenderer ->
                 inlayModel.addBlockElement(offset, true, false, Integer.MAX_VALUE, blockRenderer));

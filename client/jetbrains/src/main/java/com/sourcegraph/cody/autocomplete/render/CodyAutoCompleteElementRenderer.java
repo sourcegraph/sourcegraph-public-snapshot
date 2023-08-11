@@ -14,14 +14,14 @@ import org.jetbrains.annotations.Nullable;
 
 public abstract class CodyAutoCompleteElementRenderer implements EditorCustomElementRenderer {
   @NotNull public final String text;
-  @NotNull public final InlineAutoCompleteItem completionItem;
+  @Nullable public final InlineAutoCompleteItem completionItem;
   @NotNull protected final TextAttributes themeAttributes;
   @NotNull protected final Editor editor;
   @Nullable protected final AutoCompleteRendererType type;
 
   public CodyAutoCompleteElementRenderer(
       @NotNull String text,
-      @NotNull InlineAutoCompleteItem completionItem,
+      @Nullable InlineAutoCompleteItem completionItem,
       @NotNull Editor editor,
       @Nullable AutoCompleteRendererType type) {
     this.text = text;

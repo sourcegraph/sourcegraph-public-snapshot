@@ -6,11 +6,12 @@ import com.intellij.openapi.editor.markup.TextAttributes;
 import com.sourcegraph.cody.vscode.InlineAutoCompleteItem;
 import java.awt.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class CodyAutoCompleteSingleLineRenderer extends CodyAutoCompleteElementRenderer {
   public CodyAutoCompleteSingleLineRenderer(
       String text,
-      @NotNull InlineAutoCompleteItem completionItem,
+      @Nullable InlineAutoCompleteItem completionItem,
       Editor editor,
       AutoCompleteRendererType type) {
     super(text, completionItem, editor, type);

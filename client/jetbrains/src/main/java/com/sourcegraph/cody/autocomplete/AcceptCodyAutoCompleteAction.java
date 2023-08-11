@@ -15,6 +15,7 @@ import com.sourcegraph.common.EditorUtils;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import java.util.List;
 import java.util.Optional;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,7 +39,7 @@ public class AcceptCodyAutoCompleteAction extends EditorAction {
       return editor.getProject() != null
               && CodyAutoCompleteManager.isEditorInstanceSupported(editor)
               && CodyAgent.isConnected(editor.getProject())
-          ? getInlineAutoCompleteItem(caret).isPresent()
+          ? getAgentAutocompleteItem(caret).isPresent()
           : AutoCompleteText.atCaret(caret).isPresent();
     }
 
@@ -81,19 +82,33 @@ public class AcceptCodyAutoCompleteAction extends EditorAction {
       if (caret == null) {
         return;
       }
-      InlineAutoCompleteItem completionItem = getInlineAutoCompleteItem(caret).orElse(null);
+      InlineAutoCompleteItem completionItem = getAgentAutocompleteItem(caret).orElse(null);
       if (completionItem == null) {
         return;
       }
       WriteAction.run(() -> applyInsertText(editor, caret, completionItem));
     }
 
+    /**
+     * Returns the autocompletion item for the first inlay of type `CodyAutoCompleteElementRenderer`
+     * regardless if the inlay is positioned at the caret. The reason we don't require the inlay to
+     * be positioned at the caret is that completions can suggest changes in a nearby character like
+     * in this situation:
+     *
+     * <p><code>
+     *     System.out.println("a: CARET");     // original
+     *     System.out.println("a: " + a);CARET // autocomplete
+     * </code>
+     */
     @NotNull
-    private static Optional<@NotNull InlineAutoCompleteItem> getInlineAutoCompleteItem(
-        Caret caret) {
+    private static Optional<@NotNull InlineAutoCompleteItem> getAgentAutocompleteItem(Caret caret) {
       return InlayModelUtils.getAllInlaysForEditor(caret.getEditor()).stream()
           .filter(r -> r.getRenderer() instanceof CodyAutoCompleteElementRenderer)
-          .map(r -> ((CodyAutoCompleteElementRenderer) r.getRenderer()).completionItem)
+          .map(
+              r ->
+                  Optional.ofNullable(
+                      ((CodyAutoCompleteElementRenderer) r.getRenderer()).completionItem))
+          .flatMap(Optional::stream)
           .findFirst();
     }
 

@@ -62,14 +62,6 @@ public class InlineAutoCompleteItem {
         + '}';
   }
 
-  private static int firstMismatchIndex(String a, String b) {
-    int i = 0;
-    while (i < a.length() && i < b.length() && a.charAt(i) == b.charAt(i)) {
-      i++;
-    }
-    return i;
-  }
-
   public @NotNull AutoCompleteText toAutoCompleteText(@NotNull String sameLineSuffix) {
     boolean multiline = this.isMultiline();
     String sameLineRawAutocomplete =

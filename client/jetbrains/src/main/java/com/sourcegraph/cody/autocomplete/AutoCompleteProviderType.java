@@ -1,7 +1,5 @@
 package com.sourcegraph.cody.autocomplete;
 
-import com.intellij.openapi.diagnostic.Logger;
-
 import java.util.Arrays;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
