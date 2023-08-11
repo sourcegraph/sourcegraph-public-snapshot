@@ -35,6 +35,7 @@ public class CodyAutoCompleteManager {
   // TODO: figure out how to avoid the ugly nested `Future<CompletableFuture<T>>` type.
   private final AtomicReference<Optional<Future<CompletableFuture<Void>>>> currentJob =
       new AtomicReference<>(Optional.empty());
+  private @Nullable AutocompleteTelemetry currentAutocompleteTelemetry = null;
 
   public static @NotNull CodyAutoCompleteManager getInstance() {
     return ApplicationManager.getApplication().getService(CodyAutoCompleteManager.class);
@@ -42,7 +43,26 @@ public class CodyAutoCompleteManager {
 
   @RequiresEdt
   public void clearAutoCompleteSuggestions(@NotNull Editor editor) {
+    // Log "suggested" event and clear current autocompletion
+    Optional.ofNullable(editor.getProject())
+        .ifPresent(
+            p -> {
+              if (currentAutocompleteTelemetry != null
+                  && currentAutocompleteTelemetry.getStatus()
+                      != AutocompletionStatus.TRIGGERED_NOT_DISPLAYED) {
+                currentAutocompleteTelemetry.markCompletionHidden();
+                GraphQlLogger.logAutocompleteSuggestedEvent(
+                    p,
+                    currentAutocompleteTelemetry.getLatencyMs(),
+                    currentAutocompleteTelemetry.getDisplayDurationMs());
+                currentAutocompleteTelemetry = null;
+              }
+            });
+
+    // Cancel any running job
     cancelCurrentJob();
+
+    // Clear any existing inline elements
     InlayModelUtils.getAllInlaysForEditor(editor).stream()
         .filter(inlay -> inlay.getRenderer() instanceof CodyAutoCompleteElementRenderer)
         .forEach(Disposer::dispose);
@@ -56,12 +76,21 @@ public class CodyAutoCompleteManager {
         && isEditorSupported(editor);
   }
 
+  /**
+   * Triggers auto-complete suggestions for the given editor at the specified offset.
+   *
+   * @param editor The editor instance to provide autocomplete for.
+   * @param offset The character offset in the editor to trigger auto-complete at.
+   */
   public void triggerAutoComplete(@NotNull Editor editor, int offset) {
+    // Check if auto-complete is enabled via the config
     if (!ConfigUtil.isCodyAutoCompleteEnabled()) {
       return;
     }
 
-    /* Log the event */
+    // Save autocompletion
+    currentAutocompleteTelemetry = AutocompleteTelemetry.createAndMarkTriggered();
+
     Project project = editor.getProject();
     if (project != null) {
       GraphQlLogger.logCodyEvent(project, "completion", "started");
@@ -81,9 +110,14 @@ public class CodyAutoCompleteManager {
             200,
             0.6,
             0.1);
+
+    // Gets AutoCompleteDocumentContext for the current offset
     TextDocument textDocument = new IntelliJTextDocument(editor, project);
     AutoCompleteDocumentContext autoCompleteDocumentContext =
         textDocument.getAutoCompleteContext(offset);
+
+    // If the context has a valid completion trigger, cancel any running job
+    // and asynchronously trigger the auto-complete
     if (autoCompleteDocumentContext.isCompletionTriggerValid()) {
       Callable<CompletableFuture<Void>> callable =
           () ->
@@ -96,6 +130,9 @@ public class CodyAutoCompleteManager {
     }
   }
 
+  /**
+   * Asynchronously triggers auto-complete for the given editor and offset.
+   */
   private CompletableFuture<Void> triggerAutoCompleteAsync(
       @NotNull Editor editor,
       int offset,
@@ -136,12 +173,11 @@ public class CodyAutoCompleteManager {
                           /* Clear existing completions */
                           this.clearAutoCompleteSuggestions(editor);
 
-                          /* Log the event */
-                          Optional.ofNullable(editor.getProject())
-                              .ifPresent(
-                                  p -> GraphQlLogger.logCodyEvent(p, "completion", "suggested"));
+                          if (currentAutocompleteTelemetry != null) {
+                            currentAutocompleteTelemetry.markCompletionDisplayed();
+                          }
 
-                          /* display autocomplete */
+                          /* Display autocomplete */
                           AutoCompleteText autoCompleteText =
                               item.toAutoCompleteText(
                                   autoCompleteDocumentContext.getSameLineSuffix().trim());

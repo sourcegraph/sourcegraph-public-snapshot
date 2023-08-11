@@ -33,6 +33,12 @@ public class AcceptCodyAutoCompleteAction extends EditorAction {
           && AutoCompleteText.atCaret(caret).isPresent();
     }
 
+    /**
+     * Applies the autocomplete to the document at a caret: 1. Replaces the string between the caret
+     * offset and its line end with the current completion 2. Moves the caret to the start and end
+     * offsets with the completion text. If there are multiple carets, uses the first one. If there
+     * are no completions at the caret, does nothing.
+     */
     @Override
     protected void doExecute(
         @NotNull Editor editor, @Nullable Caret maybeCaret, @Nullable DataContext dataContext) {
@@ -60,7 +66,7 @@ public class AcceptCodyAutoCompleteAction extends EditorAction {
 
   /**
    * Applies the autocomplete to the document at a caret. This replaces the string between the caret
-   * offset and its line end with the autocompletion String and then moves the caret to the end of
+   * offset and its line end with the autocompletion string and then moves the caret to the end of
    * the autocompletion.
    *
    * @param document the document to apply the autocomplete to
@@ -68,18 +74,27 @@ public class AcceptCodyAutoCompleteAction extends EditorAction {
    */
   private static void applyAutoComplete(
       @NotNull Document document, @NotNull AutoCompleteTextAtCaret autoComplete) {
+    // Calculate the end of the line to replace
     int lineEndOffset =
         document.getLineEndOffset(document.getLineNumber(autoComplete.caret.getOffset()));
+
+    // Get autocompletion string
     String autoCompletionString =
         autoComplete.autoCompleteText.getAutoCompletionString(
             document.getText(TextRange.create(autoComplete.caret.getOffset(), lineEndOffset)));
+
+    // If the autocompletion string does not contain the suffix of the line, add it to the end
     String sameLineSuffix =
         document.getText(TextRange.create(autoComplete.caret.getOffset(), lineEndOffset));
     String sameLineSuffixIfMissing =
         autoCompletionString.contains(sameLineSuffix) ? "" : sameLineSuffix;
+
+    // Replace the line with the autocompletion string
     String finalAutoCompletionString = autoCompletionString + sameLineSuffixIfMissing;
     document.replaceString(
         autoComplete.caret.getOffset(), lineEndOffset, finalAutoCompletionString);
+
+    // Move the caret to the end of the autocompletion string
     autoComplete.caret.moveToOffset(
         autoComplete.caret.getOffset() + finalAutoCompletionString.length());
   }
