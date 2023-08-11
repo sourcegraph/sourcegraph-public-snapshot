@@ -202,17 +202,12 @@ public class CodyAutoCompleteManager {
             ApplicationManager.getApplication()
                 .invokeLater(
                     () -> {
-                      /* Clear existing completions */
                       this.clearAutoCompleteSuggestions(editor);
 
-                      /* Log the event */
                       if (currentAutocompleteTelemetry != null) {
                         currentAutocompleteTelemetry.markCompletionDisplayed();
                       }
-                      Optional.ofNullable(editor.getProject())
-                          .ifPresent(p -> GraphQlLogger.logCodyEvent(p, "completion", "suggested"));
 
-                      /* display autocomplete */
                       if (isAgentAutocomplete) {
                         displayAgentAutocomplete(editor, offset, item, inlayModel);
                       } else {
