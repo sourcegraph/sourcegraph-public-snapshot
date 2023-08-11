@@ -1,9 +1,7 @@
 package com.sourcegraph.cody.autocomplete;
 
 import com.intellij.openapi.editor.Caret;
-import com.sourcegraph.cody.vscode.InlineAutoCompleteItem;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class AutoCompleteTextAtCaret {
   @NotNull public final AutoCompleteText autoCompleteText;

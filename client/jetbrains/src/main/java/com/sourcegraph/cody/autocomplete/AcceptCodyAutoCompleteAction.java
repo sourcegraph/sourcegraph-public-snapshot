@@ -15,7 +15,6 @@ import com.sourcegraph.common.EditorUtils;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import java.util.List;
 import java.util.Optional;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
