@@ -1,4 +1,4 @@
-import { add, differenceInDays, formatDistanceStrict } from 'date-fns'
+import { differenceInDays, formatDistanceStrict } from 'date-fns'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { Code, Link, Text } from '@sourcegraph/wildcard'
@@ -30,19 +30,24 @@ export enum SetupChecklistItem {
     ConnectCodeHost = 'Connect code host',
 }
 
+export interface SetupChecklistItemType {
+    id: SetupChecklistItem
+    name: string
+    path: string
+    info: React.ReactNode
+    notification?: {
+        text: string
+        type: 'warning' | 'danger'
+    }
+}
 interface UseSetupChecklistReturnType {
-    data: {
-        id: SetupChecklistItem
-        name: string
-        path: string
-        info: React.ReactNode
-        needsSetup?: string
-    }[]
+    data: SetupChecklistItemType[]
     error?: any
     loading: boolean
 }
 
 const NOTIFY_LICENSE_EXPIRATION_DAYS = 7
+
 /**
  * Returns either text of why setup/action is required or undefined if everything is good
  *
@@ -52,11 +57,11 @@ const NOTIFY_LICENSE_EXPIRATION_DAYS = 7
 export const getLicenseSetupStatus = (
     args?: Pick<SetupChecklistResult['site'], 'users' | 'productSubscription'>,
     now = new Date()
-): string | undefined => {
+): SetupChecklistItemType['notification'] => {
     const license = args?.productSubscription?.license
 
     if (!license?.isValid) {
-        return 'The Sourcegraph license key is invalid.'
+        return { text: 'The Sourcegraph license key is invalid.', type: 'danger' }
     }
 
     if (license?.tags?.includes('dev')) {
@@ -65,22 +70,29 @@ export const getLicenseSetupStatus = (
 
     const expiresAt = license?.expiresAt ? new Date(license.expiresAt) : undefined
     if (expiresAt && differenceInDays(expiresAt, now) <= NOTIFY_LICENSE_EXPIRATION_DAYS) {
-        return `The Sourcegraph license ${
-            differenceInDays(expiresAt, now) <= 0
-                ? 'expired ' + formatDistanceStrict(expiresAt, now) + ' ago. Please, get a new license.' // 'Expired two months ago'
-                : 'will expire in ' + formatDistanceStrict(expiresAt, now) + '. Please, renew it soon.' // 'Will expire in two months'
-        }`
+        const isExpired = differenceInDays(expiresAt, now) <= 0
+        return {
+            text: `The Sourcegraph license ${
+                isExpired
+                    ? 'expired ' + formatDistanceStrict(expiresAt, now) + ' ago. Please, get a new license.' // 'Expired two months ago'
+                    : 'will expire in ' + formatDistanceStrict(expiresAt, now) + '. Please, renew it soon.' // 'Will expire in two months'
+            }`,
+            type: isExpired ? 'danger' : 'warning',
+        }
     }
 
     if (license?.tags?.includes('plan:free-1')) {
-        return 'You are on a free plan. Please, upgrade your license to unlock more features.'
+        return {
+            text: 'You are on a free plan. Please, upgrade your license to unlock more features.',
+            type: 'warning',
+        }
     }
 
     const userCount = args?.users?.totalCount
     const hasExceededUserCount =
         !!userCount && !!license?.userCount && userCount > license?.userCount && !license?.tags.includes('true-up')
     if (hasExceededUserCount) {
-        return 'Your user count has exceeded your license limit. Please, get a new license.'
+        return { text: 'Your user count has exceeded your license limit. Please, get a new license.', type: 'danger' }
     }
 
     return
@@ -88,11 +100,11 @@ export const getLicenseSetupStatus = (
 
 const getCodehostSetupStatus = (
     args?: Pick<SetupChecklistResult['site'], 'externalServicesCounts'>
-): string | undefined => {
+): SetupChecklistItemType['notification'] => {
     const codeHostsCounts = args?.externalServicesCounts?.remoteExternalServicesCount
     // todo: add more checks such as valid code host connections
     if (codeHostsCounts === 0) {
-        return 'Add code host connection'
+        return { text: 'Add code host connection', type: 'danger' }
     }
     return
 }
@@ -106,7 +118,7 @@ export function useSetupChecklist(): UseSetupChecklistReturnType {
                 id: SetupChecklistItem.AddLicense,
                 name: 'Add license',
                 path: '/site-admin/configuration',
-                needsSetup: getLicenseSetupStatus(data?.site),
+                notification: getLicenseSetupStatus(data?.site),
                 info: (
                     <Text className="m-0">
                         Add a new <Code>licenseKey</Code> json field.{' '}
@@ -119,7 +131,7 @@ export function useSetupChecklist(): UseSetupChecklistReturnType {
                 name: 'Connect codehost(s)',
                 path: '/site-admin/external-services/new',
                 info: <div>Add codehost connections and sync its repositories</div>,
-                needsSetup: getCodehostSetupStatus(data?.site),
+                notification: getCodehostSetupStatus(data?.site),
             },
         ],
         loading,

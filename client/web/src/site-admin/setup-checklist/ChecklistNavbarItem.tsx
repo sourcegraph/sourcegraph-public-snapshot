@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 
-import { mdiCheck, mdiClose, mdiInformation } from '@mdi/js'
+import { mdiCheck, mdiInformation } from '@mdi/js'
 import classNames from 'classnames'
 import MagnifyIcon from 'mdi-react/GearIcon'
 
@@ -12,7 +12,7 @@ import { useSetupChecklist } from './hooks/useSetupChecklist'
 
 export const ChecklistNavbarItem: React.FC = () => {
     const { data, loading } = useSetupChecklist()
-    const notConfiguredCount = useMemo(() => data.filter(item => item.needsSetup).length, [data])
+    const notConfiguredCount = useMemo(() => data.filter(item => item.notification).length, [data])
 
     if (loading) {
         return null
@@ -35,31 +35,27 @@ export const ChecklistNavbarItem: React.FC = () => {
                     </div>
                 ),
             }}
-            items={data.map(feature => ({
+            items={data.map(({ notification, id, path, name }) => ({
                 content: (
                     <div className="d-flex align-items-center">
-                        {!feature.needsSetup && (
-                            <Icon
-                                svgPath={feature.needsSetup ? mdiClose : mdiCheck}
-                                aria-label={feature.needsSetup ? 'not configured' : 'configured'}
-                                className={classNames('mr-1', feature.needsSetup ? 'text-danger' : 'text-success')}
-                            />
-                        )}
-                        {feature.needsSetup && (
-                            <Tooltip content={feature.needsSetup}>
+                        {notification ? (
+                            <Tooltip content={notification.text}>
                                 <Icon
                                     svgPath={mdiInformation}
-                                    className={classNames('mr-1 text-danger')}
-                                    aria-label={feature.needsSetup}
+                                    className={classNames(
+                                        'mr-1',
+                                        notification.type === 'danger' ? 'text-danger' : 'text-warning'
+                                    )}
+                                    aria-label={notification.text}
                                 />
                             </Tooltip>
+                        ) : (
+                            <Icon svgPath={mdiCheck} aria-label={'configured'} className={'mr-1 text-success'} />
                         )}
-                        {feature.name}
+                        {name}
                     </div>
                 ),
-                path: feature?.needsSetup
-                    ? `${feature.path}?setup-checklist=${encodeURIComponent(feature.id)}`
-                    : feature.path,
+                path: notification ? `${path}?setup-checklist=${encodeURIComponent(id)}` : path,
             }))}
             name="feedback"
         />
