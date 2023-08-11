@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiArrowCollapseUp, mdiArrowExpandDown, mdiBookmarkOutline, mdiChevronDown, mdiDownload } from '@mdi/js'
 import classNames from 'classnames'
 
-import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import type { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import {
     Icon,
     Link,
@@ -17,9 +17,9 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 
-import { CreateAction } from './createActions'
+import type { CreateAction } from './createActions'
 
 import navStyles from './SearchResultsInfoBar.module.scss'
 

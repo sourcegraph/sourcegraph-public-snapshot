@@ -1,4 +1,9 @@
-import { InsightViewNode, SeriesSortDirection, SeriesSortMode, TimeIntervalStepUnit } from '../../../graphql-operations'
+import {
+    type InsightViewNode,
+    SeriesSortDirection,
+    SeriesSortMode,
+    TimeIntervalStepUnit,
+} from '../../../graphql-operations'
 
 const DEFAULT_SERIES_DISPLAY_OPTIONS = {
     limit: null,

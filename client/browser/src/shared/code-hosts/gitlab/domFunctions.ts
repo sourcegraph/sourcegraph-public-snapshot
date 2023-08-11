@@ -1,6 +1,6 @@
-import { DiffPart } from '@sourcegraph/codeintellify'
+import type { DiffPart } from '@sourcegraph/codeintellify'
 
-import { DOMFunctions } from '../shared/codeViews'
+import type { DOMFunctions } from '../shared/codeViews'
 
 const getSingleFileCodeElementFromLineNumber = (
     codeView: HTMLElement,

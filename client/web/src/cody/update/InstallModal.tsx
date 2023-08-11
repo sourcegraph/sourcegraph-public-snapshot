@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { Alert, Button, H2, LoadingSpinner, Modal, Text } from '@sourcegraph/wildcard'
 
-import { UpdateInfo } from './updater'
+import type { UpdateInfo } from './updater'
 
 export interface InstallModalProps {
     details: UpdateInfo

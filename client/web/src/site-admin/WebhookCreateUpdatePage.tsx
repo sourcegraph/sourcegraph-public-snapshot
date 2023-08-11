@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useMemo, useState } from 'react'
+import React, { type FC, useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { parse as parseJSONC } from 'jsonc-parser'
@@ -12,14 +12,14 @@ import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
 import { defaultExternalServices } from '../components/externalServices/externalServices'
 import { ConnectionLoading } from '../components/FilteredConnection/ui'
 import {
-    CreateWebhookResult,
-    CreateWebhookVariables,
+    type CreateWebhookResult,
+    type CreateWebhookVariables,
     ExternalServiceKind,
-    ExternalServicesResult,
-    ExternalServicesVariables,
-    UpdateWebhookResult,
-    UpdateWebhookVariables,
-    WebhookFields,
+    type ExternalServicesResult,
+    type ExternalServicesVariables,
+    type UpdateWebhookResult,
+    type UpdateWebhookVariables,
+    type WebhookFields,
 } from '../graphql-operations'
 import { generateSecret } from '../util/security'
 

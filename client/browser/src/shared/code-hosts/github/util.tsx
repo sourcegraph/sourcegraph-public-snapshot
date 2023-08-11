@@ -1,6 +1,6 @@
-import { RawRepoSpec, RepoSpec } from '@sourcegraph/shared/src/util/url'
+import type { RawRepoSpec, RepoSpec } from '@sourcegraph/shared/src/util/url'
 
-import { DiffResolvedRevisionSpec } from '../../repo'
+import type { DiffResolvedRevisionSpec } from '../../repo'
 import { RepoURLParseError } from '../shared/errors'
 
 /**

@@ -7,7 +7,7 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Link, Icon, Text, Tooltip, Button, AnchorLink } from '@sourcegraph/wildcard'
 
-import { BatchChangeFields } from '../../graphql-operations'
+import type { BatchChangeFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { MonacoBatchSpecEditor } from './batch-spec/edit/editor/MonacoBatchSpecEditor'

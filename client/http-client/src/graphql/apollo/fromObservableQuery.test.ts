@@ -1,4 +1,4 @@
-import { Observable as ZenObservable, ObservableQuery } from '@apollo/client'
+import { Observable as ZenObservable, type ObservableQuery } from '@apollo/client'
 import delay from 'delay'
 import { isObservable } from 'rxjs'
 import sinon from 'sinon'

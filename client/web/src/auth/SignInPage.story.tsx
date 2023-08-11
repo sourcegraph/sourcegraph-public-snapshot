@@ -1,9 +1,9 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../components/WebStory'
-import { SourcegraphContext } from '../jscontext'
+import type { SourcegraphContext } from '../jscontext'
 
-import { SignInPage, SignInPageProps } from './SignInPage'
+import { SignInPage, type SignInPageProps } from './SignInPage'
 
 const config: Meta = {
     title: 'web/auth/SignInPage',

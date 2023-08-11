@@ -1,12 +1,12 @@
 import '@sourcegraph/branded'
 
-import { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react'
 
 import 'storybook-addon-designs'
 
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
-import { ChangelogModal, ChangelogModalProps } from './ReviewAndInstallModal'
+import { ChangelogModal, type ChangelogModalProps } from './ReviewAndInstallModal'
 
 const meta: Meta<ChangelogModalProps> = {
     title: 'cody-ui/Updater/Dialogs',

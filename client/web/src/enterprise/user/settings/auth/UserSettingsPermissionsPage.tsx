@@ -4,7 +4,7 @@ import { mdiInformationOutline } from '@mdi/js'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
     useDebounce,
@@ -14,7 +14,7 @@ import {
     Input,
     Link,
     Badge,
-    BadgeProps,
+    type BadgeProps,
     Icon,
     Text,
 } from '@sourcegraph/wildcard'
@@ -22,17 +22,17 @@ import {
 import { usePageSwitcherPagination } from '../../../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { PageTitle } from '../../../../components/PageTitle'
 import {
-    UserPermissionsInfoResult,
-    UserPermissionsInfoVariables,
-    PermissionsInfoRepositoryFields as INode,
-    UserPermissionsInfoUserNode as IUser,
+    type UserPermissionsInfoResult,
+    type UserPermissionsInfoVariables,
+    type PermissionsInfoRepositoryFields as INode,
+    type UserPermissionsInfoUserNode as IUser,
     PermissionSource,
 } from '../../../../graphql-operations'
 import { useURLSyncedState } from '../../../../hooks'
 import { ActionContainer } from '../../../../repo/settings/components/ActionContainer'
 import { ExternalRepositoryIcon } from '../../../../site-admin/components/ExternalRepositoryIcon'
 import { PermissionsSyncJobsTable } from '../../../../site-admin/permissions-center/PermissionsSyncJobsTable'
-import { Table, IColumn } from '../../../../site-admin/UserManagement/components/Table'
+import { Table, type IColumn } from '../../../../site-admin/UserManagement/components/Table'
 import { eventLogger } from '../../../../tracking/eventLogger'
 
 import { scheduleUserPermissionsSync, UserPermissionsInfoQuery } from './backend'

@@ -5,7 +5,7 @@ import addFormats from 'ajv-formats'
 import { load as loadYAML } from 'js-yaml'
 import { debounce } from 'lodash'
 
-import { BatchSpec } from '@sourcegraph/shared/src/schema/batch_spec.schema'
+import type { BatchSpec } from '@sourcegraph/shared/src/schema/batch_spec.schema'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import batchSpecSchemaJSON from '../../../../../../schema/batch_spec.schema.json'

@@ -1,14 +1,14 @@
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
-import {
+import type {
     FuzzySearch,
     FuzzySearchConstructorParameters,
     IndexingFSM,
     SearchIndexing,
 } from '../../fuzzyFinder/FuzzySearch'
-import { SearchValue } from '../../fuzzyFinder/SearchValue'
+import type { SearchValue } from '../../fuzzyFinder/SearchValue'
 
-import { FuzzyFSM } from './FuzzyFsm'
-import { FuzzyLocalCache, PersistableQueryResult } from './FuzzyLocalCache'
+import type { FuzzyFSM } from './FuzzyFsm'
+import type { FuzzyLocalCache, PersistableQueryResult } from './FuzzyLocalCache'
 
 export abstract class FuzzyQuery {
     private isStaleResultsDeleted = false

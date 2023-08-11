@@ -1,4 +1,4 @@
-import { FC, useCallback, useState } from 'react'
+import { type FC, useCallback, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { mdiCircle, mdiCog, mdiDelete } from '@mdi/js'
@@ -8,7 +8,7 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
 import { Button, Link, LoadingSpinner, Icon, Tooltip, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { ListExternalServiceFields } from '../../graphql-operations'
+import type { ListExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
 
 import { deleteExternalService } from './backend'

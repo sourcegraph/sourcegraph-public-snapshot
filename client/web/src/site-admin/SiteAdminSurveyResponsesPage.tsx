@@ -6,7 +6,7 @@ import { Subscription } from 'rxjs'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import {
     Badge,
-    BADGE_VARIANTS,
+    type BADGE_VARIANTS,
     Button,
     useLocalStorage,
     Link,
@@ -21,12 +21,12 @@ import {
     Card,
 } from '@sourcegraph/wildcard'
 
-import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
+import { FilteredConnection, type FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import {
-    SurveyResponseAggregateFields,
-    SurveyResponseFields,
-    UserWithSurveyResponseFields,
+    type SurveyResponseAggregateFields,
+    type SurveyResponseFields,
+    type UserWithSurveyResponseFields,
     UserActivePeriod,
 } from '../graphql-operations'
 import {

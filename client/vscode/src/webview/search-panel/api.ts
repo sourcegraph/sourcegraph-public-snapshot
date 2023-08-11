@@ -2,7 +2,7 @@ import { of } from 'rxjs'
 
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 
-import { SearchPanelAPI } from '../../contract'
+import type { SearchPanelAPI } from '../../contract'
 
 export const searchPanelAPI: SearchPanelAPI = {
     ping: () => {

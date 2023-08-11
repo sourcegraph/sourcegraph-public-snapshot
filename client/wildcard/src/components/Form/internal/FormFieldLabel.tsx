@@ -1,7 +1,7 @@
 import { forwardRef } from 'react'
 
 import { Label } from '../..'
-import { ForwardReferenceComponent } from '../../../types'
+import type { ForwardReferenceComponent } from '../../../types'
 
 export interface FormFieldLabelProps {
     /**

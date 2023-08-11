@@ -1,10 +1,10 @@
 import { useState } from 'react'
 
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { DecoratorFn, Story, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
-import { TabBar, TabsConfig, TabKey } from './TabBar'
+import { TabBar, type TabsConfig, type TabKey } from './TabBar'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 

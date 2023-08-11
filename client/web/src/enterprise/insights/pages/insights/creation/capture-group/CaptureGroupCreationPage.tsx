@@ -1,18 +1,25 @@
-import { FC, useEffect, useMemo } from 'react'
+import { type FC, useEffect, useMemo } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, useObservable, FORM_ERROR, FormChangeEvent, SubmissionErrors } from '@sourcegraph/wildcard'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import {
+    Link,
+    PageHeader,
+    useObservable,
+    FORM_ERROR,
+    type FormChangeEvent,
+    type SubmissionErrors,
+} from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
 import { CodeInsightCreationMode, CodeInsightsCreationActions, CodeInsightsPage } from '../../../../components'
-import { MinimalCaptureGroupInsightData } from '../../../../core'
+import type { MinimalCaptureGroupInsightData } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks'
 import { CodeInsightTrackType } from '../../../../pings'
 
 import { CaptureGroupCreationContent } from './components/CaptureGroupCreationContent'
 import { useCaptureInsightInitialValues } from './hooks/use-capture-insight-initial-values'
-import { CaptureGroupFormFields } from './types'
+import type { CaptureGroupFormFields } from './types'
 import { getSanitizedCaptureGroupInsight } from './utils/capture-group-insight-sanitizer'
 
 interface CaptureGroupCreationPageProps extends TelemetryProps {

@@ -5,12 +5,12 @@ import { mdiAccount, mdiPlus, mdiDownload } from '@mdi/js'
 import { useQuery } from '@sourcegraph/http-client'
 import { H1, Card, Text, Icon, Button, Link, Alert, LoadingSpinner, AnchorLink } from '@sourcegraph/wildcard'
 
-import { UsersManagementSummaryResult, UsersManagementSummaryVariables } from '../../graphql-operations'
+import type { UsersManagementSummaryResult, UsersManagementSummaryVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { checkRequestAccessAllowed } from '../../util/checkRequestAccessAllowed'
-import { ValueLegendList, ValueLegendListProps } from '../analytics/components/ValueLegendList'
+import { ValueLegendList, type ValueLegendListProps } from '../analytics/components/ValueLegendList'
 
-import { SiteUser, UsersList } from './components/UsersList'
+import { type SiteUser, UsersList } from './components/UsersList'
 import { USERS_MANAGEMENT_SUMMARY } from './queries'
 
 import styles from './index.module.scss'

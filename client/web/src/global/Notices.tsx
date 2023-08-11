@@ -3,11 +3,11 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'
-import { Notice } from '@sourcegraph/shared/src/schema/settings.schema'
+import type { Notice } from '@sourcegraph/shared/src/schema/settings.schema'
 import { useSettings } from '@sourcegraph/shared/src/settings/settings'
-import { Alert, AlertProps, Markdown } from '@sourcegraph/wildcard'
+import { Alert, type AlertProps, Markdown } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { isEmailVerificationNeededForCody } from '../cody/isCodyEnabled'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 

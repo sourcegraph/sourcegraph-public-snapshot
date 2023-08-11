@@ -4,15 +4,15 @@ import { mdiClose, mdiCheckCircle, mdiBookOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { useParams } from 'react-router-dom'
 import { useStickyBox } from 'react-sticky-box'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { catchError, delay, startWith, switchMap } from 'rxjs/operators'
 
-import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
+import type { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     LoadingSpinner,
@@ -27,13 +27,13 @@ import {
     Text,
 } from '@sourcegraph/wildcard'
 
-import { Block } from '..'
-import { AuthenticatedUser } from '../../auth'
+import type { Block } from '..'
+import type { AuthenticatedUser } from '../../auth'
 import { MarketingBlock } from '../../components/MarketingBlock'
 import { PageTitle } from '../../components/PageTitle'
-import { NotebookFields, NotebookInput } from '../../graphql-operations'
-import { OwnConfigProps } from '../../own/OwnConfigProps'
-import { SearchStreamingProps } from '../../search'
+import type { NotebookFields, NotebookInput } from '../../graphql-operations'
+import type { OwnConfigProps } from '../../own/OwnConfigProps'
+import type { SearchStreamingProps } from '../../search'
 import { NotepadIcon } from '../../search/Notepad'
 import {
     fetchNotebook as _fetchNotebook,
@@ -43,7 +43,7 @@ import {
     deleteNotebookStar as _deleteNotebookStar,
 } from '../backend'
 import { NOTEPAD_ENABLED_EVENT } from '../listPage/NotebooksListPageHeader'
-import { copyNotebook as _copyNotebook, CopyNotebookProps } from '../notebook'
+import { copyNotebook as _copyNotebook, type CopyNotebookProps } from '../notebook'
 import { blockToGQLInput, convertNotebookTitleToFileName, GQLBlockToGQLInput } from '../serialize'
 
 import { NotebookContent } from './NotebookContent'

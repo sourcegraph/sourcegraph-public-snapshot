@@ -1,10 +1,10 @@
-import { MockedResponse } from '@apollo/client/testing'
-import { Meta, Story } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import type { Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
 import { WebStory } from '../../components/WebStory'
-import { ListTeamsOfParentResult } from '../../graphql-operations'
+import type { ListTeamsOfParentResult } from '../../graphql-operations'
 import { LIST_TEAMS_OF_PARENT } from '../list/backend'
 
 import { TeamChildTeamsPage } from './TeamChildTeamsPage'

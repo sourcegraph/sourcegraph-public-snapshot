@@ -4,15 +4,15 @@ import classNames from 'classnames'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
-import { FileDiffConnectionFields } from '../../graphql-operations'
+import type { FileDiffConnectionFields } from '../../graphql-operations'
 import { queryRepositoryComparisonFileDiffs } from '../backend/diffs'
-import { OpenDiffInSourcegraphProps } from '../repo'
+import type { OpenDiffInSourcegraphProps } from '../repo'
 import { getPlatformName } from '../util/context'
 
-import { SourcegraphIconButton, SourcegraphIconButtonProps } from './SourcegraphIconButton'
+import { SourcegraphIconButton, type SourcegraphIconButtonProps } from './SourcegraphIconButton'
 
 interface Props extends SourcegraphIconButtonProps, PlatformContextProps<'requestGraphQL'> {
     openProps: OpenDiffInSourcegraphProps

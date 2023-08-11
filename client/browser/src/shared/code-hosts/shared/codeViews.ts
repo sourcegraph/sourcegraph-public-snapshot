@@ -1,19 +1,19 @@
-import { Observable, of, zip, OperatorFunction, from } from 'rxjs'
+import { type Observable, of, zip, type OperatorFunction, from } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
-import { Omit } from 'utility-types'
+import type { Omit } from 'utility-types'
 
-import { DiffPart, DOMFunctions as CodeIntellifyDOMFuncions, PositionAdjuster } from '@sourcegraph/codeintellify'
-import { Selection } from '@sourcegraph/extension-api-types'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import type { DiffPart, DOMFunctions as CodeIntellifyDOMFuncions, PositionAdjuster } from '@sourcegraph/codeintellify'
+import type { Selection } from '@sourcegraph/extension-api-types'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
-import { ButtonProps } from '../../components/CodeViewToolbar'
+import type { ButtonProps } from '../../components/CodeViewToolbar'
 import { fetchBlobContentLines } from '../../repo/backend'
-import { MutationRecordLike } from '../../util/dom'
+import type { MutationRecordLike } from '../../util/dom'
 
-import { CodeHost, FileInfoWithRepoName, DiffOrBlobInfo, FileInfoWithContent } from './codeHost'
+import type { CodeHost, FileInfoWithRepoName, DiffOrBlobInfo, FileInfoWithContent } from './codeHost'
 import { ensureRevisionIsClonedForFileInfo } from './util/fileInfo'
-import { trackViews, ViewResolver, ViewWithSubscriptions } from './views'
+import { trackViews, type ViewResolver, type ViewWithSubscriptions } from './views'
 
 export interface DOMFunctions extends CodeIntellifyDOMFuncions {
     /**

@@ -38,7 +38,19 @@ const config = {
     'no-console': 'error',
     'monorepo/no-relative-import': 'error',
     '@sourcegraph/sourcegraph/check-help-links': 'error',
+    // This rule doesn't understand type imports and we already have
+    // import/no-duplicates enabled as well, which does understand type imports
+    'no-duplicate-imports': 'off',
     '@typescript-eslint/consistent-type-exports': 'warn',
+    '@typescript-eslint/consistent-type-imports': [
+      'warn',
+      {
+        fixStyle: 'inline-type-imports',
+        disallowTypeAnnotations: false,
+      },
+    ],
+    // This converts 'import {type foo} from ...' to 'import type {foo} from ...'
+    '@typescript-eslint/no-import-type-side-effects': ['warn'],
     'no-restricted-imports': [
       'error',
       {

@@ -3,7 +3,7 @@ package com.sourcegraph.cody.autocomplete;
 import com.intellij.openapi.editor.Caret;
 import org.jetbrains.annotations.NotNull;
 
-class AutoCompleteTextAtCaret {
+public class AutoCompleteTextAtCaret {
   @NotNull public final AutoCompleteText autoCompleteText;
   @NotNull public final Caret caret;
 

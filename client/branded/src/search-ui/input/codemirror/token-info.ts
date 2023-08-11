@@ -1,10 +1,10 @@
 import { type Extension, Facet, MapMode, type SelectionRange, StateEffect, StateField } from '@codemirror/state'
-import { Decoration, EditorView, hoverTooltip, TooltipView } from '@codemirror/view'
+import { Decoration, EditorView, hoverTooltip, type TooltipView } from '@codemirror/view'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import type { DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { toHover } from '@sourcegraph/shared/src/search/query/hover'
-import { Node } from '@sourcegraph/shared/src/search/query/parser'
+import type { Node } from '@sourcegraph/shared/src/search/query/parser'
 import { KeywordKind } from '@sourcegraph/shared/src/search/query/token'
 import { resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/utils'
 

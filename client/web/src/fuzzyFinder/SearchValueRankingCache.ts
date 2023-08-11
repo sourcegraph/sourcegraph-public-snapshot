@@ -1,4 +1,4 @@
-import { SearchValue } from './SearchValue'
+import type { SearchValue } from './SearchValue'
 
 // Helper to cache the result of `SearchValue.historyRanking()`, which is both
 // useful for 1) good UX to keep the ranking stable as long as the query is

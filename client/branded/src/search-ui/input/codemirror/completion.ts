@@ -4,16 +4,16 @@ import {
     autocompletion,
     startCompletion,
     completionKeymap,
-    CompletionResult,
-    Completion,
+    type CompletionResult,
+    type Completion,
     snippet,
-    CompletionSource,
+    type CompletionSource,
     acceptCompletion,
     selectedCompletion,
     currentCompletions,
     setSelectedCompletion,
 } from '@codemirror/autocomplete'
-import { Extension, Prec } from '@codemirror/state'
+import { type Extension, Prec } from '@codemirror/state'
 import { keymap, EditorView } from '@codemirror/view'
 import {
     mdiCodeArray,
@@ -46,7 +46,7 @@ import {
     mdiWrench,
 } from '@mdi/js'
 import { isEqual, startCase } from 'lodash'
-import { NavigateFunction } from 'react-router-dom'
+import type { NavigateFunction } from 'react-router-dom'
 
 import { isDefined } from '@sourcegraph/common'
 import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
@@ -56,12 +56,12 @@ import {
     regexInsertText,
     repositoryInsertText,
 } from '@sourcegraph/shared/src/search/query/completion-utils'
-import { decorate, DecoratedToken, toDecoration } from '@sourcegraph/shared/src/search/query/decoratedToken'
-import { FILTERS, FilterType, filterTypeKeys, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
+import { decorate, type DecoratedToken, toDecoration } from '@sourcegraph/shared/src/search/query/decoratedToken'
+import { FILTERS, type FilterType, filterTypeKeys, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { getSuggestionQuery } from '@sourcegraph/shared/src/search/query/providers-utils'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
-import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import type { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
+import type { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { createSVGIcon } from '@sourcegraph/shared/src/util/dom'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 

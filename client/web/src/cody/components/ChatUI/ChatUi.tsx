@@ -16,12 +16,12 @@ import useResizeObserver from 'use-resize-observer'
 
 import {
     Chat,
-    ChatUISubmitButtonProps,
-    ChatUITextAreaProps,
-    EditButtonProps,
-    FeedbackButtonsProps,
+    type ChatUISubmitButtonProps,
+    type ChatUITextAreaProps,
+    type EditButtonProps,
+    type FeedbackButtonsProps,
 } from '@sourcegraph/cody-ui/dist/Chat'
-import { FileLinkProps } from '@sourcegraph/cody-ui/dist/chat/ContextFiles'
+import type { FileLinkProps } from '@sourcegraph/cody-ui/dist/chat/ContextFiles'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/dist/terms'
 import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourcegraph/wildcard'
 
@@ -29,7 +29,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { CodyPageIcon } from '../../chat/CodyPageIcon'
 import { isCodyEnabled, isEmailVerificationNeededForCody, isSignInRequiredForCody } from '../../isCodyEnabled'
 import { useCodySidebar } from '../../sidebar/Provider'
-import { CodyChatStore } from '../../useCodyChat'
+import type { CodyChatStore } from '../../useCodyChat'
 import { ScopeSelector } from '../ScopeSelector'
 
 import styles from './ChatUi.module.scss'

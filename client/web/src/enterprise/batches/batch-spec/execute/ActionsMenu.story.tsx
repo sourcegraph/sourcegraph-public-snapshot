@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
 import { EXECUTING_BATCH_SPEC, mockBatchChange } from '../batch-spec.mock'

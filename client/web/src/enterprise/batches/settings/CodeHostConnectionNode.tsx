@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react'
 
-import { ApolloError } from '@apollo/client'
+import type { ApolloError } from '@apollo/client'
 import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline, mdiDelete, mdiEye } from '@mdi/js'
 import classNames from 'classnames'
 
@@ -9,7 +9,7 @@ import { useLazyQuery } from '@sourcegraph/http-client'
 import { Badge, Button, Icon, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
-import {
+import type {
     BatchChangesCodeHostFields,
     CheckBatchChangesCredentialResult,
     CheckBatchChangesCredentialVariables,

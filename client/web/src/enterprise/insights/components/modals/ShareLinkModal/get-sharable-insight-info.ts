@@ -1,10 +1,10 @@
-import { ApolloError, gql, useQuery } from '@apollo/client'
+import { type ApolloError, gql, useQuery } from '@apollo/client'
 
-import {
+import type {
     GetDashboardsThatHaveInsightResult,
     GetDashboardsThatHaveInsightVariables,
 } from '../../../../../graphql-operations'
-import { CustomInsightDashboard, InsightsDashboardType } from '../../../core'
+import { type CustomInsightDashboard, InsightsDashboardType } from '../../../core'
 import { deserializeDashboardsOwners } from '../../../core/hooks/use-insight-dashboards'
 
 export const GET_DASHBOARD_THAT_HAVE_INSIGHT_GQL = gql`
