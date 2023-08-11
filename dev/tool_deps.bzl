@@ -1,7 +1,8 @@
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
 
 DOCSITE_VERSION = "1.9.2"
 SRC_CLI_VERSION = "5.1.0"
+CTAGS_VERSION = "5.9.20220403.0"
 
 SRC_CLI_BUILDFILE = """
 filegroup(
@@ -56,3 +57,21 @@ def tool_deps():
         url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_darwin_arm64.tar.gz".format(SRC_CLI_VERSION),
     )
 
+    # universal-ctags #
+    http_file(
+        name = "universal-ctags-x86_64-darwin",
+        url = "https://storage.googleapis.com/universal_ctags/x86_64-darwin/bin/ctags-{0}".format(CTAGS_VERSION),
+        executable = True,
+    )
+
+    http_file(
+        name = "universal-ctags-aarch64-darwin",
+        url = "https://storage.googleapis.com/universal_ctags/aarch64-darwin/bin/ctags-{0}".format(CTAGS_VERSION),
+        executable = True,
+    )
+
+    http_file(
+        name = "universal-ctags-x86_64-linux",
+        url = "https://storage.googleapis.com/universal_ctags/x86_64-linux/bin/ctags-{0}".format(CTAGS_VERSION),
+        executable = True,
+    )
