@@ -50,7 +50,7 @@ export const ChecklistNavbarItem: React.FC = () => {
                                 />
                             </Tooltip>
                         ) : (
-                            <Icon svgPath={mdiCheck} aria-label={'configured'} className={'mr-1 text-success'} />
+                            <Icon svgPath={mdiCheck} aria-label="configured" className="mr-1 text-success" />
                         )}
                         {name}
                     </div>
