@@ -445,6 +445,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 						RepositoryName:    l.Dump.RepositoryName,
 						DefinitionSnippet: documentAndText.Extract(scip.NewRange(occ.EnclosingRange)),
 						Filepath:          l.Path,
+						Location:          l,
 					})
 				}
 			}

@@ -122,6 +122,7 @@ func Init(
 	contextRootResolver := contextgraphql.NewRootResolver(
 		scopedContext("context"),
 		codeIntelServices.ContextService,
+		locationResolverFactory,
 	)
 
 	rankingRootResolver := rankinggraphql.NewRootResolver(
