@@ -6,10 +6,12 @@ import (
 
 type PreciseContext struct {
 	Symbol            PreciseSymbolReference
-	DefinitionSnippet string
-	RepositoryName    string
-	Filepath          string // TODO: redundant
-	Location          codenavshared.UploadLocation
+	DefinitionSnippet string                       `json:"-"` // json tags temporary
+	Location          codenavshared.UploadLocation `json:"-"` // json tags temporary
+
+	// TODO: redundant with location
+	RepositoryName string `json:"-"` // json tags temporary
+	Filepath       string `json:"-"` // json tags temporary
 }
 
 type PreciseSymbolReference struct {

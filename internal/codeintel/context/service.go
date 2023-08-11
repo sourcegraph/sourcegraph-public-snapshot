@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -74,10 +75,10 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	defer endObservation(1, observation.Args{})
 
 	logBuf := new(bytes.Buffer)
-	debug := func(format string, args ...any) {
-		s := fmt.Sprintf(format, args...)
-		fmt.Print(s)
-		logBuf.WriteString(s)
+	debug := func(v any) {
+		s, _ := json.MarshalIndent(v, "", "    ")
+		fmt.Print(string(s) + "\n")
+		logBuf.WriteString(string(s) + "\n")
 	}
 	defer func() { traceLogs = logBuf.String() }()
 
@@ -131,14 +132,20 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	// DEBUGGING
 	start := time.Now()
 	phaseStart := start
-	lap := func(format string, args ...any) {
+	lap := func(values map[string]any) {
 		n := time.Now()
-		delta := n.Sub(phaseStart)
+		phaseDelta := n.Sub(phaseStart)
+		cumulativeDelta := n.Sub(start)
 		phaseStart = n
-		debug("\t[%s]: %s\n", delta, fmt.Sprintf(format, args...))
+
+		values["phaseDeltaMs"] = phaseDelta
+		values["phaseDelta"] = phaseDelta.String()
+		values["cumulativeDeltaMs"] = cumulativeDelta
+		values["cumulativeDelta"] = cumulativeDelta.String()
+		debug(values)
 	}
-	debug("> CONTEXT API\n")
-	defer func() { debug("CONTEXT API done in %s (%s)\n", time.Since(start), err) }()
+	debug(map[string]any{"event": "context api start"})
+	defer func() { lap(map[string]any{"state": "context api return", "err": err}) }()
 	fuzzyNameSetBySymbol := map[string]map[string]struct{}{}
 	if enableSyntect {
 		// PHASE 1: Run current scope through treesitter
@@ -164,7 +171,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			uploadIDs[i] = upload.ID
 		}
 		// DEBUGGING
-		lap("PHASE 1: %d symbols from %s: %v\n", len(fuzzySymbolNames), filename, fuzzySymbolNames)
+		lap(map[string]any{"event": "phase 1", "fuzzySymbolNames": fuzzySymbolNames})
 
 		// PHASE 2: Run treesitter output through a translation layer so we can do
 		// the graph navigation in "SCIP-world" using proper identifiers. The following
@@ -186,21 +193,9 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			}
 
 			// DEBUGGING
-			for _, scipName := range explodedScipNames {
-				if strings.Contains(scipName.DescriptorSuffix, "Runner") {
-					debug("\tSCIP:%q\n", scipName.DescriptorSuffix)
-				}
-			}
-			for _, fuzzyName := range fuzzySymbolNames {
-				if strings.Contains(fuzzyName, "Runner") {
-					ex, err := symbols.NewExplodedSymbol(fuzzyName)
-					if err != nil {
-						trace.AddEvent("NewExplodedSymbol error in scipNamesByFuzzyName", attribute.String("exploded symbol err", err.Error()))
-						continue
-					}
-					debug("\tSYNTECT: %q -> %q\n", fuzzyName, ex.DescriptorSuffix)
-				}
-			}
+			// for _, scipName := range explodedScipNames {
+			// 	debug(map[string]any{"event": "[log] exploded scip names", "descriptor suffix": scipName.DescriptorSuffix})
+			// }
 
 			explodedScipSymbolsByFuzzyName := map[string][]*symbols.ExplodedSymbol{}
 			for _, fuzzyName := range fuzzySymbolNames {
@@ -221,14 +216,12 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				// DEBUGGING
 				if len(explodedScipSymbols) == 0 {
 					ex, _ := symbols.NewExplodedSymbol(fuzzyName)
-					if strings.Contains(fuzzyName, "Runner") {
-						debug("> NO MATCHES FOR %q (%q)??\n", fuzzyName, ex.DescriptorSuffix)
-					}
+					debug(map[string]any{"event": "[log] no match for symbol", "fuzzy name": fuzzyName, "descriptor suffix": ex.DescriptorSuffix})
 				}
 
 				if len(explodedScipSymbols) > 20 {
 					// DEBUGGING
-					debug("TOO MANY RESULTS FOR %q\n", fuzzyName)
+					debug(map[string]any{"event": "[log] too many matches for symbol", "fuzzy name": fuzzyName, "descriptor suffix": ex.DescriptorSuffix})
 					trace.AddEvent("TOO MANY RESULTS", attribute.String("syntectName", fuzzyName))
 					explodedScipSymbols = nil
 				}
@@ -245,8 +238,6 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 					len(explodedScipSymbolsByFuzzyName),
 				),
 			)
-			// DEBUGGING
-			debug("\n\n")
 
 			return explodedScipSymbolsByFuzzyName, nil
 		}()
@@ -266,7 +257,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		}
 
 		// DEBUGGING
-		lap("PHASE 2: %d matching precise symbols\n", len(fuzzyNameSetBySymbol))
+		lap(map[string]any{"event": "phase 2", "fuzzy names by symbol": fuzzyNameSetBySymbol})
 	} else {
 		symbolsNames, err := s.codenavSvc.GetSymbolNamesByRange(ctx, requestArgs, filename, reqState, activeRangeSelection)
 		if err != nil {
@@ -281,9 +272,9 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	// PHASE 3: Gather definitions for each relevant SCIP symbol
 
 	type preciseData struct {
-		scipName  string
-		fuzzyName string
-		location  []codenavshared.UploadLocation
+		SCIP     string
+		Fuzzy    string
+		Location []codenavshared.UploadLocation `json:"-"`
 	}
 	preciseDataList := []*preciseData{}
 
@@ -300,9 +291,9 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	for _, location := range ul {
 		for fzn := range fuzzyNameSetBySymbol[location.SymbolName] {
 			preciseDataList = append(preciseDataList, &preciseData{
-				scipName:  location.SymbolName,
-				fuzzyName: fzn,
-				location:  []codenavshared.UploadLocation{location},
+				SCIP:     location.SymbolName,
+				Fuzzy:    fzn,
+				Location: []codenavshared.UploadLocation{location},
 			})
 		}
 	}
@@ -310,7 +301,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	trace.AddEvent("preciseDataList", attribute.Int("fuzzyName", len(preciseDataList)))
 
 	// DEBUGGING
-	lap("PHASE 3: %d matching precise symbols with len %d \n", len(fuzzyNameSetBySymbol), len(preciseDataList))
+	lap(map[string]any{"event": "phase 3", "precise data list": preciseDataList})
 
 	// PHASE 4: Read the files that contain a definition
 	filesByRepo := map[string]struct {
@@ -320,7 +311,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 
 	cache := map[string]DocumentAndText{}
 	for _, pd := range preciseDataList {
-		for _, l := range pd.location {
+		for _, l := range pd.Location {
 			repoCommitKey := fmt.Sprintf("%s@%s", l.Dump.RepositoryName, l.Dump.Commit)
 
 			px := filesByRepo[repoCommitKey].paths
@@ -400,7 +391,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	}
 
 	// DEBUGGING
-	lap("PHASE 4: read %d files\n", len(cache))
+	lap(map[string]any{"event": "phase 4"})
 
 	// PHASE 5: Extract the definitions for each of the relevant syntect symbols
 	// we originally requested.
@@ -411,7 +402,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 
 	preciseResponse := []*types.PreciseContext{}
 	for _, pd := range preciseDataList {
-		for _, l := range pd.location {
+		for _, l := range pd.Location {
 			key := fmt.Sprintf("%s@%s:%s", l.Dump.RepositoryName, l.Dump.Commit, filepath.Join(l.Dump.Root, l.Path))
 			documentAndText := cache[key]
 
@@ -419,15 +410,15 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				// NOTE: assumption made; we may want to look at the precise
 				// range as an alternate or additional indicator for which
 				// syntect occurrences we are interested in
-				if occ.Symbol != pd.fuzzyName && pd.fuzzyName != "" {
+				if occ.Symbol != pd.Fuzzy && pd.Fuzzy != "" {
 					continue
 				}
 				if len(occ.EnclosingRange) > 0 {
-					ex, err := symbols.NewExplodedSymbol(pd.scipName)
+					ex, err := symbols.NewExplodedSymbol(pd.SCIP)
 					if err != nil {
 						return nil, "", err
 					}
-					fex, err := symbols.NewExplodedSymbol(pd.fuzzyName)
+					fex, err := symbols.NewExplodedSymbol(pd.Fuzzy)
 					if err != nil {
 						return nil, "", err
 					}
@@ -438,7 +429,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 
 					preciseResponse = append(preciseResponse, &types.PreciseContext{
 						Symbol: types.PreciseSymbolReference{
-							ScipName:         pd.scipName,
+							ScipName:         pd.SCIP,
 							DescriptorSuffix: ex.DescriptorSuffix,
 							FuzzyName:        fuzzyName,
 						},
@@ -454,7 +445,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	trace.AddEvent("preciseResponse", attribute.Int("length of preciseResponse", len(preciseResponse)))
 
 	// DEBUGGING
-	lap("PHASE 5: generated %s context items\n", len(preciseResponse))
+	lap(map[string]any{"event": "phase 5", "response": preciseResponse})
 	return preciseResponse, "", nil
 }
 
