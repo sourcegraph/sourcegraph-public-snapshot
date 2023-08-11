@@ -1,1 +1,1 @@
-{"tests":[{"timestamp":"2023-08-10T14:35:23.25638Z","target":"//dev/build-tracker"},{"timestamp":"2023-08-11T12:51:53.990332Z","target":"//internal/database"}]}
+{"tests":[{"timestamp":"2023-08-11T12:51:53.990332Z","target":"//internal/database"},{"timestamp":"2023-08-10T14:35:23.25638Z","target":"//dev/build-tracker"},{"timestamp":"2023-08-11T14:25:02.142104Z","target":"//internal/auth"},{"timestamp":"2023-08-11T14:25:02.142111Z","target":"//cmd/frontend"},{"timestamp":"2023-08-11T14:25:02.142115Z","target":"//migrations"}]}

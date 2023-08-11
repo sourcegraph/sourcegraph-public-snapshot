@@ -195,13 +195,13 @@ func validateTargets(ctx context.Context, pending output.Pending, targets []stri
 	for _, target := range targets {
 		pending.Updatef("checking target %s", target)
 		if strings.HasSuffix(target, "...") {
-			pending.WriteLine(output.Emoji("⚠️", fmt.Sprintf("%s is not fully qualified", target)))
+			pending.WriteLine(output.Emojif("⚠️", "s is not fully qualified", target))
 			invalid = append(invalid, fmt.Sprintf("%s is not fully qualified - please provide a fully qualified target", target))
 		} else if validTarget(ctx, target) {
-			pending.WriteLine(output.Emoji("☑️", fmt.Sprintf("%s is valid", target)))
+			pending.WriteLine(output.Emojif("☑️", "%s is valid", target))
 			valid = append(valid, target)
 		} else {
-			pending.WriteLine(output.Emoji("⚠️", fmt.Sprintf("%s is invalid", target)))
+			pending.WriteLine(output.Emojif("⚠️", "%s is invalid", target))
 			invalid = append(invalid, target)
 		}
 	}
@@ -210,13 +210,18 @@ func validateTargets(ctx context.Context, pending output.Pending, targets []stri
 }
 
 func addTargets(qMap map[string]*quarantineTest, targets ...string) error {
+	newTargets := 0
 	for _, target := range targets {
 		if _, ok := qMap[target]; ok {
 			std.Out.WriteWarningf("%s is already quarantined", target)
 		} else {
 			qMap[target] = newQuarantineTest(target)
-			std.Out.WriteSuccessf("%s added to quarantine", target)
+			std.Out.WriteLine(output.Emojif("➕", "%s added to quarantine", target))
+			newTargets += 1
 		}
+	}
+	if newTargets == 0 {
+		return errors.Newf("no new targets added to quarantine")
 	}
 	return nil
 }
@@ -225,7 +230,7 @@ func removeTargets(qMap map[string]*quarantineTest, targets ...string) error {
 	for _, target := range targets {
 		if _, ok := qMap[target]; ok {
 			delete(qMap, target)
-			std.Out.WriteSuccessf("%s removed from quarantine", target)
+			std.Out.WriteLine(output.Emojif("💥", "%s removed from quarantine", target))
 		} else {
 			std.Out.WriteWarningf("%s not found in quarantine", target)
 		}
@@ -275,7 +280,7 @@ func quarantineTarget(ctx *cli.Context) error {
 
 	err = writeQuarantinedTests(quarantinePath, tests)
 	if err == nil {
-		std.Out.WriteSuggestionf("Quarantine updated with new targets. Please commit the updated quarantine!")
+		std.Out.WriteSuccessf("Quarantine updated. Please commit the updated quarantine!")
 	}
 	return err
 }
