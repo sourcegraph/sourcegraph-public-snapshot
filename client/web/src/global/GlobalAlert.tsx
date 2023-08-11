@@ -6,8 +6,8 @@ import { renderMarkdown } from '@sourcegraph/common'
 import { AlertType } from '@sourcegraph/shared/src/graphql-operations'
 import { Alert, Markdown } from '@sourcegraph/wildcard'
 
-import { DismissibleAlert, DismissibleAlertProps } from '../components/DismissibleAlert'
-import { SiteFlagAlertFields } from '../graphql-operations'
+import { DismissibleAlert, type DismissibleAlertProps } from '../components/DismissibleAlert'
+import type { SiteFlagAlertFields } from '../graphql-operations'
 
 /**
  * A global alert that is shown at the top of the viewport.

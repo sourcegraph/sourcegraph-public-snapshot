@@ -2,13 +2,13 @@ import { noop } from 'lodash'
 import { EMPTY, NEVER, of, Subscription } from 'rxjs'
 import sinon from 'sinon'
 
-import { FlatExtensionHostAPI } from '../api/contract'
+import type { FlatExtensionHostAPI } from '../api/contract'
 import { pretendProxySubscribable, pretendRemote } from '../api/util'
-import { FetchFileParameters } from '../backend/file'
-import { Controller } from '../extensions/controller'
-import { PlatformContext } from '../platform/context'
-import { AggregateStreamingSearchResults, ContentMatch, RepositoryMatch } from '../search/stream'
-import { SettingsCascade } from '../settings/settings'
+import type { FetchFileParameters } from '../backend/file'
+import type { Controller } from '../extensions/controller'
+import type { PlatformContext } from '../platform/context'
+import type { AggregateStreamingSearchResults, ContentMatch, RepositoryMatch } from '../search/stream'
+import type { SettingsCascade } from '../settings/settings'
 
 export const CHUNK_MATCH_RESULT: ContentMatch = {
     type: 'content',

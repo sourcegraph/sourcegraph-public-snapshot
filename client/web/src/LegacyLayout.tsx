@@ -1,7 +1,7 @@
-import { FC, Suspense, useCallback, useLayoutEffect, useState } from 'react'
+import { type FC, Suspense, useCallback, useLayoutEffect, useState } from 'react'
 
 import classNames from 'classnames'
-import { matchPath, useLocation, Route, Routes, Navigate, RouteObject } from 'react-router-dom'
+import { matchPath, useLocation, Route, Routes, Navigate, type RouteObject } from 'react-router-dom'
 
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
@@ -22,7 +22,7 @@ import { GlobalContributions } from './contributions'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { useHandleSubmitFeedback } from './hooks'
-import { LegacyLayoutRouteContext } from './LegacyRouteContext'
+import type { LegacyLayoutRouteContext } from './LegacyRouteContext'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { EnterprisePageRoutes, PageRoutes } from './routes.constants'

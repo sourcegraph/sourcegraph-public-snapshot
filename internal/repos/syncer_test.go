@@ -954,7 +954,7 @@ func TestSyncRun(t *testing.T) {
 	go func() {
 		goroutine.MonitorBackgroundRoutines(ctx, syncer.Routines(ctx, store, repos.RunOptions{
 			EnqueueInterval: func() time.Duration { return time.Second },
-			IsCloud:         false,
+			IsDotCom:        false,
 			MinSyncInterval: func() time.Duration { return 1 * time.Millisecond },
 			DequeueInterval: 1 * time.Millisecond,
 		})...)
@@ -1109,7 +1109,7 @@ func TestSyncerMultipleServices(t *testing.T) {
 	go func() {
 		goroutine.MonitorBackgroundRoutines(ctx, syncer.Routines(ctx, store, repos.RunOptions{
 			EnqueueInterval: func() time.Duration { return time.Second },
-			IsCloud:         false,
+			IsDotCom:        false,
 			MinSyncInterval: func() time.Duration { return 1 * time.Minute },
 			DequeueInterval: 1 * time.Millisecond,
 		})...)

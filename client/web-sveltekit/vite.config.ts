@@ -8,7 +8,7 @@ import operations from '@sourcegraph/shared/dev/generateGraphQlOperations'
 function generateGraphQLOperations(): Plugin {
     const outputPath = './src/lib/graphql-operations.ts'
     const interfaceNameForOperations = 'SvelteKitGraphQlOperations'
-    const documents = ['src/lib/**/*.ts', '!src/lib/graphql-operations.ts']
+    const documents = ['src/lib/**/*.{ts,graphql}', '!src/lib/graphql-operations.ts']
 
     return codegen({
         config: {
@@ -39,7 +39,7 @@ const config = defineConfig(({ mode }) => ({
         proxy: {
             // Proxy requests to specific endpoints to a real Sourcegraph
             // instance.
-            '^(/sign-in|/.assets|/-|/.api|/search/stream|/users)': {
+            '^(/sign-in|/.assets|/-|/.api|/search/stream|/users|/notebooks|/insights)': {
                 target: process.env.SOURCEGRAPH_API_URL || 'https://sourcegraph.com',
                 changeOrigin: true,
                 secure: false,

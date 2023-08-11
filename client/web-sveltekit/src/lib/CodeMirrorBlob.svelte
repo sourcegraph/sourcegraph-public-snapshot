@@ -76,7 +76,6 @@
     import { createEventDispatcher } from 'svelte'
 
     import { browser } from '$app/environment'
-    import type { BlobFileFields } from '$lib/graphql-operations'
     import {
         blobPropsFacet,
         selectableLineNumbers,
@@ -85,6 +84,7 @@
         setSelectedLines,
         isValidLineRange,
     } from '$lib/web'
+    import type { BlobFileFields } from '$lib/repo/api/blob'
 
     export let blob: BlobFileFields
     export let highlights: string

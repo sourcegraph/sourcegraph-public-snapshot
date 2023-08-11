@@ -1,4 +1,4 @@
-import { FC, useState } from 'react'
+import { type FC, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiRefresh } from '@mdi/js'
 import classNames from 'classnames'
@@ -17,7 +17,7 @@ import {
 
 import { InstallModal } from './InstallModal'
 import { ChangelogModal } from './ReviewAndInstallModal'
-import { UpdateInfo, useUpdater } from './updater'
+import { type UpdateInfo, useUpdater } from './updater'
 
 import styles from './UpdateGlobalNav.module.scss'
 

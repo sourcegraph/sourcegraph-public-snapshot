@@ -1,20 +1,28 @@
 import {
     countColumn,
     EditorSelection,
-    Extension,
+    type Extension,
     Prec,
     StateEffect,
     StateField,
-    TransactionSpec,
+    type TransactionSpec,
 } from '@codemirror/state'
-import { EditorView, getTooltip, PluginValue, showTooltip, Tooltip, ViewPlugin, ViewUpdate } from '@codemirror/view'
-import { BehaviorSubject, from, fromEvent, of, Subject, Subscription } from 'rxjs'
+import {
+    EditorView,
+    getTooltip,
+    type PluginValue,
+    showTooltip,
+    type Tooltip,
+    ViewPlugin,
+    type ViewUpdate,
+} from '@codemirror/view'
+import { BehaviorSubject, from, fromEvent, of, type Subject, Subscription } from 'rxjs'
 import { debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
 
-import { HoverMerged, TextDocumentPositionParameters } from '@sourcegraph/client-api/src'
-import { formatSearchParameters, LineOrPositionOrRange } from '@sourcegraph/common/src'
+import type { HoverMerged, TextDocumentPositionParameters } from '@sourcegraph/client-api/src'
+import { formatSearchParameters, type LineOrPositionOrRange } from '@sourcegraph/common/src'
 import { getOrCreateCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
-import { Occurrence, Position } from '@sourcegraph/shared/src/codeintel/scip'
+import { type Occurrence, Position } from '@sourcegraph/shared/src/codeintel/scip'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
@@ -27,7 +35,7 @@ import {
     rangeToCmSelection,
 } from '../occurrence-utils'
 import { BLOB_SEARCH_CONTAINER_ID } from '../search'
-import { CodeIntelTooltip, HoverResult } from '../tooltips/CodeIntelTooltip'
+import { CodeIntelTooltip, type HoverResult } from '../tooltips/CodeIntelTooltip'
 import { positionToOffset, preciseOffsetAtCoords, uiPositionToOffset } from '../utils'
 
 import { preloadDefinition } from './definition'

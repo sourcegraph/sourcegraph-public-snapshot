@@ -3,7 +3,7 @@ import * as React from 'react'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Code, Text, Tooltip } from '@sourcegraph/wildcard'
 
-import { MirrorRepositoryInfoFields } from '../../graphql-operations'
+import type { MirrorRepositoryInfoFields } from '../../graphql-operations'
 import { prettyBytesBigint } from '../../util/prettyBytesBigint'
 
 export const RepoMirrorInfo: React.FunctionComponent<

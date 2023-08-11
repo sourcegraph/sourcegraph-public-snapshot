@@ -1,6 +1,6 @@
 import '@sourcegraph/branded'
 
-import { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react'
 
 import { Container } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
@@ -10,7 +10,7 @@ import 'storybook-addon-designs'
 import { useEffect, useState } from 'react'
 
 import { UpdateInfoContent } from './UpdateInfoContent'
-import { UpdateInfo } from './updater'
+import type { UpdateInfo } from './updater'
 
 const meta: Meta<typeof UpdateInfoContent> = {
     title: 'cody-ui/Updater/Content',
@@ -114,7 +114,7 @@ export const CheckNow: Story = {
 
 export const ReleaseDetails: Story = {
     render: function Render() {
-        const [state, setState] = useState<UpdateInfo>({
+        const [state] = useState<UpdateInfo>({
             stage: 'IDLE',
             hasNewVersion: true,
             version: '1.0.0',

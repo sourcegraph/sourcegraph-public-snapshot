@@ -2,15 +2,15 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
-import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
+import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import { type FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import {
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type {
     BuildSearchQueryURLParameters,
     QueryState,
     SearchContextProps,
@@ -18,13 +18,13 @@ import {
     SubmitSearchParameters,
 } from '@sourcegraph/shared/src/search'
 import {
-    AggregateStreamingSearchResults,
+    type AggregateStreamingSearchResults,
     getMatchUrl,
     getRevision,
-    SearchMatch,
+    type SearchMatch,
 } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { CommitSearchResult } from '../components/CommitSearchResult'
 import { FileContentSearchResult } from '../components/FileContentSearchResult'

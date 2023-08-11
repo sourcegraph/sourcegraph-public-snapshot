@@ -1,7 +1,7 @@
-import { Context } from '../types'
+import type { Context } from '../types'
 
 import { TokenType } from './lexer'
-import { ExpressionNode, Parser, TemplateParser } from './parser'
+import { type ExpressionNode, Parser, TemplateParser } from './parser'
 
 /**
  * A parsed context expression (that can evaluate to anything)

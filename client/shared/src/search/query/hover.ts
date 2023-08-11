@@ -1,22 +1,22 @@
-import * as Monaco from 'monaco-editor'
+import type * as Monaco from 'monaco-editor'
 
 import {
     decorate,
-    DecoratedToken,
-    MetaRegexp,
+    type DecoratedToken,
+    type MetaRegexp,
     MetaRegexpKind,
-    MetaRevision,
+    type MetaRevision,
     MetaGitRevision,
     MetaSourcegraphRevision,
-    MetaStructural,
+    type MetaStructural,
     MetaStructuralKind,
-    MetaSelector,
+    type MetaSelector,
     MetaSelectorKind,
-    MetaPredicate,
+    type MetaPredicate,
 } from './decoratedToken'
 import { resolveFilter } from './filters'
 import { toMonacoRange } from './monaco'
-import { Token } from './token'
+import type { Token } from './token'
 
 const toRegexpHover = (token: MetaRegexp): string => {
     switch (token.kind) {

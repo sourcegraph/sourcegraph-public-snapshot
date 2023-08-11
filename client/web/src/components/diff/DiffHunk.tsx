@@ -7,7 +7,7 @@ import { useLocation } from 'react-router-dom'
 
 import { createLinkUrl, Link } from '@sourcegraph/wildcard'
 
-import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
+import { DiffHunkLineType, type FileDiffHunkFields } from '../../graphql-operations'
 
 import { DiffBoundary } from './DiffBoundary'
 

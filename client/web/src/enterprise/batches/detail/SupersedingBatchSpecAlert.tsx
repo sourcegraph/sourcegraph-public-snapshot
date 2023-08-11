@@ -6,7 +6,7 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
-import { SupersedingBatchSpecFields } from '../../../graphql-operations'
+import type { SupersedingBatchSpecFields } from '../../../graphql-operations'
 
 export interface SupersedingBatchSpecAlertProps {
     spec: SupersedingBatchSpecFields | null

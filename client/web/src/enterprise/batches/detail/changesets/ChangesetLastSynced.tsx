@@ -6,7 +6,7 @@ import { formatDistance, isBefore, parseISO } from 'date-fns'
 import { isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner, Icon, Tooltip, Button } from '@sourcegraph/wildcard'
 
-import { ExternalChangesetFields, HiddenExternalChangesetFields } from '../../../../graphql-operations'
+import type { ExternalChangesetFields, HiddenExternalChangesetFields } from '../../../../graphql-operations'
 import { syncChangeset } from '../backend'
 
 import styles from './ChangesetLastSynced.module.scss'

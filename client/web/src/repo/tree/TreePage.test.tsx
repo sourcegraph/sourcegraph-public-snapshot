@@ -6,10 +6,10 @@ import sinon from 'sinon'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { AuthenticatedUser } from '../../auth'
-import { RepositoryFields, RepositoryType } from '../../graphql-operations'
+import type { AuthenticatedUser } from '../../auth'
+import { type RepositoryFields, RepositoryType } from '../../graphql-operations'
 
-import { Props, TreePage } from './TreePage'
+import { type Props, TreePage } from './TreePage'
 
 describe('TreePage', () => {
     afterEach(cleanup)

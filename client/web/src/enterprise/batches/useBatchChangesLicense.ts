@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 
 import { useQuery } from '@sourcegraph/http-client'
 
-import { GetLicenseAndUsageInfoResult, GetLicenseAndUsageInfoVariables } from '../../graphql-operations'
+import type { GetLicenseAndUsageInfoResult, GetLicenseAndUsageInfoVariables } from '../../graphql-operations'
 
 import { GET_LICENSE_AND_USAGE_INFO } from './list/backend'
 

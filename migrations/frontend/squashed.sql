@@ -451,6 +451,66 @@ CREATE FUNCTION invalidate_session_for_userid_on_password_change() RETURNS trigg
     END;
 $$;
 
+CREATE FUNCTION iscodyactiveevent(name text) RETURNS boolean
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
+BEGIN
+  RETURN
+    (name LIKE '%%cody%%' OR name LIKE '%%Cody%%')
+    AND name NOT IN (
+        '%completion:started%',
+        '%completion:suggested%',
+        '%cta%',
+        '%Cta%',
+        'CodyVSCodeExtension:CodySavedLogin:executed',
+        'web:codyChat:tryOnPublicCode',
+        'web:codyEditorWidget:viewed',
+        'web:codyChat:pageViewed',
+        'CodyConfigurationPageViewed',
+        'ClickedOnTryCodySearchCTA',
+        'TryCodyWebOnboardingDisplayed',
+        'AboutGetCodyPopover',
+        'TryCodyWeb',
+        'CodySurveyToastViewed',
+        'SiteAdminCodyPageViewed',
+        'CodyUninstalled',
+        'SpeakToACodyEngineerCTA'
+    );
+END;
+$$;
+
+CREATE FUNCTION iscodyexplanationevent(name text) RETURNS boolean
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
+BEGIN
+  RETURN name = ANY(ARRAY[
+    'CodyVSCodeExtension:recipe:explain-code-high-level:executed',
+    'CodyVSCodeExtension:recipe:explain-code-detailed:executed',
+    'CodyVSCodeExtension:recipe:find-code-smells:executed',
+    'CodyVSCodeExtension:recipe:git-history:executed',
+    'CodyVSCodeExtension:recipe:rate-code:executed'
+  ]);
+END;
+$$;
+
+CREATE FUNCTION iscodygenerationevent(name text) RETURNS boolean
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
+BEGIN
+  RETURN name = ANY(ARRAY[
+    'CodyVSCodeExtension:recipe:rewrite-to-functional:executed',
+    'CodyVSCodeExtension:recipe:improve-variable-names:executed',
+    'CodyVSCodeExtension:recipe:replace:executed',
+    'CodyVSCodeExtension:recipe:generate-docstring:executed',
+    'CodyVSCodeExtension:recipe:generate-unit-test:executed',
+    'CodyVSCodeExtension:recipe:rewrite-functional:executed',
+    'CodyVSCodeExtension:recipe:code-refactor:executed',
+    'CodyVSCodeExtension:recipe:fixup:executed',
+	'CodyVSCodeExtension:recipe:translate-to-language:executed'
+  ]);
+END;
+$$;
+
 CREATE FUNCTION merge_audit_log_transitions(internal hstore, arrayhstore hstore[]) RETURNS hstore
     LANGUAGE plpgsql IMMUTABLE
     AS $$
@@ -5865,6 +5925,12 @@ CREATE INDEX discussion_threads_target_repo_repo_id_path_idx ON discussion_threa
 CREATE INDEX event_logs_anonymous_user_id ON event_logs USING btree (anonymous_user_id);
 
 CREATE UNIQUE INDEX event_logs_export_allowlist_event_name_idx ON event_logs_export_allowlist USING btree (event_name);
+
+CREATE INDEX event_logs_name_is_cody_active_event ON event_logs USING btree (iscodyactiveevent(name));
+
+CREATE INDEX event_logs_name_is_cody_explanation_event ON event_logs USING btree (iscodyexplanationevent(name));
+
+CREATE INDEX event_logs_name_is_cody_generation_event ON event_logs USING btree (iscodygenerationevent(name));
 
 CREATE INDEX event_logs_name_timestamp ON event_logs USING btree (name, "timestamp" DESC);
 

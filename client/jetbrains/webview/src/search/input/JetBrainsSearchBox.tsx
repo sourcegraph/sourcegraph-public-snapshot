@@ -5,17 +5,17 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { IEditor, LazyQueryInput } from '@sourcegraph/branded'
+import { type IEditor, LazyQueryInput } from '@sourcegraph/branded'
 import { SearchContextDropdown } from '@sourcegraph/branded/src/search-ui/input/SearchContextDropdown'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/shared/src/search'
-import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/shared/src/search'
+import type { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { Search } from '../jetbrains-icons/Search'
 
-import { JetBrainsToggles, JetBrainsTogglesProps } from './JetBrainsToggles'
+import { JetBrainsToggles, type JetBrainsTogglesProps } from './JetBrainsToggles'
 
 import styles from './JetBrainsSearchBox.module.scss'
 

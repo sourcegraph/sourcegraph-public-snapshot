@@ -63,7 +63,8 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	var resp protocol.CreateCommitFromPatchResponse
 
 	repo := string(protocol.NormalizeRepo(req.Repo))
-	repoGitDir := filepath.Join(s.ReposDir, repo, ".git")
+	repoDir := filepath.Join(s.ReposDir, repo)
+	repoGitDir := filepath.Join(repoDir, ".git")
 	if _, err := os.Stat(repoGitDir); os.IsNotExist(err) {
 		repoGitDir = filepath.Join(s.ReposDir, repo)
 		if _, err := os.Stat(repoGitDir); os.IsNotExist(err) {
@@ -130,7 +131,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}()
 
 	// Ensure tmp directory exists
-	tmpRepoDir, err := s.tempDir("patch-repo-")
+	tmpRepoDir, err := tempDir(s.ReposDir, "patch-repo-")
 	if err != nil {
 		resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: make tmp repo"))
 		return http.StatusInternalServerError, resp
@@ -144,7 +145,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	// Temporary logging command wrapper
 	prefix := fmt.Sprintf("%d %s ", atomic.AddUint64(&patchID, 1), repo)
 	run := func(cmd *exec.Cmd, reason string) ([]byte, error) {
-		if !gitdomain.IsAllowedGitCmd(logger, cmd.Args[1:]) {
+		if !gitdomain.IsAllowedGitCmd(logger, cmd.Args[1:], repoDir) {
 			return nil, errors.New("command not on allow list")
 		}
 
@@ -430,7 +431,7 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 	p4client := strings.TrimPrefix(req.TargetRef, "refs/heads/")
 
 	// do all work in (another) temporary directory
-	tmpClientDir, err := s.tempDir("perforce-client-")
+	tmpClientDir, err := tempDir(s.ReposDir, "perforce-client-")
 	if err != nil {
 		return "", errors.Wrap(err, "gitserver: make tmp repo for Perforce client")
 	}

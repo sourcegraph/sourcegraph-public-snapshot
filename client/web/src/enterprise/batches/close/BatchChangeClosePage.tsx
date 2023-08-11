@@ -4,21 +4,21 @@ import { subDays } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { useParams } from 'react-router-dom'
 
-import { ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { CreatedByAndUpdatedByInfoByline } from '../../../components/Byline/CreatedByAndUpdatedByInfoByline'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
-import { BatchChangeChangesetsResult, Scalars } from '../../../graphql-operations'
+import type { BatchChangeChangesetsResult, Scalars } from '../../../graphql-operations'
 import {
-    queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
-    queryChangesets as _queryChangesets,
+    type queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
+    type queryChangesets as _queryChangesets,
     fetchBatchChangeByNamespace as _fetchBatchChangeByNamespace,
 } from '../detail/backend'
 
-import { closeBatchChange as _closeBatchChange } from './backend'
+import type { closeBatchChange as _closeBatchChange } from './backend'
 import { BatchChangeCloseAlert } from './BatchChangeCloseAlert'
 import { BatchChangeCloseChangesetsList } from './BatchChangeCloseChangesetsList'
 

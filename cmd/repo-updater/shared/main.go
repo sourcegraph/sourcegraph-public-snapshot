@@ -203,7 +203,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	routines = append(routines, syncer.Routines(ctx, store, repos.RunOptions{
 		EnqueueInterval: repos.ConfRepoListUpdateInterval,
-		IsCloud:         envvar.SourcegraphDotComMode(),
+		IsDotCom:        envvar.SourcegraphDotComMode(),
 		MinSyncInterval: repos.ConfRepoListUpdateInterval,
 	})...)
 

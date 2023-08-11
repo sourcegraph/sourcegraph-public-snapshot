@@ -1,10 +1,10 @@
-import React, { FC, useState, useEffect, useMemo, useCallback, ReactNode } from 'react'
+import React, { type FC, useState, useEffect, useMemo, useCallback, type ReactNode } from 'react'
 
 import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { sortBy } from 'lodash'
 import { useLocation } from 'react-router-dom'
-import { Unsubscribable } from 'rxjs'
+import type { Unsubscribable } from 'rxjs'
 
 import { isDefined } from '@sourcegraph/common'
 import { Link, Icon } from '@sourcegraph/wildcard'

@@ -8,9 +8,9 @@ const pageSize = 20
 export const load: PageLoad = async ({ url, parent }) => {
     const afterDate = url.searchParams.get('after') ?? ''
     const { first, last, before, after } = getPaginationParams(url.searchParams, pageSize)
-    const { resolvedRevision, graphqlClient } = await parent()
+    const { resolvedRevision } = await parent()
 
-    const contributors = fetchContributors(graphqlClient, {
+    const contributors = fetchContributors({
         afterDate,
         repo: resolvedRevision.repo.id,
         revisionRange: '',

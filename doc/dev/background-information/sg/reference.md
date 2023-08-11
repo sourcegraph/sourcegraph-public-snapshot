@@ -263,7 +263,6 @@ This command is useful when:
 
 Supported run types when providing an argument for 'sg ci build [runtype]':
 
-* wolfi - Wolfi Exp Branch
 * _manually_triggered_external - Manually Triggered External Build
 * main-dry-run - Main dry run
 * docker-images-patch - Patch image

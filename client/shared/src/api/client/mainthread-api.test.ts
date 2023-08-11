@@ -1,16 +1,16 @@
 import { EMPTY, of, Subject } from 'rxjs'
 import sinon from 'sinon'
 
-import { getGraphQLClient as getGraphQLClientBase, SuccessGraphQLResult } from '@sourcegraph/http-client'
+import { getGraphQLClient as getGraphQLClientBase, type SuccessGraphQLResult } from '@sourcegraph/http-client'
 
 import { cache } from '../../backend/apolloCache'
-import { PlatformContext } from '../../platform/context'
-import { SettingsCascade } from '../../settings/settings'
-import { FlatExtensionHostAPI } from '../contract'
+import type { PlatformContext } from '../../platform/context'
+import type { SettingsCascade } from '../../settings/settings'
+import type { FlatExtensionHostAPI } from '../contract'
 import { pretendRemote } from '../util'
 
 import { initMainThreadAPI } from './mainthread-api'
-import { SettingsEdit } from './services/settings'
+import type { SettingsEdit } from './services/settings'
 
 describe('MainThreadAPI', () => {
     // TODO(tj): commands, notifications

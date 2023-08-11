@@ -6,7 +6,7 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import { SearchResultStyles as styles, LegacyResultContainer } from '@sourcegraph/branded'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { getRepoMatchLabel, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
+import { getRepoMatchLabel, type RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'

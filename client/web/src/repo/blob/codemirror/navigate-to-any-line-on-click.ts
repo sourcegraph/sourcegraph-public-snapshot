@@ -1,5 +1,12 @@
-import { Extension, RangeSetBuilder } from '@codemirror/state'
-import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import { type Extension, RangeSetBuilder } from '@codemirror/state'
+import {
+    Decoration,
+    type DecorationSet,
+    EditorView,
+    type PluginValue,
+    ViewPlugin,
+    type ViewUpdate,
+} from '@codemirror/view'
 
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 

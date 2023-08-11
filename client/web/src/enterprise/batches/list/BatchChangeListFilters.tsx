@@ -1,4 +1,4 @@
-import { FC, useCallback, useId, useState } from 'react'
+import { type FC, useCallback, useId, useState } from 'react'
 
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
@@ -15,7 +15,7 @@ import {
     MultiComboboxOption,
 } from '@sourcegraph/wildcard'
 
-import { BatchChangeState } from '../../../graphql-operations'
+import type { BatchChangeState } from '../../../graphql-operations'
 
 import styles from './BatchChangeListFilter.module.scss'
 

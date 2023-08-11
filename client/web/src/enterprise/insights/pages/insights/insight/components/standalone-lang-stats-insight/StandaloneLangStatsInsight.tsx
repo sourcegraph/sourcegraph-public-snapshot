@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 
 import classNames from 'classnames'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ParentSize, ErrorAlert } from '@sourcegraph/wildcard'
 
 import {
@@ -12,7 +12,7 @@ import {
     InsightCardHeader,
     InsightCardLoading,
 } from '../../../../../components'
-import { LangStatsInsight } from '../../../../../core'
+import type { LangStatsInsight } from '../../../../../core'
 import { LivePreviewStatus, useLivePreviewLangStatsInsight } from '../../../../../core/hooks/live-preview-insight'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../../pings'
 import { StandaloneInsightContextMenu } from '../context-menu/StandaloneInsightContextMenu'

@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import '../SourcegraphWebApp.scss'
 
@@ -7,12 +7,12 @@ import { logger } from '@sourcegraph/common'
 import { LegacySourcegraphWebApp } from '../LegacySourcegraphWebApp'
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 import {
-    StaticAppConfig,
-    StaticHardcodedAppConfig,
-    StaticInjectedAppConfig,
+    type StaticAppConfig,
+    type StaticHardcodedAppConfig,
+    type StaticInjectedAppConfig,
     windowContextConfig,
 } from '../staticAppConfig'
-import { AppShellInit } from '../storm/app-shell-init'
+import type { AppShellInit } from '../storm/app-shell-init'
 import { routes } from '../storm/routes'
 
 import { APP_ROUTES } from './app/routes'

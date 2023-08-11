@@ -20,7 +20,7 @@ import {
 
 import { CopyableText } from '../../../../components/CopyableText'
 import { LoaderButton } from '../../../../components/LoaderButton'
-import { ProductLicenseFields, RevokeLicenseResult, RevokeLicenseVariables } from '../../../../graphql-operations'
+import type { ProductLicenseFields, RevokeLicenseResult, RevokeLicenseVariables } from '../../../../graphql-operations'
 import { isProductLicenseExpired } from '../../../../productSubscription/helpers'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductLicenseValidity } from '../../../dotcom/productSubscriptions/ProductLicenseValidity'

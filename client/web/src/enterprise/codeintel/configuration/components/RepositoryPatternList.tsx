@@ -1,4 +1,4 @@
-import { FunctionComponent, useEffect, useMemo, useState } from 'react'
+import { type FunctionComponent, useEffect, useMemo, useState } from 'react'
 
 import { mdiDelete, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'

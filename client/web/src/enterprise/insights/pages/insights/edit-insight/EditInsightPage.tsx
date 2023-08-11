@@ -1,4 +1,4 @@
-import { FC, useContext, useMemo } from 'react'
+import { type FC, useContext, useMemo } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { useParams } from 'react-router-dom'

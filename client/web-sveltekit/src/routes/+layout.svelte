@@ -47,8 +47,8 @@
         settings,
         isLightTheme,
         temporarySettingsStorage,
-        featureFlags: createFeatureFlagStore(data.featureFlags, () => fetchEvaluatedFeatureFlags(data.graphqlClient)),
-        client: data.graphqlClient,
+        featureFlags: createFeatureFlagStore(data.featureFlags, fetchEvaluatedFeatureFlags),
+        client: readable(data.graphqlClient),
     })
 
     // Update stores when data changes

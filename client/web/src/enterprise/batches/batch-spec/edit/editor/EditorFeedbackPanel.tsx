@@ -6,7 +6,7 @@ import { compact } from 'lodash'
 
 import { Icon, H4, ErrorMessage } from '@sourcegraph/wildcard'
 
-import { BatchSpecContextErrors } from '../../BatchSpecContext'
+import type { BatchSpecContextErrors } from '../../BatchSpecContext'
 
 import styles from './EditorFeedbackPanel.module.scss'
 

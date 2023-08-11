@@ -1,11 +1,11 @@
-import { FC, useMemo } from 'react'
+import { type FC, useMemo } from 'react'
 
 import { mdiInformation } from '@mdi/js'
 import { useLocation } from 'react-router-dom'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, Alert, H2, H3, Icon, Text, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ChecklistInfo } from '../../site-admin/setup-checklist/ChecklistInfo'
@@ -14,7 +14,7 @@ import { PageTitle } from '../PageTitle'
 
 import { AddExternalServicePage } from './AddExternalServicePage'
 import { ExternalServiceCard } from './ExternalServiceCard'
-import { allExternalServices, AddExternalServiceOptions, gitHubAppConfig } from './externalServices'
+import { allExternalServices, type AddExternalServiceOptions, gitHubAppConfig } from './externalServices'
 
 import styles from './AddExternalServicesPage.module.scss'
 

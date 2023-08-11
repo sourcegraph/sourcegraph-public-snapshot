@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
@@ -6,7 +6,7 @@ import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../components/WebStory'
-import { RoleFields } from '../../../../graphql-operations'
+import type { RoleFields } from '../../../../graphql-operations'
 import { mockPermissions } from '../../../rbac/mock'
 import { GET_ALL_ROLES_AND_USER_ROLES, SET_ROLES_FOR_USER } from '../backend'
 

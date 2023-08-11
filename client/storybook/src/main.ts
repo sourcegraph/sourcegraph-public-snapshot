@@ -1,11 +1,11 @@
 import path from 'path'
 
-import { Options, StorybookConfig } from '@storybook/core-common'
+import type { Options, StorybookConfig } from '@storybook/core-common'
 import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin'
 import { remove } from 'lodash'
 import signale from 'signale'
 import SpeedMeasurePlugin from 'speed-measure-webpack-plugin'
-import { Configuration, DefinePlugin, DllReferencePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
+import { type Configuration, DefinePlugin, DllReferencePlugin, ProgressPlugin, type RuleSetRule } from 'webpack'
 
 import {
     getBabelLoader,

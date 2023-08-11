@@ -4,7 +4,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { namespaceAreaRoutes } from '../../namespaces/routes'
 
-import { UserAreaRoute } from './UserArea'
+import type { UserAreaRoute } from './UserArea'
 
 const UserSettingsArea = lazyComponent(() => import('../settings/UserSettingsArea'), 'UserSettingsArea')
 const UserProfile = lazyComponent(() => import('../profile/UserProfile'), 'UserProfile')

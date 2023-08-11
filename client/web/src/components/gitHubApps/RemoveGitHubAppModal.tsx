@@ -3,7 +3,7 @@ import React, { useCallback } from 'react'
 import { useMutation } from '@sourcegraph/http-client'
 import { Button, Modal, Text, ErrorAlert, H3, AnchorLink, Alert } from '@sourcegraph/wildcard'
 
-import { DeleteGitHubAppResult, DeleteGitHubAppVariables, GitHubAppByIDFields } from '../../graphql-operations'
+import type { DeleteGitHubAppResult, DeleteGitHubAppVariables, GitHubAppByIDFields } from '../../graphql-operations'
 import { LoaderButton } from '../LoaderButton'
 
 import { DELETE_GITHUB_APP_BY_ID_QUERY } from './backend'

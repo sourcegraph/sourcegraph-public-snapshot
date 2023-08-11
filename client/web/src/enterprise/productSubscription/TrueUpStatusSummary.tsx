@@ -4,7 +4,7 @@ import { numberWithCommas } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/wildcard'
 
 import { SingleValueCard } from '../../components/SingleValueCard'
-import { ProductLicenseInfoResult } from '../../graphql-operations'
+import type { ProductLicenseInfoResult } from '../../graphql-operations'
 import { formatUserCount } from '../../productSubscription/helpers'
 
 import styles from './TrueUpStatusSummary.module.scss'

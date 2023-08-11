@@ -1,12 +1,12 @@
-import { FunctionComponent, HTMLAttributes } from 'react'
+import type { FunctionComponent, HTMLAttributes } from 'react'
 
 import { mdiViewDashboard } from '@mdi/js'
 import classNames from 'classnames'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon, Link, Text } from '@sourcegraph/wildcard'
 
-import { InsightDashboardReference } from '../../../../../core'
+import type { InsightDashboardReference } from '../../../../../core'
 
 import styles from './StandaloneInsightDashboardPills.module.scss'
 

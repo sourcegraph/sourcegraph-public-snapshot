@@ -1,4 +1,4 @@
-import { Category } from './utils/get-grouped-categories'
+import type { Category } from './utils/get-grouped-categories'
 
 export interface ActiveSegment<Datum> {
     category: Category<Datum>

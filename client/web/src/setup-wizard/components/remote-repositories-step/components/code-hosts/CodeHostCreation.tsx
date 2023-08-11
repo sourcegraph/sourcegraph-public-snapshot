@@ -1,20 +1,20 @@
-import { FC, ReactNode, useMemo, useEffect } from 'react'
+import { type FC, type ReactNode, useMemo, useEffect } from 'react'
 
-import { Reference } from '@apollo/client'
+import type { Reference } from '@apollo/client'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Button, FormChangeEvent, H4, Link, useLocalStorage } from '@sourcegraph/wildcard'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Alert, Button, type FormChangeEvent, H4, Link, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../../../components/externalServices/externalServices'
 import { LoaderButton } from '../../../../../components/LoaderButton'
-import { AddRemoteCodeHostResult, AddRemoteCodeHostVariables } from '../../../../../graphql-operations'
+import type { AddRemoteCodeHostResult, AddRemoteCodeHostVariables } from '../../../../../graphql-operations'
 import { ADD_CODE_HOST, CODE_HOST_FRAGMENT } from '../../../../queries'
 import { getCodeHostKindFromURLParam } from '../../helpers'
 
-import { CodeHostConnectFormFields, CodeHostJSONForm, CodeHostJSONFormState } from './common'
+import { type CodeHostConnectFormFields, CodeHostJSONForm, type CodeHostJSONFormState } from './common'
 import { GithubConnectView } from './github/GithubConnectView'
 import { getRepositoriesSettings } from './github/helpers'
 

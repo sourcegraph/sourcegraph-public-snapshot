@@ -1,14 +1,14 @@
 import { startCase } from 'lodash'
 import * as Monaco from 'monaco-editor'
-import { Omit } from 'utility-types'
+import type { Omit } from 'utility-types'
 
-import { SymbolKind } from '../../graphql-operations'
-import { SearchMatch } from '../stream'
+import type { SymbolKind } from '../../graphql-operations'
+import type { SearchMatch } from '../stream'
 
 import { createFilterSuggestions, PREDICATE_REGEX, regexInsertText, repositoryInsertText } from './completion-utils'
-import { FilterType, resolveFilter, FILTERS, ResolvedFilter } from './filters'
+import { type FilterType, resolveFilter, FILTERS, type ResolvedFilter } from './filters'
 import { toMonacoSingleLineRange } from './monaco'
-import { CharacterRange, Filter, Pattern, Token, Whitespace } from './token'
+import type { CharacterRange, Filter, Pattern, Token, Whitespace } from './token'
 
 export const repositoryCompletionItemKind = Monaco.languages.CompletionItemKind.Color
 const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Issue

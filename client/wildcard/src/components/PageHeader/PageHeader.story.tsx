@@ -1,5 +1,5 @@
 import { mdiMagnify, mdiPlus, mdiPuzzleOutline } from '@mdi/js'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '../../stories/BrandedStory'
 import { Button } from '../Button'

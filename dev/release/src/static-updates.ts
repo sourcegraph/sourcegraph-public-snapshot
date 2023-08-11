@@ -1,7 +1,7 @@
-import { SemVer } from 'semver'
+import type { SemVer } from 'semver'
 
-import { ReleaseConfig, setAWSExecutorVersion, setGoogleExecutorVersion, setSrcCliVersion } from './config'
-import { cloneRepo, createChangesets, Edit, getAuthenticatedGitHubClient, releaseBlockerLabel } from './github'
+import { type ReleaseConfig, setAWSExecutorVersion, setGoogleExecutorVersion, setSrcCliVersion } from './config'
+import { cloneRepo, createChangesets, type Edit, getAuthenticatedGitHubClient, releaseBlockerLabel } from './github'
 import {
     nextAWSExecutorVersionInputWithAutodetect,
     nextGoogleExecutorVersionInputWithAutodetect,

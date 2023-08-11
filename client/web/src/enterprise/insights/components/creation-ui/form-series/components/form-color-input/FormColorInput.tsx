@@ -1,4 +1,4 @@
-import React, { ChangeEventHandler, memo } from 'react'
+import React, { type ChangeEventHandler, memo } from 'react'
 
 import classNames from 'classnames'
 import { startCase } from 'lodash'

@@ -1,9 +1,8 @@
 import { redirect, error, type Redirect } from '@sveltejs/kit'
 
 import { asError, type ErrorLike } from '$lib/common'
-import { resolveRepoRevision } from '$lib/loader/repo'
+import { resolveRepoRevision, type ResolvedRevision } from '$lib/repo/api/repo'
 import { isRepoSeeOtherErrorLike, isRevisionNotFoundErrorLike, parseRepoRevision } from '$lib/shared'
-import type { RepoResolvedRevision } from '$lib/web'
 
 import type { LayoutLoad } from './$types'
 
@@ -14,10 +13,10 @@ export const load: LayoutLoad = async ({ params, url, depends }) => {
 
     const { repoName, revision } = parseRepoRevision(params.repo)
 
-    let resolvedRevisionOrError: RepoResolvedRevision | ErrorLike
+    let resolvedRevisionOrError: ResolvedRevision | ErrorLike
 
     try {
-        resolvedRevisionOrError = await resolveRepoRevision({ repoName, revision }).toPromise()
+        resolvedRevisionOrError = await resolveRepoRevision({ repoName, revision })
     } catch (repoError: unknown) {
         const redirect = isRepoSeeOtherErrorLike(repoError)
 

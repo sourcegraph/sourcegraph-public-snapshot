@@ -1,4 +1,4 @@
-import { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, Story, DecoratorFn } from '@storybook/react'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'

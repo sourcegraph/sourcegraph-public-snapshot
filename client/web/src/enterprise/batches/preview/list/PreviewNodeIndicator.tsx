@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { ChangesetApplyPreviewFields, ChangesetSpecOperation } from '../../../../graphql-operations'
+import { type ChangesetApplyPreviewFields, ChangesetSpecOperation } from '../../../../graphql-operations'
 import { ChangesetAddedIcon, ChangesetModifiedIcon, ChangesetRemovedIcon } from '../icons'
 
 import styles from './PreviewNodeIndicator.module.scss'

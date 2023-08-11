@@ -1,9 +1,9 @@
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import {
-    CodeMonitorFields,
+    type CodeMonitorFields,
     EventStatus,
-    ListCodeMonitors,
-    MonitorTriggerEventsResult,
+    type ListCodeMonitors,
+    type MonitorTriggerEventsResult,
 } from '../../../graphql-operations'
 
 export const mockUser: AuthenticatedUser = {

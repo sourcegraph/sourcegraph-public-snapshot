@@ -19,11 +19,11 @@ import {
     Link,
 } from '@sourcegraph/wildcard'
 
-import { FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
-import { PackageRepoReferenceKind, PackageRepoMatchFields } from '../../../graphql-operations'
+import type { FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
+import type { PackageRepoReferenceKind, PackageRepoMatchFields } from '../../../graphql-operations'
 import { useMatchingPackages } from '../hooks/useMatchingPackages'
 import { useMatchingVersions } from '../hooks/useMatchingVersions'
-import { BlockType } from '../modal-content/AddPackageFilterModalContent'
+import type { BlockType } from '../modal-content/AddPackageFilterModalContent'
 
 import { FilterPackagesActions } from './FilterPackagesActions'
 

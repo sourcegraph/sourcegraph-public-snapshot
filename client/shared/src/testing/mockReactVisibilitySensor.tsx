@@ -1,6 +1,6 @@
 import React from 'react'
 
-import _VisibilitySensor from 'react-visibility-sensor'
+import type _VisibilitySensor from 'react-visibility-sensor'
 
 type VisibilitySensorPropsType = React.ComponentProps<typeof _VisibilitySensor>
 

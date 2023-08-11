@@ -1,8 +1,8 @@
-import { Context } from 'mocha'
+import type { Context } from 'mocha'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
-import { Driver } from '@sourcegraph/shared/src/testing/driver'
+import type { Driver } from '@sourcegraph/shared/src/testing/driver'
 
 const { gitHubDotComToken } = getConfig('gitHubDotComToken', 'sourcegraphBaseUrl')
 

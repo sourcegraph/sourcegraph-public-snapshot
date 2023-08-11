@@ -1,4 +1,4 @@
-import { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, Story, DecoratorFn } from '@storybook/react'
 import { of } from 'rxjs'
 
 import { BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
@@ -6,7 +6,7 @@ import { H3 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../components/WebStory'
 import { MultiSelectContextProvider } from '../../MultiSelectContext'
-import {
+import type {
     queryAllChangesetIDs as _queryAllChangesetIDs,
     queryAvailableBulkOperations as _queryAvailableBulkOperations,
 } from '../backend'
