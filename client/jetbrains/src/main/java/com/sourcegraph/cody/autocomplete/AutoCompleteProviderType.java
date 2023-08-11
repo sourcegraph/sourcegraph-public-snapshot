@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 
 public enum AutoCompleteProviderType {
   ANTHROPIC,
+  UNSTABLE_FIREWORKS,
   UNSTABLE_CODEGEN,
   UNSTABLE_AZURE_OPENAI;
 
