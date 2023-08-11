@@ -1,7 +1,10 @@
 .external-service-group {
     &__container {
         border: 1px solid var(--border-color-2);
-        margin-bottom: 1rem;
+
+        &:not(:last-child) {
+            margin-bottom: 1rem;
+        }
     }
 
     &__link {

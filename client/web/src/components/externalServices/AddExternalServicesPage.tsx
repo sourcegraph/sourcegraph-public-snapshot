@@ -79,6 +79,15 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
         return null
     }, [search, codeHostExternalServices.ghapp])
 
+    const allowedCodeHosts = useMemo(
+        () => computeAllowedCodehosts(codeHostExternalServices),
+        [codeHostExternalServices]
+    )
+    const servicesByGroup = useMemo(
+        () => computeExternalServicesGroup(codeHostExternalServices, allowedCodeHosts),
+        [codeHostExternalServices, allowedCodeHosts]
+    )
+
     if (externalService) {
         return (
             <AddExternalServicePage
@@ -90,18 +99,6 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
             />
         )
     }
-
-    const licenseInfo = window.context.licenseInfo
-    let allowedCodeHosts: AddExternalServiceOptions[] | null = null
-    if (licenseInfo && licenseInfo.currentPlan === 'business-0') {
-        allowedCodeHosts = [
-            codeHostExternalServices.github,
-            codeHostExternalServices.gitlabcom,
-            codeHostExternalServices.bitbucket,
-        ]
-    }
-
-    const servicesByGroup = computeExternalServicesGroup(codeHostExternalServices, allowedCodeHosts)
 
     return (
         <>
@@ -140,18 +137,18 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                     </>
                 )}
 
-                {Object.entries(servicesByGroup).map(([displayName, info], index) => (
+                {Object.values(servicesByGroup).map((serviceInfo, index) => (
                     <ExternalServiceGroup
                         // We ignore the index key rule here since the grouping doesn't have a
                         // unique identifier.
                         //
                         // eslint-disable-next-line react/no-array-index-key
-                        key={`${index}-${displayName}`}
-                        name={displayName}
-                        services={info.services}
-                        description={info.description}
-                        icon={info.icon}
-                        renderServiceIcon={info.renderServiceIcon}
+                        key={`${index}-${serviceInfo.label}`}
+                        name={serviceInfo.label}
+                        services={serviceInfo.services}
+                        description={serviceInfo.description}
+                        icon={serviceInfo.icon}
+                        renderIcon={serviceInfo.renderIcon}
                     />
                 ))}
 
@@ -159,7 +156,7 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                     <ExternalServiceGroup
                         name="Dependencies"
                         services={transformExternalServices(nonCodeHostExternalServices, allowedCodeHosts)}
-                        renderServiceIcon={true}
+                        renderIcon={true}
                     />
                 )}
             </Container>
@@ -209,42 +206,46 @@ const ExternalServicesPrivacyAlert: FC<ExternalServicesPrivacyAlertProps> = ({ d
 )
 
 interface ExternalServicesGroup {
+    label: string
     services: AddExternalServiceOptionsWithID[]
     icon: React.ComponentType<{ className?: string }>
     description: string
-    renderServiceIcon: boolean
+    renderIcon: boolean
 }
 
 type GroupedServiceDisplayName = 'GitHub' | 'GitLab' | 'Bitbucket' | 'Other code hosts'
 
 const computeExternalServicesGroup = (
     services: Record<string, AddExternalServiceOptions>,
-    allowedCodeHosts: AddExternalServiceOptions[] | null
+    allowedCodeHosts: Set<AddExternalServiceOptions> | null
 ): Record<GroupedServiceDisplayName, ExternalServicesGroup> => {
-    const groupedServices: Record<GroupedServiceDisplayName, ExternalServicesGroup> = {
-        GitHub: {
+    const groupedServices: Record<string, ExternalServicesGroup> = {
+        github: {
+            label: 'GitHub',
             services: [],
             icon: GithubIcon,
             description: 'Connect with repositories on GitHub',
-            renderServiceIcon: false,
+            renderIcon: false,
         },
-        GitLab: {
+        gitlab: {
+            label: 'GitLab',
             services: [],
             icon: GitLabIcon,
             description: 'Connect with repositories on GitLab',
-            renderServiceIcon: false,
+            renderIcon: false,
         },
-        Bitbucket: {
+        bitbucket: {
+            label: 'Bitbucket',
             services: [],
             icon: BitbucketIcon,
             description: 'Connect with repositories on Bitbucket',
-            renderServiceIcon: false,
+            renderIcon: false,
         },
-        'Other code hosts': { services: [], icon: GitIcon, description: '', renderServiceIcon: true },
+        other: { label: 'Other code hosts', services: [], icon: GitIcon, description: '', renderIcon: true },
     }
 
     for (const [serviceID, service] of Object.entries(services)) {
-        const isDisabled = Boolean(allowedCodeHosts && !allowedCodeHosts.includes(service))
+        const isDisabled = allowedCodeHosts?.has(service)
         const otherProps = isDisabled
             ? {
                   badge: 'enterprise',
@@ -253,17 +254,17 @@ const computeExternalServicesGroup = (
             : {}
         switch (service.kind) {
             case ExternalServiceKind.GITHUB:
-                groupedServices.GitHub.services.push({ ...service, serviceID, enabled: !isDisabled, ...otherProps })
+                groupedServices.github.services.push({ ...service, serviceID, enabled: !isDisabled, ...otherProps })
                 break
             case ExternalServiceKind.GITLAB:
-                groupedServices.GitLab.services.push({ ...service, serviceID, enabled: !isDisabled, ...otherProps })
+                groupedServices.gitlab.services.push({ ...service, serviceID, enabled: !isDisabled, ...otherProps })
                 break
             case ExternalServiceKind.BITBUCKETCLOUD:
             case ExternalServiceKind.BITBUCKETSERVER:
-                groupedServices.Bitbucket.services.push({ ...service, serviceID, enabled: !isDisabled, ...otherProps })
+                groupedServices.bitbucket.services.push({ ...service, serviceID, enabled: !isDisabled, ...otherProps })
                 break
             default:
-                groupedServices['Other code hosts'].services.push({
+                groupedServices.other.services.push({
                     ...service,
                     serviceID,
                     enabled: !isDisabled,
@@ -277,9 +278,24 @@ const computeExternalServicesGroup = (
 
 const transformExternalServices = (
     services: Record<string, AddExternalServiceOptions>,
-    allowedCodeHosts: AddExternalServiceOptions[] | null
+    allowedCodeHosts: Set<AddExternalServiceOptions> | null
 ): AddExternalServiceOptionsWithID[] =>
     Object.entries(services).map(([serviceID, service]) => {
-        const isDisabled = Boolean(allowedCodeHosts && !allowedCodeHosts.includes(service))
+        const isDisabled = !allowedCodeHosts?.has(service)
         return { ...service, serviceID, enabled: !isDisabled }
     })
+
+const computeAllowedCodehosts = (
+    codeHostExternalServices: Record<string, AddExternalServiceOptions>
+): Set<AddExternalServiceOptions> | null => {
+    const licenseInfo = window.context.licenseInfo
+    let allowedCodeHosts: Set<AddExternalServiceOptions> | null = null
+    if (licenseInfo && licenseInfo.currentPlan === 'business-0') {
+        allowedCodeHosts = new Set([
+            codeHostExternalServices.github,
+            codeHostExternalServices.gitlabcom,
+            codeHostExternalServices.bitbucket,
+        ])
+    }
+    return allowedCodeHosts
+}

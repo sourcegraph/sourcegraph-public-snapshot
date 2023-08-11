@@ -13,7 +13,7 @@ interface ExternalServiceGroupProps {
     name: string
     services: AddExternalServiceOptionsWithID[]
     description?: string
-    renderServiceIcon: boolean
+    renderIcon: boolean
 
     icon?: React.ComponentType<{ className?: string }>
 }
@@ -30,7 +30,7 @@ export const ExternalServiceGroup: FC<ExternalServiceGroupProps> = ({
     services,
     description,
     icon,
-    renderServiceIcon,
+    renderIcon,
 }) => {
     const [isOpen, setIsOpen] = useState<boolean>(true)
     const toggleIsOpen = (): void => setIsOpen(prevIsOpen => !prevIsOpen)
@@ -60,7 +60,7 @@ export const ExternalServiceGroup: FC<ExternalServiceGroupProps> = ({
                                 [styles.externalServiceGroupEnabledNode]: service.enabled,
                             })}
                         >
-                            <ExternalServiceGroupNode service={service} renderServiceIcon={renderServiceIcon} />
+                            <ExternalServiceGroupNode service={service} renderIcon={renderIcon} />
                         </li>
                     ))}
                 </ul>
@@ -71,10 +71,10 @@ export const ExternalServiceGroup: FC<ExternalServiceGroupProps> = ({
 
 interface ExternalServiceGroupNodeProps {
     service: AddExternalServiceOptionsWithID
-    renderServiceIcon: boolean
+    renderIcon: boolean
 }
 
-const ExternalServiceGroupNode: FC<ExternalServiceGroupNodeProps> = ({ service, renderServiceIcon }) => {
+const ExternalServiceGroupNode: FC<ExternalServiceGroupNodeProps> = ({ service, renderIcon }) => {
     const isServiceEnabled = service.enabled
     const children = (
         <div
@@ -83,7 +83,7 @@ const ExternalServiceGroupNode: FC<ExternalServiceGroupNodeProps> = ({ service, 
                 'py-2': !isServiceEnabled,
             })}
         >
-            {renderServiceIcon && <Icon inline={true} className="mb-0 mr-1" as={service.icon} aria-hidden={true} />}
+            {renderIcon && <Icon inline={true} className="mb-0 mr-1" as={service.icon} aria-hidden={true} />}
             <div className={styles.externalServiceGroupNodeDisplayName}>
                 <span>{service.title}</span>
                 {'  '}
