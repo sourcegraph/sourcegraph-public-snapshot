@@ -2,21 +2,19 @@ package com.sourcegraph.cody.autocomplete;
 
 import org.jetbrains.annotations.NotNull;
 
-/**
- * A class that stores the state and timing information of an autocompletion.
- */
-public class Autocompletion {
+/** A class that stores the state and timing information of an autocompletion. */
+public class AutocompleteTelemetry {
   private long completionTriggeredTimestampMs;
   private long completionDisplayedTimestampMs;
   private long completionHiddenTimestampMs;
 
-  public static @NotNull Autocompletion createAndMarkTriggered() {
-    var autocompletion = new Autocompletion();
+  public static @NotNull AutocompleteTelemetry createAndMarkTriggered() {
+    var autocompletion = new AutocompleteTelemetry();
     autocompletion.completionTriggeredTimestampMs = System.currentTimeMillis();
     return autocompletion;
   }
 
-  private Autocompletion() {}
+  private AutocompleteTelemetry() {}
 
   public void markCompletionDisplayed() {
     this.completionDisplayedTimestampMs = System.currentTimeMillis();

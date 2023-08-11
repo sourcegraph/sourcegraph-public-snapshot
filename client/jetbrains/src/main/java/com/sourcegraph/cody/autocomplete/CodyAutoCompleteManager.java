@@ -35,7 +35,7 @@ public class CodyAutoCompleteManager {
   // TODO: figure out how to avoid the ugly nested `Future<CompletableFuture<T>>` type.
   private final AtomicReference<Optional<Future<CompletableFuture<Void>>>> currentJob =
       new AtomicReference<>(Optional.empty());
-  private @Nullable Autocompletion currentAutocompletion = null;
+  private @Nullable AutocompleteTelemetry currentAutocompleteTelemetry = null;
 
   public static @NotNull CodyAutoCompleteManager getInstance() {
     return ApplicationManager.getApplication().getService(CodyAutoCompleteManager.class);
@@ -47,15 +47,15 @@ public class CodyAutoCompleteManager {
     Optional.ofNullable(editor.getProject())
         .ifPresent(
             p -> {
-              if (currentAutocompletion != null
-                  && currentAutocompletion.getStatus()
+              if (currentAutocompleteTelemetry != null
+                  && currentAutocompleteTelemetry.getStatus()
                       != AutocompletionStatus.TRIGGERED_NOT_DISPLAYED) {
-                currentAutocompletion.markCompletionHidden();
+                currentAutocompleteTelemetry.markCompletionHidden();
                 GraphQlLogger.logAutocompleteSuggestedEvent(
                     p,
-                    currentAutocompletion.getLatencyMs(),
-                    currentAutocompletion.getDisplayDurationMs());
-                currentAutocompletion = null;
+                    currentAutocompleteTelemetry.getLatencyMs(),
+                    currentAutocompleteTelemetry.getDisplayDurationMs());
+                currentAutocompleteTelemetry = null;
               }
             });
 
@@ -89,7 +89,7 @@ public class CodyAutoCompleteManager {
     }
 
     // Save autocompletion
-    currentAutocompletion = Autocompletion.createAndMarkTriggered();
+    currentAutocompleteTelemetry = AutocompleteTelemetry.createAndMarkTriggered();
 
     Project project = editor.getProject();
     if (project != null) {
@@ -187,8 +187,8 @@ public class CodyAutoCompleteManager {
                           /* Clear existing completions */
                           this.clearAutoCompleteSuggestions(editor);
 
-                          if (currentAutocompletion != null) {
-                            currentAutocompletion.markCompletionDisplayed();
+                          if (currentAutocompleteTelemetry != null) {
+                            currentAutocompleteTelemetry.markCompletionDisplayed();
                           }
 
                           /* Display autocomplete */
