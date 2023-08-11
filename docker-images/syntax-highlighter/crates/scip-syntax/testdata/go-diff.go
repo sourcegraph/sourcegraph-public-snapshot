@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"io"
 	"os"
 
 	"sourcegraph.com/sourcegraph/go-diff/diff"
