@@ -1,0 +1,116 @@
+extend type Mutation {
+    """
+    Telemetry mutations for "Event Logging Everywhere", aka a version 2 of
+    existing event-logging APIs.
+    """
+    telemetry: TelemetryMutation
+}
+
+type TelemetryMutation {
+    """
+    Log a single telemetry event.
+    """
+    logEvent(event: TelemetryEvent!): EmptyResponse
+    """
+    Log a batch of telemetry events.
+    """
+    logEvents(events: [TelemetryEvent!]): EmptyResponse
+}
+
+type TelemetryEvent {
+    """
+    Name of the event.
+    """
+    name: String!
+
+    """
+    Source client of the event.
+    """
+    client: TelemetryEventClient!
+
+    """
+    Parameters of the event.
+    """
+    parameters: TelemetryEventParameters!
+
+    """
+    Optional user associated with the event.
+    """
+    user: TelemetryEventUser
+
+    """
+    Optional marketing campaign tracking parameters.
+    """
+    marketingTracking: TelemetryEventMarketingTracking
+}
+
+enum TelemetryEventClient {
+    SERVER_WEB
+    APP_WEB
+    MARKETING_WEB
+
+    CHROME_SOURCEGRAPH
+    SAFARI_SOURCEGRAPH
+
+    VSCODE_CODY
+    VSCODE_SOURCEGRAPH
+
+    JETBRAINS_CODY
+
+    NEOVIM_CODY
+}
+
+type TelemetryEventParameters {
+    """
+    Version of the event parameters, used for indicating the "shape" of this
+    event's metadata.
+    """
+    version: Int!
+    """
+    Strictly typed metadata.
+    """
+    metadata: [TelemetryEventMetadata!]
+    """
+    Additional, arbitrarily-shaped metadata (JSON recommended). By default, this
+    metadata is assumed to be unsafe for export from an instance.
+    """
+    additionalMetadata: String
+}
+
+type TelemetryEventMetadata {
+    """
+    Metadata keys must come from a static set of predefined metadata keys.
+    """
+    key: TelemetryEventMetadataKey!
+    """
+    Numeric value associated with the key.
+    """
+    value: Int!
+}
+
+enum TelemetryEventMetadataKey {
+    UNKNOWN
+    # TODO Add allowlisted keys here
+}
+
+type TelemetryEventUser {
+    """
+    Database user ID of signed in user.
+    """
+    userID: String
+    """
+    Randomized unique identifier for client (i.e. stored in localstorage in web
+    client).
+    """
+    anonymousUserID: String
+}
+
+type TelemetryEventMarketingTracking {
+    firstSourceURL: String
+    cohortID: String
+    referrer: String
+    lastSourceURL: String
+    deviceSessionID: String
+    sessionReferrer: String
+    sessionFirstURL: String
+}

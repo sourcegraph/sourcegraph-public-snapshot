@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package telemetrygateway.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1";
+
+service TelemeteryGatewayService {
+  rpc LogEvents(LogEventsRequest) returns (LogEventsResponse) {}
+}
+
+message LogEventsRequest {
+  repeated Event events = 1;
+
+  // License key hashed for analytics purposes (hashed value should include the
+  // appropriate prefix).
+  string analytics_hashed_license_key = 2;
+}
+
+message Event {
+  // Timestamp of when the original event was recorded.
+  google.protobuf.Timestamp timestamp = 1;
+  // Name of the event.
+  string name = 2;
+  // Source client of the event.
+  string client = 3;
+  // Parameters of the event.
+  EventParameters parameters = 4;
+  // Optional user associated with the event.
+  EventUser user = 5;
+  // Optional marketing campaign tracking parameters.
+  EventMarketingTracking marketingTracking = 6;
+}
+
+message EventParameters {
+  // Version of the event parameters, used for indicating the "shape" of this
+  // event's metadata.
+  int32 version = 1;
+  // Strictly typed metadata, restricted to integer values.
+  map<string, int32> metadata = 2;
+  // Additional, arbitrarily-shaped metadata (JSON recommended). By default,
+  // this metadata should not be assumed to be unsafe for export from an
+  // instance, and should only be exported on an allowlist basis.
+  string additionalMetadata = 3;
+}
+
+message EventUser {
+  // Database user ID of signed in user.
+  string userID = 1;
+  // Randomized unique identifier for client (i.e. stored in localstorage in web
+  // client).
+  string anonymousUserID = 2;
+}
+
+message EventMarketingTracking {
+  string firstSourceURL = 1;
+  string cohortID = 2;
+  string referrer = 3;
+  string lastSourceURL = 4;
+  string deviceSessionID = 5;
+  string sessionReferrer = 6;
+  string sessionFirstURL = 7;
+}
