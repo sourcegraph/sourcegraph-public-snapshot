@@ -2,7 +2,7 @@ import { render } from '@testing-library/react'
 import GithubIcon from 'mdi-react/GithubIcon'
 
 import { ExternalServiceGroup } from './ExternalServiceGroup'
-import { GITHUB_DOTCOM } from './externalServices'
+import { GITHUB } from './externalServices'
 
 describe('ExternalServiceGroup', () => {
     test('should render correctly with enabled external services', () => {
@@ -10,13 +10,13 @@ describe('ExternalServiceGroup', () => {
             name: 'GitHub',
             services: [
                 {
-                    ...GITHUB_DOTCOM,
+                    ...GITHUB,
                     serviceID: 'github',
                     enabled: true,
                 },
             ],
             description: 'Connect with GitHub repositories',
-            renderServiceIcon: true,
+            renderIcon: true,
             icon: GithubIcon,
         }
 
@@ -29,13 +29,13 @@ describe('ExternalServiceGroup', () => {
             name: 'GitHub',
             services: [
                 {
-                    ...GITHUB_DOTCOM,
+                    ...GITHUB,
                     serviceID: 'github',
                     enabled: false,
                 },
             ],
             description: 'Connect with GitHub repositories',
-            renderServiceIcon: true,
+            renderIcon: true,
             icon: GithubIcon,
         }
 
