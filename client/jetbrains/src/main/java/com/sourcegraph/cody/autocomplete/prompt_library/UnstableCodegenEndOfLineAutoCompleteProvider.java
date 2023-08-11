@@ -10,8 +10,13 @@ import com.sourcegraph.cody.autocomplete.UnstableCodegenLanguageUtil;
 import com.sourcegraph.cody.vscode.CancellationToken;
 import com.sourcegraph.cody.vscode.Completion;
 import com.sourcegraph.cody.vscode.TextDocument;
+
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.Socket;
 import java.util.*;
 import java.util.List;
 import java.util.Map;
@@ -24,12 +29,23 @@ import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.ssl.SSLContexts;
 import org.apache.http.util.EntityUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import javax.net.ssl.SSLContext;
 
 /** This is a rough implementation loosely translating unstable-codegen.ts */
 public class UnstableCodegenEndOfLineAutoCompleteProvider extends AutoCompleteProvider {
@@ -113,12 +129,21 @@ public class UnstableCodegenEndOfLineAutoCompleteProvider extends AutoCompletePr
                     httpPost.setHeader("Accept", "application/json");
                     httpPost.setEntity(params);
 
+                    Registry<ConnectionSocketFactory> reg = RegistryBuilder.<ConnectionSocketFactory>create()
+                        .register("http", PlainConnectionSocketFactory.INSTANCE)
+                        .register("https", new SocksSocketFactory(SSLContexts.createSystemDefault()))
+                        .build();
+                    PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager(reg);
                     try (CloseableHttpClient client = HttpClients.custom()
-                            .setProxy(new HttpHost("localhost", 9999, null))
+                            .setConnectionManager(cm)
+                            //.setProxy(new HttpHost("localhost", 9999, null))
                             .setDefaultRequestConfig(
                                     RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build())
                             .build()) {
-                        CloseableHttpResponse response = client.execute(httpPost);
+                        InetSocketAddress socksaddr = new InetSocketAddress("localhost", 9999);
+                        HttpClientContext context = HttpClientContext.create();
+                        context.setAttribute("socks.address", socksaddr);
+                        CloseableHttpResponse response = client.execute(httpPost, context);
                         int responseCode = response.getStatusLine().getStatusCode();
                         if (responseCode != 200) {
                             logger.warn(
@@ -265,4 +290,19 @@ public class UnstableCodegenEndOfLineAutoCompleteProvider extends AutoCompletePr
             this.similarity = similarity;
         }
     }
+}
+
+class SocksSocketFactory extends SSLConnectionSocketFactory {
+
+    public SocksSocketFactory(final SSLContext sslContext) {
+        super(sslContext);
+    }
+
+    @Override
+    public Socket createSocket(final HttpContext context) throws IOException {
+        InetSocketAddress socksaddr = (InetSocketAddress) context.getAttribute("socks.address");
+        Proxy proxy = new Proxy(Proxy.Type.SOCKS, socksaddr);
+        return new Socket(proxy);
+    }
+
 }
