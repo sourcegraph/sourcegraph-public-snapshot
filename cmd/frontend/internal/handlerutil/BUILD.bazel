@@ -41,7 +41,7 @@ go_test(
     deps = [
         "//cmd/frontend/backend",
         "//internal/api",
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/types",
         "//lib/errors",
         "@com_github_sourcegraph_log//logtest",

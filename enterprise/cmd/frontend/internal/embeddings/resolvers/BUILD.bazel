@@ -42,7 +42,7 @@ go_test(
         "//internal/api",
         "//internal/authz",
         "//internal/conf",
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/embeddings",
         "//internal/embeddings/background/repo",
         "//internal/featureflag",

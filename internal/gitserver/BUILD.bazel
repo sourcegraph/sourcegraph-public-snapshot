@@ -83,6 +83,7 @@ go_test(
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/errcode",
         "//internal/extsvc",
         "//internal/extsvc/gitolite",
