@@ -10,7 +10,8 @@ public class AutocompleteTelemetry {
 
   public static @NotNull AutocompleteTelemetry createAndMarkTriggered() {
     var autocompletion = new AutocompleteTelemetry();
-    // TODO: we could use java.time.Instant.now() and java.time.Duration.between(Instant,Instant) and avoid the "TimestampMs" suffixes
+    // TODO: we could use java.time.Instant.now() and java.time.Duration.between(Instant,Instant)
+    // and avoid the "TimestampMs" suffixes
     autocompletion.completionTriggeredTimestampMs = System.currentTimeMillis();
     return autocompletion;
   }
