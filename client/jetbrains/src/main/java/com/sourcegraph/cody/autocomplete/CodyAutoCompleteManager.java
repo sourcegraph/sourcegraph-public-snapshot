@@ -147,9 +147,7 @@ public class CodyAutoCompleteManager {
     }
   }
 
-  /**
-   * Asynchronously triggers auto-complete for the given editor and offset.
-   */
+  /** Asynchronously triggers auto-complete for the given editor and offset. */
   private CompletableFuture<Void> triggerAutoCompleteAsync(
       @NotNull Project project,
       @NotNull Editor editor,
@@ -187,9 +185,9 @@ public class CodyAutoCompleteManager {
           if (result.items.isEmpty()) {
             return;
           }
-                          if (currentAutocompleteTelemetry != null) {
-                            currentAutocompleteTelemetry.markCompletionDisplayed();
-                          }
+          if (currentAutocompleteTelemetry != null) {
+            currentAutocompleteTelemetry.markCompletionDisplayed();
+          }
           InlayModel inlayModel = editor.getInlayModel();
           // TODO: smarter logic around selecting the best completion item.
           Optional<InlineAutoCompleteItem> maybeItem =
