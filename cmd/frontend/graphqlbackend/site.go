@@ -639,7 +639,7 @@ func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
 	return nil
 }
 
-func (r *siteResolver) GitServerInfo(ctx context.Context) *gitServerInfoResolver {
+func (r *siteResolver) GitserverInfo(ctx context.Context) *gitServerInfoResolver {
 	// add site-admin checks to this resolver.
 	// Only site-admins should be able to access this.
 	return &gitServerInfoResolver{
@@ -656,5 +656,11 @@ func (g *gitServerInfoResolver) Addresses() []string {
 }
 
 func (g *gitServerInfoResolver) FreeSpace() int32 {
+	// g.client.Stat()s
 	return g.client.FreeSpace()
+}
+
+func (g *gitServerInfoResolver) TotalSpace() int32 {
+	// g.client.Stat()s
+	return g.client.TotalSpace()
 }

@@ -450,10 +450,15 @@ type Client interface {
 	Addrs() []string
 
 	FreeSpace() int32
+	TotalSpace() int32
 }
 
 func (c *clientImplementor) FreeSpace() int32 {
 	return 12
+}
+
+func (c *clientImplementor) TotalSpace() int32 {
+	return 30
 }
 
 func (c *clientImplementor) Addrs() []string {
