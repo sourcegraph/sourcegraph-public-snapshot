@@ -54,6 +54,7 @@ type DB interface {
 	Phabricator() PhabricatorStore
 	RedisKeyValue() RedisKeyValueStore
 	Repos() RepoStore
+	RepoUpdateJobs() RepoUpdateJobStore
 	RepoCommitsChangelists() RepoCommitsChangelistsStore
 	RepoKVPs() RepoKVPStore
 	RepoPaths() RepoPathStore
@@ -259,6 +260,10 @@ func (d *db) RedisKeyValue() RedisKeyValueStore {
 
 func (d *db) Repos() RepoStore {
 	return ReposWith(d.logger, d.Store)
+}
+
+func (d *db) RepoUpdateJobs() RepoUpdateJobStore {
+	return RepoUpdateJobStoreWith(d.Store)
 }
 
 func (d *db) RepoCommitsChangelists() RepoCommitsChangelistsStore {

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 )
@@ -2126,3 +2128,43 @@ type CodeHost struct {
 	CreatedAt                   time.Time
 	UpdatedAt                   time.Time
 }
+
+// RepoUpdateJob represents a job to clone or update a repo.
+type RepoUpdateJob struct {
+	ID                    int
+	State                 string
+	FailureMessage        *string
+	QueuedAt              time.Time
+	StartedAt             *time.Time
+	FinishedAt            *time.Time
+	ProcessAfter          *time.Time
+	NumResets             int
+	NumFailures           int
+	LastHeartbeatAt       time.Time
+	ExecutionLogs         []executor.ExecutionLogEntry
+	WorkerHostname        string
+	Cancel                bool
+	RepoID                int32
+	RepositoryName        api.RepoName
+	LastFetched           time.Time
+	LastChanged           time.Time
+	UpdateIntervalSeconds int
+	PoolRepoID            *int32
+	Priority              RepoUpdateJobPriority
+	OverwriteClone        bool
+}
+
+func (r RepoUpdateJob) RecordID() int {
+	return r.ID
+}
+
+func (r RepoUpdateJob) RecordUID() string {
+	return strconv.Itoa(r.ID)
+}
+
+type RepoUpdateJobPriority int
+
+const (
+	LowPriorityRepoUpdate  RepoUpdateJobPriority = 0
+	HighPriorityRepoUpdate RepoUpdateJobPriority = 10
+)
