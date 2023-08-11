@@ -115,10 +115,11 @@ func NewClient(db database.DB) Client {
 
 // NewTestClient returns a test client that will use the given list of
 // addresses provided by the clientSource.
-func NewTestClient(cli httpcli.Doer, clientSource ClientSource) Client {
+func NewTestClient(cli httpcli.Doer, db database.DB, clientSource ClientSource) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
 
 	return &clientImplementor{
+		db:          db,
 		logger:      logger,
 		httpClient:  cli,
 		HTTPLimiter: limiter.New(500),
@@ -335,7 +336,7 @@ type Client interface {
 	// Repo updates are not guaranteed to occur. If a repo has been updated
 	// recently (within the Since duration specified in the request), the
 	// update won't happen.
-	RequestRepoUpdate(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
+	RequestRepoUpdate(context.Context, api.RepoID, time.Duration) (*protocol.RepoUpdateResponse, error)
 
 	// RequestRepoClone is an asynchronous request to clone a repository.
 	RequestRepoClone(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error)
@@ -1171,60 +1172,19 @@ func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitComm
 	}
 }
 
-func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since time.Duration) (*protocol.RepoUpdateResponse, error) {
-	req := &protocol.RepoUpdateRequest{
-		Repo:  repo,
-		Since: since,
-	}
-
-	repoCloneJobs := database.RepoCloneJobStoreWith(c.db)
-	err := repoCloneJobs.Create(ctx, database.RepoCloneJobOpts{
-		GitserverAddress: c.AddrForRepo(ctx, repo),
-		UpdateAfter:      0,
-		RepoName:         repo,
+func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repoID api.RepoID, since time.Duration) (*protocol.RepoUpdateResponse, error) {
+	repoUpdateJobs := database.RepoUpdateJobStoreWith(c.db)
+	// If the since is zero, we just don't add anything.
+	processAfter := time.Now().Add(since)
+	_, _, err := repoUpdateJobs.Create(ctx, database.RepoUpdateJobOpts{
+		RepoID:       repoID,
+		ProcessAfter: processAfter,
 	})
 	if err != nil {
-		fmt.Printf("ERROR DURING CREATING A CLONE JOB: %s\n", err.Error())
 		return nil, err
 	}
-
-	// We proceed with a request, but on the server side it does nothing but returns
-	// an empty response.
-
-	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(ctx, repo)
-		if err != nil {
-			return nil, err
-		}
-
-		resp, err := client.RepoUpdate(ctx, req.ToProto())
-		if err != nil {
-			return nil, err
-		}
-
-		var info protocol.RepoUpdateResponse
-		info.FromProto(resp)
-
-		return &info, nil
-
-	} else {
-		resp, err := c.httpPost(ctx, repo, "repo-update", req)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			return nil, &url.Error{
-				URL: resp.Request.URL.String(),
-				Op:  "RepoUpdate",
-				Err: errors.Errorf("RepoUpdate: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
-			}
-		}
-
-		var info protocol.RepoUpdateResponse
-		err = json.NewDecoder(resp.Body).Decode(&info)
-		return &info, err
-	}
+	// TODO check to return
+	return nil, nil
 }
 
 // RequestRepoClone requests that the gitserver does an asynchronous clone of the repository.

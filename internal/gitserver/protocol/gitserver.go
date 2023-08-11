@@ -392,6 +392,7 @@ func (r *P4ExecRequest) FromProto(p *proto.P4ExecRequest) {
 }
 
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
+// TODO(sashaostrikov): remove when migration is complete
 type RepoUpdateRequest struct {
 	// Repo identifies URL for repo.
 	Repo api.RepoName `json:"repo"`

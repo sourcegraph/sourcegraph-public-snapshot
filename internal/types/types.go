@@ -2129,30 +2129,33 @@ type CodeHost struct {
 	UpdatedAt                   time.Time
 }
 
-type RepoCloneJob struct {
-	ID               int
-	State            string
-	FailureMessage   *string
-	QueuedAt         time.Time
-	StartedAt        *time.Time
-	FinishedAt       *time.Time
-	ProcessAfter     *time.Time
-	NumResets        int
-	NumFailures      int
-	LastHeartbeatAt  time.Time
-	ExecutionLogs    []executor.ExecutionLogEntry
-	WorkerHostname   string
-	Cancel           bool
-	GitserverAddress string
-	UpdateAfter      int
-	RepoName         string
-	Clone            bool
+type RepoUpdateJob struct {
+	ID                    int
+	State                 string
+	FailureMessage        *string
+	QueuedAt              time.Time
+	StartedAt             *time.Time
+	FinishedAt            *time.Time
+	ProcessAfter          *time.Time
+	NumResets             int
+	NumFailures           int
+	LastHeartbeatAt       time.Time
+	ExecutionLogs         []executor.ExecutionLogEntry
+	WorkerHostname        string
+	Cancel                bool
+	RepoID                int32
+	RepositoryName        api.RepoName
+	LastFetched           time.Time
+	LastChanged           time.Time
+	UpdateIntervalSeconds int
+	PoolRepoID            *int32
+	Priority              int
 }
 
-func (r *RepoCloneJob) RecordID() int {
+func (r RepoUpdateJob) RecordID() int {
 	return r.ID
 }
 
-func (r *RepoCloneJob) RecordUID() string {
+func (r RepoUpdateJob) RecordUID() string {
 	return strconv.Itoa(r.ID)
 }

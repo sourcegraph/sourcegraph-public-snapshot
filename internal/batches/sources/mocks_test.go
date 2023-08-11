@@ -11118,7 +11118,7 @@ func NewMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		RequestRepoUpdateFunc: &GitserverClientRequestRepoUpdateFunc{
-			defaultHook: func(context.Context, api.RepoName, time.Duration) (r0 *protocol.RepoUpdateResponse, r1 error) {
+			defaultHook: func(context.Context, api.RepoID, time.Duration) (r0 *protocol.RepoUpdateResponse, r1 error) {
 				return
 			},
 		},
@@ -11385,7 +11385,7 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		RequestRepoUpdateFunc: &GitserverClientRequestRepoUpdateFunc{
-			defaultHook: func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error) {
+			defaultHook: func(context.Context, api.RepoID, time.Duration) (*protocol.RepoUpdateResponse, error) {
 				panic("unexpected invocation of MockGitserverClient.RequestRepoUpdate")
 			},
 		},
@@ -16735,15 +16735,15 @@ func (c GitserverClientRequestRepoCloneFuncCall) Results() []interface{} {
 // RequestRepoUpdate method of the parent MockGitserverClient instance is
 // invoked.
 type GitserverClientRequestRepoUpdateFunc struct {
-	defaultHook func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
-	hooks       []func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
+	defaultHook func(context.Context, api.RepoID, time.Duration) (*protocol.RepoUpdateResponse, error)
+	hooks       []func(context.Context, api.RepoID, time.Duration) (*protocol.RepoUpdateResponse, error)
 	history     []GitserverClientRequestRepoUpdateFuncCall
 	mutex       sync.Mutex
 }
 
 // RequestRepoUpdate delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) RequestRepoUpdate(v0 context.Context, v1 api.RepoName, v2 time.Duration) (*protocol.RepoUpdateResponse, error) {
+func (m *MockGitserverClient) RequestRepoUpdate(v0 context.Context, v1 api.RepoID, v2 time.Duration) (*protocol.RepoUpdateResponse, error) {
 	r0, r1 := m.RequestRepoUpdateFunc.nextHook()(v0, v1, v2)
 	m.RequestRepoUpdateFunc.appendCall(GitserverClientRequestRepoUpdateFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -16752,7 +16752,7 @@ func (m *MockGitserverClient) RequestRepoUpdate(v0 context.Context, v1 api.RepoN
 // SetDefaultHook sets function that is called when the RequestRepoUpdate
 // method of the parent MockGitserverClient instance is invoked and the hook
 // queue is empty.
-func (f *GitserverClientRequestRepoUpdateFunc) SetDefaultHook(hook func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)) {
+func (f *GitserverClientRequestRepoUpdateFunc) SetDefaultHook(hook func(context.Context, api.RepoID, time.Duration) (*protocol.RepoUpdateResponse, error)) {
 	f.defaultHook = hook
 }
 
@@ -16761,7 +16761,7 @@ func (f *GitserverClientRequestRepoUpdateFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *GitserverClientRequestRepoUpdateFunc) PushHook(hook func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)) {
+func (f *GitserverClientRequestRepoUpdateFunc) PushHook(hook func(context.Context, api.RepoID, time.Duration) (*protocol.RepoUpdateResponse, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -16770,19 +16770,19 @@ func (f *GitserverClientRequestRepoUpdateFunc) PushHook(hook func(context.Contex
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverClientRequestRepoUpdateFunc) SetDefaultReturn(r0 *protocol.RepoUpdateResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID, time.Duration) (*protocol.RepoUpdateResponse, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverClientRequestRepoUpdateFunc) PushReturn(r0 *protocol.RepoUpdateResponse, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error) {
+	f.PushHook(func(context.Context, api.RepoID, time.Duration) (*protocol.RepoUpdateResponse, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientRequestRepoUpdateFunc) nextHook() func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error) {
+func (f *GitserverClientRequestRepoUpdateFunc) nextHook() func(context.Context, api.RepoID, time.Duration) (*protocol.RepoUpdateResponse, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -16821,7 +16821,7 @@ type GitserverClientRequestRepoUpdateFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 api.RepoName
+	Arg1 api.RepoID
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 time.Duration

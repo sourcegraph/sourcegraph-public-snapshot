@@ -80,7 +80,7 @@ func TestGetCommits(t *testing.T) {
 		}
 
 		source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
-		commits, err := gitserver.NewTestClient(http.DefaultClient, source).GetCommits(ctx, nil, repoCommits, true)
+		commits, err := gitserver.NewTestClient(http.DefaultClient, db, source).GetCommits(ctx, nil, repoCommits, true)
 		if err != nil {
 			t.Fatalf("unexpected error calling getCommits: %s", err)
 		}
@@ -119,7 +119,7 @@ func TestGetCommits(t *testing.T) {
 		}
 		source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
 
-		commits, err := gitserver.NewTestClient(http.DefaultClient, source).GetCommits(ctx, getTestSubRepoPermsChecker("file1", "file3"), repoCommits, true)
+		commits, err := gitserver.NewTestClient(http.DefaultClient, db, source).GetCommits(ctx, getTestSubRepoPermsChecker("file1", "file3"), repoCommits, true)
 		if err != nil {
 			t.Fatalf("unexpected error calling getCommits: %s", err)
 		}
@@ -152,7 +152,7 @@ func mustParseDate(s string, t *testing.T) *time.Time {
 func TestHead(t *testing.T) {
 	db := database.NewMockDB()
 	source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
-	client := gitserver.NewTestClient(http.DefaultClient, source)
+	client := gitserver.NewTestClient(http.DefaultClient, db, source)
 	t.Run("basic", func(t *testing.T) {
 		gitCommands := []string{
 			"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",

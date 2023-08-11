@@ -927,8 +927,9 @@ func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdate
 	// return s.HandleRepoUpdateRequest(ctx, req, logger)
 }
 
-func (s *Server) HandleRepoUpdateRequest(ctx context.Context, req *protocol.RepoUpdateRequest, logger log.Logger) protocol.RepoUpdateResponse {
+func (s *Server) HandleRepoUpdateRequest(ctx context.Context, req *protocol.RepoUpdateRequest, logger log.Logger) (protocol.RepoUpdateResponse, error) {
 	var resp protocol.RepoUpdateResponse
+	var err error
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 	dir := s.dir(req.Repo)
 	if !repoCloned(dir) && !s.skipCloneForTests {
@@ -964,17 +965,19 @@ func (s *Server) HandleRepoUpdateRequest(ctx context.Context, req *protocol.Repo
 			// other information.
 			resp.Error = statusErr.Error()
 		}
+		err = statusErr
 		// If an error occurred during update, report it but don't actually make
 		// it into an http error; we want the client to get the information cleanly.
 		// An update error "wins" over a status error.
 		if updateErr != nil {
 			resp.Error = updateErr.Error()
+			err = updateErr
 		} else {
 			s.Perforce.EnqueueChangelistMappingJob(perforce.NewChangelistMappingJob(req.Repo, dir))
 		}
 	}
 
-	return resp
+	return resp, err
 }
 
 // handleRepoClone is an asynchronous (does not wait for update to complete or

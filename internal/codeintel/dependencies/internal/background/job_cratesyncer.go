@@ -36,6 +36,7 @@ type crateSyncerJob struct {
 	dependenciesSvc   DependenciesService
 	gitClient         gitserver.Client
 	extSvcStore       ExternalServiceStore
+	repoStore         RepoStore
 	clock             glock.Clock
 	operations        *operations
 }
@@ -46,6 +47,7 @@ func NewCrateSyncer(
 	dependenciesSvc DependenciesService,
 	gitClient gitserver.Client,
 	extSvcStore ExternalServiceStore,
+	repoStore RepoStore,
 ) goroutine.BackgroundRoutine {
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -71,6 +73,7 @@ func NewCrateSyncer(
 		dependenciesSvc:   dependenciesSvc,
 		gitClient:         gitClient,
 		extSvcStore:       extSvcStore,
+		repoStore:         repoStore,
 		clock:             glock.NewRealClock(),
 		operations:        newOperations(observationCtx),
 	}
@@ -111,7 +114,11 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 	// We should use an internal actor when doing cross service calls.
 	clientCtx := actor.WithInternalActor(ctx)
 
-	update, err := j.gitClient.RequestRepoUpdate(clientCtx, repoName, interval)
+	repo, err := j.repoStore.GetByName(ctx, repoName)
+	if err != nil {
+		return err
+	}
+	update, err := j.gitClient.RequestRepoUpdate(clientCtx, repo.ID, interval)
 	if err != nil {
 		return err
 	}
