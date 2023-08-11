@@ -23,7 +23,7 @@ public enum AutoCompleteProviderType {
     }
   }
 
-    public String toString() {
-        return super.toString().toLowerCase().replace('_', '-');
-    }
+  public String toString() {
+    return super.toString().toLowerCase().replace('_', '-');
+  }
 }

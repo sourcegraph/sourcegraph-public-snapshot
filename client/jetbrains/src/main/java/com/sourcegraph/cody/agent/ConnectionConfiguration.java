@@ -27,23 +27,27 @@ public class ConnectionConfiguration {
     return this;
   }
 
-    public ConnectionConfiguration setAutocompleteAdvancedProvider(String autocompleteAdvancedProvider) {
-        this.autocompleteAdvancedProvider = autocompleteAdvancedProvider;
-        return this;
-    }
+  public ConnectionConfiguration setAutocompleteAdvancedProvider(
+      String autocompleteAdvancedProvider) {
+    this.autocompleteAdvancedProvider = autocompleteAdvancedProvider;
+    return this;
+  }
 
-    public ConnectionConfiguration setAutocompleteAdvancedServerEndpoint(String autocompleteAdvancedServerEndpoint) {
-        this.autocompleteAdvancedServerEndpoint = autocompleteAdvancedServerEndpoint;
-        return this;
-    }
+  public ConnectionConfiguration setAutocompleteAdvancedServerEndpoint(
+      String autocompleteAdvancedServerEndpoint) {
+    this.autocompleteAdvancedServerEndpoint = autocompleteAdvancedServerEndpoint;
+    return this;
+  }
 
-    public ConnectionConfiguration setAutocompleteAdvancedAccessToken(String autocompleteAdvancedAccessToken) {
-        this.autocompleteAdvancedAccessToken = autocompleteAdvancedAccessToken;
-        return this;
-    }
+  public ConnectionConfiguration setAutocompleteAdvancedAccessToken(
+      String autocompleteAdvancedAccessToken) {
+    this.autocompleteAdvancedAccessToken = autocompleteAdvancedAccessToken;
+    return this;
+  }
 
-    public ConnectionConfiguration setAutocompleteAdvancedEmbeddings(boolean autocompleteAdvancedEmbeddings) {
-        this.autocompleteAdvancedEmbeddings = autocompleteAdvancedEmbeddings;
-        return this;
-    }
+  public ConnectionConfiguration setAutocompleteAdvancedEmbeddings(
+      boolean autocompleteAdvancedEmbeddings) {
+    this.autocompleteAdvancedEmbeddings = autocompleteAdvancedEmbeddings;
+    return this;
+  }
 }
