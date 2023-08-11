@@ -4,6 +4,7 @@ import classNames from 'classnames'
 
 import { CodyClientScope } from '@sourcegraph/cody-shared/dist/chat/useClient'
 import { useLazyQuery } from '@sourcegraph/http-client'
+import { Text } from '@sourcegraph/wildcard'
 
 import { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -129,10 +130,9 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
                         toggleIncludeInferredFile={toggleIncludeInferredFile}
                     />
                     {scope.includeInferredFile && activeEditor?.filePath && (
-                        <div className={classNames('d-flex align-items-center', styles.filepathText)}>
-                            <div className={styles.separator} />
+                        <Text size="small" className="ml-2 mb-0 align-self-center">
                             {getFileName(activeEditor.filePath)}
-                        </div>
+                        </Text>
                     )}
                 </div>
             </div>
