@@ -35,6 +35,7 @@ go_library(
         "//internal/extsvc/rubygems",
         "//internal/gitserver/v1:gitserver",
         "//internal/goroutine",
+        "//internal/goroutine/recorder",
         "//internal/grpc",
         "//internal/grpc/defaults",
         "//internal/hostname",
