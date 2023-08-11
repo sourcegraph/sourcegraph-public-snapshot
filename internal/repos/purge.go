@@ -47,7 +47,7 @@ func NewRepositoryPurgeWorker(ctx context.Context, logger log.Logger, db databas
 			deletedBefore := time.Now().Add(-time.Duration(purgeConfig.DeletedTTLMinutes) * time.Minute)
 			purgeLogger := logger.With(log.Time("deletedBefore", deletedBefore))
 
-			timeToNextPurge := time.Duration(purgeConfig.IntervalMinutes) * time.Minute
+			timeToNextPurge = time.Duration(purgeConfig.IntervalMinutes) * time.Minute
 			purgeLogger.Debug("running repository purge", log.Duration("timeToNextPurge", timeToNextPurge))
 			if err := purge(ctx, purgeLogger, db, database.IteratePurgableReposOptions{
 				Limit:         5000,
