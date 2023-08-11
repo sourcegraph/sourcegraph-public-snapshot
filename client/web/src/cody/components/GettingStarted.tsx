@@ -117,10 +117,7 @@ export const GettingStarted: React.FC<
                 <Text size="small" className={styles.scopeSelectorWarning}>
                     {repos.length === 1 ? 'This repo is' : 'Some repos are'} not indexed for Cody. This may affect the
                     quality of the answers. Learn more about this{' '}
-                    <Link to="https://docs.sourcegraph.com/cody/explanations/code_graph_context#embeddings">
-                        in the docs
-                    </Link>
-                    .
+                    <Link to="/help/cody/explanations/code_graph_context#embeddings">in the docs</Link>.
                 </Text>
             )
         },
