@@ -7336,8 +7336,8 @@ type Site implements SettingsSubject {
 
 type GitserverInfo {
     addresses: [String!]!
-    freeSpace: Int!
-    totalSpace: Int!
+    freeSpace: BigInt!
+    totalSpace: BigInt!
 }
 
 """

@@ -655,12 +655,18 @@ func (g *gitServerInfoResolver) Addresses() []string {
 	return g.client.Addrs()
 }
 
-func (g *gitServerInfoResolver) FreeSpace() int32 {
-	// g.client.Stat()s
-	return g.client.FreeSpace()
+func (g *gitServerInfoResolver) FreeSpace() (BigInt, error) {
+	space, err := g.client.FreeSpace()
+	if err != nil {
+		return 0, err
+	}
+	return BigInt(space), err
 }
 
-func (g *gitServerInfoResolver) TotalSpace() int32 {
-	// g.client.Stat()s
-	return g.client.TotalSpace()
+func (g *gitServerInfoResolver) TotalSpace() (BigInt, error) {
+	space, err := g.client.TotalSpace()
+	if err != nil {
+		return 0, err
+	}
+	return BigInt(space), err
 }

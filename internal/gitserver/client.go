@@ -221,6 +221,8 @@ type clientImplementor struct {
 
 	// clientSource is used to get the corresponding gprc client or address for a given repository
 	clientSource ClientSource
+
+	diskSizer DiskSizer
 }
 
 type RawBatchLogResult struct {
@@ -449,16 +451,24 @@ type Client interface {
 
 	Addrs() []string
 
-	FreeSpace() int32
-	TotalSpace() int32
+	FreeSpace() (uint64, error)
+	TotalSpace() (uint64, error)
 }
 
-func (c *clientImplementor) FreeSpace() int32 {
-	return 12
+func (c *clientImplementor) FreeSpace() (uint64, error) {
+	fs, err := c.diskSizer.BytesFreeOnDisk(".")
+	if err != nil {
+		return 0, err
+	}
+	return fs, nil
 }
 
-func (c *clientImplementor) TotalSpace() int32 {
-	return 30
+func (c *clientImplementor) TotalSpace() (uint64, error) {
+	space, err := c.diskSizer.DiskSizeBytes(".")
+	if err != nil {
+		return 0, err
+	}
+	return space, nil
 }
 
 func (c *clientImplementor) Addrs() []string {

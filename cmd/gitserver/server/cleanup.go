@@ -19,7 +19,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/ricochet2200/go-disk-usage/du"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -596,15 +595,35 @@ func checkRepoDirCorrupt(rcf *wrexec.RecordingCommandFactory, reposDir string, d
 	return false, "", nil
 }
 
-// DiskSizer gets information about disk size and free space.
-type DiskSizer interface {
-	BytesFreeOnDisk(mountPoint string) (uint64, error)
-	DiskSizeBytes(mountPoint string) (uint64, error)
+// setRepoSizes uses calculated sizes of repos to update database entries of repos
+// with actual sizes, but only up to 10,000 in one run.
+func setRepoSizes(ctx context.Context, logger log.Logger, db database.DB, shardID string, repoToSize map[api.RepoName]int64) error {
+	logger = logger.Scoped("setRepoSizes", "setRepoSizes does cleanup of database entries")
+
+	reposNumber := len(repoToSize)
+	if reposNumber == 0 {
+		logger.Info("file system walk didn't yield any directory sizes")
+		return nil
+	}
+
+	logger.Debug("directory sizes calculated during file system walk",
+		log.Int("repoToSize", reposNumber))
+
+	// updating repos
+	updatedRepos, err := db.GitserverRepos().UpdateRepoSizes(ctx, shardID, repoToSize)
+	if err != nil {
+		return err
+	}
+	if updatedRepos > 0 {
+		logger.Info("repos had their sizes updated", log.Int("updatedRepos", updatedRepos))
+	}
+
+	return nil
 }
 
 // howManyBytesToFree returns the number of bytes that should be freed to make sure
 // there is sufficient disk space free to satisfy s.DesiredPercentFree.
-func howManyBytesToFree(logger log.Logger, reposDir string, diskSizer DiskSizer, desiredPercentFree int) (int64, error) {
+func howManyBytesToFree(logger log.Logger, reposDir string, diskSizer gitserver.DiskSizer, desiredPercentFree int) (int64, error) {
 	actualFreeBytes, err := diskSizer.BytesFreeOnDisk(reposDir)
 	if err != nil {
 		return 0, errors.Wrap(err, "finding the amount of space free on disk")
@@ -632,21 +651,9 @@ func howManyBytesToFree(logger log.Logger, reposDir string, diskSizer DiskSizer,
 	return howManyBytesToFree, nil
 }
 
-type StatDiskSizer struct{}
-
-func (s *StatDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
-	usage := du.NewDiskUsage(mountPoint)
-	return usage.Available(), nil
-}
-
-func (s *StatDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
-	usage := du.NewDiskUsage(mountPoint)
-	return usage.Size(), nil
-}
-
 // freeUpSpace removes git directories under ReposDir, in order from least
 // recently to most recently used, until it has freed howManyBytesToFree.
-func freeUpSpace(ctx context.Context, logger log.Logger, db database.DB, shardID string, reposDir string, diskSizer DiskSizer, desiredPercentFree int, howManyBytesToFree int64) error {
+func freeUpSpace(ctx context.Context, logger log.Logger, db database.DB, shardID string, reposDir string, diskSizer gitserver.DiskSizer, desiredPercentFree int, howManyBytesToFree int64) error {
 	if howManyBytesToFree <= 0 {
 		return nil
 	}
