@@ -16,7 +16,7 @@ pkg_tar(
     package_dir = "/usr/local/bin",
 )
 
-# Include the executor binary the specific gotags
+# Include the executor binary built with gotags
 pkg_tar(
     name = "tar_executor",
     srcs = ["//cmd/executor:executor_sh"],
