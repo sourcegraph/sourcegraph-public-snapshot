@@ -7,6 +7,9 @@
 
 .content {
     min-height: 5rem;
+    max-height: 50rem; // TODO adaptive for different screen sizes
+    overflow-y: scroll;
+    padding-right: 1em;
 }
 
 .close-action {
