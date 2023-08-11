@@ -9372,6 +9372,21 @@ packages:
       - encoding
     dev: false
 
+  /@sourcegraph/cody-shared@0.0.5:
+    resolution: {integrity: sha512-xwNHKsE9NPEUcQoEqJMYuU86D3NRqBn/V6Fjc09FlkgNQUcouJhGZuVntpOuBa3g8aEqOVT+bI/QcX0Oy1QGfQ==}
+    dependencies:
+      '@microsoft/fetch-event-source': 2.0.1
+      dompurify: 3.0.4
+      highlight.js: 10.7.3
+      isomorphic-fetch: 3.0.0
+      lodash: 4.17.21
+      marked: 4.0.16
+      vscode-uri: 3.0.7
+      x2js: 3.4.4
+    transitivePeerDependencies:
+      - encoding
+    dev: false
+
   /@sourcegraph/cody-ui@0.0.6:
     resolution: {integrity: sha512-MBeFDFebKfrTZOCwV9MeLYeluFyFaALhMbX+NltXiF3LjiFh3qqJDM0DcpOFwKgqKnaJkm1i4Uh/8/R9DUaglQ==}
     dependencies:

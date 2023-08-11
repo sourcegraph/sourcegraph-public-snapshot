@@ -5,14 +5,12 @@ import (
 	"container/list"
 	"context"
 	"database/sql"
-	"net"
 	"net/http"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strings"
-	"syscall"
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
@@ -34,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
@@ -45,8 +42,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -66,68 +63,85 @@ type EnterpriseInit func(db database.DB, keyring keyring.Ring)
 func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config *Config, enterpriseInit EnterpriseInit) error {
 	logger := observationCtx.Logger
 
+	// Load and validate configuration.
 	if err := config.Validate(); err != nil {
 		return errors.Wrap(err, "failed to validate configuration")
 	}
 
-	// Ensure the ReposDir exists.
-	if err := os.MkdirAll(config.ReposDir, os.ModePerm); err != nil {
-		return errors.Wrap(err, "creating SRC_REPOS_DIR")
+	// Prepare the file system.
+	{
+		// Ensure the ReposDir exists.
+		if err := os.MkdirAll(config.ReposDir, os.ModePerm); err != nil {
+			return errors.Wrap(err, "creating SRC_REPOS_DIR")
+		}
+		// Ensure the Perforce Dir exists.
+		p4Home := filepath.Join(config.ReposDir, server.P4HomeName)
+		if err := os.MkdirAll(p4Home, os.ModePerm); err != nil {
+			return errors.Wrapf(err, "ensuring p4Home exists: %q", p4Home)
+		}
+		// Ensure the tmp dir exists, is cleaned up, and TMP_DIR is set properly.
+		tmpDir, err := setupAndClearTmp(logger, config.ReposDir)
+		if err != nil {
+			return errors.Wrap(err, "failed to setup temporary directory")
+		}
+		// Additionally, set TMP_DIR so other temporary files we may accidentally
+		// create are on the faster RepoDir mount.
+		if err := os.Setenv("TMP_DIR", tmpDir); err != nil {
+			return errors.Wrap(err, "setting TMP_DIR")
+		}
 	}
 
+	// Create a database connection.
 	sqlDB, err := getDB(observationCtx)
 	if err != nil {
 		return errors.Wrap(err, "initializing database stores")
 	}
 	db := database.NewDB(observationCtx.Logger, sqlDB)
 
-	repoStore := db.Repos()
-	dependenciesSvc := dependencies.NewService(observationCtx, db)
-	externalServiceStore := db.ExternalServices()
-
+	// Initialize the keyring.
 	err = keyring.Init(ctx)
 	if err != nil {
 		return errors.Wrap(err, "initializing keyring")
 	}
 
+	// Possibly run enterprise hooks.
 	if enterpriseInit != nil {
 		enterpriseInit(db, keyring.Default())
 	}
 
-	if err != nil {
-		return errors.Wrap(err, "creating sub-repo client")
-	}
-
+	// Setup our server megastruct.
 	recordingCommandFactory := wrexec.NewRecordingCommandFactory(nil, 0)
+	cloneQueue := server.NewCloneQueue(observationCtx, list.New())
 	gitserver := server.Server{
-		Logger:             logger,
-		ObservationCtx:     observationCtx,
-		ReposDir:           config.ReposDir,
-		DesiredPercentFree: config.JanitorReposDesiredPercentFree,
+		Logger:         logger,
+		ObservationCtx: observationCtx,
+		ReposDir:       config.ReposDir,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
-			return getRemoteURLFunc(ctx, db, repoStore, repo)
+			return getRemoteURLFunc(ctx, logger, db, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
 			return getVCSSyncer(ctx, &newVCSSyncerOpts{
-				externalServiceStore:    externalServiceStore,
-				repoStore:               repoStore,
-				depsSvc:                 dependenciesSvc,
+				externalServiceStore:    db.ExternalServices(),
+				repoStore:               db.Repos(),
+				depsSvc:                 dependencies.NewService(observationCtx, db),
 				repo:                    repo,
 				reposDir:                config.ReposDir,
 				coursierCacheDir:        config.CoursierCacheDir,
 				recordingCommandFactory: recordingCommandFactory,
 			})
 		},
-		Hostname:                externalAddress(),
+		Hostname:                config.ExternalAddress,
 		DB:                      db,
-		CloneQueue:              server.NewCloneQueue(observationCtx, list.New()),
+		CloneQueue:              cloneQueue,
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(config.BatchLogGlobalConcurrencyLimit)),
 		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
 		RecordingCommandFactory: recordingCommandFactory,
 		DeduplicatedForksSet:    types.NewRepoURICache(conf.GetDeduplicatedForksIndex()),
 	}
 
-	conf.Watch(func() {
+	// Make sure we watch for config updates that affect DeduplicatedForksSet or
+	// the recordingCommandFactory.
+	go conf.Watch(func() {
 		gitserver.DeduplicatedForksSet.Overwrite(conf.GetDeduplicatedForksIndex())
 
 		// We update the factory with a predicate func. Each subsequent recordable command will use this predicate
@@ -140,6 +154,75 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf.Repos, recordingConf.IgnoredGitCommands), recordingConf.Size)
 	})
 
+	gitserver.RegisterMetrics(observationCtx, db)
+
+	// Create Handler now since it also initializes state
+	// TODO: Why do we set server state as a side effect of creating our handler?
+	handler := gitserver.Handler()
+	handler = actor.HTTPMiddleware(logger, handler)
+	handler = requestclient.InternalHTTPMiddleware(handler)
+	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
+	handler = instrumentation.HTTPMiddleware("", handler)
+	handler = internalgrpc.MultiplexHandlers(makeGRPCServer(logger, &gitserver), handler)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Best effort attempt to sync rate limiters for external services early on. If
+	// it fails, we'll try again in the background syncer.
+	if err := syncExternalServiceRateLimiters(ctx, db.ExternalServices()); err != nil {
+		logger.Warn("error performing initial rate limit sync", log.Error(err))
+	}
+
+	routines := []goroutine.BackgroundRoutine{
+		httpserver.NewFromAddr(config.ListenAddress, &http.Server{
+			Handler: handler,
+		}),
+		gitserver.NewClonePipeline(logger, cloneQueue),
+		newRateLimitSyncer(ctx, db, config.RateLimitSyncerLimitPerSecond),
+		gitserver.NewRepoStateSyncer(ctx, config.SyncRepoStateInterval, config.SyncRepoStateBatchSize, config.SyncRepoStateUpdatePerSecond),
+	}
+
+	if runtime.GOOS == "windows" {
+		// See https://github.com/sourcegraph/sourcegraph/issues/54317 for details.
+		logger.Warn("Janitor is disabled on windows")
+	} else {
+		routines = append(
+			routines,
+			server.NewJanitor(
+				ctx,
+				server.JanitorConfig{
+					ShardID:            gitserver.Hostname,
+					JanitorInterval:    config.JanitorInterval,
+					ReposDir:           config.ReposDir,
+					DesiredPercentFree: config.JanitorReposDesiredPercentFree,
+				},
+				db,
+				recordingCommandFactory,
+				gitserver.CloneRepo,
+				logger,
+			),
+		)
+	}
+
+	logger.Info("git-server: listening", log.String("addr", config.ListenAddress))
+
+	// We're ready!
+	ready()
+
+	// Launch all routines!
+	goroutine.MonitorBackgroundRoutines(ctx, routines...)
+
+	// The most important thing this does is kill all our clones. If we just
+	// shutdown they will be orphaned and continue running.
+	gitserver.Stop()
+
+	return nil
+}
+
+// makeGRPCServer creates a new *grpc.Server for the gitserver endpoints and registers
+// it with methods on the given server.
+func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
 	configurationWatcher := conf.DefaultClient()
 
 	var additionalServerOptions []grpc.ServerOption
@@ -160,89 +243,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	grpcServer := defaults.NewServer(logger, additionalServerOptions...)
-
 	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{
-		Server: &gitserver,
+		Server: s,
 	})
 
-	gitserver.RegisterMetrics(observationCtx, db)
-
-	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
-		return errors.Wrap(err, "failed to setup temporary directory")
-	} else if err := os.Setenv("TMP_DIR", tmpDir); err != nil {
-		// Additionally, set TMP_DIR so other temporary files we may accidentally
-		// create are on the faster RepoDir mount.
-		return errors.Wrap(err, "setting TMP_DIR")
-	}
-
-	// Create Handler now since it also initializes state
-	// TODO: Why do we set server state as a side effect of creating our handler?
-	handler := gitserver.Handler()
-	handler = actor.HTTPMiddleware(logger, handler)
-	handler = requestclient.InternalHTTPMiddleware(handler)
-	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
-	handler = instrumentation.HTTPMiddleware("", handler)
-	handler = internalgrpc.MultiplexHandlers(grpcServer, handler)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Best effort attempt to sync rate limiters for external services early on. If
-	// it fails, we'll try again in the background sync below.
-	if err := syncExternalServiceRateLimiters(ctx, externalServiceStore); err != nil {
-		logger.Warn("error performing initial rate limit sync", log.Error(err))
-	}
-
-	// Ready immediately
-	ready()
-
-	go syncRateLimiters(ctx, logger, externalServiceStore, config.RateLimitSyncerLimitPerSecond)
-	go gitserver.Janitor(actor.WithInternalActor(ctx), config.JanitorInterval)
-	go gitserver.SyncRepoState(config.SyncRepoStateInterval, config.SyncRepoStateBatchSize, config.SyncRepoStateUpdatePerSecond)
-
-	gitserver.StartClonePipeline(ctx)
-
-	addr := getAddr()
-	srv := &http.Server{
-		Addr:    addr,
-		Handler: handler,
-	}
-	logger.Info("git-server: listening", log.String("addr", srv.Addr))
-
-	go func() {
-		err := srv.ListenAndServe()
-		if err != http.ErrServerClosed {
-			logger.Fatal(err.Error())
-		}
-	}()
-
-	// Listen for shutdown signals. When we receive one attempt to clean up,
-	// but do an insta-shutdown if we receive more than one signal.
-	c := make(chan os.Signal, 2)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
-
-	// Once we receive one of the signals from above, continues with the shutdown
-	// process.
-	<-c
-	go func() {
-		// If a second signal is received, exit immediately.
-		<-c
-		os.Exit(0)
-	}()
-
-	// Wait for at most for the configured shutdown timeout.
-	ctx, cancel = context.WithTimeout(ctx, goroutine.GracefulShutdownTimeout)
-	defer cancel()
-	// Stop accepting requests.
-	if err := srv.Shutdown(ctx); err != nil {
-		logger.Error("shutting down http server", log.Error(err))
-	}
-
-	// The most important thing this does is kill all our clones. If we just
-	// shutdown they will be orphaned and continue running.
-	gitserver.Stop()
-
-	return nil
+	return grpcServer
 }
 
 func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
@@ -308,13 +313,16 @@ func getDB(observationCtx *observation.Context) (*sql.DB, error) {
 	return connections.EnsureNewFrontendDB(observationCtx, dsn, "gitserver")
 }
 
+// getRemoteURLFunc returns a remote URL for the given repo, if any external service
+// connections reference it. The first external service mentioned in repo.Sources
+// will be used to construct the URL and get credentials.
 func getRemoteURLFunc(
 	ctx context.Context,
+	logger log.Logger,
 	db database.DB,
-	repoStore database.RepoStore,
 	repo api.RepoName,
 ) (string, error) {
-	r, err := repoStore.GetByName(ctx, repo)
+	r, err := db.Repos().GetByName(ctx, repo)
 	if err != nil {
 		return "", err
 	}
@@ -332,10 +340,11 @@ func getRemoteURLFunc(
 			// if a repo moves from being public to private while belonging to both a cloud
 			// default external service and another external service with a token that has
 			// access to the private repo.
+			// TODO: This should not be possible anymore, can we remove this check?
 			continue
 		}
 
-		return repos.EncryptableCloneURL(ctx, log.Scoped("repos.CloneURL", ""), db, svc.Kind, svc.Config, r)
+		return repos.EncryptableCloneURL(ctx, logger.Scoped("repos.CloneURL", ""), db, svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
 }
@@ -473,74 +482,50 @@ func syncExternalServiceRateLimiters(ctx context.Context, store database.Externa
 
 // Sync rate limiters from config. Since we don't have a trigger that watches for
 // changes to rate limits we'll run this periodically in the background.
-func syncRateLimiters(ctx context.Context, logger log.Logger, store database.ExternalServiceStore, perSecond int) {
-	backoff := 5 * time.Second
+func newRateLimitSyncer(ctx context.Context, db database.DB, perSecond int) goroutine.BackgroundRoutine {
 	batchSize := 50
-	logger = logger.Scoped("syncRateLimiters", "sync rate limiters from config")
 
-	// perSecond should be spread across all gitserver instances and we want to wait
-	// until we know about at least one instance.
-	var instanceCount int
-	for {
-		instanceCount = len(conf.Get().ServiceConnectionConfig.GitServers)
-		if instanceCount > 0 {
-			break
-		}
-
-		logger.Warn("found zero gitserver instance, trying again after backoff", log.Duration("backoff", backoff))
+	// perSecond should be spread across all gitserver instances. If we cannot
+	// get the number of gitservers initially, we just continue, this limiter
+	// is not very critical as it just means how many external services we fetch
+	// in a given second, and most instances have a handful at most.
+	instanceCount := len(conf.Get().ServiceConnectionConfig.GitServers)
+	if instanceCount <= 0 {
+		instanceCount = 1
 	}
 
-	limiter := ratelimit.NewInstrumentedLimiter("RateLimitSyncer", rate.NewLimiter(rate.Limit(float64(perSecond)/float64(instanceCount)), batchSize))
-	syncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store, repos.RateLimitSyncerOpts{
+	limiter := ratelimit.NewInstrumentedLimiter(
+		"RateLimitSyncer",
+		rate.NewLimiter(rate.Limit(float64(perSecond)/float64(instanceCount)), batchSize),
+	)
+	syncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, db.ExternalServices(), repos.RateLimitSyncerOpts{
 		PageSize: batchSize,
 		Limiter:  limiter,
 	})
 
 	var lastSuccessfulSync time.Time
-	ticker := time.NewTicker(1 * time.Minute)
-	for {
-		start := time.Now()
-		if err := syncer.SyncLimitersSince(ctx, lastSuccessfulSync); err != nil {
-			logger.Warn("syncRateLimiters: error syncing rate limits", log.Error(err))
-		} else {
+	return goroutine.NewPeriodicGoroutine(
+		actor.WithInternalActor(ctx),
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			// Get the latest configuration for the rate limiter and update it.
+			instanceCount := len(conf.Get().ServiceConnectionConfig.GitServers)
+			if instanceCount <= 0 {
+				instanceCount = 1
+			}
+			limiter.SetLimit(rate.Limit(float64(perSecond) / float64(instanceCount)))
+
+			start := time.Now()
+			if err := syncer.SyncLimitersSince(ctx, lastSuccessfulSync); err != nil {
+				return errors.Wrap(err, "syncRateLimiters: error syncing rate limits")
+			}
 			lastSuccessfulSync = start
-		}
 
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-		}
-	}
-}
-
-// externalAddress calculates the name of this gitserver as it would appear in
-// SRC_GIT_SERVERS.
-//
-// Note: we can't just rely on the listen address since more than likely
-// gitserver is behind a k8s service.
-func externalAddress() string {
-	// First we check for it being explicitly set. This should only be
-	// happening in environments were we run gitserver on localhost.
-	if addr := os.Getenv("GITSERVER_EXTERNAL_ADDR"); addr != "" {
-		return addr
-	}
-	// Otherwise we assume we can reach gitserver via its hostname / its
-	// hostname is a prefix of the reachable address (see hostnameMatch).
-	return hostname.Get()
-}
-
-func getAddr() string {
-	addr := os.Getenv("GITSERVER_ADDR")
-	if addr == "" {
-		port := "3178"
-		host := ""
-		if env.InsecureDev {
-			host = "127.0.0.1"
-		}
-		addr = net.JoinHostPort(host, port)
-	}
-	return addr
+			return nil
+		}),
+		goroutine.WithName("gitserver.rate-limit-syncer"),
+		goroutine.WithDescription("syncs rate limit configurations from external services into memory"),
+		goroutine.WithInterval(time.Minute),
+	)
 }
 
 // methodSpecificStreamInterceptor returns a gRPC stream server interceptor that only calls the next interceptor if the method matches.
@@ -631,4 +616,57 @@ func recordCommandsOnRepos(repos []string, ignoredGitCommands []string) wrexec.S
 		}
 		return true
 	}
+}
+
+// setupAndClearTmp sets up the tempdir for reposDir as well as clearing it
+// out. It returns the temporary directory location.
+func setupAndClearTmp(logger log.Logger, reposDir string) (string, error) {
+	logger = logger.Scoped("setupAndClearTmp", "sets up the the tempdir for ReposDir as well as clearing it out")
+
+	// Additionally, we create directories with the prefix .tmp-old which are
+	// asynchronously removed. We do not remove in place since it may be a
+	// slow operation to block on. Our tmp dir will be ${s.ReposDir}/.tmp
+	dir := filepath.Join(reposDir, server.TempDirName) // .tmp
+	oldPrefix := server.TempDirName + "-old"
+	if _, err := os.Stat(dir); err == nil {
+		// Rename the current tmp file, so we can asynchronously remove it. Use
+		// a consistent pattern so if we get interrupted, we can clean it
+		// another time.
+		oldTmp, err := os.MkdirTemp(reposDir, oldPrefix)
+		if err != nil {
+			return "", err
+		}
+		// oldTmp dir exists, so we need to use a child of oldTmp as the
+		// rename target.
+		if err := os.Rename(dir, filepath.Join(oldTmp, server.TempDirName)); err != nil {
+			return "", err
+		}
+	}
+
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return "", err
+	}
+
+	// Asynchronously remove old temporary directories.
+	// TODO: Why async?
+	files, err := os.ReadDir(reposDir)
+	if err != nil {
+		logger.Error("failed to do tmp cleanup", log.Error(err))
+	} else {
+		for _, f := range files {
+			// Remove older .tmp directories as well as our older tmp-
+			// directories we would place into ReposDir. In September 2018 we
+			// can remove support for removing tmp- directories.
+			if !strings.HasPrefix(f.Name(), oldPrefix) && !strings.HasPrefix(f.Name(), "tmp-") {
+				continue
+			}
+			go func(path string) {
+				if err := os.RemoveAll(path); err != nil {
+					logger.Error("failed to remove old temporary directory", log.String("path", path), log.Error(err))
+				}
+			}(filepath.Join(reposDir, f.Name()))
+		}
+	}
+
+	return dir, nil
 }

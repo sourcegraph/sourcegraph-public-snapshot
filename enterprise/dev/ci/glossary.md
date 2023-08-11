@@ -19,8 +19,11 @@ This markdown is used to generate an annotation at the top of every build, displ
     <li><strong>ESLint</strong> is a tool for identifying and reporting on patterns found in ECMAScript/JavaScript code, with the goal of making code more consistent and avoiding bugs.</li>
     <li><strong>golangci-lint</strong> is a fast Go linters runner, providing checks for errors, bugs, performance issues, and style inconsistencies in your Go code.</li>
     <li><strong>nogo</strong> is a tool within the Bazel ecosystem that serves as a linter and static analyzer for Go code, checking for programming errors, bugs, stylistic errors, and suspicious constructs.</li>
+    <li><strong>Packages</strong> are a simple way of managing dependencies in our container images.</li>
     <li><strong>pnpm</strong> is a fast, disk space efficient package manager for JavaScript and Node.js that works in a similar manner to npm and Yarn, but uses a different approach to storing and linking packages.</li>
     <li><strong>Webpack</strong> is a static module bundler for modern JavaScript applications, transforming a multitude of file types into a single output file.</li>
+    <li><strong>Wolfi</strong> is a minimal, hardened Linux distro that's designed for containers.</li>
+    <li><strong>Wolfi Base Images</strong> are minimal container images that contain all the dependencies needed for our final images.</li>
   </ul>
 
   <p>Want to update the glossary? See the <a href="https://docs.sourcegraph.com/dev/how-to/update_ci_glossary">how-to in the docs.</a></p>

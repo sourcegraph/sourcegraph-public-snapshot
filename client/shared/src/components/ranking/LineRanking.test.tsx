@@ -1,7 +1,7 @@
 import { range } from 'lodash'
 
 import { calculateMatchGroupsSorted, mergeContext } from './LineRanking'
-import { MatchItem } from './PerFileResultRanking'
+import type { MatchItem } from './PerFileResultRanking'
 import { testDataRealMatchesByLineNumber } from './PerFileResultRankingTestHelpers'
 
 expect.addSnapshotSerializer({

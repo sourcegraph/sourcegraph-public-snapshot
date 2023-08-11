@@ -2,9 +2,9 @@ import React, {
     useCallback,
     useState,
     useMemo,
-    KeyboardEvent,
-    SyntheticEvent,
-    MouseEvent,
+    type KeyboardEvent,
+    type SyntheticEvent,
+    type MouseEvent,
     useRef,
     useEffect,
     useLayoutEffect,
@@ -26,7 +26,7 @@ import * as uuid from 'uuid'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { isMacPlatform, logger } from '@sourcegraph/common'
-import { HighlightLineRange, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { type HighlightLineRange, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
@@ -34,19 +34,19 @@ import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/ut
 import { Button, Link, TextArea, Icon, H2, H3, Text, createLinkUrl, useMatchMedia } from '@sourcegraph/wildcard'
 
 import { useSidebarSize } from '../cody/sidebar/useSidebarSize'
-import { BlockInput } from '../notebooks'
+import type { BlockInput } from '../notebooks'
 import { createNotebook } from '../notebooks/backend'
 import { blockToGQLInput } from '../notebooks/serialize'
 import { EnterprisePageRoutes } from '../routes.constants'
 import {
     addNotepadEntry,
-    NotepadEntry,
-    NotepadEntryID,
-    NotepadEntryInput,
+    type NotepadEntry,
+    type NotepadEntryID,
+    type NotepadEntryInput,
     removeAllNotepadEntries,
     removeFromNotepad,
     restorePreviousSession,
-    SearchEntry,
+    type SearchEntry,
     setEntryAnnotation,
     useNotepadState,
 } from '../stores/notepad'

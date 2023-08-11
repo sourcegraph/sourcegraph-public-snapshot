@@ -55,6 +55,8 @@ For Sourcegraph Enterprise customers, model availability depends on your Sourceg
 
 Refer to [Cody documentation](../index.md) to learn more about Cody configuration.
 
+> WARNING: When using OpenAI models for completions, only chat completions will work - code completions are currently unsupported.
+
 ## Rate limits and quotas
 
 Rate limits, quotas, and model availability is tied to one of:

@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
-import { Omit } from 'utility-types'
+import type { Omit } from 'utility-types'
 
 import { LazyQueryInput } from '@sourcegraph/branded'
-import { QueryState } from '@sourcegraph/shared/src/search'
+import type { QueryState } from '@sourcegraph/shared/src/search'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import {
     Container,
@@ -21,10 +21,10 @@ import {
     Form,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
-import { Scalars, SearchPatternType } from '../graphql-operations'
-import { NamespaceProps } from '../namespaces'
+import { type Scalars, SearchPatternType } from '../graphql-operations'
+import type { NamespaceProps } from '../namespaces'
 
 import styles from './SavedSearchForm.module.scss'
 

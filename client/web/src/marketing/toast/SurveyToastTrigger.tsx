@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 
 import { SurveyToastContent } from './SurveyToastContent'
 

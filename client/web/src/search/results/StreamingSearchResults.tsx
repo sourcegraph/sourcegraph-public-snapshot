@@ -1,36 +1,36 @@
-import { FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
 import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/branded'
 import { asError } from '@sourcegraph/common'
-import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
+import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import type { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { HighlightResponseFormat, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { QueryUpdate, SearchContextProps } from '@sourcegraph/shared/src/search'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { QueryUpdate, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { sanitizeQueryForTelemetry, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import {
-    AlertKind,
+    type AlertKind,
     LATEST_VERSION,
-    SmartSearchAlertKind,
-    StreamSearchOptions,
+    type SmartSearchAlertKind,
+    type StreamSearchOptions,
 } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useDeepMemo } from '@sourcegraph/wildcard'
 
-import { SearchAggregationProps, SearchStreamingProps } from '..'
-import { AuthenticatedUser } from '../../auth'
-import { CodeMonitoringProps } from '../../codeMonitoring'
+import type { SearchAggregationProps, SearchStreamingProps } from '..'
+import type { AuthenticatedUser } from '../../auth'
+import type { CodeMonitoringProps } from '../../codeMonitoring'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
-import { CodeInsightsProps } from '../../insights/types'
-import { OwnConfigProps } from '../../own/OwnConfigProps'
+import type { CodeInsightsProps } from '../../insights/types'
+import type { OwnConfigProps } from '../../own/OwnConfigProps'
 import { fetchBlob } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { buildSearchURLQueryFromQueryState, setSearchMode, useNavbarQueryState, useNotepad } from '../../stores'

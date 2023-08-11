@@ -6,7 +6,7 @@ import { useLocation } from 'react-router-dom'
 
 import { Link, Menu, MenuButton, MenuLink, MenuList, EMPTY_RECTANGLE, Icon } from '@sourcegraph/wildcard'
 
-import { MobileNavGroupContext, NavItem, NavLink, NavLinkProps } from '.'
+import { MobileNavGroupContext, NavItem, NavLink, type NavLinkProps } from '.'
 
 import styles from './NavDropdown.module.scss'
 import navItemStyles from './NavItem.module.scss'

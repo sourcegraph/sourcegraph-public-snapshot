@@ -3,7 +3,7 @@ import { mdiCodeGreaterThan } from '@mdi/js'
 import { Theme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { Icon } from '@sourcegraph/wildcard'
 
-import { FuzzyFSM, newFuzzyFSMFromValues } from './FuzzyFsm'
+import { type FuzzyFSM, newFuzzyFSMFromValues } from './FuzzyFsm'
 
 export class FuzzyAction {
     constructor(public readonly id: string, public readonly title: string, public readonly run: () => void) {}

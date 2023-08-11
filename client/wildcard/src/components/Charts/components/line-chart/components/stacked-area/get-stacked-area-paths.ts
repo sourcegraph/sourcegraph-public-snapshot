@@ -1,8 +1,8 @@
 import { area } from '@visx/shape'
-import { ScaleLinear, ScaleTime } from 'd3-scale'
+import type { ScaleLinear, ScaleTime } from 'd3-scale'
 
-import { isDatumWithValidNumber, SeriesType, SeriesWithData } from '../../utils'
-import { StackedSeriesDatum } from '../../utils/data-series-processing/types'
+import { isDatumWithValidNumber, SeriesType, type SeriesWithData } from '../../utils'
+import type { StackedSeriesDatum } from '../../utils/data-series-processing/types'
 
 interface Props<Datum> {
     dataSeries: SeriesWithData<Datum>[]

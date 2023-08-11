@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiChevronRight, mdiMicrosoftVisualStudioCode } from '@mdi/js'
 import classNames from 'classnames'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ButtonLink, H1, H2, Icon, Link, ProductStatusBadge, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'

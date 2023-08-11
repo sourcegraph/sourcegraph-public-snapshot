@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { renderMarkdown } from '@sourcegraph/common'
 import { Alert, Button, H2, LoadingSpinner, Markdown, Modal, Text } from '@sourcegraph/wildcard'
 
-import { UpdateInfo } from './updater'
+import type { UpdateInfo } from './updater'
 
 import styles from './ReviewAndInstallModal.module.scss'
 

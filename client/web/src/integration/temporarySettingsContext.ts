@@ -1,9 +1,9 @@
-import {
+import type {
     EditTemporarySettingsResult,
     GetTemporarySettingsResult,
     SharedGraphQlOperations,
 } from '@sourcegraph/shared/src/graphql-operations'
-import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
+import type { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 
 const defaultSettings: TemporarySettings = {
     'user.daysActiveCount': 1,

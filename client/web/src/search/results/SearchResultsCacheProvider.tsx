@@ -1,7 +1,7 @@
 import React, {
     createContext,
     createRef,
-    MutableRefObject,
+    type MutableRefObject,
     useContext,
     useEffect,
     useMemo,
@@ -14,11 +14,11 @@ import { useNavigationType, useLocation } from 'react-router-dom'
 import { merge, of } from 'rxjs'
 import { last, share, tap, throttleTime } from 'rxjs/operators'
 
-import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/wildcard'
 
-import { SearchStreamingProps } from '..'
+import type { SearchStreamingProps } from '..'
 
 interface CachedResults {
     results: AggregateStreamingSearchResults | undefined

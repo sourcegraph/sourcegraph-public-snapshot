@@ -8,7 +8,7 @@
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
-> NOTE: This feature is available in Sourcegraph 5.1.5 and later.
+> NOTE: This feature is available in Sourcegraph 5.1.6 and later.
 
 [Kubernetes manifests](https://github.com/sourcegraph/deploy-sourcegraph-k8s) are provided to deploy Sourcegraph Executors on a running Kubernetes cluster. If you are deploying Sourcegraph with helm, charts are available [here](https://github.com/sourcegraph/deploy-sourcegraph-helm).
 
@@ -40,7 +40,7 @@ Additional RBAC Roles are needed for single pod + pvc executors. Hidden for now 
 -->
 
 See
-the [example Role YAML](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/enterprise/cmd/executor/kubernetes/executor-batches.Role.yml)
+the [example Role YAML](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/cmd/executor/kubernetes/batches/executor-batches.Role.yml)
 for details.
 
 ### Docker Image
@@ -133,7 +133,7 @@ The following are Firewall rules that are _highly recommended_ when running Exec
 Environment.
 
 - Disable access to internal resources.
-- Disable access to `5.1.5.254` (AWS / GCP Instance Metadata Service).
+- Disable access to `5.1.6.254` (AWS / GCP Instance Metadata Service).
 
 ### Batch Changes
 
@@ -143,7 +143,7 @@ Kubernetes, [Native Server-Side Batch Changes](./native_execution.md) must be en
 ### Example Configuration YAML
 
 See
-the [local development YAMLs](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/enterprise/cmd/executor/kubernetes)
+the [local development YAMLs](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/cmd/executor/kubernetes)
 for an example of how to configure the Executor in Kubernetes.
 
 ## Deployment

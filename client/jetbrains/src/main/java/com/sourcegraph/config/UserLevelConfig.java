@@ -32,6 +32,12 @@ public class UserLevelConfig {
         .orElse(AutoCompleteProviderType.DEFAULT_AUTOCOMPLETE_PROVIDER_TYPE); // or default
   }
 
+  public static boolean getAutocompleteAdvancedEmbeddings() {
+    Properties properties = readProperties();
+    return Boolean.parseBoolean(
+        properties.getProperty("cody.autocomplete.advanced.embeddings", "true"));
+  }
+
   /**
    * Overrides the server endpoint used for generating autocomplete suggestions. This is only
    * supported with the `unstable-codegen` provider right now.
@@ -41,9 +47,15 @@ public class UserLevelConfig {
     Properties properties = readProperties();
     String currentKey = "cody.autocomplete.advanced.serverEndpoint";
     @Deprecated(since = "3.0.4")
-    String oldKey = "cody.completions.advanced.serverEndpoint";
+    String oldKey = "cody.autocomplete.advanced.serverEndpoint";
     return Optional.ofNullable(properties.getProperty(currentKey, null))
         .orElse(properties.getProperty(oldKey, null)); // fallback to the old key
+  }
+
+  @Nullable
+  public static String getAutoCompleteAccessToken() {
+    Properties properties = readProperties();
+    return properties.getProperty("cody.autocomplete.advanced.accessToken", null);
   }
 
   @Nullable

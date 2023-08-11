@@ -4,7 +4,7 @@ import FeatureSearchOutlineIcon from 'mdi-react/FeatureSearchOutlineIcon'
 
 import { namespaceAreaHeaderNavItems } from '../../namespaces/navitems'
 
-import { UserAreaHeaderNavItem } from './UserAreaHeader'
+import type { UserAreaHeaderNavItem } from './UserAreaHeader'
 
 export const userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] = [
     {

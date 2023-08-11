@@ -1,11 +1,11 @@
-import { Omit } from 'utility-types'
+import type { Omit } from 'utility-types'
 
-import { SearchMatch } from '../stream'
+import type { SearchMatch } from '../stream'
 
 import { languageCompletion } from './languageFilter'
 import { predicateCompletion } from './predicates'
 import { selectorCompletion } from './selectFilter'
-import { Filter, Literal } from './token'
+import type { Filter, Literal } from './token'
 
 export enum FilterType {
     after = 'after',

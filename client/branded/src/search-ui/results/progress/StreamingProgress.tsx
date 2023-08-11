@@ -3,7 +3,7 @@ import * as React from 'react'
 import { mdiClipboardPulseOutline } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Progress, StreamingResultsState } from '@sourcegraph/shared/src/search/stream'
+import type { Progress, StreamingResultsState } from '@sourcegraph/shared/src/search/stream'
 import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { StreamingProgressCount } from './StreamingProgressCount'

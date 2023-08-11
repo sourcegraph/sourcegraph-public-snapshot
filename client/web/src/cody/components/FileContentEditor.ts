@@ -1,6 +1,6 @@
 import { URI } from 'vscode-uri'
 
-import {
+import type {
     ActiveTextEditor,
     ActiveTextEditorDiagnostic,
     ActiveTextEditorSelection,
@@ -60,6 +60,16 @@ export class FileContentEditor implements Editor {
             ...this.editor,
             fileName: this.editor.filePath,
         }
+    }
+
+    public getWorkspaceRootUri(): null {
+        // Not implemented.
+        return null
+    }
+
+    public getActiveTextEditorDiagnosticsForRange(): ActiveTextEditorDiagnostic[] | null {
+        // Not implemented.
+        return null
     }
 
     public replaceSelection(_fileName: string, _selectedText: string, _replacement: string): Promise<void> {

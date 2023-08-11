@@ -1,7 +1,7 @@
 import { gql } from '@sourcegraph/http-client'
-import { ContentMatch, PathMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import type { ContentMatch, PathMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 
-import { BlobContentResult, BlobContentVariables } from '../../graphql-operations'
+import type { BlobContentResult, BlobContentVariables } from '../../graphql-operations'
 import { getMatchId } from '../results/utils'
 
 import { ExpirationCache } from './ExpirationCache'

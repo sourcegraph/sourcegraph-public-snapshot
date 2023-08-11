@@ -1,6 +1,6 @@
 import { URI } from 'vscode-uri'
 
-import {
+import type {
     ActiveTextEditor,
     ActiveTextEditorDiagnostic,
     ActiveTextEditorSelection,
@@ -43,6 +43,16 @@ export class RepoContainerEditor implements Editor {
     }
 
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
+        return null
+    }
+
+    public getWorkspaceRootUri(): null {
+        // Not implemented.
+        return null
+    }
+
+    public getActiveTextEditorDiagnosticsForRange(): ActiveTextEditorDiagnostic[] | null {
+        // Not implemented.
         return null
     }
 

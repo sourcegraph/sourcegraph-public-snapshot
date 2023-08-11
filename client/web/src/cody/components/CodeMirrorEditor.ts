@@ -1,7 +1,7 @@
 import type { EditorView } from '@codemirror/view'
 import { URI } from 'vscode-uri'
 
-import {
+import type {
     ActiveTextEditor,
     ActiveTextEditorDiagnostic,
     ActiveTextEditorSelection,
@@ -126,6 +126,16 @@ export class CodeMirrorEditor implements Editor {
             }
         }
 
+        return null
+    }
+
+    public getWorkspaceRootUri(): null {
+        // Not implemented.
+        return null
+    }
+
+    public getActiveTextEditorDiagnosticsForRange(): ActiveTextEditorDiagnostic[] | null {
+        // Not implemented.
         return null
     }
 

@@ -58,7 +58,7 @@
         return fetchRepoCommits({
             repoID: $page.data.resolvedRevision.repo.id,
             revision: $page.data.resolvedRevision.commitID,
-            filePath: $page.params.path || null,
+            filePath: $page.params.path,
             pageInfo,
         })
     }

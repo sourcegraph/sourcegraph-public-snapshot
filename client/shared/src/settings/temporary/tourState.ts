@@ -8,7 +8,7 @@
  * https://github.com/sourcegraph/sourcegraph/issues/45836
  *
  */
-import { Optional } from 'utility-types'
+import type { Optional } from 'utility-types'
 
 /**
  * Tour supported languages

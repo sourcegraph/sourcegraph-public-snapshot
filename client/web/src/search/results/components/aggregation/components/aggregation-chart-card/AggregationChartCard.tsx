@@ -1,16 +1,16 @@
-import { Suspense, HTMLAttributes, ReactElement, MouseEvent } from 'react'
+import { Suspense, type HTMLAttributes, type ReactElement, type MouseEvent } from 'react'
 
 import { mdiPlay } from '@mdi/js'
 import { useDebouncedCallback } from 'use-debounce'
 
 import { pluralize } from '@sourcegraph/common'
-import { NotAvailableReasonType, SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
+import { NotAvailableReasonType, type SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Text, Link, Tooltip, Button, Icon, ErrorAlert, ErrorMessage } from '@sourcegraph/wildcard'
 
-import { SearchAggregationDatum, GetSearchAggregationResult } from '../../../../../../graphql-operations'
+import type { SearchAggregationDatum, GetSearchAggregationResult } from '../../../../../../graphql-operations'
 
-import { AggregationChartProps, AggregationTextContent, AggregationContent } from './components'
+import { type AggregationChartProps, AggregationTextContent, AggregationContent } from './components'
 
 import styles from './AggregationChartCard.module.scss'
 

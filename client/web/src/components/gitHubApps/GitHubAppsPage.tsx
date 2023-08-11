@@ -7,7 +7,7 @@ import { useLocation } from 'react-router-dom'
 import { useQuery } from '@sourcegraph/http-client'
 import { ButtonLink, Container, ErrorAlert, Icon, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
-import { GitHubAppsResult, GitHubAppsVariables, GitHubAppDomain } from '../../graphql-operations'
+import { type GitHubAppsResult, type GitHubAppsVariables, GitHubAppDomain } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import {
     ConnectionContainer,

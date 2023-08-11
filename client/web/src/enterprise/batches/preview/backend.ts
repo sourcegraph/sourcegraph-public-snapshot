@@ -1,11 +1,11 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 
 import { diffStatFields } from '../../../backend/diff'
 import { requestGraphQL } from '../../../backend/graphql'
-import {
+import type {
     CreateBatchChangeVariables,
     CreateBatchChangeResult,
     ApplyBatchChangeResult,

@@ -3,13 +3,13 @@ import React, { useCallback } from 'react'
 import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
-import { QueryState } from '@sourcegraph/shared/src/search'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { QueryState } from '@sourcegraph/shared/src/search'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Card, Text } from '@sourcegraph/wildcard'
 
 import { ModalVideo } from '../alias/ModalVideo'
 
-import { SearchExample, exampleQueries } from './SearchExamples'
+import { type SearchExample, exampleQueries } from './SearchExamples'
 
 import styles from './HomeFooter.module.scss'
 

@@ -1,14 +1,14 @@
 import React from 'react'
 
 import classNames from 'classnames'
-import { AuthProvider } from 'src/jscontext'
+import type { AuthProvider } from 'src/jscontext'
 
-import { ErrorLike } from '@sourcegraph/common'
+import type { ErrorLike } from '@sourcegraph/common'
 
 import { defaultExternalAccounts } from '../../../components/externalAccounts/externalAccounts'
 
 import { ExternalAccount } from './ExternalAccount'
-import { AccountsByServiceID, UserExternalAccount } from './UserSettingsSecurityPage'
+import type { AccountsByServiceID, UserExternalAccount } from './UserSettingsSecurityPage'
 
 import styles from './ExternalAccountsSignIn.module.scss'
 

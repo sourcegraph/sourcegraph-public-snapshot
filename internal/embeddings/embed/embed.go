@@ -35,10 +35,6 @@ func NewEmbeddingsClient(config *conftypes.EmbeddingsConfig) (client.EmbeddingsC
 	}
 }
 
-const (
-	getEmbeddingsMaxRetries = 5
-)
-
 // EmbedRepo embeds file contents from the given file names for a repository.
 // It separates the file names into code files and text files and embeds them separately.
 // It returns a RepoEmbeddingIndex containing the embeddings and metadata.

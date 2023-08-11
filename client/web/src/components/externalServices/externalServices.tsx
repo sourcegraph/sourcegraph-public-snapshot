@@ -1,6 +1,6 @@
-import React, { ReactNode } from 'react'
+import React, { type ReactNode } from 'react'
 
-import { Edit, JSONPath, ModificationOptions, modify, parse as parseJSONC } from 'jsonc-parser'
+import { type Edit, type JSONPath, type ModificationOptions, modify, parse as parseJSONC } from 'jsonc-parser'
 import AwsIcon from 'mdi-react/AwsIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
@@ -37,15 +37,15 @@ import pythonPackagesJSON from '../../../../../schema/python-packages.schema.jso
 import rubyPackagesSchemaJSON from '../../../../../schema/ruby-packages.schema.json'
 import rustPackagesJSON from '../../../../../schema/rust-packages.schema.json'
 import {
-    ExternalRepositoryFields,
+    type ExternalRepositoryFields,
     ExternalServiceKind,
     ExternalServiceSyncJobState,
-    GitHubAppByAppIDResult,
+    type GitHubAppByAppIDResult,
 } from '../../graphql-operations'
-import { EditorAction } from '../../settings/EditorActionsGroup'
+import type { EditorAction } from '../../settings/EditorActionsGroup'
 import { GitHubAppSelector } from '../gitHubApps/GitHubAppSelector'
 
-import { ExternalServiceFieldsWithConfig } from './backend'
+import type { ExternalServiceFieldsWithConfig } from './backend'
 import { GerritIcon } from './GerritIcon'
 
 /**

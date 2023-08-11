@@ -1,7 +1,7 @@
 import * as path from 'path'
 
 import { pythonStyleComment } from './comments'
-import { FilterContext, LanguageSpec, Result } from './language-spec'
+import type { FilterContext, LanguageSpec, Result } from './language-spec'
 import { extractFromLines, filterResultsByImports, removeExtension } from './util'
 
 /**

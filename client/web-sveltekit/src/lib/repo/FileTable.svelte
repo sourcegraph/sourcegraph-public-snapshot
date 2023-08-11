@@ -1,10 +1,12 @@
 <script lang="ts">
     import { mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
 
-    import type { TreeEntryFields } from '$lib/graphql/shared'
     import Icon from '$lib/Icon.svelte'
+    import type { TreeEntryFields } from './api/tree'
+    import { replaceRevisionInURL } from '$lib/web'
 
     export let entries: TreeEntryFields[]
+    export let revision: string
 </script>
 
 <table>
@@ -13,7 +15,7 @@
             <tr>
                 <td>
                     <Icon svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline} inline />
-                    <a href={entry.url}>{entry.name}</a>
+                    <a href={replaceRevisionInURL(entry.canonicalURL, revision)}>{entry.name}</a>
                 </td>
             </tr>
         {/each}

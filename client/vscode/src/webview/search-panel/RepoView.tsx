@@ -7,11 +7,11 @@ import { catchError } from 'rxjs/operators'
 
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { QueryState } from '@sourcegraph/shared/src/search'
-import { RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
+import type { QueryState } from '@sourcegraph/shared/src/search'
+import type { RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { Icon, PageHeader, useObservable, H4, Text, Button } from '@sourcegraph/wildcard'
 
-import { WebviewPageProps } from '../platform/context'
+import type { WebviewPageProps } from '../platform/context'
 
 import styles from './RepoView.module.scss'
 

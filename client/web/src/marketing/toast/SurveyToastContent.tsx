@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react'
 
 import { gql, useMutation } from '@apollo/client'
 
-import { AuthenticatedUser } from '../../auth'
-import { SubmitSurveyResult, SubmitSurveyVariables } from '../../graphql-operations'
+import type { AuthenticatedUser } from '../../auth'
+import type { SubmitSurveyResult, SubmitSurveyVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { SurveySuccessToast } from './SurveySuccessToast'

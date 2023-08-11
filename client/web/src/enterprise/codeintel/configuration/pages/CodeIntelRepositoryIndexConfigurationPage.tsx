@@ -1,11 +1,11 @@
-import { FunctionComponent, useEffect, useState } from 'react'
+import { type FunctionComponent, useEffect, useState } from 'react'
 
 import { useLocation } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Link, Tabs, TabList, Tab, TabPanels, TabPanel } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../auth'
+import type { AuthenticatedUser } from '../../../../auth'
 import { PageTitle } from '../../../../components/PageTitle'
 import { CodeIntelConfigurationPageHeader } from '../components/CodeIntelConfigurationPageHeader'
 import { ConfigurationEditor } from '../components/ConfigurationEditor'

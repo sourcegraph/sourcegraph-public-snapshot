@@ -2,9 +2,12 @@ import { useCallback } from 'react'
 
 import { gql, useLazyQuery } from '@apollo/client'
 
-import { renderError, AsyncValidator, Validator } from '@sourcegraph/wildcard'
+import { renderError, type AsyncValidator, type Validator } from '@sourcegraph/wildcard'
 
-import { CheckRepositoryExistsResult, CheckRepositoryExistsVariables } from '../../../../../../../graphql-operations'
+import type {
+    CheckRepositoryExistsResult,
+    CheckRepositoryExistsVariables,
+} from '../../../../../../../graphql-operations'
 
 /**
  * Primarily used in creation and edit insight pages and also on the landing page where

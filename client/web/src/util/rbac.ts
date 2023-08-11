@@ -1,6 +1,6 @@
 import { findIndex } from 'lodash'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { RepoMetadataWritePermission } from '../rbac/constants'
 
 export const canWriteRepoMetadata = (user: Pick<AuthenticatedUser, 'permissions'> | null): boolean =>

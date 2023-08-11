@@ -1,9 +1,9 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import AboutOutlineIcon from 'mdi-react/AboutOutlineIcon'
 import { Routes, Route, Outlet, Navigate, useLocation } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, MenuDivider, PageHeader } from '@sourcegraph/wildcard'
 
 import { RemoteRepositoriesStep } from '../../../setup-wizard/components'
