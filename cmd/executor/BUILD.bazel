@@ -35,6 +35,7 @@ go_binary(
 
 go_binary(
     name = "executor_shell",
+    basename = "executor",
     embed = [":executor_lib"],
     gotags = [
         "shell",
@@ -54,9 +55,6 @@ pkg_tar(
 pkg_tar(
     name = "tar_executor_shell",
     srcs = [":executor_shell"],
-    remap_paths = {
-        "/executor_shell": "/usr/local/bin/executor",
-    },
     visibility = ["//cmd/bundled-executor:__pkg__"],
 )
 

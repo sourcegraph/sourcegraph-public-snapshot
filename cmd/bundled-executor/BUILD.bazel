@@ -6,6 +6,7 @@ load("//cmd/server:macro.bzl", "container_dependencies", "dependencies_tars")
 
 DEPS = [
     "//cmd/batcheshelper",
+    "//cmd/executor:executor_shell",
 ]
 
 container_dependencies(DEPS)
@@ -30,7 +31,6 @@ oci_image(
         "EXECUTOR_NUM_TOTAL_JOBS": "1",
     },
     tars = dependencies_tars(DEPS) + [
-        "//cmd/executor:tar_executor_shell",
         ":tar_src-cli",
     ],
     user = "sourcegraph",
