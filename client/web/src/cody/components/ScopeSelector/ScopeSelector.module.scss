@@ -19,6 +19,7 @@
 
     &:focus {
         border-color: var(--primary-2) !important;
+        box-shadow: none !important;
     }
 
     svg {

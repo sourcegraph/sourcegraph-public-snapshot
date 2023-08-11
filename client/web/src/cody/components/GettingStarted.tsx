@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 
@@ -16,6 +16,8 @@ type CoversationScope = 'general' | 'repo'
 
 const isBlobPage = (): boolean => parseBrowserRepoURL(window.location.href)?.filePath !== undefined
 
+const DEFAULT_VERTICAL_OFFSET = '1rem'
+
 export const GettingStarted: React.FC<
     Pick<
         CodyChatStore,
@@ -26,8 +28,36 @@ export const GettingStarted: React.FC<
     }
 > = ({ submitInput, ...scopeSelectorProps }) => {
     const [conversationScope, setConversationScope] = useState<CoversationScope>(
-        scopeSelectorProps.scope.repositories.length ? 'repo' : 'general'
+        isBlobPage() || scopeSelectorProps.scope.repositories.length > 0 ? 'repo' : 'general'
     )
+
+    /*
+    When content is vertically centered inside the container using CSS,
+    any content height change (e.g. conditional rendering of additional examples, etc.)
+    causes content top and bottom positions to change. This results in a "jumping" effect and not-optimal UX
+    when interacting with conversation scope radio group.
+    In order to avoid this, we calculate the vertical offset of the content and apply it as a margin. In this case
+    when content height chages, the top position remains the same and only the bottom position changes.
+    */
+    const [contentVerticalOffset, setContentVerticalOffset] = useState<string>(DEFAULT_VERTICAL_OFFSET)
+    const containerRef = useRef<HTMLDivElement>()
+    const contentRef = useRef<HTMLDivElement>()
+    useEffect(() => {
+        const updateVerticalOffset = (): void =>
+            setContentVerticalOffset(() => {
+                if (!containerRef.current || !contentRef.current) {
+                    return DEFAULT_VERTICAL_OFFSET
+                }
+
+                const containerHeight = containerRef.current.getBoundingClientRect().height
+                const contentHeight = contentRef.current.getBoundingClientRect().height
+
+                return `${(containerHeight - contentHeight) / 2}px`
+            })
+        updateVerticalOffset()
+        window.addEventListener('resize', updateVerticalOffset)
+        return () => window.removeEventListener('resize', updateVerticalOffset)
+    }, [])
 
     useEffect(() => {
         if (scopeSelectorProps.scope.repositories.length > 0) {
@@ -76,7 +106,7 @@ export const GettingStarted: React.FC<
         }
     }, [conversationScope, scopeSelectorProps.scope.repositories])
 
-    const renderRepoINdexingWarning = useCallback(
+    const renderRepoIndexingWarning = useCallback(
         (repos: IRepo[]) => {
             if (conversationScope === 'general' || repos.every(isRepoIndexed)) {
                 return null
@@ -97,8 +127,9 @@ export const GettingStarted: React.FC<
     )
 
     return (
-        <div className={styles.container}>
-            <div className={styles.content}>
+        <div ref={containerRef} className={styles.container}>
+            {/* eslint-disable-next-line react/forbid-dom-props */}
+            <div ref={contentRef} style={{ margin: `${contentVerticalOffset} 20%` }}>
                 <Grid templateColumns="1fr 1fr" spacing={0} className={styles.iconSection}>
                     <Grid templateColumns="1fr" spacing={0} className={styles.greetingContainer}>
                         <div className={styles.greetingIcon}>
@@ -150,7 +181,7 @@ export const GettingStarted: React.FC<
                                     onChange={event => setConversationScope(event.target.value as CoversationScope)}
                                 />
                                 <div className={styles.scopeSelectorWrapper}>
-                                    <ScopeSelector {...scopeSelectorProps} renderHint={renderRepoINdexingWarning} />
+                                    <ScopeSelector {...scopeSelectorProps} renderHint={renderRepoIndexingWarning} />
                                 </div>
                                 <hr className={styles.divider} />
 
