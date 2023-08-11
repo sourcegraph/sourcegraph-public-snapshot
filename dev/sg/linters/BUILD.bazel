@@ -16,6 +16,7 @@ go_library(
         "misc.go",
         "prettier.go",
         "runner.go",
+        "shell.go",
         "svg.go",
         "usage_linter.go",
     ],
