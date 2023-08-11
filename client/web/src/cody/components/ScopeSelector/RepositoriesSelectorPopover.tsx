@@ -30,7 +30,7 @@ import {
     useDebounce,
 } from '@sourcegraph/wildcard'
 
-import { ReposSelectorSearchResult, ReposSelectorSearchVariables } from '../../../graphql-operations'
+import { RepositoryOrderBy, ReposSelectorSearchResult, ReposSelectorSearchVariables } from '../../../graphql-operations'
 import { ExternalRepositoryIcon } from '../../../site-admin/components/ExternalRepositoryIcon'
 
 import { ReposSelectorSearchQuery } from './backend'
@@ -62,6 +62,7 @@ export const RepositoriesSelectorPopover: React.FC<{
     inferredRepository: IRepo | null
     inferredFilePath: string | null
     additionalRepositories: IRepo[]
+    shouldShowRepoExamples?: boolean
     resetScope: (() => Promise<void>) | null
     addRepository: (repoName: string) => void
     removeRepository: (repoName: string) => void
@@ -78,6 +79,7 @@ export const RepositoriesSelectorPopover: React.FC<{
     includeInferredFile,
     toggleIncludeInferredRepository,
     toggleIncludeInferredFile,
+    shouldShowRepoExamples,
 }) {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
     const [searchText, setSearchText] = useState('')
@@ -103,15 +105,19 @@ export const RepositoriesSelectorPopover: React.FC<{
     }, [setSearchText, stopPolling])
 
     useEffect(() => {
-        if (searchTextDebounced) {
+        if (searchTextDebounced || (isPopoverOpen && shouldShowRepoExamples)) {
             /* eslint-disable no-console */
             searchRepositories({
-                variables: { query: searchTextDebounced, includeJobs: !!window.context.currentUser?.siteAdmin },
-                pollInterval: 5000,
+                variables: {
+                    query: searchTextDebounced,
+                    includeJobs: !!window.context.currentUser?.siteAdmin,
+                    orderBy: searchTextDebounced ? RepositoryOrderBy.REPOSITORY_NAME : RepositoryOrderBy.SIZE,
+                },
+                pollInterval: searchTextDebounced ? 5000 : undefined,
             }).catch(console.error)
             /* eslint-enable no-console */
         }
-    }, [searchTextDebounced, searchRepositories])
+    }, [searchTextDebounced, shouldShowRepoExamples, searchRepositories, isPopoverOpen])
 
     const [isCalloutDismissed = true, setIsCalloutDismissed] = useTemporarySetting(
         'cody.contextCallout.dismissed',
@@ -192,7 +198,37 @@ export const RepositoriesSelectorPopover: React.FC<{
                         )}
                     >
                         <div>
-                            {!searchText && (
+                            {searchText || (shouldShowRepoExamples && searchResults.length > 0) ? (
+                                <>
+                                    <div className="d-flex justify-content-between p-2 border-bottom mb-1">
+                                        <Text className={classNames('m-0', styles.header)}>
+                                            {additionalRepositoriesLeft
+                                                ? `Add up to ${additionalRepositoriesLeft} additional repositories`
+                                                : 'Maximum additional repositories added'}
+                                        </Text>
+                                    </div>
+                                    <div className={classNames('d-flex flex-column', styles.contextItemsContainer)}>
+                                        {searchResults.length ? (
+                                            searchResults.map(repository => (
+                                                <SearchResultsListItem
+                                                    additionalRepositories={additionalRepositories}
+                                                    key={repository.id}
+                                                    repository={repository}
+                                                    searchText={searchText}
+                                                    addRepository={addRepository}
+                                                    removeRepository={removeRepository}
+                                                />
+                                            ))
+                                        ) : !loadingSearchResults ? (
+                                            <div className="d-flex align-items-center justify-content-center flex-column p-4 mt-4">
+                                                <Text size="small" className="m-0 d-flex text-center">
+                                                    No matching repositories found
+                                                </Text>
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                </>
+                            ) : (
                                 <>
                                     <div className="d-flex justify-content-between p-2 border-bottom mb-1">
                                         <Text className={classNames('m-0', styles.header)}>Chat Context</Text>
@@ -312,37 +348,6 @@ export const RepositoriesSelectorPopover: React.FC<{
                                     </div>
                                 </>
                             )}
-                            {searchText && (
-                                <>
-                                    <div className="d-flex justify-content-between p-2 border-bottom mb-1">
-                                        <Text className={classNames('m-0', styles.header)}>
-                                            {additionalRepositoriesLeft
-                                                ? `Add up to ${additionalRepositoriesLeft} additional repositories`
-                                                : 'Maximum additional repositories added'}
-                                        </Text>
-                                    </div>
-                                    <div className={classNames('d-flex flex-column', styles.contextItemsContainer)}>
-                                        {searchResults.length ? (
-                                            searchResults.map(repository => (
-                                                <SearchResultsListItem
-                                                    additionalRepositories={additionalRepositories}
-                                                    key={repository.id}
-                                                    repository={repository}
-                                                    searchText={searchText}
-                                                    addRepository={addRepository}
-                                                    removeRepository={removeRepository}
-                                                />
-                                            ))
-                                        ) : !loadingSearchResults ? (
-                                            <div className="d-flex align-items-center justify-content-center flex-column p-4 mt-4">
-                                                <Text size="small" className="m-0 d-flex text-center">
-                                                    No matching repositories found
-                                                </Text>
-                                            </div>
-                                        ) : null}
-                                    </div>
-                                </>
-                            )}
                         </div>
                         <div className={classNames('relative p-2 border-top mt-auto', styles.inputContainer)}>
                             <Input
@@ -353,8 +358,8 @@ export const RepositoriesSelectorPopover: React.FC<{
                                 placeholder={
                                     additionalRepositoriesLeft
                                         ? inferredRepository
-                                            ? 'Add additional repositories...'
-                                            : 'Add repositories...'
+                                            ? 'Search additional repositories...'
+                                            : 'Search repositories...'
                                         : 'Maximum additional repositories added'
                                 }
                                 variant="small"

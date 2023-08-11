@@ -1,8 +1,8 @@
 import { gql } from '@sourcegraph/http-client'
 
 export const ReposSelectorSearchQuery = gql`
-    query ReposSelectorSearch($query: String!, $includeJobs: Boolean!) {
-        repositories(query: $query, first: 10) {
+    query ReposSelectorSearch($query: String!, $includeJobs: Boolean!, $orderBy: RepositoryOrderBy) {
+        repositories(query: $query, first: 10, orderBy: $orderBy) {
             nodes {
                 id
                 name
