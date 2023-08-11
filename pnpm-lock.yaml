@@ -1584,8 +1584,8 @@ importers:
         specifier: https://github.com/sourcegraph/cody/files/12324804/sourcegraph-cody-shared-0.0.0-codyintel.experimental.1.tgz
         version: '@github.com/sourcegraph/cody/files/12324804/sourcegraph-cody-shared-0.0.0-codyintel.experimental.1.tgz'
       '@sourcegraph/cody-ui':
-        specifier: https://github.com/sourcegraph/cody/releases/download/codyintel3/sourcegraph-cody-ui-0.0.0-codyintel.experimental.1.tgz
-        version: '@github.com/sourcegraph/cody/releases/download/codyintel3/sourcegraph-cody-ui-0.0.0-codyintel.experimental.1.tgz'
+        specifier: https://github.com/sourcegraph/cody/releases/download/codyintel3/sourcegraph-cody-ui-0.0.0-codyintel.experimental.2.tgz
+        version: '@github.com/sourcegraph/cody/releases/download/codyintel3/sourcegraph-cody-ui-0.0.0-codyintel.experimental.2.tgz'
       '@sourcegraph/common':
         specifier: workspace:*
         version: link:../common
@@ -34974,8 +34974,8 @@ packages:
       - encoding
     dev: false
 
-  '@github.com/sourcegraph/cody/releases/download/codyintel3/sourcegraph-cody-ui-0.0.0-codyintel.experimental.1.tgz':
-    resolution: {tarball: https://github.com/sourcegraph/cody/releases/download/codyintel3/sourcegraph-cody-ui-0.0.0-codyintel.experimental.1.tgz}
+  '@github.com/sourcegraph/cody/releases/download/codyintel3/sourcegraph-cody-ui-0.0.0-codyintel.experimental.2.tgz':
+    resolution: {tarball: https://github.com/sourcegraph/cody/releases/download/codyintel3/sourcegraph-cody-ui-0.0.0-codyintel.experimental.2.tgz}
     name: '@sourcegraph/cody-ui'
     version: 0.0.0-codyintel.experimental.1
     dependencies:
