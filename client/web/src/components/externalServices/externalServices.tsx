@@ -1145,13 +1145,13 @@ const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
     jsonSchema: phabricatorSchemaJSON,
     defaultDisplayName: 'Phabricator',
     defaultConfig: `{
-// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
-// Configuration options are documented here:
-// https://docs.sourcegraph.com/admin/external_service/phabricator#configuration
+  // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+  // Configuration options are documented here:
+  // https://docs.sourcegraph.com/admin/external_service/phabricator#configuration
 
-"url": "https://phabricator.example.com",
-"token": "",
-"repos": []
+  "url": "https://phabricator.example.com",
+  "token": "",
+  "repos": []
 }`,
     editorActions: [
         {

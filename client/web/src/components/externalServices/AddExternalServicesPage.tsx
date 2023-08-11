@@ -211,6 +211,7 @@ interface ExternalServicesGroup {
     icon: React.ComponentType<{ className?: string }>
     description: string
     renderIcon: boolean
+    renderAsSingleItem?: boolean
 }
 
 const computeExternalServicesGroup = (
@@ -231,6 +232,7 @@ const computeExternalServicesGroup = (
             icon: GitLabIcon,
             description: 'Connect with repositories on GitLab',
             renderIcon: false,
+            renderAsSingleItem: true,
         },
         bitbucket: {
             label: 'Bitbucket',
@@ -270,7 +272,7 @@ const transformNonCodeHostExternalServices = (
     allowedCodeHosts: Set<AddExternalServiceOptions> | null
 ): AddExternalServiceOptionsWithID[] =>
     Object.entries(services).map(([serviceID, service]) => {
-        const isDisabled = !allowedCodeHosts?.has(service)
+        const isDisabled = allowedCodeHosts?.has(service)
         return { ...service, serviceID, enabled: !isDisabled }
     })
 
