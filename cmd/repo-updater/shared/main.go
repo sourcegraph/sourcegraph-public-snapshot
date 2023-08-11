@@ -40,6 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -150,7 +151,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		DeduplicatedForksSet: types.NewRepoURICache(conf.GetDeduplicatedForksIndex()),
 	}
 
-	conf.Watch(func() {
+	go conf.Watch(func() {
 		syncer.DeduplicatedForksSet.Overwrite(conf.GetDeduplicatedForksIndex())
 	})
 
@@ -170,20 +171,14 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// background jobs for this feature.
 	if !envvar.SourcegraphDotComMode() {
 		syncRegistry := batches.InitBackgroundJobs(ctx, db, kr.BatchChangesCredentialKey, cf)
-		if server != nil {
-			server.ChangesetSyncRegistry = syncRegistry
-		}
+		server.ChangesetSyncRegistry = syncRegistry
 	}
 
 	permsStore := database.Perms(observationCtx.Logger, db, timeutil.Now)
 	permsSyncer := authz.NewPermsSyncer(observationCtx.Logger.Scoped("PermsSyncer", "repository and user permissions syncer"), db, store, permsStore, timeutil.Now)
 
-	if server != nil {
-		if server.Syncer != nil {
-			server.Syncer.EnterpriseCreateRepoHook = enterpriseCreateRepoHook
-			server.Syncer.EnterpriseUpdateRepoHook = enterpriseUpdateRepoHook
-		}
-	}
+	server.Syncer.EnterpriseCreateRepoHook = enterpriseCreateRepoHook
+	server.Syncer.EnterpriseUpdateRepoHook = enterpriseUpdateRepoHook
 
 	repoWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeRepo)
 	userWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeUser)
@@ -194,37 +189,57 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// separate name for logging and metrics.
 	resetter := authz.MakeResetter(observationCtx, repoWorkerStore)
 
-	go goroutine.MonitorBackgroundRoutines(ctx, repoSyncWorker, userSyncWorker, resetter)
 	go watchAuthzProviders(ctx, db)
 
 	go watchSyncer(ctx, logger, syncer, updateScheduler, server.ChangesetSyncRegistry)
-	go func() {
-		err := syncer.Run(ctx, store, repos.RunOptions{
-			EnqueueInterval: repos.ConfRepoListUpdateInterval,
-			IsDotCom:        envvar.SourcegraphDotComMode(),
-			MinSyncInterval: repos.ConfRepoListUpdateInterval,
-		})
-		if err != nil {
-			logger.Fatal("syncer.Run failure", log.Error(err))
-		}
-	}()
 
-	go manageUnclonedRepos(ctx, logger, updateScheduler, store)
+	routines := []goroutine.BackgroundRoutine{
+		repoSyncWorker,
+		userSyncWorker,
+		resetter,
+		newUnclonedReposManager(ctx, logger, envvar.SourcegraphDotComMode(), updateScheduler, store),
+		repos.NewPhabricatorRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker", ""), store),
+	}
+
+	routines = append(routines, syncer.Routines(ctx, store, repos.RunOptions{
+		EnqueueInterval: repos.ConfRepoListUpdateInterval,
+		IsDotCom:        envvar.SourcegraphDotComMode(),
+		MinSyncInterval: repos.ConfRepoListUpdateInterval,
+	})...)
 
 	if envvar.SourcegraphDotComMode() {
 		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(.05, 1))
-		go syncer.RunSyncReposWithLastErrorsWorker(ctx, rateLimiter)
+		routines = append(routines, syncer.NewSyncReposWithLastErrorsWorker(ctx, rateLimiter))
 	}
 
-	go repos.RunPhabricatorRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker", ""), store)
-
 	// git-server repos purging thread
-	go repos.RunRepositoryPurgeWorker(ctx, log.Scoped("repoPurgeWorker", "remove deleted repositories"),
-		db, conf.DefaultClient())
+	// Temporary escape hatch if this feature proves to be dangerous
+	// TODO: Move to config.
+	if disabled, _ := strconv.ParseBool(os.Getenv("DISABLE_REPO_PURGE")); disabled {
+		logger.Info("repository purger is disabled via env DISABLE_REPO_PURGE")
+	} else {
+		routines = append(routines, repos.NewRepositoryPurgeWorker(ctx, log.Scoped("repoPurgeWorker", "remove deleted repositories"), db, conf.DefaultClient()))
+	}
 
-	// Git fetches scheduler
+	// Run git fetches scheduler
 	go repos.RunScheduler(ctx, logger, updateScheduler)
-	logger.Debug("started scheduler")
+
+	// Register recorder in all routines that support it.
+	recorderCache := recorder.GetCache()
+	rec := recorder.New(observationCtx.Logger, env.MyName, recorderCache)
+	for _, r := range routines {
+		if recordable, ok := r.(recorder.Recordable); ok {
+			recordable.SetJobName("repo-updater")
+			recordable.RegisterRecorder(rec)
+			rec.Register(recordable)
+		}
+	}
+	rec.RegistrationDone()
+
+	go goroutine.MonitorBackgroundRoutines(
+		ctx,
+		routines...,
+	)
 
 	host := ""
 	if env.InsecureDev {
@@ -249,7 +264,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	handler = internalgrpc.MultiplexHandlers(grpcServer, handler)
 
-	globals.WatchExternalURL()
+	go globals.WatchExternalURL()
 
 	debugDumpers["repos"] = updateScheduler
 	debugserverEndpoints.repoUpdaterStateEndpoint = repoUpdaterStatsHandler(debugDumpers)
@@ -281,55 +296,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 
 	return nil
-}
-
-func createDebugServerEndpoints(ready chan struct{}, debugserverEndpoints *LazyDebugserverEndpoint) []debugserver.Endpoint {
-	return []debugserver.Endpoint{
-		{
-			Name: "Repo Updater State",
-			Path: "/repo-updater-state",
-			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				// wait until we're healthy to respond
-				<-ready
-				// repoUpdaterStateEndpoint is guaranteed to be assigned now
-				debugserverEndpoints.repoUpdaterStateEndpoint(w, r)
-			}),
-		},
-		{
-			Name: "List Authz Providers",
-			Path: "/list-authz-providers",
-			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				// wait until we're healthy to respond
-				<-ready
-				// listAuthzProvidersEndpoint is guaranteed to be assigned now
-				debugserverEndpoints.listAuthzProvidersEndpoint(w, r)
-			}),
-		},
-		{
-			Name: "Gitserver Repo Status",
-			Path: "/gitserver-repo-status",
-			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				<-ready
-				debugserverEndpoints.gitserverReposStatusEndpoint(w, r)
-			}),
-		},
-		{
-			Name: "Rate Limiter State",
-			Path: "/rate-limiter-state",
-			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				<-ready
-				debugserverEndpoints.rateLimiterStateEndpoint(w, r)
-			}),
-		},
-		{
-			Name: "Manual Repo Purge",
-			Path: "/manual-purge",
-			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				<-ready
-				debugserverEndpoints.manualPurgeEndpoint(w, r)
-			}),
-		},
-	}
 }
 
 func gitserverReposStatusHandler(db database.DB) http.HandlerFunc {
@@ -517,56 +483,55 @@ func watchSyncer(
 	}
 }
 
-// manageUnclonedRepos will periodically list the uncloned repositories on gitserver
-// and update the scheduler with the list. It also ensures that if any of our
-// indexable repos are missing from the cloned list they will be added for
-// cloning ASAP.
-func manageUnclonedRepos(ctx context.Context, logger log.Logger, sched *repos.UpdateScheduler, store repos.Store) {
-	baseRepoStore := database.ReposWith(logger, store)
-
-	doSync := func() {
-		// Don't modify the scheduler if we're not performing auto updates
-		if conf.Get().DisableAutoGitUpdates {
-			return
-		}
-
-		if envvar.SourcegraphDotComMode() {
-			// Fetch ALL indexable repos that are NOT cloned so that we can add them to the
-			// scheduler
-			opts := database.ListSourcegraphDotComIndexableReposOptions{
-				CloneStatus: types.CloneStatusNotCloned,
+// newUnclonedReposManager creates a background routine that will periodically list
+// the uncloned repositories on gitserver and update the scheduler with the list.
+// It also ensures that if any of our indexable repos are missing from the cloned
+// list they will be added for cloning ASAP.
+func newUnclonedReposManager(ctx context.Context, logger log.Logger, isSourcegraphDotCom bool, sched *repos.UpdateScheduler, store repos.Store) goroutine.BackgroundRoutine {
+	return goroutine.NewPeriodicGoroutine(
+		actor.WithInternalActor(ctx),
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			// Don't modify the scheduler if we're not performing auto updates.
+			if conf.Get().DisableAutoGitUpdates {
+				return nil
 			}
-			indexable, err := baseRepoStore.ListSourcegraphDotComIndexableRepos(ctx, opts)
+
+			baseRepoStore := database.ReposWith(logger, store)
+
+			if isSourcegraphDotCom {
+				// Fetch ALL indexable repos that are NOT cloned so that we can add them to the
+				// scheduler.
+				opts := database.ListSourcegraphDotComIndexableReposOptions{
+					CloneStatus: types.CloneStatusNotCloned,
+				}
+				indexable, err := baseRepoStore.ListSourcegraphDotComIndexableRepos(ctx, opts)
+				if err != nil {
+					return errors.Wrap(err, "listing indexable repos")
+				}
+				// Ensure that uncloned indexable repos are known to the scheduler
+				sched.EnsureScheduled(indexable)
+			}
+
+			// Next, move any repos managed by the scheduler that are uncloned to the front
+			// of the queue.
+			managed := sched.ListRepoIDs()
+
+			uncloned, err := baseRepoStore.ListMinimalRepos(ctx, database.ReposListOptions{IDs: managed, NoCloned: true})
 			if err != nil {
-				logger.Error("listing indexable repos", log.Error(err))
-				return
+				return errors.Wrap(err, "failed to fetch list of uncloned repositories")
 			}
-			// Ensure that uncloned indexable repos are known to the scheduler
-			sched.EnsureScheduled(indexable)
-		}
 
-		// Next, move any repos managed by the scheduler that are uncloned to the front
-		// of the queue
-		managed := sched.ListRepoIDs()
+			sched.PrioritiseUncloned(uncloned)
 
-		uncloned, err := baseRepoStore.ListMinimalRepos(ctx, database.ReposListOptions{IDs: managed, NoCloned: true})
-		if err != nil {
-			logger.Warn("failed to fetch list of uncloned repositories", log.Error(err))
-			return
-		}
-
-		sched.PrioritiseUncloned(uncloned)
-	}
-
-	for ctx.Err() == nil {
-		doSync()
-		select {
-		case <-ctx.Done():
-		case <-time.After(30 * time.Second):
-		}
-	}
+			return nil
+		}),
+		goroutine.WithName("repo-updater.uncloned-repo-manager"),
+		goroutine.WithDescription("periodically lists uncloned repos and schedules them as high priority in the repo updater update queue"),
+		goroutine.WithInterval(30*time.Second),
+	)
 }
 
+// TODO: This might clash with what osscmd.Main does.
 // watchAuthzProviders updates authz providers if config changes.
 func watchAuthzProviders(ctx context.Context, db database.DB) {
 	globals.WatchPermissionsUserMapping()
