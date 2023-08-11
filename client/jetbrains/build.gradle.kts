@@ -39,7 +39,6 @@ dependencies {
     implementation("org.commonmark:commonmark-ext-gfm-tables:0.21.0")
     implementation("org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.21.0")
     implementation("com.googlecode.java-diff-utils:diffutils:1.3.0")
-    implementation("io.github.java-diff-utils:java-diff-utils:4.12")
 
 
     testImplementation(platform("org.junit:junit-bom:5.7.2"))
