@@ -248,7 +248,7 @@ const computeExternalServicesGroup = (
         const otherProps = isDisabled
             ? {
                   badge: 'enterprise',
-                  tooltip: 'Upgrade to Sourcegraph Enterprise to add repositories from other code hosts',
+                  tooltip: 'Upgrade your license to Sourcegraph Enterprise to add repositories from other code hosts',
               }
             : {}
         switch (service.kind) {
