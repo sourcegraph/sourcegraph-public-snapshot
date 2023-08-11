@@ -4,6 +4,7 @@ import classNames from 'classnames'
 
 import { H4, H5, RadioButton, Text, Button, Grid, Icon, Link } from '@sourcegraph/wildcard'
 
+import { parseBrowserRepoURL } from '../../util/url'
 import { CodyChatStore } from '../useCodyChat'
 
 import { ScopeSelector } from './ScopeSelector'
@@ -12,6 +13,8 @@ import { IRepo, isRepoIndexed } from './ScopeSelector/RepositoriesSelectorPopove
 import styles from './GettingStarted.module.scss'
 
 type CoversationScope = 'general' | 'repo'
+
+const isBlobPage = (): boolean => parseBrowserRepoURL(window.location.href)?.filePath !== undefined
 
 export const GettingStarted: React.FC<
     Pick<
@@ -32,21 +35,23 @@ export const GettingStarted: React.FC<
         }
     }, [scopeSelectorProps.scope.repositories.length])
 
-    const isSeparateCodyPage = !scopeSelectorProps.scope.editor.getActiveTextEditor()?.filePath
-
     const content: { title: string; examples: { label?: string; text: string }[] } = useMemo(() => {
         if (conversationScope === 'repo') {
             return {
-                title: 'General coding examples to start with',
+                title: `Great examples to start with${
+                    scopeSelectorProps.scope.repositories.length === 1
+                        ? ` for ${scopeSelectorProps.scope.repositories[0]}`
+                        : ''
+                }`,
                 examples: [
                     {
-                        text: 'How the QuickSort algorithm works with an implementation in Python?',
+                        text: 'What is the tech stack of the this repo?',
                     },
                     {
-                        text: "I'm working on a large-scale web application using React. What are some best practices or design patterns I should be aware of to maintain code readability and performance?",
+                        text: 'Are there any automated tests in this repo?',
                     },
                     {
-                        text: "I'm trying to build a RESTful API using Node.js and Express. Can you provide an example of how to implement JWT authentication in this context?",
+                        text: 'Can you describe the overall structure of this repo?',
                     },
                 ],
             }
@@ -69,7 +74,7 @@ export const GettingStarted: React.FC<
                 },
             ],
         }
-    }, [conversationScope])
+    }, [conversationScope, scopeSelectorProps.scope.repositories])
 
     const renderRepoINdexingWarning = useCallback(
         (repos: IRepo[]) => {
@@ -108,7 +113,7 @@ export const GettingStarted: React.FC<
                     </div>
                 </Grid>
 
-                {isSeparateCodyPage && (
+                {isBlobPage() ? null : (
                     <div className={classNames(styles.section, 'mb-3')}>
                         <fieldset>
                             <legend>
