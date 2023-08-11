@@ -183,9 +183,6 @@ public class CodyAutoCompleteManager {
           if (result.items.isEmpty()) {
             return;
           }
-          if (currentAutocompleteTelemetry != null) {
-            currentAutocompleteTelemetry.markCompletionDisplayed();
-          }
           InlayModel inlayModel = editor.getInlayModel();
           // TODO: smarter logic around selecting the best completion item.
           Optional<InlineAutoCompleteItem> maybeItem =
@@ -209,6 +206,9 @@ public class CodyAutoCompleteManager {
                       this.clearAutoCompleteSuggestions(editor);
 
                       /* Log the event */
+                      if (currentAutocompleteTelemetry != null) {
+                        currentAutocompleteTelemetry.markCompletionDisplayed();
+                      }
                       Optional.ofNullable(editor.getProject())
                           .ifPresent(p -> GraphQlLogger.logCodyEvent(p, "completion", "suggested"));
 
