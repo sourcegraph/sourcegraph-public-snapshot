@@ -64,6 +64,7 @@ unNixifyDylibs { inherit pkgs; } (stdenv.mkDerivation rec {
 
   postFixup = ''
     ln -s $out/bin/ctags $out/bin/universal-ctags
+    ln -s $out/bin/ctags $out/bin/ctags-$version
   '';
 
   doCheck = true;
