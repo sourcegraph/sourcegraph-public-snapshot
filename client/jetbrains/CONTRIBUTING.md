@@ -27,8 +27,11 @@ New issues and feature requests can be filed through our [issue tracker](https:/
   1. CLI: [SDKMAN!](https://github.com/sdkman/homebrew-tap):
      - `brew tap sdkman/tap`
      - `brew install sdkman-cli`
-     - Add this to your `.zprofile`: `export SDKMAN_DIR=$(brew --prefix sdkman-cli)/libexec
-[[ -s "${SDKMAN_DIR}/bin/sdkman-init.sh" ]] && source "${SDKMAN_DIR}/bin/sdkman-init.sh"`
+     - Add this to your `.zprofile`:
+       ```sh
+       export SDKMAN_DIR=$(brew --prefix sdkman-cli)/libexec
+       [[ -s "${SDKMAN_DIR}/bin/sdkman-init.sh" ]] && source "${SDKMAN_DIR}/bin/sdkman-init.sh"
+       ```
      - Try it with `sdk version` in a new terminal. It should work.
      - Run `sdk install java 11.0.20-amzn`
   2. GUI:
