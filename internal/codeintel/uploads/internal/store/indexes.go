@@ -223,7 +223,8 @@ SELECT
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `,
 	u.should_reindex,
-	u.requested_envvars
+	u.requested_envvars,
+	u.enqueuer_user_id
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
@@ -280,7 +281,8 @@ SELECT
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `,
 	u.should_reindex,
-	u.requested_envvars
+	u.requested_envvars,
+	u.enqueuer_user_id
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
