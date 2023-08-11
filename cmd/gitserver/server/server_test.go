@@ -35,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -173,8 +174,8 @@ func TestExecRequest(t *testing.T) {
 		},
 	}
 
-	db := database.NewMockDB()
-	gr := database.NewMockGitserverRepoStore()
+	db := dbmocks.NewMockDB()
+	gr := dbmocks.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
 	s := &Server{
 		Logger:            logtest.Scoped(t),
@@ -288,7 +289,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 			ReposDir:                "/testroot",
 			ObservationCtx:          observation.TestContextTB(t),
 			skipCloneForTests:       true,
-			DB:                      database.NewMockDB(),
+			DB:                      dbmocks.NewMockDB(),
 			RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		}
 
@@ -700,11 +701,11 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 	t.Helper()
 
 	if db == nil {
-		mDB := database.NewMockDB()
-		mDB.GitserverReposFunc.SetDefaultReturn(database.NewMockGitserverRepoStore())
-		mDB.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
+		mDB := dbmocks.NewMockDB()
+		mDB.GitserverReposFunc.SetDefaultReturn(dbmocks.NewMockGitserverRepoStore())
+		mDB.FeatureFlagsFunc.SetDefaultReturn(dbmocks.NewMockFeatureFlagStore())
 
-		repoStore := database.NewMockRepoStore()
+		repoStore := dbmocks.NewMockRepoStore()
 		repoStore.GetByNameFunc.SetDefaultReturn(nil, &database.RepoNotFoundErr{})
 
 		mDB.ReposFunc.SetDefaultReturn(repoStore)
@@ -1425,7 +1426,7 @@ func TestHostnameMatch(t *testing.T) {
 				Logger:         logtest.Scoped(t),
 				ObservationCtx: observation.TestContextTB(t),
 				Hostname:       tc.hostname,
-				DB:             database.NewMockDB(),
+				DB:             dbmocks.NewMockDB(),
 			}
 			have := hostnameMatch(s.Hostname, tc.addr)
 			if have != tc.shouldMatch {
@@ -1639,7 +1640,7 @@ func TestHandleBatchLog(t *testing.T) {
 				Logger:                  logtest.Scoped(t),
 				ObservationCtx:          observation.TestContextTB(t),
 				GlobalBatchLogSemaphore: semaphore.NewWeighted(8),
-				DB:                      database.NewMockDB(),
+				DB:                      dbmocks.NewMockDB(),
 				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 			}
 			h := server.Handler()

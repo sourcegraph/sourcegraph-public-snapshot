@@ -1,6 +1,9 @@
 package multierror
 
-import "sync"
+import (
+	"flag"
+	"sync"
+)
 
 // Group is a collection of goroutines which return errors that need to be
 // coalesced.

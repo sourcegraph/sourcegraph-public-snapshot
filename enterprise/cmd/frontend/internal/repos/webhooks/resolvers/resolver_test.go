@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	sgerrors "github.com/sourcegraph/sourcegraph/lib/errors"
@@ -26,7 +27,7 @@ import (
 )
 
 func TestListWebhooks(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 	// There is only a user with ID = 1. User with ID = 2 doesn't exist.
 	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
@@ -37,7 +38,7 @@ func TestListWebhooks(t *testing.T) {
 	})
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	webhookStore := database.NewMockWebhookStore()
+	webhookStore := dbmocks.NewMockWebhookStore()
 	webhooks := []*types.Webhook{
 		{
 			ID:              1,
@@ -81,7 +82,7 @@ func TestListWebhooks(t *testing.T) {
 		return len(whs), err
 	})
 
-	webhookLogsStore := database.NewMockWebhookLogStore()
+	webhookLogsStore := dbmocks.NewMockWebhookLogStore()
 	webhookLogs := []*types.WebhookLog{
 		{
 			ID:         1,
@@ -122,7 +123,7 @@ func TestListWebhooks(t *testing.T) {
 		return int64(len(whs)), err
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.WebhooksFunc.SetDefaultReturn(webhookStore)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.WebhookLogsFunc.SetDefaultReturn(webhookLogsStore)
@@ -341,11 +342,11 @@ func TestWebhooks_CursorPagination(t *testing.T) {
 		{ID: 2, CodeHostURN: bbURN},
 	}
 
-	store := database.NewMockWebhookStore()
-	db := database.NewMockDB()
+	store := dbmocks.NewMockWebhookStore()
+	db := dbmocks.NewMockDB()
 	db.WebhooksFunc.SetDefaultReturn(store)
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 	db.UsersFunc.SetDefaultReturn(users)
 
@@ -467,11 +468,11 @@ func TestWebhooks_CursorPagination(t *testing.T) {
 }
 
 func TestCreateWebhook(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	webhookStore := database.NewMockWebhookStore()
+	webhookStore := dbmocks.NewMockWebhookStore()
 	whUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	expectedWebhook := types.Webhook{
@@ -479,7 +480,7 @@ func TestCreateWebhook(t *testing.T) {
 	}
 	webhookStore.CreateFunc.SetDefaultReturn(&expectedWebhook, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.WebhooksFunc.SetDefaultReturn(webhookStore)
 	db.UsersFunc.SetDefaultReturn(users)
 	queryStr := `mutation CreateWebhook($name: String!, $codeHostKind: String!, $codeHostURN: String!, $secret: String) {
@@ -575,7 +576,7 @@ func TestCreateWebhook(t *testing.T) {
 }
 
 func TestGetWebhookWithURL(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
 	testURL := "https://testurl.com"
@@ -591,7 +592,7 @@ func TestGetWebhookWithURL(t *testing.T) {
 	)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	webhookStore := database.NewMockWebhookStore()
+	webhookStore := dbmocks.NewMockWebhookStore()
 	whUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	expectedWebhook := types.Webhook{
@@ -599,7 +600,7 @@ func TestGetWebhookWithURL(t *testing.T) {
 	}
 	webhookStore.GetByIDFunc.SetDefaultReturn(&expectedWebhook, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.WebhooksFunc.SetDefaultReturn(webhookStore)
 	db.UsersFunc.SetDefaultReturn(users)
 	queryStr := `query GetWebhook($id: ID!) {
@@ -682,14 +683,14 @@ func TestWebhookCursor(t *testing.T) {
 }
 
 func TestDeleteWebhook(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	webhookStore := database.NewMockWebhookStore()
+	webhookStore := dbmocks.NewMockWebhookStore()
 	webhookStore.DeleteFunc.SetDefaultReturn(sgerrors.New("oops"))
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.WebhooksFunc.SetDefaultReturn(webhookStore)
 	db.UsersFunc.SetDefaultReturn(users)
 	id := marshalWebhookID(42)
@@ -760,11 +761,11 @@ func TestDeleteWebhook(t *testing.T) {
 }
 
 func TestUpdateWebhook(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	webhookStore := database.NewMockWebhookStore()
+	webhookStore := dbmocks.NewMockWebhookStore()
 	webhookStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, webhook *types.Webhook) (*types.Webhook, error) {
 		return nil, sgerrors.New("oops")
 	})
@@ -773,7 +774,7 @@ func TestUpdateWebhook(t *testing.T) {
 	require.NoError(t, err)
 	webhookStore.GetByIDFunc.SetDefaultReturn(&types.Webhook{Name: "old name", ID: 1, UUID: whUUID, CodeHostURN: ghURN}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.WebhooksFunc.SetDefaultReturn(webhookStore)
 	db.UsersFunc.SetDefaultReturn(users)
 	id := marshalWebhookID(42)

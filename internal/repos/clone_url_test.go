@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -171,7 +171,7 @@ func TestBitbucketCloudCloneURLs(t *testing.T) {
 func TestGitHubCloneURLs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	t.Run("empty repo.URL", func(t *testing.T) {
-		_, err := githubCloneURL(context.Background(), logger, database.NewMockDB(), &github.Repository{}, &schema.GitHubConnection{})
+		_, err := githubCloneURL(context.Background(), logger, dbmocks.NewMockDB(), &github.Repository{}, &schema.GitHubConnection{})
 		got := fmt.Sprintf("%v", err)
 		want := "empty repo.URL"
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -204,7 +204,7 @@ func TestGitHubCloneURLs(t *testing.T) {
 
 			repo.URL = test.RepoURL
 
-			got, err := githubCloneURL(context.Background(), logger, database.NewMockDB(), &repo, &cfg)
+			got, err := githubCloneURL(context.Background(), logger, dbmocks.NewMockDB(), &repo, &cfg)
 			if err != nil {
 				t.Fatal(err)
 			}

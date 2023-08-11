@@ -17,7 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -55,11 +55,11 @@ func InitGitserver() {
 		logger.Fatal(err.Error())
 	}
 
-	db := database.NewMockDB()
-	db.GitserverReposFunc.SetDefaultReturn(database.NewMockGitserverRepoStore())
-	db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
+	db := dbmocks.NewMockDB()
+	db.GitserverReposFunc.SetDefaultReturn(dbmocks.NewMockGitserverRepoStore())
+	db.FeatureFlagsFunc.SetDefaultReturn(dbmocks.NewMockFeatureFlagStore())
 
-	r := database.NewMockRepoStore()
+	r := dbmocks.NewMockRepoStore()
 	r.GetByNameFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName) (*types.Repo, error) {
 		return &types.Repo{
 			Name: repoName,

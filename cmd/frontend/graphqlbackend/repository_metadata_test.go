@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -26,13 +27,13 @@ func TestRepositoryMetadata(t *testing.T) {
 	ctx := context.Background()
 
 	logger := logtest.Scoped(t)
-	db := database.NewMockDBFrom(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := dbmocks.NewMockDBFrom(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 	db.UsersFunc.SetDefaultReturn(users)
 
-	permissions := database.NewMockPermissionStore()
+	permissions := dbmocks.NewMockPermissionStore()
 	permissions.GetPermissionForUserFunc.SetDefaultReturn(&types.Permission{
 		ID:        1,
 		Namespace: rtypes.RepoMetadataNamespace,
