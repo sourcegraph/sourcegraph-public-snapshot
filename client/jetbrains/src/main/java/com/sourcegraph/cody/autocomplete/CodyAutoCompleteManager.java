@@ -302,8 +302,6 @@ public class CodyAutoCompleteManager {
                 inlayModel.addBlockElement(offset, true, false, Integer.MAX_VALUE, blockRenderer));
   }
 
-  private void displayAutoComplete() {}
-
   // TODO: handle tabs in multiline autocomplete suggestions when we add them
   public static @NotNull InlineAutoCompleteItem normalizeIndentation(
       @NotNull InlineAutoCompleteItem item,
