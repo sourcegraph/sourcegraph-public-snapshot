@@ -4,9 +4,9 @@ import classNames from 'classnames'
 
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
-import { OpenInSourcegraphProps } from '../repo'
+import type { OpenInSourcegraphProps } from '../repo'
 
-import { SourcegraphIconButton, SourcegraphIconButtonProps } from './SourcegraphIconButton'
+import { SourcegraphIconButton, type SourcegraphIconButtonProps } from './SourcegraphIconButton'
 
 interface Props extends SourcegraphIconButtonProps {
     openProps: OpenInSourcegraphProps

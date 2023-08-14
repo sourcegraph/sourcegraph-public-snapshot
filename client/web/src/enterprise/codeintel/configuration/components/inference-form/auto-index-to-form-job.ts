@@ -1,8 +1,8 @@
 import { uniqueId } from 'lodash'
 
-import { AutoIndexJobDescriptionFields, AutoIndexLsifPreIndexFields } from '../../../../../graphql-operations'
+import type { AutoIndexJobDescriptionFields, AutoIndexLsifPreIndexFields } from '../../../../../graphql-operations'
 
-import { InferenceFormData, InferenceFormJobStep, InferenceFormJob } from './types'
+import type { InferenceFormData, InferenceFormJobStep, InferenceFormJob } from './types'
 
 const autoIndexStepToFormStep = (step: AutoIndexLsifPreIndexFields): InferenceFormJobStep => ({
     root: step.root,

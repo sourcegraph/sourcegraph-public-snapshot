@@ -1,7 +1,7 @@
 import { render } from 'react-dom'
 import { RouterProvider, createMemoryRouter } from 'react-router-dom'
 
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 

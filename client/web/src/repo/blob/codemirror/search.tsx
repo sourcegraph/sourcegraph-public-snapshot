@@ -15,16 +15,24 @@ import {
 } from '@codemirror/search'
 import {
     Compartment,
-    Extension,
+    type Extension,
     StateEffect,
-    TransactionSpec,
+    type TransactionSpec,
     type Text as CodeMirrorText,
-    SelectionRange,
+    type SelectionRange,
 } from '@codemirror/state'
-import { EditorView, KeyBinding, keymap, Panel, runScopeHandlers, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import {
+    EditorView,
+    type KeyBinding,
+    keymap,
+    type Panel,
+    runScopeHandlers,
+    ViewPlugin,
+    type ViewUpdate,
+} from '@codemirror/view'
 import { mdiChevronDown, mdiChevronUp, mdiFormatLetterCase, mdiInformationOutline, mdiRegex } from '@mdi/js'
-import { createRoot, Root } from 'react-dom/client'
-import { NavigateFunction } from 'react-router-dom'
+import { createRoot, type Root } from 'react-dom/client'
+import type { NavigateFunction } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, startWith, tap } from 'rxjs/operators'
 

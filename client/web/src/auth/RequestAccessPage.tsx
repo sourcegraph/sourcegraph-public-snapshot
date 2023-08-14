@@ -7,7 +7,7 @@ import { Text, Link, ErrorAlert, Form, Input, Button, LoadingSpinner, TextArea, 
 
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
-import { SourcegraphContext } from '../jscontext'
+import type { SourcegraphContext } from '../jscontext'
 import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'

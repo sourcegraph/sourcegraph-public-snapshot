@@ -8,7 +8,7 @@ import classNames from 'classnames'
 
 import { QueryInputToggle } from '@sourcegraph/branded/src/search-ui/input/toggles/QueryInputToggle'
 import { isErrorLike } from '@sourcegraph/common'
-import {
+import type {
     CaseSensitivityProps,
     SearchContextProps,
     SearchPatternTypeMutationProps,
@@ -17,7 +17,7 @@ import {
 } from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../graphql-operations'

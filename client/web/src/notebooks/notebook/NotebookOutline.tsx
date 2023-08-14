@@ -4,13 +4,13 @@ import { mdiChevronRight, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 // We're using marked import here to access the `marked` package type definitions.
 // eslint-disable-next-line no-restricted-imports
-import { marked, Slugger } from 'marked'
+import { type marked, Slugger } from 'marked'
 import ReactDOM from 'react-dom'
 
 import { markdownLexer } from '@sourcegraph/common'
 import { Button, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
-import { Block, MarkdownBlock } from '..'
+import type { Block, MarkdownBlock } from '..'
 
 import styles from './NotebookOutline.module.scss'
 

@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { ForwardReferenceComponent } from '../../../types'
+import type { ForwardReferenceComponent } from '../../../types'
 import { Link } from '../Link/Link'
 
 type LinkOrSpanProps = React.PropsWithChildren<

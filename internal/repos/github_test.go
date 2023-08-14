@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -149,7 +150,7 @@ func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
 	defer save(t)
 
 	ctx := context.Background()
-	githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), database.NewMockDB(), service, factory)
+	githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), service, factory)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -272,7 +273,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), database.NewMockDB(), svc, cf)
+			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -379,7 +380,7 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 			defer save(t)
 
 			ctx := context.Background()
-			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), database.NewMockDB(), svc, cf)
+			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -418,7 +419,7 @@ func TestMakeRepo_NullCharacter(t *testing.T) {
 	schema := &schema.GitHubConnection{
 		Url: "https://github.com",
 	}
-	s, err := newGitHubSource(context.Background(), logtest.Scoped(t), database.NewMockDB(), &svc, schema, nil)
+	s, err := newGitHubSource(context.Background(), logtest.Scoped(t), dbmocks.NewMockDB(), &svc, schema, nil)
 	require.NoError(t, err)
 	repo := s.makeRepo(r)
 
@@ -478,7 +479,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 			// We need to clear the cache before we run the tests
 			rcache.SetupForTest(t)
 
-			s, err := newGitHubSource(context.Background(), logtest.Scoped(t), database.NewMockDB(), &svc, test.schema, nil)
+			s, err := newGitHubSource(context.Background(), logtest.Scoped(t), dbmocks.NewMockDB(), &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -759,7 +760,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), database.NewMockDB(), svc, cf)
+			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -800,7 +801,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), database.NewMockDB(), svc, nil)
+	githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -834,7 +835,7 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), database.NewMockDB(), svc, nil)
+	githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -866,7 +867,7 @@ func TestGithubSource_GetVersion(t *testing.T) {
 		}
 
 		ctx := context.Background()
-		githubSrc, err := NewGitHubSource(ctx, logger, database.NewMockDB(), svc, nil)
+		githubSrc, err := NewGitHubSource(ctx, logger, dbmocks.NewMockDB(), svc, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -905,7 +906,7 @@ func TestGithubSource_GetVersion(t *testing.T) {
 		}
 
 		ctx := context.Background()
-		githubSrc, err := NewGitHubSource(ctx, logger, database.NewMockDB(), svc, cf)
+		githubSrc, err := NewGitHubSource(ctx, logger, dbmocks.NewMockDB(), svc, cf)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1236,7 +1237,7 @@ func TestGithubSource_SearchRepositories(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), database.NewMockDB(), svc, cf)
+			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}

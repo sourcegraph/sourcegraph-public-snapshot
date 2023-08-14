@@ -1,4 +1,4 @@
-import { Story, Meta, DecoratorFn } from '@storybook/react'
+import type { Story, Meta, DecoratorFn } from '@storybook/react'
 import classNames from 'classnames'
 import { addHours } from 'date-fns'
 import { of } from 'rxjs'

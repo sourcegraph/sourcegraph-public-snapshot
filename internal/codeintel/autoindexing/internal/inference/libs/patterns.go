@@ -31,6 +31,7 @@ func (api patternAPI) LuaAPI() map[string]lua.LGFunction {
 	}
 
 	return map[string]lua.LGFunction{
+		// type: (string, array[string]) -> pattern
 		"backdoor": util.WrapLuaFunction(func(state *lua.LState) error {
 			glob := state.CheckString(1)
 			pathspecTable := state.CheckTable(2)
@@ -48,7 +49,9 @@ func (api patternAPI) LuaAPI() map[string]lua.LGFunction {
 			state.Push(luar.New(state, luatypes.NewPattern(glob, pathspecs)))
 			return nil
 		}),
+		// type: ((pattern | array[pattern])...) -> pattern
 		"path_combine": util.WrapLuaFunction(newPathPatternCombineConstructor(luatypes.NewCombinedPattern)),
+		// type: ((pattern | array[pattern])...) -> pattern
 		"path_exclude": util.WrapLuaFunction(newPathPatternCombineConstructor(luatypes.NewExcludePattern)),
 	}
 }

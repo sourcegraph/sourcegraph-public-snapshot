@@ -25,7 +25,14 @@ public class ConfigUtil {
     return new ConnectionConfiguration()
         .setServerEndpoint(getSourcegraphUrl(project))
         .setAccessToken(getProjectAccessToken(project))
-        .setCustomHeaders(getCustomRequestHeadersAsMap(project));
+        .setCustomHeaders(getCustomRequestHeadersAsMap(project))
+        .setAutocompleteAdvancedProvider(
+            UserLevelConfig.getAutoCompleteProviderType().vscodeSettingString())
+        .setAutocompleteAdvancedServerEndpoint(UserLevelConfig.getAutoCompleteServerEndpoint())
+        .setAutocompleteAdvancedAccessToken(UserLevelConfig.getAutoCompleteAccessToken())
+        .setAutocompleteAdvancedEmbeddings(UserLevelConfig.getAutocompleteAdvancedEmbeddings())
+        .setDebug(isCodyDebugEnabled())
+        .setVerboseDebug(isCodyVerboseDebugEnabled());
   }
 
   @NotNull
@@ -216,6 +223,14 @@ public class ConfigUtil {
 
   public static boolean isCodyEnabled() {
     return getApplicationLevelConfig().isCodyEnabled;
+  }
+
+  public static boolean isCodyDebugEnabled() {
+    return getApplicationLevelConfig().isCodyDebugEnabled();
+  }
+
+  public static boolean isCodyVerboseDebugEnabled() {
+    return getApplicationLevelConfig().isCodyVerboseDebugEnabled();
   }
 
   public static boolean isCodyAutoCompleteEnabled() {

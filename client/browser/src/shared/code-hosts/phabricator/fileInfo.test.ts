@@ -1,13 +1,13 @@
 import { readFile } from 'mz/fs'
-import { Observable, throwError, of } from 'rxjs'
+import { type Observable, throwError, of } from 'rxjs'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
-import { DiffOrBlobInfo } from '../shared/codeHost'
-import { GraphQLResponseMap, mockRequestGraphQL } from '../shared/testHelpers'
+import type { DiffOrBlobInfo } from '../shared/codeHost'
+import { type GraphQLResponseMap, mockRequestGraphQL } from '../shared/testHelpers'
 
-import { QueryConduitHelper } from './backend'
+import type { QueryConduitHelper } from './backend'
 import { resolveDiffusionFileInfo, resolveRevisionFileInfo, resolveDiffFileInfo } from './fileInfo'
 
 interface ConduitResponseMap {

@@ -1,4 +1,4 @@
-import { StatsCompilation } from 'webpack'
+import type { StatsCompilation } from 'webpack'
 
 import { NODE_MODULES_PATH } from '@sourcegraph/build-config'
 

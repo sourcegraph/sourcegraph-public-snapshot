@@ -5,6 +5,7 @@ go_library(
     name = "util",
     srcs = [
         "buildtag.go",
+        "buildtag_shell.go",  # keep
         "exec.go",
         "srccli.go",
         "tools.go",

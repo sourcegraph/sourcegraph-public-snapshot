@@ -1,8 +1,8 @@
 import { from } from 'rxjs'
 import { take } from 'rxjs/operators'
 
-import { ErrorLike, isErrorLike, isDefined, isNot } from '@sourcegraph/common'
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import { type ErrorLike, isErrorLike, isDefined, isNot } from '@sourcegraph/common'
+import type { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 

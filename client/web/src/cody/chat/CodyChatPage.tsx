@@ -15,7 +15,7 @@ import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { CodyLogo } from '@sourcegraph/cody-ui/dist/icons/CodyLogo'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import {
     Badge,
@@ -39,14 +39,14 @@ import {
 import { MarketingBlock } from '../../components/MarketingBlock'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { SourcegraphContext } from '../../jscontext'
+import type { SourcegraphContext } from '../../jscontext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import { ChatUI } from '../components/ChatUI'
 import { CodyMarketingPage } from '../components/CodyMarketingPage'
 import { HistoryList } from '../components/HistoryList'
 import { isCodyEnabled } from '../isCodyEnabled'
-import { CodyChatStore, useCodyChat } from '../useCodyChat'
+import { type CodyChatStore, useCodyChat } from '../useCodyChat'
 
 import { CodyColorIcon } from './CodyPageIcon'
 
@@ -376,7 +376,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                     New chat
                                 </Button>
                             </div>
-                            <ChatUI codyChatStore={codyChatStore} isSourcegraphApp={true} />
+                            <ChatUI codyChatStore={codyChatStore} isSourcegraphApp={true} isCodyChatPage={true} />
                         </div>
 
                         {showMobileHistory && (
@@ -456,7 +456,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                 deleteHistoryItem={deleteHistoryItem}
                             />
                         ) : (
-                            <ChatUI codyChatStore={codyChatStore} />
+                            <ChatUI codyChatStore={codyChatStore} isCodyChatPage={true} />
                         )}
                     </div>
                 )}

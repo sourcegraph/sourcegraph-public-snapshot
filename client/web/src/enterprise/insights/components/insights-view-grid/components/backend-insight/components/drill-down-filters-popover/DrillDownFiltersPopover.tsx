@@ -1,4 +1,4 @@
-import { FC, RefObject, useRef, useState } from 'react'
+import { type FC, type RefObject, useRef, useState } from 'react'
 
 import { mdiFilterOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -12,15 +12,15 @@ import {
     PopoverTail,
     Position,
     createRectangle,
-    FormChangeEvent,
-    SubmissionResult,
+    type FormChangeEvent,
+    type SubmissionResult,
 } from '@sourcegraph/wildcard'
 
-import { InsightFilters } from '../../../../../../core'
+import type { InsightFilters } from '../../../../../../core'
 import {
-    DrillDownFiltersFormValues,
+    type DrillDownFiltersFormValues,
     DrillDownInsightCreationForm,
-    DrillDownInsightCreationFormValues,
+    type DrillDownInsightCreationFormValues,
     DrillDownInsightFilters,
     FilterSectionVisualMode,
     hasActiveFilters,

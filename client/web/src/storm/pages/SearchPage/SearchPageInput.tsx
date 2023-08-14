@@ -1,18 +1,18 @@
-import React, { FC, useCallback, useEffect, useRef } from 'react'
+import React, { type FC, useCallback, useEffect, useRef } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
-import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
+import type { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
 import { SearchBox, Toggles } from '@sourcegraph/branded'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import {
-    CaseSensitivityProps,
-    SearchPatternTypeProps,
-    SubmitSearchParameters,
+    type CaseSensitivityProps,
+    type SearchPatternTypeProps,
+    type SubmitSearchParameters,
     canSubmitSearch,
-    QueryState,
-    SearchModeProps,
+    type QueryState,
+    type SearchModeProps,
     getUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/search'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'

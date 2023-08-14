@@ -1,9 +1,9 @@
 import { useState } from 'react'
 
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { DecoratorFn, Story, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../../../../../components/WebStory'
-import { CustomInsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../core'
+import { type CustomInsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../core'
 
 import { DashboardSelect } from './DashboardSelect'
 

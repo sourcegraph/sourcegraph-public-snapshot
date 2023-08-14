@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { Navigate, useLocation } from 'react-router-dom'
 
@@ -9,14 +9,14 @@ import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/sha
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
-import { SourcegraphContext } from '../jscontext'
-import { NotebookProps } from '../notebooks'
-import { OwnConfigProps } from '../own/OwnConfigProps'
+import type { SourcegraphContext } from '../jscontext'
+import type { NotebookProps } from '../notebooks'
+import type { OwnConfigProps } from '../own/OwnConfigProps'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { formatHash, formatLineOrPositionOrRange, parseBrowserRepoURL } from '../util/url'
 
 import { BlobPage } from './blob/BlobPage'
-import { RepoRevisionContainerContext } from './RepoRevisionContainer'
+import type { RepoRevisionContainerContext } from './RepoRevisionContainer'
 import { RepoRevisionSidebar } from './RepoRevisionSidebar'
 import { TreePage } from './tree/TreePage'
 

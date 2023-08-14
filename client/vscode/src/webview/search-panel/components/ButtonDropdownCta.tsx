@@ -3,10 +3,10 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
-import { WebviewPageProps } from '../../platform/context'
+import type { WebviewPageProps } from '../../platform/context'
 
 import styles from './ButtonDropdownCta.module.scss'
 

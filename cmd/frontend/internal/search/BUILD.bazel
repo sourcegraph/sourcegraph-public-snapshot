@@ -43,7 +43,7 @@ go_test(
     embed = [":search"],
     deps = [
         "//internal/api",
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/search",
         "//internal/search/client",
         "//internal/search/query",

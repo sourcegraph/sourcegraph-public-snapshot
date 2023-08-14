@@ -10,7 +10,7 @@
 ### Prerequisites
 
 - Sourcegraph 5.1.0 or above
-- A Sourcegraph Enterprise subscription with [Cody Gateway access](./cody_gateway.md), or [an account with a third-party LLM provider](#using-a-third-party-llm-provider-directly).
+- A Sourcegraph Enterprise subscription with [Cody Gateway access](./../explanations/cody_gateway.md), or [an account with a third-party LLM provider](#using-a-third-party-llm-provider-directly).
 
 There are two steps required to enable Cody on your enterprise instance:
 
@@ -26,7 +26,7 @@ This requires site-admin privileges.
 1. First, configure your desired LLM provider:
     > NOTE: If you are a Sourcegraph Cloud customer, skip to (3).
 
-    - Recommended: [Using Sourcegraph Cody Gateway](./cody_gateway.md#using-cody-gateway-in-sourcegraph-enterprise)
+    - Recommended: [Using Sourcegraph Cody Gateway](./../explanations/cody_gateway.md#using-cody-gateway-in-sourcegraph-enterprise)
     - [Using a third-party LLM provider directly](#using-a-third-party-llm-provider-directly)
 2. Go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
 
@@ -36,7 +36,7 @@ This requires site-admin privileges.
       "cody.enabled": true
     }
     ```
-3. Set up a policy to automatically create embeddings for repositories: ["Configuring embeddings"](code_graph_context.md#configuring-embeddings)
+3. Set up a policy to automatically create embeddings for repositories: ["Configuring embeddings"](./../explanations/code_graph_context.md#configuring-embeddings)
 
 Cody is now fully set up on your instance!
 
@@ -49,21 +49,21 @@ Now that Cody is turned on on your Sourcegraph instance, any user can configure 
 
   <img width="500" alt="Sourcegraph Cody in VS Code Marketplace" src="https://storage.googleapis.com/sourcegraph-assets/cody-in-marketplace.png">
 
-3. Reload VS Code, and open the Cody extension. <!-- Review and accept the terms. (this has been removed?) --> 
+3. Reload VS Code, and open the Cody extension. <!-- Review and accept the terms. (this has been removed?) -->
 
 4. Now you'll need to point the Cody extension to your Sourcegraph instance. Click on "Other Sign In Options..." and select your enterpise option depending on your sourcegraph version (to check your Sourcegraph version go to Sourcegraph => Settings and the version will be in the bottom left)
 
   <img width="1369" alt="image" src="https://storage.googleapis.com/sourcegraph-assets/cody-sign-in-options.png">
 
-5. If you on version 5.1 and above you will just need to follow an authorization flow to give Cody access to your enterpise instance. 
+5. If you on version 5.1 and above you will just need to follow an authorization flow to give Cody access to your enterpise instance.
 
     - For Sourcegraph 5.0 and above you'll need to generate an access token. On your Sourcegraph instance, click on **Settings**, then on **Access tokens** (`https://<your-instance>.sourcegraph.com/users/<your-instance>/settings/tokens`). Generate an access token, copy it, and set it in the Cody extension.
 
     <img width="1369" alt="image" src="https://user-images.githubusercontent.com/25070988/227510686-4afcb1f9-a3a5-495f-b1bf-6d661ba53cce.png">
 
     - After creating your access token, copy it and return to VS code. Click on the "Other Sign In Options..." button and select "Sign in to Sourcegraph Enterprise instance via Access Token".
-    - Enter the URL for your sourcegraph instance and then paste in your access token. 
-    
+    - Enter the URL for your sourcegraph instance and then paste in your access token.
+
     <!-- <img width="553" alt="image" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png"> -->
 
 You're all set!
@@ -76,7 +76,7 @@ These are a few things you can ask Cody:
 - Open your workspace, and ask "Do we have a React date picker component in this repository?"
 - Right click on a function, and ask Cody to explain it
 
-[See more Cody use cases here](use_cases.md).
+[See more Cody use cases here](./../use-cases.md).
 
 ## Cody on Sourcegraph Cloud
 
@@ -89,14 +89,14 @@ Cody can be enabled on demand on your Sourcegraph instance by contacting your ac
 ### Step 2: Configure the VS Code extension
 [See above](#step-2-configure-the-vs-code-extension).
 
-### Step 3: Try Cody! 
+### Step 3: Try Cody!
 [See above](#step-3-try-cody).
 
 [Learn more about running Cody on Sourcegraph Cloud](../../cloud/index.md#cody).
 
 ## Enabling codebase-aware answers
 
-> NOTE: In order to enable codebase-aware answers for Cody, you must first [configure code graph context](code_graph_context.md).
+> NOTE: In order to enable codebase-aware answers for Cody, you must first [configure code graph context](./../explanations/code_graph_context.md).
 
 The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the Cody extension. By setting this configuration option to the repository name on your Sourcegraph instance, Cody will be able to provide more accurate and relevant answers to your coding questions, based on the context of the codebase you are currently working in.
 
@@ -141,7 +141,7 @@ To do so:
 
 ## Using a third-party LLM provider directly
 
-Instead of [Sourcegraph Cody Gateway](./cody_gateway.md), you can configure Sourcegraph to use a third-party provider directly. Currently, this can be one of
+Instead of [Sourcegraph Cody Gateway](./../explanations/cody_gateway.md), you can configure Sourcegraph to use a third-party provider directly. Currently, this can be one of
 - Anthropic
 - OpenAI
 - Azure OpenAI <span class="badge badge-experimental">Experimental</span>
@@ -186,7 +186,7 @@ _[*OpenAI models supported](https://platform.openai.com/docs/models)_
 
 ### Azure OpenAI <span class="badge badge-experimental">Experimental</span>
 
-First, make sure you created a project in the Azure OpenAI portal. 
+First, make sure you created a project in the Azure OpenAI portal.
 
 From the project overview, go to **Keys and Endpoint** and grab **one of the keys** on that page, and the **endpoint**.
 
@@ -211,4 +211,4 @@ Once done, go to **Site admin > Site configuration** (`/site-admin/configuration
 
 ---
 
-Similarly, you can also [use a third-party LLM provider directly for embeddings](./code_graph_context.md#using-a-third-party-embeddings-provider-directly).
+Similarly, you can also [use a third-party LLM provider directly for embeddings](./../explanations/code_graph_context.md#using-a-third-party-embeddings-provider-directly).

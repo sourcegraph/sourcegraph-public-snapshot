@@ -1,8 +1,8 @@
-import { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
-import { AboutTab, AboutTabProps } from './AboutPage'
+import { AboutTab, type AboutTabProps } from './AboutPage'
 
 const meta: Meta<AboutTabProps> = {
     component: AboutTab,

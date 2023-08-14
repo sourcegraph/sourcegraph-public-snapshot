@@ -1,16 +1,23 @@
-import { QueryState } from '@sourcegraph/shared/src/search'
+import type { QueryState } from '@sourcegraph/shared/src/search'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
-import { FormInstance, FormChangeEvent, SubmissionErrors, useField, useFieldAPI, useForm } from '@sourcegraph/wildcard'
+import {
+    type FormInstance,
+    type FormChangeEvent,
+    type SubmissionErrors,
+    useField,
+    type useFieldAPI,
+    useForm,
+} from '@sourcegraph/wildcard'
 
 import {
     createDefaultEditSeries,
-    EditableDataSeries,
+    type EditableDataSeries,
     insightSeriesValidator,
     insightStepValueValidator,
     insightTitleValidator,
     useRepoFields,
 } from '../../../../../components'
-import { CreateInsightFormFields, InsightStep, RepoMode } from '../types'
+import type { CreateInsightFormFields, InsightStep, RepoMode } from '../types'
 
 export const INITIAL_INSIGHT_VALUES: CreateInsightFormFields = {
     // If user opens the creation form to create insight

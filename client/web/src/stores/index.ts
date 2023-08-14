@@ -10,7 +10,7 @@
  */
 
 import { Observable } from 'rxjs'
-import { UseBoundStore } from 'zustand'
+import type { UseBoundStore } from 'zustand'
 
 export {
     useNavbarQueryState,

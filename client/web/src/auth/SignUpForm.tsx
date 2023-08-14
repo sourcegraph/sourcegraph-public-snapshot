@@ -3,20 +3,20 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { mdiBitbucket, mdiGithub, mdiGitlab } from '@mdi/js'
 import classNames from 'classnames'
 import cookies from 'js-cookie'
-import { Observable, of } from 'rxjs'
+import { type Observable, of } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
 import {
     useInputValidation,
-    ValidationOptions,
+    type ValidationOptions,
     deriveInputClassName,
 } from '@sourcegraph/shared/src/util/useInputValidation'
 import { Link, Icon, Label, Text, Button, AnchorLink, LoaderInput, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
-import { AuthProvider, SourcegraphContext } from '../jscontext'
+import type { AuthProvider, SourcegraphContext } from '../jscontext'
 import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY, LAST_SOURCE_URL_KEY } from '../tracking/eventLogger'
 import { validatePassword, getPasswordRequirements } from '../util/security'
 

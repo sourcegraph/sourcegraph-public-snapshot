@@ -2,10 +2,10 @@ import { useContext } from 'react'
 
 import { useNavigate } from 'react-router-dom'
 
-import { SubmissionErrors } from '@sourcegraph/wildcard'
+import type { SubmissionErrors } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../../../../tracking/eventLogger'
-import { CodeInsightsBackendContext, CreationInsightInput } from '../../../../core'
+import { CodeInsightsBackendContext, type CreationInsightInput } from '../../../../core'
 import { useQueryParameters } from '../../../../hooks'
 import { getTrackingTypeByInsightType } from '../../../../pings'
 

@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import {
     mockAuthenticatedUser,
@@ -9,7 +9,7 @@ import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTes
 
 import { WebStory } from '../../components/WebStory'
 
-import { SearchContextsList, SearchContextsListProps } from './SearchContextsList'
+import { SearchContextsList, type SearchContextsListProps } from './SearchContextsList'
 
 const decorator: DecoratorFn = story => (
     <div className="p-3 container" style={{ position: 'static' }}>

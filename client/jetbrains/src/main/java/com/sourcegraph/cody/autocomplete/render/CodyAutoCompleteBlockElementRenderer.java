@@ -4,16 +4,21 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.Inlay;
 import com.intellij.openapi.editor.impl.EditorImpl;
 import com.intellij.openapi.editor.markup.TextAttributes;
+import com.sourcegraph.cody.vscode.InlineAutoCompleteItem;
 import java.awt.*;
 import java.util.Comparator;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** Implements the logic to render an autocomplete item inline in the editor. */
 public class CodyAutoCompleteBlockElementRenderer extends CodyAutoCompleteElementRenderer {
 
-  public CodyAutoCompleteBlockElementRenderer(@NotNull String text, @NotNull Editor editor) {
-    super(text, editor, AutoCompleteRendererType.BLOCK);
+  public CodyAutoCompleteBlockElementRenderer(
+      @NotNull String text,
+      @Nullable InlineAutoCompleteItem completionItem,
+      @NotNull Editor editor) {
+    super(text, completionItem, editor, AutoCompleteRendererType.BLOCK);
   }
 
   @Override

@@ -1,4 +1,4 @@
-import { BaseInsight, InsightType } from '../common'
+import type { BaseInsight, InsightType } from '../common'
 
 /**
  * Extended Lang Stats Insight.

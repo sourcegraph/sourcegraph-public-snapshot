@@ -31,7 +31,7 @@ import {
     LoadingSpinner,
     Popover,
     PopoverContent,
-    PopoverOpenEvent,
+    type PopoverOpenEvent,
     PopoverTrigger,
     Position,
     Text,
@@ -41,8 +41,8 @@ import {
 
 import {
     SiteUserOrderBy,
-    UsersManagementUsersListResult,
-    UsersManagementUsersListVariables,
+    type UsersManagementUsersListResult,
+    type UsersManagementUsersListVariables,
 } from '../../../graphql-operations'
 import { useURLSyncedState } from '../../../hooks'
 import { USERS_MANAGEMENT_USERS_LIST } from '../queries'

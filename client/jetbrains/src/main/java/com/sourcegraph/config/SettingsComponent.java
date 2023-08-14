@@ -61,6 +61,8 @@ public class SettingsComponent implements Disposable {
   private JLabel installLocalAppComment;
   private ActionLink runLocalAppLink;
   private JLabel runLocalAppComment;
+  private JBCheckBox isCodyDebugEnabledCheckBox;
+  private JBCheckBox isCodyVerboseDebugEnabledCheckBox;
 
   private final ScheduledExecutorService codyAppStateCheckerExecutorService =
       Executors.newSingleThreadScheduledExecutor();
@@ -453,6 +455,22 @@ public class SettingsComponent implements Disposable {
     isCodyAutoCompleteEnabledCheckBox.setSelected(value);
   }
 
+  public boolean isCodyDebugEnabled() {
+    return isCodyDebugEnabledCheckBox.isSelected();
+  }
+
+  public void setIsCodyDebugEnabled(boolean value) {
+    isCodyDebugEnabledCheckBox.setSelected(value);
+  }
+
+  public boolean isCodyVerboseDebugEnabled() {
+    return isCodyVerboseDebugEnabledCheckBox.isSelected();
+  }
+
+  public void setIsCodyVerboseDebugEnabled(boolean value) {
+    isCodyVerboseDebugEnabledCheckBox.setSelected(value);
+  }
+
   private void setInstanceSettingsEnabled(@NotNull InstanceType instanceType) {
     // enterprise stuff
     boolean isEnterprise = instanceType == InstanceType.ENTERPRISE;
@@ -585,12 +603,17 @@ public class SettingsComponent implements Disposable {
     //noinspection DialogTitleCapitalization
     isCodyEnabledCheckBox = new JBCheckBox("Enable Cody");
     isCodyAutoCompleteEnabledCheckBox = new JBCheckBox("Enable Cody autocomplete");
+    isCodyDebugEnabledCheckBox = new JBCheckBox("Enable debug");
+    isCodyVerboseDebugEnabledCheckBox = new JBCheckBox("Verbose debug");
     JPanel codySettingsPanel =
         FormBuilder.createFormBuilder()
             .addComponent(isCodyEnabledCheckBox, 10)
             .addTooltip(
                 "Disable this to turn off all AI-based functionality of the plugin, including the Cody chat sidebar and autocomplete")
             .addComponent(isCodyAutoCompleteEnabledCheckBox, 5)
+            .addComponent(isCodyDebugEnabledCheckBox)
+            .addTooltip("Enables debug output visible in the idea.log")
+            .addComponent(isCodyVerboseDebugEnabledCheckBox)
             .getPanel();
     codySettingsPanel.setBorder(
         IdeBorderFactory.createTitledBorder("Cody Settings", true, JBUI.insetsTop(8)));

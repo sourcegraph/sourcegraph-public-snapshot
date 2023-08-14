@@ -40,7 +40,7 @@ Additional RBAC Roles are needed for single pod + pvc executors. Hidden for now 
 -->
 
 See
-the [example Role YAML](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/cmd/executor/kubernetes/executor-batches.Role.yml)
+the [example Role YAML](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/cmd/executor/kubernetes/batches/executor-batches.Role.yml)
 for details.
 
 ### Docker Image

@@ -1,14 +1,14 @@
 import { from } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { Intersection } from 'utility-types'
+import type { Intersection } from 'utility-types'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import type { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createSyncLoadedController'
 
-import { SearchSidebarAPI } from '../../../../contract'
-import { WebviewPageProps } from '../../../platform/context'
+import type { SearchSidebarAPI } from '../../../../contract'
+import type { WebviewPageProps } from '../../../platform/context'
 
 import { createExtensionHost } from './worker'
 

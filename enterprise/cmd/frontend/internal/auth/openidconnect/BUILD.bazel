@@ -52,6 +52,7 @@ go_test(
         "//internal/auth/providers",
         "//internal/conf",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/licensing",
         "//internal/types",
         "//lib/errors",

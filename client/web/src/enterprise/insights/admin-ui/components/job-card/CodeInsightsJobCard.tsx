@@ -1,4 +1,4 @@
-import { ChangeEvent, FC, PropsWithChildren, useId } from 'react'
+import { type ChangeEvent, type FC, type PropsWithChildren, useId } from 'react'
 
 import { mdiAlertCircle, mdiCheckCircle, mdiHelp, mdiMoonNew, mdiTimerSand } from '@mdi/js'
 import classNames from 'classnames'
@@ -19,7 +19,7 @@ import {
     PopoverTrigger,
 } from '@sourcegraph/wildcard'
 
-import { InsightJob, InsightQueueItemState } from '../../../../../graphql-operations'
+import { type InsightJob, InsightQueueItemState } from '../../../../../graphql-operations'
 import { formatFilter } from '../job-filters'
 
 import styles from './CodeInsightsJobCard.module.scss'

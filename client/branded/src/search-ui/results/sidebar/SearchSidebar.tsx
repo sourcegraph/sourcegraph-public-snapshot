@@ -1,9 +1,9 @@
 import {
-    ComponentProps,
+    type ComponentProps,
     createContext,
-    FC,
-    HTMLAttributes,
-    PropsWithChildren,
+    type FC,
+    type HTMLAttributes,
+    type PropsWithChildren,
     useCallback,
     useContext,
     useMemo,
@@ -14,8 +14,8 @@ import classNames from 'classnames'
 import { noop } from 'lodash'
 import StickyBox from 'react-sticky-box'
 
-import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
-import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
+import type { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
+import type { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, H2, H4, Icon } from '@sourcegraph/wildcard'
 

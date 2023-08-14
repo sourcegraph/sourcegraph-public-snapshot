@@ -1,8 +1,8 @@
-import { InsightType, InsightFilters, InsightDashboardReference } from './common'
-import { CaptureGroupInsight } from './types/capture-group-insight'
-import { ComputeInsight } from './types/compute-insight'
-import { LangStatsInsight } from './types/lang-stat-insight'
-import { SearchBasedInsight, SearchBasedInsightSeries } from './types/search-insight'
+import { InsightType, type InsightFilters, type InsightDashboardReference } from './common'
+import type { CaptureGroupInsight } from './types/capture-group-insight'
+import type { ComputeInsight } from './types/compute-insight'
+import type { LangStatsInsight } from './types/lang-stat-insight'
+import type { SearchBasedInsight, SearchBasedInsightSeries } from './types/search-insight'
 
 export { InsightType }
 

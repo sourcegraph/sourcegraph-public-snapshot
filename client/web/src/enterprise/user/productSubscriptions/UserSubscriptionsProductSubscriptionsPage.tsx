@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback } from 'react'
 
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
@@ -10,7 +10,7 @@ import { Container, PageHeader, Link, Text } from '@sourcegraph/wildcard'
 import { queryGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
-import {
+import type {
     ProductSubscriptionFields,
     ProductSubscriptionsResult,
     ProductSubscriptionsVariables,
@@ -21,7 +21,7 @@ import {
     productSubscriptionFragment,
     ProductSubscriptionNode,
     ProductSubscriptionNodeHeader,
-    ProductSubscriptionNodeProps,
+    type ProductSubscriptionNodeProps,
 } from '../../dotcom/productSubscriptions/ProductSubscriptionNode'
 
 interface Props {

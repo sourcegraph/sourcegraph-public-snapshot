@@ -5,7 +5,7 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { sortBy } from 'lodash'
 
-import { BuildSearchQueryURLParameters, QueryState } from '@sourcegraph/shared/src/search'
+import type { BuildSearchQueryURLParameters, QueryState } from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { Badge, Button, Code, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
