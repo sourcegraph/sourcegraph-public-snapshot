@@ -156,6 +156,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         setIsSidebarOpen: setIsCodySidebarOpen,
         scope,
         setEditorScope,
+        transcript,
     } = useCodySidebar()
 
     const { sidebarSize, setSidebarSize: setCodySidebarSize } = useSidebarSize()
@@ -398,6 +399,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                                         props.telemetryService.log(EventName.CODY_SIDEBAR_CHAT_OPENED, {
                                             repo,
                                             path: filePath,
+                                            chatId: transcript?.id,
                                         })
                                         setIsCodySidebarOpen(true)
                                     }}
