@@ -47,7 +47,7 @@ jobs:
         name: Run `nix build`
         run: |
           nix build .#ctags-aarch64-darwin
-          codesign --force -s - ./result/bin/ctags-*
+          codesign --force -vvvv -s - ./result/bin/ctags-*
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
