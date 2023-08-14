@@ -762,12 +762,8 @@ commands:
     cmd: ./dev/postgres_exporter.sh
 
   monitoring-generator:
-    cmd: (cd monitoring/ && go generate ./... )
+    cmd: echo "monitoring-generator is deprecated, please run 'sg generate go' or 'bazel run //dev:write_all_generated' instead"
     env:
-      RELOAD: true
-    watch:
-      - monitoring
-    continueWatchOnExit: true
 
   loki:
     cmd: |
@@ -1364,7 +1360,6 @@ commandsets:
       - prometheus
       - grafana
       - postgres_exporter
-      - monitoring-generator
 
   monitoring-alerts:
     checks:
