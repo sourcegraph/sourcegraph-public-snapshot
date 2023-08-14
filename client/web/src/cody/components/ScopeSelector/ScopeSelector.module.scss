@@ -126,15 +126,5 @@
 }
 
 .icon {
-    &-green {
-        fill: var(--green) !important;
-    }
-
-    &-yellow {
-        fill: var(--yellow) !important;
-    }
-
-    &-red {
-        fill: var(--red) !important;
-    }
+    fill: currentColor !important;
 }
