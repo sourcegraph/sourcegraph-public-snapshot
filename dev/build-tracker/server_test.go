@@ -23,6 +23,8 @@ func TestGetBuild(t *testing.T) {
 	req = mux.SetURLVars(req, map[string]string{"buildNumber": "1234"})
 
 	t.Run("401 Unauthorized when in production mode and incorrect credentials", func(t *testing.T) {
+		t.Fail()
+
 		server := NewServer(logger, config.Config{Production: true, DebugPassword: "this is a test"})
 		rec := httptest.NewRecorder()
 		server.handleGetBuild(rec, req)
