@@ -76,7 +76,7 @@ export const GettingStarted: React.FC<
                 }`,
                 examples: [
                     {
-                        text: 'What is the tech stack of the this repo?',
+                        text: 'What is the tech stack of this repo?',
                     },
                     {
                         text: 'Are there any automated tests in this repo?',
