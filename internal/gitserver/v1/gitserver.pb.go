@@ -2781,105 +2781,6 @@ func (x *RepoUpdateResponse) GetError() string {
 	return ""
 }
 
-// ReposStatsRequest is a empty request for the ReposStats RPC.
-type ReposStatsRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *ReposStatsRequest) Reset() {
-	*x = ReposStatsRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[40]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *ReposStatsRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReposStatsRequest) ProtoMessage() {}
-
-func (x *ReposStatsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[40]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReposStatsRequest.ProtoReflect.Descriptor instead.
-func (*ReposStatsRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{40}
-}
-
-// ReposStats is an aggregation of statistics from a gitserver.
-type ReposStatsResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// git_dir_bytes is the amount of bytes stored in .git directories.
-	GitDirBytes uint64 `protobuf:"varint,1,opt,name=git_dir_bytes,json=gitDirBytes,proto3" json:"git_dir_bytes,omitempty"`
-	// updated_at is the time these statistics were computed. If updated_at is
-	// zero, the statistics have not yet been computed. This can happen on a
-	// new gitserver.
-	UpdatedAt *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-}
-
-func (x *ReposStatsResponse) Reset() {
-	*x = ReposStatsResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[41]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *ReposStatsResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReposStatsResponse) ProtoMessage() {}
-
-func (x *ReposStatsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[41]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReposStatsResponse.ProtoReflect.Descriptor instead.
-func (*ReposStatsResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{41}
-}
-
-func (x *ReposStatsResponse) GetGitDirBytes() uint64 {
-	if x != nil {
-		return x.GitDirBytes
-	}
-	return 0
-}
-
-func (x *ReposStatsResponse) GetUpdatedAt() *timestamppb.Timestamp {
-	if x != nil {
-		return x.UpdatedAt
-	}
-	return nil
-}
-
 type P4ExecRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4115,8 +4016,6 @@ var file_gitserver_proto_goTypes = []interface{}{
 	(*RepoDeleteResponse)(nil),                  // 39: gitserver.v1.RepoDeleteResponse
 	(*RepoUpdateRequest)(nil),                   // 40: gitserver.v1.RepoUpdateRequest
 	(*RepoUpdateResponse)(nil),                  // 41: gitserver.v1.RepoUpdateResponse
-	(*ReposStatsRequest)(nil),                   // 42: gitserver.v1.ReposStatsRequest
-	(*ReposStatsResponse)(nil),                  // 43: gitserver.v1.ReposStatsResponse
 	(*P4ExecRequest)(nil),                       // 44: gitserver.v1.P4ExecRequest
 	(*P4ExecResponse)(nil),                      // 45: gitserver.v1.P4ExecResponse
 	(*ListGitoliteRequest)(nil),                 // 46: gitserver.v1.ListGitoliteRequest
@@ -4187,7 +4086,6 @@ var file_gitserver_proto_depIdxs = []int32{
 	35, // 50: gitserver.v1.GitserverService.RepoCloneProgress:input_type -> gitserver.v1.RepoCloneProgressRequest
 	38, // 51: gitserver.v1.GitserverService.RepoDelete:input_type -> gitserver.v1.RepoDeleteRequest
 	40, // 52: gitserver.v1.GitserverService.RepoUpdate:input_type -> gitserver.v1.RepoUpdateRequest
-	42, // 53: gitserver.v1.GitserverService.ReposStats:input_type -> gitserver.v1.ReposStatsRequest
 	3,  // 54: gitserver.v1.GitserverService.BatchLog:output_type -> gitserver.v1.BatchLogResponse
 	10, // 55: gitserver.v1.GitserverService.CreateCommitFromPatchBinary:output_type -> gitserver.v1.CreateCommitFromPatchBinaryResponse
 	12, // 56: gitserver.v1.GitserverService.Exec:output_type -> gitserver.v1.ExecResponse
@@ -4201,7 +4099,6 @@ var file_gitserver_proto_depIdxs = []int32{
 	37, // 64: gitserver.v1.GitserverService.RepoCloneProgress:output_type -> gitserver.v1.RepoCloneProgressResponse
 	39, // 65: gitserver.v1.GitserverService.RepoDelete:output_type -> gitserver.v1.RepoDeleteResponse
 	41, // 66: gitserver.v1.GitserverService.RepoUpdate:output_type -> gitserver.v1.RepoUpdateResponse
-	43, // 67: gitserver.v1.GitserverService.ReposStats:output_type -> gitserver.v1.ReposStatsResponse
 	54, // [54:68] is the sub-list for method output_type
 	40, // [40:54] is the sub-list for method input_type
 	40, // [40:40] is the sub-list for extension type_name
@@ -4685,30 +4582,6 @@ func file_gitserver_proto_init() {
 		}
 		file_gitserver_proto_msgTypes[39].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RepoUpdateResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_gitserver_proto_msgTypes[40].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReposStatsRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_gitserver_proto_msgTypes[41].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReposStatsResponse); i {
 			case 0:
 				return &v.state
 			case 1:

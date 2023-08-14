@@ -319,15 +319,6 @@ type Client interface {
 	// into an equivalent set of commit hashes
 	ResolveRevisions(_ context.Context, repo api.RepoName, _ []protocol.RevisionSpecifier) ([]string, error)
 
-	// ReposStats will return a map of the ReposStats for each gitserver in a
-	// map. If we fail to fetch a stat from a gitserver, it won't be in the
-	// returned map and will be appended to the error. If no errors occur err will
-	// be nil.
-	//
-	// Note: If the statistics for a gitserver have not been computed, the
-	// UpdatedAt field will be zero. This can happen for new gitservers.
-	ReposStats(context.Context) (map[string]*protocol.ReposStats, error)
-
 	// RequestRepoUpdate is the new protocol endpoint for synchronous requests
 	// with more detailed responses. Do not use this if you are not repo-updater.
 	//
@@ -1461,58 +1452,6 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 		}
 		return &res, err
 	}
-}
-
-func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protocol.ReposStats, error) {
-	stats := map[string]*protocol.ReposStats{}
-	var allErr error
-
-	if conf.IsGRPCEnabled(ctx) {
-		for _, addr := range c.clientSource.Addresses() {
-			client, err := addr.GRPCClient()
-			if err != nil {
-				return nil, err
-			}
-
-			resp, err := client.ReposStats(ctx, &proto.ReposStatsRequest{})
-			if err != nil {
-				allErr = errors.Append(allErr, err)
-			} else {
-				rs := &protocol.ReposStats{}
-				rs.FromProto(resp)
-				stats[addr.Address()] = rs
-			}
-		}
-	} else {
-
-		for _, addr := range c.Addrs() {
-			stat, err := c.doReposStats(ctx, addr)
-			if err != nil {
-				allErr = errors.Append(allErr, err)
-			} else {
-				stats[addr] = stat
-			}
-
-		}
-	}
-
-	return stats, allErr
-}
-
-func (c *clientImplementor) doReposStats(ctx context.Context, addr string) (*protocol.ReposStats, error) {
-	resp, err := c.do(ctx, "", "GET", fmt.Sprintf("http://%s/repos-stats", addr), nil)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	var stats protocol.ReposStats
-	err = json.NewDecoder(resp.Body).Decode(&stats)
-	if err != nil {
-		return nil, err
-	}
-
-	return &stats, nil
 }
 
 func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) error {

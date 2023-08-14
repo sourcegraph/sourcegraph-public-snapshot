@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	_ "embed"
-	"encoding/json"
 	"fmt"
 	"hash/fnv"
 	"io"
@@ -32,7 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -185,8 +183,6 @@ var (
 	})
 )
 
-const reposStatsName = "repos-stats.json"
-
 type cloneRepoFunc func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error)
 
 // cleanupRepos walks the repos directory and performs maintenance tasks:
@@ -235,10 +231,6 @@ func cleanupRepos(
 		logger.Warn("current shard is not included in the list of known gitserver shards, will not delete repos", log.String("current-hostname", shardID), log.Strings("all-shards", gitServerAddrs.Addresses))
 	}
 
-	stats := protocol.ReposStats{
-		UpdatedAt: time.Now(),
-	}
-
 	repoToSize := make(map[api.RepoName]int64)
 	var wrongShardRepoCount int64
 	var wrongShardRepoSize int64
@@ -258,7 +250,6 @@ func cleanupRepos(
 
 	collectSizeAndMaybeDeleteWrongShardRepos := func(dir common.GitDir) (done bool, err error) {
 		size := dirSize(dir.Path("."))
-		stats.GitDirBytes += size
 		name := repoNameFromDir(reposDir, dir)
 		repoToSize[name] = size
 
@@ -569,12 +560,6 @@ func cleanupRepos(
 	})
 	if err != nil {
 		logger.Error("error iterating over repositories", log.Error(err))
-	}
-
-	if b, err := json.Marshal(stats); err != nil {
-		logger.Error("failed to marshal periodic stats", log.Error(err))
-	} else if err = os.WriteFile(filepath.Join(reposDir, reposStatsName), b, 0666); err != nil {
-		logger.Error("failed to write periodic stats", log.Error(err))
 	}
 
 	err = setRepoSizes(ctx, logger, db, shardID, repoToSize)
