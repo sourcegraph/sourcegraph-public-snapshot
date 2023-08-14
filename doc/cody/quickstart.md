@@ -5,7 +5,7 @@ This guide provides recommendations for first things to try once you have Cody u
 If you haven't yet enabled Cody for your Sourcegraph instance or installed the VS Code extension, go here first:
 
 - [Enabling Cody for Sourcegraph Enterprise customers](overview/enable-cody-enterprise.md)
-- [Enabling Cody for Sourcegraph.com users](overview/cody-with-sourcegraph)
+- [Enabling Cody for Sourcegraph.com users](overview/cody-with-sourcegraph.md)
 - [Installing Cody for VS Code](overview/install-vscode.md)
 - [Installing Cody for Jetbrains](overview/install-jetbrains.md)
 - [Installing the Cody app](overview/app/index.md)

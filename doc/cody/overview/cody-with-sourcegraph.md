@@ -1,6 +1,6 @@
 # Enabling Cody with Sourcegraph.com
 
-Cody uses Sourcegraph to fetch relevant context to generate answers and code. These instructions walk through installing Cody in your editor and connecting it to Sourcegraph.com and is the best option if you're interested in using Cody on public code. To use Cody on your local code, download the [Cody App](../../app/index.md) or see [this page about enabling Cody for Enterprise](enable-cody-enterprise.md).
+Cody uses Sourcegraph to fetch relevant context to generate answers and code. These instructions walk through installing Cody in your editor and connecting it to Sourcegraph.com and is the best option if you're interested in using Cody on public code. To use Cody on your local code, download the [Cody App](./../overview/app/index.md) or see [this page about enabling Cody for Enterprise](enable-cody-enterprise.md).
 
 ## Initial setup
 
