@@ -13,8 +13,8 @@ In this guide, you will:
 
 If you haven't yet done this, see Step 1 on the following pages:
 
-- [Enabling Cody for Sourcegraph Enterprise](enabling_cody_enterprise.md)
-- [Enabling Cody for Sourcegraph.com](enabling_cody.md)
+- [Enabling Cody for Sourcegraph Enterprise](enable-cody-enterprise.md)
+- [Enabling Cody for Sourcegraph.com](cody-with-sourcegraph.md)
 
 ## Install the Jetbrains IntelliJ Cody extension
 
@@ -46,8 +46,8 @@ Click `Continue with Sourcegraph.com` in the Cody extension. From there, you'll 
 
 You can optional configure code graph content, which gives Cody the ability to provide context-aware answers. For example, Cody can write example API calls if has context of a codebase's API schema.
 
-- [Configure code graph context for Sourcegraph.com](enabling_cody.md#configure-code-graph-context-for-code-aware-answers)
-- [Configure code graph context for Sourcegraph Enterprise](enabling_cody_enterprise.md#enabling-codebase-aware-answers)
+- [Configure code graph context for Sourcegraph.com](cody-with-sourcegraph.md#configure-code-graph-context-for-code-aware-answers)
+- [Configure code graph context for Sourcegraph Enterprise](enable-cody-enterprise.md#enabling-codebase-aware-answers)
 
 ## Get started with Cody
 
