@@ -4,19 +4,7 @@ import { ApolloError } from '@apollo/client'
 import { applyEdits, modify, parse, ParseError } from 'jsonc-parser'
 
 import { SiteConfiguration, SMTPServerConfig } from '@sourcegraph/shared/src/schema/site.schema'
-import {
-    Button,
-    Checkbox,
-    Form,
-    H3,
-    Input,
-    Label,
-    Link,
-    Alert,
-    Select,
-    Text,
-    Container,
-} from '@sourcegraph/wildcard'
+import { Button, Checkbox, Form, H3, Input, Label, Link, Alert, Select, Text, Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { LoaderButton } from '../../components/LoaderButton'
@@ -280,7 +268,7 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
                         Discard changes
                     </Button>
                 </div>
-            </FormData>
+            </Form>
             <Container className="mt-4">
                 <H3>Test email</H3>
                 <SendTestEmailForm authenticatedUser={authenticatedUser} />
