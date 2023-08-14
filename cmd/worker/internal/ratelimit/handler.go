@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"golang.org/x/time/rate"
 )
 
 type handler struct {
@@ -45,59 +46,63 @@ func (h *handler) Handle(ctx context.Context, observationCtx *observation.Contex
 }
 
 func (h *handler) processCodeHost(ctx context.Context, codeHostURL string) error {
-	apiCap, apiRepInterval, gitCap, gitRepInterval, err := h.getRateLimitConfigsOrDefaults(ctx, codeHostURL)
+	configs, err := h.getRateLimitConfigsOrDefaults(ctx, codeHostURL)
 	if err != nil {
 		return err
 	}
 	// Set API token values
-	err = h.ratelimiter.SetTokenBucketReplenishment(ctx, fmt.Sprintf("%s:%s", codeHostURL, redispool.CodeHostAPITokenBucketSuffix), apiCap, apiRepInterval)
+	err = h.ratelimiter.SetTokenBucketReplenishment(ctx, fmt.Sprintf("%s:%s", codeHostURL, redispool.CodeHostAPITokenBucketSuffix), configs.ApiQuota, configs.ApiReplenishmentInterval)
 	// Set Git token values
-	err2 := h.ratelimiter.SetTokenBucketReplenishment(ctx, fmt.Sprintf("%s:%s", codeHostURL, redispool.CodeHostGitTokenBucketSuffix), gitCap, gitRepInterval)
+	err2 := h.ratelimiter.SetTokenBucketReplenishment(ctx, fmt.Sprintf("%s:%s", codeHostURL, redispool.CodeHostGitTokenBucketSuffix), configs.GitQuota, configs.GitReplenishmentInterval)
 
 	return errors.CombineErrors(err, err2)
 }
 
-func (h *handler) getRateLimitConfigsOrDefaults(ctx context.Context, codeHostURL string) (apiCap, apiRepInterval, gitCap, gitRepInterval int32, err error) {
-	// Retrieve the actual rate limit values from the source of truth (Postgres).
-	ch, err := h.codeHostStore.GetByURL(ctx, codeHostURL)
+func (h *handler) getRateLimitConfigsOrDefaults(ctx context.Context, codeHostURL string) (CodeHostRateLimitConfigs, error) {
+	var configs CodeHostRateLimitConfigs
+	// Retrieve the actual rate limit values from the source of truth (database).
+	codeHost, err := h.codeHostStore.GetByURL(ctx, codeHostURL)
 	if err != nil {
-		err = errors.Wrapf(err, "rate limit config worker unable to get code host by URL: %s", codeHostURL)
-		return
+		return CodeHostRateLimitConfigs{}, errors.Wrapf(err, "rate limit config worker unable to get code host by URL: %s", codeHostURL)
 	}
 
-	// Determine the values of the 4 rate limit configurations by using their set value from Postgres or their default value if they are not set.
-	if ch.APIRateLimitQuota != nil {
-		apiCap = *ch.APIRateLimitQuota
+	// Determine the values of the 4 rate limit configurations by using their set value from the database or their default value if they are not set.
+	if codeHost.APIRateLimitQuota != nil {
+		configs.ApiQuota = *codeHost.APIRateLimitQuota
 	} else {
-		// TODO: is this reasonable? These limits represent remote calls, so we are never reaching these numbers anyways.
-		defaultRateLimitAsInt := int32(extsvc.GetRateLimit(ch.Kind))
-		if defaultRateLimitAsInt < 0 {
+		defaultRateLimitAsInt := int32(extsvc.GetDefaultRateLimit(codeHost.Kind))
+		// Basically only happens if the rate limit is set to rate.Inf
+		if extsvc.GetDefaultRateLimit(codeHost.Kind) > rate.Limit(math.MaxInt32) {
 			defaultRateLimitAsInt = math.MaxInt32
 		}
-		apiCap = defaultRateLimitAsInt
+		configs.ApiQuota = defaultRateLimitAsInt
 	}
 
-	if ch.APIRateLimitIntervalSeconds != nil {
-		apiRepInterval = *ch.APIRateLimitIntervalSeconds
+	if codeHost.APIRateLimitIntervalSeconds != nil {
+		configs.ApiReplenishmentInterval = *codeHost.APIRateLimitIntervalSeconds
 	} else {
-		apiRepInterval = int32(3600)
+		configs.ApiReplenishmentInterval = int32(3600)
 	}
 
-	if ch.GitRateLimitQuota != nil {
-		gitCap = *ch.GitRateLimitQuota
+	if codeHost.GitRateLimitQuota != nil {
+		configs.GitQuota = *codeHost.GitRateLimitQuota
 	} else {
 		siteCfg := conf.Get()
 		if siteCfg.GitMaxCodehostRequestsPerSecond != nil {
-			gitCap = int32(*siteCfg.GitMaxCodehostRequestsPerSecond)
+			configs.GitQuota = int32(*siteCfg.GitMaxCodehostRequestsPerSecond)
 		} else {
-			gitCap = math.MaxInt32
+			configs.GitQuota = math.MaxInt32
 		}
 	}
 
-	if ch.GitRateLimitIntervalSeconds != nil {
-		gitRepInterval = *ch.GitRateLimitIntervalSeconds
+	if codeHost.GitRateLimitIntervalSeconds != nil {
+		configs.GitReplenishmentInterval = *codeHost.GitRateLimitIntervalSeconds
 	} else {
-		gitRepInterval = int32(1)
+		configs.GitReplenishmentInterval = int32(1)
 	}
-	return
+	return configs, nil
+}
+
+type CodeHostRateLimitConfigs struct {
+	ApiQuota, ApiReplenishmentInterval, GitQuota, GitReplenishmentInterval int32
 }

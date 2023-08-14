@@ -52,8 +52,8 @@ func NewRateLimiter() (RateLimiter, error) {
 	}, nil
 }
 
-// NewRateLimiterWithPoolAndPrefix same as NewRateLimiter but with configurable pool and prefix, currently used for testing
-func NewRateLimiterWithPoolAndPrefix(pool *redis.Pool, prefix string) (RateLimiter, error) {
+// NewTestRateLimiterWithPoolAndPrefix same as NewRateLimiter but with configurable pool and prefix, used for testing
+func NewTestRateLimiterWithPoolAndPrefix(pool *redis.Pool, prefix string) (RateLimiter, error) {
 	if pool == nil {
 		return nil, errors.New("Redis pool can't be nil")
 	}

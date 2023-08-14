@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -20,7 +19,7 @@ func NewRateLimitConfigJob() job.Job {
 }
 
 func (s *rateLimitConfigJob) Description() string {
-	return ""
+	return "Copies the rate limit configurations from the database to Redis."
 }
 
 func (s *rateLimitConfigJob) Config() []env.Config {
@@ -32,28 +31,27 @@ func (s *rateLimitConfigJob) Routines(_ context.Context, observationCtx *observa
 	if err != nil {
 		return nil, err
 	}
+	rl, err := redispool.NewRateLimiter()
+	if err != nil {
+		return nil, err
+	}
 
-	rlcWorker := makeRateLimitConfigWorker(observationCtx, db.CodeHosts())
+	rlcWorker := makeRateLimitConfigWorker(observationCtx, handler{
+		codeHostStore:  db.CodeHosts(),
+		redisKeyPrefix: redispool.TokenBucketGlobalPrefix,
+		ratelimiter:    rl,
+	})
 	return []goroutine.BackgroundRoutine{rlcWorker}, nil
 }
 
-func makeRateLimitConfigWorker(observationCtx *observation.Context, store database.CodeHostStore) goroutine.BackgroundRoutine {
+func makeRateLimitConfigWorker(observationCtx *observation.Context, hdlr handler) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			rl, err := redispool.NewRateLimiter()
-			if err != nil {
-				return err
-			}
-			h := &handler{
-				codeHostStore:  store,
-				redisKeyPrefix: redispool.TokenBucketGlobalPrefix,
-				ratelimiter:    rl,
-			}
-			return h.Handle(ctx, observationCtx)
+			return hdlr.Handle(ctx, observationCtx)
 		}),
 		goroutine.WithName("rate_limit_config_worker"),
-		goroutine.WithDescription("copies the rate limit configurations from Postgres to Redis"),
+		goroutine.WithDescription("copies the rate limit configurations from the database to Redis"),
 		goroutine.WithInterval(30*time.Second),
 	)
 }

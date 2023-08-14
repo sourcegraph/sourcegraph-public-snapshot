@@ -106,32 +106,9 @@ func redisPoolForTest(t *testing.T, prefix string) *redis.Pool {
 		c.Close()
 	})
 
-	if err := deleteAllKeysWithPrefix(c, prefix); err != nil {
+	if err := DeleteAllKeysWithPrefix(c, prefix); err != nil {
 		t.Logf("Could not clear test prefix name=%q prefix=%q error=%v", t.Name(), prefix, err)
 	}
 
 	return pool
-}
-
-func deleteAllKeysWithPrefix(c redis.Conn, prefix string) error {
-	const script = `
-redis.replicate_commands()
-local cursor = '0'
-local prefix = ARGV[1]
-local batchSize = ARGV[2]
-local result = ''
-repeat
-	local keys = redis.call('SCAN', cursor, 'MATCH', prefix, 'COUNT', batchSize)
-	if #keys[2] > 0
-	then
-		result = redis.call('DEL', unpack(keys[2]))
-	end
-
-	cursor = keys[1]
-until cursor == '0'
-return result
-`
-
-	_, err := c.Do("EVAL", script, 0, prefix+":*", 100)
-	return err
 }

@@ -18,23 +18,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_Handle(t *testing.T) {
+func TestHandler_Handle(t *testing.T) {
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	prefix := "__test__" + t.Name()
 	ctx := context.Background()
-	ten := int32(10)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	prefix := "__test__" + t.Name()
 	url := "https://github.com/"
 	redisHost := "127.0.0.1:6379"
-	codeHost := &types.CodeHost{
-		Kind:                        extsvc.KindGitHub,
-		URL:                         url,
-		APIRateLimitQuota:           &ten,
-		APIRateLimitIntervalSeconds: &ten,
-		GitRateLimitQuota:           &ten,
-		GitRateLimitIntervalSeconds: &ten,
-	}
+
 	pool := &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
@@ -46,7 +39,16 @@ func Test_Handle(t *testing.T) {
 			return err
 		},
 	}
-	assertValFromRedis := func(key string, expectedVal int32, kv redispool.KeyValue) {
+	t.Cleanup(func() {
+		c := pool.Get()
+		err := redispool.DeleteAllKeysWithPrefix(c, prefix)
+		if err != nil {
+			t.Logf("Failed to clear redis: %+v\n", err)
+		}
+		c.Close()
+	})
+
+	assertValFromRedis := func(kv redispool.KeyValue, key string, expectedVal int32) {
 		val, err := kv.Get(key).Int()
 		assert.NoError(t, err)
 		assert.Equal(t, expectedVal, int32(val))
@@ -56,17 +58,18 @@ func Test_Handle(t *testing.T) {
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
 	})
-	rateLimiter, err := redispool.NewRateLimiterWithPoolAndPrefix(pool, prefix)
+	rateLimiter, err := redispool.NewTestRateLimiterWithPoolAndPrefix(pool, prefix)
 	require.NoError(t, err)
 
-	t.Cleanup(func() {
-		c := pool.Get()
-		err := deleteAllKeysWithPrefix(c, prefix)
-		if err != nil {
-			t.Logf("Failed to clear redis: %+v\n", err)
-		}
-		c.Close()
-	})
+	rateLimitConfigValues := int32(10)
+	codeHost := &types.CodeHost{
+		Kind:                        extsvc.KindGitHub,
+		URL:                         url,
+		APIRateLimitQuota:           &rateLimitConfigValues,
+		APIRateLimitIntervalSeconds: &rateLimitConfigValues,
+		GitRateLimitQuota:           &rateLimitConfigValues,
+		GitRateLimitIntervalSeconds: &rateLimitConfigValues,
+	}
 	err = db.CodeHosts().Create(ctx, codeHost)
 	require.NoError(t, err)
 
@@ -89,20 +92,19 @@ func Test_Handle(t *testing.T) {
 	err = h.Handle(ctx, obsCtx)
 	assert.NoError(t, err)
 	apiCapKey, apiReplenishmentKey, gitCapKey, gitReplenishmentKey := redispool.GetCodeHostRateLimiterConfigKeys(prefix, url)
-	assertValFromRedis(apiCapKey, ten, kv)
-	assertValFromRedis(apiReplenishmentKey, ten, kv)
-	assertValFromRedis(gitCapKey, ten, kv)
-	assertValFromRedis(gitReplenishmentKey, ten, kv)
+	assertValFromRedis(kv, apiCapKey, rateLimitConfigValues)
+	assertValFromRedis(kv, apiReplenishmentKey, rateLimitConfigValues)
+	assertValFromRedis(kv, gitCapKey, rateLimitConfigValues)
+	assertValFromRedis(kv, gitReplenishmentKey, rateLimitConfigValues)
 
 	// Update the rate limit config in Postgres to use defaults/maxes
-	thirtySixHundred := int32(3600)
-	maxInt := int32(math.MaxInt32)
-	one := int32(1)
+	maxRateLimitQuota := int32(math.MaxInt32)
+
 	// This should default to max int32
 	codeHost.APIRateLimitQuota = nil
 	// This should default to  3600
 	codeHost.APIRateLimitIntervalSeconds = nil
-	codeHost.GitRateLimitQuota = &maxInt
+	codeHost.GitRateLimitQuota = &maxRateLimitQuota
 	// This should default to 1
 	codeHost.GitRateLimitIntervalSeconds = nil
 	err = db.CodeHosts().Update(ctx, codeHost)
@@ -111,31 +113,10 @@ func Test_Handle(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check updated values are in Redis
-	assertValFromRedis(apiCapKey, maxInt, kv)
-	assertValFromRedis(apiReplenishmentKey, thirtySixHundred, kv)
-	assertValFromRedis(gitCapKey, maxInt, kv)
-	assertValFromRedis(gitReplenishmentKey, one, kv)
-}
-
-func deleteAllKeysWithPrefix(c redis.Conn, prefix string) error {
-	const script = `
-redis.replicate_commands()
-local cursor = '0'
-local prefix = ARGV[1]
-local batchSize = ARGV[2]
-local result = ''
-repeat
-	local keys = redis.call('SCAN', cursor, 'MATCH', prefix, 'COUNT', batchSize)
-	if #keys[2] > 0
-	then
-		result = redis.call('DEL', unpack(keys[2]))
-	end
-
-	cursor = keys[1]
-until cursor == '0'
-return result
-`
-
-	_, err := c.Do("EVAL", script, 0, prefix+":*", 100)
-	return err
+	defaultAPIRateLimitReplenishmentInterval := int32(3600)
+	defaultGitRateLimitReplenishmentInterval := int32(1)
+	assertValFromRedis(kv, apiCapKey, maxRateLimitQuota)
+	assertValFromRedis(kv, apiReplenishmentKey, defaultAPIRateLimitReplenishmentInterval)
+	assertValFromRedis(kv, gitCapKey, maxRateLimitQuota)
+	assertValFromRedis(kv, gitReplenishmentKey, defaultGitRateLimitReplenishmentInterval)
 }
