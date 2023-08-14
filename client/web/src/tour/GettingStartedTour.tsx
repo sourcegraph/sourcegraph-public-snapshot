@@ -40,14 +40,16 @@ type TourWithErrorBoundaryProps = Omit<TourProps, 'useStore' | 'eventPrefix' | '
 const TourWithErrorBoundary = memo(
     withErrorBoundary(({ isAuthenticated, isSourcegraphDotCom, ...props }: TourWithErrorBoundaryProps) => {
         // Do not show if on prem
-        if (!isSourcegraphDotCom) {
-            return null
-        }
+        // if (!isSourcegraphDotCom) {
+        //     return null
+        // }
 
         // Show visitors version
         if (!isAuthenticated) {
             return <TourVisitor {...props} />
         }
+
+        console.log(JSON.stringify(authenticatedTasks))
 
         return (
             <TourAuthenticated
