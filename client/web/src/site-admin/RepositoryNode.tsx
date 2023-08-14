@@ -80,7 +80,7 @@ const repoCloned = (repo: SiteAdminRepositoryFields): boolean =>
 
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
-    refetchAllRepos: () => void
+    refetchAllRepos: () => Promise<void>
 }
 
 export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({
