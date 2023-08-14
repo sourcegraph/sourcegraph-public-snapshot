@@ -88,7 +88,7 @@ type AlertFuncArgs struct {
 	IsAuthenticated     bool             // whether the viewer is authenticated
 	IsSiteAdmin         bool             // whether the viewer is a site admin
 	ViewerFinalSettings *schema.Settings // the viewer's final user/org/global settings
-	Ctx             context.Context
+	Ctx                 context.Context
 	DB                  database.DB
 }
 
@@ -102,7 +102,7 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 		IsAuthenticated:     actor.FromContext(ctx).IsAuthenticated(),
 		IsSiteAdmin:         auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil,
 		ViewerFinalSettings: settings,
-		Ctx:             ctx,
+		Ctx:                 ctx,
 		DB:                  r.db,
 	}
 
