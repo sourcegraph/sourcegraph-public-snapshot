@@ -1,12 +1,8 @@
 extend type Query {
-    contentLibrary: [SearchQueryLibraryContent!]!
-
     onboardingTourContent: OnboardingTourContent!
 }
 
 extend type Mutation {
-    addContentEntry(description: String!, query: String!): EmptyResponse!
-
     updateOnboardingTourContent(input: String!): EmptyResponse!
 }
 

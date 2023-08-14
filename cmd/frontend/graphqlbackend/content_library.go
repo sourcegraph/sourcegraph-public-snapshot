@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
 
 	logger "github.com/sourcegraph/log"
@@ -17,9 +16,6 @@ import (
 var _ ContentLibraryResolver = &contentLibraryResolver{}
 
 type ContentLibraryResolver interface {
-	ContentLibrary(ctx context.Context) ([]SearchQueryContentResolver, error)
-	AddContentEntry(ctx context.Context, args AddContentEntryArgs) (*EmptyResponse, error)
-
 	OnboardingTourContent(ctx context.Context) (OnboardingTourContentResolver, error)
 	UpdateOnboardingTourContent(ctx context.Context, args UpdateOnboardingTourArgs) (*EmptyResponse, error)
 }
@@ -83,75 +79,4 @@ func (c *contentLibraryResolver) UpdateOnboardingTourContent(ctx context.Context
 
 type UpdateOnboardingTourArgs struct {
 	Input string
-}
-
-func (c *contentLibraryResolver) ContentLibrary(ctx context.Context) (resolvers []SearchQueryContentResolver, _ error) {
-	store := basestore.NewWithHandle(c.db.Handle())
-
-	got, err := fetch(ctx, store)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, entry := range got {
-		resolvers = append(resolvers, &searchQueryLibraryContentResolver{entry: entry})
-	}
-
-	return resolvers, nil
-}
-
-func (c *contentLibraryResolver) AddContentEntry(ctx context.Context, args AddContentEntryArgs) (*EmptyResponse, error) {
-	store := basestore.NewWithHandle(c.db.Handle())
-
-	actr := actor.FromContext(ctx)
-
-	return &EmptyResponse{}, store.Exec(ctx, sqlf.Sprintf("insert into search_content_library (description, query_string, created_by) values (%s, %s, %s);", args.Description, args.Query, actr.UID))
-}
-
-type searchQueryLibraryContentResolver struct {
-	entry SearchContentEntry
-}
-
-func (c *searchQueryLibraryContentResolver) ID() graphql.ID {
-	return relay.MarshalID("search_content_library_entry", c.entry.ID)
-}
-
-func (c *searchQueryLibraryContentResolver) Description() string {
-	return c.entry.Description
-}
-
-func (c *searchQueryLibraryContentResolver) QueryString() string {
-	return c.entry.QueryString
-}
-
-type SearchContentEntry struct {
-	ID          int
-	Description string
-	QueryString string
-}
-
-var columns = []*sqlf.Query{
-	sqlf.Sprintf("id"),
-	sqlf.Sprintf("query_string"),
-	sqlf.Sprintf("description"),
-}
-
-func fetch(ctx context.Context, store *basestore.Store) (results []SearchContentEntry, _ error) {
-	rows, err := store.Query(ctx, sqlf.Sprintf("select %s from search_content_library", sqlf.Join(columns, ", ")))
-	if err != nil {
-		return nil, err
-	}
-
-	for rows.Next() {
-		var temp SearchContentEntry
-		if err := rows.Scan(
-			temp.ID,
-			temp.QueryString,
-			temp.Description); err != nil {
-			return nil, err
-		}
-		results = append(results, temp)
-	}
-
-	return results, nil
 }
