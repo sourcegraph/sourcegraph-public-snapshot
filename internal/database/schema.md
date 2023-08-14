@@ -1584,8 +1584,70 @@ Referenced by:
  queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "exhaustive_search_jobs_pkey" PRIMARY KEY, btree (id)
+    "exhaustive_search_jobs_query_initiator_id_key" UNIQUE CONSTRAINT, btree (query, initiator_id)
 Foreign-key constraints:
     "exhaustive_search_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE
+Referenced by:
+    TABLE "exhaustive_search_repo_jobs" CONSTRAINT "exhaustive_search_repo_jobs_search_job_id_fkey" FOREIGN KEY (search_job_id) REFERENCES exhaustive_search_jobs(id) ON DELETE CASCADE
+
+```
+
+# Table "public.exhaustive_search_repo_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                         Default                         
+-------------------+--------------------------+-----------+----------+---------------------------------------------------------
+ id                | integer                  |           | not null | nextval('exhaustive_search_repo_jobs_id_seq'::regclass)
+ state             | text                     |           |          | 'queued'::text
+ repo_id           | integer                  |           | not null | 
+ search_job_id     | integer                  |           | not null | 
+ failure_message   | text                     |           |          | 
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ cancel            | boolean                  |           | not null | false
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ queued_at         | timestamp with time zone |           |          | now()
+Indexes:
+    "exhaustive_search_repo_jobs_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "exhaustive_search_repo_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    "exhaustive_search_repo_jobs_search_job_id_fkey" FOREIGN KEY (search_job_id) REFERENCES exhaustive_search_jobs(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "exhaustive_search_repo_revision_jobs" CONSTRAINT "exhaustive_search_repo_revision_jobs_search_repo_job_id_fkey" FOREIGN KEY (search_repo_job_id) REFERENCES exhaustive_search_repo_jobs(id) ON DELETE CASCADE
+
+```
+
+# Table "public.exhaustive_search_repo_revision_jobs"
+```
+       Column       |           Type           | Collation | Nullable |                             Default                              
+--------------------+--------------------------+-----------+----------+------------------------------------------------------------------
+ id                 | integer                  |           | not null | nextval('exhaustive_search_repo_revision_jobs_id_seq'::regclass)
+ state              | text                     |           |          | 'queued'::text
+ search_repo_job_id | integer                  |           | not null | 
+ revision           | text                     |           | not null | 
+ failure_message    | text                     |           |          | 
+ started_at         | timestamp with time zone |           |          | 
+ finished_at        | timestamp with time zone |           |          | 
+ process_after      | timestamp with time zone |           |          | 
+ num_resets         | integer                  |           | not null | 0
+ num_failures       | integer                  |           | not null | 0
+ last_heartbeat_at  | timestamp with time zone |           |          | 
+ execution_logs     | json[]                   |           |          | 
+ worker_hostname    | text                     |           | not null | ''::text
+ cancel             | boolean                  |           | not null | false
+ created_at         | timestamp with time zone |           | not null | now()
+ updated_at         | timestamp with time zone |           | not null | now()
+ queued_at          | timestamp with time zone |           |          | now()
+Indexes:
+    "exhaustive_search_repo_revision_jobs_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "exhaustive_search_repo_revision_jobs_search_repo_job_id_fkey" FOREIGN KEY (search_repo_job_id) REFERENCES exhaustive_search_repo_jobs(id) ON DELETE CASCADE
 
 ```
 
@@ -3515,6 +3577,7 @@ Referenced by:
     TABLE "codeintel_autoindexing_exceptions" CONSTRAINT "codeintel_autoindexing_exceptions_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "codeowners" CONSTRAINT "codeowners_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "exhaustive_search_repo_jobs" CONSTRAINT "exhaustive_search_repo_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "gitserver_repos" CONSTRAINT "gitserver_repos_pool_repo_id_fkey" FOREIGN KEY (pool_repo_id) REFERENCES repo(id)
     TABLE "gitserver_repos" CONSTRAINT "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
