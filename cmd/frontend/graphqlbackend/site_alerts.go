@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
@@ -87,7 +88,8 @@ type AlertFuncArgs struct {
 	IsAuthenticated     bool             // whether the viewer is authenticated
 	IsSiteAdmin         bool             // whether the viewer is a site admin
 	ViewerFinalSettings *schema.Settings // the viewer's final user/org/global settings
-	Context             context.Context
+	Ctx             context.Context
+	DB                  database.DB
 }
 
 func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
@@ -100,7 +102,8 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 		IsAuthenticated:     actor.FromContext(ctx).IsAuthenticated(),
 		IsSiteAdmin:         auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil,
 		ViewerFinalSettings: settings,
-		Context:             ctx,
+		Ctx:             ctx,
+		DB:                  r.db,
 	}
 
 	var alerts []*Alert
@@ -142,6 +145,8 @@ func init() {
 	AlertFuncs = append(AlertFuncs, storageLimitReachedAlert)
 
 	AlertFuncs = append(AlertFuncs, freePlanAlert)
+
+	AlertFuncs = append(AlertFuncs, userCountExceededAlert)
 
 	// Notify admins if critical alerts are firing, if Prometheus is configured.
 	prom, err := srcprometheus.NewClient(srcprometheus.PrometheusURL)
@@ -234,7 +239,7 @@ func freePlanAlert(args AlertFuncArgs) []*Alert {
 		return nil
 	}
 
-	if !featureflag.FromContext(args.Context).GetBoolOr("setup-checklist", false) {
+	if !featureflag.FromContext(args.Ctx).GetBoolOr("setup-checklist", false) {
 		return nil
 	}
 	licenseInfo := hooks.GetLicenseInfo()
@@ -251,6 +256,56 @@ func freePlanAlert(args AlertFuncArgs) []*Alert {
 			IsDismissibleWithKeyValue: "free-plan-upgrade",
 		}}
 	}
+	return nil
+}
+
+func userCountExceededAlert(args AlertFuncArgs) []*Alert {
+	// We only show this alert to site admins.
+	if !args.IsSiteAdmin {
+		return nil
+	}
+
+	if !featureflag.FromContext(args.Ctx).GetBoolOr("setup-checklist", false) {
+		return nil
+	}
+
+	info, err := licensing.GetConfiguredProductLicenseInfo()
+	if err != nil {
+		log15.Error("Error getting configured product license info", "error", err)
+		return nil
+	}
+
+	if info == nil {
+		log15.Error("No license info available")
+		return nil
+	}
+
+	if info.HasTag(licensing.TrueUpUserCountTag) {
+		return nil
+	}
+
+	var licensedUserCount int32
+	if info != nil {
+		licensedUserCount = int32(info.UserCount)
+	} else {
+		licensedUserCount = licensing.NoLicenseMaximumAllowedUserCount
+	}
+
+	userCount, err := args.DB.Users().Count(args.Ctx, nil)
+	if err != nil {
+		log15.Error("Error counting users", "error", err)
+		return nil
+	}
+
+	if licensedUserCount > 0 && int32(userCount) >= licensedUserCount {
+		return []*Alert{{
+			GroupValue:                &AlertGroupLicense,
+			TypeValue:                 AlertTypeWarning,
+			MessageValue:              fmt.Sprintf("You have reached the maximum user count (%d) for your current Sourcegraph license. [Upgrade](https://about.sourcegraph.com/pricing) to support more users.", licensedUserCount),
+			IsDismissibleWithKeyValue: "user-count-limit",
+		}}
+	}
+
 	return nil
 }
 
