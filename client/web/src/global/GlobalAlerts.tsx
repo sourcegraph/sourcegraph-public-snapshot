@@ -79,7 +79,7 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                         siteFlagsValue.alerts.map((alert, index) => (
                             <GlobalAlert key={index} alert={alert} className={styles.alert} />
                         ))}
-                    {siteFlagsValue.productSubscription.license &&
+                    {!isSetupChecklistEnabled && siteFlagsValue.productSubscription.license &&
                         (() => {
                             const expiresAt = parseISO(siteFlagsValue.productSubscription.license.expiresAt)
                             return (
