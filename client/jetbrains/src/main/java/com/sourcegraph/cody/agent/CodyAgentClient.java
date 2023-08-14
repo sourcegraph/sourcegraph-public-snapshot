@@ -55,6 +55,6 @@ public class CodyAgentClient {
 
   @JsonNotification("debug/message")
   public void debugMessage(DebugMessage msg) {
-    logger.info(String.format("%s: %s", msg.channel, msg.message));
+    logger.warn(String.format("%s: %s", msg.channel, msg.message));
   }
 }

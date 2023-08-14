@@ -459,7 +459,7 @@ public class SettingsComponent implements Disposable {
     return isCodyDebugEnabledCheckBox.isSelected();
   }
 
-  public void setIsDebugEnabled(boolean value) {
+  public void setIsCodyDebugEnabled(boolean value) {
     isCodyDebugEnabledCheckBox.setSelected(value);
   }
 
@@ -467,7 +467,7 @@ public class SettingsComponent implements Disposable {
     return isCodyVerboseDebugEnabledCheckBox.isSelected();
   }
 
-  public void setIsVerboseDebugEnabled(boolean value) {
+  public void setIsCodyVerboseDebugEnabled(boolean value) {
     isCodyVerboseDebugEnabledCheckBox.setSelected(value);
   }
 

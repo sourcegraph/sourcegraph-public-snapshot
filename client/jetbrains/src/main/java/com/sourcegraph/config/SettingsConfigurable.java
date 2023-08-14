@@ -172,8 +172,8 @@ public class SettingsConfigurable implements Configurable {
     mySettingsComponent.setUrlNotificationDismissedEnabled(ConfigUtil.isUrlNotificationDismissed());
     mySettingsComponent.setCodyEnabled(ConfigUtil.isCodyEnabled());
     mySettingsComponent.setCodyAutoCompleteEnabled(ConfigUtil.isCodyAutoCompleteEnabled());
-    mySettingsComponent.setIsDebugEnabled(ConfigUtil.isCodyDebugEnabled());
-    mySettingsComponent.setIsVerboseDebugEnabled(ConfigUtil.isCodyVerboseDebugEnabled());
+    mySettingsComponent.setIsCodyDebugEnabled(ConfigUtil.isCodyDebugEnabled());
+    mySettingsComponent.setIsCodyVerboseDebugEnabled(ConfigUtil.isCodyVerboseDebugEnabled());
     mySettingsComponent.getPanel().requestFocusInWindow();
   }
 
