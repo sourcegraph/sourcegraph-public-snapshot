@@ -1,5 +1,6 @@
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 go_library(
     name = "database",
@@ -327,4 +328,34 @@ go_test(
         "@org_golang_x_sync//errgroup",
         "@tools_gotest//assert",
     ],
+)
+
+
+genrule(
+    name = "generate",
+    srcs = ["//migrations/frontend:sql"],
+    outs = [
+        "migrations/frontend/squashed.sql",
+        # "migrations/codeintel/squashed.sql",
+        # "migrations/codeinsights/squashed.sql",
+    ],
+    cmd = """
+    ls -la
+    outs=($(OUTS))
+    export HOME="$$(pwd)"
+    export SG_FORCE_REPO_ROOT="$$(pwd)"
+
+    echo "____________"
+    which createdb
+    echo "____________"
+    $(location //dev/sg:sg) migration squash-all -skip-teardown -db frontend -f $${outs[0]}
+    touch $${outs[0]}
+    """,
+    tags = [
+        "no-sandbox"
+    ],
+    tools = [
+        "//dev/sg",
+    ],
+    visibility = ["//visibility:private"],
 )
