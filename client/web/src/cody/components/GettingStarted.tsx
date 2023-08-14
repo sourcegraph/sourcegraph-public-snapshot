@@ -110,7 +110,7 @@ export const GettingStarted: React.FC<
         }
     }, [conversationScope, scopeSelectorProps.scope.repositories])
 
-    const renderRepoIndexingWarning = useCallback(
+    const renderRepoIndexingWarning: (repos: IRepo[]) => React.ReactNode = useCallback(
         (repos: IRepo[]) => {
             if (conversationScope === 'general' || repos.every(isRepoIndexed)) {
                 return null
