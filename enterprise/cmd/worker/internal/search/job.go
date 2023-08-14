@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 )
 
 type searchJob struct{}
@@ -32,7 +32,11 @@ func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Cont
 		return nil, err
 	}
 
-	workerStore := exhaustive.NewJobWorkerStore(observationCtx, db.Handle())
+	exhaustiveSearchStore := store.New(db, observationCtx)
+
+	searchWorkerStore := store.NewExhaustiveSearchJobWorkerStore(observationCtx, db.Handle())
+	repoWorkerStore := store.NewRepoSearchJobWorkerStore(observationCtx, db.Handle())
+	revWorkerStore := store.NewRevSearchJobWorkerStore(observationCtx, db.Handle())
 
 	observationCtx = observation.ContextWithLogger(
 		observationCtx.Logger.Scoped("routines", "exhaustive search job routines"),
@@ -41,6 +45,8 @@ func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Cont
 
 	workCtx := actor.WithInternalActor(context.Background())
 	return []goroutine.BackgroundRoutine{
-		NewExhaustiveSearchWorker(workCtx, observationCtx, workerStore),
+		NewExhaustiveSearchWorker(workCtx, observationCtx, searchWorkerStore, exhaustiveSearchStore),
+		NewExhaustiveSearchRepoWorker(workCtx, observationCtx, repoWorkerStore, exhaustiveSearchStore),
+		NewExhaustiveSearchRepoRevisionWorker(workCtx, observationCtx, revWorkerStore, exhaustiveSearchStore),
 	}, nil
 }
