@@ -31,7 +31,6 @@ import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
-import { ChecklistInfo } from './setup-checklist/ChecklistInfo'
 import { SiteConfigurationChangeList } from './SiteConfigurationChangeList'
 
 import styles from './SiteAdminConfigurationPage.module.scss'
@@ -423,7 +422,6 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
                     className="mb-3"
                 />
                 <Container className="mb-3">
-                    <ChecklistInfo />
                     <div>{alerts}</div>
                     {this.state.loading && <LoadingSpinner />}
                     {this.state.site?.configuration && (

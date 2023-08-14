@@ -21,6 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/settings"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
@@ -30,13 +32,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+type AlertGroup string
+
+var (
+	AlertGroupLicense        AlertGroup = "LICENSE"
+	AlertGroupAuthentication AlertGroup = "AUTHENTICATION"
+	AlertGroupCodehost       AlertGroup = "CODEHOST"
+	AlertGroupOther          AlertGroup = "OTHER"
+	AlertGroupSMTP           AlertGroup = "SMTP"
+)
+
 // Alert implements the GraphQL type Alert.
 type Alert struct {
+	GroupValue *AlertGroup
+	// todo: use dedicated type
 	TypeValue                 string
 	MessageValue              string
 	IsDismissibleWithKeyValue string
 }
 
+func (r *Alert) Group() *string {
+	if r.GroupValue != nil {
+		group := string(*r.GroupValue)
+		return &group
+	}
+	return nil
+}
 func (r *Alert) Type() string    { return r.TypeValue }
 func (r *Alert) Message() string { return r.MessageValue }
 func (r *Alert) IsDismissibleWithKey() *string {
@@ -66,6 +87,7 @@ type AlertFuncArgs struct {
 	IsAuthenticated     bool             // whether the viewer is authenticated
 	IsSiteAdmin         bool             // whether the viewer is a site admin
 	ViewerFinalSettings *schema.Settings // the viewer's final user/org/global settings
+	Context             context.Context
 }
 
 func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
@@ -78,6 +100,7 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 		IsAuthenticated:     actor.FromContext(ctx).IsAuthenticated(),
 		IsSiteAdmin:         auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil,
 		ViewerFinalSettings: settings,
+		Context:             ctx,
 	}
 
 	var alerts []*Alert
@@ -118,6 +141,8 @@ func init() {
 
 	AlertFuncs = append(AlertFuncs, storageLimitReachedAlert)
 
+	AlertFuncs = append(AlertFuncs, freePlanAlert)
+
 	// Notify admins if critical alerts are firing, if Prometheus is configured.
 	prom, err := srcprometheus.NewClient(srcprometheus.PrometheusURL)
 	if err == nil {
@@ -151,6 +176,7 @@ func init() {
 		if err != nil {
 			return []*Alert{
 				{
+					GroupValue:   &AlertGroupOther,
 					TypeValue:    AlertTypeError,
 					MessageValue: `Update [**site configuration**](/site-admin/configuration) to resolve problems: ` + err.Error(),
 				},
@@ -161,6 +187,7 @@ func init() {
 		if err != nil {
 			return []*Alert{
 				{
+					GroupValue:   &AlertGroupOther,
 					TypeValue:    AlertTypeError,
 					MessageValue: `Update [**site configuration**](/site-admin/configuration) to resolve problems: ` + err.Error(),
 				},
@@ -176,7 +203,8 @@ func init() {
 		siteProblems := problems.Site()
 		if len(siteProblems) > 0 {
 			alerts = append(alerts, &Alert{
-				TypeValue: AlertTypeWarning,
+				GroupValue: &AlertGroupOther,
+				TypeValue:  AlertTypeWarning,
 				MessageValue: `[**Update site configuration**](/site-admin/configuration) to resolve problems:` +
 					"\n* " + strings.Join(siteProblems.Messages(), "\n* "),
 			})
@@ -185,7 +213,8 @@ func init() {
 		externalServiceProblems := problems.ExternalService()
 		if len(externalServiceProblems) > 0 {
 			alerts = append(alerts, &Alert{
-				TypeValue: AlertTypeWarning,
+				GroupValue: &AlertGroupCodehost,
+				TypeValue:  AlertTypeWarning,
 				MessageValue: `[**Update external service configuration**](/site-admin/external-services) to resolve problems:` +
 					"\n* " + strings.Join(externalServiceProblems.Messages(), "\n* "),
 			})
@@ -199,6 +228,32 @@ func init() {
 	AlertFuncs = append(AlertFuncs, codyGatewayUsageAlert)
 }
 
+func freePlanAlert(args AlertFuncArgs) []*Alert {
+	// We only show this alert to site admins.
+	if !args.IsSiteAdmin {
+		return nil
+	}
+
+	if !featureflag.FromContext(args.Context).GetBoolOr("setup-checklist", false) {
+		return nil
+	}
+	licenseInfo := hooks.GetLicenseInfo()
+	if licenseInfo == nil {
+		return nil
+	}
+
+	plan := licensing.Plan(licenseInfo.CurrentPlan)
+	if plan == licensing.PlanFree1 || plan == licensing.PlanFree0 {
+		return []*Alert{{
+			GroupValue:                &AlertGroupLicense,
+			TypeValue:                 AlertTypeWarning,
+			MessageValue:              "You're on a free Sourcegraph plan. [Upgrade](https://about.sourcegraph.com/pricing) to unlock more features and support.",
+			IsDismissibleWithKeyValue: "free-plan-upgrade",
+		}}
+	}
+	return nil
+}
+
 func storageLimitReachedAlert(args AlertFuncArgs) []*Alert {
 	licenseInfo := hooks.GetLicenseInfo()
 	if licenseInfo == nil {
@@ -207,11 +262,13 @@ func storageLimitReachedAlert(args AlertFuncArgs) []*Alert {
 
 	if licenseInfo.CodeScaleCloseToLimit {
 		return []*Alert{{
+			GroupValue:   &AlertGroupLicense,
 			TypeValue:    AlertTypeWarning,
 			MessageValue: "You're about to reach the 100GiB storage limit. Upgrade to [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing) for unlimited storage for your code.",
 		}}
 	} else if licenseInfo.CodeScaleExceededLimit {
 		return []*Alert{{
+			GroupValue:   &AlertGroupLicense,
 			TypeValue:    AlertTypeError,
 			MessageValue: "You've used all 100GiB of storage. Upgrade to [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing) for unlimited storage for your code.",
 		}}
@@ -248,7 +305,10 @@ func updateAvailableAlert(args AlertFuncArgs) []*Alert {
 
 	// dismission key includes the version so after it is dismissed the alert comes back for the next update.
 	key := "update-available-" + globalUpdateStatus.UpdateVersion
-	return []*Alert{{TypeValue: AlertTypeInfo, MessageValue: message, IsDismissibleWithKeyValue: key}}
+	return []*Alert{{
+		GroupValue: &AlertGroupOther,
+		TypeValue:  AlertTypeInfo, MessageValue: message, IsDismissibleWithKeyValue: key,
+	}}
 }
 
 // isMinorUpdateAvailable tells if upgrading from the current version to the specified upgrade
@@ -274,6 +334,7 @@ func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
 	}
 	if conf.Get().EmailSmtp == nil || conf.Get().EmailSmtp.Host == "" {
 		return []*Alert{{
+			GroupValue:                &AlertGroupSMTP,
 			TypeValue:                 AlertTypeWarning,
 			MessageValue:              "Warning: Sourcegraph cannot send emails! [Configure `email.smtp`](/help/admin/config/email) so that features such as Code Monitors, password resets, and invitations work. [documentation](/help/admin/config/email)",
 			IsDismissibleWithKeyValue: "email-sending",
@@ -281,6 +342,7 @@ func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
 	}
 	if conf.Get().EmailAddress == "" {
 		return []*Alert{{
+			GroupValue:                &AlertGroupSMTP,
 			TypeValue:                 AlertTypeWarning,
 			MessageValue:              "Warning: Sourcegraph cannot send emails! [Configure `email.address`](/help/admin/config/email) so that features such as Code Monitors, password resets, and invitations work. [documentation](/help/admin/config/email)",
 			IsDismissibleWithKeyValue: "email-sending",

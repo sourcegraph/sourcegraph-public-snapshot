@@ -9,7 +9,7 @@ import (
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
+// todo: update/add new tests
 func Test_determineOutOfDateAlert(t *testing.T) {
 	tests := []struct {
 		name                              string
