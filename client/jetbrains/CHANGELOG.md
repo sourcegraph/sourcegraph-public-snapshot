@@ -6,7 +6,19 @@
 
 ### Changed
 
-- Store application level access tokens in a safe way [#55251](https://github.com/sourcegraph/sourcegraph/pull/55251)
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [3.0.9]
+
+### Added
+
+### Changed
 
 ### Deprecated
 
@@ -14,12 +26,20 @@
 
 ### Fixed
 
+### Security
+
+## [3.0.9]
+
+### Changed
+
+- Store application level access tokens in a safe way [#55251](https://github.com/sourcegraph/sourcegraph/pull/55251)
+- Autocomplete is now powered by the agent when enabled (off by default) [#55638](https://github.com/sourcegraph/sourcegraph/pull/55638), [#55826](https://github.com/sourcegraph/sourcegraph/pull/55826)
+
+### Fixed
+
 - Removed jumping text effect from the chat when generating response [#55357](https://github.com/sourcegraph/sourcegraph/pull/55357)
 - Chat message doesn't jump after finished response generation [#55390](https://github.com/sourcegraph/sourcegraph/pull/55390)
-
 - Removed jumping text effect from the chat when generating response [#55357](https://github.com/sourcegraph/sourcegraph/pull/55357)
-
-### Security
 
 ## [3.0.8]
 
