@@ -1581,11 +1581,11 @@ importers:
         specifier: workspace:*
         version: link:../codeintellify
       '@sourcegraph/cody-shared':
-        specifier: https://github.com/sourcegraph/cody/files/12324804/sourcegraph-cody-shared-0.0.0-codyintel.experimental.1.tgz
-        version: '@github.com/sourcegraph/cody/files/12324804/sourcegraph-cody-shared-0.0.0-codyintel.experimental.1.tgz'
+        specifier: https://github.com/sourcegraph/cody/releases/download/codyintel5/sourcegraph-cody-shared-0.0.0-codyintel.experimental.10.tgz
+        version: '@github.com/sourcegraph/cody/releases/download/codyintel5/sourcegraph-cody-shared-0.0.0-codyintel.experimental.10.tgz'
       '@sourcegraph/cody-ui':
-        specifier: https://github.com/sourcegraph/cody/releases/download/codyintel3/sourcegraph-cody-ui-0.0.0-codyintel.experimental.2.tgz
-        version: '@github.com/sourcegraph/cody/releases/download/codyintel3/sourcegraph-cody-ui-0.0.0-codyintel.experimental.2.tgz'
+        specifier: https://github.com/sourcegraph/cody/releases/download/codyintel5/sourcegraph-cody-ui-0.0.0-codyintel.experimental.10.tgz
+        version: '@github.com/sourcegraph/cody/releases/download/codyintel5/sourcegraph-cody-ui-0.0.0-codyintel.experimental.10.tgz'
       '@sourcegraph/common':
         specifier: workspace:*
         version: link:../common
@@ -34957,10 +34957,10 @@ packages:
     resolution: {integrity: sha512-V50KMwwzqJV0NpZIZFwfOD5/lyny3WlSzRiXgA0G7VUnRlqttta1L6UQIHzd6EuBY/cHGfwTIck7w1yH6Q5zUw==}
     dev: true
 
-  '@github.com/sourcegraph/cody/files/12324804/sourcegraph-cody-shared-0.0.0-codyintel.experimental.1.tgz':
-    resolution: {tarball: https://github.com/sourcegraph/cody/files/12324804/sourcegraph-cody-shared-0.0.0-codyintel.experimental.1.tgz}
+  '@github.com/sourcegraph/cody/releases/download/codyintel5/sourcegraph-cody-shared-0.0.0-codyintel.experimental.10.tgz':
+    resolution: {tarball: https://github.com/sourcegraph/cody/releases/download/codyintel5/sourcegraph-cody-shared-0.0.0-codyintel.experimental.10.tgz}
     name: '@sourcegraph/cody-shared'
-    version: 0.0.0-codyintel.experimental.1
+    version: 0.0.0-codyintel.experimental.10
     dependencies:
       '@microsoft/fetch-event-source': 2.0.1
       dompurify: 3.0.5
@@ -34974,13 +34974,13 @@ packages:
       - encoding
     dev: false
 
-  '@github.com/sourcegraph/cody/releases/download/codyintel3/sourcegraph-cody-ui-0.0.0-codyintel.experimental.2.tgz':
-    resolution: {tarball: https://github.com/sourcegraph/cody/releases/download/codyintel3/sourcegraph-cody-ui-0.0.0-codyintel.experimental.2.tgz}
+  '@github.com/sourcegraph/cody/releases/download/codyintel5/sourcegraph-cody-ui-0.0.0-codyintel.experimental.10.tgz':
+    resolution: {tarball: https://github.com/sourcegraph/cody/releases/download/codyintel5/sourcegraph-cody-ui-0.0.0-codyintel.experimental.10.tgz}
     name: '@sourcegraph/cody-ui'
-    version: 0.0.0-codyintel.experimental.1
+    version: 0.0.0-codyintel.experimental.10
     dependencies:
       '@mdi/js': 7.2.96
-      '@sourcegraph/cody-shared': '@github.com/sourcegraph/cody/files/12324804/sourcegraph-cody-shared-0.0.0-codyintel.experimental.1.tgz'
+      '@sourcegraph/cody-shared': '@github.com/sourcegraph/cody/releases/download/codyintel5/sourcegraph-cody-shared-0.0.0-codyintel.experimental.10.tgz'
       classnames: 2.3.2
     transitivePeerDependencies:
       - encoding
