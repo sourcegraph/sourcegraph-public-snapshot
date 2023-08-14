@@ -26,7 +26,7 @@
         grid-column: 2 / 2;
         grid-row: 1 / 1;
         // stylelint-disable-next-line declaration-property-unit-allowed-list
-        margin: 0 0 -1rem -0.5rem !important;
+        margin: 0 0 -1.5rem -0.5rem !important;
     }
 
     &-icon {
@@ -43,10 +43,15 @@
     }
 }
 
-.cody-icon {
+.cody-icon-container {
     grid-column: 1 / 1;
     grid-row: 2 / 2;
     justify-self: end;
+}
+
+.cody-icon {
+    height: 32px !important;
+    width: 32px !important;
 }
 
 .radio-wrapper {
