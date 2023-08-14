@@ -167,24 +167,24 @@ If you have any questions regarding Cody, you can always ask our community on [G
 
 ## Explanations
 
-- [Cody clients, plugins, and extensions](explanations/cody_clients.md)
-- [Enabling Cody for Sourcegraph Enterprise customers](explanations/enabling_cody_enterprise.md)
-- [Enabling Cody for the Cody app](../app/index.md)
-- [Enabling Cody for open source Sourcegraph.com users](explanations/enabling_cody.md)
-- [Installing the Cody VS Code extension](explanations/installing_vs_code.md)
-- [Installing the Jetbrains extension (experimental)](explanations/installing_jetbrains.md)
-- [Configuring code graph context](explanations/code_graph_context.md)
-- [Sourcegraph Cody Gateway](explanations/cody_gateway.md)
+- [Cody clients, plugins, and extensions](./../explanations/cody_clients.md)
+- [Enabling Cody for Sourcegraph Enterprise customers](./../overview/enable-cody-enterprise.md)
+- [Enabling Cody for the Cody app](../overview/app/index.md)
+- [Enabling Cody for open source Sourcegraph.com users](./../overview/cody-with-sourcegraph.md)
+- [Installing the Cody VS Code extension](./../overview/install-vscode.md)
+- [Installing the Jetbrains extension (experimental)](./../overview/install-jetbrains.md)
+- [Configuring code graph context](./../explanations/code_graph_context.md)
+- [Sourcegraph Cody Gateway](./../explanations/cody_gateway.md)
 
 ## More resources
 
 For more information on what to do next, we recommend the following resources:
 
 <div class="cards">
-  <a class="card text-left" href="quickstart"><b>Cody Quickstart</b><p>This guide recommends first things to try once Cody is up and running.</p></a>
-  <a class="card text-left" href="explanations/use_cases"><b>Cody Use Cases</b><p>Explore some of the handy use cases with Cody and try them yourself.</p></a>
+  <a class="card text-left" href="./../quickstart"><b>Cody Quickstart</b><p>This guide recommends first things to try once Cody is up and running.</p></a>
+  <a class="card text-left" href="./../use-cases"><b>Cody Use Cases</b><p>Explore some of the handy use cases with Cody and try them yourself.</p></a>
 </div>
 <div class="cards">
-   <a class="card text-left" href="troubleshooting"><b>Cody Troubleshooting Guide</b><p>Having trouble with Cody? Review our troubleshooting guide for help.</p></a>
-  <a class="card text-left" href="faq"><b>FAQs</b><p>Learn about some of the frequently asked questions about Cody.</p></a>
+   <a class="card text-left" href="./../troubleshooting"><b>Cody Troubleshooting Guide</b><p>Having trouble with Cody? Review our troubleshooting guide for help.</p></a>
+  <a class="card text-left" href="./../faq"><b>FAQs</b><p>Learn about some of the frequently asked questions about Cody.</p></a>
 </div>
