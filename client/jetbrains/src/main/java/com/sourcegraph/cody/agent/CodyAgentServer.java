@@ -52,4 +52,7 @@ public interface CodyAgentServer {
 
   @JsonNotification("textDocument/didClose")
   void textDocumentDidClose(TextDocument document);
+
+  @JsonNotification("debug/message")
+  void debugMessage(DebugMessage message);
 }

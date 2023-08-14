@@ -3,8 +3,8 @@
 - Installing or turning on Cody
   - [Enabling Cody for Sourcegraph Enterprise](./../overview/enable-cody-enterprise.md)
   - [Installing the Cody App](../../app/index.md)
-  - [Enabling Cody with Sourcegraph.com](./../overview/cody-with-sourcegraph.md)
--  Configuration
+  - [Enabling Cody with Sourcegraph.com](enabling_cody.md)
+- Configuration
   - [Configuring code graph context](code_graph_context.md)
   - [Generating Index to Enable Codebase-Aware Answers](indexing.md)
   - [Embeddings Policies](policies.md)
