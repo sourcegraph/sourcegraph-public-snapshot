@@ -18,16 +18,14 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
   @Nullable public String instanceType;
   @Nullable public String url;
 
-  // Remove this after 2024-08-01 when surely everyone migrated to the secure
-  // storage.
+  // Remove this after 2024-08-01 when surely everyone migrated to the secure storage.
   @Deprecated(since = "3.0.7")
   @Nullable
   public String dotComAccessToken;
 
   public boolean isDotComAccessTokenSet;
 
-  // Remove this after 2024-08-01 when surely everyone migrated to the secure
-  // storage.
+  // Remove this after 2024-08-01 when surely everyone migrated to the secure storage.
   @Deprecated(since = "3.0.7")
   @Nullable
   public String enterpriseAccessToken;

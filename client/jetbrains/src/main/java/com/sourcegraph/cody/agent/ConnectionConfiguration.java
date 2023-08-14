@@ -11,8 +11,8 @@ public class ConnectionConfiguration {
   public String autocompleteAdvancedServerEndpoint;
   public String autocompleteAdvancedAccessToken;
   public boolean autocompleteAdvancedEmbeddings;
-  public boolean codyDebug;
-  public boolean codyVerboseDebug;
+  public boolean debug;
+  public boolean verboseDebug;
 
   public ConnectionConfiguration setServerEndpoint(String serverEndpoint) {
     this.serverEndpoint = serverEndpoint;
@@ -53,13 +53,13 @@ public class ConnectionConfiguration {
     return this;
   }
 
-  public ConnectionConfiguration setCodyDebug(boolean codyDebug) {
-    this.codyDebug = codyDebug;
+  public ConnectionConfiguration setDebug(boolean debug) {
+    this.debug = debug;
     return this;
   }
 
-  public ConnectionConfiguration setCodyVerboseDebug(boolean codyVerboseDebug) {
-    this.codyVerboseDebug = codyVerboseDebug;
+  public ConnectionConfiguration setVerboseDebug(boolean verboseDebug) {
+    this.verboseDebug = verboseDebug;
     return this;
   }
 
@@ -86,11 +86,11 @@ public class ConnectionConfiguration {
         + ", autocompleteAdvancedEmbeddings="
         + autocompleteAdvancedEmbeddings
         + '\''
-        + ", codyDebug="
-        + codyDebug
+        + ", debug="
+        + debug
         + '\''
-        + ", codyVerboseDebug="
-        + codyVerboseDebug
+        + ", verboseDebug="
+        + verboseDebug
         + '}';
   }
 }
