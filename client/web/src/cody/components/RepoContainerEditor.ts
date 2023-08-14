@@ -16,10 +16,6 @@ export class RepoContainerEditor implements Editor {
         return null
     }
 
-    public getWorkspaceRootUri(): URI | null {
-        return null
-    }
-
     public getActiveTextEditor(): ActiveTextEditor | null {
         return {
             content: '',
@@ -33,12 +29,6 @@ export class RepoContainerEditor implements Editor {
     }
 
     public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
-        return null
-    }
-
-    public getActiveTextEditorDiagnosticsForRange(
-        range: ActiveTextEditorSelectionRange
-    ): ActiveTextEditorDiagnostic[] | null {
         return null
     }
 

@@ -26,10 +26,6 @@ export class FileContentEditor implements Editor {
         return null
     }
 
-    public getWorkspaceRootUri(): URI | null {
-        return null
-    }
-
     public getActiveTextEditor(): ActiveTextEditor | null {
         return this.editor
     }
@@ -47,12 +43,6 @@ export class FileContentEditor implements Editor {
             selectedText: this.editor.content,
             followingText: '',
         }
-    }
-
-    public getActiveTextEditorDiagnosticsForRange(
-        range: ActiveTextEditorSelectionRange
-    ): ActiveTextEditorDiagnostic[] | null {
-        return null
     }
 
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
