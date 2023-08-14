@@ -376,7 +376,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                     New chat
                                 </Button>
                             </div>
-                            <ChatUI codyChatStore={codyChatStore} isSourcegraphApp={true} />
+                            <ChatUI codyChatStore={codyChatStore} isSourcegraphApp={true} isCodyChatPage={true} />
                         </div>
 
                         {showMobileHistory && (
@@ -456,7 +456,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                 deleteHistoryItem={deleteHistoryItem}
                             />
                         ) : (
-                            <ChatUI codyChatStore={codyChatStore} />
+                            <ChatUI codyChatStore={codyChatStore} isCodyChatPage={true} />
                         )}
                     </div>
                 )}

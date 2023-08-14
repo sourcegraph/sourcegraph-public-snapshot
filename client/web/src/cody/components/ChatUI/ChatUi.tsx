@@ -43,9 +43,10 @@ const onFeedbackSubmit = (feedback: string): void => eventLogger.log(`web:cody:f
 interface IChatUIProps {
     codyChatStore: CodyChatStore
     isSourcegraphApp?: boolean
+    isCodyChatPage?: boolean
 }
 
-export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp }): JSX.Element => {
+export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp, isCodyChatPage }): JSX.Element => {
     const {
         submitMessage,
         editMessage,
@@ -99,6 +100,11 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
         ]
     )
 
+    const gettingStartedComponentProps = useMemo(
+        () => ({ ...scopeSelectorProps, isCodyChatPage }),
+        [scopeSelectorProps, isCodyChatPage]
+    )
+
     if (!loaded) {
         return <></>
     }
@@ -138,6 +144,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
                 contextStatusComponent={ScopeSelector}
                 contextStatusComponentProps={scopeSelectorProps}
                 gettingStartedComponent={GettingStarted}
+                gettingStartedComponentProps={gettingStartedComponentProps}
                 abortMessageInProgressComponent={AbortMessageInProgress}
                 onAbortMessageInProgress={abortMessageInProgress}
                 isCodyEnabled={isCodyEnabled()}

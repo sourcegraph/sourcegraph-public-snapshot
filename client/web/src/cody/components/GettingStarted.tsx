@@ -4,7 +4,6 @@ import classNames from 'classnames'
 
 import { H4, H5, RadioButton, Text, Button, Grid, Icon, Link } from '@sourcegraph/wildcard'
 
-import { parseBrowserRepoURL } from '../../util/url'
 import type { CodyChatStore } from '../useCodyChat'
 
 import { ScopeSelector } from './ScopeSelector'
@@ -15,8 +14,6 @@ import styles from './GettingStarted.module.scss'
 
 type ConversationScope = 'general' | 'repo'
 
-const isBlobPage = (): boolean => parseBrowserRepoURL(window.location.href)?.filePath !== undefined
-
 const DEFAULT_VERTICAL_OFFSET = '1rem'
 
 export const GettingStarted: React.FC<
@@ -25,11 +22,12 @@ export const GettingStarted: React.FC<
         'scope' | 'setScope' | 'toggleIncludeInferredRepository' | 'toggleIncludeInferredFile' | 'fetchRepositoryNames'
     > & {
         isSourcegraphApp?: boolean
+        isCodyChatPage?: boolean
         submitInput: (input: string, submitType: 'user' | 'suggestion' | 'example') => void
     }
-> = ({ submitInput, ...scopeSelectorProps }) => {
+> = ({ isCodyChatPage, submitInput, ...scopeSelectorProps }) => {
     const [conversationScope, setConversationScope] = useState<ConversationScope>(
-        isBlobPage() || scopeSelectorProps.scope.repositories.length > 0 ? 'repo' : 'general'
+        !isCodyChatPage || scopeSelectorProps.scope.repositories.length > 0 ? 'repo' : 'general'
     )
 
     /*
@@ -146,7 +144,7 @@ export const GettingStarted: React.FC<
                     </div>
                 </Grid>
 
-                {isBlobPage() ? null : (
+                {isCodyChatPage ? (
                     <div className={classNames(styles.section, 'mb-3')}>
                         <fieldset>
                             <legend>
@@ -204,7 +202,7 @@ export const GettingStarted: React.FC<
                             </div>
                         </fieldset>
                     </div>
-                )}
+                ) : null}
 
                 <div className={classNames(styles.section, 'mb-3')}>
                     <H5>{content.title}</H5>
