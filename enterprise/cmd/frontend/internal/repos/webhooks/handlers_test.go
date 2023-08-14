@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -197,8 +198,8 @@ func sign(t *testing.T, message, secret []byte) string {
 func TestGitLabHandler(t *testing.T) {
 	repoName := "gitlab.com/ryanslade/ryan-test-private"
 
-	db := database.NewMockDB()
-	repositories := database.NewMockRepoStore()
+	db := dbmocks.NewMockDB()
+	repositories := dbmocks.NewMockRepoStore()
 	repositories.GetFirstRepoNameByCloneURLFunc.SetDefaultHook(func(ctx context.Context, s string) (api.RepoName, error) {
 		return api.RepoName(repoName), nil
 	})
@@ -233,8 +234,8 @@ func TestGitLabHandler(t *testing.T) {
 func TestBitbucketServerHandler(t *testing.T) {
 	repoName := "bitbucket.sgdev.org/private/test-2020-06-01"
 
-	db := database.NewMockDB()
-	repositories := database.NewMockRepoStore()
+	db := dbmocks.NewMockDB()
+	repositories := dbmocks.NewMockRepoStore()
 	repositories.GetFirstRepoNameByCloneURLFunc.SetDefaultHook(func(ctx context.Context, s string) (api.RepoName, error) {
 		return "bitbucket.sgdev.org/private/test-2020-06-01", nil
 	})
@@ -269,8 +270,8 @@ func TestBitbucketServerHandler(t *testing.T) {
 func TestBitbucketCloudHandler(t *testing.T) {
 	repoName := "bitbucket.org/sourcegraph-testing/sourcegraph"
 
-	db := database.NewMockDB()
-	repositories := database.NewMockRepoStore()
+	db := dbmocks.NewMockDB()
+	repositories := dbmocks.NewMockRepoStore()
 	repositories.GetFirstRepoNameByCloneURLFunc.SetDefaultHook(func(ctx context.Context, s string) (api.RepoName, error) {
 		return "bitbucket.org/sourcegraph-testing/sourcegraph", nil
 	})

@@ -1,12 +1,15 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { mapTo, map, tap } from 'rxjs/operators'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
 import { requestGraphQL } from '../../../../backend/graphql'
-import { ScheduleUserPermissionsSyncResult, ScheduleUserPermissionsSyncVariables } from '../../../../graphql-operations'
+import type {
+    ScheduleUserPermissionsSyncResult,
+    ScheduleUserPermissionsSyncVariables,
+} from '../../../../graphql-operations'
 
 export function scheduleUserPermissionsSync(args: { user: Scalars['ID'] }): Observable<void> {
     return requestGraphQL<ScheduleUserPermissionsSyncResult, ScheduleUserPermissionsSyncVariables>(
@@ -37,8 +40,8 @@ export const UserPermissionsInfoQuery = gql`
 
     fragment UserPermissionsInfoUserNode on User {
         permissionsInfo {
-            syncedAt
             updatedAt
+            source
             repositories(first: $first, last: $last, after: $after, before: $before, query: $query) {
                 nodes {
                     ...PermissionsInfoRepositoryFields

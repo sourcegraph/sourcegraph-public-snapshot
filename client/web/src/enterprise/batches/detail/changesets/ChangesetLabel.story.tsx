@@ -1,4 +1,4 @@
-import { Story, DecoratorFn, Meta } from '@storybook/react'
+import type { Story, DecoratorFn, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
 

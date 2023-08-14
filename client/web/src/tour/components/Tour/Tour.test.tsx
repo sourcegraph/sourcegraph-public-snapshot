@@ -1,8 +1,8 @@
-import { render, cleanup, RenderResult, fireEvent, act } from '@testing-library/react'
+import { render, cleanup, type RenderResult, fireEvent, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import sinon from 'sinon'
 
-import { TourLanguage, TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
+import { TourLanguage, type TourTaskStepType, type TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 

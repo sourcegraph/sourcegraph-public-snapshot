@@ -15,7 +15,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { LogOutput } from '../../../../../components/LogOutput'
-import {
+import type {
     GetRepoIdResult,
     GetRepoIdVariables,
     InferAutoIndexJobsForRepoResult,

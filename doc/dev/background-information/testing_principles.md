@@ -19,7 +19,10 @@ Engineers should budget an appropriate amount of time for ensuring [test plans](
 
 **All pull requests must provide test plans** that indicate what has been done to test the changes being introduced. This can be done with a "Test plan" section within a pull request's description.
 
-Some pull requests may not require a rigorous test plan—see [Exceptions](#exceptions).
+These plans are here to demonstrate we're complying with industry standards which are critical for our customers. They may be read by auditors, customers, who are seeking to understand if with we uphold these standards. 
+Therefore, it's perfectly fine to be succint as long as the substance is here. And because the audience for these test plans are engineers, they will understand the context. Changing a README for example can simply covered by stating you rendered it locally and it was fine.
+
+Some pull requests may not require a rigorous test plan in certain situations, see [Exceptions](#exceptions).
 
 ## Types of tests
 
@@ -123,6 +126,12 @@ We use [Percy](https://percy.io/) to detect visual changes in Sourcegraph featur
 ## Exceptions
 
 If for a situational reason, a pull request needs to be exempted from the testing guidelines, skipping reviews or not providing a [test plan](#test-plans) will trigger an automated process that create and link an issue requesting that the author document a reason for the exception within [sourcegraph/sec-pr-audit-trail](https://github.com/sourcegraph/sec-pr-audit-trail).
+
+### Why does it matter?
+
+In order to comply with industry standards that we share with our customers, we have to demonstrate that even when we're deviating from the standard process we're taking the necessary actions. This exception process is what gives us the flexibility to deal with edge cases when the normal process would slow us down to land some changes that we need to be merged right now. This automated exception mechanism gives us flexibility rather than forcing us to blindly comply with the process even if the situation clearly requires to go around it. 
+
+Remember that auditors may look at these exception explanations, and might eventually ask you about what happened exactly six month from now. It's a small price to pay for a bit of flexibility. The created issues contains example on how to explain the most common scenarios to help you write a good explanation.
 
 ### Fixed exceptions
 

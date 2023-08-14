@@ -1,4 +1,4 @@
-import { GraphQLClient } from '@sourcegraph/http-client'
+import type { GraphQLClient } from '@sourcegraph/http-client'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 
 import { getWebGraphQLClient } from '../backend/graphql'

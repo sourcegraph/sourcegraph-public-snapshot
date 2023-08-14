@@ -1,4 +1,4 @@
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { DecoratorFn, Story, Meta } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { WebStory } from '../../../components/WebStory'

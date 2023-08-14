@@ -1,4 +1,4 @@
-import { render, RenderResult, cleanup, waitFor, act, fireEvent } from '@testing-library/react'
+import { render, type RenderResult, cleanup, waitFor, act, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { wait } from '@testing-library/user-event/dist/utils'
 

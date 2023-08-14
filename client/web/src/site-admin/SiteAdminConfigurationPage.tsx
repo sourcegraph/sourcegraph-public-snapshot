@@ -1,15 +1,15 @@
 import * as React from 'react'
-import { FC } from 'react'
+import type { FC } from 'react'
 
-import { ApolloClient, useApolloClient } from '@apollo/client'
+import { type ApolloClient, useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import * as jsonc from 'jsonc-parser'
 import { Subject, Subscription } from 'rxjs'
 import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
-import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Button,
@@ -25,12 +25,13 @@ import {
 
 import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
-import { SiteResult } from '../graphql-operations'
+import type { SiteResult } from '../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
+import { ChecklistInfo } from './setup-checklist/ChecklistInfo'
 import { SiteConfigurationChangeList } from './SiteConfigurationChangeList'
 
 import styles from './SiteAdminConfigurationPage.module.scss'
@@ -422,6 +423,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
                     className="mb-3"
                 />
                 <Container className="mb-3">
+                    <ChecklistInfo />
                     <div>{alerts}</div>
                     {this.state.loading && <LoadingSpinner />}
                     {this.state.site?.configuration && (

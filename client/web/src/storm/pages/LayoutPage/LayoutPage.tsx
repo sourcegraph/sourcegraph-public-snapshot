@@ -21,7 +21,7 @@ import { useUserHistory } from '../../../components/useUserHistory'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { GlobalAlerts } from '../../../global/GlobalAlerts'
 import { useHandleSubmitFeedback } from '../../../hooks'
-import { LegacyLayoutRouteContext } from '../../../LegacyRouteContext'
+import type { LegacyLayoutRouteContext } from '../../../LegacyRouteContext'
 import { CodySurveyToast, SurveyToast } from '../../../marketing/toast'
 import { GlobalNavbar } from '../../../nav/GlobalNavbar'
 import { EnterprisePageRoutes, PageRoutes } from '../../../routes.constants'
@@ -77,8 +77,11 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
         routeMatch.pathname.startsWith(EnterprisePageRoutes.CodySearch)
     )
 
-    // eslint-disable-next-line no-restricted-syntax
-    const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
+    const [isSetupChecklistEnabled, flagLoading] = useFeatureFlag('setup-checklist')
+    const [setupSkipped] = useLocalStorage('setup.skipped', false)
+    // navigate to setup wizard if not skipped and new setup-checklist is disabled
+    const wasSetupWizardSkipped = flagLoading || isSetupChecklistEnabled || setupSkipped
+
     const { fuzzyFinder } = useExperimentalFeatures(features => ({
         // enable fuzzy finder by default unless it's explicitly disabled in settings
         fuzzyFinder: features.fuzzyFinder ?? true,

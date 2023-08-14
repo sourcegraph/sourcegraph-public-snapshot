@@ -1,8 +1,8 @@
 import {
     ChangesetState,
-    PublishableChangesetSpecIDsHiddenChangesetApplyPreviewFields,
-    PublishableChangesetSpecIDsVisibleChangesetApplyPreviewFields,
-    Scalars,
+    type PublishableChangesetSpecIDsHiddenChangesetApplyPreviewFields,
+    type PublishableChangesetSpecIDsVisibleChangesetApplyPreviewFields,
+    type Scalars,
 } from '../../../graphql-operations'
 
 /* The preview changeset can be published from the UI */

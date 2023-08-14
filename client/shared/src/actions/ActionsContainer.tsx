@@ -1,20 +1,20 @@
 import React, { useMemo } from 'react'
 
-import * as H from 'history'
+import type * as H from 'history'
 import { from } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 
-import { ContributableMenu } from '@sourcegraph/client-api'
+import type { ContributableMenu } from '@sourcegraph/client-api'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../api/client/api/common'
-import { ContributionOptions } from '../api/extension/extensionHostApi'
+import type { ContributionOptions } from '../api/extension/extensionHostApi'
 import { getContributedActionItems } from '../contributions/contributions'
-import { RequiredExtensionsControllerProps } from '../extensions/controller'
-import { PlatformContextProps } from '../platform/context'
-import { TelemetryProps } from '../telemetry/telemetryService'
+import type { RequiredExtensionsControllerProps } from '../extensions/controller'
+import type { PlatformContextProps } from '../platform/context'
+import type { TelemetryProps } from '../telemetry/telemetryService'
 
-import { ActionItem, ActionItemAction } from './ActionItem'
+import { ActionItem, type ActionItemAction } from './ActionItem'
 
 export interface ActionsProps
     extends RequiredExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,

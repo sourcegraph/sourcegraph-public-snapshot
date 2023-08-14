@@ -3,17 +3,17 @@ import React, { useMemo, useEffect } from 'react'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, LoadingSpinner, H2, Text, LineChart, Series } from '@sourcegraph/wildcard'
+import { Card, LoadingSpinner, H2, Text, LineChart, type Series } from '@sourcegraph/wildcard'
 
-import { BatchChangesStatisticsResult, BatchChangesStatisticsVariables } from '../../../graphql-operations'
+import type { BatchChangesStatisticsResult, BatchChangesStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
-import { TimeSavedCalculator, TimeSavedCalculatorProps } from '../components/TimeSavedCalculatorGroup'
-import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
+import { TimeSavedCalculator, type TimeSavedCalculatorProps } from '../components/TimeSavedCalculatorGroup'
+import { ValueLegendList, type ValueLegendListProps } from '../components/ValueLegendList'
 import { useChartFilters } from '../useChartFilters'
-import { StandardDatum } from '../utils'
+import type { StandardDatum } from '../utils'
 
 import { BATCHCHANGES_STATISTICS } from './queries'
 

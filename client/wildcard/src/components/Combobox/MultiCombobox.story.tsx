@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { mdiSourceRepository } from '@mdi/js'
-import { DecoratorFn, Meta } from '@storybook/react'
+import type { DecoratorFn, Meta } from '@storybook/react'
 
 import { BrandedStory } from '../../stories'
 import { Grid } from '../Grid'

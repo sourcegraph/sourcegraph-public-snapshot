@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { Subject } from 'rxjs'
 
 import { ExternalServiceSyncJobState } from '../../graphql-operations'

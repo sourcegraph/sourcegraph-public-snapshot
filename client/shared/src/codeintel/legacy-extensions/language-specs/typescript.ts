@@ -1,7 +1,7 @@
 import * as path from 'path'
 
 import { cStyleComment } from './comments'
-import { FilterContext, LanguageSpec, Result, LSIFSupport } from './language-spec'
+import { type FilterContext, type LanguageSpec, type Result, LSIFSupport } from './language-spec'
 import { extractFromLines, filterResultsByImports, removeExtension } from './util'
 
 /**

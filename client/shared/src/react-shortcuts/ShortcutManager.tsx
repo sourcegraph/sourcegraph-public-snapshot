@@ -1,6 +1,6 @@
 import { isMacPlatform } from '@sourcegraph/common'
 
-import { Key, MODIFIER_KEYS, ModifierKey } from './keys'
+import { type Key, MODIFIER_KEYS, type ModifierKey } from './keys'
 
 const ON_MATCH_DELAY = 500
 

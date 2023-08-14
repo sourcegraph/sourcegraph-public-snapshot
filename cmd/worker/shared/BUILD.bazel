@@ -10,6 +10,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/shared",
     visibility = ["//visibility:public"],
     deps = [
+        "//cmd/worker/internal/codygateway",
         "//cmd/worker/internal/encryption",
         "//cmd/worker/internal/gitserver",
         "//cmd/worker/internal/licensecheck",

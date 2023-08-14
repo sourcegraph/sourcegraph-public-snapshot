@@ -14,16 +14,38 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+/**
+ * Abstract base class for auto-complete providers. Subclasses must implement: createPromptPrefix()
+ * - Generates prompt prefix messages. generateCompletions() - Generates completions for a given
+ * context.
+ */
 public abstract class AutoCompleteProvider {
+  /** The client for making completion requests */
   protected SourcegraphNodeCompletionsClient completionsClient;
+
+  /** An executor service for async operations */
   protected final ExecutorService executor =
       Executors.newFixedThreadPool(CodyAutoCompleteItemProvider.nThreads);
+
+  /** Max chars allowed for prompt */
   protected int promptChars;
+
+  /** Max tokens to generate in response */
   protected int responseTokens;
+
+  /** Reference code snippets to include in prompt */
   protected List<ReferenceSnippet> snippets;
+
+  /** Prefix context before cursor */
   protected String prefix;
+
+  /** Suffix context after cursor */
   protected String suffix;
+
+  /** Additional prefix to inject into prompt */
   protected String injectPrefix;
+
+  /** Default number of completions to generate */
   protected int defaultN;
 
   public AutoCompleteProvider(
@@ -51,12 +73,14 @@ public abstract class AutoCompleteProvider {
   public abstract CompletableFuture<List<Completion>> generateCompletions(
       CancellationToken token, Optional<Integer> n);
 
+  /** Gets length of prompt without snippets */
   public int emptyPromptLength() {
     String promptNoSnippets =
         createPromptPrefix().stream().map(Message::prompt).collect(Collectors.joining(""));
-    return promptNoSnippets.length() - 10;
+    return promptNoSnippets.length() - 10; // Hunch: The minus 10 is for "Assistant:"?
   }
 
+  /** Builds full prompt with prefixes and snippets */
   protected List<Message> createPrompt() {
     List<Message> prefixMessages = createPromptPrefix();
     List<Message> referenceSnippetMessages = new ArrayList<>();
@@ -88,6 +112,7 @@ public abstract class AutoCompleteProvider {
     return referenceSnippetMessages;
   }
 
+  /** Batches multiple completion requests */
   protected CompletableFuture<List<CompletionResponse>> batchCompletions(
       SourcegraphNodeCompletionsClient client, CompletionParameters params, int n) {
     List<CompletableFuture<CompletionResponse>> promises = new ArrayList<>();

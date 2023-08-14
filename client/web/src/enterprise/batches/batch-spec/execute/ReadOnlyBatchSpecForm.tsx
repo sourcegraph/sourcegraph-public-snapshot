@@ -1,4 +1,4 @@
-import React, { FC, useMemo, useState } from 'react'
+import React, { type FC, useMemo, useState } from 'react'
 
 import { useNavigate } from 'react-router-dom'
 
@@ -6,13 +6,13 @@ import { useMutation } from '@sourcegraph/http-client'
 import { Button, H3, H4, Link, Text } from '@sourcegraph/wildcard'
 
 import {
-    BatchSpecExecutionFields,
+    type BatchSpecExecutionFields,
     BatchSpecSource,
-    CancelBatchSpecExecutionResult,
-    CancelBatchSpecExecutionVariables,
+    type CancelBatchSpecExecutionResult,
+    type CancelBatchSpecExecutionVariables,
 } from '../../../../graphql-operations'
 import { BatchSpec } from '../../BatchSpec'
-import { BatchSpecContextState, useBatchSpecContext } from '../BatchSpecContext'
+import { type BatchSpecContextState, useBatchSpecContext } from '../BatchSpecContext'
 import { LibraryPane } from '../edit/library/LibraryPane'
 import { WorkspacesPreviewPanel } from '../edit/workspaces-preview/WorkspacesPreviewPanel'
 

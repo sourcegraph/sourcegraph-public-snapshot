@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -21,10 +22,10 @@ import (
 func TestSavedSearches(t *testing.T) {
 	key := int32(1)
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{SiteAdmin: true, ID: key}, nil)
 
-	ss := database.NewMockSavedSearchStore()
+	ss := dbmocks.NewMockSavedSearchStore()
 	ss.ListSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32, paginationArgs *database.PaginationArgs) ([]*types.SavedSearch, error) {
 		return []*types.SavedSearch{{ID: key, Description: "test query", Query: "test type:diff patternType:regexp", UserID: userID, OrgID: nil}}, nil
 	})
@@ -32,7 +33,7 @@ func TestSavedSearches(t *testing.T) {
 		return 1, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 
@@ -67,10 +68,10 @@ func TestSavedSearches(t *testing.T) {
 func TestSavedSearchesForSameUser(t *testing.T) {
 	key := int32(1)
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{SiteAdmin: false, ID: key}, nil)
 
-	ss := database.NewMockSavedSearchStore()
+	ss := dbmocks.NewMockSavedSearchStore()
 	ss.ListSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32, paginationArgs *database.PaginationArgs) ([]*types.SavedSearch, error) {
 		return []*types.SavedSearch{{ID: key, Description: "test query", Query: "test type:diff patternType:regexp", UserID: userID, OrgID: nil}}, nil
 	})
@@ -78,7 +79,7 @@ func TestSavedSearchesForSameUser(t *testing.T) {
 		return 1, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 
@@ -114,10 +115,10 @@ func TestSavedSearchesForDifferentUser(t *testing.T) {
 	key := int32(1)
 	userID := int32(2)
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{SiteAdmin: false, ID: userID}, nil)
 
-	ss := database.NewMockSavedSearchStore()
+	ss := dbmocks.NewMockSavedSearchStore()
 	ss.ListSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32, paginationArgs *database.PaginationArgs) ([]*types.SavedSearch, error) {
 		return []*types.SavedSearch{{ID: key, Description: "test query", Query: "test type:diff patternType:regexp", UserID: userID, OrgID: nil}}, nil
 	})
@@ -125,7 +126,7 @@ func TestSavedSearchesForDifferentUser(t *testing.T) {
 		return 1, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 
@@ -143,16 +144,16 @@ func TestSavedSearchesForDifferentUser(t *testing.T) {
 func TestSavedSearchesForDifferentOrg(t *testing.T) {
 	key := int32(1)
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{SiteAdmin: false, ID: key}, nil)
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false, ID: key}, nil)
 
-	om := database.NewMockOrgMemberStore()
+	om := dbmocks.NewMockOrgMemberStore()
 	om.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(ctx context.Context, oid, uid int32) (*types.OrgMembership, error) {
 		return nil, nil
 	})
 
-	ss := database.NewMockSavedSearchStore()
+	ss := dbmocks.NewMockSavedSearchStore()
 	ss.ListSavedSearchesByOrgOrUserFunc.SetDefaultHook(func(_ context.Context, userID, orgId *int32, paginationArgs *database.PaginationArgs) ([]*types.SavedSearch, error) {
 		return []*types.SavedSearch{{ID: key, Description: "test query", Query: "test type:diff patternType:regexp", UserID: nil, OrgID: &key}}, nil
 	})
@@ -160,7 +161,7 @@ func TestSavedSearchesForDifferentOrg(t *testing.T) {
 		return 1, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(om)
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
@@ -181,10 +182,10 @@ func TestSavedSearchByIDOwner(t *testing.T) {
 	userID := int32(1)
 	ssID := marshalSavedSearchID(1)
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false, ID: userID}, nil)
 
-	ss := database.NewMockSavedSearchStore()
+	ss := dbmocks.NewMockSavedSearchStore()
 	ss.GetByIDFunc.SetDefaultReturn(
 		&api.SavedQuerySpecAndConfig{
 			Spec: api.SavedQueryIDSpec{},
@@ -198,7 +199,7 @@ func TestSavedSearchByIDOwner(t *testing.T) {
 		nil,
 	)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 
@@ -232,10 +233,10 @@ func TestSavedSearchByIDNonOwner(t *testing.T) {
 	adminID := int32(2)
 	ssID := marshalSavedSearchID(1)
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true, ID: adminID}, nil)
 
-	ss := database.NewMockSavedSearchStore()
+	ss := dbmocks.NewMockSavedSearchStore()
 	ss.GetByIDFunc.SetDefaultReturn(
 		&api.SavedQuerySpecAndConfig{
 			Spec: api.SavedQueryIDSpec{},
@@ -249,7 +250,7 @@ func TestSavedSearchByIDNonOwner(t *testing.T) {
 		nil,
 	)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 
@@ -267,12 +268,12 @@ func TestSavedSearchByIDNonOwner(t *testing.T) {
 func TestCreateSavedSearch(t *testing.T) {
 	key := int32(1)
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true, ID: key}, nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: key})
 
-	ss := database.NewMockSavedSearchStore()
+	ss := dbmocks.NewMockSavedSearchStore()
 	ss.CreateFunc.SetDefaultHook(func(_ context.Context, newSavedSearch *types.SavedSearch) (*types.SavedSearch, error) {
 		return &types.SavedSearch{
 			ID:          key,
@@ -285,7 +286,7 @@ func TestCreateSavedSearch(t *testing.T) {
 		}, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 
@@ -333,12 +334,12 @@ func TestCreateSavedSearch(t *testing.T) {
 
 func TestUpdateSavedSearch(t *testing.T) {
 	key := int32(1)
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true, ID: key}, nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: key})
 
-	ss := database.NewMockSavedSearchStore()
+	ss := dbmocks.NewMockSavedSearchStore()
 	ss.UpdateFunc.SetDefaultHook(func(ctx context.Context, savedSearch *types.SavedSearch) (*types.SavedSearch, error) {
 		return &types.SavedSearch{
 			ID:          key,
@@ -356,7 +357,7 @@ func TestUpdateSavedSearch(t *testing.T) {
 		},
 	}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 
@@ -450,7 +451,7 @@ func TestUpdateSavedSearchPermissions(t *testing.T) {
 	for _, tt := range cases {
 		t.Run("", func(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), actor.FromUser(tt.execUser.ID))
-			users := database.NewMockUserStore()
+			users := dbmocks.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
 				switch actor.FromContext(ctx).UID {
 				case user1.ID:
@@ -464,7 +465,7 @@ func TestUpdateSavedSearchPermissions(t *testing.T) {
 				}
 			})
 
-			savedSearches := database.NewMockSavedSearchStore()
+			savedSearches := dbmocks.NewMockSavedSearchStore()
 			savedSearches.UpdateFunc.SetDefaultHook(func(_ context.Context, ss *types.SavedSearch) (*types.SavedSearch, error) {
 				return ss, nil
 			})
@@ -475,7 +476,7 @@ func TestUpdateSavedSearchPermissions(t *testing.T) {
 				},
 			}, nil)
 
-			orgMembers := database.NewMockOrgMemberStore()
+			orgMembers := dbmocks.NewMockOrgMemberStore()
 			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
 				if orgID == userID {
 					return &types.OrgMembership{}, nil
@@ -483,7 +484,7 @@ func TestUpdateSavedSearchPermissions(t *testing.T) {
 				return nil, nil
 			})
 
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 			db.SavedSearchesFunc.SetDefaultReturn(savedSearches)
 			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
@@ -511,12 +512,12 @@ func TestUpdateSavedSearchPermissions(t *testing.T) {
 
 func TestDeleteSavedSearch(t *testing.T) {
 	key := int32(1)
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{SiteAdmin: true, ID: key}, nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: key})
 
-	ss := database.NewMockSavedSearchStore()
+	ss := dbmocks.NewMockSavedSearchStore()
 	ss.GetByIDFunc.SetDefaultReturn(&api.SavedQuerySpecAndConfig{
 		Spec: api.SavedQueryIDSpec{
 			Subject: api.SettingsSubject{User: &key},
@@ -533,7 +534,7 @@ func TestDeleteSavedSearch(t *testing.T) {
 
 	ss.DeleteFunc.SetDefaultReturn(nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.SavedSearchesFunc.SetDefaultReturn(ss)
 

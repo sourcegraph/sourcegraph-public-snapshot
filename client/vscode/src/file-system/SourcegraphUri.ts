@@ -1,4 +1,4 @@
-import { Position } from '@sourcegraph/extension-api-types'
+import type { Position } from '@sourcegraph/extension-api-types'
 import { parseQueryAndHash, parseRepoRevision } from '@sourcegraph/shared/src/util/url'
 
 export interface SourcegraphUriOptionals {

@@ -14,7 +14,7 @@ import {
     ShowMoreButton,
     ConnectionForm,
 } from '../../components/FilteredConnection/ui'
-import { Scalars } from '../../graphql-operations'
+import type { Scalars } from '../../graphql-operations'
 
 import { AddTeamMemberModal } from './AddTeamMemberModal'
 import { useTeamMembers } from './backend'

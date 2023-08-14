@@ -1,9 +1,11 @@
+import com.jetbrains.plugin.structure.base.utils.isDirectory
 import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.nio.file.Files
 import java.nio.file.Paths
 
 fun properties(key: String) = project.findProperty(key).toString()
+val isAgentEnabled = findProperty("enableAgent") == "true"
 
 plugins {
     id("java")
@@ -36,6 +38,9 @@ dependencies {
     implementation("org.commonmark:commonmark:0.21.0")
     implementation("org.commonmark:commonmark-ext-gfm-tables:0.21.0")
     implementation("org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.21.0")
+    implementation("com.googlecode.java-diff-utils:diffutils:1.3.0")
+
+
     testImplementation(platform("org.junit:junit-bom:5.7.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.assertj:assertj-core:3.24.2")
@@ -106,7 +111,7 @@ tasks {
         )
     }
 
-    val agentSourceDirectory = Paths.get("..", "cody-agent").normalize()
+    val agentSourceDirectory = Paths.get("..", "..", "..", "cody", "agent").normalize()
     val agentTargetDirectory =
         buildDir.resolve("sourcegraph").resolve("agent").toPath()
 
@@ -118,9 +123,11 @@ tasks {
 
     fun copyAgentBinariesToPluginPath(targetPath: String) {
         val shouldBuildBinaries =
-            findProperty("forceAgentBuild") == "true" ||
-                !Files.isDirectory(agentTargetDirectory) ||
-                agentTargetDirectory.toFile().list().isEmpty()
+            agentSourceDirectory.isDirectory && (
+                    findProperty("forceAgentBuild") == "true" ||
+                            !Files.isDirectory(agentTargetDirectory) ||
+                            agentTargetDirectory.toFile().list()?.isEmpty() ?: false
+                    )
         if (shouldBuildBinaries) {
             exec {
                 commandLine("pnpm", "install")
@@ -156,7 +163,6 @@ tasks {
         jvmArgs("-Djdk.module.illegalAccess.silent=true")
         systemProperty("cody-agent.trace-path", "$buildDir/sourcegraph/cody-agent-trace.json")
         systemProperty("cody-agent.directory", agentTargetDirectory.parent.toString())
-        val isAgentEnabled = findProperty("enableAgent") == "true"
         systemProperty("cody-agent.enabled", isAgentEnabled.toString())
     }
 
@@ -190,5 +196,5 @@ tasks.test {
 }
 
 tasks.getByName("copyAgentBinariesToPluginPath") {
-    enabled = false
+    enabled = isAgentEnabled
 }

@@ -1,12 +1,16 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
-import { ListAllCodeMonitorsVariables, ListCodeMonitors, ListUserCodeMonitorsVariables } from '../../graphql-operations'
+import type {
+    ListAllCodeMonitorsVariables,
+    ListCodeMonitors,
+    ListUserCodeMonitorsVariables,
+} from '../../graphql-operations'
 
 import { CodeMonitoringPage } from './CodeMonitoringPage'
 import { mockCodeMonitorNodes } from './testing/util'

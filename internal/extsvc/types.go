@@ -401,18 +401,6 @@ func TypeToKind(t string) string {
 	return variant.AsKind()
 }
 
-var (
-	// Precompute these for use in ParseServiceType below since the constants are mixed case
-	bbsLower    = strings.ToLower(VariantBitbucketServer.AsType())
-	bbcLower    = strings.ToLower(VariantBitbucketCloud.AsType())
-	jvmLower    = strings.ToLower(VariantJVMPackages.AsType())
-	npmLower    = strings.ToLower(VariantNpmPackages.AsType())
-	goLower     = strings.ToLower(VariantGoPackages.AsType())
-	pythonLower = strings.ToLower(VariantPythonPackages.AsType())
-	rustLower   = strings.ToLower(VariantRustPackages.AsType())
-	rubyLower   = strings.ToLower(VariantRubyPackages.AsType())
-)
-
 // ParseServiceType will return a ServiceType constant after doing a case insensitive match on s.
 // It returns ("", false) if no match was found.
 func ParseServiceType(s string) (string, bool) {
@@ -431,16 +419,6 @@ func ParseServiceKind(s string) (string, bool) {
 		return "", false
 	}
 	return variant.AsKind(), true
-}
-
-var supportsRepoExclusion = map[string]bool{
-	VariantAWSCodeCommit.AsKind():   true,
-	VariantBitbucketCloud.AsKind():  true,
-	VariantBitbucketServer.AsKind(): true,
-	VariantGitHub.AsKind():          true,
-	VariantGitLab.AsKind():          true,
-	VariantGitolite.AsKind():        true,
-	VariantAzureDevOps.AsKind():     true,
 }
 
 // SupportsRepoExclusion returns true when given external service kind supports

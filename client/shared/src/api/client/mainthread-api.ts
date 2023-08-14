@@ -1,13 +1,13 @@
-import { Remote, proxy } from 'comlink'
-import { Unsubscribable, Subscription, from, of } from 'rxjs'
+import { type Remote, proxy } from 'comlink'
+import { type Unsubscribable, Subscription, from, of } from 'rxjs'
 import { publishReplay, refCount, switchMap } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
 
 import { registerBuiltinClientCommands } from '../../commands/commands'
-import { PlatformContext } from '../../platform/context'
+import type { PlatformContext } from '../../platform/context'
 import { isSettingsValid } from '../../settings/settings'
-import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
+import type { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
 import { proxySubscribable } from '../extension/api/common'
 
 import { ProxySubscription } from './api/common'

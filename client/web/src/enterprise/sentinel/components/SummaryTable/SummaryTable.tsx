@@ -1,7 +1,7 @@
 import { useQuery } from '@sourcegraph/http-client'
 import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
-import {
+import type {
     VulnerabilityMatchesSummaryCountResult,
     VulnerabilityMatchesSummaryCountVariables,
 } from '../../../../graphql-operations'

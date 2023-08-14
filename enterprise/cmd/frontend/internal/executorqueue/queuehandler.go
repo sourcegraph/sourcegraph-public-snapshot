@@ -40,7 +40,7 @@ func newExecutorQueuesHandler(
 	// queue names in ./metrics/queue_allocation.go, and register a metrics exporter
 	// in the worker.
 	//
-	// Note: In order register a new queue type please change the validate() check code in enterprise/cmd/executor/config.go
+	// Note: In order register a new queue type please change the validate() check code in cmd/executor/config.go
 	codeIntelQueueHandler := codeintelqueue.QueueHandler(observationCtx, db, accessToken)
 	batchesQueueHandler := batches.QueueHandler(observationCtx, db, accessToken)
 

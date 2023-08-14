@@ -25,7 +25,7 @@ if (browser) {
 }
 
 export const load: LayoutLoad = async ({ parent, params }) => {
-    const { resolvedRevision, repoName, revision } = await parent()
+    const { resolvedRevision, repoName } = await parent()
     const parentPath = getRootPath(repoName, params.path ? dirname(params.path) : REPO_ROOT)
 
     return {
@@ -35,12 +35,11 @@ export const load: LayoutLoad = async ({ parent, params }) => {
             codeCommits: fetchRepoCommits({
                 repoID: resolvedRevision.repo.id,
                 revision: resolvedRevision.commitID,
-                filePath: params.path ?? null,
+                filePath: params.path,
             }),
             fileTree: fetchSidebarFileTree({
-                repoName,
+                repoID: resolvedRevision.repo.id,
                 commitID: resolvedRevision.commitID,
-                revision: revision ?? '',
                 filePath: parentPath,
             }),
         },

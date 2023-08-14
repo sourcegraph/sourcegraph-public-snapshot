@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { log } from '../log'
 
-import { SourcegraphFileSystemProvider } from './SourcegraphFileSystemProvider'
+import type { SourcegraphFileSystemProvider } from './SourcegraphFileSystemProvider'
 import { SourcegraphUri } from './SourcegraphUri'
 
 export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {

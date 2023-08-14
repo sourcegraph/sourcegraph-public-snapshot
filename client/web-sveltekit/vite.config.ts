@@ -1,8 +1,27 @@
 import { sveltekit } from '@sveltejs/kit/vite'
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
+import codegen from 'vite-plugin-graphql-codegen'
+import inspect from 'vite-plugin-inspect'
+
+import operations from '@sourcegraph/shared/dev/generateGraphQlOperations'
+
+function generateGraphQLOperations(): Plugin {
+    const outputPath = './src/lib/graphql-operations.ts'
+    const interfaceNameForOperations = 'SvelteKitGraphQlOperations'
+    const documents = ['src/lib/**/*.{ts,graphql}', '!src/lib/graphql-operations.ts']
+
+    return codegen({
+        config: {
+            ...operations.createCodegenConfig([{ interfaceNameForOperations, outputPath }]),
+            // Top-level documents needs to be expliclity configured, otherwise vite-plugin-graphql-codgen
+            // won't regenerate on change.
+            documents,
+        },
+    })
+}
 
 const config = defineConfig(({ mode }) => ({
-    plugins: [sveltekit()],
+    plugins: [sveltekit(), generateGraphQLOperations(), inspect()],
     define:
         mode === 'test'
             ? {}
@@ -20,7 +39,7 @@ const config = defineConfig(({ mode }) => ({
         proxy: {
             // Proxy requests to specific endpoints to a real Sourcegraph
             // instance.
-            '^(/sign-in|/.assets|/-|/.api|/search/stream)': {
+            '^(/sign-in|/.assets|/-|/.api|/search/stream|/users|/notebooks|/insights)': {
                 target: process.env.SOURCEGRAPH_API_URL || 'https://sourcegraph.com',
                 changeOrigin: true,
                 secure: false,

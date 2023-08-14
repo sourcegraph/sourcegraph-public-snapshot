@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -15,7 +15,7 @@ func TestEnterpriseCreateRepoHook(t *testing.T) {
 	ctx := context.Background()
 
 	// Set up mock repo count
-	mockRepoStore := database.NewMockRepoStore()
+	mockRepoStore := dbmocks.NewMockRepoStore()
 	mockStore := repos.NewMockStore()
 	mockStore.RepoStoreFunc.SetDefaultReturn(mockRepoStore)
 
@@ -81,7 +81,7 @@ func TestEnterpriseUpdateRepoHook(t *testing.T) {
 	ctx := context.Background()
 
 	// Set up mock repo count
-	mockRepoStore := database.NewMockRepoStore()
+	mockRepoStore := dbmocks.NewMockRepoStore()
 	mockStore := repos.NewMockStore()
 	mockStore.RepoStoreFunc.SetDefaultReturn(mockRepoStore)
 

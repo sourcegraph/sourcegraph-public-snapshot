@@ -1,6 +1,6 @@
 import { gql } from '@sourcegraph/http-client'
 
-import { FileNamesResult, FileNamesVariables } from '../graphql-operations'
+import type { FileNamesResult, FileNamesVariables } from '../graphql-operations'
 
 import { requestGraphQLFromVSCode } from './requestGraphQl'
 

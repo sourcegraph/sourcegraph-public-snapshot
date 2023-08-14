@@ -75,11 +75,8 @@ These are a few things you can ask Cody:
 - "What are popular go libraries for building CLIs?"
 - Open your workspace, and ask "Do we have a React date picker component in this repository?"
 - Right click on a function, and ask Cody to explain it
-- Try any of the Cody recipes!
 
 [See more Cody use cases here](use_cases.md).
-
-<img width="510" alt="image" src="https://user-images.githubusercontent.com/25070988/227511383-aa60f074-817d-4875-af41-54558dfe1951.png">
 
 ## Cody on Sourcegraph Cloud
 

@@ -1,6 +1,6 @@
 import { dropWhile, takeWhile } from 'lodash'
 
-import { BlockCommentStyle, CommentStyle, TextDocumentPlacement } from '../language-specs/language-spec'
+import type { BlockCommentStyle, CommentStyle, TextDocumentPlacement } from '../language-specs/language-spec'
 
 /**
  * Extract a docstring near the given definition.

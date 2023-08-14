@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiLink } from '@mdi/js'
 import classNames from 'classnames'
 
-import { QuickLink } from '@sourcegraph/shared/src/schema/settings.schema'
+import type { QuickLink } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './QuickLinks.module.scss'

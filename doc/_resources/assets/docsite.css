@@ -53,7 +53,6 @@ body.theme-light {
   --input-border-color: var(--sidebar-border-color);
   --input-focus-border-color: #1986ea;
   --link-color: #0055c5;
-  --link-hover-color: #1986ea;
   --anchor-inline-bg: yellow;
   --anchor-inline-border-color: #eecc11;
   --code-bg: #f4f7fb;
@@ -80,8 +79,7 @@ body.theme-dark {
   --sidebar-border-color: #1986ea66;
   --input-border-color: var(--sidebar-border-color);
   --input-focus-border-color: #1986ea;
-  --link-color: #66aaff;
-  --link-hover-color: #77bbff;
+  --link-color: var(--brand-cyan-color);
   --anchor-inline-bg: yellow;
   --anchor-inline-border-color: #eecc11;
   --code-bg: #191929;
@@ -105,31 +103,22 @@ body {
 
 a {
   text-decoration: none;
-}
-
-body.theme-light a,
-body.theme-light .markdown-body a {
   color: var(--link-color);
 }
 
-body.theme-dark a {
-  color:var(--brand-cyan-color);
-
-}
 a:hover {
-  opacity:0.8;
+  opacity: 0.8;
   transition: color 0.2s ease-in-out;
-  text-decoration: none;
 }
 
-body.theme-light #sidebar a,
-body.theme-light #index a {
-  color: #171717;
+body.theme-light #sidebar,
+body.theme-light #index {
+  --link-color: #171717
 }
 
-body.theme-dark #sidebar a,
-body.theme-dark #index a {
-  color: rgb(161, 161, 161);
+body.theme-dark #sidebar,
+body.theme-dark #index {
+  --link-color: rgb(161, 161, 161);
 }
 
 /* Nav links */
@@ -199,6 +188,9 @@ body > div#page {
 }
 /* Responsive */
 @media (max-width: 800px /* == var(--sidebar-breakpoint-width) */) {
+    :root {
+        --gutter: calc(0.5 * var(--spacing));
+    }
     body {
         flex-direction: column;
     }
@@ -253,8 +245,9 @@ body > #sidebar {
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    margin-top: calc(2*var(--spacing));
+    padding-top: calc(2*var(--spacing));
     margin-left: calc(6*var(--spacing));
+    padding-right: var(--spacing);
 }
 /* Logo */
 body > #sidebar #logo {
@@ -345,21 +338,19 @@ body > #sidebar .nav-section li.collapse ul {
 }
 /* Theme */
 body > #sidebar #theme {
-    flex: 1;
     display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    margin-top: calc(2*var(--spacing));
-    padding: 0 calc(1.5*var(--spacing));
+    margin: calc(2*var(--spacing)) 0;
+    gap: 0.5rem;
+    align-items: center;
 }
-body > #sidebar #theme div {
-    display: flex;
+body > #sidebar #theme svg {
+    width: 16px;
+    margin-right: 0.25rem;
+    fill: var(--text-muted);
 }
 body > #sidebar #theme button {
-    border: 0;
-    background-color: transparent;
+    all: unset;
     font-family: var(--base-font-family);
-    font-size: 1rem;
     cursor: pointer;
 }
 body > #sidebar #theme button:not(.active) {
@@ -367,6 +358,9 @@ body > #sidebar #theme button:not(.active) {
 }
 body > #sidebar #theme button.active {
     color: var(--text-body);
+}
+body > #sidebar #theme button:hover {
+    opacity: 0.8;
 }
 
 /* FOOTER */
@@ -696,10 +690,10 @@ body > #page > main > #content {
 }
 
 .markdown-body .subtitle {
-  font-weight: 600;
-  margin-top: -0.5em;
-  font-size: 1.3rem;
-  color: var(--text-muted);
+    font-weight: 250;
+    margin-top: -1em;
+    font-size: 1.1rem;
+    color: var(--text-muted);
 }
 
 .markdown-body .lead {
@@ -728,6 +722,13 @@ body > #page > main > #content {
 
 .markdown-body .cta-group {
   margin: 3em 0;
+}
+
+@media (max-width: 500px) {
+    .markdown-body {
+        /* Smaller line lengths are more readable with shorter line heights */
+        line-height: 1.5;
+    }
 }
 
 
@@ -788,9 +789,6 @@ body > #page > main > #content {
     margin: 4px;
     color: var(--link-color);
     font-size: 1.5rem;
-}
-.copy-text:hover {
-    color: var(--link-hover-color);
 }
 
 /* Display hash on hover for schema doc key. */
@@ -991,11 +989,17 @@ body.theme-dark .markdown-body .chroma.sgquery .ss { color: #ff6b6b; background-
 .markdown-body .getting-started {
   display: flex;
   align-items: stretch;
+  gap: 0.5em;
+}
+
+@media (max-width: 800px /* == var(--sidebar-breakpoint-width) */) {
+    .markdown-body .getting-started {
+        flex-direction: column;
+    }
 }
 
 .markdown-body .getting-started .btn {
   flex: 1;
-  margin: 0.5em;
   padding: 1rem 1rem;
   color: var(--text-color);
   border-radius: 4px;
@@ -1004,13 +1008,13 @@ body.theme-dark .markdown-body .chroma.sgquery .ss { color: #ff6b6b; background-
   padding-top: 1.25rem;
 }
 
-.markdown-body .getting-started .btn:hover {
-  color: var(--link-color);
-}
-
 .markdown-body .getting-started .btn span {
   color: var(--link-color);
   font-weight: bold;
+}
+
+.markdown-body .getting-started .btn p {
+    margin: 0.5rem 0 0 0;
 }
 
 /* Home Page - index.md */
@@ -1128,7 +1132,7 @@ a.cloud-cta {
     background: #5033E1;
     color: #ffffff;
 }
-@media only screen and (min-width: 640px /* --breakpoint-sm */) {
+@media (min-width: 640px /* --breakpoint-sm */) {
     .cloud-cta {
         flex-direction: row;
         align-items: center;
@@ -1137,7 +1141,7 @@ a.cloud-cta {
         margin: 0 0 0 auto;
     }
 }
-@media only screen and (min-width: 1024px /* --breakpoint-lg */) {
+@media (min-width: 1024px /* --breakpoint-lg */) {
     .cloud-cta {
         background: #270741 url('/assets/cloud-cta-illustration.svg') no-repeat left top;
     }
@@ -1165,7 +1169,7 @@ body {
     --markprompt-secondaryForeground: #171717;
     --markprompt-primaryHighlight: #A112FF;
     --markprompt-secondaryHighlight: #00CBEC;
-    --markprompt-overlay: #00000010;
+    --markprompt-overlay: #00000090;
     --markprompt-ring: #00CBEC;
     --markprompt-radius: 8px;
     --markprompt-text-size: .875rem;
@@ -1260,6 +1264,10 @@ body.theme-dark {
     color: #ffffff;
 }
 
+.MarkpromptOverlay {
+    z-index: 99 !important;
+}
+
 .MarkpromptContentDialog {
     z-index: 100 !important;
 }
@@ -1349,18 +1357,20 @@ markprompt-content.dark {
 }
 
 #markprompt-button {
-    background-color: transparent;
-    border: 0px;
+    all: unset;
     color: var(--markprompt-mutedForeground);
-    cursor:pointer;
+    cursor: pointer;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
 }
 
 #markprompt-button:hover {
-    color: var(--link-hover-color);
+    color: var(--link-color);
 }
 
-.markdown-body a {
-    color: var(--brand-cyan-color);
+body > #markprompt-button svg {
+    margin-right: 0;
 }
 
 #sidebar ul ul li {

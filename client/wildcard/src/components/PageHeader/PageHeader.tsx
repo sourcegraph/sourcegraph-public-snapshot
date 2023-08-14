@@ -2,9 +2,9 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Text, HeadingElement } from '../Typography'
+import { Text, type HeadingElement } from '../Typography'
 
-import { Breadcrumb, BreadcrumbIcon, BreadcrumbProps, BreadcrumbText } from './Breadcrumb'
+import { Breadcrumb, type BreadcrumbIcon, type BreadcrumbProps, type BreadcrumbText } from './Breadcrumb'
 import { Heading } from './Heading'
 
 import styles from './PageHeader.module.scss'

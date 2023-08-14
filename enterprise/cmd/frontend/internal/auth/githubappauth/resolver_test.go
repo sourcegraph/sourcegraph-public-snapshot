@@ -13,7 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -32,7 +32,7 @@ func TestResolver_DeleteGitHubApp(t *testing.T) {
 	id := 1
 	graphqlID := MarshalGitHubAppID(int64(id))
 
-	userStore := database.NewMockUserStore()
+	userStore := dbmocks.NewMockUserStore()
 	userStore.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
 		a := actor.FromContext(ctx)
 		if a.UID == 1 {
@@ -52,7 +52,7 @@ func TestResolver_DeleteGitHubApp(t *testing.T) {
 		return nil
 	})
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 
 	db.GitHubAppsFunc.SetDefaultReturn(gitHubAppsStore)
 	db.UsersFunc.SetDefaultReturn(userStore)
@@ -108,7 +108,7 @@ func TestResolver_GitHubApps(t *testing.T) {
 	id2 := 2
 	graphqlID2 := MarshalGitHubAppID(int64(id2))
 
-	userStore := database.NewMockUserStore()
+	userStore := dbmocks.NewMockUserStore()
 	userStore.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
 		a := actor.FromContext(ctx)
 		if a.UID == 1 {
@@ -128,7 +128,7 @@ func TestResolver_GitHubApps(t *testing.T) {
 		return []*ghtypes.GitHubApp{{ID: 1}, {ID: 2}}, nil
 	})
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 
 	db.GitHubAppsFunc.SetDefaultReturn(gitHubAppsStore)
 	db.UsersFunc.SetDefaultReturn(userStore)
@@ -207,7 +207,7 @@ func TestResolver_GitHubApp(t *testing.T) {
 	id := 1
 	graphqlID := MarshalGitHubAppID(int64(id))
 
-	userStore := database.NewMockUserStore()
+	userStore := dbmocks.NewMockUserStore()
 	userStore.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
 		a := actor.FromContext(ctx)
 		if a.UID == 1 {
@@ -226,7 +226,7 @@ func TestResolver_GitHubApp(t *testing.T) {
 		BaseURL: "https://github.com",
 	}, nil)
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 
 	db.GitHubAppsFunc.SetDefaultReturn(gitHubAppsStore)
 	db.UsersFunc.SetDefaultReturn(userStore)
@@ -275,7 +275,7 @@ func TestResolver_GitHubAppByAppID(t *testing.T) {
 	baseURL := "https://github.com"
 	name := "Horsegraph App"
 
-	userStore := database.NewMockUserStore()
+	userStore := dbmocks.NewMockUserStore()
 	userStore.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
 		a := actor.FromContext(ctx)
 		if a.UID == 1 {
@@ -295,7 +295,7 @@ func TestResolver_GitHubAppByAppID(t *testing.T) {
 		Name:    name,
 	}, nil)
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 
 	db.GitHubAppsFunc.SetDefaultReturn(gitHubAppsStore)
 	db.UsersFunc.SetDefaultReturn(userStore)

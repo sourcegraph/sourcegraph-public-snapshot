@@ -1,10 +1,10 @@
-import { FC, useCallback } from 'react'
+import { type FC, useCallback } from 'react'
 
-import { ApolloClient } from '@apollo/client'
+import type { ApolloClient } from '@apollo/client'
 import { useNavigate } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { H1, H2, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
@@ -12,7 +12,7 @@ import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
 
 import {
-    StepConfiguration,
+    type StepConfiguration,
     SetupStepsRoot,
     SetupStepsHeader,
     SetupStepsContent,

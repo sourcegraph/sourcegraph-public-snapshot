@@ -46,14 +46,6 @@ type PeriodicGoroutine struct {
 
 var _ recorder.Recordable = &PeriodicGoroutine{}
 
-// fullErrorHandler implements Handler and ErrorHandler.
-// Cannot be named errorHandler because gomockgen tries to generate 2 mocks that
-// conflicts (because of ErrorHandler).
-type fullErrorHandler interface {
-	Handler
-	ErrorHandler
-}
-
 // Handler represents the main behavior of a PeriodicGoroutine. Additional
 // interfaces like ErrorHandler can also be implemented.
 type Handler interface {
@@ -115,14 +107,6 @@ func WithOperation(operation *observation.Operation) Option {
 // WithInitialDelay sets the initial delay before the first invocation of the handler.
 func WithInitialDelay(delay time.Duration) Option {
 	return func(p *PeriodicGoroutine) { p.initialDelay = delay }
-}
-
-func withClock(clock glock.Clock) Option {
-	return func(p *PeriodicGoroutine) { p.clock = clock }
-}
-
-func withConcurrencyClock(clock glock.Clock) Option {
-	return func(p *PeriodicGoroutine) { p.concurrencyClock = clock }
 }
 
 // NewPeriodicGoroutine creates a new PeriodicGoroutine with the given handler. The context provided will propagate into

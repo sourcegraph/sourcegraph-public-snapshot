@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useState } from 'react'
+import { type FC, useCallback, useEffect, useState } from 'react'
 
 import { mdiCalendar, mdiClockAlertOutline } from '@mdi/js'
 import { parseISO } from 'date-fns'
@@ -22,7 +22,7 @@ import {
 
 import { LogOutput } from '../../../components/LogOutput'
 import { PageTitle } from '../../../components/PageTitle'
-import { SettingsAreaRepositoryFields, RepositoryRecordedCommandFields } from '../../../graphql-operations'
+import type { SettingsAreaRepositoryFields, RepositoryRecordedCommandFields } from '../../../graphql-operations'
 import { LogsPageTabs } from '../../../repo/constants'
 import { eventLogger } from '../../../tracking/eventLogger'
 

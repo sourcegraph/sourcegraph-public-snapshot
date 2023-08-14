@@ -2,11 +2,11 @@ import React from 'react'
 
 import { mdiLoading, mdiMinusThick } from '@mdi/js'
 
-import { ErrorLike, asError } from '@sourcegraph/common'
+import { type ErrorLike, asError } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import {
+import type {
     RemoveAssignedOwnerResult,
     RemoveAssignedOwnerVariables,
     RemoveAssignedTeamResult,

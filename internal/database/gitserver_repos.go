@@ -70,6 +70,9 @@ type GitserverRepoStore interface {
 	UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoName]int64) (int, error)
 	// SetCloningProgress updates a piece of text description from how cloning proceeds.
 	SetCloningProgress(context.Context, api.RepoName, string) error
+	// GetLastSyncOutput returns the last stored output from a repo sync (clone or fetch), or ok: false if
+	// no log is found.
+	GetLastSyncOutput(ctx context.Context, name api.RepoName) (output string, ok bool, err error)
 
 	// UpdatePoolRepoID updates the pool_repo_id column of a gitserver_repo.
 	UpdatePoolRepoID(ctx context.Context, poolRepoName, repoName api.RepoName) (err error)
@@ -407,11 +410,9 @@ SELECT
 	gr.updated_at,
 	gr.corrupted_at,
 	gr.corruption_logs,
-	gr.pool_repo_id,
-	go.last_output
+	gr.pool_repo_id
 FROM gitserver_repos gr
 JOIN repo ON gr.repo_id = repo.id
-LEFT OUTER JOIN gitserver_repos_sync_output go ON gr.repo_id = go.repo_id
 WHERE %s
 ORDER BY gr.repo_id ASC
 %s
@@ -443,10 +444,8 @@ SELECT
 	gr.updated_at,
 	gr.corrupted_at,
 	gr.corruption_logs,
-	gr.pool_repo_id,
-	go.last_output
+	gr.pool_repo_id
 FROM gitserver_repos gr
-LEFT OUTER JOIN gitserver_repos_sync_output go ON gr.repo_id = go.repo_id
 WHERE gr.repo_id = %s
 `
 
@@ -476,11 +475,9 @@ SELECT
 	gr.updated_at,
 	gr.corrupted_at,
 	gr.corruption_logs,
-	gr.pool_repo_id,
-	go.last_output
+	gr.pool_repo_id
 FROM gitserver_repos gr
 JOIN repo r ON r.id = gr.repo_id
-LEFT OUTER JOIN gitserver_repos_sync_output go ON gr.repo_id = go.repo_id
 WHERE r.name = %s
 `
 
@@ -503,11 +500,9 @@ SELECT
 	gr.updated_at,
 	gr.corrupted_at,
 	gr.corruption_logs,
-	gr.pool_repo_id,
-	go.last_output
+	gr.pool_repo_id
 FROM gitserver_repos gr
 JOIN repo r on r.id = gr.repo_id
-LEFT OUTER JOIN gitserver_repos_sync_output go ON gr.repo_id = go.repo_id
 WHERE r.name = ANY (%s)
 `
 
@@ -551,7 +546,6 @@ func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoNa
 		&dbutil.NullTime{Time: &gr.CorruptedAt},
 		&rawLogs,
 		&dbutil.NullInt32{N: &poolRepoID},
-		&dbutil.NullString{S: &gr.LastSyncOutput},
 	)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "scanning GitserverRepo")
@@ -618,14 +612,33 @@ func (s *gitserverRepoStore) SetLastOutput(ctx context.Context, name api.RepoNam
 INSERT INTO gitserver_repos_sync_output(repo_id, last_output)
 SELECT id, %s FROM repo WHERE name = %s
 ON CONFLICT(repo_id)
-DO UPDATE SET last_output = %s, updated_at = NOW()
-`, ns, name, ns))
+DO UPDATE SET last_output = EXCLUDED.last_output, updated_at = NOW()
+`, ns, name))
 	if err != nil {
 		return errors.Wrap(err, "setting last output")
 	}
 
 	return nil
 }
+
+func (s *gitserverRepoStore) GetLastSyncOutput(ctx context.Context, name api.RepoName) (output string, ok bool, err error) {
+	q := sqlf.Sprintf(getLastSyncOutputQueryFmtstr, name)
+	output, ok, err = basestore.ScanFirstString(s.Query(ctx, q))
+	// We don't store NULLs in the db, so we need to map empty string to not ok as well.s
+	if output == "" {
+		ok = false
+	}
+	return output, ok, err
+}
+
+const getLastSyncOutputQueryFmtstr = `
+SELECT
+	last_output
+FROM
+	gitserver_repos_sync_output
+WHERE
+	repo_id = (SELECT id FROM repo WHERE name = %s)
+`
 
 func (s *gitserverRepoStore) SetRepoSize(ctx context.Context, name api.RepoName, size int64, shardID string) error {
 	err := s.Exec(ctx, sqlf.Sprintf(`

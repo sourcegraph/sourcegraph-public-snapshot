@@ -1,5 +1,5 @@
-import { Meta, Story } from '@storybook/react'
-import { AxisScale } from '@visx/axis/lib/types'
+import type { Meta, Story } from '@storybook/react'
+import type { AxisScale } from '@visx/axis/lib/types'
 import { ParentSize } from '@visx/responsive'
 import { scaleBand, scaleLinear, scaleTime } from '@visx/scale'
 import { timeFormat } from 'd3-time-format'

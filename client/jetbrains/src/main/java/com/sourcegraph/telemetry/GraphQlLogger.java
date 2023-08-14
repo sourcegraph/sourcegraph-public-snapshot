@@ -16,53 +16,55 @@ import org.jetbrains.annotations.Nullable;
 public class GraphQlLogger {
   private static final Logger logger = Logger.getInstance(GraphQlLogger.class);
 
-  public static void logInstallEvent(Project project, Consumer<Boolean> callback) {
-    String anonymousUserId = ConfigUtil.getAnonymousUserId();
-    JsonObject eventParameters = getEventParameters(project);
-    if (anonymousUserId != null) {
-      Event event =
-          new Event("CodyInstalled", anonymousUserId, "", eventParameters, eventParameters);
+  public static void logInstallEvent(
+      @NotNull Project project, @NotNull Consumer<Boolean> callback) {
+    if (ConfigUtil.getAnonymousUserId() != null) {
+      var event = createEvent(project, "CodyInstalled", new JsonObject());
       logEvent(project, event, (responseStatusCode) -> callback.accept(responseStatusCode == 200));
     }
   }
 
-  public static void logUninstallEvent(Project project) {
-    String anonymousUserId = ConfigUtil.getAnonymousUserId();
-    JsonObject eventParameters = getEventParameters(project);
-    if (anonymousUserId != null) {
-      Event event =
-          new Event("CodyUninstalled", anonymousUserId, "", eventParameters, eventParameters);
+  public static void logUninstallEvent(@NotNull Project project) {
+    if (ConfigUtil.getAnonymousUserId() != null) {
+      Event event = createEvent(project, "CodyUninstalled", new JsonObject());
       logEvent(project, event, null);
     }
   }
 
-  public static void logCodyEvents(
-      @NotNull Project project, @NotNull String componentName, String... actions) {
-    for (String action : actions) {
-      logCodyEvent(project, componentName, action);
-    }
+  public static void logAutocompleteSuggestedEvent(
+      @NotNull Project project, long latencyMs, long displayDurationMs) {
+    String eventName = "CodyJetBrainsPlugin:completion:suggested";
+    JsonObject eventParameters = new JsonObject();
+    eventParameters.addProperty("latency", latencyMs);
+    eventParameters.addProperty("displayDuration", displayDurationMs);
+    logEvent(project, createEvent(project, eventName, eventParameters), null);
   }
 
   public static void logCodyEvent(
       @NotNull Project project, @NotNull String componentName, @NotNull String action) {
-    String anonymousUserId = ConfigUtil.getAnonymousUserId();
-    String eventName = "CodyJetBrainsPlugin:" + componentName + ":" + action;
-    JsonObject eventParameters = getEventParameters(project);
-    Event event =
-        new Event(
-            eventName,
-            anonymousUserId != null ? anonymousUserId : "",
-            "",
-            eventParameters,
-            eventParameters);
-    logEvent(project, event, null);
+    var eventName = "CodyJetBrainsPlugin:" + componentName + ":" + action;
+    logEvent(project, createEvent(project, eventName, new JsonObject()), null);
   }
 
   @NotNull
-  private static JsonObject getEventParameters(@NotNull Project project) {
-    JsonObject eventParameters = new JsonObject();
-    eventParameters.addProperty("serverEndpoint", ConfigUtil.getSourcegraphUrl(project));
-    return eventParameters;
+  private static Event createEvent(
+      @NotNull Project project, @NotNull String eventName, @NotNull JsonObject eventParameters) {
+    var updatedEventParameters = addProjectSpecificEventParameters(eventParameters, project);
+    String anonymousUserId = ConfigUtil.getAnonymousUserId();
+    return new Event(
+        eventName,
+        anonymousUserId != null ? anonymousUserId : "",
+        "",
+        updatedEventParameters,
+        updatedEventParameters);
+  }
+
+  @NotNull
+  private static JsonObject addProjectSpecificEventParameters(
+      @NotNull JsonObject eventParameters, @NotNull Project project) {
+    var updatedEventParameters = eventParameters.deepCopy();
+    updatedEventParameters.addProperty("serverEndpoint", ConfigUtil.getSourcegraphUrl(project));
+    return updatedEventParameters;
   }
 
   private static void callGraphQlService(

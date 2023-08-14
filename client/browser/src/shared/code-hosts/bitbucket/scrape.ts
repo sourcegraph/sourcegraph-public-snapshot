@@ -2,8 +2,8 @@ import * as path from 'path'
 
 import { createAggregateError } from '@sourcegraph/common'
 
-import { DiffResolvedRevisionSpec } from '../../repo'
-import { FileInfo, DiffInfo } from '../shared/codeHost'
+import type { DiffResolvedRevisionSpec } from '../../repo'
+import type { FileInfo, DiffInfo } from '../shared/codeHost'
 
 export interface BitbucketRepoInfo {
     repoSlug: string
