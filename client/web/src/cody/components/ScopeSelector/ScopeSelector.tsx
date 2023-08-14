@@ -23,7 +23,6 @@ export interface ScopeSelectorProps {
     fetchRepositoryNames: (count: number) => Promise<string[]>
     isSourcegraphApp?: boolean
     className?: string
-    shouldShowRepoExamples?: boolean
     renderHint?: (repos: IRepo[]) => React.ReactNode
 }
 
@@ -35,7 +34,6 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     fetchRepositoryNames,
     isSourcegraphApp,
     className,
-    shouldShowRepoExamples,
     renderHint,
 }) {
     const [loadReposStatus, { data: newReposStatusData, previousData: previousReposStatusData }] = useLazyQuery<
@@ -125,7 +123,6 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
                         inferredRepository={inferredRepository}
                         inferredFilePath={activeEditor?.filePath || null}
                         additionalRepositories={additionalRepositories}
-                        shouldShowRepoExamples={shouldShowRepoExamples}
                         addRepository={addRepository}
                         resetScope={!isSourcegraphApp ? resetScope : null}
                         removeRepository={removeRepository}

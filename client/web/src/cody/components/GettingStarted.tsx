@@ -179,11 +179,7 @@ export const GettingStarted: React.FC<
                                     onChange={event => setConversationScope(event.target.value as CoversationScope)}
                                 />
                                 <div className={styles.scopeSelectorWrapper}>
-                                    <ScopeSelector
-                                        {...scopeSelectorProps}
-                                        shouldShowRepoExamples={true}
-                                        renderHint={renderRepoIndexingWarning}
-                                    />
+                                    <ScopeSelector {...scopeSelectorProps} renderHint={renderRepoIndexingWarning} />
                                 </div>
                                 <hr className={styles.divider} />
 
