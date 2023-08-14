@@ -16885,7 +16885,7 @@
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX lsif_indexes_dequeue_order_idx ON lsif_indexes USING btree ((enqueuer_user_id = 0), queued_at DESC, id)",
+          "IndexDefinition": "CREATE INDEX lsif_indexes_dequeue_order_idx ON lsif_indexes USING btree ((enqueuer_user_id = 0), queued_at DESC, id) WHERE state = 'queued'::text OR state = 'errored'::text",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },

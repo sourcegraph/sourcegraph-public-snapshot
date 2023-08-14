@@ -6107,7 +6107,7 @@ CREATE INDEX lsif_dependency_syncing_jobs_state ON lsif_dependency_syncing_jobs 
 
 CREATE INDEX lsif_indexes_commit_last_checked_at ON lsif_indexes USING btree (commit_last_checked_at) WHERE (state <> 'deleted'::text);
 
-CREATE INDEX lsif_indexes_dequeue_order_idx ON lsif_indexes USING btree (((enqueuer_user_id = 0)), queued_at DESC, id);
+CREATE INDEX lsif_indexes_dequeue_order_idx ON lsif_indexes USING btree (((enqueuer_user_id = 0)), queued_at DESC, id) WHERE ((state = 'queued'::text) OR (state = 'errored'::text));
 
 CREATE INDEX lsif_indexes_queued_at_id ON lsif_indexes USING btree (queued_at DESC, id);
 
