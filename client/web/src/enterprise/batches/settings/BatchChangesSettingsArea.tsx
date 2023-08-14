@@ -3,7 +3,7 @@ import React from 'react'
 import { PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
-import { UserAreaUserFields } from '../../../graphql-operations'
+import type { UserAreaUserFields } from '../../../graphql-operations'
 
 import { UserCodeHostConnections } from './CodeHostConnections'
 import { UserCommitSigningIntegrations } from './CommitSigningIntegrations'

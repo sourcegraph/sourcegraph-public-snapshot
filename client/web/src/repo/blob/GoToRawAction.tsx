@@ -2,12 +2,12 @@ import * as React from 'react'
 
 import { mdiFileDownloadOutline } from '@mdi/js'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { encodeRepoRevision, RepoSpec, RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { encodeRepoRevision, type RepoSpec, type RevisionSpec, type FileSpec } from '@sourcegraph/shared/src/util/url'
 import { Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
-import { RepoHeaderContext } from '../RepoHeader'
+import type { RepoHeaderContext } from '../RepoHeader'
 
 interface Props extends RepoSpec, Partial<RevisionSpec>, FileSpec, RepoHeaderContext, TelemetryProps {}
 

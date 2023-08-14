@@ -144,51 +144,6 @@ func TestHoist(t *testing.T) {
 	}
 }
 
-func TestSubstituteOrForRegexp(t *testing.T) {
-	cases := []struct {
-		input string
-		want  string
-	}{
-		{
-			input: "foo or bar",
-			want:  `"(?:foo)|(?:bar)"`,
-		},
-		{
-			input: "(foo or (bar or baz))",
-			want:  `"(?:foo)|(?:bar)|(?:baz)"`,
-		},
-		{
-			input: "repo:foobar foo or (bar or baz)",
-			want:  `(or "(?:bar)|(?:baz)" (and "repo:foobar" "foo"))`,
-		},
-		{
-			input: "(foo or (bar or baz)) and foobar",
-			want:  `(and "(?:foo)|(?:bar)|(?:baz)" "foobar")`,
-		},
-		{
-			input: "(foo or (bar and baz))",
-			want:  `(or "(?:foo)" (and "bar" "baz"))`,
-		},
-		{
-			input: "foo or (bar and baz) or foobar",
-			want:  `(or "(?:foo)|(?:foobar)" (and "bar" "baz"))`,
-		},
-		{
-			input: "repo:foo a or b",
-			want:  `(and "repo:foo" "(?:a)|(?:b)")`,
-		},
-	}
-	for _, c := range cases {
-		t.Run("Map query", func(t *testing.T) {
-			query, _ := Parse(c.input, SearchTypeRegex)
-			got := toString(substituteOrForRegexp(query))
-			if diff := cmp.Diff(c.want, got); diff != "" {
-				t.Fatal(diff)
-			}
-		})
-	}
-}
-
 func TestConcat(t *testing.T) {
 	test := func(input string, searchType SearchType) string {
 		query, _ := ParseSearchType(input, searchType)

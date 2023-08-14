@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/licensecheck"
@@ -60,6 +61,7 @@ func LoadConfig(additionalJobs map[string]workerjob.Job, registerEnterpriseMigra
 		"zoekt-repos-updater":       zoektrepos.NewUpdater(),
 		"outbound-webhook-sender":   outboundwebhooks.NewSender(),
 		"license-check":             licensecheck.NewJob(),
+		"cody-gateway-usage-check":  codygateway.NewUsageJob(),
 		"rate-limit-config":         ratelimit.NewRateLimitConfigJob(),
 	}
 

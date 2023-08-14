@@ -4,9 +4,9 @@ import { mdiChevronDown } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import * as uuid from 'uuid'
 
-import { ErrorLike } from '@sourcegraph/common'
+import type { ErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Link,
     Button,
@@ -21,8 +21,8 @@ import {
     Icon,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { CreateNotebookVariables } from '../../graphql-operations'
+import type { AuthenticatedUser } from '../../auth'
+import type { CreateNotebookVariables } from '../../graphql-operations'
 import { EnterprisePageRoutes } from '../../routes.constants'
 import { NotepadIcon } from '../../search/Notepad'
 import { blockToGQLInput } from '../serialize'

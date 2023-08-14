@@ -45,6 +45,7 @@ go_test(
         "//internal/batches/types",
         "//internal/conf",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/executor/types",
         "//internal/types",
         "//lib/batches",

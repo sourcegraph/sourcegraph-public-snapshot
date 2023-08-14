@@ -40,6 +40,7 @@ go_test(
         "//internal/api",
         "//internal/codeintel/resolvers",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/types",

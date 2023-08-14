@@ -6,9 +6,10 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeintelContext "github.com/sourcegraph/sourcegraph/internal/codeintel/context"
@@ -614,7 +615,11 @@ type erroringEmbeddingsClient struct {
 	err error
 }
 
-func (c *erroringEmbeddingsClient) GetEmbeddings(_ context.Context, texts []string) (*client.EmbeddingsResults, error) {
+func (c *erroringEmbeddingsClient) GetQueryEmbedding(_ context.Context, text string) (*client.EmbeddingsResults, error) {
+	return nil, c.err
+}
+
+func (c *erroringEmbeddingsClient) GetDocumentEmbeddings(_ context.Context, texts []string) (*client.EmbeddingsResults, error) {
 	return nil, c.err
 }
 
@@ -623,8 +628,12 @@ type misbehavingEmbeddingsClient struct {
 	returnedDimsPerInput int
 }
 
-func (c *misbehavingEmbeddingsClient) GetEmbeddings(_ context.Context, texts []string) (*client.EmbeddingsResults, error) {
-	return &client.EmbeddingsResults{Embeddings: make([]float32, len(texts)*c.returnedDimsPerInput), Dimensions: c.returnedDimsPerInput}, nil
+func (c *misbehavingEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) (*client.EmbeddingsResults, error) {
+	return &client.EmbeddingsResults{Embeddings: make([]float32, c.returnedDimsPerInput), Dimensions: c.returnedDimsPerInput}, nil
+}
+
+func (c *misbehavingEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context, documents []string) (*client.EmbeddingsResults, error) {
+	return &client.EmbeddingsResults{Embeddings: make([]float32, len(documents)*c.returnedDimsPerInput), Dimensions: c.returnedDimsPerInput}, nil
 }
 
 func NewMockEmbeddingsClient() client.EmbeddingsClient {
@@ -641,7 +650,15 @@ func (c *mockEmbeddingsClient) GetModelIdentifier() string {
 	return "mock/some-model"
 }
 
-func (c *mockEmbeddingsClient) GetEmbeddings(_ context.Context, texts []string) (*client.EmbeddingsResults, error) {
+func (c *mockEmbeddingsClient) GetQueryEmbedding(_ context.Context, query string) (*client.EmbeddingsResults, error) {
+	dimensions, err := c.GetDimensions()
+	if err != nil {
+		return nil, err
+	}
+	return &client.EmbeddingsResults{Embeddings: make([]float32, dimensions), Dimensions: dimensions}, nil
+}
+
+func (c *mockEmbeddingsClient) GetDocumentEmbeddings(_ context.Context, texts []string) (*client.EmbeddingsResults, error) {
 	dimensions, err := c.GetDimensions()
 	if err != nil {
 		return nil, err
@@ -655,7 +672,15 @@ type partialFailureEmbeddingsClient struct {
 	failedAttempts map[int]struct{}
 }
 
-func (c *partialFailureEmbeddingsClient) GetEmbeddings(_ context.Context, texts []string) (*client.EmbeddingsResults, error) {
+func (c *partialFailureEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) (*client.EmbeddingsResults, error) {
+	return c.getEmbeddings(ctx, []string{query})
+}
+
+func (c *partialFailureEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context, documents []string) (*client.EmbeddingsResults, error) {
+	return c.getEmbeddings(ctx, documents)
+}
+
+func (c *partialFailureEmbeddingsClient) getEmbeddings(_ context.Context, texts []string) (*client.EmbeddingsResults, error) {
 	dimensions, err := c.GetDimensions()
 	if err != nil {
 		return nil, err

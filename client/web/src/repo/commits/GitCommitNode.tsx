@@ -9,11 +9,11 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
 import { Button, ButtonGroup, ErrorAlert, Link, Icon, Code, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
 
-import { GitCommitFields, RepositoryType } from '../../graphql-operations'
+import { type GitCommitFields, RepositoryType } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 import { DiffModeSelector } from '../commit/DiffModeSelector'
-import { DiffMode } from '../commit/RepositoryCommitPage'
+import type { DiffMode } from '../commit/RepositoryCommitPage'
 import { Linkified } from '../linkifiy/Linkified'
 import { getCanonicalURL, getRefType, isPerforceChangelistMappingEnabled, isPerforceDepotSource } from '../utils'
 

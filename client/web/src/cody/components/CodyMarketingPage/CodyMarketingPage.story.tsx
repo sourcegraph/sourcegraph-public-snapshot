@@ -1,8 +1,8 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import { WebStory } from '../../../components/WebStory'
-import { SourcegraphContext } from '../../../jscontext'
+import type { SourcegraphContext } from '../../../jscontext'
 
 import { CodyMarketingPage } from './CodyMarketingPage'
 
@@ -15,6 +15,7 @@ export default config
 const context: Pick<SourcegraphContext, 'authProviders'> = {
     authProviders: [
         {
+            clientID: '000',
             serviceType: 'github',
             displayName: 'GitHub.com',
             isBuiltin: false,
@@ -22,6 +23,7 @@ const context: Pick<SourcegraphContext, 'authProviders'> = {
             serviceID: 'https://github.com',
         },
         {
+            clientID: '001',
             serviceType: 'gitlab',
             displayName: 'GitLab.com',
             isBuiltin: false,

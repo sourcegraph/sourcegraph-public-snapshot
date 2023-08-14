@@ -4,12 +4,12 @@ import { mdiCog, mdiAccount, mdiDelete, mdiPlus } from '@mdi/js'
 import { Subject } from 'rxjs'
 
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, Icon, H2, Text, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { OrganizationFields } from '../graphql-operations'
+import type { OrganizationFields } from '../graphql-operations'
 import { orgURL } from '../org'
 
 import { deleteOrganization, fetchAllOrganizations } from './backend'

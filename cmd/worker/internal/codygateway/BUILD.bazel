@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "codygateway",
+    srcs = ["usageworker.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/codygateway",
+    visibility = ["//cmd/worker:__subpackages__"],
+    deps = [
+        "//cmd/worker/job",
+        "//internal/codygateway",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/httpcli",
+        "//internal/observation",
+        "//internal/redispool",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

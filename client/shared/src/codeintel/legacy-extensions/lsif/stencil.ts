@@ -1,10 +1,10 @@
 import gql from 'tagged-template-noop'
 
-import * as sourcegraph from '../api'
+import type * as sourcegraph from '../api'
 import { cache } from '../util'
-import { QueryGraphQLFn, queryGraphQL as sgQueryGraphQL } from '../util/graphql'
+import { type QueryGraphQLFn, queryGraphQL as sgQueryGraphQL } from '../util/graphql'
 
-import { GenericLSIFResponse, queryLSIF } from './api'
+import { type GenericLSIFResponse, queryLSIF } from './api'
 
 export const stencil = async (
     uri: string,

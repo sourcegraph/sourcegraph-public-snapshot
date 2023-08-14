@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Button, ButtonProps, Modal } from '@sourcegraph/wildcard'
+import { Button, type ButtonProps, Modal } from '@sourcegraph/wildcard'
 
 export interface ConfirmationModalProps {
     showModal: boolean

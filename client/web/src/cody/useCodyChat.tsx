@@ -1,12 +1,16 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 
-import { Transcript, TranscriptJSON, TranscriptJSONScope } from '@sourcegraph/cody-shared/dist/chat/transcript'
+import {
+    Transcript,
+    type TranscriptJSON,
+    type TranscriptJSONScope,
+} from '@sourcegraph/cody-shared/dist/chat/transcript'
 import {
     useClient,
-    CodyClient,
-    CodyClientScope,
-    CodyClientConfig,
-    CodyClientEvent,
+    type CodyClient,
+    type CodyClientScope,
+    type CodyClientConfig,
+    type CodyClientEvent,
 } from '@sourcegraph/cody-shared/dist/chat/useClient'
 import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
 import { useLocalStorage } from '@sourcegraph/wildcard'
@@ -305,11 +309,16 @@ export const useCodyChat = ({
     )
 
     const initializeNewChat = useCallback((): Transcript | null => {
-        eventLogger.log(EventName.CODY_CHAT_INITIALIZED)
-        const transcript = initializeNewChatInternal()
+        const isNewChat = !transcript?.getLastInteraction()
+        if (isNewChat) {
+            return null
+        }
 
-        if (transcript) {
-            pushTranscriptToHistory(transcript).catch(() => null)
+        eventLogger.log(EventName.CODY_CHAT_INITIALIZED)
+        const newTranscript = initializeNewChatInternal()
+
+        if (newTranscript) {
+            pushTranscriptToHistory(newTranscript).catch(() => null)
 
             if (autoLoadScopeWithRepositories) {
                 fetchRepositoryNames(10)
@@ -321,13 +330,13 @@ export const useCodyChat = ({
                             editor: scope.editor,
                         }
                         setScopeInternal(updatedScope)
-                        updateTranscriptInHistory(transcript, updatedScope).catch(() => null)
+                        updateTranscriptInHistory(newTranscript, updatedScope).catch(() => null)
                     })
                     .catch(() => null)
             }
         }
 
-        return transcript
+        return newTranscript
     }, [
         initializeNewChatInternal,
         pushTranscriptToHistory,
@@ -336,6 +345,7 @@ export const useCodyChat = ({
         setScopeInternal,
         autoLoadScopeWithRepositories,
         updateTranscriptInHistory,
+        transcript,
     ])
 
     const executeRecipe = useCallback<typeof executeRecipeInternal>(

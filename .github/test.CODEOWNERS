@@ -85,7 +85,7 @@
 
 /docker-images/prometheus/**/* @bobheadxi
 
-/enterprise/cmd/executor/**/* @efritz
+/cmd/executor/**/* @efritz
 
 /enterprise/cmd/frontend/internal/auth/**/* @unknwon
 

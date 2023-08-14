@@ -6,17 +6,17 @@ import { useLocation } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
-import { UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../graphql-operations'
-import { AuthProvider, SourcegraphContext } from '../jscontext'
+import type { UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../graphql-operations'
+import type { AuthProvider, SourcegraphContext } from '../jscontext'
 import { USER_AREA_USER_PROFILE } from '../user/area/UserArea'
 
 import { ExternalsAuth } from './components/ExternalsAuth'
 import { FeatureList } from './components/FeatureList'
-import { SignUpArguments, SignUpForm } from './SignUpForm'
+import { type SignUpArguments, SignUpForm } from './SignUpForm'
 
 import styles from './CloudSignUpPage.module.scss'
 

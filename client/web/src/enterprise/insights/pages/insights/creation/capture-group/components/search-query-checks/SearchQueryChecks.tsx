@@ -1,4 +1,4 @@
-import { FC, PropsWithChildren } from 'react'
+import type { FC, PropsWithChildren } from 'react'
 
 import { mdiClose, mdiRadioboxBlank } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'

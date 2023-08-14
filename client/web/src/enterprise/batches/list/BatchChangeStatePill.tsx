@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { Badge, Icon } from '@sourcegraph/wildcard'
 
-import { BatchChangeState, BatchSpecState, Scalars } from '../../../graphql-operations'
+import { BatchChangeState, BatchSpecState, type Scalars } from '../../../graphql-operations'
 
 import styles from './BatchChangeStatePill.module.scss'
 

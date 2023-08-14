@@ -1,4 +1,4 @@
-import { FC, PropsWithChildren, useCallback, useEffect, useMemo, useRef } from 'react'
+import { type FC, type PropsWithChildren, useCallback, useEffect, useMemo, useRef } from 'react'
 
 import { Prec } from '@codemirror/state'
 

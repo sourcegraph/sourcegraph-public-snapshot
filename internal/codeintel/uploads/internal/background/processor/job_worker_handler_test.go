@@ -22,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -422,8 +422,8 @@ func setupRepoMocks(t *testing.T) {
 	}
 }
 
-func defaultMockRepoStore() *database.MockRepoStore {
-	repoStore := database.NewMockRepoStore()
+func defaultMockRepoStore() *dbmocks.MockRepoStore {
+	repoStore := dbmocks.NewMockRepoStore()
 	repoStore.GetFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (*internaltypes.Repo, error) {
 		return &internaltypes.Repo{
 			ID:   id,

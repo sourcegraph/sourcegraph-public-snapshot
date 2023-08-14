@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 
-import { ErrorLike } from '@sourcegraph/common'
+import type { ErrorLike } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import {
     Container,
@@ -17,10 +17,10 @@ import {
     Form,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
 import { PageTitle } from '../../../components/PageTitle'
-import {
+import type {
     CreatePasswordResult,
     CreatePasswordVariables,
     UpdatePasswordResult,
@@ -29,7 +29,7 @@ import {
     UserExternalAccountFields,
     UserExternalAccountsWithAccountDataVariables,
 } from '../../../graphql-operations'
-import { AuthProvider, SourcegraphContext } from '../../../jscontext'
+import type { AuthProvider, SourcegraphContext } from '../../../jscontext'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { getPasswordRequirements } from '../../../util/security'
 import { CREATE_PASSWORD, USER_EXTERNAL_ACCOUNTS, UPDATE_PASSWORD } from '../backend'

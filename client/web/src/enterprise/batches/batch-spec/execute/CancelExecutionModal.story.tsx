@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { Text } from '@sourcegraph/wildcard'

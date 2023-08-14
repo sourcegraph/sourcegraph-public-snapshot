@@ -4,7 +4,7 @@ import addDays from 'date-fns/addDays'
 import endOfDay from 'date-fns/endOfDay'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import {
     Alert,
     Button,
@@ -20,7 +20,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
-import {
+import type {
     GenerateProductLicenseForSubscriptionResult,
     GenerateProductLicenseForSubscriptionVariables,
     ProductLicenseFields,

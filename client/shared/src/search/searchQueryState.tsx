@@ -1,11 +1,11 @@
 import React, { createContext, useContext } from 'react'
 
-import { StoreApi, UseBoundStore } from 'zustand'
+import type { StoreApi, UseBoundStore } from 'zustand'
 
-import { SearchPatternType } from '../graphql-operations'
+import type { SearchPatternType } from '../graphql-operations'
 
-import { QueryState, SubmitSearchParameters, toggleSubquery } from './helpers'
-import { FilterType } from './query/filters'
+import { type QueryState, type SubmitSearchParameters, toggleSubquery } from './helpers'
+import type { FilterType } from './query/filters'
 import { appendFilter, updateFilter } from './query/transformer'
 import { filterExists } from './query/validate'
 

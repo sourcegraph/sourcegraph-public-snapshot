@@ -1,11 +1,11 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../backend/graphql'
-import {
+import type {
     CreateCodeMonitorResult,
     CreateCodeMonitorVariables,
     DeleteCodeMonitorResult,

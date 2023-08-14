@@ -12,5 +12,5 @@ export {
 } from '@sourcegraph/common/src/util/url'
 export { pluralize, numberWithCommas } from '@sourcegraph/common/src/util/strings'
 export { renderMarkdown } from '@sourcegraph/common/src/util/markdown/markdown'
-export { highlightNodeMultiline } from '@sourcegraph/common/src/util/highlightNode'
+export { highlightNodeMultiline, highlightNode } from '@sourcegraph/common/src/util/highlightNode'
 export { logger } from '@sourcegraph/common/src/util/logger'

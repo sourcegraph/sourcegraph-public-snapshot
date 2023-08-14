@@ -1,5 +1,5 @@
 import { MockedProvider } from '@apollo/client/testing'
-import { render, RenderResult } from '@testing-library/react'
+import { render, type RenderResult } from '@testing-library/react'
 import { spy } from 'sinon'
 
 import { waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'

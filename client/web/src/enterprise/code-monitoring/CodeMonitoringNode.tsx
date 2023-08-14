@@ -1,14 +1,14 @@
 import React, { useState, useCallback, useMemo } from 'react'
 
-import * as H from 'history'
-import { Observable, concat, of } from 'rxjs'
+import type * as H from 'history'
+import { type Observable, concat, of } from 'rxjs'
 import { switchMap, catchError, startWith, takeUntil, tap, delay } from 'rxjs/operators'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { type ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
 import { Button, LoadingSpinner, useEventObservable, Link, Alert } from '@sourcegraph/wildcard'
 
-import { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
+import type { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
 
 import { toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled } from './backend'
 

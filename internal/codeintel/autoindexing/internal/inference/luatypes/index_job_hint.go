@@ -8,24 +8,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// IndexJobHintsFromTable decodes a single index job hint or slice of index job hints from
-// the given Lua value.
-func IndexJobHintsFromTable(value lua.LValue) (indexJobHints []config.IndexJobHint, err error) {
-	err = util.UnwrapSliceOrSingleton(value, func(value lua.LValue) error {
-		jobHint, err := indexJobHintFromTable(value)
-		if err != nil {
-			return err
-		}
-
-		indexJobHints = append(indexJobHints, jobHint)
-		return nil
-	})
-
-	return
-}
-
-// indexJobHintFromTable decodes a single Lua table value into an index job hint instance.
-func indexJobHintFromTable(value lua.LValue) (config.IndexJobHint, error) {
+// IndexJobHintFromTable decodes a single Lua table value into an index job hint instance.
+func IndexJobHintFromTable(value lua.LValue) (config.IndexJobHint, error) {
 	table, ok := value.(*lua.LTable)
 	if !ok {
 		return config.IndexJobHint{}, util.NewTypeError("table", value)

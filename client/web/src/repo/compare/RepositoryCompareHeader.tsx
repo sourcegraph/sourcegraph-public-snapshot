@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { PageHeader, Link, Icon } from '@sourcegraph/wildcard'
 
-import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
+import type { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { RepositoryComparePopover } from './RepositoryComparePopover'
 
 import styles from './RepositoryCompareHeader.module.scss'

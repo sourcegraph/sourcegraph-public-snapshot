@@ -4,14 +4,14 @@ import { mdiClose, mdiEmailOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, H2, H4, Icon, Link, Text } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import { ExternalsAuth } from '../../../auth/components/ExternalsAuth'
 import { MarketingBlock } from '../../../components/MarketingBlock'
-import { AuthProvider, SourcegraphContext } from '../../../jscontext'
+import type { AuthProvider, SourcegraphContext } from '../../../jscontext'
 import { EventName } from '../../../util/constants'
 
 import { GlowingCodySVG, MeetCodySVG } from './WidgetIcons'

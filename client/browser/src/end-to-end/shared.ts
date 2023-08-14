@@ -1,9 +1,9 @@
 import assert from 'assert'
 
 import expect from 'expect'
-import puppeteer from 'puppeteer'
+import type puppeteer from 'puppeteer'
 
-import { Driver } from '@sourcegraph/shared/src/testing/driver'
+import type { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
 /**

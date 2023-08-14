@@ -3,15 +3,15 @@ import React, { useCallback, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import { useNavigate } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { Container, Button, useEventObservable, Alert, Link, Select, Input, Form } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
-import { CodeMonitorFields } from '../../../graphql-operations'
+import type { AuthenticatedUser } from '../../../auth'
+import type { CodeMonitorFields } from '../../../graphql-operations'
 import { deleteCodeMonitor as _deleteCodeMonitor } from '../backend'
 
 import { DeleteMonitorModal } from './DeleteMonitorModal'

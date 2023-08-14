@@ -1,15 +1,15 @@
-import { FunctionComponent, useRef, useState } from 'react'
+import { type FunctionComponent, useRef, useState } from 'react'
 
 import { mdiLinkVariant } from '@mdi/js'
 import { escapeRegExp } from 'lodash'
 import { useNavigate } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { DownloadFileButton } from '../../../../../components/DownloadFileButton'
 import { ConfirmDeleteModal } from '../../../../../components/modals/ConfirmDeleteModal'
-import { Insight, isLangStatsInsight } from '../../../../../core'
+import { type Insight, isLangStatsInsight } from '../../../../../core'
 import { useCopyURLHandler } from '../../../../../hooks/use-copy-url-handler'
 
 import styles from './CodeInsightIndependentPageActions.module.scss'

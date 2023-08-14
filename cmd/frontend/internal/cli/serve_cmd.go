@@ -265,7 +265,7 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 	}
 
 	// Create the external HTTP handler.
-	externalHandler := newExternalHTTPHandler(
+	externalHandler, err := newExternalHTTPHandler(
 		db,
 		schema,
 		rateLimiter,
@@ -294,6 +294,9 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppSetupHandler,
 	)
+	if err != nil {
+		return nil, errors.Errorf("create external HTTP handler: %v", err)
+	}
 	httpServer := &http.Server{
 		Handler:      externalHandler,
 		ReadTimeout:  75 * time.Second,

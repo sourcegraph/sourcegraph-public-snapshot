@@ -11,26 +11,26 @@ import { Card, Text, Alert, PageSwitcher, Link, Select, Button, Badge, Tooltip }
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import {
-    RejectAccessRequestResult,
-    RejectAccessRequestVariables,
-    ApproveAccessRequestResult,
-    ApproveAccessRequestVariables,
-    DoesUsernameExistResult,
-    DoesUsernameExistVariables,
-    AccessRequestCreateUserResult,
-    AccessRequestCreateUserVariables,
-    HasLicenseSeatsResult,
-    HasLicenseSeatsVariables,
+    type RejectAccessRequestResult,
+    type RejectAccessRequestVariables,
+    type ApproveAccessRequestResult,
+    type ApproveAccessRequestVariables,
+    type DoesUsernameExistResult,
+    type DoesUsernameExistVariables,
+    type AccessRequestCreateUserResult,
+    type AccessRequestCreateUserVariables,
+    type HasLicenseSeatsResult,
+    type HasLicenseSeatsVariables,
     AccessRequestStatus,
-    AccessRequestNode,
-    GetAccessRequestsVariables,
-    GetAccessRequestsResult,
+    type AccessRequestNode,
+    type GetAccessRequestsVariables,
+    type GetAccessRequestsResult,
 } from '../../graphql-operations'
 import { useURLSyncedString } from '../../hooks/useUrlSyncedString'
 import { eventLogger } from '../../tracking/eventLogger'
 import { AccountCreatedAlert } from '../components/AccountCreatedAlert'
 import { SiteAdminPageTitle } from '../components/SiteAdminPageTitle'
-import { IColumn, Table } from '../UserManagement/components/Table'
+import { type IColumn, Table } from '../UserManagement/components/Table'
 
 import {
     APPROVE_ACCESS_REQUEST,

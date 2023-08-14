@@ -4,7 +4,7 @@
   - [Enabling Cody for Sourcegraph Enterprise](enabling_cody_enterprise.md)
   - [Installing the Cody App](../../app/index.md)
   - [Enabling Cody with Sourcegraph.com](enabling_cody.md)
--  Configuration
+- Configuration
   - [Configuring code graph context](code_graph_context.md)
   - [Generating Index to Enable Codebase-Aware Answers](indexing.md)
   - [Embeddings Policies](policies.md)

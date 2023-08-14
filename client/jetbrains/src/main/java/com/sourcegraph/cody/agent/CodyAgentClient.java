@@ -1,8 +1,10 @@
 package com.sourcegraph.cody.agent;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.sourcegraph.cody.agent.protocol.ChatMessage;
+import com.sourcegraph.cody.agent.protocol.DebugMessage;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -13,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings("unused")
 public class CodyAgentClient {
 
+  private static final Logger logger = Logger.getInstance(CodyAgentClient.class);
   @Nullable public CodyAgentServer server;
   @Nullable public CodyAgentDocuments documents;
   // Callback that is invoked when the agent sends a "chat/updateMessageInProgress" notification.
@@ -48,5 +51,10 @@ public class CodyAgentClient {
       ApplicationManager.getApplication()
           .invokeLater(() -> onChatUpdateMessageInProgress.accept(params));
     }
+  }
+
+  @JsonNotification("debug/message")
+  public void debugMessage(DebugMessage msg) {
+    logger.warn(String.format("%s: %s", msg.channel, msg.message));
   }
 }

@@ -1,20 +1,20 @@
-import { ApolloClient, ApolloError } from '@apollo/client'
+import type { ApolloClient, ApolloError } from '@apollo/client'
 import { groupBy } from 'lodash'
 
 import { isDefined } from '@sourcegraph/common'
 import { dataOrThrowErrors, getDocumentNode, gql } from '@sourcegraph/http-client'
 
-import { Connection } from '../../../../../../../components/FilteredConnection'
+import type { Connection } from '../../../../../../../components/FilteredConnection'
 import { useShowMorePagination } from '../../../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
-    AssignableInsight,
-    DashboardInsights,
-    FindInsightsBySearchTermResult,
-    FindInsightsBySearchTermVariables,
+    type AssignableInsight,
+    type DashboardInsights,
+    type FindInsightsBySearchTermResult,
+    type FindInsightsBySearchTermVariables,
     GroupByField,
 } from '../../../../../../../graphql-operations'
 
-import { DashboardInsight, InsightSuggestion, InsightType } from './types'
+import { type DashboardInsight, type InsightSuggestion, InsightType } from './types'
 
 const SYNC_DASHBOARD_INSIGHTS = gql`
     fragment DashboardInsights on InsightsDashboard {

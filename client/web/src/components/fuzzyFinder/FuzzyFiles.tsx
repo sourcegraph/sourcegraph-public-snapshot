@@ -1,24 +1,24 @@
-import { ApolloClient } from '@apollo/client'
+import type { ApolloClient } from '@apollo/client'
 import { mdiFileDocumentOutline } from '@mdi/js'
 
 import { getDocumentNode, gql } from '@sourcegraph/http-client'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
-import { FuzzySearchTransformer, createUrlFunction } from '../../fuzzyFinder/FuzzySearch'
-import { SearchValue } from '../../fuzzyFinder/SearchValue'
-import {
+import type { FuzzySearchTransformer, createUrlFunction } from '../../fuzzyFinder/FuzzySearch'
+import type { SearchValue } from '../../fuzzyFinder/SearchValue'
+import type {
     FileNamesResult,
     FileNamesVariables,
     FuzzyFinderFilesResult,
     FuzzyFinderFilesVariables,
 } from '../../graphql-operations'
-import { UserHistory } from '../useUserHistory'
+import type { UserHistory } from '../useUserHistory'
 
-import { FuzzyFSM, newFuzzyFSMFromValues } from './FuzzyFsm'
-import { emptyFuzzyCache, PersistableQueryResult } from './FuzzyLocalCache'
+import { type FuzzyFSM, newFuzzyFSMFromValues } from './FuzzyFsm'
+import { emptyFuzzyCache, type PersistableQueryResult } from './FuzzyLocalCache'
 import { FuzzyQuery } from './FuzzyQuery'
-import { FuzzyRepoRevision, fuzzyRepoRevisionSearchFilter } from './FuzzyRepoRevision'
+import { type FuzzyRepoRevision, fuzzyRepoRevisionSearchFilter } from './FuzzyRepoRevision'
 
 export const FUZZY_GIT_LSFILES_QUERY = gql`
     query FileNames($repository: String!, $commit: String!) {

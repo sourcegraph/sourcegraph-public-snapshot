@@ -1,4 +1,4 @@
-import { InsightDataNode, SeriesSortDirection, SeriesSortMode } from '../../../../../graphql-operations'
+import type { InsightDataNode, SeriesSortDirection, SeriesSortMode } from '../../../../../graphql-operations'
 
 export interface BaseInsight {
     id: string

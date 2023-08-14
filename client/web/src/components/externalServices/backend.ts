@@ -1,15 +1,15 @@
-import { Dispatch, SetStateAction } from 'react'
+import type { Dispatch, SetStateAction } from 'react'
 
-import { QueryTuple, MutationTuple, QueryResult } from '@apollo/client'
+import type { QueryTuple, MutationTuple, QueryResult } from '@apollo/client'
 import { parse } from 'jsonc-parser'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors, useMutation, useLazyQuery, useQuery } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../backend/graphql'
-import {
+import type {
     UpdateExternalServiceResult,
     UpdateExternalServiceVariables,
     Scalars,
@@ -33,7 +33,10 @@ import {
     ExternalServiceResult,
     ExternalServiceVariables,
 } from '../../graphql-operations'
-import { useShowMorePagination, UseShowMorePaginationResult } from '../FilteredConnection/hooks/useShowMorePagination'
+import {
+    useShowMorePagination,
+    type UseShowMorePaginationResult,
+} from '../FilteredConnection/hooks/useShowMorePagination'
 
 export const externalServiceFragment = gql`
     fragment ExternalServiceFields on ExternalService {

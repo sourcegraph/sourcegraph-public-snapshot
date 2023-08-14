@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 import { spy } from 'sinon'
 
 import { H2 } from '@sourcegraph/wildcard'

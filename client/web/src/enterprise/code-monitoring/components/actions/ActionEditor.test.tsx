@@ -4,7 +4,7 @@ import sinon from 'sinon'
 
 import { assertAriaDisabled } from '@sourcegraph/testing'
 
-import { ActionEditor, ActionEditorProps } from './ActionEditor'
+import { ActionEditor, type ActionEditorProps } from './ActionEditor'
 
 describe('ActionEditor', () => {
     const props: ActionEditorProps = {

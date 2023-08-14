@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Alert } from '@sourcegraph/wildcard'
 
-import { BatchChangeFields } from '../../../graphql-operations'
+import type { BatchChangeFields } from '../../../graphql-operations'
 
 interface ClosedNoticeProps {
     closedAt: BatchChangeFields['closedAt']

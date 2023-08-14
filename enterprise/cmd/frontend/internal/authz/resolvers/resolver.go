@@ -604,6 +604,7 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 		perms:        authz.Read,
 		syncedAt:     syncedAt,
 		updatedAt:    updatedAt,
+		source:       nil,
 		unrestricted: unrestricted,
 	}, nil
 }
@@ -631,31 +632,21 @@ func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (grap
 
 	// get max updated_at time from the permissions
 	updatedAt := time.Time{}
+	var source string
+
 	for _, p := range perms {
 		if p.UpdatedAt.After(updatedAt) {
 			updatedAt = p.UpdatedAt
+			source = p.Source.ToGraphQL()
 		}
-	}
-
-	// get sync time from the sync jobs table
-	latestSyncJob, err := r.db.PermissionSyncJobs().GetLatestFinishedSyncJob(ctx, database.ListPermissionSyncJobOpts{
-		UserID:      int(userID),
-		NotCanceled: true,
-	})
-	if err != nil {
-		return nil, err
-	}
-	syncedAt := time.Time{}
-	if latestSyncJob != nil {
-		syncedAt = latestSyncJob.FinishedAt
 	}
 
 	return &permissionsInfoResolver{
 		db:        r.db,
 		userID:    userID,
 		perms:     authz.Read,
-		syncedAt:  syncedAt,
 		updatedAt: updatedAt,
+		source:    &source,
 	}, nil
 }
 

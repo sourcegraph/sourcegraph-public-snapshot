@@ -6,10 +6,10 @@ import classNames from 'classnames'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { SearchPatternType } from '../../../graphql-operations'
-import { WebviewPageProps } from '../../platform/context'
+import type { SearchPatternType } from '../../../graphql-operations'
+import type { WebviewPageProps } from '../../platform/context'
 
-import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
+import { ButtonDropdownCta, type ButtonDropdownCtaProps } from './ButtonDropdownCta'
 import { BookmarkRadialGradientIcon, CodeMonitoringLogo } from './icons'
 
 import styles from './SearchResultsInfoBar.module.scss'

@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.agent;
 
 import com.sourcegraph.cody.agent.protocol.*;
+import com.sourcegraph.cody.autocomplete.prompt_library.InlineAutoCompleteList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;
@@ -27,6 +28,9 @@ public interface CodyAgentServer {
   @JsonRequest("recipes/execute")
   CompletableFuture<Void> recipesExecute(ExecuteRecipeParams params);
 
+  @JsonRequest("autocomplete/execute")
+  CompletableFuture<InlineAutoCompleteList> autocompleteExecute(AutocompleteExecuteParams params);
+
   // Notifications
   @JsonNotification("initialized")
   void initialized();
@@ -48,4 +52,7 @@ public interface CodyAgentServer {
 
   @JsonNotification("textDocument/didClose")
   void textDocumentDidClose(TextDocument document);
+
+  @JsonNotification("debug/message")
+  void debugMessage(DebugMessage message);
 }

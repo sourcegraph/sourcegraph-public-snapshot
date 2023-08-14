@@ -1,15 +1,15 @@
-import { FC, ReactNode } from 'react'
+import type { FC, ReactNode } from 'react'
 
 import classNames from 'classnames'
 
-import { Button, useFieldAPI } from '@sourcegraph/wildcard'
+import { Button, type useFieldAPI } from '@sourcegraph/wildcard'
 
 import { useUiFeatures } from '../../../hooks'
 import { LimitedAccessLabel } from '../../index'
 
 import { FormSeriesInput } from './components/form-series-input/FormSeriesInput'
 import { SeriesCard } from './components/series-card/SeriesCard'
-import { EditableDataSeries } from './types'
+import type { EditableDataSeries } from './types'
 import { useEditableSeries } from './use-editable-series'
 
 import styles from './FormSeries.module.scss'

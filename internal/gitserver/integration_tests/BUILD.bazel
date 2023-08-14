@@ -12,7 +12,7 @@ go_library(
     deps = [
         "//cmd/gitserver/server",
         "//internal/api",
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/extsvc",
         "//internal/gitserver",
         "//internal/gitserver/v1:gitserver",
@@ -46,7 +46,7 @@ go_test(
         "//internal/authz",
         "//internal/authz/subrepoperms",
         "//internal/conf",
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//schema",
