@@ -15,7 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
@@ -87,7 +87,7 @@ cindy <cindy@example.com> (Cindy) accessed 2020/12/04
 
 func TestProvider_FetchUserPerms(t *testing.T) {
 	ctx := context.Background()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 
 	t.Run("nil account", func(t *testing.T) {
 		logger := logtest.Scoped(t)
@@ -343,7 +343,7 @@ read user alice * -//Sourcegraph/Security/...
 func TestProvider_FetchRepoPerms(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 
 	t.Run("nil repository", func(t *testing.T) {
 		p := NewProvider(logger, gitserver.NewClient(db), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{})
@@ -442,7 +442,7 @@ Users:
 }
 
 func NewTestProvider(logger log.Logger, urn, host, user, password string, execer p4Execer) *Provider {
-	p := NewProvider(logger, gitserver.NewClient(database.NewMockDB()), urn, host, user, password, []extsvc.RepoID{})
+	p := NewProvider(logger, gitserver.NewClient(dbmocks.NewMockDB()), urn, host, user, password, []extsvc.RepoID{})
 	p.p4Execer = execer
 	return p
 }

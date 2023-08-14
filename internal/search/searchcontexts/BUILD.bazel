@@ -39,6 +39,7 @@ go_test(
         "//cmd/frontend/envvar",
         "//internal/actor",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/types",
         "//lib/errors",
