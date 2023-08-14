@@ -36,6 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/siteid"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
@@ -188,13 +189,20 @@ func (r *siteResolver) SMTPConfigured(ctx context.Context) (bool, error) {
 
 	cfg := conf.SiteConfig()
 	hasSMTP := cfg.EmailSmtp != nil
-	hasSMTPAuth := cfg.EmailSmtp != nil && cfg.EmailSmtp.Authentication != "none"
-	if hasSMTP && cfg.EmailAddress == "" {
+	if !hasSMTP || cfg.EmailAddress == "" {
 		return false, nil
 	}
-	if hasSMTPAuth && (cfg.EmailSmtp.Username == "" && cfg.EmailSmtp.Password == "") {
+
+	hasSMTPAuth := hasSMTP && cfg.EmailSmtp.Authentication != "none"
+	if !hasSMTPAuth || (cfg.EmailSmtp.Username == "" || cfg.EmailSmtp.Password == "") {
 		return false, nil
 	}
+
+	client, err := txemail.CreateSMTPClient(cfg)
+	if err != nil {
+		return false, nil
+	}
+	defer func() { _ = client.Quit() }()
 
 	return true, nil
 }

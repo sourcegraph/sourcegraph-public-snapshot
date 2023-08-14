@@ -28,8 +28,20 @@ interface FormData extends SMTPServerConfig {
     [key: string]: any
 }
 
+const initialConfig: FormData = {
+    email: '',
+    senderName: '',
+    host: '',
+    username: '',
+    password: '',
+    authentication: 'PLAIN',
+    domain: '',
+    port: 587,
+    noVerifyTLS: false,
+}
+
 export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser, saveConfig, error, loading }) => {
-    const [form, setForm] = useState<FormData>({} as FormData)
+    const [form, setForm] = useState<FormData>({ ...initialConfig })
 
     const [parsedConfig, err] = useMemo((): [FormData | null, Error | null] => {
         if (!config) {
@@ -47,14 +59,17 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
         }
 
         const result = {
-            email: siteConfig['email.address'],
-            senderName: siteConfig['email.senderName'],
+            email: siteConfig['email.address'] ?? '',
+            senderName: siteConfig['email.senderName'] ?? '',
             ...siteConfig['email.smtp'],
             noVerifyTLS: !!siteConfig['email.smtp']?.noVerifyTLS,
             authentication: siteConfig['email.smtp']?.authentication ?? 'PLAIN',
         } as FormData
 
-        setForm(result)
+        setForm({
+            ...initialConfig,
+            ...result,
+        })
 
         return [result, null]
     }, [config])
@@ -86,23 +101,30 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
             if (name === 'noVerifyTLS') {
                 newValue.noVerifyTLS = !(e.target as HTMLInputElement).checked
             }
-            if (name === 'authentication' && value === 'none') {
-                delete newValue.username
-                delete newValue.password
-            }
-            if (value === '') {
-                delete newValue[name]
-            }
             setForm(newValue)
         },
         [form, setForm]
     )
 
     const applyChanges = useCallback(() => {
-        let newConfig = applyEdits(config!, modify(config!, ['email.address'], form.email, defaultModificationOptions))
+        const normalizedConfig = { ...form } as FormData
+        if (normalizedConfig.authentication === 'none') {
+            delete normalizedConfig.username
+            delete normalizedConfig.password
+        }
+        for (const [key, val] of Object.entries(normalizedConfig)) {
+            if (val === '' || val === undefined) {
+                delete normalizedConfig[key]
+            }
+        }
+
+        let newConfig = applyEdits(
+            config!,
+            modify(config!, ['email.address'], normalizedConfig.email, defaultModificationOptions)
+        )
         newConfig = applyEdits(
             newConfig,
-            modify(newConfig!, ['email.senderName'], form.senderName, defaultModificationOptions)
+            modify(newConfig!, ['email.senderName'], normalizedConfig.senderName, defaultModificationOptions)
         )
         newConfig = applyEdits(
             newConfig,
@@ -110,13 +132,13 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
                 newConfig!,
                 ['email.smtp'],
                 {
-                    host: form.host,
-                    port: Number(form.port),
-                    authentication: form.authentication,
-                    username: form.username,
-                    password: form.password,
-                    noVerifyTLS: form.noVerifyTLS,
-                    domain: form.domain,
+                    host: normalizedConfig.host,
+                    port: normalizedConfig.port,
+                    authentication: normalizedConfig.authentication,
+                    username: normalizedConfig.username,
+                    password: normalizedConfig.password,
+                    noVerifyTLS: normalizedConfig.noVerifyTLS,
+                    domain: normalizedConfig.domain,
                 },
                 defaultModificationOptions
             )
@@ -126,7 +148,10 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
     }, [form, config, parsedConfig])
 
     const reset = useCallback(() => {
-        setForm(parsedConfig ?? ({} as FormData))
+        setForm({
+            ...initialConfig,
+            ...parsedConfig,
+        })
     }, [parsedConfig])
 
     const handleSubmit = useCallback(
