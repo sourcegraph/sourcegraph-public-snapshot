@@ -17,8 +17,8 @@ import { LimitedAccessBanner } from '../LimitedAccessBanner'
 import { PageTitle } from '../PageTitle'
 
 import { AddExternalServicePage } from './AddExternalServicePage'
-import { ExternalServiceGroup, AddExternalServiceOptionsWithID } from './ExternalServiceGroup'
-import { allExternalServices, AddExternalServiceOptions, gitHubAppConfig } from './externalServices'
+import { ExternalServiceGroup, type AddExternalServiceOptionsWithID } from './ExternalServiceGroup'
+import { allExternalServices, type AddExternalServiceOptions, gitHubAppConfig } from './externalServices'
 
 export interface AddExternalServicesPageProps extends TelemetryProps {
     /**
