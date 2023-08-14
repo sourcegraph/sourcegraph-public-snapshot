@@ -4,7 +4,7 @@
 
 Sourcegraph Cody Gateway powers the default `"provider": "sourcegraph"` Cody completions and embeddings for Sourcegraph Enterprise customers.
 It supports a variety of upstream LLM providers, such as [Anthropic](https://www.anthropic.com/) and [OpenAI](https://openai.com/), with rate limits, quotas, and model availability tied to your Sourcegraph Enterprise product subscription.
-[Sourcegraph App users](../../app/overview/index.md) with Sourcegraph.com accounts will also be able to use Sourcegraph Cody Gateway.
+[Sourcegraph App users](../../overview/app/index.md) with Sourcegraph.com accounts will also be able to use Sourcegraph Cody Gateway.
 
 Reach out your account manager for more details about Sourcegraph Cody Gateway access available to you and how you can gain access to higher rate limits, quotas, and/or model options.
 
@@ -62,7 +62,7 @@ Refer to [Cody documentation](../overview/index.md) to learn more about Cody con
 Rate limits, quotas, and model availability is tied to one of:
 
 - your Sourcegraph Enterprise product subscription, for Sourcegraph Enterprise instances
-- your Sourcegraph.com account, for [Sourcegraph App users](../../app/overview/index.md)
+- your Sourcegraph.com account, for [Sourcegraph App users](../../overview/app/index.md)
 
 All successful requests to Cody Gateway will count towards your rate limits.
 Unsuccesful requests are not counted as usage.
