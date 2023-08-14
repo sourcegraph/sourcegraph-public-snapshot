@@ -30,7 +30,9 @@ import { CodyPageIcon } from '../../chat/CodyPageIcon'
 import { isCodyEnabled, isEmailVerificationNeededForCody, isSignInRequiredForCody } from '../../isCodyEnabled'
 import { useCodySidebar } from '../../sidebar/Provider'
 import type { CodyChatStore } from '../../useCodyChat'
+import { GettingStarted } from '../GettingStarted'
 import { ScopeSelector } from '../ScopeSelector'
+import type { ScopeSelectorProps } from '../ScopeSelector/ScopeSelector'
 
 import styles from './ChatUi.module.scss'
 
@@ -41,9 +43,10 @@ const onFeedbackSubmit = (feedback: string): void => eventLogger.log(`web:cody:f
 interface IChatUIProps {
     codyChatStore: CodyChatStore
     isSourcegraphApp?: boolean
+    isCodyChatPage?: boolean
 }
 
-export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp }): JSX.Element => {
+export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp, isCodyChatPage }): JSX.Element => {
     const {
         submitMessage,
         editMessage,
@@ -77,7 +80,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
     const onSubmit = useCallback((text: string) => submitMessage(text), [submitMessage])
     const onEdit = useCallback((text: string) => editMessage(text), [editMessage])
 
-    const scopeSelectorProps = useMemo(
+    const scopeSelectorProps: ScopeSelectorProps = useMemo(
         () => ({
             scope,
             setScope,
@@ -85,6 +88,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
             toggleIncludeInferredFile,
             fetchRepositoryNames,
             isSourcegraphApp,
+            className: 'mt-2',
         }),
         [
             scope,
@@ -94,6 +98,11 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
             fetchRepositoryNames,
             isSourcegraphApp,
         ]
+    )
+
+    const gettingStartedComponentProps = useMemo(
+        () => ({ ...scopeSelectorProps, isCodyChatPage }),
+        [scopeSelectorProps, isCodyChatPage]
     )
 
     if (!loaded) {
@@ -134,6 +143,8 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
                 codyNotEnabledNotice={CodyNotEnabledNotice}
                 contextStatusComponent={ScopeSelector}
                 contextStatusComponentProps={scopeSelectorProps}
+                gettingStartedComponent={GettingStarted}
+                gettingStartedComponentProps={gettingStartedComponentProps}
                 abortMessageInProgressComponent={AbortMessageInProgress}
                 onAbortMessageInProgress={abortMessageInProgress}
                 isCodyEnabled={isCodyEnabled()}
