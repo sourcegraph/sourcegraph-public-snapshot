@@ -14,6 +14,7 @@ ignoreDisconnectedPageCheck: true
     text-transform: uppercase;
     text-align: center;
   }
+  .theme-light .heading{color: black;}
 </style>
 
 <!--
