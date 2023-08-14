@@ -53,6 +53,10 @@ export const GettingStarted: React.FC<
                 const containerHeight = containerRef.current.getBoundingClientRect().height
                 const contentHeight = contentRef.current.getBoundingClientRect().height
 
+                if (containerHeight <= contentHeight) {
+                    return DEFAULT_VERTICAL_OFFSET
+                }
+
                 return `${(containerHeight - contentHeight) / 2}px`
             })
         updateVerticalOffset()
