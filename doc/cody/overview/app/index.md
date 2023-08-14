@@ -34,19 +34,19 @@ The Cody app is a free, lightweight, native desktop application that connects yo
 
 ## Installation
 
-Download the app: 
+Download the app:
 - [MacOS (Apple Silicon)](https://sourcegraph.com/.api/app/latest?arch=aarch64&target=darwin)
 - [MacOS (Intel)](https://sourcegraph.com/.api/app/latest?arch=x86_64&target=darwin)
 - [Linux](https://sourcegraph.com/.api/app/latest?arch=x86_64&target=linux)
-- Windows coming in October 2023 
+- Windows coming in October 2023
 
 ## Setup
 
-Follow the setup instructions to connect the app to your Sourcegraph.com account (or create one for free if you don't have an account yet), add your local projects, and select up to 10 of those projects to build your code graph. The code graph helps Cody generate more accurate answers about your code by sending your code to Sourcegraph to create [embeddings](../cody/explanations/code_graph_context.md#embeddings). (This may take a few minutes, depending on the size of your repos.) We are working on making it so that *all* the projects you connect to your app get embeddings and bumping the cap up from 10.
+Follow the setup instructions to connect the app to your Sourcegraph.com account (or create one for free if you don't have an account yet), add your local projects, and select up to 10 of those projects to build your code graph. The code graph helps Cody generate more accurate answers about your code by sending your code to Sourcegraph to create [embeddings](./../../explanations/code_graph_context.md#embeddings). (This may take a few minutes, depending on the size of your repos.) We are working on making it so that *all* the projects you connect to your app get embeddings and bumping the cap up from 10.
 
 If you use VS Code or a JetBrains IDE, we recommend you follow the steps to download the extension, which enables Cody within your editor. (If you installed the extension before you downloaded the app, you'll see a prompt in your editor to download the app.) Cody in your editor will then talk to your Sourcegraph app to answer questions.
 
-Note: The JetBrains extension is still `Experimental`. 
+Note: The JetBrains extension is still `Experimental`.
 
 ## Upgrading
 
@@ -56,14 +56,15 @@ If you're on a version that's 2023.6.13 or older, we recommend you uninstall the
 
 ## Rate limiting
 
-There are several forms of rate limiting that help us control costs for free versions of Cody. We expect to relax these limits as we continue development on [Cody Gateway](../cody/explanations/cody_gateway.md). If you hit these limits, you can can request an increase by visiting our [discord](https://discord.com/servers/sourcegraph-969688426372825169) channel and requesting a higher limit for both chats and completions. If you'd like to use your own third-party LLM provider instead of Cody Gateway, you must create your own key with Anthropic or OpenAI and [update your app configuration](app_configuration.md).  
+There are several forms of rate limiting that help us control costs for free versions of Cody. We expect to relax these limits as we continue development on [Cody Gateway](./../../explanations/cody_gateway.md). If you hit these limits, you can can request an increase by visiting our [discord](https://discord.com/servers/sourcegraph-969688426372825169) channel and requesting a higher limit for both chats and completions. If you'd like to use your own third-party LLM provider instead of Cody Gateway, you must create your own key with Anthropic or OpenAI and [update your app configuration](app_configuration.md).
 
 ### Embeddings
+
 The setup experience allows users to select up to 10 repos for embeddings. Additional repos can be added, and embeddings can be scheduled, under Settings > Advanced settings > Embedding jobs, but the number of additional repos supported will vary depending on size.
 
 ## Uninstallation
 
-Select "Troubleshooting > Clear All Data" from the system tray and delete the app from your applications folder. If you're on an older version of the app and don't see a "Clear All Data" option, run: 
+Select "Troubleshooting > Clear All Data" from the system tray and delete the app from your applications folder. If you're on an older version of the app and don't see a "Clear All Data" option, run:
 
 ```bash
 rm -rf ~/.sourcegraph-psql ~/Library/Application\ Support/com.sourcegraph.cody ~/Library/Caches/com.sourcegraph.cody ~/Library/WebKit/com.sourcegraph.cody
@@ -87,4 +88,3 @@ Cody app is new and we're iterating on it quickly. If you run into any trouble o
 
 * [Join our community Discord](https://discord.com/invite/s2qDtYGnAE) for live help/discussion
 * [Create a GitHub issue](https://github.com/sourcegraph/app/issues/new)
-

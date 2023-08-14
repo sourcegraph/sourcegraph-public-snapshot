@@ -49,7 +49,6 @@ The script that builds the backend is located at [`enterprise/dev/app/build-back
 - `PLATFORM=x86_64-apple-darwin`
 - `CROSS_COMPILE_X86_64_MACOS=1`
 
-
 ### Bundling with Tauri
 
 Tauri is used to provide a cross platform native shell for Sourcegrah App. The pipeline executes the script [`tauri-build.sh`](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@4cb14a729d2bcd86b47c6ee65f6fe7e34d2ff782/-/blob/enterprise/dev/app/tauri-build.sh) which starts the bundling process. Without going into too much detail of the script it performs the following functions:
@@ -111,7 +110,7 @@ __Note__: if you're wondering why the bucket names are different even though we 
 
 ### Automatically updating the manifest
 
-`sg` can be used to automatically update the manifest from the latest build on `app-release/stable` and corresponding latest release on GitHub. Updating the manifest will set the new current version for download links as well as prompt users to upgrade the next time the App checks for  updates. To run the update-manifest command request the `Sourcegraph App Release Bucket access` bundle in Entitle. 
+`sg` can be used to automatically update the manifest from the latest build on `app-release/stable` and corresponding latest release on GitHub. Updating the manifest will set the new current version for download links as well as prompt users to upgrade the next time the App checks for  updates. To run the update-manifest command request the `Sourcegraph App Release Bucket access` bundle in Entitle.
 
 Below is an example command:
 
