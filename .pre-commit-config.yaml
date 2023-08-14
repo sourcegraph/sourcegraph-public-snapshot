@@ -29,11 +29,8 @@ repos:
     - id: prettier
       name: prettier
       description: ''
-      entry: |
-        [[ $CI != "1" ]] && \
-          pnpm prettier --write --list-different --ignore-unknown --config prettier.config.js || \
-          {BAZEL_BINDIR=. && bazel run //:prettier --run_under="cd $PWD &&" -- --list-different --ignore-unknown --config prettier.config.js}
-      language: system
+      entry: ./dev/pre-commit-prettier-wrapper.sh
+      language: script
       'types': [text]
       files: \.(js|json|ts|tsx|graphql|md|scss)
       args: []
