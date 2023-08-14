@@ -6,12 +6,6 @@
     font-size: 0.875rem;
 }
 
-.separator {
-    height: 100%;
-    border-left: 1px solid var(--border-color-2);
-    margin-right: 0.675rem;
-}
-
 .footer {
     padding: 0.625rem;
     border-top: 1px solid var(--border-color-2);
@@ -21,19 +15,18 @@
 .repository-names-text {
     display: flex;
     min-width: 0;
-    font-size: 0.8rem;
-    font-weight: 400;
+    font-size: 0.75rem;
+
+    &:focus {
+        border-color: var(--primary-2) !important;
+        box-shadow: none !important;
+    }
 
     svg {
         width: 1rem;
         height: 1rem;
         flex-shrink: 0;
     }
-}
-
-.filepath-text {
-    font-size: 0.8rem;
-    flex: 1;
 }
 
 .tinted-search {
@@ -130,4 +123,8 @@
 
 .not-included-in-context:hover {
     opacity: 1;
+}
+
+.icon {
+    fill: currentColor !important;
 }
