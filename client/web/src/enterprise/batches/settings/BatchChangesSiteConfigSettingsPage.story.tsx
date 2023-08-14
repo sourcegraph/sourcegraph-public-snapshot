@@ -1,11 +1,11 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
-import { MATCH_ANY_PARAMETERS, WildcardMockedResponse, WildcardMockLink } from 'wildcard-mock-link'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import { MATCH_ANY_PARAMETERS, type WildcardMockedResponse, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-import { BatchChangesCodeHostFields, ExternalServiceKind } from '../../../graphql-operations'
+import { type BatchChangesCodeHostFields, ExternalServiceKind } from '../../../graphql-operations'
 import { BATCH_CHANGES_SITE_CONFIGURATION } from '../backend'
 import { rolloutWindowConfigMockResult } from '../mocks'
 

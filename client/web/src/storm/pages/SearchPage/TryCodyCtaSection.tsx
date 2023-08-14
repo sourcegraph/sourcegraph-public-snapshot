@@ -4,7 +4,7 @@ import { mdiArrowRight, mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, ButtonLink, H2, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { isCodyEnabled } from '../../../cody/isCodyEnabled'

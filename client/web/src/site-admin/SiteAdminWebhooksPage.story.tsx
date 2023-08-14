@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -7,7 +7,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../components/WebStory'
-import { WebhookFields } from '../graphql-operations'
+import type { WebhookFields } from '../graphql-operations'
 
 import { WEBHOOKS, WEBHOOK_PAGE_HEADER } from './backend'
 import { SiteAdminWebhooksPage } from './SiteAdminWebhooksPage'

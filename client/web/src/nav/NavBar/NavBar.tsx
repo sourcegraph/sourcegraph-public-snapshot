@@ -2,13 +2,13 @@ import React, { forwardRef, useContext } from 'react'
 
 import { mdiMenu } from '@mdi/js'
 import classNames from 'classnames'
-import { LinkProps, NavLink as RouterNavLink } from 'react-router-dom'
+import { type LinkProps, NavLink as RouterNavLink } from 'react-router-dom'
 
 import {
     Link,
     Icon,
     H1,
-    ForwardReferenceComponent,
+    type ForwardReferenceComponent,
     VIEWPORT_SM,
     Menu,
     MenuList,

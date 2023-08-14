@@ -20,10 +20,10 @@ import {
     useDebounce,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import { usePageSwitcherPagination } from '../../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { PageTitle } from '../../../components/PageTitle'
-import {
+import type {
     OrgAreaOrganizationFields,
     OrganizationSettingsMembersResult,
     OrganizationSettingsMembersVariables,
@@ -33,7 +33,7 @@ import {
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { userURL } from '../../../user'
-import { OrgAreaRouteContext } from '../../area/OrgArea'
+import type { OrgAreaRouteContext } from '../../area/OrgArea'
 import { ORGANIZATION_MEMBERS_QUERY, REMOVE_USER_FROM_ORGANIZATION_QUERY } from '../../backend'
 
 import { InviteForm } from './InviteForm'

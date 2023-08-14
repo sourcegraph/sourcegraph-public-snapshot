@@ -1,6 +1,6 @@
 import '@sourcegraph/branded'
 
-import { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
@@ -8,7 +8,7 @@ import 'storybook-addon-designs'
 
 import { Container } from '@sourcegraph/wildcard'
 
-import { UpdateGlobalNav, UpdateGlobalNavFrame, UpdateGlobalNavFrameProps } from './UpdateGlobalNav'
+import { type UpdateGlobalNav, UpdateGlobalNavFrame, type UpdateGlobalNavFrameProps } from './UpdateGlobalNav'
 
 const meta: Meta<UpdateGlobalNavFrameProps> = {
     title: 'cody-ui/Updater/Global Nav',

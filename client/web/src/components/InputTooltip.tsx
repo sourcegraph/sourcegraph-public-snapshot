@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Button, ButtonProps, Tooltip, TooltipProps } from '@sourcegraph/wildcard'
+import { Button, type ButtonProps, Tooltip, type TooltipProps } from '@sourcegraph/wildcard'
 
 import styles from './InputTooltip.module.scss'
 

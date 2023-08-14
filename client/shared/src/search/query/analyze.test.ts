@@ -1,5 +1,5 @@
 import { getRelevantTokens } from './analyze'
-import { Node, parseSearchQuery } from './parser'
+import { type Node, parseSearchQuery } from './parser'
 import { stringHuman } from './printer'
 
 export const parse = (input: string, filter = (_node: Node) => true): string => {

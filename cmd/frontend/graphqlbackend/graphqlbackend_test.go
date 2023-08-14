@@ -24,7 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -63,8 +63,8 @@ func BenchmarkPrometheusFieldName(b *testing.B) {
 }
 
 func TestRepository(t *testing.T) {
-	db := database.NewMockDB()
-	repos := database.NewMockRepoStore()
+	db := dbmocks.NewMockDB()
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
 	db.ReposFunc.SetDefaultReturn(repos)
 	RunTests(t, []*Test{
@@ -113,16 +113,16 @@ func TestRecloneRepository(t *testing.T) {
 	})
 	defer conf.Mock(nil)
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 1, Name: "github.com/gorilla/mux"}, nil)
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
-	gitserverRepos := database.NewMockGitserverRepoStore()
+	gitserverRepos := dbmocks.NewMockGitserverRepoStore()
 	gitserverRepos.GetByIDFunc.SetDefaultReturn(&types.GitserverRepo{RepoID: 1, CloneStatus: "cloned"}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.GitserverReposFunc.SetDefaultReturn(gitserverRepos)
@@ -158,16 +158,16 @@ func TestRecloneRepository(t *testing.T) {
 func TestDeleteRepositoryFromDisk(t *testing.T) {
 	resetMocks()
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 	called := backend.Mocks.Repos.MockDeleteRepositoryFromDisk(t, 1)
 
-	gitserverRepos := database.NewMockGitserverRepoStore()
+	gitserverRepos := dbmocks.NewMockGitserverRepoStore()
 	gitserverRepos.GetByIDFunc.SetDefaultReturn(&types.GitserverRepo{RepoID: 1, CloneStatus: "cloned"}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.GitserverReposFunc.SetDefaultReturn(gitserverRepos)
@@ -197,7 +197,7 @@ func TestDeleteRepositoryFromDisk(t *testing.T) {
 }
 
 func TestResolverTo(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	// This test exists purely to remove some non determinism in our tests
 	// run. The To* resolvers are stored in a map in our graphql
 	// implementation => the order we call them is non deterministic =>

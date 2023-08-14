@@ -1,5 +1,5 @@
 import { mdiMagnify } from '@mdi/js'
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 import { startCase } from 'lodash'
 
 import { ButtonLink, H1, H2, Text } from '..'

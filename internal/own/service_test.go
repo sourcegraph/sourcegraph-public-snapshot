@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
@@ -72,11 +73,11 @@ func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
 			git := gitserver.NewMockClient()
 			git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
 
-			reposStore := database.NewMockRepoStore()
+			reposStore := dbmocks.NewMockRepoStore()
 			reposStore.GetFunc.SetDefaultReturn(&types2.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
-			codeownersStore := database.NewMockCodeownersStore()
+			codeownersStore := dbmocks.NewMockCodeownersStore()
 			codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.ReposFunc.SetDefaultReturn(reposStore)
 			db.CodeownersFunc.SetDefaultReturn(codeownersStore)
 
@@ -105,11 +106,11 @@ func TestOwnersCannotFindFile(t *testing.T) {
 	git := gitserver.NewMockClient()
 	git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
 
-	codeownersStore := database.NewMockCodeownersStore()
+	codeownersStore := dbmocks.NewMockCodeownersStore()
 	codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, database.CodeownersFileNotFoundError{})
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.CodeownersFunc.SetDefaultReturn(codeownersStore)
-	reposStore := database.NewMockRepoStore()
+	reposStore := dbmocks.NewMockRepoStore()
 	reposStore.GetFunc.SetDefaultReturn(&types2.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
 	db.ReposFunc.SetDefaultReturn(reposStore)
 	got, err := NewService(git, db).RulesetForRepo(context.Background(), "repo", 1, "SHA")
@@ -131,13 +132,13 @@ func TestOwnersServesIngestedFile(t *testing.T) {
 
 		git := gitserver.NewMockClient()
 
-		codeownersStore := database.NewMockCodeownersStore()
+		codeownersStore := dbmocks.NewMockCodeownersStore()
 		codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(&types.CodeownersFile{
 			Proto: codeownersProto,
 		}, nil)
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.CodeownersFunc.SetDefaultReturn(codeownersStore)
-		reposStore := database.NewMockRepoStore()
+		reposStore := dbmocks.NewMockRepoStore()
 		reposStore.GetFunc.SetDefaultReturn(&types2.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
 		db.ReposFunc.SetDefaultReturn(reposStore)
 
@@ -149,11 +150,11 @@ func TestOwnersServesIngestedFile(t *testing.T) {
 		git := gitserver.NewMockClient()
 		git.ReadFileFunc.SetDefaultReturn(nil, nil)
 
-		codeownersStore := database.NewMockCodeownersStore()
+		codeownersStore := dbmocks.NewMockCodeownersStore()
 		codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, database.CodeownersFileNotFoundError{})
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.CodeownersFunc.SetDefaultReturn(codeownersStore)
-		reposStore := database.NewMockRepoStore()
+		reposStore := dbmocks.NewMockRepoStore()
 		reposStore.GetFunc.SetDefaultReturn(&types2.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
 		db.ReposFunc.SetDefaultReturn(reposStore)
 

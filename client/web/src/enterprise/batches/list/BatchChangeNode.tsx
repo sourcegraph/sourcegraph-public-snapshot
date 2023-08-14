@@ -9,8 +9,8 @@ import { Badge, Link, H3, H4, Markdown } from '@sourcegraph/wildcard'
 import {
     BatchChangeState,
     BatchSpecState,
-    ListBatchChange,
-    ListBatchChangeLatestSpecFields,
+    type ListBatchChange,
+    type ListBatchChangeLatestSpecFields,
 } from '../../../graphql-operations'
 import {
     ChangesetStatusOpen,

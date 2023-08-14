@@ -9,10 +9,9 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	proto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -25,16 +24,14 @@ func serveConfiguration(w http.ResponseWriter, _ *http.Request) error {
 	return nil
 }
 
-func serveExternalURL(w http.ResponseWriter, _ *http.Request) error {
-	if err := json.NewEncoder(w).Encode(globals.ExternalURL().String()); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
+// configServer implements proto.ConfigServiceServer to serve config to other clients in the cluster.
+type configServer struct {
+	proto.UnimplementedConfigServiceServer
 }
 
-func decodeSendEmail(r *http.Request) (txtypes.InternalAPIMessage, error) {
-	var msg txtypes.InternalAPIMessage
-	return msg, json.NewDecoder(r.Body).Decode(&msg)
+func (c *configServer) GetConfig(_ context.Context, _ *proto.GetConfigRequest) (*proto.GetConfigResponse, error) {
+	raw := conf.Raw()
+	return &proto.GetConfigResponse{RawUnified: raw.ToProto()}, nil
 }
 
 // gitServiceHandler are handlers which redirect git clone requests to the

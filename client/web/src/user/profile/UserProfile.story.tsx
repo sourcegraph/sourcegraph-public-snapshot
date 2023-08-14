@@ -1,7 +1,7 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../components/WebStory'
-import { UserAreaUserFields } from '../../graphql-operations'
+import type { UserAreaUserFields } from '../../graphql-operations'
 
 import { UserProfile } from './UserProfile'
 

@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
-import { NEVER, Observable } from 'rxjs'
+import { NEVER, type Observable } from 'rxjs'
 import { catchError, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Link, Text, ErrorAlert, Card, H1, H2, useEventObservable } from '@sourcegraph/wildcard'
 
@@ -14,8 +14,8 @@ import { AccessTokenScopes } from '../../../auth/accessToken'
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { CopyableText } from '../../../components/CopyableText'
 import { LoaderButton } from '../../../components/LoaderButton'
-import { CreateAccessTokenResult } from '../../../graphql-operations'
-import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
+import type { CreateAccessTokenResult } from '../../../graphql-operations'
+import type { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { createAccessToken } from './create'
 

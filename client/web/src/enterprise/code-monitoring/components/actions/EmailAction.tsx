@@ -5,8 +5,12 @@ import { noop } from 'lodash'
 
 import { Input, Link } from '@sourcegraph/wildcard'
 
-import { MonitorEmailPriority, SendTestEmailResult, SendTestEmailVariables } from '../../../../graphql-operations'
-import { ActionProps } from '../FormActionArea'
+import {
+    MonitorEmailPriority,
+    type SendTestEmailResult,
+    type SendTestEmailVariables,
+} from '../../../../graphql-operations'
+import type { ActionProps } from '../FormActionArea'
 
 import { ActionEditor } from './ActionEditor'
 

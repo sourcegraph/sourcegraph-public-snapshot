@@ -1,4 +1,4 @@
-import { UserSettingsSidebarItems } from './UserSettingsSidebar'
+import type { UserSettingsSidebarItems } from './UserSettingsSidebar'
 
 export const userSettingsSideBarItems: UserSettingsSidebarItems = [
     {

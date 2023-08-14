@@ -1,11 +1,11 @@
-import { MockedResponse } from '@apollo/client/testing'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-import { UsersStatisticsResult } from '../../../graphql-operations'
+import type { UsersStatisticsResult } from '../../../graphql-operations'
 
 import { AnalyticsUsersPage } from './index'
 import { USERS_STATISTICS } from './queries'

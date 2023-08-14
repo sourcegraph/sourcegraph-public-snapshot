@@ -4,7 +4,7 @@ import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 
 import { formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/branded'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
+import type { CommitMatch } from '@sourcegraph/shared/src/search/stream'
 import { Code } from '@sourcegraph/wildcard'
 
 import { InfoDivider } from './InfoDivider'

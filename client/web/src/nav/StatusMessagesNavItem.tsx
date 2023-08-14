@@ -32,7 +32,7 @@ import {
     ErrorAlert,
 } from '@sourcegraph/wildcard'
 
-import { StatusAndRepoCountResult } from '../graphql-operations'
+import type { StatusAndRepoCountResult } from '../graphql-operations'
 
 import { STATUS_AND_REPO_COUNT } from './StatusMessagesNavItemQueries'
 

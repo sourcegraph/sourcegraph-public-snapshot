@@ -1,8 +1,8 @@
-import { SVGProps, forwardRef } from 'react'
+import { type SVGProps, forwardRef } from 'react'
 
 import classNames from 'classnames'
 
-import { ForwardReferenceComponent } from '../../types'
+import type { ForwardReferenceComponent } from '../../types'
 import { Icon } from '../Icon'
 
 import styles from './LoadingSpinner.module.scss'

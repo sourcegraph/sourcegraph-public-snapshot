@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { ProductSubscriptionFields, SiteAdminProductSubscriptionFields } from '../../../graphql-operations'
+import type { ProductSubscriptionFields, SiteAdminProductSubscriptionFields } from '../../../graphql-operations'
 import { formatUserCount } from '../../../productSubscription/helpers'
 
 /**

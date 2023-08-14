@@ -6,7 +6,7 @@ import { logger } from '@sourcegraph/common'
 import { Button, Modal, Link, Code, Label, Text, Input, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
-import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
+import { ExternalServiceKind, type Scalars } from '../../../graphql-operations'
 
 import { useCreateBatchChangesCredential } from './backend'
 import { CodeHostSshPublicKey } from './CodeHostSshPublicKey'

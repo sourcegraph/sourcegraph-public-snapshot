@@ -1,10 +1,11 @@
-package database
+package oauthtoken
 
 import (
 	"context"
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -17,7 +18,7 @@ import (
 
 // externalAccountTokenRefresher returns an oauthutil.TokenRefresher for the
 // given external account.
-func externalAccountTokenRefresher(store UserExternalAccountsStore, externalAccountID int32, originalToken *auth.OAuthBearerToken) oauthutil.TokenRefresher {
+func externalAccountTokenRefresher(store database.UserExternalAccountsStore, externalAccountID int32, originalToken *auth.OAuthBearerToken) oauthutil.TokenRefresher {
 	return func(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OAuthContext) (token *auth.OAuthBearerToken, err error) {
 		// Start a transaction so that multiple refreshes don't happen simultaneously
 		tx, err := store.Transact(ctx)
@@ -76,7 +77,7 @@ func externalAccountTokenRefresher(store UserExternalAccountsStore, externalAcco
 
 // externalServiceTokenRefresher returns an oauthutil.TokenRefresher for the
 // given external service.
-func externalServiceTokenRefresher(db DB, externalServiceID int64, refreshToken string) oauthutil.TokenRefresher {
+func externalServiceTokenRefresher(db database.DB, externalServiceID int64, refreshToken string) oauthutil.TokenRefresher {
 	return func(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OAuthContext) (token *auth.OAuthBearerToken, err error) {
 		defer func() {
 			success := err == nil
@@ -126,7 +127,7 @@ func externalServiceTokenRefresher(db DB, externalServiceID int64, refreshToken 
 	}
 }
 
-func GetServiceRefreshAndStoreOAuthTokenFunc(db DB, externalServiceID int64, oauthContext *oauthutil.OAuthContext) func(context.Context, httpcli.Doer, *auth.OAuthBearerToken) (string, string, time.Time, error) {
+func GetServiceRefreshAndStoreOAuthTokenFunc(db database.DB, externalServiceID int64, oauthContext *oauthutil.OAuthContext) func(context.Context, httpcli.Doer, *auth.OAuthBearerToken) (string, string, time.Time, error) {
 	return func(ctx context.Context, cli httpcli.Doer, a *auth.OAuthBearerToken) (string, string, time.Time, error) {
 		tokenRefresher := externalServiceTokenRefresher(db, externalServiceID, a.RefreshToken)
 		token, err := tokenRefresher(ctx, cli, *oauthContext)
@@ -138,7 +139,7 @@ func GetServiceRefreshAndStoreOAuthTokenFunc(db DB, externalServiceID int64, oau
 	}
 }
 
-func GetAccountRefreshAndStoreOAuthTokenFunc(store UserExternalAccountsStore, externalAccountID int32, oauthContext *oauthutil.OAuthContext) func(context.Context, httpcli.Doer, *auth.OAuthBearerToken) (string, string, time.Time, error) {
+func GetAccountRefreshAndStoreOAuthTokenFunc(store database.UserExternalAccountsStore, externalAccountID int32, oauthContext *oauthutil.OAuthContext) func(context.Context, httpcli.Doer, *auth.OAuthBearerToken) (string, string, time.Time, error) {
 	return func(ctx context.Context, cli httpcli.Doer, a *auth.OAuthBearerToken) (string, string, time.Time, error) {
 		tokenRefresher := externalAccountTokenRefresher(store, externalAccountID, a)
 		token, err := tokenRefresher(ctx, cli, *oauthContext)

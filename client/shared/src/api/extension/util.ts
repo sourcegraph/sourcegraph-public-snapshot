@@ -1,4 +1,4 @@
-import { BehaviorSubject, Unsubscribable } from 'rxjs'
+import type { BehaviorSubject, Unsubscribable } from 'rxjs'
 
 /**
  * calls next() on behaviorSubject with a immutably added element ([...old, value])

@@ -1,6 +1,6 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 
-import { Progress } from '@sourcegraph/shared/src/search/stream'
+import type { Progress } from '@sourcegraph/shared/src/search/stream'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'

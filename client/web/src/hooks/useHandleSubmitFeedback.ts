@@ -1,9 +1,9 @@
 import { useCallback } from 'react'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
-import { FeedbackPromptSubmitEventHandler } from '@sourcegraph/wildcard'
+import type { FeedbackPromptSubmitEventHandler } from '@sourcegraph/wildcard'
 
-import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../graphql-operations'
+import type { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../graphql-operations'
 
 interface UseHandleSubmitFeedbackState {
     handleSubmitFeedback: FeedbackPromptSubmitEventHandler

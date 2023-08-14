@@ -1,8 +1,8 @@
 import { isEqual } from 'lodash'
 
-import { Position, Range } from '@sourcegraph/extension-api-types'
+import type { Position, Range } from '@sourcegraph/extension-api-types'
 
-import { isPosition, LineOrPositionOrRange } from './types'
+import { isPosition, type LineOrPositionOrRange } from './types'
 
 /**
  * A collection of methods needed to tell codeintellify how to look at the DOM. These are required for

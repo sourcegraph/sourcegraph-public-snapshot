@@ -6,14 +6,14 @@ import { spy } from 'sinon'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+import { type RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { NotebookFields } from '../graphql-operations'
+import type { NotebookFields } from '../graphql-operations'
 import * as backend from '../notebooks/backend'
 import { useNotepadState } from '../stores'
-import { addNotepadEntry, NotepadEntry } from '../stores/notepad'
+import { addNotepadEntry, type NotepadEntry } from '../stores/notepad'
 
-import { NotepadContainer, NotepadProps } from './Notepad'
+import { NotepadContainer, type NotepadProps } from './Notepad'
 
 describe('Notepad', () => {
     const renderNotepad = (props?: Partial<NotepadProps>, enabled = true): RenderWithBrandedContextResult =>

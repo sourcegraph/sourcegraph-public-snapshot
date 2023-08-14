@@ -1,8 +1,9 @@
 import PollyAdapter from '@pollyjs/adapter'
-import { Polly, Request as PollyRequest } from '@pollyjs/core'
+import type { Polly, Request as PollyRequest } from '@pollyjs/core'
 import { noop } from 'lodash'
-import Puppeteer, { Protocol, ProtocolMapping } from 'puppeteer'
-import { Observable, Subject } from 'rxjs'
+import type { Protocol, ProtocolMapping } from 'puppeteer'
+import type Puppeteer from 'puppeteer'
+import { type Observable, Subject } from 'rxjs'
 
 import { isErrorLike, logger } from '@sourcegraph/common'
 

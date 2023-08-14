@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { FilterLink, RevisionsProps, TabIndex } from '@sourcegraph/branded'
+import { FilterLink, type RevisionsProps, TabIndex } from '@sourcegraph/branded'
 import styles from '@sourcegraph/branded/src/search-ui/results/sidebar/SearchFilterSection.module.scss'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
@@ -11,9 +11,9 @@ import { Button, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text }
 
 import { useShowMorePagination } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
-    SearchSidebarGitRefsResult,
-    SearchSidebarGitRefsVariables,
-    SearchSidebarGitRefFields,
+    type SearchSidebarGitRefsResult,
+    type SearchSidebarGitRefsVariables,
+    type SearchSidebarGitRefFields,
     GitRefType,
 } from '../../../graphql-operations'
 

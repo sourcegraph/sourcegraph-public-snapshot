@@ -4,7 +4,7 @@ import { mdiCog, mdiFileOutline, mdiGlasses, mdiInformationOutline } from '@mdi/
 import classNames from 'classnames'
 import { formatISO, subYears } from 'date-fns'
 import { capitalize, escapeRegExp } from 'lodash'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 
 import { RepoMetadata } from '@sourcegraph/branded'
@@ -12,14 +12,14 @@ import { encodeURIPathComponent, numberWithCommas, pluralize } from '@sourcegrap
 import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { RepositoryType, SearchPatternType, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { RepositoryType, SearchPatternType, type TreeFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Badge, ButtonLink, Card, CardHeader, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { requestGraphQL } from '../../backend/graphql'
 import {
     ConnectionContainer,
@@ -30,7 +30,7 @@ import {
     SummaryContainer,
 } from '../../components/FilteredConnection/ui'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
-import {
+import type {
     CommitAtTimeResult,
     CommitAtTimeVariables,
     DiffSinceResult,
@@ -56,7 +56,7 @@ import { GitCommitNodeTableRow } from '../commits/GitCommitNodeTableRow'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { getRefType, isPerforceChangelistMappingEnabled } from '../utils'
 
-import { DiffStat, FilesCard, ReadmePreviewCard } from './TreePagePanels'
+import { type DiffStat, FilesCard, ReadmePreviewCard } from './TreePagePanels'
 
 import styles from './TreePageContent.module.scss'
 import contributorsStyles from './TreePageContentContributors.module.scss'

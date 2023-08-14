@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 
 import { mdiWebhook, mdiMapSearch, mdiPlus } from '@mdi/js'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ButtonLink, Container, Icon, PageHeader } from '@sourcegraph/wildcard'
 
 import {

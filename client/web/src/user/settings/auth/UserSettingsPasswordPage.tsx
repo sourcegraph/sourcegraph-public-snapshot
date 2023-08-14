@@ -17,10 +17,10 @@ import {
     Form,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
 import { PageTitle } from '../../../components/PageTitle'
-import { UserAreaUserFields } from '../../../graphql-operations'
+import type { UserAreaUserFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { validatePassword, getPasswordRequirements } from '../../../util/security'
 import { updatePassword } from '../backend'

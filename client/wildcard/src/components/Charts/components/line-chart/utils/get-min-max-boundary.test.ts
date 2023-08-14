@@ -1,4 +1,4 @@
-import { SeriesType, SeriesWithData } from './data-series-processing'
+import { SeriesType, type SeriesWithData } from './data-series-processing'
 import { getMinMaxBoundaries } from './get-min-max-boundary'
 
 interface Datum {

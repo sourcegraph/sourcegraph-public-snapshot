@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from '@storybook/addons'
-import { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, Story, DecoratorFn } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { of } from 'rxjs'
 
@@ -9,12 +9,12 @@ import {
     ChangesetReviewState,
     ChangesetSpecType,
     ChangesetState,
-    BatchChangeFields,
+    type BatchChangeFields,
     BatchSpecState,
     BatchChangeState,
     BatchSpecSource,
 } from '../../../graphql-operations'
-import {
+import type {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs,
     fetchBatchChangeByNamespace,

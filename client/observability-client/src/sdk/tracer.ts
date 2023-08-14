@@ -1,4 +1,4 @@
-import { Tracer } from '@opentelemetry/sdk-trace-base'
+import type { Tracer } from '@opentelemetry/sdk-trace-base'
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web'
 
 import { getFetchInstrumentationStartSpan } from '../instrumentations/fetch'

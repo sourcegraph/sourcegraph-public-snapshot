@@ -7,7 +7,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { RepoRevisionChevronDownIcon } from '../components/RepoRevision'
 import { RevisionsPopover } from '../RevisionsPopover'
 
-import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
+import type { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 
 interface RepositoryCompareHeaderProps extends RepositoryCompareAreaPageProps {
     className: string

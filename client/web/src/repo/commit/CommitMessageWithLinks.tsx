@@ -1,6 +1,6 @@
 import { Link } from '@sourcegraph/wildcard'
 
-import { ExternalServiceKind } from '../../graphql-operations'
+import type { ExternalServiceKind } from '../../graphql-operations'
 import { Linkified } from '../linkifiy/Linkified'
 
 interface Props {

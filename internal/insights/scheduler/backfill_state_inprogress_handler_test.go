@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	edb "github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/insights/pipeline"
 	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
@@ -48,8 +49,8 @@ func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	permStore := store.NewInsightPermissionStore(database.NewMockDB())
-	repos := database.NewMockRepoStore()
+	permStore := store.NewInsightPermissionStore(dbmocks.NewMockDB())
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&itypes.Repo{ID: 1, Name: "repo1"}, nil)
 	insightsStore := store.NewInsightStore(insightsDB)
 	seriesStore := store.New(insightsDB, permStore)
@@ -125,8 +126,8 @@ func Test_PullsByEstimatedCostAge(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	permStore := store.NewInsightPermissionStore(database.NewMockDB())
-	repos := database.NewMockRepoStore()
+	permStore := store.NewInsightPermissionStore(dbmocks.NewMockDB())
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&itypes.Repo{ID: 1, Name: "repo1"}, nil)
 	insightsStore := store.NewInsightStore(insightsDB)
 	seriesStore := store.New(insightsDB, permStore)
@@ -188,8 +189,8 @@ func Test_BackfillWithRetry(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	permStore := store.NewInsightPermissionStore(database.NewMockDB())
-	repos := database.NewMockRepoStore()
+	permStore := store.NewInsightPermissionStore(dbmocks.NewMockDB())
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&itypes.Repo{ID: 1, Name: "repo1"}, nil)
 	insightsStore := store.NewInsightStore(insightsDB)
 	seriesStore := store.New(insightsDB, permStore)
@@ -267,8 +268,8 @@ func Test_BackfillWithRetryAndComplete(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	permStore := store.NewInsightPermissionStore(database.NewMockDB())
-	repos := database.NewMockRepoStore()
+	permStore := store.NewInsightPermissionStore(dbmocks.NewMockDB())
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&itypes.Repo{ID: 1, Name: "repo1"}, nil)
 	insightsStore := store.NewInsightStore(insightsDB)
 	seriesStore := store.New(insightsDB, permStore)
@@ -350,8 +351,8 @@ func Test_BackfillWithRepoNotFound(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	permStore := store.NewInsightPermissionStore(database.NewMockDB())
-	repos := database.NewMockRepoStore()
+	permStore := store.NewInsightPermissionStore(dbmocks.NewMockDB())
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(ctx context.Context, ri api.RepoID) (*itypes.Repo, error) {
 		if ri == 1 {
 			return &itypes.Repo{ID: 1, Name: "repo1"}, nil
@@ -433,8 +434,8 @@ func Test_BackfillWithARepoError(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	permStore := store.NewInsightPermissionStore(database.NewMockDB())
-	repos := database.NewMockRepoStore()
+	permStore := store.NewInsightPermissionStore(dbmocks.NewMockDB())
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(ctx context.Context, ri api.RepoID) (*itypes.Repo, error) {
 		if ri == 1 {
 			return &itypes.Repo{ID: 1, Name: "repo1"}, nil
@@ -515,8 +516,8 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	permStore := store.NewInsightPermissionStore(database.NewMockDB())
-	repos := database.NewMockRepoStore()
+	permStore := store.NewInsightPermissionStore(dbmocks.NewMockDB())
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&itypes.Repo{ID: 1, Name: "repo1"}, nil)
 	insightsStore := store.NewInsightStore(insightsDB)
 	seriesStore := store.New(insightsDB, permStore)
@@ -600,8 +601,8 @@ func Test_BackfillCrossingErrorThreshold(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	permStore := store.NewInsightPermissionStore(database.NewMockDB())
-	repos := database.NewMockRepoStore()
+	permStore := store.NewInsightPermissionStore(dbmocks.NewMockDB())
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&itypes.Repo{ID: 1, Name: "repo1"}, nil)
 	insightsStore := store.NewInsightStore(insightsDB)
 	seriesStore := store.New(insightsDB, permStore)

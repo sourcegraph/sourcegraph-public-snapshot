@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -16,8 +17,8 @@ var verifiedDate = time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
 
 // getMockDB returns a mock database that contains the given users.
 // Note: IDs of users must be ascending.
-func getMockDB(users []*types.UserForSCIM, usersEmails map[int32][]*database.UserEmail) *database.MockDB {
-	userStore := database.NewMockUserStore()
+func getMockDB(users []*types.UserForSCIM, usersEmails map[int32][]*database.UserEmail) *dbmocks.MockDB {
+	userStore := dbmocks.NewMockUserStore()
 	userStore.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		for _, user := range users {
 			if user.ID == id {
@@ -107,7 +108,7 @@ func getMockDB(users []*types.UserForSCIM, usersEmails map[int32][]*database.Use
 		return errors.New("user not found")
 	})
 
-	userExternalAccountsStore := database.NewMockUserExternalAccountsStore()
+	userExternalAccountsStore := dbmocks.NewMockUserExternalAccountsStore()
 	userExternalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, newUser database.NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (*types.User, error) {
 		nextID := 1
 		if len(users) > 0 {
@@ -139,7 +140,7 @@ func getMockDB(users []*types.UserForSCIM, usersEmails map[int32][]*database.Use
 		return
 	})
 
-	userEmailsStore := database.NewMockUserEmailsStore()
+	userEmailsStore := dbmocks.NewMockUserEmailsStore()
 	userEmailsStore.AddFunc.SetDefaultHook(func(ctx context.Context, userID int32, email string, verificationCode *string) error {
 		usersEmails[userID] = append(usersEmails[userID], &database.UserEmail{UserID: userID, Email: email, VerificationCode: verificationCode})
 		return nil
@@ -205,11 +206,11 @@ func getMockDB(users []*types.UserForSCIM, usersEmails map[int32][]*database.Use
 		return toReturn, nil
 	})
 
-	authzStore := database.NewMockAuthzStore()
+	authzStore := dbmocks.NewMockAuthzStore()
 	authzStore.RevokeUserPermissionsListFunc.SetDefaultReturn(nil)
 
 	// Create DB
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, tx func(database.DB) error) error {
 		return tx(db)
 	})

@@ -2,7 +2,7 @@
 import { Subject, forkJoin } from 'rxjs'
 import { debounceTime, distinctUntilChanged, map, publishReplay, refCount, repeat, switchMap } from 'rxjs/operators'
 
-import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import type { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 
 interface BaseSuggestion {

@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -37,10 +37,10 @@ func TestRepository_Commit(t *testing.T) {
 		backend.Mocks = backend.MockServices{}
 	}()
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
 	RunTest(t, &Test{
@@ -74,11 +74,11 @@ func TestRepository_Changelist(t *testing.T) {
 		return exampleCommitSHA1, nil
 	}
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(repo, nil)
 	repos.GetByNameFunc.SetDefaultReturn(repo, nil)
 
-	repoCommitsChangelists := database.NewMockRepoCommitsChangelistsStore()
+	repoCommitsChangelists := dbmocks.NewMockRepoCommitsChangelistsStore()
 	repoCommitsChangelists.GetRepoCommitChangelistFunc.SetDefaultReturn(&types.RepoCommit{
 		ID:                   1,
 		RepoID:               2,
@@ -86,7 +86,7 @@ func TestRepository_Changelist(t *testing.T) {
 		PerforceChangelistID: 123,
 	}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.RepoCommitsChangelistsFunc.SetDefaultReturn(repoCommitsChangelists)
 
@@ -151,9 +151,9 @@ func TestRepositoryHydration(t *testing.T) {
 	t.Run("hydrated without errors", func(t *testing.T) {
 		minimalRepo, hydratedRepo := makeRepos()
 
-		rs := database.NewMockRepoStore()
+		rs := dbmocks.NewMockRepoStore()
 		rs.GetFunc.SetDefaultReturn(hydratedRepo, nil)
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.ReposFunc.SetDefaultReturn(rs)
 
 		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(db), minimalRepo)
@@ -166,9 +166,9 @@ func TestRepositoryHydration(t *testing.T) {
 
 		dbErr := errors.New("cannot load repo")
 
-		rs := database.NewMockRepoStore()
+		rs := dbmocks.NewMockRepoStore()
 		rs.GetFunc.SetDefaultReturn(nil, dbErr)
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.ReposFunc.SetDefaultReturn(rs)
 
 		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(db), minimalRepo)

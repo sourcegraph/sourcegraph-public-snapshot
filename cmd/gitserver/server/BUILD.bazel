@@ -143,6 +143,7 @@ go_test(
         "//internal/conf",
         "//internal/conf/reposource",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/encryption",
         "//internal/extsvc/gitolite",

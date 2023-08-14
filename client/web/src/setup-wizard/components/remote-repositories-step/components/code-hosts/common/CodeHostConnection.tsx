@@ -1,4 +1,4 @@
-import { FC, ReactElement, ReactNode, useState } from 'react'
+import { type FC, type ReactElement, type ReactNode, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
@@ -14,16 +14,16 @@ import {
     Text,
     FormGroup,
     getDefaultInputProps,
-    SubmissionErrors,
+    type SubmissionErrors,
     useField,
-    useFieldAPI,
+    type useFieldAPI,
     useForm,
     ErrorAlert,
     FORM_ERROR,
-    FormChangeEvent,
+    type FormChangeEvent,
 } from '@sourcegraph/wildcard'
 
-import { AddExternalServiceOptions } from '../../../../../../components/externalServices/externalServices'
+import type { AddExternalServiceOptions } from '../../../../../../components/externalServices/externalServices'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../../../../settings/DynamicallyImportedMonacoSettingsEditor'
 
 import styles from './CodeHostConnection.module.scss'

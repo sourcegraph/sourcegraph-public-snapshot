@@ -1,5 +1,5 @@
-import { MockedResponse } from '@apollo/client/testing'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -7,16 +7,16 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { WebStory } from '../../components/WebStory'
 import {
     ExternalServiceKind,
-    RepositoryFields,
-    RepositoryGitCommitsResult,
-    RepositoryGitCommitsVariables,
+    type RepositoryFields,
+    type RepositoryGitCommitsResult,
+    type RepositoryGitCommitsVariables,
     RepositoryType,
 } from '../../graphql-operations'
 
 import {
     REPOSITORY_GIT_COMMITS_QUERY,
     RepositoryCommitsPage,
-    RepositoryCommitsPageProps,
+    type RepositoryCommitsPageProps,
 } from './RepositoryCommitsPage'
 
 window.context.experimentalFeatures = { perforceChangelistMapping: 'enabled' }

@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
-import { Meta } from '@storybook/react'
-import { StoryFnReactReturnType } from '@storybook/react/dist/ts3.9/client/preview/types'
+import type { Meta } from '@storybook/react'
+import type { StoryFnReactReturnType } from '@storybook/react/dist/ts3.9/client/preview/types'
 
 import { H1 } from '../..'
 import { BrandedStory } from '../../../stories/BrandedStory'

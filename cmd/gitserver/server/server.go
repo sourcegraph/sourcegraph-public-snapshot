@@ -1488,7 +1488,11 @@ type execStatus struct {
 func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.ExecRequest, userAgent string, w io.Writer) (execStatus, error) {
 	// 🚨 SECURITY: Ensure that only commands in the allowed list are executed.
 	// See https://github.com/sourcegraph/security-issues/issues/213.
-	if !gitdomain.IsAllowedGitCmd(logger, req.Args) {
+
+	repoPath := string(protocol.NormalizeRepo(req.Repo))
+	repoDir := filepath.Join(s.ReposDir, filepath.FromSlash(repoPath))
+
+	if !gitdomain.IsAllowedGitCmd(logger, req.Args, repoDir) {
 		blockedCommandExecutedCounter.Inc()
 		return execStatus{}, ErrInvalidCommand
 	}

@@ -6,7 +6,7 @@ import { concat, Subject } from 'rxjs'
 import { catchError, concatMap, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
     PageHeader,
@@ -25,8 +25,8 @@ import {
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { PageTitle } from '../../../components/PageTitle'
-import { CreateAccessTokenResult } from '../../../graphql-operations'
-import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
+import type { CreateAccessTokenResult } from '../../../graphql-operations'
+import type { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { createAccessToken } from './create'
 

@@ -1,9 +1,9 @@
 import { logger } from '@sourcegraph/common'
 import { getDocumentNode, gql, useQuery } from '@sourcegraph/http-client'
 
-import { EvaluateFeatureFlagResult, EvaluateFeatureFlagVariables } from '../graphql-operations'
+import type { EvaluateFeatureFlagResult, EvaluateFeatureFlagVariables } from '../graphql-operations'
 
-import { FeatureFlagName } from './featureFlags'
+import type { FeatureFlagName } from './featureFlags'
 import { getFeatureFlagOverrideValue } from './lib/feature-flag-local-overrides'
 
 export const EVALUATE_FEATURE_FLAG_QUERY = getDocumentNode(gql`
