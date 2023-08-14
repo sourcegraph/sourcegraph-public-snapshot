@@ -6,8 +6,8 @@ import { useLocation, useNavigationType } from 'react-router-dom'
 import { logger } from '@sourcegraph/common'
 
 import {
-    MutationObserverError,
-    MutationObserverPromise,
+    type MutationObserverError,
+    type MutationObserverPromise,
     mutationObserverWithTimeout,
 } from './mutationObserverWithTimeout'
 

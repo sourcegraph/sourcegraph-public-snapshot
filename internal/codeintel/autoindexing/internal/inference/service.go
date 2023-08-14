@@ -452,6 +452,11 @@ type registrationAPI struct {
 	recognizers []*luatypes.Recognizer
 }
 
+// Register adds another recognizer to be run at a later point.
+//
+// WARNING: This function is exposed directly to Lua through the 'api' parameter
+// of the generate(..) function, so changing the signature may break existing
+// auto-indexing scripts.
 func (api *registrationAPI) Register(recognizer *luatypes.Recognizer) {
 	api.recognizers = append(api.recognizers, recognizer)
 }

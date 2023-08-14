@@ -1,4 +1,4 @@
-package database
+package oauthtoken
 
 import (
 	"bytes"
@@ -8,13 +8,13 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type mockDoer struct {
@@ -27,9 +27,9 @@ func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
 
 func TestExternalServiceTokenRefresher(t *testing.T) {
 	ctx := context.Background()
-	db := NewMockDB()
+	db := dbmocks.NewMockDB()
 
-	externalServices := NewMockExternalServiceStore()
+	externalServices := dbmocks.NewMockExternalServiceStore()
 	extSvc := &types.ExternalService{
 		ID:          2,
 		Kind:        extsvc.KindGitLab,
@@ -94,7 +94,7 @@ func TestExternalServiceTokenRefresher(t *testing.T) {
 func TestExternalAccountTokenRefresher(t *testing.T) {
 	ctx := context.Background()
 
-	externalAccounts := NewMockUserExternalAccountsStore()
+	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 	originalToken := &auth.OAuthBearerToken{
 		Token:        "expired",
 		RefreshToken: "refresh_token",

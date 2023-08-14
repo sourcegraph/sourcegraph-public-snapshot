@@ -1,7 +1,7 @@
-import { Extension, Facet, RangeSetBuilder } from '@codemirror/state'
+import { type Extension, Facet, RangeSetBuilder } from '@codemirror/state'
 import { Decoration, EditorView, WidgetType } from '@codemirror/view'
 
-import { Filter } from '@sourcegraph/shared/src/search/query/token'
+import type { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/utils'
 
 import { queryTokens } from './parsedQuery'

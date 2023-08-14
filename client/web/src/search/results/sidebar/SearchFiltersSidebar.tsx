@@ -1,4 +1,13 @@
-import { FC, ReactNode, ReactElement, useCallback, useMemo, HTMLAttributes, memo, PropsWithChildren } from 'react'
+import {
+    type FC,
+    type ReactNode,
+    type ReactElement,
+    useCallback,
+    useMemo,
+    type HTMLAttributes,
+    memo,
+    type PropsWithChildren,
+} from 'react'
 
 import { mdiInformationOutline } from '@mdi/js'
 
@@ -13,15 +22,15 @@ import {
     getFiltersOfKind,
     useLastRepoName,
 } from '@sourcegraph/branded'
-import { QueryStateUpdate, QueryUpdate } from '@sourcegraph/shared/src/search'
+import type { QueryStateUpdate, QueryUpdate } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { Filter } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import type { Filter } from '@sourcegraph/shared/src/search/stream'
+import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Code, Tooltip, Icon } from '@sourcegraph/wildcard'
 
-import { SearchPatternType } from '../../../graphql-operations'
+import type { SearchPatternType } from '../../../graphql-operations'
 import { buildSearchURLQueryFromQueryState } from '../../../stores'
 import { AggregationUIMode, GroupResultsPing } from '../components/aggregation'
 

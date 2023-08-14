@@ -1,14 +1,14 @@
 import React, { useState } from 'react'
 
 import { action } from '@storybook/addon-actions'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import GithubIcon from 'mdi-react/GithubIcon'
-import { Observable, of } from 'rxjs'
+import { type Observable, of } from 'rxjs'
 
 import { Grid, H1, H2, H3 } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
-import { OptionsPage, OptionsPageProps } from './OptionsPage'
+import { OptionsPage, type OptionsPageProps } from './OptionsPage'
 
 import brandedStyles from '../../branded.scss'
 

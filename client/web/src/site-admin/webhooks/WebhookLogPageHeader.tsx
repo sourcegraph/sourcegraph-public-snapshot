@@ -6,9 +6,9 @@ import classNames from 'classnames'
 import { useQuery } from '@sourcegraph/http-client'
 import { Button, Select, Icon } from '@sourcegraph/wildcard'
 
-import { WebhookLogPageHeaderResult } from '../../graphql-operations'
+import type { WebhookLogPageHeaderResult } from '../../graphql-operations'
 
-import { SelectedExternalService, WEBHOOK_LOG_PAGE_HEADER } from './backend'
+import { type SelectedExternalService, WEBHOOK_LOG_PAGE_HEADER } from './backend'
 import { PerformanceGauge } from './PerformanceGauge'
 
 import styles from './WebhookLogPageHeader.module.scss'

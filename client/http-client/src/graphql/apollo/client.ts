@@ -1,5 +1,12 @@
-import { ApolloClient, createHttpLink, from, HttpOptions, InMemoryCache, NormalizedCacheObject } from '@apollo/client'
-import { PersistenceMapperFunction } from 'apollo3-cache-persist/lib/types'
+import {
+    ApolloClient,
+    createHttpLink,
+    from,
+    type HttpOptions,
+    type InMemoryCache,
+    type NormalizedCacheObject,
+} from '@apollo/client'
+import type { PersistenceMapperFunction } from 'apollo3-cache-persist/lib/types'
 import { once } from 'lodash'
 
 import { checkOk } from '../../http-status-error'

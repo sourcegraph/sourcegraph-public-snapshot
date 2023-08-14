@@ -4,19 +4,19 @@ import * as path from 'path'
 import { subDays } from 'date-fns'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
-import { RepositoryType, SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { RepositoryType, type SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import {
     DiffHunkLineType,
-    RepositoryContributorsResult,
-    WebGraphQlOperations,
+    type RepositoryContributorsResult,
+    type WebGraphQlOperations,
     ExternalServiceKind,
 } from '../graphql-operations'
 
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from './context'
 import {
     createResolveRepoRevisionResult,
     createFileExternalLinksResult,

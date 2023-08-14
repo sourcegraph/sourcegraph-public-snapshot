@@ -4,10 +4,10 @@ import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, Code, Link, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { BatchSpecFields } from '../../../graphql-operations'
+import type { BatchSpecFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { MultiSelectContext } from '../MultiSelectContext'
 

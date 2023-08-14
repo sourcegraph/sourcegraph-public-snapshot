@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { Link, Icon } from '@sourcegraph/wildcard'
 
-import { AuthProvider, SourcegraphContext } from '../../jscontext'
+import type { AuthProvider, SourcegraphContext } from '../../jscontext'
 
 import styles from './ExternalsAuth.module.scss'
 

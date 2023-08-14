@@ -1,4 +1,4 @@
-import { Series } from '../../../../types'
+import type { Series } from '../../../../types'
 
 import { getSeriesData } from './get-series-data'
 import { SeriesType } from './types'

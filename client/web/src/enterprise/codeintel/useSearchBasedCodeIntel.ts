@@ -4,20 +4,20 @@ import stringify from 'fast-json-stable-stringify'
 import { flatten, sortBy } from 'lodash'
 import LRU from 'lru-cache'
 
-import { createAggregateError, ErrorLike } from '@sourcegraph/common'
-import { Range as ExtensionRange, Position as ExtensionPosition } from '@sourcegraph/extension-api-types'
+import { createAggregateError, type ErrorLike } from '@sourcegraph/common'
+import type { Range as ExtensionRange, Position as ExtensionPosition } from '@sourcegraph/extension-api-types'
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
+import type { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 import { Position as ScipPosition } from '@sourcegraph/shared/src/codeintel/scip'
 import { searchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
-import { Location, buildSearchBasedLocation, split } from '../../codeintel/location'
+import { type Location, buildSearchBasedLocation, split } from '../../codeintel/location'
 import { CODE_INTEL_SEARCH_QUERY, LOCAL_CODE_INTEL_QUERY } from '../../codeintel/ReferencesPanelQueries'
-import { SettingsGetter } from '../../codeintel/settings'
+import type { SettingsGetter } from '../../codeintel/settings'
 import { isDefined } from '../../codeintel/util/helpers'
-import { CodeIntelSearch2Variables } from '../../graphql-operations'
+import type { CodeIntelSearch2Variables } from '../../graphql-operations'
 import { syntaxHighlight } from '../../repo/blob/codemirror/highlight'
 import { getBlobEditView } from '../../repo/blob/use-blob-store'
 
@@ -26,7 +26,7 @@ import {
     isExternalPrivateSymbol,
     isSourcegraphDotCom,
     referencesQuery,
-    SearchResult,
+    type SearchResult,
     searchResultToResults,
     searchWithFallback,
 } from './searchBased'

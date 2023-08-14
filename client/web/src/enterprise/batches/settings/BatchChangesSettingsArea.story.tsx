@@ -1,14 +1,14 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
 import {
-    BatchChangesCodeHostFields,
-    BatchChangesCredentialFields,
+    type BatchChangesCodeHostFields,
+    type BatchChangesCredentialFields,
     ExternalServiceKind,
-    UserBatchChangesCodeHostsResult,
+    type UserBatchChangesCodeHostsResult,
 } from '../../../graphql-operations'
 import { BATCH_CHANGES_SITE_CONFIGURATION } from '../backend'
 import { noRolloutWindowMockResult, rolloutWindowConfigMockResult } from '../mocks'

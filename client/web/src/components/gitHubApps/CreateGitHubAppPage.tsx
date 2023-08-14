@@ -1,4 +1,4 @@
-import React, { FC, useState, useCallback, useRef, useEffect } from 'react'
+import React, { type FC, useState, useCallback, useRef, useEffect } from 'react'
 
 import { noop } from 'lodash'
 import { Link } from 'react-router-dom'

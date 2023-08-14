@@ -63,6 +63,7 @@ go_test(
         "//internal/authz/permssync",
         "//internal/authz/providers/github",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/executor",
         "//internal/extsvc",
         "//internal/licensing",

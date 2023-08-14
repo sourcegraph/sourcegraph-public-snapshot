@@ -1,18 +1,18 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { Routes, Route } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
 import {
     GitHubAppDomain,
-    SiteExternalServiceConfigResult,
-    SiteExternalServiceConfigVariables,
+    type SiteExternalServiceConfigResult,
+    type SiteExternalServiceConfigVariables,
 } from '../graphql-operations'
 
 import { SITE_EXTERNAL_SERVICE_CONFIG } from './backend'

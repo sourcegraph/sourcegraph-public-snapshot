@@ -1,4 +1,4 @@
-import { Observable, Observer } from 'rxjs'
+import { Observable, type Observer } from 'rxjs'
 
 /**
  * An async generator that yields no values.

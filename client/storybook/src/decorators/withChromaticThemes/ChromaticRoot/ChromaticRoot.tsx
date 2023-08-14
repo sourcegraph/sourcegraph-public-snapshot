@@ -1,9 +1,9 @@
-import { FunctionComponent, PropsWithChildren, useState } from 'react'
+import { type FunctionComponent, type PropsWithChildren, useState } from 'react'
 
 import classNames from 'classnames'
 
 import { PopoverRoot } from '@sourcegraph/wildcard'
-import { ChromaticThemeContext, ChromaticTheme } from '@sourcegraph/wildcard/src/stories'
+import { ChromaticThemeContext, type ChromaticTheme } from '@sourcegraph/wildcard/src/stories'
 
 import styles from './ChromaticRoot.module.scss'
 

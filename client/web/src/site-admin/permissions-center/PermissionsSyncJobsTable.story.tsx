@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { addMinutes, formatRFC3339, subMinutes } from 'date-fns'
 import { WildcardMockLink } from 'wildcard-mock-link'
 
@@ -15,7 +15,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../components/WebStory'
-import { PermissionsSyncJob } from '../../graphql-operations'
+import type { PermissionsSyncJob } from '../../graphql-operations'
 
 import { PERMISSIONS_SYNC_JOBS_QUERY, PERMISSIONS_SYNC_JOBS_STATS } from './backend'
 import { PermissionsSyncJobsTable } from './PermissionsSyncJobsTable'

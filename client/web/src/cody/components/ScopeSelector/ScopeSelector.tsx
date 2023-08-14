@@ -3,19 +3,20 @@ import React, { useEffect, useMemo, useCallback } from 'react'
 import classNames from 'classnames'
 
 import { Transcript } from '@sourcegraph/cody-shared/dist/chat/transcript'
-import { CodyClientScope } from '@sourcegraph/cody-shared/dist/chat/useClient'
+import type { CodyClientScope } from '@sourcegraph/cody-shared/dist/chat/useClient'
 import { useLazyQuery } from '@sourcegraph/http-client'
+import { Text } from '@sourcegraph/wildcard'
 
-import { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
+import type { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { EventName } from '../../../util/constants'
 
 import { ReposStatusQuery } from './backend'
-import { RepositoriesSelectorPopover, getFileName, IRepo } from './RepositoriesSelectorPopover'
+import { RepositoriesSelectorPopover, getFileName, type IRepo } from './RepositoriesSelectorPopover'
 
 import styles from './ScopeSelector.module.scss'
 
-interface ScopeSelectorProps {
+export interface ScopeSelectorProps {
     scope: CodyClientScope
     setScope: (scope: CodyClientScope) => void
     toggleIncludeInferredRepository: () => void
@@ -23,6 +24,9 @@ interface ScopeSelectorProps {
     fetchRepositoryNames: (count: number) => Promise<string[]>
     isSourcegraphApp: boolean
     transcript: Transcript
+    isSourcegraphApp?: boolean
+    className?: string
+    renderHint?: (repos: IRepo[]) => React.ReactNode
 }
 
 export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function ScopeSelectorComponent({
@@ -33,6 +37,8 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     fetchRepositoryNames,
     isSourcegraphApp,
     transcript,
+    className,
+    renderHint,
 }) {
     const [loadReposStatus, { data: newReposStatusData, previousData: previousReposStatusData }] = useLazyQuery<
         ReposStatusResult,
@@ -112,27 +118,29 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     }, [scope, setScope, fetchRepositoryNames, isSourcegraphApp])
 
     return (
-        <div className={styles.wrapper}>
-            <div className="d-flex text-truncate">
-                <RepositoriesSelectorPopover
-                    includeInferredRepository={scope.includeInferredRepository}
-                    includeInferredFile={scope.includeInferredFile}
-                    inferredRepository={inferredRepository}
-                    inferredFilePath={activeEditor?.filePath || null}
-                    additionalRepositories={additionalRepositories}
-                    addRepository={addRepository}
-                    resetScope={!isSourcegraphApp ? resetScope : null}
-                    removeRepository={removeRepository}
-                    toggleIncludeInferredRepository={toggleIncludeInferredRepository}
-                    toggleIncludeInferredFile={toggleIncludeInferredFile}
-                />
-                {scope.includeInferredFile && activeEditor?.filePath && (
-                    <div className={classNames('d-flex align-items-center', styles.filepathText)}>
-                        <div className={styles.separator} />
-                        {getFileName(activeEditor.filePath)}
-                    </div>
-                )}
+        <>
+            <div className={classNames(styles.wrapper, className)}>
+                <div className="d-flex text-truncate w-100">
+                    <RepositoriesSelectorPopover
+                        includeInferredRepository={scope.includeInferredRepository}
+                        includeInferredFile={scope.includeInferredFile}
+                        inferredRepository={inferredRepository}
+                        inferredFilePath={activeEditor?.filePath || null}
+                        additionalRepositories={additionalRepositories}
+                        addRepository={addRepository}
+                        resetScope={!isSourcegraphApp ? resetScope : null}
+                        removeRepository={removeRepository}
+                        toggleIncludeInferredRepository={toggleIncludeInferredRepository}
+                        toggleIncludeInferredFile={toggleIncludeInferredFile}
+                    />
+                    {scope.includeInferredFile && activeEditor?.filePath && (
+                        <Text size="small" className="ml-2 mb-0 align-self-center">
+                            {getFileName(activeEditor.filePath)}
+                        </Text>
+                    )}
+                </div>
             </div>
-        </div>
+            {renderHint?.(additionalRepositories)}
+        </>
     )
 })

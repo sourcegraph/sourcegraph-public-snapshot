@@ -1,14 +1,14 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import * as vscode from 'vscode'
 
 import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 
 import { getProxyAgent } from '../backend/fetch'
-import { initializeSourcegraphSettings } from '../backend/sourcegraphSettings'
+import type { initializeSourcegraphSettings } from '../backend/sourcegraphSettings'
 import { initializeCodeIntel } from '../code-intel/initialize'
-import { ExtensionCoreAPI } from '../contract'
-import { SourcegraphFileSystemProvider } from '../file-system/SourcegraphFileSystemProvider'
+import type { ExtensionCoreAPI } from '../contract'
+import type { SourcegraphFileSystemProvider } from '../file-system/SourcegraphFileSystemProvider'
 import { SearchPatternType } from '../graphql-operations'
 import { endpointRequestHeadersSetting, endpointSetting } from '../settings/endpointSetting'
 

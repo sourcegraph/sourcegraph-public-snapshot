@@ -1,4 +1,4 @@
-import { DOMFunctions } from '../tokenPosition'
+import type { DOMFunctions } from '../tokenPosition'
 
 import { GITHUB_CODE_TABLE, SOURCEGRAPH_CODE_TABLE } from './generate'
 import { TEST_DATA_REVSPEC } from './revision'

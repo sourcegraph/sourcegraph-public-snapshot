@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Input } from '@sourcegraph/wildcard'
 
-import { CodeMirrorQueryInputFacadeProps } from './CodeMirrorQueryInput'
+import type { CodeMirrorQueryInputFacadeProps } from './CodeMirrorQueryInput'
 
 import styles from './LazyQueryInput.module.scss'
 

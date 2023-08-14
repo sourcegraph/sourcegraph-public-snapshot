@@ -1,4 +1,4 @@
-import { FC, ReactNode, useLayoutEffect, useMemo } from 'react'
+import { type FC, type ReactNode, useLayoutEffect, useMemo } from 'react'
 
 import { mdiGit, mdiDelete, mdiFolderMultipleOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -17,8 +17,8 @@ import {
     CollapsePanel,
 } from '@sourcegraph/wildcard'
 
-import { LocalRepository } from '../../../../graphql-operations'
-import { callFilePicker, useLocalExternalServices, LocalCodeHost } from '../../../../setup-wizard/components'
+import type { LocalRepository } from '../../../../graphql-operations'
+import { callFilePicker, useLocalExternalServices, type LocalCodeHost } from '../../../../setup-wizard/components'
 import { NoReposAddedState } from '../../components'
 
 import styles from './LocalRepositoriesTab.module.scss'

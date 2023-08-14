@@ -1,6 +1,6 @@
-import React, { HTMLAttributes } from 'react'
+import React, { type HTMLAttributes } from 'react'
 
-import { Alert, AlertProps } from '../Alert/Alert'
+import { Alert, type AlertProps } from '../Alert/Alert'
 import { ErrorMessage } from '../ErrorMessage'
 
 export type ErrorAlertProps = {

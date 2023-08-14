@@ -11,8 +11,8 @@ import {
     PermissionsSyncJobReason,
     PermissionsSyncJobReasonGroup,
     CodeHostStatus,
-    PermissionsSyncJobsResult,
-    UserPermissionsInfoResult,
+    type PermissionsSyncJobsResult,
+    type UserPermissionsInfoResult,
     PermissionsSyncJobState,
 } from '../../../../graphql-operations'
 import { PERMISSIONS_SYNC_JOBS_QUERY } from '../../../../site-admin/permissions-center/backend'

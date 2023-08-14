@@ -4,14 +4,14 @@ import { mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
-import { AuthProvider, SourcegraphContext } from '../jscontext'
+import type { AuthProvider, SourcegraphContext } from '../jscontext'
 
 import { ExternalsAuth } from './components/ExternalsAuth'
-import { SignUpArguments, SignUpForm } from './SignUpForm'
+import { type SignUpArguments, SignUpForm } from './SignUpForm'
 
 import styles from './VsCodeSignUpPage.module.scss'
 

@@ -1,8 +1,8 @@
-import { FunctionComponent } from 'react'
+import type { FunctionComponent } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { Insight, isBackendInsight } from '../../../../core'
+import { type Insight, isBackendInsight } from '../../../../core'
 
 import { StandaloneBackendInsight } from './standalone-backend-insight/StandaloneBackendInsight'
 import { StandaloneLangStatsInsight } from './standalone-lang-stats-insight/StandaloneLangStatsInsight'

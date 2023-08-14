@@ -1,16 +1,16 @@
 import { of } from 'rxjs'
 
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
-import {
+import type {
     LegacyLayoutRouteContext,
     LegacyRouteComputedContext,
     LegacyRouteStaticInjections,
 } from '../LegacyRouteContext'
-import { DynamicSourcegraphWebAppContext, StaticSourcegraphWebAppContext } from '../SourcegraphWebApp'
-import {
+import type { DynamicSourcegraphWebAppContext, StaticSourcegraphWebAppContext } from '../SourcegraphWebApp'
+import type {
     StaticInjectedAppConfig,
     StaticHardcodedAppConfig,
     StaticWindowContextComputedAppConfig,

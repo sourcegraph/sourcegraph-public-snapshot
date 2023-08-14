@@ -332,7 +332,7 @@ sg ci build --help
 
 				if cmd.Bool("wait") {
 					pending := std.Out.Pending(output.Styledf(output.StylePending, "Waiting for %d jobs...", len(build.Jobs)))
-					err = statusTicker(cmd.Context, fetchJobs(cmd.Context, client, *build.Number, pending))
+					err = statusTicker(cmd.Context, fetchJobs(cmd.Context, client, &build, pending))
 					if err != nil {
 						return err
 					}
@@ -409,7 +409,7 @@ sg ci build --help
 					}
 
 					pending := std.Out.Pending(output.Styledf(output.StylePending, "Waiting for %d jobs...", len(build.Jobs)))
-					err := statusTicker(cmd.Context, fetchJobs(cmd.Context, client, *build.Number, pending))
+					err := statusTicker(cmd.Context, fetchJobs(cmd.Context, client, &build, pending))
 					pending.Destroy()
 					if err != nil {
 						return err
@@ -1010,12 +1010,15 @@ func statusTicker(ctx context.Context, f func() (bool, error)) error {
 	}
 }
 
-func fetchJobs(ctx context.Context, client *bk.Client, buildNumber int, pending output.Pending) func() (bool, error) {
+func fetchJobs(ctx context.Context, client *bk.Client, buildPtr **buildkite.Build, pending output.Pending) func() (bool, error) {
 	return func() (bool, error) {
-		build, err := client.GetBuildByNumber(ctx, "sourcegraph", strconv.Itoa(buildNumber))
+		build, err := client.GetBuildByNumber(ctx, "sourcegraph", strconv.Itoa(*((*buildPtr).Number)))
 		if err != nil {
 			return false, errors.Newf("failed to get most recent build for branch %q: %w", *build.Branch, err)
 		}
+
+		// Update the original build reference with the refreshed one.
+		*buildPtr = build
 
 		// Check if all jobs are finished
 		finishedJobs := 0

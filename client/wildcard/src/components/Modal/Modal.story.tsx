@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 
 import { H1 } from '..'
 import { BrandedStory } from '../../stories/BrandedStory'

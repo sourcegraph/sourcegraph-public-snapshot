@@ -1,15 +1,15 @@
-import React, { FunctionComponent, useMemo, useState } from 'react'
+import React, { type FunctionComponent, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { asError, isErrorLike, ErrorLike } from '@sourcegraph/common'
+import { asError, isErrorLike, type ErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
 import { screenReaderAnnounce, Input, Label, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { LoaderButton } from '../../../components/LoaderButton'
-import { AddUserEmailResult, AddUserEmailVariables, UserSettingsAreaUserFields } from '../../../graphql-operations'
+import type { AddUserEmailResult, AddUserEmailVariables, UserSettingsAreaUserFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 interface Props {

@@ -1,8 +1,8 @@
 import React, { useCallback } from 'react'
 
-import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import type { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
-import { getResultId, LineMatchItem, SymbolMatchItem } from './utils'
+import { getResultId, type LineMatchItem, type SymbolMatchItem } from './utils'
 
 import styles from './SelectableSearchResult.module.scss'
 

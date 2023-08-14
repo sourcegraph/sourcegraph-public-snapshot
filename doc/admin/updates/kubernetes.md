@@ -19,6 +19,10 @@ For upgrade procedures or general info about sourcegraph versioning see the link
 No applicable notes for unreleased versions.
 
 <!-- Add changes changes to this section before release. -->
+## v5.1.5 ➔ v5.1.6
+
+#### Notes:
+
 ## v5.1.4 ➔ v5.1.5
 
 #### Notes:

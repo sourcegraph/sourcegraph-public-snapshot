@@ -55,7 +55,7 @@ go_test(
         "//cmd/symbols/parser",
         "//internal/api",
         "//internal/ctags_config",
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/diskcache",
         "//internal/endpoint",
         "//internal/gitserver/gitdomain",

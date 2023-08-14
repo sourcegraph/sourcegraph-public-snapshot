@@ -1,12 +1,12 @@
-import {
+import type {
     CaseSensitivityProps,
     QueryState,
     SearchContextProps,
     SearchPatternTypeProps,
 } from '@sourcegraph/shared/src/search'
-import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import type { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 
-import { IEditor } from './LazyQueryInput'
+import type { IEditor } from './LazyQueryInput'
 
 /**
  * Props that the Monaco and CodeMirror implementation have in common.

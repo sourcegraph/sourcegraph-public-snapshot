@@ -1,13 +1,13 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
-import { Subject } from 'rxjs'
+import type { Subject } from 'rxjs'
 
 import { Timestamp, TimestampFormat } from '@sourcegraph/branded/src/components/Timestamp'
-import { Badge, BadgeProps, Button, ErrorAlert, Icon } from '@sourcegraph/wildcard'
+import { Badge, type BadgeProps, Button, ErrorAlert, Icon } from '@sourcegraph/wildcard'
 
-import { ExternalServiceSyncJobListFields, ExternalServiceSyncJobState } from '../../graphql-operations'
-import { ValueLegendList, ValueLegendListProps } from '../../site-admin/analytics/components/ValueLegendList'
+import { type ExternalServiceSyncJobListFields, ExternalServiceSyncJobState } from '../../graphql-operations'
+import { ValueLegendList, type ValueLegendListProps } from '../../site-admin/analytics/components/ValueLegendList'
 import { LoaderButton } from '../LoaderButton'
 import { Duration } from '../time/Duration'
 

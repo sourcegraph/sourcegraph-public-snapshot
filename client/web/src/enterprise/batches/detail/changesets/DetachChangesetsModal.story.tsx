@@ -1,5 +1,5 @@
 import { action } from '@storybook/addon-actions'
-import { Story, Meta, DecoratorFn } from '@storybook/react'
+import type { Story, Meta, DecoratorFn } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'

@@ -1,7 +1,7 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Series, useDeepMemo, ErrorAlert } from '@sourcegraph/wildcard'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { type Series, useDeepMemo, ErrorAlert } from '@sourcegraph/wildcard'
 
 import {
     SeriesBasedChartTypes,
@@ -17,7 +17,7 @@ import {
 } from '../../../../../components'
 import { DATA_SERIES_COLORS } from '../../../../../constants'
 import {
-    SeriesWithStroke,
+    type SeriesWithStroke,
     useLivePreviewSeriesInsight,
     LivePreviewStatus,
 } from '../../../../../core/hooks/live-preview-insight'

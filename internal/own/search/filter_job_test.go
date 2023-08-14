@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/own"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -26,7 +27,7 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 	tests := []struct {
 		name  string
 		args  args
-		setup func(db *database.MockDB)
+		setup func(db *dbmocks.MockDB)
 		want  autogold.Value
 	}{
 		{
@@ -545,28 +546,28 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 				return []byte(content), nil
 			})
 
-			codeownersStore := database.NewMockCodeownersStore()
+			codeownersStore := dbmocks.NewMockCodeownersStore()
 			codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.CodeownersFunc.SetDefaultReturn(codeownersStore)
-			usersStore := database.NewMockUserStore()
+			usersStore := dbmocks.NewMockUserStore()
 			usersStore.GetByUsernameFunc.SetDefaultReturn(nil, nil)
 			usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, nil)
 			db.UsersFunc.SetDefaultReturn(usersStore)
-			usersEmailsStore := database.NewMockUserEmailsStore()
+			usersEmailsStore := dbmocks.NewMockUserEmailsStore()
 			usersEmailsStore.GetVerifiedEmailsFunc.SetDefaultReturn(nil, nil)
 			db.UserEmailsFunc.SetDefaultReturn(usersEmailsStore)
-			assignedOwnersStore := database.NewMockAssignedOwnersStore()
+			assignedOwnersStore := dbmocks.NewMockAssignedOwnersStore()
 			assignedOwnersStore.ListAssignedOwnersForRepoFunc.SetDefaultReturn(nil, nil)
 			db.AssignedOwnersFunc.SetDefaultReturn(assignedOwnersStore)
-			assignedTeamsStore := database.NewMockAssignedTeamsStore()
+			assignedTeamsStore := dbmocks.NewMockAssignedTeamsStore()
 			assignedTeamsStore.ListAssignedTeamsForRepoFunc.SetDefaultReturn(nil, nil)
 			db.AssignedTeamsFunc.SetDefaultReturn(assignedTeamsStore)
-			userExternalAccountsStore := database.NewMockUserExternalAccountsStore()
+			userExternalAccountsStore := dbmocks.NewMockUserExternalAccountsStore()
 			userExternalAccountsStore.ListFunc.SetDefaultReturn(nil, nil)
 			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccountsStore)
-			db.TeamsFunc.SetDefaultReturn(database.NewMockTeamStore())
-			repoStore := database.NewMockRepoStore()
+			db.TeamsFunc.SetDefaultReturn(dbmocks.NewMockTeamStore())
+			repoStore := dbmocks.NewMockRepoStore()
 			repoStore.GetFunc.SetDefaultReturn(&types.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
 			db.ReposFunc.SetDefaultReturn(repoStore)
 			if tt.setup != nil {
@@ -599,15 +600,15 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 	}
 }
 
-func assignedOwnerSetup(path string, user *types.User) func(*database.MockDB) {
-	return func(db *database.MockDB) {
+func assignedOwnerSetup(path string, user *types.User) func(*dbmocks.MockDB) {
+	return func(db *dbmocks.MockDB) {
 		assignedOwners := []*database.AssignedOwnerSummary{
 			{
 				OwnerUserID: user.ID,
 				FilePath:    path,
 			},
 		}
-		usersStore := database.NewMockUserStore()
+		usersStore := dbmocks.NewMockUserStore()
 		usersStore.GetByUsernameFunc.SetDefaultHook(func(_ context.Context, name string) (*types.User, error) {
 			if name == user.Username {
 				return user, nil
@@ -616,7 +617,7 @@ func assignedOwnerSetup(path string, user *types.User) func(*database.MockDB) {
 		})
 		usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, nil)
 		db.UsersFunc.SetDefaultReturn(usersStore)
-		assignedOwnersStore := database.NewMockAssignedOwnersStore()
+		assignedOwnersStore := dbmocks.NewMockAssignedOwnersStore()
 		assignedOwnersStore.ListAssignedOwnersForRepoFunc.SetDefaultReturn(assignedOwners, nil)
 		db.AssignedOwnersFunc.SetDefaultReturn(assignedOwnersStore)
 	}

@@ -5,10 +5,10 @@ import classNames from 'classnames'
 import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
-import { BlockProps } from '..'
+import type { BlockProps } from '..'
 import { isModifierKeyPressed } from '../notebook/useNotebookEventHandlers'
 
-import { NotebookBlockMenu, NotebookBlockMenuProps } from './menu/NotebookBlockMenu'
+import { NotebookBlockMenu, type NotebookBlockMenuProps } from './menu/NotebookBlockMenu'
 import { useIsBlockInputFocused } from './useIsBlockInputFocused'
 
 import blockStyles from './NotebookBlock.module.scss'

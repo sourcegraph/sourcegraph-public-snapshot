@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 
-import { ApolloError } from '@apollo/client'
+import type { ApolloError } from '@apollo/client'
 
 import { gql, useLazyQuery } from '@sourcegraph/http-client'
 
-import {
+import type {
     RepositoryRecordedCommandsResult,
     RepositoryRecordedCommandsVariables,
     RepositoryRecordedCommandFields,

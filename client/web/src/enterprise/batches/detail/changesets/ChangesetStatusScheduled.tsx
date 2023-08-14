@@ -4,7 +4,7 @@ import { mdiTimerOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { formatDistanceToNow, isBefore, parseISO } from 'date-fns'
 
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Tooltip, Icon } from '@sourcegraph/wildcard'
 
 import { getChangesetScheduleEstimate } from '../backend'

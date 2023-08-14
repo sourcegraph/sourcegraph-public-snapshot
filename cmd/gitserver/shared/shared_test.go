@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -46,8 +46,8 @@ func TestGetVCSSyncer(t *testing.T) {
 	tempCoursierCacheDir := filepath.Join(tempReposDir, "coursier")
 
 	repo := api.RepoName("foo/bar")
-	extsvcStore := database.NewMockExternalServiceStore()
-	repoStore := database.NewMockRepoStore()
+	extsvcStore := dbmocks.NewMockExternalServiceStore()
+	repoStore := dbmocks.NewMockRepoStore()
 
 	repoStore.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
 		return &types.Repo{

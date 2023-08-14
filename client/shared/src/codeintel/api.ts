@@ -1,34 +1,34 @@
 import { castArray } from 'lodash'
-import { from, Observable, of } from 'rxjs'
+import { from, type Observable, of } from 'rxjs'
 import { defaultIfEmpty, map } from 'rxjs/operators'
 
 import {
     fromHoverMerged,
-    HoverMerged,
-    TextDocumentIdentifier,
-    TextDocumentPositionParameters,
+    type HoverMerged,
+    type TextDocumentIdentifier,
+    type TextDocumentPositionParameters,
 } from '@sourcegraph/client-api'
-import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import type { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 // eslint-disable-next-line no-restricted-imports
 import { isDefined } from '@sourcegraph/common/src/types'
-import * as clientType from '@sourcegraph/extension-api-types'
+import type * as clientType from '@sourcegraph/extension-api-types'
 
 import { match } from '../api/client/types/textDocument'
-import { FlatExtensionHostAPI, ScipParameters } from '../api/contract'
+import type { FlatExtensionHostAPI, ScipParameters } from '../api/contract'
 import { proxySubscribable } from '../api/extension/api/common'
 import { toPosition } from '../api/extension/api/types'
 import { getModeFromPath } from '../languages'
 import type { PlatformContext } from '../platform/context'
-import { isSettingsValid, Settings, SettingsCascade } from '../settings/settings'
+import { isSettingsValid, type Settings, type SettingsCascade } from '../settings/settings'
 import { parseRepoURI } from '../util/url'
 
 import type { DocumentSelector, TextDocument, DocumentHighlight } from './legacy-extensions/api'
 import * as sourcegraph from './legacy-extensions/api'
-import { LanguageSpec } from './legacy-extensions/language-specs/language-spec'
+import type { LanguageSpec } from './legacy-extensions/language-specs/language-spec'
 import { languageSpecs } from './legacy-extensions/language-specs/languages'
 import { RedactingLogger } from './legacy-extensions/logging'
-import { createProviders, emptySourcegraphProviders, SourcegraphProviders } from './legacy-extensions/providers'
-import { Occurrence } from './scip'
+import { createProviders, emptySourcegraphProviders, type SourcegraphProviders } from './legacy-extensions/providers'
+import type { Occurrence } from './scip'
 
 interface CodeIntelAPI {
     hasReferenceProvidersForDocument(textParameters: TextDocumentPositionParameters): Promise<boolean>

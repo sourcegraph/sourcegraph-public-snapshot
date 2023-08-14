@@ -1,7 +1,7 @@
 import { gql } from '@sourcegraph/http-client'
-import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
+import type { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 
-import { PreviewGitObjectFilterResult } from '../../../../graphql-operations'
+import type { PreviewGitObjectFilterResult } from '../../../../graphql-operations'
 
 export interface GitObjectPreviewResult {
     preview: {

@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -397,7 +398,7 @@ func Test_UserResourceHandler_Patch_ReplaceStrategies_Standard(t *testing.T) {
 }
 
 // createMockDB creates a mock database with the given number of users and two emails for each user.
-func createMockDB() *database.MockDB {
+func createMockDB() *dbmocks.MockDB {
 	user := &types.UserForSCIM{
 		User:            types.User{ID: 1, Username: "test-user1"},
 		Emails:          []string{"primary@work.com", "secondary@work.com"},

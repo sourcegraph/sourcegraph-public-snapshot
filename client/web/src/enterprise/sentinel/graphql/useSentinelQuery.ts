@@ -1,10 +1,10 @@
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 
 import {
-    UseShowMorePaginationResult,
+    type UseShowMorePaginationResult,
     useShowMorePagination,
 } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
-import {
+import type {
     VulnerabilityMatchesResult,
     VulnerabilityMatchesVariables,
     VulnerabilitiesFields,

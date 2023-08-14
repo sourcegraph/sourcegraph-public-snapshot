@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'

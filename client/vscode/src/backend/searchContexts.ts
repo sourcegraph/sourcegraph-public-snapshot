@@ -1,12 +1,12 @@
-import { from, Observable, of } from 'rxjs'
+import { from, type Observable, of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
-import { GraphQLResult } from '@sourcegraph/http-client'
+import type { GraphQLResult } from '@sourcegraph/http-client'
 import { getAvailableSearchContextSpecOrFallback } from '@sourcegraph/shared/src/search'
 
-import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from '../settings/LocalStorageService'
-import { VSCEStateMachine } from '../state'
+import { type LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from '../settings/LocalStorageService'
+import type { VSCEStateMachine } from '../state'
 
 import { requestGraphQLFromVSCode } from './requestGraphQl'
 

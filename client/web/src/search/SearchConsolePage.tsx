@@ -9,7 +9,7 @@ import { debounceTime } from 'rxjs/operators'
 
 import {
     StreamingSearchResultsList,
-    StreamingSearchResultsListProps,
+    type StreamingSearchResultsListProps,
     CodeMirrorQueryInput,
     createDefaultSuggestions,
     changeListener,
@@ -21,10 +21,10 @@ import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
-import { OwnConfigProps } from '../own/OwnConfigProps'
+import type { OwnConfigProps } from '../own/OwnConfigProps'
 import { setSearchMode, useNavbarQueryState } from '../stores'
 
-import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
+import { parseSearchURLQuery, parseSearchURLPatternType, type SearchStreamingProps } from '.'
 import { submitSearch } from './helpers'
 
 import styles from './SearchConsolePage.module.scss'

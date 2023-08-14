@@ -3,14 +3,14 @@ import React from 'react'
 import { mdiAccount } from '@mdi/js'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { H1, Icon, Link, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { BreadcrumbSetters } from '../../components/Breadcrumbs'
+import type { AuthenticatedUser } from '../../auth'
+import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { RepositoryFields } from '../../graphql-operations'
+import type { RepositoryFields } from '../../graphql-operations'
 
 import { RepositoryOwnPageContents } from './RepositoryOwnPageContents'
 
