@@ -343,7 +343,7 @@
 
 
 # Cody IA revamp redirects
-/cody /cody/overview 308
+# /cody /cody/overview 301
 /cody/explanations/installing_vs_code /cody/overview/install-vscode 308
 /cody/explanations/installing_jetbrains /cody/overview/install-jetbrains 308
 /app /cody/overview/app 308

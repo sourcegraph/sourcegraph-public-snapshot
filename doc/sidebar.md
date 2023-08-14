@@ -6,7 +6,7 @@ ignoreDisconnectedPageCheck: true
     color:#fff;
     display: inline-block;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: bold;
     letter-spacing: 0;
     line-height: 30px;
     margin: calc(1.5*var(--spacing)) 0 calc(.5*var(--spacing));
