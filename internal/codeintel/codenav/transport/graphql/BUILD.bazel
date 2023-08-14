@@ -59,7 +59,7 @@ go_test(
         "//internal/codeintel/resolvers",
         "//internal/codeintel/shared/resolvers/gitresolvers",
         "//internal/codeintel/uploads/shared",
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/observation",

@@ -57,7 +57,7 @@ go_test(
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//internal/actor",
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/encryption",
         "//internal/github_apps/store",
         "//internal/github_apps/types",

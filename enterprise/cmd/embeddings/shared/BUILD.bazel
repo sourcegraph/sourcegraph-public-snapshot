@@ -87,7 +87,7 @@ go_test(
     deps = [
         "//enterprise/cmd/embeddings/qa",
         "//internal/api",
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/embeddings",
         "//internal/embeddings/background/repo",
         "//internal/endpoint",

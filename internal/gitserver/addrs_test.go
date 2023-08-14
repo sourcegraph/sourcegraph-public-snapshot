@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -16,7 +16,7 @@ import (
 )
 
 func TestAddrForRepo(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	ga := GitserverAddresses{
 		db:        db,
 		Addresses: []string{"gitserver-1", "gitserver-2", "gitserver-3"},
@@ -119,7 +119,7 @@ func TestAddrForRepo(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				repos := database.NewMockRepoStore()
+				repos := dbmocks.NewMockRepoStore()
 				repos.GetByNameFunc.PushReturn(
 					&types.Repo{
 						ID:   api.RepoID(1),
@@ -136,7 +136,7 @@ func TestAddrForRepo(t *testing.T) {
 				)
 				db.ReposFunc.SetDefaultReturn(repos)
 
-				gs := database.NewMockGitserverRepoStore()
+				gs := dbmocks.NewMockGitserverRepoStore()
 				gs.GetPoolRepoNameFunc.SetDefaultReturn(tc.getPoolRepoFuncDefaultReturn())
 				db.GitserverReposFunc.SetDefaultReturn(gs)
 
@@ -205,7 +205,7 @@ func TestGitserverAddresses_withUpdateCache(t *testing.T) {
 }
 
 func TestGitserverAddresses_getCachedRepoAddress(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	ga := &GitserverAddresses{
 		db:        db,
 		Addresses: []string{"gitserver-1", "gitserver-2", "gitserver-3"},

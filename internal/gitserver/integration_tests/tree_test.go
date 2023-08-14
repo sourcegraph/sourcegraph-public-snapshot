@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -61,7 +61,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		},
 	}
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
 	client := gitserver.NewTestClient(http.DefaultClient, source)
 	for label, test := range tests {
@@ -256,7 +256,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 		},
 	}
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
 	client := gitserver.NewTestClient(http.DefaultClient, source)
 	for label, test := range tests {
@@ -318,7 +318,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 		},
 	}
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
 	client := gitserver.NewTestClient(http.DefaultClient, source)
 	for label, test := range tests {
@@ -405,7 +405,7 @@ func TestReadDir_SubRepoFiltering(t *testing.T) {
 		},
 	})
 	defer conf.Mock(nil)
-	srpGetter := database.NewMockSubRepoPermsStore()
+	srpGetter := dbmocks.NewMockSubRepoPermsStore()
 	testSubRepoPerms := map[api.RepoName]authz.SubRepoPermissions{
 		repo: {
 			Paths: []string{"/**", "-/app/**"},
@@ -417,7 +417,7 @@ func TestReadDir_SubRepoFiltering(t *testing.T) {
 		t.Fatalf("unexpected error creating sub-repo perms client: %s", err)
 	}
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
 	client := gitserver.NewTestClient(http.DefaultClient, source)
 	files, err := client.ReadDir(ctx, checker, repo, commitID, "", false)

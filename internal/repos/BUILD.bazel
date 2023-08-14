@@ -171,6 +171,7 @@ go_test(
         "//internal/conf/conftypes",
         "//internal/conf/reposource",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/encryption/keyring",
         "//internal/extsvc",

@@ -69,6 +69,7 @@ go_test(
     embed = [":shared"],
     deps = [
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/licensing",
         "//internal/repos",
         "//internal/types",
