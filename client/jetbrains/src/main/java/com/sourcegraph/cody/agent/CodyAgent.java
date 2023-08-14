@@ -108,7 +108,7 @@ public class CodyAgent implements Disposable {
             } catch (Exception e) {
               initializationErrorMessage =
                   "failed to send 'initialize' JSON-RPC request Cody agent";
-              logger.error(initializationErrorMessage, e);
+              logger.warn(initializationErrorMessage, e);
             }
           });
     } catch (Exception e) {
