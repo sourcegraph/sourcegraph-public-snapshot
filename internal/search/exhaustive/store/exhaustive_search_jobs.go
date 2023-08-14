@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var exhaustiveSearchJobWorkerOpts = dbworkerstore.Options[*types.ExhaustiveSearchJob]{
@@ -65,6 +66,13 @@ func (s *Store) CreateExhaustiveSearchJob(ctx context.Context, job types.Exhaust
 	ctx, _, endObservation := s.operations.createExhaustiveSearchJob.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
+	if job.Query == "" {
+		return 0, MissingQueryErr
+	}
+	if job.InitiatorID <= 0 {
+		return 0, MissingInitiatorIDErr
+	}
+
 	row := s.Store.QueryRow(
 		ctx,
 		sqlf.Sprintf(createExhaustiveSearchJobQueryFmtr, job.Query, job.InitiatorID),
@@ -76,6 +84,12 @@ func (s *Store) CreateExhaustiveSearchJob(ctx context.Context, job types.Exhaust
 	}
 	return id, nil
 }
+
+// MissingQueryErr is returned when a query is missing from a types.ExhaustiveSearchJob.
+var MissingQueryErr = errors.New("missing query")
+
+// MissingInitiatorIDErr is returned when an initiator ID is missing from a types.ExhaustiveSearchJob.
+var MissingInitiatorIDErr = errors.New("missing initiator ID")
 
 const createExhaustiveSearchJobQueryFmtr = `
 INSERT INTO exhaustive_search_jobs (query, initiator_id)
