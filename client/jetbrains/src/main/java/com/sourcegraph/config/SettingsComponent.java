@@ -128,7 +128,7 @@ public class SettingsComponent implements Disposable {
     // Create URL field for the enterprise section
     JBLabel urlLabel = new JBLabel("Sourcegraph URL:");
     urlTextField = new JBTextField();
-    // noinspection DialogTitleCapitalization
+    //noinspection DialogTitleCapitalization
     urlTextField.getEmptyText().setText("https://sourcegraph.example.com");
     urlTextField.setToolTipText("The default is \"" + ConfigUtil.DOTCOM_URL + "\".");
     addValidation(
@@ -558,14 +558,14 @@ public class SettingsComponent implements Disposable {
   private JPanel createNavigationSettingsPanel() {
     JBLabel defaultBranchNameLabel = new JBLabel("Default branch name:");
     defaultBranchNameTextField = new JBTextField();
-    // noinspection DialogTitleCapitalization
+    //noinspection DialogTitleCapitalization
     defaultBranchNameTextField.getEmptyText().setText("main");
     defaultBranchNameTextField.setToolTipText(
         "Usually \"main\" or \"master\", but can be any name");
 
     JBLabel remoteUrlReplacementsLabel = new JBLabel("Remote URL replacements:");
     remoteUrlReplacementsTextField = new JBTextField();
-    // noinspection DialogTitleCapitalization
+    //noinspection DialogTitleCapitalization
     remoteUrlReplacementsTextField
         .getEmptyText()
         .setText("search1, replacement1, search2, replacement2, ...");
@@ -600,7 +600,7 @@ public class SettingsComponent implements Disposable {
 
   @NotNull
   private JPanel createCodySettingsPanel() {
-    // noinspection DialogTitleCapitalization
+    //noinspection DialogTitleCapitalization
     isCodyEnabledCheckBox = new JBCheckBox("Enable Cody");
     isCodyAutoCompleteEnabledCheckBox = new JBCheckBox("Enable Cody autocomplete");
     isCodyDebugEnabledCheckBox = new JBCheckBox("Enable debug");
@@ -618,8 +618,7 @@ public class SettingsComponent implements Disposable {
     codySettingsPanel.setBorder(
         IdeBorderFactory.createTitledBorder("Cody Settings", true, JBUI.insetsTop(8)));
 
-    // Disable isCodyAutoCompleteEnabledCheckBox if isCodyEnabledCheckBox is not
-    // selected
+    // Disable isCodyAutoCompleteEnabledCheckBox if isCodyEnabledCheckBox is not selected
     isCodyEnabledCheckBox.addActionListener(
         e -> {
           if (!isCodyEnabledCheckBox.isSelected()) {
