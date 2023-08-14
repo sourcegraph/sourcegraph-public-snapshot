@@ -4807,7 +4807,8 @@ Foreign-key constraints:
     u.local_steps,
     u.should_reindex,
     u.requested_envvars,
-    r.name AS repository_name
+    r.name AS repository_name,
+    u.enqueuer_user_id
    FROM (lsif_indexes u
      JOIN repo r ON ((r.id = u.repository_id)))
   WHERE (r.deleted_at IS NULL);
