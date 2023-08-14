@@ -85,6 +85,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
             toggleIncludeInferredFile,
             fetchRepositoryNames,
             isSourcegraphApp,
+            transcript,
         }),
         [
             scope,
@@ -93,6 +94,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
             toggleIncludeInferredFile,
             fetchRepositoryNames,
             isSourcegraphApp,
+            transcript,
         ]
     )
 
