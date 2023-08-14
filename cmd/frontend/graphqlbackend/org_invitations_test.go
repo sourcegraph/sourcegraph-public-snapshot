@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -164,14 +165,14 @@ func TestInviteUserToOrganization(t *testing.T) {
 	defer func() {
 		timeNow = time.Now
 	}()
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: "foo"}, nil)
 
-	userEmails := database.NewMockUserEmailsStore()
+	userEmails := dbmocks.NewMockUserEmailsStore()
 	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("foo@bar.baz", false, nil)
 
-	orgMembers := database.NewMockOrgMemberStore()
+	orgMembers := dbmocks.NewMockOrgMemberStore()
 	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
 		if userID == 1 {
 			return &types.OrgMembership{}, nil
@@ -180,19 +181,19 @@ func TestInviteUserToOrganization(t *testing.T) {
 		return nil, &database.ErrOrgMemberNotFound{}
 	})
 
-	orgs := database.NewMockOrgStore()
+	orgs := dbmocks.NewMockOrgStore()
 	orgName := "acme"
 	mockedOrg := types.Org{ID: 1, Name: orgName}
 	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
-	orgInvitations := database.NewMockOrgInvitationStore()
+	orgInvitations := dbmocks.NewMockOrgInvitationStore()
 	orgInvitations.CreateFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1, ExpiresAt: pointers.Ptr(timeNow().Add(DefaultExpiryDuration))}, nil)
 
-	featureFlags := database.NewMockFeatureFlagStore()
+	featureFlags := dbmocks.NewMockFeatureFlagStore()
 	featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(false, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
@@ -357,10 +358,10 @@ func TestInviteUserToOrganization(t *testing.T) {
 }
 
 func TestPendingInvitations(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
-	orgMembers := database.NewMockOrgMemberStore()
+	orgMembers := dbmocks.NewMockOrgMemberStore()
 	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(&types.OrgMembership{}, nil)
 
 	//orgs := database.NewMockOrgStore()
@@ -380,10 +381,10 @@ func TestPendingInvitations(t *testing.T) {
 			ID: 3,
 		},
 	}
-	orgInvitations := database.NewMockOrgInvitationStore()
+	orgInvitations := dbmocks.NewMockOrgInvitationStore()
 	orgInvitations.GetPendingByOrgIDFunc.SetDefaultReturn(invitations, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	//db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
@@ -451,11 +452,11 @@ func TestPendingInvitations(t *testing.T) {
 }
 
 func TestInvitationByToken(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: "foo"}, nil)
 
-	orgMembers := database.NewMockOrgMemberStore()
+	orgMembers := dbmocks.NewMockOrgMemberStore()
 	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
 		if userID == 1 {
 			return &types.OrgMembership{}, nil
@@ -464,16 +465,16 @@ func TestInvitationByToken(t *testing.T) {
 		return nil, &database.ErrOrgMemberNotFound{}
 	})
 
-	orgs := database.NewMockOrgStore()
+	orgs := dbmocks.NewMockOrgStore()
 	orgName := "acme"
 	mockedOrg := types.Org{ID: 1, Name: orgName}
 	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
-	orgInvitations := database.NewMockOrgInvitationStore()
+	orgInvitations := dbmocks.NewMockOrgInvitationStore()
 	orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1, OrgID: 1, RecipientUserID: 1}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
@@ -548,11 +549,11 @@ func TestInvitationByToken(t *testing.T) {
 }
 
 func TestRespondToOrganizationInvitation(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2}, nil)
 	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: "foo"}, nil)
 
-	orgMembers := database.NewMockOrgMemberStore()
+	orgMembers := dbmocks.NewMockOrgMemberStore()
 	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
 		if userID == 1 {
 			return &types.OrgMembership{}, nil
@@ -561,19 +562,19 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		return nil, &database.ErrOrgMemberNotFound{}
 	})
 
-	orgs := database.NewMockOrgStore()
+	orgs := dbmocks.NewMockOrgStore()
 	orgName := "acme"
 	mockedOrg := types.Org{ID: 1, Name: orgName}
 	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
-	orgInvitations := database.NewMockOrgInvitationStore()
+	orgInvitations := dbmocks.NewMockOrgInvitationStore()
 	orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1, OrgID: 1, RecipientUserID: 2}, nil)
 	orgInvitations.RespondFunc.SetDefaultHook(func(ctx context.Context, id int64, userID int32, accept bool) (int32, error) {
 		return int32(id), nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
@@ -685,7 +686,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		email := "foo@bar.baz"
 		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: strings.ToUpper(email)}, nil)
 
-		userEmails := database.NewMockUserEmailsStore()
+		userEmails := dbmocks.NewMockUserEmailsStore()
 		userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: email, UserID: 2}}, nil)
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
@@ -740,7 +741,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		email := "foo@bar.baz"
 		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: email}, nil)
 
-		userEmails := database.NewMockUserEmailsStore()
+		userEmails := dbmocks.NewMockUserEmailsStore()
 		userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: "something@else.invalid", UserID: 2}}, nil)
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
@@ -782,14 +783,14 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 }
 
 func TestResendOrganizationInvitationNotification(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: "foo"}, nil)
 
-	userEmails := database.NewMockUserEmailsStore()
+	userEmails := dbmocks.NewMockUserEmailsStore()
 	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("foo@bar.baz", true, nil)
 
-	orgMembers := database.NewMockOrgMemberStore()
+	orgMembers := dbmocks.NewMockOrgMemberStore()
 	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
 		if userID == 1 {
 			return &types.OrgMembership{}, nil
@@ -798,19 +799,19 @@ func TestResendOrganizationInvitationNotification(t *testing.T) {
 		return nil, &database.ErrOrgMemberNotFound{}
 	})
 
-	orgs := database.NewMockOrgStore()
+	orgs := dbmocks.NewMockOrgStore()
 	orgName := "acme"
 	mockedOrg := types.Org{ID: 1, Name: orgName}
 	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
 	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
-	orgInvitations := database.NewMockOrgInvitationStore()
+	orgInvitations := dbmocks.NewMockOrgInvitationStore()
 	orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1, OrgID: 1, RecipientUserID: 2}, nil)
 	orgInvitations.RespondFunc.SetDefaultHook(func(ctx context.Context, id int64, userID int32, accept bool) (int32, error) {
 		return int32(id), nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)

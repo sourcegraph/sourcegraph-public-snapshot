@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,14 +17,14 @@ func TestSchedulePermsSync_UserPermsTest(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 
-	permsSyncStore := database.NewMockPermissionSyncJobStore()
+	permsSyncStore := dbmocks.NewMockPermissionSyncJobStore()
 	permsSyncStore.CreateUserSyncJobFunc.SetDefaultReturn(nil)
 	permsSyncStore.CreateRepoSyncJobFunc.SetDefaultReturn(nil)
 
-	featureFlags := database.NewMockFeatureFlagStore()
+	featureFlags := dbmocks.NewMockFeatureFlagStore()
 	featureFlags.GetGlobalFeatureFlagsFunc.SetDefaultReturn(map[string]bool{}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncStore)
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
@@ -43,11 +44,11 @@ func TestSchedulePermsSync_RepoPermsTest(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 
-	permsSyncStore := database.NewMockPermissionSyncJobStore()
+	permsSyncStore := dbmocks.NewMockPermissionSyncJobStore()
 	permsSyncStore.CreateUserSyncJobFunc.SetDefaultReturn(nil)
 	permsSyncStore.CreateRepoSyncJobFunc.SetDefaultReturn(nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncStore)
 
 	syncTime := time.Now().Add(37 * time.Second)

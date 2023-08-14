@@ -76,7 +76,7 @@ go_test(
         "//cmd/gitserver/server",
         "//internal/api",
         "//internal/codeintel/dependencies",
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/extsvc",
         "//internal/types",
         "@com_github_google_go_cmp//cmp",

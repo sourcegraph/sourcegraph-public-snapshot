@@ -54,6 +54,7 @@ go_test(
         "//internal/cloud",
         "//internal/conf",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/extsvc",
         "//internal/types",

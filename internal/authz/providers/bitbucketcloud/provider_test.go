@@ -12,7 +12,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -74,7 +74,7 @@ func createTestServer() *httptest.Server {
 }
 
 func TestProvider_FetchUserPerms(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	t.Run("nil account", func(t *testing.T) {
 		p := NewProvider(db,
 			&types.BitbucketCloudConnection{
@@ -185,7 +185,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 func TestProvider_FetchRepoPerms(t *testing.T) {
 	server := createTestServer()
 	defer server.Close()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 
 	conn := &schema.BitbucketCloudConnection{
 		ApiURL: server.URL,

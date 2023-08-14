@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
-	"github.com/sourcegraph/zoekt/grpc/v1"
+	v1 "github.com/sourcegraph/zoekt/grpc/v1"
 	"github.com/sourcegraph/zoekt/rpc"
 	zoektstream "github.com/sourcegraph/zoekt/stream"
 	"google.golang.org/grpc"
