@@ -35,11 +35,24 @@ export const ExternalServiceGroup: FC<ExternalServiceGroupProps> = ({
     const [isOpen, setIsOpen] = useState<boolean>(true)
     const toggleIsOpen = (): void => setIsOpen(prevIsOpen => !prevIsOpen)
 
+    if (services.length === 1) {
+        const [service] = services
+        return (
+            <div
+                className={classNames('mb-3 px-2 border', styles.externalServiceGroupNode, {
+                    [styles.externalServiceGroupEnabledNode]: service.enabled,
+                })}
+            >
+                <ExternalServiceGroupNode service={service} renderIcon={true} />
+            </div>
+        )
+    }
+
     return (
-        <div className={styles.externalServiceGroupContainer}>
+        <div className={classNames('border', styles.externalServiceGroupContainer)}>
             <Button
                 className={classNames(styles.externalServiceGroupHeader, {
-                    [styles.externalServiceGroupExpandedHeader]: isOpen,
+                    'border-bottom': isOpen,
                 })}
                 onClick={toggleIsOpen}
             >

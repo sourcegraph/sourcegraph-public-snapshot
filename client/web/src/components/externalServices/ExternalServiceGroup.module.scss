@@ -1,7 +1,5 @@
 .external-service-group {
     &__container {
-        border: 1px solid var(--border-color-2);
-
         &:not(:last-child) {
             margin-bottom: 1rem;
         }
@@ -17,10 +15,6 @@
         display: flex;
         justify-content: space-between;
         padding: 0.5rem;
-    }
-
-    &__expanded-header {
-        border-bottom: 1px solid var(--border-color-2);
     }
 
     &__description {
