@@ -18,14 +18,16 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
   @Nullable public String instanceType;
   @Nullable public String url;
 
-  // Remove this after 2024-08-01 when surely everyone migrated to the secure storage.
+  // Remove this after 2024-08-01 when surely everyone migrated to the secure
+  // storage.
   @Deprecated(since = "3.0.7")
   @Nullable
   public String dotComAccessToken;
 
   public boolean isDotComAccessTokenSet;
 
-  // Remove this after 2024-08-01 when surely everyone migrated to the secure storage.
+  // Remove this after 2024-08-01 when surely everyone migrated to the secure
+  // storage.
   @Deprecated(since = "3.0.7")
   @Nullable
   public String enterpriseAccessToken;
@@ -47,6 +49,8 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
   @Nullable public Boolean isCodyAutoCompleteEnabled;
   public boolean isAccessTokenNotificationDismissed;
   @Nullable public Boolean authenticationFailedLastTime;
+  @Nullable public Boolean isCodyDebugEnabled;
+  @Nullable public Boolean isCodyVerboseDebugEnabled;
 
   @Nullable
   public String
@@ -124,6 +128,14 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
         .orElse(false);
   }
 
+  public boolean isCodyDebugEnabled() {
+    return Optional.ofNullable(isCodyDebugEnabled).orElse(false);
+  }
+
+  public boolean isCodyVerboseDebugEnabled() {
+    return Optional.ofNullable(isCodyVerboseDebugEnabled).orElse(false);
+  }
+
   public boolean isAccessTokenNotificationDismissed() {
     return isAccessTokenNotificationDismissed;
   }
@@ -166,5 +178,7 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     this.isAccessTokenNotificationDismissed = settings.isAccessTokenNotificationDismissed;
     this.authenticationFailedLastTime = settings.authenticationFailedLastTime;
     this.lastUpdateNotificationPluginVersion = settings.lastUpdateNotificationPluginVersion;
+    this.isCodyDebugEnabled = settings.isCodyDebugEnabled;
+    this.isCodyVerboseDebugEnabled = settings.isCodyVerboseDebugEnabled;
   }
 }

@@ -30,7 +30,9 @@ public class ConfigUtil {
             UserLevelConfig.getAutoCompleteProviderType().vscodeSettingString())
         .setAutocompleteAdvancedServerEndpoint(UserLevelConfig.getAutoCompleteServerEndpoint())
         .setAutocompleteAdvancedAccessToken(UserLevelConfig.getAutoCompleteAccessToken())
-        .setAutocompleteAdvancedEmbeddings(UserLevelConfig.getAutocompleteAdvancedEmbeddings());
+        .setAutocompleteAdvancedEmbeddings(UserLevelConfig.getAutocompleteAdvancedEmbeddings())
+        .setCodyDebug(isCodyDebugEnabled())
+        .setCodyVerboseDebug(isCodyVerboseDebugEnabled());
   }
 
   @NotNull
@@ -223,6 +225,14 @@ public class ConfigUtil {
     return getApplicationLevelConfig().isCodyEnabled;
   }
 
+  public static boolean isCodyDebugEnabled() {
+    return getApplicationLevelConfig().isCodyDebugEnabled();
+  }
+
+  public static boolean isCodyVerboseDebugEnabled() {
+    return getApplicationLevelConfig().isCodyVerboseDebugEnabled();
+  }
+
   public static boolean isCodyAutoCompleteEnabled() {
     return getApplicationLevelConfig().isCodyEnabled
         && getApplicationLevelConfig().isCodyAutoCompleteEnabled();
@@ -277,13 +287,16 @@ public class ConfigUtil {
     if (project.getBasePath() != null) {
       return project.getBasePath();
     }
-    // The base path should only be null for the default project. The agent server assumes that the
-    // workspace root is not null, so we have to provide some default value. Feel free to change to
+    // The base path should only be null for the default project. The agent server
+    // assumes that the
+    // workspace root is not null, so we have to provide some default value. Feel
+    // free to change to
     // something else than the home directory if this is causing problems.
     return System.getProperty("user.home");
   }
 
-  // Null means user denied access to token storage. Empty string means no token found.
+  // Null means user denied access to token storage. Empty string means no token
+  // found.
   @Nullable
   public static String getProjectAccessToken(@NotNull Project project) {
     SettingsComponent.InstanceType instanceType = ConfigUtil.getInstanceType(project);
@@ -296,7 +309,8 @@ public class ConfigUtil {
     }
   }
 
-  // Null means user denied access to token storage. Empty string means no token found.
+  // Null means user denied access to token storage. Empty string means no token
+  // found.
   @Nullable
   public static String getEnterpriseAccessToken(Project project) {
     // Project level overrides secure storage
@@ -315,7 +329,8 @@ public class ConfigUtil {
       return securelyStoredAccessToken.get();
     }
 
-    // No secure token found, so use app-level token and migrate it to secure storage.
+    // No secure token found, so use app-level token and migrate it to secure
+    // storage.
     String unsafeApplicationLevelAccessToken = getApplicationLevelConfig().enterpriseAccessToken;
     if (unsafeApplicationLevelAccessToken != null) {
       AccessTokenStorage.setApplicationEnterpriseAccessToken(unsafeApplicationLevelAccessToken);
@@ -324,7 +339,8 @@ public class ConfigUtil {
     return unsafeApplicationLevelAccessToken != null ? unsafeApplicationLevelAccessToken : "";
   }
 
-  // Null means user denied access to token storage. Empty string means no token found.
+  // Null means user denied access to token storage. Empty string means no token
+  // found.
   @Nullable
   public static String getDotComAccessToken(@NotNull Project project) {
     // Project level overrides secure storage
@@ -342,7 +358,8 @@ public class ConfigUtil {
       return securelyStoredAccessToken.get();
     }
 
-    // No secure token found, so use app-level token and migrate it to secure storage.
+    // No secure token found, so use app-level token and migrate it to secure
+    // storage.
     String unsafeApplicationLevelAccessToken = getApplicationLevelConfig().dotComAccessToken;
     if (unsafeApplicationLevelAccessToken != null) {
       AccessTokenStorage.setApplicationDotComAccessToken(unsafeApplicationLevelAccessToken);

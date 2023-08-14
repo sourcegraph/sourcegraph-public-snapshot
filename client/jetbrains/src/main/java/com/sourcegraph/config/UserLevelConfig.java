@@ -76,9 +76,10 @@ public class UserLevelConfig {
     return properties.getProperty("url", "");
   }
 
-  // readProps returns the first properties file it's able to parse from the following paths:
-  //   $HOME/.sourcegraph-jetbrains.properties
-  //   $HOME/sourcegraph-jetbrains.properties
+  // readProps returns the first properties file it's able to parse from the
+  // following paths:
+  // $HOME/.sourcegraph-jetbrains.properties
+  // $HOME/sourcegraph-jetbrains.properties
   @NotNull
   private static Properties readProperties() {
     Path[] candidatePaths = {
