@@ -13,7 +13,7 @@ import { isRepoIndexed } from './ScopeSelector/RepositoriesSelectorPopover'
 
 import styles from './GettingStarted.module.scss'
 
-type CoversationScope = 'general' | 'repo'
+type ConversationScope = 'general' | 'repo'
 
 const isBlobPage = (): boolean => parseBrowserRepoURL(window.location.href)?.filePath !== undefined
 
@@ -28,7 +28,7 @@ export const GettingStarted: React.FC<
         submitInput: (input: string, submitType: 'user' | 'suggestion' | 'example') => void
     }
 > = ({ submitInput, ...scopeSelectorProps }) => {
-    const [conversationScope, setConversationScope] = useState<CoversationScope>(
+    const [conversationScope, setConversationScope] = useState<ConversationScope>(
         isBlobPage() || scopeSelectorProps.scope.repositories.length > 0 ? 'repo' : 'general'
     )
 
@@ -161,7 +161,7 @@ export const GettingStarted: React.FC<
                                     value="general"
                                     wrapperClassName="d-flex align-items-baseline"
                                     checked={conversationScope === 'general'}
-                                    onChange={event => setConversationScope(event.target.value as CoversationScope)}
+                                    onChange={event => setConversationScope(event.target.value as ConversationScope)}
                                 />
                             </div>
                             <div>
@@ -176,7 +176,7 @@ export const GettingStarted: React.FC<
                                     value="repo"
                                     wrapperClassName="d-flex align-items-baseline mb-1"
                                     checked={conversationScope === 'repo'}
-                                    onChange={event => setConversationScope(event.target.value as CoversationScope)}
+                                    onChange={event => setConversationScope(event.target.value as ConversationScope)}
                                 />
                                 <div className={styles.scopeSelectorWrapper}>
                                     <ScopeSelector {...scopeSelectorProps} renderHint={renderRepoIndexingWarning} />
