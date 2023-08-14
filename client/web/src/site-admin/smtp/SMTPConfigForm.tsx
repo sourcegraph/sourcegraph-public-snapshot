@@ -1,10 +1,22 @@
-import { FC, useCallback, useMemo, useState } from 'react'
+import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { ApolloError } from '@apollo/client'
 import { applyEdits, modify, parse, ParseError } from 'jsonc-parser'
 
-import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
-import { Button, Checkbox, Form, H3, Input, Label, Link, Alert, Select, Text, Container } from '@sourcegraph/wildcard'
+import { SiteConfiguration, SMTPServerConfig } from '@sourcegraph/shared/src/schema/site.schema'
+import {
+    Button,
+    Checkbox,
+    Form,
+    H3,
+    Input,
+    Label,
+    Link,
+    Alert,
+    Select,
+    Text,
+    Container,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { LoaderButton } from '../../components/LoaderButton'
@@ -21,8 +33,17 @@ interface Props {
     error?: ApolloError
 }
 
+interface FormData extends SMTPServerConfig {
+    email?: SiteConfiguration['email.address']
+    senderName?: SiteConfiguration['email.senderName']
+
+    [key: string]: any
+}
+
 export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser, saveConfig, error, loading }) => {
-    const [initialConfig, err] = useMemo(() => {
+    const [form, setForm] = useState<FormData>({} as FormData)
+
+    const [parsedConfig, err] = useMemo((): [FormData | null, Error | null] => {
         if (!config) {
             return [null, null]
         }
@@ -43,12 +64,12 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
             ...siteConfig['email.smtp'],
             noVerifyTLS: !!siteConfig['email.smtp']?.noVerifyTLS,
             authentication: siteConfig['email.smtp']?.authentication ?? 'PLAIN',
-        }
+        } as FormData
+
+        setForm(result)
 
         return [result, null]
     }, [config])
-
-    const [form, setForm] = useState(initialConfig ?? {})
 
     const isValid = useMemo(() => {
         return (
@@ -69,9 +90,13 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
     const fieldChanged = useCallback(
         (e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLSelectElement>) => {
             const { name, value } = e.target
+
             const newValue = {
                 ...form,
                 [name]: value,
+            }
+            if (name === 'noVerifyTLS') {
+                newValue.noVerifyTLS = !(e.target as HTMLInputElement).checked
             }
             if (name === 'authentication' && value === 'none') {
                 delete newValue.username
@@ -86,28 +111,35 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
     )
 
     const applyChanges = useCallback(() => {
-        const edits = [
-            ...modify(config!, ['email.address'], form.email, defaultModificationOptions),
-            ...modify(
-                config!,
+        let newConfig = applyEdits(config!, modify(config!, ['email.address'], form.email, defaultModificationOptions))
+        newConfig = applyEdits(
+            newConfig,
+            modify(newConfig!, ['email.senderName'], form.senderName, defaultModificationOptions)
+        )
+        newConfig = applyEdits(
+            newConfig,
+            modify(
+                newConfig!,
                 ['email.smtp'],
                 {
                     host: form.host,
                     port: Number(form.port),
-                    authentication: form.authentication || 'PLAIN',
+                    authentication: form.authentication,
                     username: form.username,
                     password: form.password,
+                    noVerifyTLS: form.noVerifyTLS,
+                    domain: form.domain,
                 },
                 defaultModificationOptions
-            ),
-        ]
+            )
+        )
 
-        saveConfig(applyEdits(config!, edits))
-    }, [form, config, initialConfig])
+        saveConfig(newConfig)
+    }, [form, config, parsedConfig])
 
     const reset = useCallback(() => {
-        setForm(initialConfig ?? {})
-    }, [initialConfig])
+        setForm(parsedConfig ?? ({} as FormData))
+    }, [parsedConfig])
 
     const handleSubmit = useCallback(
         (e: React.FormEvent<HTMLFormElement>) => {
@@ -242,13 +274,13 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
                         variant="primary"
                         label="Save"
                         loading={loading}
-                        disabled={!isValid || JSON.stringify(form) === JSON.stringify(initialConfig)}
+                        disabled={!isValid || JSON.stringify(form) === JSON.stringify(parsedConfig)}
                     />
                     <Button className="ml-2" type="button" variant="secondary" onClick={reset}>
                         Discard changes
                     </Button>
                 </div>
-            </Form>
+            </FormData>
             <Container className="mt-4">
                 <H3>Test email</H3>
                 <SendTestEmailForm authenticatedUser={authenticatedUser} />

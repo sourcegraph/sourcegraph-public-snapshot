@@ -1,7 +1,7 @@
 import { FC, useCallback, useMemo } from 'react'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { Link, Alert, Text } from '@sourcegraph/wildcard'
+import { Link, Alert, Text, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { LoaderButton } from '../../components/LoaderButton'
@@ -13,9 +13,19 @@ interface SendTestEmailProps {
     authenticatedUser: AuthenticatedUser
 }
 export const SendTestEmailForm: FC<SendTestEmailProps> = ({ authenticatedUser, className }) => {
-    const [sendTestEmail, { data, loading, error }] = useMutation<SendTestEmailToResult, SendTestEmailToVariables>(
-        SEND_TEST_EMAIL
-    )
+    const controller = useMemo(() => new AbortController(), [])
+
+    const [sendTestEmail, { data, loading, error, reset }] = useMutation<
+        SendTestEmailToResult,
+        SendTestEmailToVariables
+    >(SEND_TEST_EMAIL, {
+        context: {
+            fetchOptions: {
+                signal: controller.signal,
+            },
+        },
+        onError: err => console.error('Apollo error', err),
+    })
     const primaryEmail = useMemo(
         () => authenticatedUser?.emails.find(email => email.isPrimary)?.email,
         [authenticatedUser]
@@ -27,6 +37,11 @@ export const SendTestEmailForm: FC<SendTestEmailProps> = ({ authenticatedUser, c
             },
         })
     }, [sendTestEmail, primaryEmail])
+
+    const cancel = useCallback(() => {
+        controller.abort()
+        reset()
+    }, [controller, reset])
 
     return (
         <div className={className}>
@@ -45,10 +60,13 @@ export const SendTestEmailForm: FC<SendTestEmailProps> = ({ authenticatedUser, c
                 <LoaderButton
                     onClick={onSendTestEmail}
                     loading={loading}
-                    disabled={!primaryEmail}
+                    disabled={!primaryEmail || loading}
                     label="Send test email"
-                    variant="secondary"
+                    variant="primary"
                 />
+                <Button className="ml-2" onClick={cancel} variant="secondary">
+                    Cancel
+                </Button>
             </div>
         </div>
     )

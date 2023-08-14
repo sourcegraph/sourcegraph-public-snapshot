@@ -233,6 +233,7 @@ interface Props extends TelemetryProps {
 }
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
+const SITE_CONFIG_QUERY_NAME = 'Site'
 
 /**
  * A page displaying the site configuration.
@@ -250,10 +251,12 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
     const [isSetupChecklistEnabled] = useFeatureFlag('setup-checklist', false)
 
     useEffect(() => {
-        if (isSetupChecklistEnabled) setSearchParams({ tab: tabIndex.toString() })
+        if (isSetupChecklistEnabled) {setSearchParams({ tab: tabIndex.toString() })}
     }, [tabIndex, isSetupChecklistEnabled])
 
-    const { data, loading, error, refetch } = useQuery<SiteResult, SiteVariables>(SITE_CONFIG_QUERY, {})
+    const { data, loading, error } = useQuery<SiteResult, SiteVariables>(SITE_CONFIG_QUERY, {
+        // fetchPolicy: 'cache-and-network',
+    })
 
     const [reloadSiteConfig, { loading: reloadLoading, error: reloadError }] = useMutation<
         ReloadSiteResult,
@@ -263,7 +266,9 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
     const [updateSiteConfig, { loading: updateLoading, error: updateError }] = useMutation<
         UpdateSiteConfigurationResult,
         UpdateSiteConfigurationVariables
-    >(UPDATE_SITE_CONFIG)
+    >(UPDATE_SITE_CONFIG, {
+        refetchQueries: [SITE_CONFIG_QUERY_NAME],
+    })
 
     const reloadSite = useCallback(() => {
         eventLogger.log('SiteReloaded')
@@ -312,10 +317,8 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
                     logger.error(error)
                 }
             }
-
-            refetch()
         },
-        [client, data, refetch, setEnabledCompletions, updateSiteConfig]
+        [client, data, setEnabledCompletions, updateSiteConfig]
     )
 
     let effectiveError: Error | undefined = error || reloadError
@@ -446,7 +449,7 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
                                     authenticatedUser={authenticatedUser}
                                     config={data?.site?.configuration?.effectiveContents}
                                     saveConfig={onSave}
-                                    loading={updateLoading}
+                                    loading={loading || updateLoading}
                                     error={updateError}
                                 />
                             </Container>
