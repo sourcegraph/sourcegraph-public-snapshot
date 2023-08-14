@@ -87,7 +87,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
             toggleIncludeInferredFile,
             fetchRepositoryNames,
             isSourcegraphApp,
-            wrapperClassName: 'mt-2',
+            className: 'mt-2',
         }),
         [
             scope,

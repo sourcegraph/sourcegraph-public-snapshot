@@ -22,7 +22,7 @@ export interface ScopeSelectorProps {
     toggleIncludeInferredFile: () => void
     fetchRepositoryNames: (count: number) => Promise<string[]>
     isSourcegraphApp?: boolean
-    wrapperClassName?: string
+    className?: string
     shouldShowRepoExamples?: boolean
     renderHint?: (repos: IRepo[]) => React.ReactNode
 }
@@ -34,7 +34,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     toggleIncludeInferredFile,
     fetchRepositoryNames,
     isSourcegraphApp,
-    wrapperClassName,
+    className,
     shouldShowRepoExamples,
     renderHint,
 }) {
@@ -117,7 +117,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
 
     return (
         <>
-            <div className={classNames(styles.wrapper, wrapperClassName)}>
+            <div className={classNames(styles.wrapper, className)}>
                 <div className="d-flex text-truncate w-100">
                     <RepositoriesSelectorPopover
                         includeInferredRepository={scope.includeInferredRepository}
