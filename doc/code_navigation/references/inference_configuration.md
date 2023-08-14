@@ -149,9 +149,9 @@ This library also defines the following two pattern collection constructors.
 - `new_path_exclude(patterns)` creates a new _inverted_ pattern collection object. Paths matching these `pattern`s are filtered out from the set of matching filepaths given to a recognizer's `generate` function.
   - Type: `((pattern | array[pattern])...) -> pattern`
 
-### `paths`
+### `path`
 
-This library defines the following five path utility functions:
+This library defines the following utility functions:
 
 - `ancestors(path)` returns a list `{dirname(path), dirname(dirname(path)), ...}`. The last element in the list will be an empty string.
   - Type: `(string) -> array[string]`
@@ -159,10 +159,10 @@ This library defines the following five path utility functions:
   - Type: `(string) -> string`
 - `dirname(path)` returns the dirname of the given path as defined by Go's [filepath.Dir](https://pkg.go.dev/path/filepath#Dir), except that it (1) returns an empty path instead of `"."` if the path is empty and (2) removes a leading `/` if present.
   - Type: `string -> string`
-- `join(paths...)` returns a filepath created by joining the given path segments via filepath separator.
-  - Type: `(string...) -> string`
-- `split(path)` split a path into an ordered sequence of path segments.
-  - Type: `(string) -> array[string]`
+- `join(path1, path2)` returns a filepath created by joining the given path segments via filepath separator.
+  - Type: `(string, string) -> string`
+- `split(path)` is a convenience function that returns `dirname(path), basename(path)`.
+  - Type: `(string) -> string, string`
 
 ### `json`
 
