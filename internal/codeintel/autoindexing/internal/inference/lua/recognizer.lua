@@ -30,6 +30,12 @@ local normalize = function(config)
   return config
 end
 
+-- type: ({
+--   "patterns": array[pattern],
+--   "patterns_for_content": array[pattern],
+--   "generate": (registration_api, paths: array[string], contents_by_path: table[string, string]) -> void,
+--   "hints": (registration_api, paths: array[string]) -> void
+-- }) -> recognizer
 M.new_path_recognizer = function(config)
   return recognizers.path_recognizer(normalize(config))
 end

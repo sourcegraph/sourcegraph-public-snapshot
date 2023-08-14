@@ -60,10 +60,10 @@ local snek_recognizer = recognizer.new_path_recognizer {
     pattern.new_path_basename("Snek.module"),
 
     -- Ignore any files in test or vendor directories
-    pattern.new_path_exclude(pattern.new_path_combine {
+    pattern.new_path_exclude(
       pattern.new_path_segment("test"),
-      pattern.new_path_segment("vendor"),
-    }),
+      pattern.new_path_segment("vendor")
+    ),
   },
 
   -- Called with list of matching Snek.module files
@@ -94,37 +94,75 @@ return require("sg.autoindex.config").new({
 
 There are a number of specific and general-purpose Lua libraries made accessible via the built-in `require`.
 
+The type signatures for the functions below use the following syntax:
+
+- `(A1, ..., An) -> R`: Function type with arguments of type `A1, ..., An` and return type `R`.
+- `array[A]`: Table with indexes 1 to N of elements of type `A`.
+- `table[K, V]`: Table with keys of type `K` and values of type `V`.
+- `A | B`: Union type (includes values of type `A` and type `B`).
+- `A...`: Variadic (0 or more values of A, without being wrapped in a table).
+- `"mystring"`: Literal object key
+- `{K1: V1, K2: V2, ...}`: Heterogenous table (object) with key-value pairs `K1: V1` etc.
+- `void`: no value returned from function
+
 ### `sg.autoindex.recognizer`
 
 This auto-indexing-specific library defines the following two functions.
 
 <!-- TODO - document paths_for_content;api.register -->
-- `new_path_recognizer` creates a `recognizer` from a config object containing `patterns` and `generate` fields. See the [example](#example) above for basic usage.
+- `new_path_recognizer` creates a `Recognizer` from a config object containing `patterns` and `generate` fields. See the [example](#example) above for basic usage.
+  - Type:
+    ```
+    ({
+      "patterns": array[pattern],
+      "patterns_for_content": array[pattern],
+      "generate": (registration_api, paths: array[string], contents_by_path: table[string, string]) -> void,
+      "hints": (registration_api, paths: array[string]) -> void
+    }) -> recognizer
+    ```
 - `new_fallback_recognizer` creates a `recognizer` from an ordered list of `recognizer`s. Each `recognizer` is called sequentially, until one of them emits non-empty results.
+  - Type: `(array[recognizer]) -> recognizer`
+
+The `registration_api` object has the following API:
+- `register` which queues a `recognizer` to be run at a later stage.
+  This makes it possible to add more recognizers dynamically,
+  such as based on whether specific configuration files were found or not.
+  - Type: `(recognizer) -> void`
 
 ### `sg.autoindex.patterns`
 
 This auto-indexing-specific library defines the following four path pattern constructors.
 
-- `new_path_literal(pattern)` creates a `pattern` that matches an exact filepath.
-- `new_path_segment(pattern)` creates a `pattern` that matches a directory name.
-- `new_path_basename(pattern)` creates a `pattern` that matches a basename exactly.
-- `new_path_extension(ext_no_dot)` creates a `pattern` that matches files with a given extension.
+- `new_path_literal(fullpath)` creates a `pattern` that matches an exact filepath.
+  - Type: `(string) -> pattern`
+- `new_path_segment(segment)` creates a `pattern` that matches a directory name.
+  - Type: `(string) -> pattern`
+- `new_path_basename(basename)` creates a `pattern` that matches a basename exactly.
+  - Type: `(string) -> pattern`
+- `new_path_extension(ext_no_leading_dot)` creates a `pattern` that matches files with a given extension. 
+  - Type: `(string) -> pattern`
 
 This library also defines the following two pattern collection constructors.
 
 - `new_path_combine(patterns)` creates a pattern collection object (to be used with [recognizers](#sg-autoindex-recognizers)) from the given set of path `pattern`s.
+  - Type: `((pattern | array[pattern])...) -> pattern`
 - `new_path_exclude(patterns)` creates a new _inverted_ pattern collection object. Paths matching these `pattern`s are filtered out from the set of matching filepaths given to a recognizer's `generate` function.
+  - Type: `((pattern | array[pattern])...) -> pattern`
 
 ### `paths`
 
 This library defines the following five path utility functions:
 
-- `ancestors(path)` returns a path's parent, grandparent, etc as a list.
-- `basename(path)` returns the basename of the given path.
-- `dirname(path)` returns the dirname of the given path.
-- `join(paths)` returns a filepath created by joining the given path segments via filepath separator.
+- `ancestors(path)` returns a list `{dirname(path), dirname(dirname(path)), ...}`. The last element in the list will be an empty string.
+  - Type: `(string) -> array[string]`
+- `basename(path)` returns the basename of the given path as defined by Go's [filepath.Base](https://pkg.go.dev/path/filepath#Base).
+  - Type: `(string) -> string`
+- `dirname(path)` returns the dirname of the given path as defined by Go's [filepath.Dir](https://pkg.go.dev/path/filepath#Dir), except that it (1) returns an empty path instead of `"."` if the path is empty and (2) removes a leading `/` if present.
+  - Type: `string -> string`
+- `join(paths...)` returns a filepath created by joining the given path segments via filepath separator.
+  - Type: `(string...) -> string`
 - `split(path)` split a path into an ordered sequence of path segments.
+  - Type: `(string) -> array[string]`
 
 ### `json`
 
