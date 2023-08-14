@@ -157,9 +157,9 @@ Some of the main Cody features include:
 
 |     Feature     |                                                                                         Description                                                                                         |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Code chatbot](capabilities.md#code-chatbot)    | Your AI-powered code assistant. It fits your project's coding conventions and architecture, unlike other AI code chatbots. Chat with Cody from your code editor or the Sourcegraph sidebar. |
-| [Fix code inline](capabilities.md#fix-code-inline) | Cody can help you make interactive edits and refactor code by following natural-language instructions.                                                                                      |
-| [Autocomplete](capabilities.md#code-autocomplete)    | Cody provides context-based code auto-completion while typing. Predictions make coding easier.                                                                                              |
+| [Code chatbot](./../capabilities.md#code-chatbot)    | Your AI-powered code assistant. It fits your project's coding conventions and architecture, unlike other AI code chatbots. Chat with Cody from your code editor or the Sourcegraph sidebar. |
+| [Fix code inline](./../capabilities.md#fix-code-inline) | Cody can help you make interactive edits and refactor code by following natural-language instructions.                                                                                      |
+| [Autocomplete](./../capabilities.md#code-autocomplete)    | Cody provides context-based code auto-completion while typing. Predictions make coding easier.                                                                                              |
 
 ## Join our community
 

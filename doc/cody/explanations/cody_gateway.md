@@ -31,7 +31,7 @@ That's it! Reasonable defaults will automatically be applied, and authentication
 
 For more details about configuring Cody, refer to the following guides:
 
-- [Enabling Cody for Sourcegraph Enterprise](./enabling_cody_enterprise.md)
+- [Enabling Cody for Sourcegraph Enterprise](./../overview/enable-cody-enterprise.md)
 - [Code Graph Context: Embeddings](./code_graph_context.md#embeddings)
 
 Cody Gateway is hosted at `cody-gateway.sourcegraph.com`. To use Cody Gateway, your Sourcegraph instance must be able to connect to the service at this domain.
