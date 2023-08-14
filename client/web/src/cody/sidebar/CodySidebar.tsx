@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { mdiClose, mdiHistory, mdiPlus, mdiDelete } from '@mdi/js'
+import classNames from 'classnames'
 
 import { CodyLogo } from '@sourcegraph/cody-ui/dist/icons/CodyLogo'
 import { Button, Icon, Tooltip, Badge } from '@sourcegraph/wildcard'
@@ -83,7 +84,7 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose }) => {
         <div className={styles.mainWrapper}>
             <div className={styles.codySidebar} ref={codySidebarRef} onScroll={handleScroll}>
                 <div className={styles.codySidebarHeader}>
-                    <div className="d-flex col-2 p-0">
+                    <div className={classNames(styles.actionButtons, 'd-flex col-2 p-0')}>
                         <Tooltip content="Chat history">
                             <Button
                                 variant="icon"
