@@ -18,7 +18,7 @@ public class GraphQlLogger {
 
   public static void logInstallEvent(
       @NotNull Project project, @NotNull Consumer<Boolean> callback) {
-    if (ConfigUtil.getAnonymousUserId() != null) {
+    if (ConfigUtil.getAnonymousUserId() != null && project.isDisposed()) {
       var event = createEvent(project, "CodyInstalled", new JsonObject());
       logEvent(project, event, (responseStatusCode) -> callback.accept(responseStatusCode == 200));
     }

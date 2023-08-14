@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.autocomplete;
 
+import com.intellij.codeInsight.lookup.LookupManager;
 import com.intellij.injected.editor.EditorWindow;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -24,6 +25,7 @@ import com.sourcegraph.cody.vscode.*;
 import com.sourcegraph.common.EditorUtils;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.NotificationActivity;
+import com.sourcegraph.config.UserLevelConfig;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import difflib.Delta;
 import difflib.DiffUtils;
@@ -208,6 +210,17 @@ public class CodyAutoCompleteManager {
                         currentAutocompleteTelemetry.markCompletionDisplayed();
                       }
 
+                      // Avoid displaying autocomplete when IntelliJ is already displaying
+                      // built-in completions. When built-in completions are visible, we can't
+                      // accept the Cody autocomplete with TAB because it accepts the built-in
+                      // completion.
+                      if (LookupManager.getInstance(project).getActiveLookup() != null) {
+                        if (UserLevelConfig.isVerboseLoggingEnabled()) {
+                          logger.warn("Skipping autocomplete because lookup is active: " + item);
+                        }
+                        return;
+                      }
+
                       if (isAgentAutocomplete) {
                         displayAgentAutocomplete(editor, offset, item, inlayModel);
                       } else {
@@ -242,6 +255,9 @@ public class CodyAutoCompleteManager {
     // need to make to the document.
     Patch<String> patch = CodyAutoCompleteManager.diff(originalText, insertTextFirstLine);
     if (!patch.getDeltas().stream().allMatch(delta -> delta.getType() == Delta.TYPE.INSERT)) {
+      if (UserLevelConfig.isVerboseLoggingEnabled()) {
+        logger.warn("Skipping autocomplete with non-insert deltas: " + patch);
+      }
       // Skip completions that need to delete or change characters in the existing document. We only
       // want completions to add changes to the document.
       return;
