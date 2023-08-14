@@ -293,11 +293,9 @@ export const updateUpgradeGuides = (previous: string, next: string): EditFunc =>
 export const updateMigratorBazelOuts =
     (version: string): EditFunc =>
     (directory: string): void => {
-        const newEntries = [
-            `schema-descriptions/v${version}-internal_database_schema.codeinsights.json`,
-            `schema-descriptions/v${version}-internal_database_schema.codeintel.json`,
-            `schema-descriptions/v${version}-internal_database_schema.json`,
-        ]
+        const newEntries = `        "schema-descriptions/v${version}-internal_database_schema.codeinsights.json",
+        "schema-descriptions/v${version}-internal_database_schema.codeintel.json",
+        "schema-descriptions/v${version}-internal_database_schema.json",`
         const filePath = `${directory}/cmd/migrator/BUILD.bazel`
 
         let inGenrule = false
@@ -322,7 +320,7 @@ export const updateMigratorBazelOuts =
             if (inGenrule && inOuts && line.includes('],')) {
                 inOuts = false
                 inGenrule = false
-                line = `        "${newEntries.join(',\n')}",\n    ` + line
+                line = `${newEntries}\n${line}`
             }
 
             result.push(line)

@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -949,14 +950,15 @@ func TestSyncRun(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	done := make(chan error)
+	done := make(chan struct{})
 	go func() {
-		done <- syncer.Run(ctx, store, repos.RunOptions{
+		goroutine.MonitorBackgroundRoutines(ctx, syncer.Routines(ctx, store, repos.RunOptions{
 			EnqueueInterval: func() time.Duration { return time.Second },
 			IsDotCom:        false,
 			MinSyncInterval: func() time.Duration { return 1 * time.Millisecond },
 			DequeueInterval: 1 * time.Millisecond,
-		})
+		})...)
+		done <- struct{}{}
 	}()
 
 	// Ignore fields store adds
@@ -1009,10 +1011,7 @@ func TestSyncRun(t *testing.T) {
 
 	// Cancel context and the run loop should stop
 	cancel()
-	err := <-done
-	if err != nil && err != context.Canceled {
-		t.Fatal(err)
-	}
+	<-done
 }
 
 func TestSyncerMultipleServices(t *testing.T) {
@@ -1106,14 +1105,15 @@ func TestSyncerMultipleServices(t *testing.T) {
 		Now:    time.Now,
 	}
 
-	done := make(chan error)
+	done := make(chan struct{})
 	go func() {
-		done <- syncer.Run(ctx, store, repos.RunOptions{
+		goroutine.MonitorBackgroundRoutines(ctx, syncer.Routines(ctx, store, repos.RunOptions{
 			EnqueueInterval: func() time.Duration { return time.Second },
 			IsDotCom:        false,
 			MinSyncInterval: func() time.Duration { return 1 * time.Minute },
 			DequeueInterval: 1 * time.Millisecond,
-		})
+		})...)
+		done <- struct{}{}
 	}()
 
 	// Ignore fields store adds
@@ -1181,10 +1181,7 @@ func TestSyncerMultipleServices(t *testing.T) {
 
 	// Cancel context and the run loop should stop
 	cancel()
-	err := <-done
-	if err != nil && err != context.Canceled {
-		t.Fatal(err)
-	}
+	<-done
 }
 
 func TestOrphanedRepo(t *testing.T) {

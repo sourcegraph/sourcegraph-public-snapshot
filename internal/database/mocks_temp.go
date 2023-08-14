@@ -35732,6 +35732,9 @@ type MockGitserverRepoStore struct {
 	// GetByNamesFunc is an instance of a mock function object controlling
 	// the behavior of the method GetByNames.
 	GetByNamesFunc *GitserverRepoStoreGetByNamesFunc
+	// GetLastSyncOutputFunc is an instance of a mock function object
+	// controlling the behavior of the method GetLastSyncOutput.
+	GetLastSyncOutputFunc *GitserverRepoStoreGetLastSyncOutputFunc
 	// GetPoolRepoNameFunc is an instance of a mock function object
 	// controlling the behavior of the method GetPoolRepoName.
 	GetPoolRepoNameFunc *GitserverRepoStoreGetPoolRepoNameFunc
@@ -35807,6 +35810,11 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 		},
 		GetByNamesFunc: &GitserverRepoStoreGetByNamesFunc{
 			defaultHook: func(context.Context, ...api.RepoName) (r0 map[api.RepoName]*types.GitserverRepo, r1 error) {
+				return
+			},
+		},
+		GetLastSyncOutputFunc: &GitserverRepoStoreGetLastSyncOutputFunc{
+			defaultHook: func(context.Context, api.RepoName) (r0 string, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -35923,6 +35931,11 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 				panic("unexpected invocation of MockGitserverRepoStore.GetByNames")
 			},
 		},
+		GetLastSyncOutputFunc: &GitserverRepoStoreGetLastSyncOutputFunc{
+			defaultHook: func(context.Context, api.RepoName) (string, bool, error) {
+				panic("unexpected invocation of MockGitserverRepoStore.GetLastSyncOutput")
+			},
+		},
 		GetPoolRepoNameFunc: &GitserverRepoStoreGetPoolRepoNameFunc{
 			defaultHook: func(context.Context, api.RepoName) (api.RepoName, bool, error) {
 				panic("unexpected invocation of MockGitserverRepoStore.GetPoolRepoName")
@@ -36029,6 +36042,9 @@ func NewMockGitserverRepoStoreFrom(i GitserverRepoStore) *MockGitserverRepoStore
 		},
 		GetByNamesFunc: &GitserverRepoStoreGetByNamesFunc{
 			defaultHook: i.GetByNames,
+		},
+		GetLastSyncOutputFunc: &GitserverRepoStoreGetLastSyncOutputFunc{
+			defaultHook: i.GetLastSyncOutput,
 		},
 		GetPoolRepoNameFunc: &GitserverRepoStoreGetPoolRepoNameFunc{
 			defaultHook: i.GetPoolRepoName,
@@ -36417,6 +36433,120 @@ func (c GitserverRepoStoreGetByNamesFuncCall) Args() []interface{} {
 // invocation.
 func (c GitserverRepoStoreGetByNamesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverRepoStoreGetLastSyncOutputFunc describes the behavior when the
+// GetLastSyncOutput method of the parent MockGitserverRepoStore instance is
+// invoked.
+type GitserverRepoStoreGetLastSyncOutputFunc struct {
+	defaultHook func(context.Context, api.RepoName) (string, bool, error)
+	hooks       []func(context.Context, api.RepoName) (string, bool, error)
+	history     []GitserverRepoStoreGetLastSyncOutputFuncCall
+	mutex       sync.Mutex
+}
+
+// GetLastSyncOutput delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitserverRepoStore) GetLastSyncOutput(v0 context.Context, v1 api.RepoName) (string, bool, error) {
+	r0, r1, r2 := m.GetLastSyncOutputFunc.nextHook()(v0, v1)
+	m.GetLastSyncOutputFunc.appendCall(GitserverRepoStoreGetLastSyncOutputFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the GetLastSyncOutput
+// method of the parent MockGitserverRepoStore instance is invoked and the
+// hook queue is empty.
+func (f *GitserverRepoStoreGetLastSyncOutputFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (string, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetLastSyncOutput method of the parent MockGitserverRepoStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverRepoStoreGetLastSyncOutputFunc) PushHook(hook func(context.Context, api.RepoName) (string, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverRepoStoreGetLastSyncOutputFunc) SetDefaultReturn(r0 string, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (string, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverRepoStoreGetLastSyncOutputFunc) PushReturn(r0 string, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, api.RepoName) (string, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *GitserverRepoStoreGetLastSyncOutputFunc) nextHook() func(context.Context, api.RepoName) (string, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverRepoStoreGetLastSyncOutputFunc) appendCall(r0 GitserverRepoStoreGetLastSyncOutputFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverRepoStoreGetLastSyncOutputFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverRepoStoreGetLastSyncOutputFunc) History() []GitserverRepoStoreGetLastSyncOutputFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverRepoStoreGetLastSyncOutputFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverRepoStoreGetLastSyncOutputFuncCall is an object that describes
+// an invocation of method GetLastSyncOutput on an instance of
+// MockGitserverRepoStore.
+type GitserverRepoStoreGetLastSyncOutputFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverRepoStoreGetLastSyncOutputFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverRepoStoreGetLastSyncOutputFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // GitserverRepoStoreGetPoolRepoNameFunc describes the behavior when the

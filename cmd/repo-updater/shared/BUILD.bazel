@@ -4,6 +4,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "shared",
     srcs = [
+        "debug.go",
         "licensing.go",
         "main.go",
         "service.go",
@@ -32,6 +33,7 @@ go_library(
         "//internal/env",
         "//internal/extsvc",
         "//internal/goroutine",
+        "//internal/goroutine/recorder",
         "//internal/grpc",
         "//internal/grpc/defaults",
         "//internal/httpcli",
