@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
@@ -37,9 +38,8 @@ func (s *rateLimitConfigJob) Routines(_ context.Context, observationCtx *observa
 	}
 
 	rlcWorker := makeRateLimitConfigWorker(observationCtx, handler{
-		codeHostStore:  db.CodeHosts(),
-		redisKeyPrefix: redispool.TokenBucketGlobalPrefix,
-		ratelimiter:    rl,
+		codeHostStore: db.CodeHosts(),
+		ratelimiter:   ratelimit.NewCodeHostRateLimiter(rl),
 	})
 	return []goroutine.BackgroundRoutine{rlcWorker}, nil
 }

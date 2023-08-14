@@ -2,7 +2,6 @@ package ratelimit
 
 import (
 	"context"
-	"fmt"
 	"math"
 
 	"github.com/sourcegraph/log"
@@ -10,36 +9,44 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.org/x/time/rate"
 )
 
+var (
+	defaultAPIReplenishmentInterval = int32(3600)
+	defaultGitReplenishmentInterval = int32(1)
+)
+
 type handler struct {
-	codeHostStore  database.CodeHostStore
-	redisKeyPrefix string
-	ratelimiter    redispool.RateLimiter
+	codeHostStore database.CodeHostStore
+	ratelimiter   ratelimit.CodeHostRateLimiter
 }
 
 func (h *handler) Handle(ctx context.Context, observationCtx *observation.Context) error {
 	var err error
-	next := int32(-1)
-	for next != 0 {
-		codeHosts, next2, err := h.codeHostStore.List(ctx, database.ListCodeHostsOpts{
+	var next int32
+	for {
+		var codeHosts []*types.CodeHost
+		codeHosts, next, err = h.codeHostStore.List(ctx, database.ListCodeHostsOpts{
 			LimitOffset: database.LimitOffset{
-				Limit: 10,
+				Limit: 20,
 			},
 			Cursor: next,
 		})
 		if err != nil {
 			return err
 		}
-		next = next2
 		for _, codeHost := range codeHosts {
 			err = h.processCodeHost(ctx, codeHost.URL)
 			if err != nil {
 				observationCtx.Logger.Error("error setting rate limit configuration", log.String("url", codeHost.URL), log.Error(err))
 			}
+		}
+		if next == 0 {
+			break
 		}
 	}
 	return err
@@ -51,9 +58,9 @@ func (h *handler) processCodeHost(ctx context.Context, codeHostURL string) error
 		return err
 	}
 	// Set API token values
-	err = h.ratelimiter.SetTokenBucketReplenishment(ctx, fmt.Sprintf("%s:%s", codeHostURL, redispool.CodeHostAPITokenBucketSuffix), configs.ApiQuota, configs.ApiReplenishmentInterval)
+	err = h.ratelimiter.SetCodeHostAPIRateLimitConfig(ctx, codeHostURL, configs.ApiQuota, configs.ApiReplenishmentInterval)
 	// Set Git token values
-	err2 := h.ratelimiter.SetTokenBucketReplenishment(ctx, fmt.Sprintf("%s:%s", codeHostURL, redispool.CodeHostGitTokenBucketSuffix), configs.GitQuota, configs.GitReplenishmentInterval)
+	err2 := h.ratelimiter.SetCodeHostGitRateLimitConfig(ctx, codeHostURL, configs.GitQuota, configs.GitReplenishmentInterval)
 
 	return errors.CombineErrors(err, err2)
 }
@@ -81,7 +88,7 @@ func (h *handler) getRateLimitConfigsOrDefaults(ctx context.Context, codeHostURL
 	if codeHost.APIRateLimitIntervalSeconds != nil {
 		configs.ApiReplenishmentInterval = *codeHost.APIRateLimitIntervalSeconds
 	} else {
-		configs.ApiReplenishmentInterval = int32(3600)
+		configs.ApiReplenishmentInterval = defaultAPIReplenishmentInterval
 	}
 
 	if codeHost.GitRateLimitQuota != nil {
@@ -98,7 +105,7 @@ func (h *handler) getRateLimitConfigsOrDefaults(ctx context.Context, codeHostURL
 	if codeHost.GitRateLimitIntervalSeconds != nil {
 		configs.GitReplenishmentInterval = *codeHost.GitRateLimitIntervalSeconds
 	} else {
-		configs.GitReplenishmentInterval = int32(1)
+		configs.GitReplenishmentInterval = defaultGitReplenishmentInterval
 	}
 	return configs, nil
 }

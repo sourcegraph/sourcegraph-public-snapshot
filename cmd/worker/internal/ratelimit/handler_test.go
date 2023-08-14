@@ -2,6 +2,7 @@ package ratelimit
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"testing"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/stretchr/testify/assert"
@@ -85,13 +87,15 @@ func TestHandler_Handle(t *testing.T) {
 
 	// Create the handler to start the test
 	h := handler{
-		codeHostStore:  db.CodeHosts(),
-		redisKeyPrefix: prefix,
-		ratelimiter:    rateLimiter,
+		codeHostStore: db.CodeHosts(),
+		ratelimiter:   ratelimit.NewCodeHostRateLimiter(rateLimiter),
 	}
 	err = h.Handle(ctx, obsCtx)
 	assert.NoError(t, err)
-	apiCapKey, apiReplenishmentKey, gitCapKey, gitReplenishmentKey := redispool.GetCodeHostRateLimiterConfigKeys(prefix, url)
+	apiCapKey := fmt.Sprintf("%s:%s:%s:config:bucket_capacity", prefix, url, "api_tokens")
+	apiReplenishmentKey := fmt.Sprintf("%s:%s:%s:config:bucket_replenishment_interval_seconds", prefix, url, "api_tokens")
+	gitCapKey := fmt.Sprintf("%s:%s:%s:config:bucket_capacity", prefix, url, "git_tokens")
+	gitReplenishmentKey := fmt.Sprintf("%s:%s:%s:config:bucket_replenishment_interval_seconds", prefix, url, "git_tokens")
 	assertValFromRedis(kv, apiCapKey, rateLimitConfigValues)
 	assertValFromRedis(kv, apiReplenishmentKey, rateLimitConfigValues)
 	assertValFromRedis(kv, gitCapKey, rateLimitConfigValues)
