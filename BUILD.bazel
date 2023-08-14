@@ -40,6 +40,9 @@ eslint_bin.eslint_binary(
 
 prettier_bin.prettier_binary(
     name = "prettier",
+    data = [
+        "//:prettier_config_js",
+    ],
     visibility = ["//visibility:public"],
 )
 
