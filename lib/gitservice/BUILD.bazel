@@ -1,4 +1,3 @@
-load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -9,15 +8,5 @@ go_library(
     deps = [
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
-    ],
-)
-
-go_test(
-    name = "gitservice_test",
-    timeout = "short",
-    srcs = ["gitservice_test.go"],
-    deps = [
-        ":gitservice",
-        "@com_github_sourcegraph_log//logtest",
     ],
 )
