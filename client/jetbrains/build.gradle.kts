@@ -164,6 +164,7 @@ tasks {
         systemProperty("cody-agent.trace-path", "$buildDir/sourcegraph/cody-agent-trace.json")
         systemProperty("cody-agent.directory", agentTargetDirectory.parent.toString())
         systemProperty("cody-agent.enabled", isAgentEnabled.toString())
+        systemProperty("sourcegraph.verbose-logging", "true")
     }
 
     // Configure UI tests plugin
