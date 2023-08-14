@@ -1,11 +1,11 @@
 # Quickstart for Cody in VS Code
 
-This guide provides recommendations for first things to try once you have Cody up and running. 
+This guide provides recommendations for first things to try once you have Cody up and running.
 
 If you haven't yet enabled Cody for your Sourcegraph instance or installed the VS Code extension, go here first:
 
 - [Enabling Cody for Sourcegraph Enterprise customers](explanations/enabling_cody_enterprise.md)
-- [Enabling Cody for Sourcegraph.com users](explanations/enabling_cody.md)
+- [Enabling Cody for Sourcegraph.com users][cody-with-sourcegraph]
 - [Installing Cody for VS Code](explanations/installing_vs_code.md)
 - [Installing Cody for Jetbrains](explanations/installing_jetbrains.md)
 - [Installing the Cody app](../app/index.md)
@@ -73,3 +73,5 @@ Cody can do many other things, including:
 3. Translate code to different languages
 4. Answer general questions about your code
 5. Suggest bugfixes and changes to code snippets
+
+[cody-with-sourcegraph]: overview//cody-with-sourcegraph.md
