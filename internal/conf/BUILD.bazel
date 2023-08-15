@@ -59,7 +59,6 @@ go_test(
         "computed_test.go",
         "diff_test.go",
         "grpc_test.go",
-        "mocks_test.go",
         "validate_test.go",
     ],
     embed = [":conf"],
