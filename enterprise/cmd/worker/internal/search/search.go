@@ -66,6 +66,21 @@ type RepositoryRevision struct {
 // idempotent due to backend state changing. The main purpose of breaking it
 // out like this is so we can report progress, do retries, and spread out the
 // work over time.
+//
+// Commentary on exhaustive worker jobs added in
+// https://github.com/sourcegraph/sourcegraph/pull/55587:
+//
+//   - ExhaustiveSearchJob uses RepositoryRefSpecs to create ExhaustiveSearchRepoJob
+//   - ExhaustiveSearchRepoJob uses ResolveRepositoryRefSpec to create ExhaustiveSearchRepoRevisionJob
+//   - ExhaustiveSearchRepoRevisionJob uses Search
+//
+// In each case I imagine Backend.NewSearch(query) to get hold of the
+// Searcher. NewSearch is envisioned as being cheap to do. The only IO it does
+// is maybe reading featureflags/site configuration/etc. This does mean it is
+// possible for things to change over time, but this should be rare and will
+// result in a well defined error. The alternative is a way to serialize a
+// Searcher, but this makes it harder to make changes to search going forward
+// for what should be rare errors.
 type Searcher interface {
 	RepositoryRefSpecs(context.Context) ([]RepositoryRefSpec, error)
 
