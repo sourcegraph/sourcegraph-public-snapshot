@@ -2,8 +2,12 @@ package search
 
 import (
 	"context"
+	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Backend interface {
@@ -36,6 +40,10 @@ type RepositoryRefSpec struct {
 	RefSpec string
 }
 
+func (r RepositoryRefSpec) String() string {
+	return fmt.Sprintf("RepositoryRefSpec{%d@%s}", r.Repository, r.RefSpec)
+}
+
 // RepositoryRevision represents the smallest unit we can search over, a
 // specific repository and revision.
 //
@@ -47,6 +55,10 @@ type RepositoryRevision struct {
 
 	// Revision is the resolved revision.
 	Revision api.CommitID
+}
+
+func (r RepositoryRevision) String() string {
+	return fmt.Sprintf("RepositoryRevision{%d@%s}", r.Repository, r.Revision)
 }
 
 // Searcher represents a search in a way we can break up the work. The flow is
@@ -102,4 +114,69 @@ type CSVWriter interface {
 	// WriteRow should have the same number of values as WriteHeader and can be
 	// called zero or more times.
 	WriteRow(...string) error
+}
+
+// BackendFake is a convenient working implementation of Searcher which always
+// will write results generated from the repoRevs. It expects a query string
+// which looks like
+//
+//	 1@rev1 1@rev2 2@rev3
+//
+//	This is a space separated list of {repoid}@{revision}.
+//
+//	- RepositoryRefSpecs will return one RepositoryRefSpec per unique repository.
+//	- ResolveRepositoryRefSpec returns the repoRevs for that repository.
+//	- Search will write one result which is just the repo and revision.
+func BackendFake() Backend {
+	return backendFake{}
+}
+
+type backendFake struct{}
+
+func (backendFake) NewSearch(ctx context.Context, q string) (Searcher, error) {
+	var repoRevs []RepositoryRevision
+	for _, part := range strings.Fields(q) {
+		var r RepositoryRevision
+		if n, err := fmt.Sscanf(part, "%d@%s", &r.Repository, &r.Revision); n != 2 || err != nil {
+			return nil, errors.Errorf("failed to parse repository revision %q", part)
+		}
+		r.RepositoryRefSpec.Repository = r.Repository
+		r.RepositoryRefSpec.RefSpec = "spec"
+		repoRevs = append(repoRevs, r)
+	}
+	return searcherFake{repoRevs: repoRevs}, nil
+}
+
+type searcherFake struct {
+	repoRevs []RepositoryRevision
+}
+
+func (s searcherFake) RepositoryRefSpecs(context.Context) ([]RepositoryRefSpec, error) {
+	seen := map[RepositoryRefSpec]bool{}
+	var repoRefSpecs []RepositoryRefSpec
+	for _, r := range s.repoRevs {
+		if seen[r.RepositoryRefSpec] {
+			continue
+		}
+		seen[r.RepositoryRefSpec] = true
+		repoRefSpecs = append(repoRefSpecs, r.RepositoryRefSpec)
+	}
+	return repoRefSpecs, nil
+}
+
+func (s searcherFake) ResolveRepositoryRefSpec(_ context.Context, repoRefSpec RepositoryRefSpec) ([]RepositoryRevision, error) {
+	var repoRevs []RepositoryRevision
+	for _, r := range s.repoRevs {
+		if r.RepositoryRefSpec == repoRefSpec {
+			repoRevs = append(repoRevs, r)
+		}
+	}
+	return repoRevs, nil
+}
+
+func (s searcherFake) Search(_ context.Context, r RepositoryRevision, w CSVWriter) error {
+	if err := w.WriteHeader("repo", "refspec", "revision"); err != nil {
+		return err
+	}
+	return w.WriteRow(strconv.Itoa(int(r.Repository)), r.RefSpec, string(r.Revision))
 }
