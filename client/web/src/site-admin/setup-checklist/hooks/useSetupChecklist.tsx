@@ -1,7 +1,7 @@
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { Code, Link, Text } from '@sourcegraph/wildcard'
 
-import { SetupChecklistResult, SetupChecklistVariables } from '../../../graphql-operations'
+import type { SetupChecklistResult, SetupChecklistVariables } from '../../../graphql-operations'
 
 const QUERY = gql`
     query SetupChecklist {

@@ -43,6 +43,7 @@ go_test(
         "//internal/auth",
         "//internal/codemonitors/background",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/gqlutil",
         "//internal/search/result",

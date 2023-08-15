@@ -6,10 +6,10 @@ import { NavLink } from 'react-router-dom'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { Icon, Link, PageHeader } from '@sourcegraph/wildcard'
 
-import { BatchChangesProps } from '../../batches'
-import { NavItemWithIconDescriptor } from '../../util/contributions'
+import type { BatchChangesProps } from '../../batches'
+import type { NavItemWithIconDescriptor } from '../../util/contributions'
 
-import { UserAreaRouteContext } from './UserArea'
+import type { UserAreaRouteContext } from './UserArea'
 
 import styles from './UserAreaHeader.module.scss'
 

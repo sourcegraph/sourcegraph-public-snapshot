@@ -340,3 +340,12 @@
 /cody#fix-code-inline /cody/capabilities#fix-code-inline 308
 /cody#recipes /cody/capabilities#cody-recipes 308
 /cody#autocomplete /cody/capabilities#code-autocomplete 308
+
+
+# Cody IA revamp redirects
+# /cody /cody/overview 301
+/cody/explanations/installing_vs_code /cody/overview/install-vscode 308
+/cody/explanations/installing_jetbrains /cody/overview/install-jetbrains 308
+/app /cody/overview/app 308
+/cody/explanations/enabling_cody /cody/overview/cody-with-sourcegraph 308
+/cody/explanations/enabling_cody_enterprise /cody/overview/enable-cody-enterprise 308

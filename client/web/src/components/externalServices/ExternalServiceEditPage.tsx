@@ -1,18 +1,18 @@
-import React, { FC, useEffect, useState, useCallback, useMemo } from 'react'
+import React, { type FC, useEffect, useState, useCallback, useMemo } from 'react'
 
 import { useNavigate, useParams } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, ErrorAlert, PageHeader, ButtonLink } from '@sourcegraph/wildcard'
 
-import { AddExternalServiceInput } from '../../graphql-operations'
+import type { AddExternalServiceInput } from '../../graphql-operations'
 import { CreatedByAndUpdatedByInfoByline } from '../Byline/CreatedByAndUpdatedByInfoByline'
 import { useFetchGithubAppForES } from '../gitHubApps/backend'
 import { PageTitle } from '../PageTitle'
 
 import {
     useUpdateExternalService,
-    ExternalServiceFieldsWithConfig,
+    type ExternalServiceFieldsWithConfig,
     useFetchExternalService,
     getExternalService,
 } from './backend'

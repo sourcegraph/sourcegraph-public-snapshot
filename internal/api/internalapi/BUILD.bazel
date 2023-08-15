@@ -7,12 +7,16 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
+        "//internal/api/internalapi/v1:internalapi",
         "//internal/conf/conftypes",
         "//internal/conf/deploy",
         "//internal/env",
+        "//internal/grpc/defaults",
         "//internal/httpcli",
+        "//internal/syncx",
         "//lib/errors",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_log//:log",
     ],
 )

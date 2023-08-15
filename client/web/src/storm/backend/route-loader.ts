@@ -1,4 +1,4 @@
-import { OperationVariables, SuspenseQueryHookOptions } from '@apollo/client'
+import type { OperationVariables, SuspenseQueryHookOptions } from '@apollo/client'
 import { useLoaderData } from 'react-router-dom'
 import * as uuid from 'uuid'
 

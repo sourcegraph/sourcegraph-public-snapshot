@@ -1,10 +1,10 @@
-import React, { FC, useState } from 'react'
+import React, { type FC, useState } from 'react'
 
 import { mdiArrowLeft, mdiHelpCircleOutline } from '@mdi/js'
 
 import { Icon, Tooltip, Button, Text, H3 } from '@sourcegraph/wildcard'
 
-import { CodeSearchSimpleSearch, SimpleSearchProps } from './CodeSearchSimpleSearch'
+import { CodeSearchSimpleSearch, type SimpleSearchProps } from './CodeSearchSimpleSearch'
 import { FindChangesSimpleSearch } from './FindChangesSimpleSearch'
 import { RepoSearchSimpleSearch } from './RepoSearchSimpleSearch'
 

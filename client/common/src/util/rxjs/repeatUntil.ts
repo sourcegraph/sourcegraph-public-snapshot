@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { repeatWhen, delay, takeWhile, repeat } from 'rxjs/operators'
 
 /**

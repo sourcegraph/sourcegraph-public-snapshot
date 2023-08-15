@@ -12,7 +12,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { TreeOwnershipPanel } from '../../repo/blob/own/TreeOwnershipPanel'
 import { FilePathBreadcrumbs } from '../../repo/FilePathBreadcrumbs'
 
-import { RepositoryOwnAreaPageProps } from './RepositoryOwnEditPage'
+import type { RepositoryOwnAreaPageProps } from './RepositoryOwnEditPage'
 
 import styles from './RepositoryOwnPageContents.module.scss'
 

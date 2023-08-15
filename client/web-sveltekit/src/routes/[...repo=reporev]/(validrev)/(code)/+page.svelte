@@ -10,13 +10,11 @@
 
     export let data: PageData
 
-    const { value: tree, set: setTree } = createPromiseStore<PageData['deferred']['fileTree']>()
     const {
         value: readme,
         set: setReadme,
         pending: readmePending,
     } = createPromiseStore<PageData['deferred']['readme']>()
-    $: setTree(data.deferred.fileTree)
     $: setReadme(data.deferred.readme)
 </script>
 

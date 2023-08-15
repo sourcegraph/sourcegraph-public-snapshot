@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -19,12 +19,12 @@ import (
 func TestCheckMirrorRepositoryConnection(t *testing.T) {
 	const repoName = api.RepoName("my/repo")
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(repos)
 
@@ -191,10 +191,10 @@ func TestCheckMirrorRepositoryRemoteURL(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.repoURL, func(t *testing.T) {
-			users := database.NewMockUserStore()
+			users := dbmocks.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
 			backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
@@ -246,10 +246,10 @@ func (f *fakeGitserverClient) RepoCloneProgress(_ context.Context, repoName ...a
 }
 
 func TestRepositoryMirrorInfoCloneProgressCallsGitserver(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
@@ -287,19 +287,19 @@ func TestRepositoryMirrorInfoCloneProgressCallsGitserver(t *testing.T) {
 }
 
 func TestRepositoryMirrorInfoCloneProgressFetchedFromDatabase(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	featureFlags := database.NewMockFeatureFlagStore()
+	featureFlags := dbmocks.NewMockFeatureFlagStore()
 	featureFlags.GetGlobalFeatureFlagsFunc.SetDefaultReturn(map[string]bool{"clone-progress-logging": true}, nil)
 
-	gitserverRepos := database.NewMockGitserverRepoStore()
+	gitserverRepos := dbmocks.NewMockGitserverRepoStore()
 	gitserverRepos.GetByIDFunc.SetDefaultReturn(&types.GitserverRepo{
 		CloneStatus:     types.CloneStatusCloning,
 		CloningProgress: "cloning progress from the db",
 	}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 	db.GitserverReposFunc.SetDefaultReturn(gitserverRepos)

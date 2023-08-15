@@ -1,8 +1,8 @@
 // TODO: Eventually we'll import the actual lsif-typed protobuf file in this project,
 // but it doesn't make sense to do so right now.
-import * as extensions from '@sourcegraph/extension-api-types'
+import type * as extensions from '@sourcegraph/extension-api-types'
 
-import * as sourcegraph from './legacy-extensions/api'
+import type * as sourcegraph from './legacy-extensions/api'
 
 export interface JsonDocument {
     occurrences?: JsonOccurrence[]

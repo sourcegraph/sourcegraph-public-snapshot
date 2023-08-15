@@ -18,7 +18,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -426,7 +426,7 @@ func TestPathMatches(t *testing.T) {
 
 // githubStore fetches from github and caches across test runs.
 var githubStore = &Store{
-	GitserverClient: gitserver.NewClient(database.NewMockDB()),
+	GitserverClient: gitserver.NewClient(dbmocks.NewMockDB()),
 	FetchTar:        fetchTarFromGithub,
 	Path:            "/tmp/search_test/store",
 	ObservationCtx:  &observation.TestContext,

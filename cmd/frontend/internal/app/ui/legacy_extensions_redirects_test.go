@@ -5,11 +5,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 )
 
 func TestLegacyExtensionsRedirects(t *testing.T) {
-	InitRouter(database.NewMockDB())
+	InitRouter(dbmocks.NewMockDB())
 	router := Router()
 
 	tests := map[string]bool{

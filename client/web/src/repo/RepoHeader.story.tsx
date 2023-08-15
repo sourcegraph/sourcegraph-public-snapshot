@@ -1,5 +1,5 @@
 import { mdiSourceRepository } from '@mdi/js'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { CopyPathAction } from '@sourcegraph/branded'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
@@ -7,11 +7,11 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { Button, H1, H2, Icon, Link } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { FilePathBreadcrumbs } from './FilePathBreadcrumbs'
-import { RepoHeader, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
+import { RepoHeader, type RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoRevisionContainerBreadcrumb } from './RepoRevisionContainer'
 
 import webStyles from '../SourcegraphWebApp.scss'

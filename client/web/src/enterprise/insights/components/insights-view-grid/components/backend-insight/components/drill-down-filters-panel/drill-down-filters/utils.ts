@@ -1,5 +1,5 @@
 import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../../../graphql-operations'
-import { InsightSeriesDisplayOptions } from '../../../../../../../core/types/insight/common'
+import type { InsightSeriesDisplayOptions } from '../../../../../../../core/types/insight/common'
 
 export const getSerializedSortAndLimitFilter = (seriesDisplayOptions: InsightSeriesDisplayOptions): string => {
     const { sortOptions, limit, numSamples } = seriesDisplayOptions

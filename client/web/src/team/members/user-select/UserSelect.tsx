@@ -10,7 +10,7 @@ import {
     ComboboxOptionText,
 } from '@sourcegraph/wildcard'
 
-import { Scalars, TeamMemberUserSelectSearchFields } from '../../../graphql-operations'
+import type { Scalars, TeamMemberUserSelectSearchFields } from '../../../graphql-operations'
 
 import { useUserSelectSearch } from './backend'
 

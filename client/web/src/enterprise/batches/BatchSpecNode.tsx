@@ -33,7 +33,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { Duration } from '../../components/time/Duration'
-import {
+import type {
     BatchSpecListFields,
     Scalars,
     PartialBatchSpecWorkspaceFileFields,

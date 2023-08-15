@@ -1,4 +1,4 @@
-import * as React from 'react'
+import type * as React from 'react'
 
 /**
  * Converts a synthetic React event to a persisted, native Event object.

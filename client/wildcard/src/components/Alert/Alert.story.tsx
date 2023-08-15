@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { action } from '@storybook/addon-actions'
-import { Story, Meta } from '@storybook/react'
+import type { Story, Meta } from '@storybook/react'
 import classNames from 'classnames'
 import { flow } from 'lodash'
 

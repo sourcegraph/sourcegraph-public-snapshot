@@ -1,18 +1,18 @@
-import { QueryResult } from '@apollo/client'
+import type { QueryResult } from '@apollo/client'
 import { parse as parseJSONC } from 'jsonc-parser'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map, mapTo, tap } from 'rxjs/operators'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import type { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {
     useShowMorePagination,
-    UseShowMorePaginationResult,
+    type UseShowMorePaginationResult,
 } from '../components/FilteredConnection/hooks/useShowMorePagination'
-import {
+import type {
     AllConfigResult,
     CheckMirrorRepositoryConnectionResult,
     CreateUserResult,

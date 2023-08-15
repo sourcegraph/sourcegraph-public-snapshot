@@ -4,8 +4,8 @@ import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { CommitMatch, getCommitMatchUrl, getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { type CommitMatch, getCommitMatchUrl, getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
 import { Link, Code } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/Timestamp'

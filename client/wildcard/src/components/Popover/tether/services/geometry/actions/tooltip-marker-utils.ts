@@ -1,6 +1,6 @@
-import { createPoint, Point } from '../../../models/geometry/point'
-import { createRectangle, createRectangleFromPoints, Rectangle } from '../../../models/geometry/rectangle'
-import { ElementPosition, Position } from '../../../models/tether-models'
+import { createPoint, type Point } from '../../../models/geometry/point'
+import { createRectangle, createRectangleFromPoints, type Rectangle } from '../../../models/geometry/rectangle'
+import { type ElementPosition, Position } from '../../../models/tether-models'
 import { POSITION_VARIANTS } from '../constants'
 
 /**

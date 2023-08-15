@@ -3,7 +3,7 @@ import { useCallback } from 'react'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { buildEditorUrl, buildRepoBaseNameAndPath } from './build-url'
-import { EditorSettings } from './editor-settings'
+import type { EditorSettings } from './editor-settings'
 
 /**
  * @returns A function to open the current location in your preferred editor

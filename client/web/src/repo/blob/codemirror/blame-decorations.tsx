@@ -3,26 +3,26 @@
  * text document decorations to CodeMirror decorations. Text document
  * decorations are provided via the {@link showGitBlameDecorations} facet.
  */
-import { Extension, Facet, RangeSet } from '@codemirror/state'
+import { type Extension, Facet, RangeSet } from '@codemirror/state'
 import {
     Decoration,
-    DecorationSet,
+    type DecorationSet,
     EditorView,
     gutter,
     gutterLineClass,
     GutterMarker,
     gutters,
     ViewPlugin,
-    ViewUpdate,
+    type ViewUpdate,
     WidgetType,
 } from '@codemirror/view'
 import { isEqual } from 'lodash'
-import { createRoot, Root } from 'react-dom/client'
-import { NavigateFunction } from 'react-router-dom'
+import { createRoot, type Root } from 'react-dom/client'
+import type { NavigateFunction } from 'react-router-dom'
 
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 
-import { BlameHunk, BlameHunkData } from '../../blame/useBlameHunks'
+import type { BlameHunk, BlameHunkData } from '../../blame/useBlameHunks'
 import { BlameDecoration } from '../BlameDecoration'
 
 import { blobPropsFacet } from '.'

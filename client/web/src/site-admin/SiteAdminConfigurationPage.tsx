@@ -1,4 +1,4 @@
-import { FC, useState, useEffect, useCallback } from 'react'
+import { type FC, useState, useEffect, useCallback } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
@@ -7,7 +7,7 @@ import { useSearchParams } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
 import { useQuery, useMutation } from '@sourcegraph/http-client'
-import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import { type SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
@@ -32,12 +32,12 @@ import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import {
-    ReloadSiteResult,
-    ReloadSiteVariables,
-    SiteResult,
-    SiteVariables,
-    UpdateSiteConfigurationResult,
-    UpdateSiteConfigurationVariables,
+    type ReloadSiteResult,
+    type ReloadSiteVariables,
+    type SiteResult,
+    type SiteVariables,
+    type UpdateSiteConfigurationResult,
+    type UpdateSiteConfigurationVariables,
 } from '../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../site/backend'
@@ -251,7 +251,9 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
     const [isSetupChecklistEnabled] = useFeatureFlag('setup-checklist', false)
 
     useEffect(() => {
-        if (isSetupChecklistEnabled) {setSearchParams({ tab: tabIndex.toString() })}
+        if (isSetupChecklistEnabled) {
+            setSearchParams({ tab: tabIndex.toString() })
+        }
     }, [tabIndex, isSetupChecklistEnabled])
 
     const { data, loading, error } = useQuery<SiteResult, SiteVariables>(SITE_CONFIG_QUERY, {

@@ -1,14 +1,14 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 
 import { isDefined } from '@sourcegraph/common'
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Card, Icon, Link, LoadingSpinner, Button, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../../../../components/FilteredConnection/hooks/useShowMorePagination'
-import {
+import type {
     GetAllInsightConfigurationsResult,
     GetAllInsightConfigurationsVariables,
     InsightViewNode,

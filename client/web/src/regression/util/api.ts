@@ -2,7 +2,7 @@
  * Provides convenience functions for interacting with the Sourcegraph API from tests.
  */
 
-import { zip, timer, concat, throwError, defer, Observable } from 'rxjs'
+import { zip, timer, concat, throwError, defer, type Observable } from 'rxjs'
 import { map, tap, retryWhen, delayWhen, take, mergeMap } from 'rxjs/operators'
 
 import { isErrorLike, createAggregateError, logger } from '@sourcegraph/common'
@@ -18,11 +18,11 @@ import {
     isRepoNotFoundErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
 import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
-import { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { Config } from '@sourcegraph/shared/src/testing/config'
+import type { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { Config } from '@sourcegraph/shared/src/testing/config'
 
-import {
+import type {
     AddExternalServiceInput,
     ExternalServiceKind,
     UpdateExternalServiceInput,
@@ -66,8 +66,8 @@ import {
     SearchVariables,
 } from '../../graphql-operations'
 
-import { GraphQLClient } from './GraphQlClient'
-import { ResourceDestructor } from './TestResourceManager'
+import type { GraphQLClient } from './GraphQlClient'
+import type { ResourceDestructor } from './TestResourceManager'
 
 type WaitForRepoOptions = Partial<
     Pick<Config, 'logStatusMessages'> & {

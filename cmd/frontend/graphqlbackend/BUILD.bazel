@@ -473,6 +473,7 @@ go_test(
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/database/dbutil",
         "//internal/database/fakedb",

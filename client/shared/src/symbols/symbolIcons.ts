@@ -25,7 +25,7 @@ import {
     mdiWrench,
 } from '@mdi/js'
 
-import { SymbolKind } from '../graphql-operations'
+import type { SymbolKind } from '../graphql-operations'
 
 export const getSymbolIconSVGPath = (kind: SymbolKind): string => {
     switch (kind) {

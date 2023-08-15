@@ -1,4 +1,4 @@
-import { OrgSettingsSidebarItems } from './OrgSettingsSidebar'
+import type { OrgSettingsSidebarItems } from './OrgSettingsSidebar'
 
 export const orgSettingsSideBarItems: OrgSettingsSidebarItems = [
     {

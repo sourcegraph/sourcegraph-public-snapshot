@@ -11,7 +11,7 @@ import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 import { Linkified } from '../linkifiy/Linkified'
 import { isPerforceChangelistMappingEnabled } from '../utils'
 
-import { GitCommitNodeProps } from './GitCommitNode'
+import type { GitCommitNodeProps } from './GitCommitNode'
 import { GitCommitNodeByline } from './GitCommitNodeByline'
 
 import styles from './GitCommitNode.module.scss'

@@ -1,7 +1,7 @@
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { DecoratorFn, Story, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../../../../../../../components/WebStory'
-import { InsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../../../core'
+import { type InsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../../../core'
 
 import { EmptyCustomDashboard } from './EmptyInsightDashboard'
 

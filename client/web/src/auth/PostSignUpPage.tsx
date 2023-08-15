@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Navigate } from 'react-router-dom'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { Page } from '../components/Page'
 import { PageTitle } from '../components/PageTitle'
 import { CodySurveyToast } from '../marketing/toast/CodySurveyToast'

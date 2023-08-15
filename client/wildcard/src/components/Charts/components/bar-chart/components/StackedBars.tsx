@@ -1,10 +1,10 @@
-import { ComponentProps, MouseEvent, ReactElement } from 'react'
+import type { ComponentProps, MouseEvent, ReactElement } from 'react'
 
 import { Group } from '@visx/group'
 import { BarRounded } from '@visx/shape'
-import { ScaleBand, ScaleLinear } from 'd3-scale'
+import type { ScaleBand, ScaleLinear } from 'd3-scale'
 
-import { Category } from '../utils/get-grouped-categories'
+import type { Category } from '../utils/get-grouped-categories'
 
 interface StackedBarsProps<Datum> extends ComponentProps<typeof Group> {
     xScale: ScaleBand<string>

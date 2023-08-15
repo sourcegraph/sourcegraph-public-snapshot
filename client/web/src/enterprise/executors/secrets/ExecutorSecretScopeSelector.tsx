@@ -2,7 +2,7 @@ import React, { useCallback } from 'react'
 
 import { Button, Tooltip } from '@sourcegraph/wildcard'
 
-import { ExecutorSecretScope } from '../../../graphql-operations'
+import type { ExecutorSecretScope } from '../../../graphql-operations'
 
 export interface Props {
     scope: ExecutorSecretScope
