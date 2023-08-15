@@ -333,7 +333,7 @@ public class SettingsComponent implements Disposable {
             .addTooltip("Whitespace around commas doesn't matter.")
             .getPanel();
     userAuthenticationPanel.setBorder(
-        IdeBorderFactory.createTitledBorder("User Authentication", true, JBUI.insetsTop(8)));
+        IdeBorderFactory.createTitledBorder("Authentication (Applies to Code Search and Cody)", true, JBUI.insetsTop(8)));
 
     updateVisibilityOfHelperLinks();
     codyAppStateCheckerExecutorService.scheduleWithFixedDelay(
@@ -594,7 +594,7 @@ public class SettingsComponent implements Disposable {
             .addComponent(isUrlNotificationDismissedCheckBox, 10)
             .getPanel();
     navigationSettingsPanel.setBorder(
-        IdeBorderFactory.createTitledBorder("Navigation Settings", true, JBUI.insetsTop(8)));
+        IdeBorderFactory.createTitledBorder("Code Search Settings", true, JBUI.insetsTop(8)));
     return navigationSettingsPanel;
   }
 
