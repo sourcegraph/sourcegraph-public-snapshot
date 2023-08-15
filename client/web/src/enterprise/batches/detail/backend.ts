@@ -49,7 +49,6 @@ import type {
     AvailableBulkOperationsVariables,
     AvailableBulkOperationsResult,
     BulkOperationType,
-    Nodes,
 } from '../../../graphql-operations'
 import { VIEWER_BATCH_CHANGES_CODE_HOST_FRAGMENT } from '../MissingCredentialsAlert'
 
@@ -867,7 +866,7 @@ export async function exportChangesets(
     const batchChangeData = dataOrThrowErrors(result)
     let changesetNodes = batchChangeData?.node?.changesets.nodes
 
-    changesetNodes = changesetNodes.filter((node: Nodes) => {
+    changesetNodes = changesetNodes.filter((node) => {
         if (changesets.includes(node.id)) {
             return node
         }
