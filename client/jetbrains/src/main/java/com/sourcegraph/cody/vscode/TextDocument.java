@@ -1,11 +1,14 @@
 package com.sourcegraph.cody.vscode;
 
-import com.sourcegraph.cody.completions.CompletionDocumentContext;
+import com.sourcegraph.cody.autocomplete.AutoCompleteDocumentContext;
 import java.net.URI;
+import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 
 public interface TextDocument {
   URI uri();
 
+  @NotNull
   String fileName();
 
   int offsetAt(Position position);
@@ -16,5 +19,8 @@ public interface TextDocument {
 
   Position positionAt(int offset);
 
-  CompletionDocumentContext getCompletionContext(int offset);
+  AutoCompleteDocumentContext getAutoCompleteContext(int offset);
+
+  @NotNull
+  Optional<String> getLanguageId();
 }

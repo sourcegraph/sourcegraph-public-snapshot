@@ -4,14 +4,7 @@
 
 ### Added
 
-- Background color and font of inline code blocks differs from regular text in message [#53761](https://github.com/sourcegraph/sourcegraph/pull/53761)
-- Autofocus Cody chat prompt input [#53836](https://github.com/sourcegraph/sourcegraph/pull/53836)
-- Basic integration with the local Cody App [#54061](https://github.com/sourcegraph/sourcegraph/pull/54061)
-
 ### Changed
-
-- Convert `\t` to spaces in leading whitespace for autocomplete suggestions (according to settings) [#53743](https://github.com/sourcegraph/sourcegraph/pull/53743)
-- Disabled line highlighting in code blocks in chat [#53829](https://github.com/sourcegraph/sourcegraph/pull/53829)
 
 ### Deprecated
 
@@ -19,17 +12,175 @@
 
 ### Fixed
 
-- Fixed the y position at which autocomplete suggestions are rendered [#53677](https://github.com/sourcegraph/sourcegraph/pull/53677)
-- Fixed rendered completions being cleared after disabling them in settings [#53758](https://github.com/sourcegraph/sourcegraph/pull/53758)
-
 ### Security
 
-## [3.0.0-alpha.2]
+## [3.0.9]
 
 ### Added
 
-- A separate setting for the (optional) dotcom access token. [pull/53018](https://github.com/sourcegraph/sourcegraph/pull/53018)
-- Enabled "Explain selected code (detailed)" recipe [#53080](https://github.com/sourcegraph/sourcegraph/pull/53080)
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [3.0.9]
+
+### Changed
+
+- Store application level access tokens in a safe way [#55251](https://github.com/sourcegraph/sourcegraph/pull/55251)
+- Autocomplete is now powered by the agent when enabled (off by default) [#55638](https://github.com/sourcegraph/sourcegraph/pull/55638), [#55826](https://github.com/sourcegraph/sourcegraph/pull/55826)
+
+### Fixed
+
+- Removed jumping text effect from the chat when generating response [#55357](https://github.com/sourcegraph/sourcegraph/pull/55357)
+- Chat message doesn't jump after finished response generation [#55390](https://github.com/sourcegraph/sourcegraph/pull/55390)
+- Removed jumping text effect from the chat when generating response [#55357](https://github.com/sourcegraph/sourcegraph/pull/55357)
+
+## [3.0.8]
+
+### Fixed
+
+- Improved the auto-scrolling of the Cody chat [#55150](https://github.com/sourcegraph/sourcegraph/pull/55150)
+- Fixed mouse wheel and mouse drag scrolling in the Cody chat [#55199](https://github.com/sourcegraph/sourcegraph/pull/55199)
+
+## [3.0.7]
+
+### Added
+
+- New menu item in the toolbar cogwheel menu to open the Cody app settings [#55146](https://github.com/sourcegraph/sourcegraph/pull/55146)
+
+### Changed
+
+- Improved UI of the onboarding widgets [#55090](https://github.com/sourcegraph/sourcegraph/pull/55090)
+- Improved perceived autocomplete performance [#55098](https://github.com/sourcegraph/sourcegraph/pull/55098)
+
+### Fixed
+
+- Enable/disable Cody automatically based on the settings [#55138](https://github.com/sourcegraph/sourcegraph/pull/55138)
+
+## [3.0.6]
+
+### Added
+
+- Automatic detection of Cody app status in the settings window [#54955](https://github.com/sourcegraph/sourcegraph/pull/54955)
+- Add "Enable Cody" option to settings [#55004](https://github.com/sourcegraph/sourcegraph/pull/55004)
+
+### Changed
+
+- Disable "summarize recent code changes" button if git repository is not available [#54859](https://github.com/sourcegraph/sourcegraph/pull/54859)
+- Get the chat model max tokens value from the instance when available [#54954](https://github.com/sourcegraph/sourcegraph/pull/54954)
+
+### Fixed
+
+- Downgraded connection errors for invalid or inaccessible enterprise instances to warnings [#54916](https://github.com/sourcegraph/sourcegraph/pull/54916)
+- Try to log error stack traces and recover from them, rather than re-throw the exception [#54917](https://github.com/sourcegraph/sourcegraph/pull/54917)
+- Show only one informative message in case of invalid access token [#54951](https://github.com/sourcegraph/sourcegraph/pull/54951)
+- Don't display `<br />` tag in the chat message when trying to insert new line in the code block [#55007](https://github.com/sourcegraph/sourcegraph/pull/55007)
+
+## [3.0.5]
+
+### Added
+
+- Added embeddings status in footer [#54575](https://github.com/sourcegraph/sourcegraph/pull/54575)
+- Added currently opened file name in footer [#54610](https://github.com/sourcegraph/sourcegraph/pull/54610)
+- Auto-growing prompt input [#53594](https://github.com/sourcegraph/sourcegraph/pull/53594)
+- Added "stop generating" button [#54710](https://github.com/sourcegraph/sourcegraph/pull/54710)
+- Copy code block button added to editor in the chat message to copy the text to clipboard [#54783](https://github.com/sourcegraph/sourcegraph/pull/54783)
+- Insert at Cursor button added to editor in the chat message to insert the text form the editor to main editor [#54815](https://github.com/sourcegraph/sourcegraph/pull/54815)
+- Added support for multiline autocomplete [#54848](https://github.com/sourcegraph/sourcegraph/pull/54848)
+
+### Fixed
+
+- Fixed telemetry for Sourcegraph.com [#54885](https://github.com/sourcegraph/sourcegraph/pull/54885)
+
+## [3.0.4]
+
+### Added
+
+- Added embeddings status in footer [#54575](https://github.com/sourcegraph/sourcegraph/pull/54575)
+- Added currently opened file name in footer [#54610](https://github.com/sourcegraph/sourcegraph/pull/54610)
+- Added "stop generating" button [#54710](https://github.com/sourcegraph/sourcegraph/pull/54710)
+- Made prompt input grow automatically [#53594](https://github.com/sourcegraph/sourcegraph/pull/53594)
+
+### Changed
+
+- Fixed logging to use JetBrains api + other minor fixes [#54579](https://github.com/sourcegraph/sourcegraph/pull/54579)
+- Enabled editor recipe context menu items when working with Cody app only when Cody app is running [#54583](https://github.com/sourcegraph/sourcegraph/pull/54583)
+- Renamed `completion` to `autocomplete` in both the UI and code [#54606](https://github.com/sourcegraph/sourcegraph/pull/54606)
+- Increased minimum rows of prompt input form 2 to 3 [#54733](https://github.com/sourcegraph/sourcegraph/pull/54733)
+- Improved completion prompt with changes from the VS Code plugin [#54668](https://github.com/sourcegraph/sourcegraph/pull/54668)
+- Displayed more informative message when no context has been found [#54480](https://github.com/sourcegraph/sourcegraph/pull/54480)
+
+### Fixed
+
+- Now avoiding NullPointerException in an edge case when the chat doesn't exist [#54785](https://github.com/sourcegraph/sourcegraph/pull/54785)
+
+## [3.0.3]
+
+### Added
+
+- Added recipes to editor context menu [#54430](https://github.com/sourcegraph/sourcegraph/pull/54430)
+- Figure out default repository when no files are opened in the editor [#54476](https://github.com/sourcegraph/sourcegraph/pull/54476)
+- Added `unstable-codegen` completions support [#54435](https://github.com/sourcegraph/sourcegraph/pull/54435)
+
+### Changed
+
+- Use smaller Cody logo in toolbar and editor context menu [#54481](https://github.com/sourcegraph/sourcegraph/pull/54481)
+- Sourcegraph link sharing and opening file in browser actions are disabled when working with Cody app [#54473](https://github.com/sourcegraph/sourcegraph/pull/54473)
+
+### Fixed
+
+- Preserve new lines in the human chat message [#54417](https://github.com/sourcegraph/sourcegraph/pull/54417)
+- JetBrains: Handle response == null case when checking for embeddings [#54492](https://github.com/sourcegraph/sourcegraph/pull/54492)
+
+## [3.0.2]
+
+### Fixed
+
+- Repositories with http/https remotes are now available for Cody [#54372](https://github.com/sourcegraph/sourcegraph/pull/54372)
+
+## [3.0.1]
+
+### Changed
+
+- Sending message on Enter rather than Ctrl/Cmd+Enter [#54331](https://github.com/sourcegraph/sourcegraph/pull/54331)
+- Updated name to Cody AI app [#54360](https://github.com/sourcegraph/sourcegraph/pull/54360)
+
+### Removed
+
+- Sourcegraph CLI's SRC_ENDPOINT and SRC_ACCESS_TOKEN env variables overrides for the local config got removed [#54369](https://github.com/sourcegraph/sourcegraph/pull/54369)
+
+### Fixed
+
+- telemetry is now being sent to both the current instance & dotcom (unless the current instance is dotcom, then just that) [#54347](https://github.com/sourcegraph/sourcegraph/pull/54347)
+- Don't display doubled messages about the error when trying to load context [#54345](https://github.com/sourcegraph/sourcegraph/pull/54345)
+- Now handling Null error messages in error logging properly [#54351](https://github.com/sourcegraph/sourcegraph/pull/54351)
+- Made sidebar refresh work for non-internal builds [#54348](https://github.com/sourcegraph/sourcegraph/pull/54358)
+- Don't display duplicated files in the "Read" section in the chat [#54363](https://github.com/sourcegraph/sourcegraph/pull/54363)
+- Repositories without configured git remotes are now available for Cody [#54370](https://github.com/sourcegraph/sourcegraph/pull/54370)
+- Repositories with http/https remotes are now available for Cody [#54372](https://github.com/sourcegraph/sourcegraph/pull/54372)
+
+## [3.0.0]
+
+### Added
+
+- Background color and font of inline code blocks differs from regular text in message [#53761](https://github.com/sourcegraph/sourcegraph/pull/53761)
+- Autofocus Cody chat prompt input [#53836](https://github.com/sourcegraph/sourcegraph/pull/53836)
+- Basic integration with the local Cody App [#54061](https://github.com/sourcegraph/sourcegraph/pull/54061)
+- Background color and font of inline code blocks differs from regular text in message [#53761](https://github.com/sourcegraph/sourcegraph/pull/53761)
+- Autofocus Cody chat prompt input [#53836](https://github.com/sourcegraph/sourcegraph/pull/53836)
+- Cody Agent [#53370](https://github.com/sourcegraph/sourcegraph/pull/53370)
+- Chat message when access token is invalid or not
+  configured [#53659](https://github.com/sourcegraph/sourcegraph/pull/53659)
+- A separate setting for the (optional) dotcom access
+  token. [pull/53018](https://github.com/sourcegraph/sourcegraph/pull/53018)
+- Enabled "Explain selected code (detailed)"
+  recipe [#53080](https://github.com/sourcegraph/sourcegraph/pull/53080)
 - Enabled multiple recipes [#53299](https://github.com/sourcegraph/sourcegraph/pull/53299)
   - Explain selected code (high level)
   - Generate a unit test
@@ -42,15 +193,89 @@
 - Enabled "Translate to different language" recipe [#53393](https://github.com/sourcegraph/sourcegraph/pull/53393)
 - Skip Cody completions if there is code in line suffix or in the middle of a word in prefix [#53476](https://github.com/sourcegraph/sourcegraph/pull/53476)
 - Enabled "Summarize recent code changes" recipe [#53534](https://github.com/sourcegraph/sourcegraph/pull/53534)
-- Chat message when access token is invalid or not configured [#53659](https://github.com/sourcegraph/sourcegraph/pull/53659)
+
+### Changed
+
+- Convert `\t` to spaces in leading whitespace for autocomplete suggestions (according to settings) [#53743](https://github.com/sourcegraph/sourcegraph/pull/53743)
+- Disabled line highlighting in code blocks in chat [#53829](https://github.com/sourcegraph/sourcegraph/pull/53829)
+- Parallelized completion API calls and reduced debounce down to 20ms [#53592](https://github.com/sourcegraph/sourcegraph/pull/53592)
+
+### Fixed
+
+- Fixed the y position at which autocomplete suggestions are rendered [#53677](https://github.com/sourcegraph/sourcegraph/pull/53677)
+- Fixed rendered completions being cleared after disabling them in settings [#53758](https://github.com/sourcegraph/sourcegraph/pull/53758)
+- Wrap long words in the chat message [#54244](https://github.com/sourcegraph/sourcegraph/pull/54244)
+- Reset conversation button re-enables "Send"
+  button [#53669](https://github.com/sourcegraph/sourcegraph/pull/53669)
+- Fixed font on the chat ui [#53540](https://github.com/sourcegraph/sourcegraph/pull/53540)
+- Fixed line breaks in the chat ui [#53543](https://github.com/sourcegraph/sourcegraph/pull/53543)
+- Reset prompt input on message send [#53543](https://github.com/sourcegraph/sourcegraph/pull/53543)
+- Fixed UI of the prompt input [#53548](https://github.com/sourcegraph/sourcegraph/pull/53548)
+- Fixed zero-width spaces popping up in inline autocomplete [#53599](https://github.com/sourcegraph/sourcegraph/pull/53599)
+- Reset conversation button re-enables "Send" button [#53669](https://github.com/sourcegraph/sourcegraph/pull/53669)
+- Fixed displaying message about invalid access token on any 401 error from backend [#53674](https://github.com/sourcegraph/sourcegraph/pull/53674)
+
+## [3.0.0-alpha.9]
+
+### Added
+
+- Background color and font of inline code blocks differs from regular text in message [#53761](https://github.com/sourcegraph/sourcegraph/pull/53761)
+- Autofocus Cody chat prompt input [#53836](https://github.com/sourcegraph/sourcegraph/pull/53836)
+- Basic integration with the local Cody App [#54061](https://github.com/sourcegraph/sourcegraph/pull/54061)
+- Onboarding of the user when using local Cody App [#54298](https://github.com/sourcegraph/sourcegraph/pull/54298)
+
+## [3.0.0-alpha.7]
+
+### Added
+
+- Background color and font of inline code blocks differs from regular text in message [#53761](https://github.com/sourcegraph/sourcegraph/pull/53761)
+- Autofocus Cody chat prompt input [#53836](https://github.com/sourcegraph/sourcegraph/pull/53836)
+- Cody Agent [#53370](https://github.com/sourcegraph/sourcegraph/pull/53370)
+
+### Changed
+
+- Convert `\t` to spaces in leading whitespace for autocomplete suggestions (according to settings) [#53743](https://github.com/sourcegraph/sourcegraph/pull/53743)
+- Disabled line highlighting in code blocks in chat [#53829](https://github.com/sourcegraph/sourcegraph/pull/53829)
+
+### Fixed
+
+- Fixed the y position at which autocomplete suggestions are rendered [#53677](https://github.com/sourcegraph/sourcegraph/pull/53677)
+- Fixed rendered completions being cleared after disabling them in settings [#53758](https://github.com/sourcegraph/sourcegraph/pull/53758)
+- Wrap long words in the chat message [#54244](https://github.com/sourcegraph/sourcegraph/pull/54244)
+- Reset conversation button re-enables "Send"
+  button [#53669](https://github.com/sourcegraph/sourcegraph/pull/53669)
+
+## [3.0.0-alpha.6]
+
+### Added
+
+- Chat message when access token is invalid or not
+  configured [#53659](https://github.com/sourcegraph/sourcegraph/pull/53659)
+
+## [3.0.0-alpha.5]
+
+### Added
+
+- A separate setting for the (optional) dotcom access
+  token. [pull/53018](https://github.com/sourcegraph/sourcegraph/pull/53018)
+- Enabled "Explain selected code (detailed)"
+  recipe [#53080](https://github.com/sourcegraph/sourcegraph/pull/53080)
+- Enabled multiple recipes [#53299](https://github.com/sourcegraph/sourcegraph/pull/53299)
+  - Explain selected code (high level)
+  - Generate a unit test
+  - Generate a docstring
+  - Improve variable names
+  - Smell code
+  - Optimize code
+- A separate setting for enabling/disabling Cody completions. [pull/53302](https://github.com/sourcegraph/sourcegraph/pull/53302)
+- Debounce for inline Cody completions [pull/53447](https://github.com/sourcegraph/sourcegraph/pull/53447)
+- Enabled "Translate to different language" recipe [#53393](https://github.com/sourcegraph/sourcegraph/pull/53393)
+- Skip Cody completions if there is code in line suffix or in the middle of a word in prefix [#53476](https://github.com/sourcegraph/sourcegraph/pull/53476)
+- Enabled "Summarize recent code changes" recipe [#53534](https://github.com/sourcegraph/sourcegraph/pull/53534)
 
 ### Changed
 
 - Parallelized completion API calls and reduced debounce down to 20ms [#53592](https://github.com/sourcegraph/sourcegraph/pull/53592)
-
-### Deprecated
-
-### Removed
 
 ### Fixed
 
@@ -61,8 +286,6 @@
 - Fixed zero-width spaces popping up in inline autocomplete [#53599](https://github.com/sourcegraph/sourcegraph/pull/53599)
 - Reset conversation button re-enables "Send" button [#53669](https://github.com/sourcegraph/sourcegraph/pull/53669)
 - Fixed displaying message about invalid access token on any 401 error from backend [#53674](https://github.com/sourcegraph/sourcegraph/pull/53674)
-
-### Security
 
 ## [3.0.0-alpha.1]
 

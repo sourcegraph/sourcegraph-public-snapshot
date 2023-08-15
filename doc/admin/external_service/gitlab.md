@@ -7,7 +7,7 @@ To connect GitLab to Sourcegraph:
 1. Go to **Site admin > Manage code hosts > Add code host**
 2. Select **GitLab** (for GitLab.com) or **GitLab Self-Managed**.
 3. Set **url** to the URL of your GitLab instance, such as https://gitlab.example.com or https://gitlab.com (for GitLab.com).
-4. Create a GitLab access token using these [instructions](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#creating-a-personal-access-token) with repo scope, and set it to be the value of the token.
+4. Create a GitLab access token using these [instructions](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#creating-a-personal-access-token) with the `read_api` and `read_repository` scopes, and set it to be the value of the token.
 5. Use the [Repository syncing documentation below](#repository-syncing) to select and add your preferred projects/repos to the configuration.
 6. You can use the action buttons above the text field to add the fields, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration) for additional fields.
 7. Click **Add repositories**.

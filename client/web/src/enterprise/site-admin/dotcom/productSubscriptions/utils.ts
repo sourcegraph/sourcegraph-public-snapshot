@@ -1,4 +1,4 @@
-import { ApolloError } from '@apollo/client'
+import type { ApolloError } from '@apollo/client'
 import { isEqual } from 'lodash'
 
 /**
@@ -39,3 +39,5 @@ export function errorForPath(error: ApolloError | undefined, path: (string | num
 }
 
 export const accessTokenPath = ['dotcom', 'productSubscription', 'currentSourcegraphAccessToken']
+
+export const numberFormatter = new Intl.NumberFormat()

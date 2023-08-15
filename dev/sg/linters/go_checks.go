@@ -10,7 +10,6 @@ import (
 )
 
 var (
-	goFmt          = runScript("Go format", "dev/check/gofmt.sh")
 	goDBConnImport = runScript("Go pkg/database/dbconn", "dev/check/go-dbconn-import.sh")
 )
 

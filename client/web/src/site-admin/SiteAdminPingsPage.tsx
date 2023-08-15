@@ -391,7 +391,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         </ul>
                     </li>
                     <li>
-                        Sourcegraph Own usage data
+                        Code ownership usage data
                         <ul>
                             <li>
                                 Number and ratio of repositories for which ownership data is available via CODEOWNERS

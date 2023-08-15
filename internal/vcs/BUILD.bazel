@@ -3,7 +3,11 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "vcs",
-    srcs = ["url.go"],
+    srcs = [
+        "url.go",
+        "url_posix.go",
+        "url_windows.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/vcs",
     visibility = ["//:__subpackages__"],
     deps = [

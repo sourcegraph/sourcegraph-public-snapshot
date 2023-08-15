@@ -1,7 +1,7 @@
-import { Meta, Story, DecoratorFn } from '@storybook/react'
-import { Observable, of } from 'rxjs'
+import type { Meta, Story, DecoratorFn } from '@storybook/react'
+import { type Observable, of } from 'rxjs'
 
-import { ListSearchContextsResult } from '@sourcegraph/shared/src/graphql-operations'
+import type { ListSearchContextsResult } from '@sourcegraph/shared/src/graphql-operations'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     mockFetchSearchContexts,
@@ -10,7 +10,7 @@ import {
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
-import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
+import { SearchContextMenu, type SearchContextMenuProps } from './SearchContextMenu'
 
 const decorator: DecoratorFn = story => (
     <div className="dropdown-menu show" style={{ position: 'static' }}>

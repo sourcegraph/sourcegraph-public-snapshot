@@ -3,14 +3,14 @@ import React from 'react'
 import { mdiAccount } from '@mdi/js'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { H1, Icon, Link, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { BreadcrumbSetters } from '../../components/Breadcrumbs'
+import type { AuthenticatedUser } from '../../auth'
+import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { RepositoryFields } from '../../graphql-operations'
+import type { RepositoryFields } from '../../graphql-operations'
 
 import { RepositoryOwnPageContents } from './RepositoryOwnPageContents'
 
@@ -22,6 +22,7 @@ export interface RepositoryOwnAreaPageProps extends Pick<BreadcrumbSetters, 'use
     repo: RepositoryFields
     authenticatedUser: Pick<AuthenticatedUser, 'siteAdmin'> | null
 }
+
 const EDIT_PAGE_BREADCRUMB = { key: 'edit-own', element: 'Upload CODEOWNERS' }
 
 export const RepositoryOwnEditPage: React.FunctionComponent<Omit<RepositoryOwnAreaPageProps, 'telemetryService'>> = ({
@@ -38,8 +39,8 @@ export const RepositoryOwnEditPage: React.FunctionComponent<Omit<RepositoryOwnAr
             <PageHeader
                 description={
                     <>
-                        Sourcegraph Own can provide code ownership data for this repository via an upload or a committed{' '}
-                        CODEOWNERS file. <Link to="/help/own">Learn more about Sourcegraph Own.</Link>
+                        Code ownership data for this repository can be provided via an upload or a committed CODEOWNERS
+                        file. <Link to="/help/own">Learn more about code ownership.</Link>
                     </>
                 }
             >

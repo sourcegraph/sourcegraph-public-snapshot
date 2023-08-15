@@ -79,7 +79,7 @@ func (c *SearchResultsResolver) repositoryResolvers(ctx context.Context, ids []a
 		return nil, nil
 	}
 
-	gsClient := gitserver.NewClient()
+	gsClient := gitserver.NewClient(c.db)
 	resolvers := make([]*RepositoryResolver, 0, len(ids))
 	err := c.db.Repos().StreamMinimalRepos(ctx, database.ReposListOptions{
 		IDs: ids,
@@ -134,7 +134,7 @@ func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultRe
 		Rev  string
 	}
 	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
-	gsClient := gitserver.NewClient()
+	gsClient := gitserver.NewClient(db)
 	getRepoResolver := func(repoName types.MinimalRepo, rev string) *RepositoryResolver {
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
@@ -192,8 +192,8 @@ func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
 }
 
 func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
-	tr, _ := trace.New(ctx, "DynamicFilters", "", attribute.String("resolver", "SearchResultsResolver"))
-	defer tr.Finish()
+	tr, _ := trace.New(ctx, "DynamicFilters", attribute.String("resolver", "SearchResultsResolver"))
+	defer tr.End()
 
 	var filters streaming.SearchFilters
 	filters.Update(streaming.SearchEvent{
@@ -235,8 +235,8 @@ func (sf *searchFilterResolver) Kind() string {
 // blameFileMatch blames the specified file match to produce the time at which
 // the first line match inside of it was authored.
 func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.FileMatch) (t time.Time, err error) {
-	tr, ctx := trace.New(ctx, "SearchResultsResolver", "blameFileMatch")
-	defer tr.FinishWithErr(&err)
+	tr, ctx := trace.New(ctx, "SearchResultsResolver.blameFileMatch")
+	defer tr.EndWithErr(&err)
 
 	// Blame the first line match.
 	if len(fm.ChunkMatches) == 0 {
@@ -244,7 +244,7 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 		return time.Time{}, nil
 	}
 	hm := fm.ChunkMatches[0]
-	hunks, err := gitserver.NewClient().BlameFile(ctx, authz.DefaultSubRepoPermsChecker, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
+	hunks, err := gitserver.NewClient(sr.db).BlameFile(ctx, authz.DefaultSubRepoPermsChecker, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
 		NewestCommit: fm.CommitID,
 		StartLine:    hm.Ranges[0].Start.Line,
 		EndLine:      hm.Ranges[0].Start.Line,
@@ -460,7 +460,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err != nil {
 			return nil, err
 		}
-		j, err := jobutil.NewBasicJob(r.SearchInputs, b, r.enterpriseJobs)
+		j, err := jobutil.NewBasicJob(r.SearchInputs, b)
 		if err != nil {
 			return nil, err
 		}

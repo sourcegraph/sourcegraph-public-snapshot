@@ -1,11 +1,11 @@
-import { Optional } from 'utility-types'
+import type { Optional } from 'utility-types'
 
-import { BatchChangeState } from '../../graphql-operations'
+import type { BatchChangeState } from '../../graphql-operations'
 
-import { DiffMode } from './diffMode'
-import { RecentSearch } from './recentSearches'
-import { SectionID, NoResultsSectionID } from './searchSidebar'
-import { TourListState } from './tourState'
+import type { DiffMode } from './diffMode'
+import type { RecentSearch } from './recentSearches'
+import type { SectionID, NoResultsSectionID } from './searchSidebar'
+import type { TourListState } from './tourState'
 
 // Prior to this type we store in settings list of MultiSelectState
 // we no longer use MultiSelect UI but for backward compatibility we still
@@ -75,6 +75,8 @@ export interface TemporarySettingsSchema {
     'cody.survey.submitted': boolean
     'app.codyStandalonePage.selectedRepo': string
     'cody.contextCallout.dismissed': boolean
+    'admin.hasDismissedCodeHostPrivacyWarning': boolean
+    'simple.search.toggle': boolean
 }
 
 /**

@@ -5,12 +5,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/context/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
-	codycontext "github.com/sourcegraph/sourcegraph/enterprise/internal/codycontext"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
+	codycontext "github.com/sourcegraph/sourcegraph/internal/codycontext"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings"
+	vdb "github.com/sourcegraph/sourcegraph/internal/embeddings/db"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 )
@@ -24,16 +26,21 @@ func Init(
 	enterpriseServices *enterprise.Services,
 ) error {
 	embeddingsClient := embeddings.NewDefaultClient()
-	searchClient := client.New(
-		observationCtx.Logger,
-		db,
-		enterpriseServices.EnterpriseSearchJobs,
-	)
+	searchClient := client.New(observationCtx.Logger, db)
+	qdrantSearcher := vdb.NewDisabledDB()
+	if addr := conf.ServiceConnections().Qdrant; addr != "" {
+		conn, err := defaults.Dial(addr, observationCtx.Logger)
+		if err != nil {
+			return err
+		}
+		qdrantSearcher = vdb.NewQdrantDBFromConn(conn)
+	}
 	contextClient := codycontext.NewCodyContextClient(
 		observationCtx,
-		edb.NewEnterpriseDB(db),
+		db,
 		embeddingsClient,
 		searchClient,
+		qdrantSearcher,
 	)
 	enterpriseServices.CodyContextResolver = resolvers.NewResolver(
 		db,

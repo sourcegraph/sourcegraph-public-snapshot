@@ -7,7 +7,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -23,6 +26,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
+
+type resetFlag struct {
+	dryRun bool
+}
+
+var resetFlags resetFlag
 
 type updateManifestFlag struct {
 	bucket           string
@@ -48,6 +57,12 @@ sg app update-manifest --no-upload
 
 # Update the manifest but don't update the signatures from the release - useful if the release comes from the same build
 sg app update-manifest --update-signatures
+
+# Resets the dev app's db and web cache
+sg app reset
+
+# Prints the locations to be removed without deleting
+sg app reset --dry-run
 `,
 	Description: `
 Various commands to handle management of releases, and processes around Cody App.
@@ -93,6 +108,18 @@ Various commands to handle management of releases, and processes around Cody App
 				},
 			},
 			Action: UpdateCodyAppManifest,
+		},
+		{
+			Name:  "reset",
+			Usage: "Resets the dev app's db and web cache",
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:        "dry-run",
+					Destination: &resetFlags.dryRun,
+					Usage:       "write out paths to be removed",
+				},
+			},
+			Action: ResetApp,
 		},
 	},
 }
@@ -347,4 +374,45 @@ func findArtifactByBuild(ctx context.Context, client *bk.Client, build *buildkit
 	}
 
 	return nil, errors.Newf("failed to find artifact %q on build %q", artifactName, buildNumber)
+}
+
+func ResetApp(ctx *cli.Context) error {
+	if runtime.GOOS != "darwin" {
+		return errors.Newf("this command is not supported on %s", runtime.GOOS)
+	}
+	var appDataDir, appCacheDir, appWebCacheDir, dbSocketDir string
+	userHome, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	userCache, err := os.UserCacheDir()
+	if err != nil {
+		return err
+	}
+	userConfig, err := os.UserConfigDir()
+	if err != nil {
+		return err
+	}
+
+	dbSocketDir = filepath.Join(userHome, ".sourcegraph-psql")
+	appCacheDir = filepath.Join(userCache, "sourcegraph-dev")
+	appDataDir = filepath.Join(userConfig, "sourcegraph-dev")
+	appWebCacheDir = filepath.Join(userHome, "Library/WebKit/Sourcegraph")
+
+	appPaths := []string{dbSocketDir, appCacheDir, appDataDir, appWebCacheDir}
+	msg := "removing"
+	if resetFlags.dryRun {
+		msg = "skipping"
+	}
+	for _, path := range appPaths {
+		std.Out.Writef("%s: %s", msg, path)
+		if resetFlags.dryRun {
+			continue
+		}
+		if err := os.RemoveAll(path); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

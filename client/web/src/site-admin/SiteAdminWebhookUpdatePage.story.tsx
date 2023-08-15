@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { Route, Routes } from 'react-router-dom'
 import { WildcardMockLink } from 'wildcard-mock-link'
 
@@ -32,7 +32,7 @@ export const WebhookUpdatePage: Story = () => (
                         {
                             request: {
                                 query: getDocumentNode(EXTERNAL_SERVICES),
-                                variables: { first: null, after: null },
+                                variables: { first: null, after: null, repo: null },
                             },
                             result: {
                                 data: {

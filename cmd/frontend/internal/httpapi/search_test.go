@@ -26,6 +26,7 @@ import (
 	citypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -461,7 +462,7 @@ func (*fakeRankingService) GetDocumentRanks(ctx context.Context, repoName api.Re
 // the suffix of hostname.
 type suffixIndexers bool
 
-func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.MinimalRepo) ([]types.MinimalRepo, error) {
+func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, indexed zoekt.ReposMap, indexable []types.MinimalRepo) ([]types.MinimalRepo, error) {
 	if !b.Enabled() {
 		return nil, errors.New("indexers disabled")
 	}
@@ -518,8 +519,8 @@ func TestIndexStatusUpdate(t *testing.T) {
 		wantBranches := []zoekt.RepositoryBranch{{Name: "main", Version: "f00b4r"}}
 		called := false
 
-		zoektReposStore := database.NewMockZoektReposStore()
-		zoektReposStore.UpdateIndexStatusesFunc.SetDefaultHook(func(_ context.Context, indexed map[uint32]*zoekt.MinimalRepoListEntry) error {
+		zoektReposStore := dbmocks.NewMockZoektReposStore()
+		zoektReposStore.UpdateIndexStatusesFunc.SetDefaultHook(func(_ context.Context, indexed zoekt.ReposMap) error {
 			entry, ok := indexed[1234]
 			if !ok {
 				t.Fatalf("wrong repo ID")
@@ -531,7 +532,7 @@ func TestIndexStatusUpdate(t *testing.T) {
 			return nil
 		})
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.ZoektReposFunc.SetDefaultReturn(zoektReposStore)
 
 		srv := &searchIndexerServer{db: db, logger: logger}
@@ -561,8 +562,8 @@ func TestIndexStatusUpdate(t *testing.T) {
 
 		called := false
 
-		zoektReposStore := database.NewMockZoektReposStore()
-		zoektReposStore.UpdateIndexStatusesFunc.SetDefaultHook(func(_ context.Context, indexed map[uint32]*zoekt.MinimalRepoListEntry) error {
+		zoektReposStore := dbmocks.NewMockZoektReposStore()
+		zoektReposStore.UpdateIndexStatusesFunc.SetDefaultHook(func(_ context.Context, indexed zoekt.ReposMap) error {
 			entry, ok := indexed[wantRepoID]
 			if !ok {
 				t.Fatalf("wrong repo ID")
@@ -574,7 +575,7 @@ func TestIndexStatusUpdate(t *testing.T) {
 			return nil
 		})
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.ZoektReposFunc.SetDefaultReturn(zoektReposStore)
 
 		parameters := indexStatusUpdateArgs{

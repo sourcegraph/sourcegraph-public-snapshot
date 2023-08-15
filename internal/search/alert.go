@@ -170,7 +170,7 @@ func AlertForUnownedResult() *Alert {
 	return &Alert{
 		Kind:        "unowned-results",
 		Title:       "Some results have no owners",
-		Description: "For some results, no ownership data was found, or no rule applied to the result. [Learn more about configuring Sourcegraph Own](https://docs.sourcegraph.com/own).",
+		Description: "For some results, no ownership data was found, or no rule applied to the result. [Learn more about configuring code ownership](https://docs.sourcegraph.com/own).",
 		// Explicitly set a low priority, so other alerts take precedence.
 		Priority: 0,
 	}

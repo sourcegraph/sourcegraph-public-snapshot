@@ -68,7 +68,7 @@ public class BrowserAndLoadingPanel extends JLayeredPane {
       emptyText.appendLine(
           "Make sure your Sourcegraph URL and access token are correct to use search.");
       emptyText.appendLine(
-          "Click here to configure your Sourcegraph settings.",
+          "Click here to configure your Cody AI by Sourcegraph settings.",
           new SimpleTextAttributes(STYLE_PLAIN, JBUI.CurrentTheme.Link.Foreground.ENABLED),
           __ ->
               ShowSettingsUtil.getInstance()
@@ -88,7 +88,7 @@ public class BrowserAndLoadingPanel extends JLayeredPane {
           "If you believe this is a bug, please raise this at support@sourcegraph.com,");
       //noinspection DialogTitleCapitalization
       emptyText.appendLine(
-          "mentioning the above error message and your plugin and Sourcegraph version.");
+          "mentioning the above error message and your Cody plugin and Cody App or Sourcegraph server version.");
       emptyText.appendLine("Sorry for the inconvenience.");
 
     } else if (connectionAndAuthState == ConnectionAndAuthState.LOADING) {

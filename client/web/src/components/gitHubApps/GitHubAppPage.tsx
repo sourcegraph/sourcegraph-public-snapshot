@@ -1,13 +1,13 @@
-import { FC, useEffect, useMemo, useState } from 'react'
+import { type FC, useEffect, useMemo, useState } from 'react'
 
 import { mdiCog, mdiDelete, mdiOpenInNew, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { ErrorLike } from '@sourcegraph/common'
+import type { ErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
     ErrorAlert,
@@ -23,9 +23,9 @@ import {
     Grid,
     AnchorLink,
 } from '@sourcegraph/wildcard'
-import { BreadcrumbItem } from '@sourcegraph/wildcard/src/components/PageHeader'
+import type { BreadcrumbItem } from '@sourcegraph/wildcard/src/components/PageHeader'
 
-import { GitHubAppDomain, GitHubAppByIDResult, GitHubAppByIDVariables } from '../../graphql-operations'
+import { GitHubAppDomain, type GitHubAppByIDResult, type GitHubAppByIDVariables } from '../../graphql-operations'
 import { ExternalServiceNode } from '../externalServices/ExternalServiceNode'
 import { ConnectionList, SummaryContainer, ConnectionSummary } from '../FilteredConnection/ui'
 import { PageTitle } from '../PageTitle'
@@ -42,9 +42,11 @@ interface Props extends TelemetryProps {
      * The parent breadcrumb item to show for this page in the header.
      */
     headerParentBreadcrumb: BreadcrumbItem
+    /** An optional annotation to show in the page header. */
+    headerAnnotation?: React.ReactNode
 }
 
-export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcrumb }) => {
+export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcrumb, headerAnnotation }) => {
     const { appID } = useParams()
     const navigate = useNavigate()
     const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
@@ -111,6 +113,7 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcr
                                 ),
                             },
                         ]}
+                        annotation={headerAnnotation}
                         className="mb-3"
                         headingElement="h2"
                     />
@@ -177,7 +180,7 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcr
                             </AnchorLink>
                             . A private GitHub App can only be installed on the account that originally created it.{' '}
                             <Link
-                                to="/help/admin/external_service/github#mutliple-installations"
+                                to="/help/admin/external_service/github#multiple-installations"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >

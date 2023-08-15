@@ -34,14 +34,14 @@ const (
 
 // List lists extensions on the remote registry matching the query (or all if the query is empty).
 func List(ctx context.Context, registry *url.URL, query string) (xs []*Extension, err error) {
-	tr, ctx := trace.New(ctx, "registry", "List",
+	tr, ctx := trace.New(ctx, "registry.List",
 		attribute.Stringer("registry", registry),
 		attribute.String("query", query))
 	defer func() {
 		if xs != nil {
 			tr.SetAttributes(attribute.Int("results", len(xs)))
 		}
-		tr.FinishWithErr(&err)
+		tr.EndWithErr(&err)
 	}()
 
 	var q url.Values

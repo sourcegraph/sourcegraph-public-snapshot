@@ -1,6 +1,6 @@
-import { ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
-import { InsightStep } from '../../../../pages/insights/creation/search-insight'
+import type { InsightStep } from '../../../../pages/insights/creation/search-insight'
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 declare namespace Intl {
@@ -19,7 +19,17 @@ declare namespace Intl {
     }
 }
 
-const LIST_FORMATTER = new Intl.ListFormat('en', { style: 'long', type: 'conjunction' })
+const LIST_FORMATTER = (() => {
+    try {
+        return new Intl.ListFormat('en', { style: 'long', type: 'conjunction' })
+    } catch {
+        return {
+            format(items: string[]) {
+                return items.join(', ')
+            },
+        }
+    }
+})()
 
 const INTERVALS = [
     { type: 'years', inMinutes: 60 * 24 * 7 * 5 * 12 },

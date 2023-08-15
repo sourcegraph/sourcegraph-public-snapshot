@@ -1,12 +1,12 @@
-import { MutationTuple } from '@apollo/client'
+import type { MutationTuple } from '@apollo/client'
 
 import { dataOrThrowErrors, gql, useMutation } from '@sourcegraph/http-client'
 
 import {
     useShowMorePagination,
-    UseShowMorePaginationResult,
+    type UseShowMorePaginationResult,
 } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
-import {
+import type {
     BatchChangesCodeHostFields,
     CreateBatchChangesCredentialResult,
     CreateBatchChangesCredentialVariables,
@@ -133,7 +133,7 @@ export const useUserBatchChangesCodeHostConnection = (
             first: 15,
         },
         options: {
-            fetchPolicy: 'no-cache',
+            fetchPolicy: 'network-only',
         },
         getConnection: result => {
             const { node } = dataOrThrowErrors(result)
@@ -175,7 +175,7 @@ export const useGlobalBatchChangesCodeHostConnection = (): UseShowMorePagination
         },
         options: {
             useURL: true,
-            fetchPolicy: 'no-cache',
+            fetchPolicy: 'network-only',
         },
         getConnection: result => {
             const { batchChangesCodeHosts } = dataOrThrowErrors(result)

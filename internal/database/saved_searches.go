@@ -71,10 +71,10 @@ func (s *savedSearchStore) IsEmpty(ctx context.Context) (bool, error) {
 // user is an admin. It is the callers responsibility to ensure that only users
 // with the proper permissions can access the returned saved searches.
 func (s *savedSearchStore) ListAll(ctx context.Context) (savedSearches []api.SavedQuerySpecAndConfig, err error) {
-	tr, ctx := trace.New(ctx, "database.SavedSearches.ListAll", "",
+	tr, ctx := trace.New(ctx, "database.SavedSearches.ListAll",
 		attribute.Int("count", len(savedSearches)),
 	)
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	q := sqlf.Sprintf(`SELECT
 		id,
@@ -319,8 +319,8 @@ func (s *savedSearchStore) Create(ctx context.Context, newSavedSearch *types.Sav
 		return nil, errors.New("newSavedSearch.ID must be zero")
 	}
 
-	tr, ctx := trace.New(ctx, "database.SavedSearches.Create", "")
-	defer tr.FinishWithErr(&err)
+	tr, ctx := trace.New(ctx, "database.SavedSearches.Create")
+	defer tr.EndWithErr(&err)
 
 	savedQuery = &types.SavedSearch{
 		Description: newSavedSearch.Description,
@@ -358,8 +358,8 @@ func (s *savedSearchStore) Create(ctx context.Context, newSavedSearch *types.Sav
 // user is an admin. It is the callers responsibility to ensure the user has
 // proper permissions to perform the update.
 func (s *savedSearchStore) Update(ctx context.Context, savedSearch *types.SavedSearch) (savedQuery *types.SavedSearch, err error) {
-	tr, ctx := trace.New(ctx, "database.SavedSearches.Update", "")
-	defer tr.FinishWithErr(&err)
+	tr, ctx := trace.New(ctx, "database.SavedSearches.Update")
+	defer tr.EndWithErr(&err)
 
 	savedQuery = &types.SavedSearch{
 		Description:     savedSearch.Description,
@@ -395,8 +395,8 @@ func (s *savedSearchStore) Update(ctx context.Context, savedSearch *types.SavedS
 // user is an admin. It is the callers responsibility to ensure the user has
 // proper permissions to perform the delete.
 func (s *savedSearchStore) Delete(ctx context.Context, id int32) (err error) {
-	tr, ctx := trace.New(ctx, "database.SavedSearches.Delete", "")
-	defer tr.FinishWithErr(&err)
+	tr, ctx := trace.New(ctx, "database.SavedSearches.Delete")
+	defer tr.EndWithErr(&err)
 	_, err = s.Handle().ExecContext(ctx, `DELETE FROM saved_searches WHERE ID=$1`, id)
 	return err
 }

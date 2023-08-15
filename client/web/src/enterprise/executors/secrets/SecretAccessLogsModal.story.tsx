@@ -1,5 +1,5 @@
-import { MockedResponse } from '@apollo/client/testing'
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import type { DecoratorFn, Story, Meta } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { noop } from 'lodash'
 
@@ -7,7 +7,7 @@ import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-import { ExecutorSecretAccessLogsResult } from '../../../graphql-operations'
+import type { ExecutorSecretAccessLogsResult } from '../../../graphql-operations'
 
 import { EXECUTOR_SECRET_ACCESS_LOGS } from './backend'
 import { SecretAccessLogsModal } from './SecretAccessLogsModal'

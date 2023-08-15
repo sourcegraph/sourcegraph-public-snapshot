@@ -1,12 +1,12 @@
 import { useEffect } from 'react'
 
-import { Navigate, RouteObject } from 'react-router-dom'
+import { Navigate, type RouteObject } from 'react-router-dom'
 
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
-import { LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
+import { type LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
 import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
 
@@ -34,6 +34,8 @@ const SurveyPage = lazyComponent(() => import('./marketing/page/SurveyPage'), 'S
 const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
 const TeamsArea = lazyComponent(() => import('./team/TeamsArea'), 'TeamsArea')
 const CodySidebarStoreProvider = lazyComponent(() => import('./cody/sidebar/Provider'), 'CodySidebarStoreProvider')
+const GetCodyPage = lazyComponent(() => import('./get-cody/GetCodyPage'), 'GetCodyPage')
+const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.
 const PassThroughToServer: React.FC = () => {
@@ -117,6 +119,7 @@ export const routes: RouteObject[] = [
                         routes={props.siteAdminAreaRoutes}
                         sideBarGroups={props.siteAdminSideBarGroups}
                         overviewComponents={props.siteAdminOverviewComponents}
+                        codeInsightsEnabled={window.context.codeInsightsEnabled}
                     />
                 )}
             />
@@ -163,6 +166,14 @@ export const routes: RouteObject[] = [
         // detect if we're inside the repo container reliably inside the Layout, we
         // expose this information in the handle object instead.
         handle: { isRepoContainer: true },
+    },
+    {
+        path: PageRoutes.GetCody,
+        element: <LegacyRoute render={props => <GetCodyPage {...props} context={window.context} />} />,
+    },
+    {
+        path: PageRoutes.PostSignUp,
+        element: <LegacyRoute render={props => <PostSignUpPage {...props} />} />,
     },
 ]
 

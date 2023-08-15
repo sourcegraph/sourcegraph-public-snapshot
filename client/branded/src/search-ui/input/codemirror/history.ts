@@ -1,7 +1,7 @@
 import { Facet } from '@codemirror/state'
-import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import { type EditorView, type PluginValue, ViewPlugin, type ViewUpdate } from '@codemirror/view'
 
-import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
+import type { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 
 /**
  * Transactions which modify the input because a history item was selected are

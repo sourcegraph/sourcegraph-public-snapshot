@@ -11,7 +11,7 @@
 
         <ComponentGroup Id="Cody" Directory="INSTALLDIR">
             <Component>
-                <File Source="bin/$(var.Platform)/signed/Cody.exe" />
+                <File Id="CodyApp" Source="bin/$(var.Platform)/signed/Cody.exe" />
             </Component>
         </ComponentGroup>
 
@@ -36,7 +36,7 @@
         </DirectoryRef>
 
         <StandardDirectory Id="DesktopFolder">
-            <Component Id="DesktopIcon" Guid="665E0344-222B-4F04-86F4-559BACFFD160">
+            <Component Id="DesktopIcon" Guid="{665E0344-222B-4F04-86F4-559BACFFD160}">
                 <RegistryValue Root="HKCU"
                        Key="$(var.RegistryKeyPath)\Components"
                        Name="AppDesktopShortcuts"

@@ -10,16 +10,16 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -36,8 +36,8 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 		licensing.MockCheckFeature = oldMock
 	})
 
-	mockDB := database.NewMockDB()
-	mockRepos := database.NewMockRepoStore()
+	mockDB := dbmocks.NewMockDB()
+	mockRepos := dbmocks.NewMockRepoStore()
 	mockRepos.GetByIDsFunc.SetDefaultReturn([]*types.Repo{{ID: 1, Name: "repo1"}}, nil)
 	mockDB.ReposFunc.SetDefaultReturn(mockRepos)
 

@@ -49,8 +49,8 @@ public class NotificationActivity implements StartupActivity.DumbAware {
     // Display notification
     Notification notification =
         new Notification(
-            "Sourcegraph access",
-            "Sourcegraph",
+            "Cody AI by Sourcegraph: server access",
+            "Cody AI by Sourcegraph",
             "A custom Sourcegraph URL is not set for this project. You can only access public repos. Do you want to set your custom URL?",
             NotificationType.INFORMATION);
     AnAction setUrlAction = new OpenPluginSettingsAction("Set URL");
@@ -69,7 +69,7 @@ public class NotificationActivity implements StartupActivity.DumbAware {
             ConfigUtil.setUrlNotificationDismissed(true);
           }
         };
-    notification.setIcon(Icons.SourcegraphLogo);
+    notification.setIcon(Icons.CodyLogo);
     notification.addAction(setUrlAction);
     notification.addAction(cancelAction);
     notification.addAction(neverShowAgainAction);
@@ -83,8 +83,8 @@ public class NotificationActivity implements StartupActivity.DumbAware {
     String altSShortcutText = KeymapUtil.getShortcutText(altSShortcut);
     Notification notification =
         new Notification(
-            "Sourcegraph plugin updates",
-            "Sourcegraph",
+            "Cody AI by Sourcegraph plugin updates",
+            "Cody AI by Sourcegraph",
             "Access the new plugin and try out code search with the shortcut "
                 + altSShortcutText
                 + "! Learn more about the plugin’s functionality in our blog post.",
@@ -106,7 +106,7 @@ public class NotificationActivity implements StartupActivity.DumbAware {
             BrowserOpener.openInBrowser(project, whatsNewUrl);
           }
         };
-    notification.setIcon(Icons.SourcegraphLogo);
+    notification.setIcon(Icons.CodyLogo);
     notification.addAction(openAction);
     notification.addAction(learnMoreAction);
     Notifications.Bus.notify(notification);
@@ -122,8 +122,11 @@ public class NotificationActivity implements StartupActivity.DumbAware {
             + " It is not possible to use Sourcegraph API and Cody without it.";
     Notification notification =
         new Notification(
-            "Sourcegraph access", "Sourcegraph", content, NotificationType.INFORMATION);
-    notification.setIcon(Icons.SourcegraphLogo);
+            "Cody AI by Sourcegraph: server access",
+            "Sourcegraph",
+            content,
+            NotificationType.INFORMATION);
+    notification.setIcon(Icons.CodyLogo);
     notification.addAction(new OpenPluginSettingsAction("Set Access Token"));
     notification.addAction(dumbAwareAction("Do Not Set", notification::expire));
     notification.addAction(

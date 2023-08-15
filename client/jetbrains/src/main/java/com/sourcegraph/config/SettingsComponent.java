@@ -1,65 +1,86 @@
 package com.sourcegraph.config;
 
+import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComponentValidator;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.IdeBorderFactory;
+import com.intellij.ui.components.ActionLink;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
+import com.intellij.ui.components.JBPasswordField;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.FormBuilder;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import com.jetbrains.jsonSchema.settings.mappings.JsonSchemaConfigurable;
 import com.sourcegraph.cody.localapp.LocalAppManager;
+import com.sourcegraph.cody.ui.PasswordFieldWithShowHideButton;
 import com.sourcegraph.common.AuthorizationUtil;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.Enumeration;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import javax.swing.*;
+import javax.swing.AbstractButton;
+import javax.swing.ButtonGroup;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Supports creating and managing a {@link JPanel} for the Settings Dialog. */
-public class SettingsComponent {
-  private final Project project;
+public class SettingsComponent implements Disposable {
   private final JPanel panel;
   private ButtonGroup instanceTypeButtonGroup;
   private JBTextField urlTextField;
-  private JBTextField enterpriseAccessTokenTextField;
-  private JBTextField dotComAccessTokenTextField;
+  private PasswordFieldWithShowHideButton enterpriseAccessTokenTextField;
+  private PasswordFieldWithShowHideButton dotComAccessTokenTextField;
   private JBLabel userDocsLinkComment;
   private JBLabel enterpriseAccessTokenLinkComment;
   private JBTextField customRequestHeadersTextField;
   private JBTextField defaultBranchNameTextField;
   private JBTextField remoteUrlReplacementsTextField;
   private JBCheckBox isUrlNotificationDismissedCheckBox;
-  private JBCheckBox areCompletionsEnabledCheckBox;
+  private JBCheckBox isCodyEnabledCheckBox;
+  private JBCheckBox isCodyAutoCompleteEnabledCheckBox;
 
-  private JButton testCodyAppConnectionButton;
-  private JLabel testCodyAppConnectionLabel;
+  private ActionLink installLocalAppLink;
+  private JLabel installLocalAppComment;
+  private ActionLink runLocalAppLink;
+  private JLabel runLocalAppComment;
+  private JBCheckBox isCodyDebugEnabledCheckBox;
+  private JBCheckBox isCodyVerboseDebugEnabledCheckBox;
+
+  private final ScheduledExecutorService codyAppStateCheckerExecutorService =
+      Executors.newSingleThreadScheduledExecutor();
 
   public JComponent getPreferredFocusedComponent() {
     return defaultBranchNameTextField;
   }
 
   public SettingsComponent(@NotNull Project project) {
-    this.project = project;
-    JPanel userAuthenticationPanel = createAuthenticationPanel();
+    JPanel userAuthenticationPanel = createAuthenticationPanel(project);
     JPanel navigationSettingsPanel = createNavigationSettingsPanel();
     JPanel codySettingsPanel = createCodySettingsPanel();
 
     panel =
         FormBuilder.createFormBuilder()
             .addComponent(userAuthenticationPanel)
-            .addComponent(navigationSettingsPanel)
             .addComponent(codySettingsPanel)
+            .addComponent(navigationSettingsPanel)
             .addComponentFillVertically(new JPanel(), 0)
             .getPanel();
   }
@@ -68,10 +89,16 @@ public class SettingsComponent {
     return panel;
   }
 
+  public static InstanceType getDefaultInstanceType() {
+    return LocalAppManager.isLocalAppInstalled() && LocalAppManager.isPlatformSupported()
+        ? InstanceType.LOCAL_APP
+        : InstanceType.DOTCOM;
+  }
+
   @NotNull
   public InstanceType getInstanceType() {
     return InstanceType.optionalValueOf(instanceTypeButtonGroup.getSelection().getActionCommand())
-        .orElse(InstanceType.ENTERPRISE);
+        .orElse(getDefaultInstanceType());
   }
 
   public void setInstanceType(@NotNull InstanceType instanceType) {
@@ -85,8 +112,19 @@ public class SettingsComponent {
     setInstanceSettingsEnabled(instanceType);
   }
 
+  private ActionLink simpleActionLink(String text, Runnable runnable) {
+    ActionLink actionLink =
+        new ActionLink(
+            text,
+            e -> {
+              runnable.run();
+            });
+    actionLink.setFont(UIUtil.getLabelFont(UIUtil.FontSize.SMALL));
+    return actionLink;
+  }
+
   @NotNull
-  private JPanel createAuthenticationPanel() {
+  private JPanel createAuthenticationPanel(@NotNull Project project) {
     // Create URL field for the enterprise section
     JBLabel urlLabel = new JBLabel("Sourcegraph URL:");
     urlTextField = new JBTextField();
@@ -96,25 +134,30 @@ public class SettingsComponent {
     addValidation(
         urlTextField,
         () ->
-            urlTextField.getText().length() == 0
+            urlTextField.getText().isEmpty()
                 ? new ValidationInfo("Missing URL", urlTextField)
                 : (!JsonSchemaConfigurable.isValidURL(urlTextField.getText())
                     ? new ValidationInfo("This is an invalid URL", urlTextField)
                     : null));
-    addDocumentListener(urlTextField, e -> updateAccessTokenLinkCommentText());
+    addDocumentListener(
+        urlTextField, urlTextField.getDocument(), e -> updateAccessTokenLinkCommentText());
 
-    // Create access token field
+    // Create enterprise access token field
     JBLabel accessTokenLabel = new JBLabel("Access token:");
-    enterpriseAccessTokenTextField = new JBTextField();
-    enterpriseAccessTokenTextField.getEmptyText().setText("Paste your access token here");
+    enterpriseAccessTokenTextField =
+        new PasswordFieldWithShowHideButton(
+            new JBPasswordField(), () -> ConfigUtil.getEnterpriseAccessToken(project));
+    enterpriseAccessTokenTextField.setEmptyText("Paste your access token here");
     addValidation(
         enterpriseAccessTokenTextField,
-        () ->
-            !AuthorizationUtil.isValidAccessToken(enterpriseAccessTokenTextField.getText())
-                ? new ValidationInfo("Invalid access token", enterpriseAccessTokenTextField)
-                : null);
+        () -> {
+          String password = enterpriseAccessTokenTextField.getPassword();
+          return password != null && !AuthorizationUtil.isValidAccessToken(password)
+              ? new ValidationInfo("Invalid access token", enterpriseAccessTokenTextField)
+              : null;
+        });
 
-    // Create access token field
+    // Create dotcom access token field
     JBLabel dotComAccessTokenComment =
         new JBLabel(
                 "(optional) To use Cody, you will need an access token to sign in.",
@@ -122,14 +165,18 @@ public class SettingsComponent {
                 UIUtil.FontColor.BRIGHTER)
             .withBorder(JBUI.Borders.emptyLeft(10));
     JBLabel dotComAccessTokenLabel = new JBLabel("Access token:");
-    dotComAccessTokenTextField = new JBTextField();
-    dotComAccessTokenTextField.getEmptyText().setText("Paste your access token here");
+    dotComAccessTokenTextField =
+        new PasswordFieldWithShowHideButton(
+            new JBPasswordField(), () -> ConfigUtil.getDotComAccessToken(project));
+    dotComAccessTokenTextField.setEmptyText("Paste your access token here");
     addValidation(
         dotComAccessTokenTextField,
-        () ->
-            !AuthorizationUtil.isValidAccessToken(dotComAccessTokenTextField.getText())
-                ? new ValidationInfo("Invalid access token", dotComAccessTokenTextField)
-                : null);
+        () -> {
+          String password = dotComAccessTokenTextField.getPassword();
+          return password != null && !AuthorizationUtil.isValidAccessToken(password)
+              ? new ValidationInfo("Invalid access token", dotComAccessTokenTextField)
+              : null;
+        });
 
     // Create comments
     userDocsLinkComment =
@@ -147,42 +194,69 @@ public class SettingsComponent {
         event ->
             setInstanceSettingsEnabled(
                 InstanceType.optionalValueOf(event.getActionCommand())
-                    .orElse(InstanceType.ENTERPRISE));
+                    .orElse(getDefaultInstanceType()));
+    boolean isLocalAppInstalled = LocalAppManager.isLocalAppInstalled();
+    boolean isLocalAppAccessTokenConfigured = LocalAppManager.getLocalAppAccessToken().isPresent();
+    boolean isLocalAppPlatformSupported = LocalAppManager.isPlatformSupported();
     JRadioButton codyAppRadioButton = new JRadioButton("Use the local Cody App");
-    boolean isCodyAppInstalledAndConfigured =
-        LocalAppManager.isLocalAppInstalled()
-            && LocalAppManager.getLocalAppAccessToken().isPresent();
     codyAppRadioButton.setMnemonic(KeyEvent.VK_A);
     codyAppRadioButton.setActionCommand(InstanceType.LOCAL_APP.name());
     codyAppRadioButton.addActionListener(actionListener);
-    codyAppRadioButton.setEnabled(isCodyAppInstalledAndConfigured);
-    JRadioButton sourcegraphDotComRadioButton = new JRadioButton("Use sourcegraph.com");
-    sourcegraphDotComRadioButton.setMnemonic(KeyEvent.VK_C);
-    sourcegraphDotComRadioButton.setActionCommand(InstanceType.DOTCOM.name());
-    sourcegraphDotComRadioButton.addActionListener(actionListener);
+    codyAppRadioButton.setEnabled(isLocalAppInstalled && isLocalAppAccessTokenConfigured);
+    JRadioButton dotcomRadioButton = new JRadioButton("Use sourcegraph.com");
+    dotcomRadioButton.setMnemonic(KeyEvent.VK_C);
+    dotcomRadioButton.setActionCommand(InstanceType.DOTCOM.name());
+    dotcomRadioButton.addActionListener(actionListener);
     JRadioButton enterpriseInstanceRadioButton = new JRadioButton("Use an enterprise instance");
     enterpriseInstanceRadioButton.setMnemonic(KeyEvent.VK_E);
     enterpriseInstanceRadioButton.setActionCommand(InstanceType.ENTERPRISE.name());
     enterpriseInstanceRadioButton.addActionListener(actionListener);
     instanceTypeButtonGroup = new ButtonGroup();
     instanceTypeButtonGroup.add(codyAppRadioButton);
-    instanceTypeButtonGroup.add(sourcegraphDotComRadioButton);
+    instanceTypeButtonGroup.add(dotcomRadioButton);
     instanceTypeButtonGroup.add(enterpriseInstanceRadioButton);
 
-    // Assemble the three main panels
-
+    // Assemble the three main panels String platformName =
+    String platformName =
+        Optional.ofNullable(System.getProperty("os.name")).orElse("Your platform");
+    @SuppressWarnings("DialogTitleCapitalization")
+    String codyAppCommentText =
+        isLocalAppPlatformSupported
+            ? "Use Sourcegraph through Cody App."
+            : platformName
+                + " is not yet supported by the Cody App. Keep an eye on future updates!";
     JBLabel codyAppComment =
+        new JBLabel(codyAppCommentText, UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
+    codyAppComment.setBorder(JBUI.Borders.emptyLeft(20));
+    installLocalAppComment =
         new JBLabel(
-            "Use Sourcegraph through the locally installed Cody App",
+            "Cody App wasn't detected on this system, it seems it hasn't been installed yet.",
             UIUtil.ComponentStyle.SMALL,
             UIUtil.FontColor.BRIGHTER);
-    codyAppComment.setBorder(JBUI.Borders.emptyLeft(20));
-    codyAppComment.setEnabled(isCodyAppInstalledAndConfigured);
+    installLocalAppComment.setVisible(false);
+    installLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
+    installLocalAppLink =
+        simpleActionLink("Install Cody App...", LocalAppManager::browseLocalAppInstallPage);
+    installLocalAppLink.setVisible(false);
+    installLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
+    runLocalAppLink = simpleActionLink("Run Cody App...", LocalAppManager::runLocalApp);
+    runLocalAppLink.setVisible(false);
+    runLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
+    runLocalAppComment =
+        new JBLabel(
+            "Cody App seems to be installed, but it's not running, currently.",
+            UIUtil.ComponentStyle.SMALL,
+            UIUtil.FontColor.BRIGHTER);
+    runLocalAppComment.setVisible(false);
+    runLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
     JPanel codyAppPanel =
         FormBuilder.createFormBuilder()
             .addComponent(codyAppRadioButton, 1)
             .addComponent(codyAppComment, 2)
-            //            .addComponent(codyAppPanelContent, 1)
+            .addComponent(installLocalAppComment, 2)
+            .addComponent(installLocalAppLink, 2)
+            .addComponent(runLocalAppComment, 2)
+            .addComponent(runLocalAppLink, 2)
             .getPanel();
     JBLabel dotComComment =
         new JBLabel(
@@ -198,14 +272,14 @@ public class SettingsComponent {
     dotComPanelContent.setBorder(IdeBorderFactory.createEmptyBorder(JBUI.insets(1, 30, 0, 0)));
     JPanel dotComPanel =
         FormBuilder.createFormBuilder()
-            .addComponent(sourcegraphDotComRadioButton, 1)
+            .addComponent(dotcomRadioButton, 1)
             .addComponent(dotComComment, 2)
             .addComponent(dotComPanelContent, 1)
             .getPanel();
     JPanel enterprisePanelContent =
         FormBuilder.createFormBuilder()
             .addLabeledComponent(urlLabel, urlTextField, 1)
-            .addTooltip("If your company uses a private Sourcegraph instance, set its URL here")
+            .addTooltip("If your company uses a Sourcegraph enterprise instance, set its URL here")
             .addLabeledComponent(accessTokenLabel, enterpriseAccessTokenTextField, 1)
             .addComponentToRightColumn(userDocsLinkComment, 1)
             .addComponentToRightColumn(enterpriseAccessTokenLinkComment, 1)
@@ -228,13 +302,13 @@ public class SettingsComponent {
     addValidation(
         customRequestHeadersTextField,
         () -> {
-          if (customRequestHeadersTextField.getText().length() == 0) {
+          if (customRequestHeadersTextField.getText().isEmpty()) {
             return null;
           }
           String[] pairs = customRequestHeadersTextField.getText().split(",");
           if (pairs.length % 2 != 0) {
             return new ValidationInfo(
-                "Must be a comma-separated list of pairs", customRequestHeadersTextField);
+                "Must be a comma-separated list of string pairs", customRequestHeadersTextField);
           }
 
           for (int i = 0; i < pairs.length; i += 2) {
@@ -259,9 +333,29 @@ public class SettingsComponent {
             .addTooltip("Whitespace around commas doesn't matter.")
             .getPanel();
     userAuthenticationPanel.setBorder(
-        IdeBorderFactory.createTitledBorder("User Authentication", true, JBUI.insetsTop(8)));
+        IdeBorderFactory.createTitledBorder("Authentication", true, JBUI.insetsTop(8)));
 
+    updateVisibilityOfHelperLinks();
+    codyAppStateCheckerExecutorService.scheduleWithFixedDelay(
+        this::updateVisibilityOfHelperLinks, 0, 1, TimeUnit.SECONDS);
     return userAuthenticationPanel;
+  }
+
+  private void updateVisibilityOfHelperLinks() {
+    boolean isLocalAppInstalled = LocalAppManager.isLocalAppInstalled();
+    boolean isLocalAppRunning = LocalAppManager.isLocalAppRunning();
+    boolean isLocalAppPlatformSupported = LocalAppManager.isPlatformSupported();
+    boolean shouldShowInstallLocalAppLink = !isLocalAppInstalled && isLocalAppPlatformSupported;
+    boolean shouldShowRunLocalAppLink = isLocalAppInstalled && !isLocalAppRunning;
+    ApplicationManager.getApplication()
+        .invokeLater(
+            () -> {
+              installLocalAppComment.setVisible(shouldShowInstallLocalAppLink);
+              installLocalAppLink.setVisible(shouldShowInstallLocalAppLink);
+              runLocalAppLink.setVisible(shouldShowRunLocalAppLink);
+              runLocalAppComment.setVisible(shouldShowRunLocalAppLink);
+            },
+            ModalityState.any());
   }
 
   @NotNull
@@ -273,22 +367,38 @@ public class SettingsComponent {
     urlTextField.setText(value != null ? value : "");
   }
 
-  @NotNull
+  /**
+   * @return Null means we don't know the token because it wasn't loaded from the secure storage. An
+   *     empty token means the user has explicitly set it to empty.
+   */
+  @Nullable
   public String getDotComAccessToken() {
-    return dotComAccessTokenTextField.getText();
+    return dotComAccessTokenTextField.getPassword();
   }
 
-  public void setDotComAccessToken(@NotNull String value) {
-    dotComAccessTokenTextField.setText(value);
+  public void resetDotComAccessToken() {
+    dotComAccessTokenTextField.resetUI();
   }
 
-  @NotNull
+  public boolean isDotComAccessTokenChanged() {
+    return dotComAccessTokenTextField.hasPasswordChanged();
+  }
+
+  /**
+   * @return Null means we don't know the token because it wasn't loaded from the secure storage. An
+   *     empty token means the user has explicitly set it to empty.
+   */
+  @Nullable
   public String getEnterpriseAccessToken() {
-    return enterpriseAccessTokenTextField.getText();
+    return enterpriseAccessTokenTextField.getPassword();
   }
 
-  public void setEnterpriseAccessToken(@NotNull String value) {
-    enterpriseAccessTokenTextField.setText(value);
+  public void resetEnterpriseAccessToken() {
+    enterpriseAccessTokenTextField.resetUI();
+  }
+
+  public boolean isEnterpriseAccessTokenChanged() {
+    return enterpriseAccessTokenTextField.hasPasswordChanged();
   }
 
   @NotNull
@@ -326,12 +436,40 @@ public class SettingsComponent {
     isUrlNotificationDismissedCheckBox.setSelected(value);
   }
 
-  public boolean areCodyCompletionsEnabled() {
-    return areCompletionsEnabledCheckBox.isSelected();
+  public boolean isCodyEnabled() {
+    return isCodyEnabledCheckBox.isSelected();
   }
 
-  public void setCodyCompletionsEnabled(boolean value) {
-    areCompletionsEnabledCheckBox.setSelected(value);
+  public void setCodyEnabled(boolean value) {
+    isCodyEnabledCheckBox.setSelected(value);
+    this.onDidCodyEnableSettingChange();
+    if (!value) {
+      setCodyAutoCompleteEnabled(false);
+    }
+  }
+
+  public boolean isCodyAutoCompleteEnabled() {
+    return isCodyAutoCompleteEnabledCheckBox.isSelected();
+  }
+
+  public void setCodyAutoCompleteEnabled(boolean value) {
+    isCodyAutoCompleteEnabledCheckBox.setSelected(value);
+  }
+
+  public boolean isCodyDebugEnabled() {
+    return isCodyDebugEnabledCheckBox.isSelected();
+  }
+
+  public void setIsCodyDebugEnabled(boolean value) {
+    isCodyDebugEnabledCheckBox.setSelected(value);
+  }
+
+  public boolean isCodyVerboseDebugEnabled() {
+    return isCodyVerboseDebugEnabledCheckBox.isSelected();
+  }
+
+  public void setIsCodyVerboseDebugEnabled(boolean value) {
+    isCodyVerboseDebugEnabledCheckBox.setSelected(value);
   }
 
   private void setInstanceSettingsEnabled(@NotNull InstanceType instanceType) {
@@ -366,33 +504,38 @@ public class SettingsComponent {
 
   private void addValidation(
       @NotNull JTextComponent component, @NotNull Supplier<ValidationInfo> validator) {
-    new ComponentValidator(project).withValidator(validator).installOn(component);
-    addDocumentListener(
-        component,
-        e -> ComponentValidator.getInstance(component).ifPresent(ComponentValidator::revalidate));
+    new ComponentValidator(this).withValidator(validator).installOn(component);
+    addDocumentListener(component, component.getDocument(), ComponentValidator::revalidate);
+  }
+
+  private void addValidation(
+      @NotNull PasswordFieldWithShowHideButton component,
+      @NotNull Supplier<ValidationInfo> validator) {
+    new ComponentValidator(this).withValidator(validator).installOn(component);
+    addDocumentListener(component, component.getDocument(), ComponentValidator::revalidate);
   }
 
   private void addDocumentListener(
-      @NotNull JTextComponent textComponent, @NotNull Consumer<ComponentValidator> function) {
-    textComponent
-        .getDocument()
-        .addDocumentListener(
-            new DocumentListener() {
-              @Override
-              public void insertUpdate(DocumentEvent e) {
-                ComponentValidator.getInstance(textComponent).ifPresent(function);
-              }
+      @NotNull JComponent component,
+      @NotNull Document document,
+      @NotNull Consumer<ComponentValidator> function) {
+    document.addDocumentListener(
+        new DocumentListener() {
+          @Override
+          public void insertUpdate(DocumentEvent e) {
+            ComponentValidator.getInstance(component).ifPresent(function);
+          }
 
-              @Override
-              public void removeUpdate(DocumentEvent e) {
-                ComponentValidator.getInstance(textComponent).ifPresent(function);
-              }
+          @Override
+          public void removeUpdate(DocumentEvent e) {
+            ComponentValidator.getInstance(component).ifPresent(function);
+          }
 
-              @Override
-              public void changedUpdate(DocumentEvent e) {
-                ComponentValidator.getInstance(textComponent).ifPresent(function);
-              }
-            });
+          @Override
+          public void changedUpdate(DocumentEvent e) {
+            ComponentValidator.getInstance(component).ifPresent(function);
+          }
+        });
   }
 
   private void updateAccessTokenLinkCommentText() {
@@ -430,7 +573,7 @@ public class SettingsComponent {
     addValidation(
         remoteUrlReplacementsTextField,
         () ->
-            (remoteUrlReplacementsTextField.getText().length() > 0
+            (!remoteUrlReplacementsTextField.getText().isEmpty()
                     && remoteUrlReplacementsTextField.getText().split(",").length % 2 != 0)
                 ? new ValidationInfo(
                     "Must be a comma-separated list of pairs", remoteUrlReplacementsTextField)
@@ -452,17 +595,43 @@ public class SettingsComponent {
             .addComponent(isUrlNotificationDismissedCheckBox, 10)
             .getPanel();
     navigationSettingsPanel.setBorder(
-        IdeBorderFactory.createTitledBorder("Navigation Settings", true, JBUI.insetsTop(8)));
+        IdeBorderFactory.createTitledBorder("Code Search", true, JBUI.insetsTop(8)));
     return navigationSettingsPanel;
   }
 
   @NotNull
   private JPanel createCodySettingsPanel() {
-    areCompletionsEnabledCheckBox = new JBCheckBox("Enable Cody completions");
+    //noinspection DialogTitleCapitalization
+    isCodyEnabledCheckBox = new JBCheckBox("Enable Cody");
+    isCodyAutoCompleteEnabledCheckBox = new JBCheckBox("Enable Cody autocomplete");
+    isCodyDebugEnabledCheckBox = new JBCheckBox("Enable debug");
+    isCodyVerboseDebugEnabledCheckBox = new JBCheckBox("Verbose debug");
     JPanel codySettingsPanel =
-        FormBuilder.createFormBuilder().addComponent(areCompletionsEnabledCheckBox, 10).getPanel();
+        FormBuilder.createFormBuilder()
+            .addComponent(isCodyEnabledCheckBox, 10)
+            .addTooltip(
+                "Disable this to turn off all AI-based functionality of the plugin, including the Cody chat sidebar and autocomplete")
+            .addComponent(isCodyAutoCompleteEnabledCheckBox, 5)
+            .addComponent(isCodyDebugEnabledCheckBox)
+            .addTooltip("Enables debug output visible in the idea.log")
+            .addComponent(isCodyVerboseDebugEnabledCheckBox)
+            .getPanel();
     codySettingsPanel.setBorder(
-        IdeBorderFactory.createTitledBorder("Cody Settings", true, JBUI.insetsTop(8)));
+        IdeBorderFactory.createTitledBorder("Cody AI", true, JBUI.insetsTop(8)));
+
+    // Disable isCodyAutoCompleteEnabledCheckBox if isCodyEnabledCheckBox is not selected
+    isCodyEnabledCheckBox.addActionListener(e -> this.onDidCodyEnableSettingChange());
+    this.onDidCodyEnableSettingChange();
+
     return codySettingsPanel;
   }
+
+  private void onDidCodyEnableSettingChange() {
+    isCodyAutoCompleteEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
+    isCodyDebugEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
+    isCodyVerboseDebugEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
+  }
+
+  @Override
+  public void dispose() {}
 }

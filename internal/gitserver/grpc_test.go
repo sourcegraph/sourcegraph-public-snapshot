@@ -10,22 +10,36 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestClientSource_AddrMatchesTarget(t *testing.T) {
-	source := NewTestClientSource(t, []string{"localhost:1234", "localhost:4321"})
+	db := dbmocks.NewMockDB()
+	repos := dbmocks.NewMockRepoStore()
+	repos.GetByNameFunc.SetDefaultReturn(nil, nil)
+
+	gs := dbmocks.NewMockGitserverRepoStore()
+	gs.GetPoolRepoNameFunc.SetDefaultReturn(api.RepoName(""), false, nil)
+
+	db.ReposFunc.SetDefaultReturn(repos)
+	db.GitserverReposFunc.SetDefaultReturn(gs)
+
+	source := NewTestClientSource(t, db, []string{"localhost:1234", "localhost:4321"})
 	testGitserverConns := source.(*testGitserverConns)
 	conns := GitserverConns(*testGitserverConns.conns)
+	conns.logger = logtest.Scoped(t)
 
+	ctx := context.Background()
 	for _, repo := range []api.RepoName{"a", "b", "c", "d"} {
-		addr := source.AddrForRepo("test", repo)
-		conn, err := conns.ConnForRepo("test", repo)
+		addr := source.AddrForRepo(ctx, "test", repo)
+		conn, err := conns.ConnForRepo(ctx, "test", repo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -76,7 +90,7 @@ func TestClient_GRPCRouting(t *testing.T) {
 		},
 	})
 
-	client := NewClient()
+	client := NewClient(dbmocks.NewMockDB())
 	_, _ = client.ResolveRevision(context.Background(), "a", "HEAD", ResolveRevisionOptions{})
 
 	if !(m1.called && !m2.called) {
@@ -92,15 +106,22 @@ func TestClient_GRPCRouting(t *testing.T) {
 }
 
 func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
-	client := NewClient()
+	db := dbmocks.NewMockDB()
+	client := NewClient(db)
 
 	cfg := newConfig(
 		[]string{"gitserver1", "gitserver2"},
 		map[string]string{"repo1": "gitserver2"},
 	)
-	conns.update(cfg)
 
-	addr := client.AddrForRepo("repo1")
+	logger := logtest.NoOp(t)
+
+	atomicConns := getAtomicGitserverConns(logger, db)
+
+	atomicConns.update(cfg)
+
+	ctx := context.Background()
+	addr := client.AddrForRepo(ctx, "repo1")
 	require.Equal(t, "gitserver2", addr)
 
 	// simulate config change - site admin manually changes the pinned repo config
@@ -108,9 +129,9 @@ func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
 		[]string{"gitserver1", "gitserver2"},
 		map[string]string{"repo1": "gitserver1"},
 	)
-	conns.update(cfg)
+	atomicConns.update(cfg)
 
-	require.Equal(t, "gitserver1", client.AddrForRepo("repo1"))
+	require.Equal(t, "gitserver1", client.AddrForRepo(ctx, "repo1"))
 }
 
 func newConfig(addrs []string, pinned map[string]string) *conf.Unified {

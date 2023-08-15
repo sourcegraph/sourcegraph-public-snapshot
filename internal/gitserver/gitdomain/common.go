@@ -387,8 +387,6 @@ type Pathspec string
 
 // PathspecLiteral constructs a pathspec that matches a path without interpreting "*" or "?" as special
 // characters.
+//
+// See: https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-literal
 func PathspecLiteral(s string) Pathspec { return Pathspec(":(literal)" + s) }
-
-// PathspecSuffix constructs a pathspec that matches paths ending with the given suffix (useful for
-// matching paths by basename).
-func PathspecSuffix(s string) Pathspec { return Pathspec("*" + s) }

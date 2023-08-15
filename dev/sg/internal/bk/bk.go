@@ -212,8 +212,9 @@ func (c *Client) TriggerBuild(ctx context.Context, pipeline, branch, commit stri
 }
 
 type ExportLogsOpts struct {
-	JobQuery string
-	State    string
+	JobStepKey string
+	JobQuery   string
+	State      string
 }
 
 type JobLogs struct {
@@ -278,6 +279,28 @@ func (c *Client) ExportLogs(ctx context.Context, pipeline string, build int, opt
 	buildDetails, _, err := c.bk.Builds.Get(BuildkiteOrg, pipeline, buildID, nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if opts.JobStepKey != "" {
+		var job *buildkite.Job
+		for _, j := range buildDetails.Jobs {
+			if j.StepKey != nil && *j.StepKey == opts.JobStepKey {
+				job = j
+				break
+			}
+		}
+		if job == nil {
+			return nil, errors.Newf("no job matching stepkey %q found in build %d", opts.JobStepKey, build)
+		}
+
+		l, _, err := c.bk.Jobs.GetJobLog(BuildkiteOrg, pipeline, buildID, *job.ID)
+		if err != nil {
+			return nil, err
+		}
+		return []*JobLogs{{
+			JobMeta: newJobMeta(build, job),
+			Content: l.Content,
+		}}, nil
 	}
 
 	if opts.JobQuery != "" {

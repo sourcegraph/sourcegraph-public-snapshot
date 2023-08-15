@@ -4,7 +4,7 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import { pluralize } from '@sourcegraph/common'
 import { Icon, H3 } from '@sourcegraph/wildcard'
 
-import { BatchSpecWorkspaceStats } from '../../../../graphql-operations'
+import type { BatchSpecWorkspaceStats } from '../../../../graphql-operations'
 
 import styles from './ExecutionStatsBar.module.scss'
 

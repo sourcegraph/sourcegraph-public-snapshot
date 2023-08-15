@@ -9,6 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
@@ -60,6 +61,15 @@ type ConfStore interface {
 // ErrNewerEdit is returned by SiteCreateIfUpToDate when a newer edit has already been applied and
 // the edit has been rejected.
 var ErrNewerEdit = errors.New("someone else has already applied a newer edit")
+
+// ConfStoreWith instantiates and returns a new ConfStore using
+// the other store handle.
+func ConfStoreWith(other basestore.ShareableStore) ConfStore {
+	return &confStore{
+		Store:  basestore.NewWithHandle(other.Handle()),
+		logger: log.Scoped("confStore", "database confStore"),
+	}
+}
 
 type confStore struct {
 	*basestore.Store

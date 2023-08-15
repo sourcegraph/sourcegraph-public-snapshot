@@ -174,7 +174,7 @@ Once set up, you can use code navigation with popular development tools:
   - [Enable auto-indexing](how-to/enable_auto_indexing.md)
   - [Configure auto-indexing](how-to/configure_auto_indexing.md)
 - Best practices
-  - [Guide to defining policies](how-to/policies_best_practices.md) as it relates to resource usage
+  - [Guide to defining policies](how-to/policies_resource_usage_best_practices.md) as it relates to resource usage
 ## [Reference](references/index.md)
 
 - [Requirements](references/requirements.md)

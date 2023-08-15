@@ -1,6 +1,6 @@
 import { flatMap } from 'lodash'
 
-import { MatchGroup, MatchItem, PerFileResultRanking, RankingResult } from './PerFileResultRanking'
+import type { MatchGroup, MatchItem, PerFileResultRanking, RankingResult } from './PerFileResultRanking'
 
 /**
  * LineRanking orders hunks purely by line number, disregarding the relevance ranking provided by Zoekt.

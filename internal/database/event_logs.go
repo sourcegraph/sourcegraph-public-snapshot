@@ -187,23 +187,26 @@ func SanitizeEventURL(raw string) string {
 
 // Event contains information needed for logging an event.
 type Event struct {
-	ID               int32
-	Name             string
-	URL              string
-	UserID           uint32
-	AnonymousUserID  string
-	Argument         json.RawMessage
-	PublicArgument   json.RawMessage
-	Source           string
-	Version          string
-	Timestamp        time.Time
-	EvaluatedFlagSet featureflag.EvaluatedFlagSet
-	CohortID         *string // date in YYYY-MM-DD format
-	FirstSourceURL   *string
-	LastSourceURL    *string
-	Referrer         *string
-	DeviceID         *string
-	InsertID         *string
+	ID                     int32
+	Name                   string
+	URL                    string
+	UserID                 uint32
+	AnonymousUserID        string
+	Argument               json.RawMessage
+	PublicArgument         json.RawMessage
+	Source                 string
+	Version                string
+	Timestamp              time.Time
+	EvaluatedFlagSet       featureflag.EvaluatedFlagSet
+	CohortID               *string // date in YYYY-MM-DD format
+	FirstSourceURL         *string
+	LastSourceURL          *string
+	Referrer               *string
+	DeviceID               *string
+	InsertID               *string
+	Client                 *string
+	BillingProductCategory *string
+	BillingEventID         *string
 }
 
 func (l *eventLogStore) Insert(ctx context.Context, e *Event) error {
@@ -271,6 +274,9 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 			event.Referrer,
 			ensureUuid(event.DeviceID),
 			ensureUuid(event.InsertID),
+			event.Client,
+			event.BillingProductCategory,
+			event.BillingEventID,
 		}
 	}
 	close(rowValues)
@@ -297,6 +303,9 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 			"referrer",
 			"device_id",
 			"insert_id",
+			"client",
+			"billing_product_category",
+			"billing_event_id",
 		},
 		rowValues,
 	)
@@ -1566,9 +1575,10 @@ func (l *eventLogStore) aggregatedSearchEvents(ctx context.Context, queryString 
 }
 
 var aggregatedCodyUsageEventsQuery = `
-WITH events AS (
+WITH
+events AS (
   SELECT
-    name AS key,
+    name,
     ` + aggregatedUserIDQueryFragment + ` AS user_id,
     ` + makeDateTruncExpression("month", "timestamp") + ` as month,
     ` + makeDateTruncExpression("week", "timestamp") + ` as week,
@@ -1578,33 +1588,11 @@ WITH events AS (
     ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
   FROM event_logs
   WHERE
-    timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
-    AND lower(name) like '%%cody%%'
-),
-code_generation_keys AS (
-  SELECT * FROM unnest(ARRAY[
-    'CodyVSCodeExtension:recipe:rewrite-to-functional:executed',
-    'CodyVSCodeExtension:recipe:improve-variable-names:executed',
-    'CodyVSCodeExtension:recipe:replace:executed',
-    'CodyVSCodeExtension:recipe:generate-docstring:executed',
-    'CodyVSCodeExtension:recipe:generate-unit-test:executed',
-    'CodyVSCodeExtension:recipe:rewrite-functional:executed',
-    'CodyVSCodeExtension:recipe:code-refactor:executed',
-    'CodyVSCodeExtension:recipe:fixup:executed',
-	'CodyVSCodeExtension:recipe:translate-to-language:executed'
-  ]) AS key
-),
-explanation_keys AS (
-  SELECT * FROM unnest(ARRAY[
-    'CodyVSCodeExtension:recipe:explain-code-high-level:executed',
-    'CodyVSCodeExtension:recipe:explain-code-detailed:executed',
-    'CodyVSCodeExtension:recipe:find-code-smells:executed',
-    'CodyVSCodeExtension:recipe:git-history:executed',
-    'CodyVSCodeExtension:recipe:rate-code:executed'
-  ]) AS key
+  	timestamp >= %s::timestamp - '1 month'::interval
+    AND iscodyactiveevent(name)
 )
 SELECT
-  key,
+  name,
   current_month,
   current_week,
   current_day,
@@ -1614,25 +1602,23 @@ SELECT
   COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
   COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
-  SUM(case when month = current_month and key in
-  	(SELECT * FROM code_generation_keys)
+  SUM(case when month = current_month and iscodygenerationevent(name)
   	then 1 else 0 end) as code_generation_month,
-  SUM(case when week = current_week and key in
-  	(SELECT * FROM explanation_keys)
+  SUM(case when week = current_week and iscodygenerationevent(name)
 	then 1 else 0 end) as code_generation_week,
-  SUM(case when day = current_day and key in (SELECT * FROM code_generation_keys)
+  SUM(case when day = current_day and iscodygenerationevent(name)
 	then 1 else 0 end) as code_generation_day,
-  SUM(case when month = current_month and key in (SELECT * FROM explanation_keys)
+  SUM(case when month = current_month and iscodyexplanationevent(name)
 	then 1 else 0 end) as explanation_month,
-  SUM(case when week = current_week and key in (SELECT * FROM explanation_keys)
+  SUM(case when week = current_week and iscodyexplanationevent(name)
 	then 1 else 0 end) as explanation_week,
-  SUM(case when day = current_day and key in (SELECT * FROM explanation_keys)
+  SUM(case when day = current_day and iscodyexplanationevent(name)
 	then 1 else 0 end) as explanation_day,
 	0 as invalid_month,
 	0 as invalid_week,
 	0 as invalid_day
 FROM events
-GROUP BY key, current_month, current_week, current_day
+GROUP BY name, current_month, current_week, current_day
 `
 
 var searchLatencyEventNames = []string{
@@ -1766,13 +1752,13 @@ END
 // (and many parts of the world) which start the week on Monday.
 func makeDateTruncExpression(unit, expr string) string {
 	if unit == "week" {
-		return fmt.Sprintf(`TIMEZONE('UTC', (DATE_TRUNC('week', TIMEZONE('UTC', %s) + '1 day'::interval) - '1 day'::interval))`, expr)
+		return fmt.Sprintf(`(DATE_TRUNC('week', TIMEZONE('UTC', %s) + '1 day'::interval) - '1 day'::interval)`, expr)
 	}
 	if unit == "rolling_month" {
-		return fmt.Sprintf(`TIMEZONE('UTC', (DATE_TRUNC('day', TIMEZONE('UTC', %s)) - '1 month'::interval))`, expr)
+		return fmt.Sprintf(`(DATE_TRUNC('day', TIMEZONE('UTC', %s)) - '1 month'::interval)`, expr)
 	}
 
-	return fmt.Sprintf(`TIMEZONE('UTC', DATE_TRUNC('%s', TIMEZONE('UTC', %s)))`, unit, expr)
+	return fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s))`, unit, expr)
 }
 
 // RequestsByLanguage returns a map of language names to the number of requests of precise support for that language.

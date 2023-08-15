@@ -6,7 +6,6 @@ go_library(
     srcs = [
         "buf.go",
         "client.go",
-        "dockerfiles.go",
         "enterprise.go",
         "go_checks.go",
         "godirective.go",
@@ -26,7 +25,6 @@ go_library(
     deps = [
         "//dev/sg/buf",
         "//dev/sg/internal/check",
-        "//dev/sg/internal/docker",
         "//dev/sg/internal/generate/golang",
         "//dev/sg/internal/generate/proto",
         "//dev/sg/internal/repo",

@@ -58,7 +58,11 @@ CANDIDATE_ONLY=${CANDIDATE_ONLY:-""}
 
 push_prod=false
 
-if [ "$BUILDKITE_BRANCH" == "main" ]; then
+# ok: main
+# ok: main-dry-run
+# ok: main-dry-run-123
+# no: main-foo
+if [[ "$BUILDKITE_BRANCH" =~ ^main(-dry-run/)?.* ]] || [[ "$BUILDKITE_BRANCH" =~ ^docker-images-candidates-notest/.* ]]; then
   dev_tags+=("insiders")
   prod_tags+=("insiders")
   push_prod=true
@@ -71,7 +75,11 @@ if [[ "$BUILDKITE_BRANCH" =~ ^[0-9]+\.[0-9]+$ ]]; then
   push_prod=true
 fi
 
-if [[ "$BUILDKITE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+# ok: v5.1.0
+# ok: v5.1.0-rc.5
+# no: v5.1.0-beta.1
+# no: v5.1.0-rc5
+if [[ "$BUILDKITE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\-rc\.[0-9]+)?$ ]]; then
   dev_tags+=("${BUILDKITE_TAG:1}")
   prod_tags+=("${BUILDKITE_TAG:1}")
   push_prod=true

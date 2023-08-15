@@ -26,7 +26,7 @@ require (
 	github.com/sourcegraph/go-diff v0.6.2-0.20221123165719-f8cd299c40f3
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/sourcegraph/log v0.0.0-20221206163500-7d93c6ad7037
-	github.com/sourcegraph/scip v0.2.4-0.20230613194658-b62733841bc3
+	github.com/sourcegraph/scip v0.3.1-0.20230627154934-45df7f6d33fc
 	github.com/stretchr/testify v1.8.2
 	github.com/urfave/cli/v2 v2.23.7
 	github.com/xeipuuv/gojsonschema v1.2.0
@@ -37,6 +37,7 @@ require (
 	google.golang.org/protobuf v1.29.1
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
+	gotest.tools v2.2.0+incompatible
 )
 
 require (

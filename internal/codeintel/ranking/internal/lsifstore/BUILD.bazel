@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "lsifstore",
+    srcs = [
+        "observability.go",
+        "store.go",
+        "stream.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/lsifstore",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/codeintel/shared",
+        "//internal/codeintel/uploads/shared",
+        "//internal/database/basestore",
+        "//internal/metrics",
+        "//internal/observation",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
+        "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_google_protobuf//proto",
+    ],
+)

@@ -6,17 +6,13 @@ Executors are Sourcegraph's solution for running untrusted code in a secure and 
 
 To deploy executors to target your Sourcegraph instance, [follow our deployment guide](deploy_executors.md).
 
-There are two supported installation paths:
+The supported deployment options are,
 
-- Deploy with Terraform on AWS or GCP. Sourcegraph provides Terraform modules and AMIs for [supported regions](./deploy_executors.md).
-- Deploy [binaries](./deploy_executors_binary.md).
-
-There are two supported installation methods (Experimental):
-
-- <span class="badge badge-experimental">Experimental</span> Deploy on [Kubernetes via Helm or manifests](./deploy_executors_kubernetes.md).
-- <span class="badge badge-experimental">Experimental</span> Deploy via [Docker-Compose](./deploy_executors_docker.md).
-
-> NOTE: Note to all Technical Success team members: please reach out to the product and engineering teams in #wg-shipping-executors for any discussion about deployment modes other than the two documented paths above. We expect large customers (Large Enterprise and Strategic) to have complex and heterogenous requirements not addressed by the deployment models currently in Beta out of the box. Reach out in #wg-shipping-executors early in the process to collect requirements and discuss present and future implementation options.
+- [Binary](./deploy_executors_binary.md).
+- [Terraform on AWS or GCP](./deploy_executors.md).
+- <span class="badge badge-beta">Beta</span> [Native Kubernetes](./deploy_executors_kubernetes.md).
+- <span class="badge badge-beta">Beta</span> [Docker-in-Docker on Kubernetes](./deploy_executors_dind.md).
+- <span class="badge badge-beta">Beta</span> [Docker-Compose](./deploy_executors_docker.md).
 
 ## Why use executors?
 

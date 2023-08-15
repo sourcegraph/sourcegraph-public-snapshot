@@ -1,4 +1,4 @@
-import { FC, useEffect } from 'react'
+import { type FC, useEffect } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
@@ -6,7 +6,7 @@ import { noop } from 'lodash'
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
-import { RepositoriesProgressResult } from '../../../../graphql-operations'
+import type { RepositoriesProgressResult } from '../../../../graphql-operations'
 
 import styles from './AppSetupProgressBar.module.scss'
 
@@ -63,7 +63,7 @@ export const AppSetupProgressBar: FC<AppSetupProgressBarProps> = props => {
             <div className={styles.description}>
                 {hasDetails && (
                     <>
-                        <span>Generating embeddings for {data.embeddingsSetupProgress.currentRepository}</span>
+                        <span>Building the code graph for {data.embeddingsSetupProgress.currentRepository}</span>
                         <Text size="small" className={styles.percent}>
                             {data.embeddingsSetupProgress.currentRepositoryFilesProcessed} /{' '}
                             {data.embeddingsSetupProgress.currentRepositoryTotalFilesToProcess}
@@ -73,7 +73,7 @@ export const AppSetupProgressBar: FC<AppSetupProgressBarProps> = props => {
 
                 {!hasDetails && (
                     <>
-                        <span>Generating repositories embeddings</span>
+                        <span>Building the code graph</span>
                         <Text size="small" className={styles.percent}>
                             Loading files <LoadingSpinner />
                         </Text>

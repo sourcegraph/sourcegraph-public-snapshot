@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -39,7 +39,7 @@ func TestGetAndStoreVersions(t *testing.T) {
 		{Kind: extsvc.KindBitbucketServer, DisplayName: "bitbucket server", Config: extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.sgdev.org"}`)},
 		{Kind: extsvc.KindBitbucketServer, DisplayName: "another bitbucket server", Config: extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket2.sgdev.org"}`)},
 	}
-	externalServices := database.NewMockExternalServiceStore()
+	externalServices := dbmocks.NewMockExternalServiceStore()
 	externalServices.ListFunc.SetDefaultReturn(es, nil)
 
 	t.Run("success", func(t *testing.T) {

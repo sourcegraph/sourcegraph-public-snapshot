@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 public class LocalAppManagerTest {
   // these tests are just a sanity check to make sure the LocalAppManager API doesn't throw random
   // exceptions, not verifying if they actually work for now
+
   @Test
   public void localAppInstallCheckDoesntFail() {
     LocalAppManager.isLocalAppInstalled();

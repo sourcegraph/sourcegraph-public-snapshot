@@ -12,10 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -112,8 +111,8 @@ func TestGetByToken(t *testing.T) {
 	u, err := db.Users().Create(ctx, database.NewUser{Username: "user"})
 	require.NoError(t, err)
 
-	license := insertLicense(t, ctx, db, u, "key")
-	require.NotNil(t, license.LicenseCheckToken)
+	lc := insertLicense(t, ctx, db, u, "key")
+	require.NotNil(t, lc.LicenseCheckToken)
 
 	tests := []struct {
 		name      string
@@ -123,8 +122,8 @@ func TestGetByToken(t *testing.T) {
 	}{
 		{
 			name:  "ok",
-			token: licensing.GenerateLicenseKeyBasedAccessToken("key"),
-			want:  &license.ID,
+			token: license.GenerateLicenseKeyBasedAccessToken("key"),
+			want:  &lc.ID,
 		},
 		{
 			name:      "invalid non-hex token",

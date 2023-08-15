@@ -208,15 +208,31 @@ var allowedOverrideMap = map[int]struct{}{
 	1528395701: {}, // https://github.com/sourcegraph/sourcegraph/pull/16203 - rewritten to avoid * in select
 	1528395730: {}, // https://github.com/sourcegraph/sourcegraph/pull/15972 - drops/re-created view to avoid dependencies
 	1663871069: {}, // https://github.com/sourcegraph/sourcegraph/pull/43390 - fixes malformed published value
+	1648628900: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
+	1652707934: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
+	1655157509: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
+	1667220626: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
+	1670934184: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
+	1674455760: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
+	1675962678: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
+	1677003167: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
+	1676420496: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
+	1677944752: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
+	1678214530: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
+	1678456448: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
 
 	// codeintel
 	1000000020: {}, // https://github.com/sourcegraph/sourcegraph/pull/28772 - rewritten to be idempotent
+	1665531314: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
+	1670365552: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
 
 	// codeiensights
 	1000000002: {}, // https://github.com/sourcegraph/sourcegraph/pull/28713 - fixed SQL error
 	1000000001: {}, // https://github.com/sourcegraph/sourcegraph/pull/30781 - removed timescsaledb
 	1000000004: {}, // https://github.com/sourcegraph/sourcegraph/pull/30781 - removed timescsaledb
 	1000000010: {}, // https://github.com/sourcegraph/sourcegraph/pull/30781 - removed timescsaledb
+	1659572248: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
+	1672921606: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
 }
 
 func overrideAllowed(id int) bool {

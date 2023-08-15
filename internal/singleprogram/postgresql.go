@@ -2,11 +2,15 @@ package singleprogram
 
 import (
 	"bufio"
+	"fmt"
 	"io"
+	"net"
+	"net/url"
 	"os"
 	"os/user"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"time"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
@@ -34,7 +38,7 @@ func initPostgreSQL(logger log.Logger, embeddedPostgreSQLRootDir string) (StopPo
 		var err error
 		stop, vars, err = startEmbeddedPostgreSQL(logger, embeddedPostgreSQLRootDir)
 		if err != nil {
-			return stop, errors.Wrap(err, "Failed to download or start embedded postgresql. Please start your own postgres instance then configure the PG* environment variables to connect to it as well as setting USE_EMBEDDED_POSTGRESQL=0")
+			return stop, errors.Wrap(err, "Failed to download or start embedded postgresql.")
 		}
 		os.Setenv("PGPORT", vars.PGPORT)
 		os.Setenv("PGHOST", vars.PGHOST)
@@ -106,18 +110,37 @@ func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (StopPostgresF
 		PGDATASOURCE: "postgresql:///sourcegraph?host=" + unixSocketDir,
 	}
 
-	db := embeddedpostgres.NewDatabase(
-		embeddedpostgres.DefaultConfig().
-			Version(embeddedpostgres.V14).
-			BinariesPath(filepath.Join(pgRootDir, "bin")).
-			DataPath(filepath.Join(pgRootDir, "data")).
-			RuntimePath(filepath.Join(pgRootDir, "runtime")).
-			Username(vars.PGUSER).
-			Database(vars.PGDATABASE).
-			UseUnixSocket(unixSocketDir).
-			StartTimeout(120 * time.Second).
-			Logger(debugLogLinesWriter(logger, "postgres output line")),
-	)
+	config := embeddedpostgres.DefaultConfig().
+		Version(embeddedpostgres.V14).
+		BinariesPath(filepath.Join(pgRootDir, "bin")).
+		DataPath(filepath.Join(pgRootDir, "data")).
+		RuntimePath(filepath.Join(pgRootDir, "runtime")).
+		Username(vars.PGUSER).
+		Database(vars.PGDATABASE).
+		UseUnixSocket(unixSocketDir).
+		StartTimeout(120 * time.Second).
+		Logger(debugLogLinesWriter(logger, "postgres output line"))
+
+	if runtime.GOOS == "windows" {
+		vars.PGHOST = "localhost"
+		vars.PGPORT = os.Getenv("PGPORT")
+		vars.PGPASSWORD = "sourcegraph"
+		vars.PGDATASOURCE = (&url.URL{
+			Scheme: "postgres",
+			Host:   net.JoinHostPort("localhost", vars.PGPORT),
+		}).String()
+
+		intPgPort, _ := strconv.ParseUint(vars.PGPORT, 10, 32)
+
+		config = config.
+			UseUnixSocket("").
+			Port(uint32(intPgPort)).
+			Password(vars.PGPASSWORD)
+
+		logger.Info(fmt.Sprintf("Embedded PostgreSQL running on %s:%s", vars.PGHOST, vars.PGPORT))
+	}
+
+	db := embeddedpostgres.NewDatabase(config)
 	if err := db.Start(); err != nil {
 		return noopStop, nil, err
 	}

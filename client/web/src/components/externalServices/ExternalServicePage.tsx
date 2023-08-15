@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo, FC } from 'react'
+import React, { useEffect, useState, useCallback, useMemo, type FC } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { mdiCog, mdiConnection, mdiDelete } from '@mdi/js'
@@ -7,7 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Subject } from 'rxjs'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Alert, Button, Container, ErrorAlert, H2, Icon, Link, PageHeader, Tooltip } from '@sourcegraph/wildcard'
 
@@ -24,7 +24,7 @@ import {
     queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs,
     deleteExternalService,
     useExternalServiceCheckConnectionByIdLazyQuery,
-    ExternalServiceFieldsWithConfig,
+    type ExternalServiceFieldsWithConfig,
     useFetchExternalService,
 } from './backend'
 import { getBreadCrumbs } from './breadCrumbs'
@@ -99,7 +99,7 @@ export const ExternalServicePage: FC<Props> = props => {
 
     const externalServiceCategory = resolveExternalServiceCategory(externalService)
 
-    const editingEnabled = allowEditExternalServicesWithFile || !externalServicesFromFile
+    const editingDisabled = externalServicesFromFile && !allowEditExternalServicesWithFile
 
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
     const client = useApolloClient()
@@ -211,7 +211,7 @@ export const ExternalServicePage: FC<Props> = props => {
                                         />
                                     </Tooltip>
                                 </div>
-                                {editingEnabled && (
+                                {!editingDisabled && (
                                     <div className="flex-grow-1 ml-1">
                                         <Tooltip content="Edit code host connection settings">
                                             <Button
@@ -230,12 +230,18 @@ export const ExternalServicePage: FC<Props> = props => {
                                     </div>
                                 )}
                                 <div className="flex-shrink-0 ml-1">
-                                    <Tooltip content="Delete code host connection">
+                                    <Tooltip
+                                        content={
+                                            editingDisabled
+                                                ? 'Deleting code host connections through the UI is disabled when the EXTSVC_CONFIG_FILE environment variable is set.'
+                                                : 'Delete code host connection'
+                                        }
+                                    >
                                         <Button
                                             aria-label="Delete"
                                             className="test-delete-external-service-button"
                                             onClick={onDelete}
-                                            disabled={isDeleting === true}
+                                            disabled={isDeleting === true || editingDisabled}
                                             variant="danger"
                                             size="sm"
                                         >

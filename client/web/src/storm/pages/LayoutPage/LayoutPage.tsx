@@ -10,6 +10,7 @@ import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackPrompt, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
+import { StartupUpdateChecker } from '../../../cody/update/StartupUpdateChecker'
 import { communitySearchContextsRoutes } from '../../../communitySearchContexts/routes'
 import { AppRouterContainer } from '../../../components/AppRouterContainer'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
@@ -20,7 +21,7 @@ import { useUserHistory } from '../../../components/useUserHistory'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { GlobalAlerts } from '../../../global/GlobalAlerts'
 import { useHandleSubmitFeedback } from '../../../hooks'
-import { LegacyLayoutRouteContext } from '../../../LegacyRouteContext'
+import type { LegacyLayoutRouteContext } from '../../../LegacyRouteContext'
 import { CodySurveyToast, SurveyToast } from '../../../marketing/toast'
 import { GlobalNavbar } from '../../../nav/GlobalNavbar'
 import { EnterprisePageRoutes, PageRoutes } from '../../../routes.constants'
@@ -76,8 +77,11 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
         routeMatch.pathname.startsWith(EnterprisePageRoutes.CodySearch)
     )
 
-    // eslint-disable-next-line no-restricted-syntax
-    const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
+    const [isSetupChecklistEnabled, flagLoading] = useFeatureFlag('setup-checklist')
+    const [setupSkipped] = useLocalStorage('setup.skipped', false)
+    // navigate to setup wizard if not skipped and new setup-checklist is disabled
+    const wasSetupWizardSkipped = flagLoading || isSetupChecklistEnabled || setupSkipped
+
     const { fuzzyFinder } = useExperimentalFeatures(features => ({
         // enable fuzzy finder by default unless it's explicitly disabled in settings
         fuzzyFinder: features.fuzzyFinder ?? true,
@@ -97,6 +101,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     const needsRepositoryConfiguration = window.context?.needsRepositoryConfiguration
     const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
     const isSignInOrUp = useIsSignInOrSignUpPage()
+    const isGetCodyPage = location.pathname === PageRoutes.GetCody
 
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
@@ -147,7 +152,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     </div>
                 }
             >
-                <LazySetupWizard isSourcegraphApp={props.isSourcegraphApp} telemetryService={props.telemetryService} />
+                <LazySetupWizard telemetryService={props.telemetryService} />
             </Suspense>
         )
     }
@@ -200,7 +205,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     authenticatedUser={props.authenticatedUser}
                 />
             )}
-            {!isSiteInit && !isSignInOrUp && (
+            {!isSiteInit && !isSignInOrUp && !isGetCodyPage && (
                 <GlobalNavbar
                     {...props}
                     routes={[]}
@@ -218,6 +223,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     showFeedbackModal={showFeedbackModal}
                 />
             )}
+            {props.isSourcegraphApp && <StartupUpdateChecker />}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
             <ErrorBoundary location={location}>
                 <Suspense

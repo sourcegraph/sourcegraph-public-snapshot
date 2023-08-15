@@ -3,18 +3,17 @@ import assert from 'assert'
 import delay from 'delay'
 
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { TimeIntervalStepUnit } from '../../graphql-operations'
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from '../context'
 import { createEditorAPI, percySnapshotWithVariants } from '../utils'
 
 import { SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE, LANG_STATS_INSIGHT_DATA_FIXTURE } from './fixtures/runtime-insights'
 import { overrideInsightsGraphQLApi } from './utils/override-insights-graphql-api'
 
-// Flake issue https://github.com/sourcegraph/sourcegraph/issues/53767
-describe.skip('Code insight create insight page', () => {
+describe('Code insight create insight page', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 

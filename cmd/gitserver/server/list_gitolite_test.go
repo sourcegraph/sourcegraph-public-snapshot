@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
@@ -113,8 +113,8 @@ func Test_Gitolite_listRepos(t *testing.T) {
 }
 
 func TestCheckSSRFHeader(t *testing.T) {
-	db := database.NewMockDB()
-	gr := database.NewMockGitserverRepoStore()
+	db := dbmocks.NewMockDB()
+	gr := dbmocks.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
 	s := &Server{
 		Logger:            logtest.Scoped(t),

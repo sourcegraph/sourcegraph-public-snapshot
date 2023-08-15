@@ -24,6 +24,7 @@ type CompletionsProviderName string
 const (
 	CompletionsProviderNameAnthropic   CompletionsProviderName = "anthropic"
 	CompletionsProviderNameOpenAI      CompletionsProviderName = "openai"
+	CompletionsProviderNameAzureOpenAI CompletionsProviderName = "azure-openai"
 	CompletionsProviderNameSourcegraph CompletionsProviderName = "sourcegraph"
 )
 
@@ -35,15 +36,23 @@ type EmbeddingsConfig struct {
 	Dimensions                 int
 	Incremental                bool
 	MinimumInterval            time.Duration
-	ExcludedFilePathPatterns   []string
+	FileFilters                EmbeddingsFileFilters
 	MaxCodeEmbeddingsPerRepo   int
 	MaxTextEmbeddingsPerRepo   int
 	PolicyRepositoryMatchLimit *int
+	ExcludeChunkOnError        bool
 }
 
 type EmbeddingsProviderName string
 
 const (
 	EmbeddingsProviderNameOpenAI      EmbeddingsProviderName = "openai"
+	EmbeddingsProviderNameAzureOpenAI EmbeddingsProviderName = "azure-openai"
 	EmbeddingsProviderNameSourcegraph EmbeddingsProviderName = "sourcegraph"
 )
+
+type EmbeddingsFileFilters struct {
+	IncludedFilePathPatterns []string
+	ExcludedFilePathPatterns []string
+	MaxFileSizeBytes         int
+}

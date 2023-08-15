@@ -266,6 +266,14 @@ type BatchSpec struct {
 	Workspaces []*WorkspaceConfiguration `json:"workspaces,omitempty"`
 }
 
+// Batches description: The configuration for the batches queue.
+type Batches struct {
+	// Limit description: The maximum number of dequeues allowed within the expiration window.
+	Limit int `json:"limit"`
+	// Weight description: The relative weight of this queue. Higher weights mean a higher chance of being picked at random.
+	Weight int `json:"weight"`
+}
+
 // BitbucketCloudAuthProvider description: Configures the Bitbucket Cloud OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your Bitbucket Cloud workspace: https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/. The application should have account, email, and repository scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and "/.auth/bitbucketcloud/callback".
 type BitbucketCloudAuthProvider struct {
 	// AllowSignup description: Allows new visitors to sign up for accounts via Bitbucket Cloud authentication. If false, users signing in via Bitbucket Cloud must have an existing Sourcegraph account, which will be linked to their Bitbucket Cloud identity after sign-in.
@@ -542,6 +550,14 @@ type CloudKMSEncryptionKey struct {
 	Type            string `json:"type"`
 }
 
+// Codeintel description: The configuration for the codeintel queue.
+type Codeintel struct {
+	// Limit description: The maximum number of dequeues allowed within the expiration window.
+	Limit int `json:"limit"`
+	// Weight description: The relative weight of this queue. Higher weights mean a higher chance of being picked at random.
+	Weight int `json:"weight"`
+}
+
 // CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
 type CodyGateway struct {
 	// BigQueryDataset description: The dataset to pull BigQuery Cody Gateway related events from.
@@ -596,6 +612,14 @@ type DebugLog struct {
 	ExtsvcGitlab bool `json:"extsvc.gitlab,omitempty"`
 }
 
+// DequeueCacheConfig description: The configuration for the dequeue cache of multiqueue executors. Each queue defines a limit of dequeues in the expiration window as well as a weight, indicating how frequently a queue is picked at random. For example, a weight of 4 for batches and 1 for codeintel means out of 5 dequeues, statistically batches will be picked 4 times and codeintel 1 time (unless one of those queues is at its limit).
+type DequeueCacheConfig struct {
+	// Batches description: The configuration for the batches queue.
+	Batches *Batches `json:"batches,omitempty"`
+	// Codeintel description: The configuration for the codeintel queue.
+	Codeintel *Codeintel `json:"codeintel,omitempty"`
+}
+
 // Dotcom description: Configuration options for Sourcegraph.com only.
 type Dotcom struct {
 	// AppNotifications description: Notifications to display in the Sourcegraph app.
@@ -636,8 +660,12 @@ type Embeddings struct {
 	Enabled *bool `json:"enabled,omitempty"`
 	// Endpoint description: The endpoint under which to reach the provider. Sensible default will be used for each provider.
 	Endpoint string `json:"endpoint,omitempty"`
+	// ExcludeChunkOnError description: Whether to cancel indexing a repo if embedding a single file fails. If true, the chunk that cannot generate embeddings is not indexed and the remainder of the repository proceeds with indexing.
+	ExcludeChunkOnError *bool `json:"excludeChunkOnError,omitempty"`
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
+	// FileFilters description: Filters that will decode which files om a repository get embedded.
+	FileFilters *FileFilters `json:"fileFilters,omitempty"`
 	// Incremental description: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.
 	Incremental *bool `json:"incremental,omitempty"`
 	// MaxCodeEmbeddingsPerRepo description: The maximum number of embeddings for code files to generate per repo
@@ -776,6 +804,12 @@ type ExcludedOtherRepo struct {
 	// Pattern description: Regular expression which matches against the name of a Other repo to exclude from mirroring.
 	Pattern string `json:"pattern,omitempty"`
 }
+
+// ExecutorsMultiqueue description: The configuration for multiqueue executors.
+type ExecutorsMultiqueue struct {
+	// DequeueCacheConfig description: The configuration for the dequeue cache of multiqueue executors. Each queue defines a limit of dequeues in the expiration window as well as a weight, indicating how frequently a queue is picked at random. For example, a weight of 4 for batches and 1 for codeintel means out of 5 dequeues, statistically batches will be picked 4 times and codeintel 1 time (unless one of those queues is at its limit).
+	DequeueCacheConfig *DequeueCacheConfig `json:"dequeueCacheConfig,omitempty"`
+}
 type ExistingChangesetSpec struct {
 	// BaseRepository description: The GraphQL ID of the repository that contains the existing changeset on the code host.
 	BaseRepository string `json:"baseRepository"`
@@ -805,7 +839,7 @@ type ExperimentalFeatures struct {
 	EnableGRPC bool `json:"enableGRPC,omitempty"`
 	// EnableGithubInternalRepoVisibility description: Enable support for visibility of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
-	// EnablePermissionsWebhooks description: Enables webhook consumers to sync permissions from external services faster than the defaults schedule
+	// EnablePermissionsWebhooks description: DEPRECATED: No longer has any effect.
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EnableStorm description: Enables the Storm frontend architecture changes.
 	EnableStorm bool `json:"enableStorm,omitempty"`
@@ -855,8 +889,10 @@ type ExperimentalFeatures struct {
 	StructuralSearch   string              `json:"structuralSearch,omitempty"`
 	SubRepoPermissions *SubRepoPermissions `json:"subRepoPermissions,omitempty"`
 	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
-	TlsExternal *TlsExternal   `json:"tls.external,omitempty"`
-	Additional  map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
+	TlsExternal *TlsExternal `json:"tls.external,omitempty"`
+	// UseGitserverAddressLookupCache description: (Internal development only) Short lived experimental flag to test the effect of caching vs no caching of repo address lookup
+	UseGitserverAddressLookupCache *bool          `json:"useGitserverAddressLookupCache,omitempty"`
+	Additional                     map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
 }
 
 func (v ExperimentalFeatures) MarshalJSON() ([]byte, error) {
@@ -920,6 +956,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "structuralSearch")
 	delete(m, "subRepoPermissions")
 	delete(m, "tls.external")
+	delete(m, "useGitserverAddressLookupCache")
 	if len(m) > 0 {
 		v.Additional = make(map[string]any, len(m))
 	}
@@ -947,6 +984,16 @@ type ExternalIdentity struct {
 	// GitlabProvider description: The name that identifies the authentication provider to GitLab. This is passed to the `?provider=` query parameter in calls to the GitLab Users API. If you're not sure what this value is, you can look at the `identities` field of the GitLab Users API result (`curl  -H 'PRIVATE-TOKEN: $YOUR_TOKEN' $GITLAB_URL/api/v4/users`).
 	GitlabProvider string `json:"gitlabProvider"`
 	Type           string `json:"type"`
+}
+
+// FileFilters description: Filters that will decode which files om a repository get embedded.
+type FileFilters struct {
+	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
+	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
+	// IncludedFilePathPatterns description: A list of glob patterns that match file paths you want to include in embeddings. If specified, all files not matching these include patterns are excluded.
+	IncludedFilePathPatterns []string `json:"includedFilePathPatterns,omitempty"`
+	// MaxFileSizeBytes description: The maximum file size (in bytes) to include in embeddings. Must be between 0 and 100000 (1 MB).
+	MaxFileSizeBytes int `json:"maxFileSizeBytes,omitempty"`
 }
 
 // FusionClient description: Configuration for the experimental p4-fusion client
@@ -1178,6 +1225,8 @@ type GitLabAuthProvider struct {
 	DisplayPrefix *string `json:"displayPrefix,omitempty"`
 	Hidden        bool    `json:"hidden,omitempty"`
 	Order         int     `json:"order,omitempty"`
+	// SsoURL description: An alternate sign-in URL used to ease SSO sign-in flows, such as https://gitlab.com/groups/your-group/saml/sso?token=xxxxxx
+	SsoURL string `json:"ssoURL,omitempty"`
 	// TokenRefreshWindowMinutes description: Time in minutes before token expiry when we should attempt to refresh it
 	TokenRefreshWindowMinutes int    `json:"tokenRefreshWindowMinutes,omitempty"`
 	Type                      string `json:"type"`
@@ -1265,9 +1314,11 @@ type GitLabWebhook struct {
 	Secret string `json:"secret"`
 }
 
-// GitRecorder description: Record git operations that are executed on configured repositories. The following commands are not recorded: show, log, rev-parse and diff.
+// GitRecorder description: Record git operations that are executed on configured repositories.
 type GitRecorder struct {
-	// Repos description: List of repositories whose git operations should be recorded.
+	// IgnoredGitCommands description: List of git commands that should be ignored and not recorded.
+	IgnoredGitCommands []string `json:"ignoredGitCommands,omitempty"`
+	// Repos description: List of repositories whose git operations should be recorded. To record commands on all repositories, simply pass in an asterisk as the only item in the array.
 	Repos []string `json:"repos,omitempty"`
 	// Size description: Defines how many recordings to keep. Once this size is reached, the oldest entry will be removed.
 	Size int `json:"size,omitempty"`
@@ -1782,11 +1833,11 @@ type PerforceRateLimit struct {
 	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 
-// PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
+// PermissionsUserMapping description: Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This will mark repositories as restricted by default.
 type PermissionsUserMapping struct {
 	// BindID description: The type of identifier to identify a user. The default is "email", which uses the email address to identify a user. Use "username" to identify a user by their username. Changing this setting will erase any permissions created for users that do not yet exist.
 	BindID string `json:"bindID,omitempty"`
-	// Enabled description: Whether permissions user mapping is enabled. There must be no `authorization` field in any external service configuration before enabling this.
+	// Enabled description: Whether permissions user mapping is enabled.
 	Enabled bool `json:"enabled,omitempty"`
 }
 
@@ -1864,6 +1915,12 @@ type Repos struct {
 	Callsign string `json:"callsign"`
 	// Path description: Display path for the url e.g. gitolite/my/repo
 	Path string `json:"path"`
+}
+
+// Repositories description: Top level configuration key for all things repositories.
+type Repositories struct {
+	// DeduplicateForks description: EXPERIMENTAL: A list of absolute paths of repositories whose forks will use deduplicated storage in gitserver
+	DeduplicateForks []string `json:"deduplicateForks,omitempty"`
 }
 
 // Repository description: The repository to get the latest version of.
@@ -2442,7 +2499,7 @@ type SiteConfiguration struct {
 	DisableFeedbackSurvey bool `json:"disableFeedbackSurvey,omitempty"`
 	// DisableNonCriticalTelemetry description: DEPRECATED. Has no effect.
 	DisableNonCriticalTelemetry bool `json:"disableNonCriticalTelemetry,omitempty"`
-	// DisablePublicRepoRedirects description: Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.
+	// DisablePublicRepoRedirects description: DEPRECATED! Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.
 	DisablePublicRepoRedirects bool `json:"disablePublicRepoRedirects,omitempty"`
 	// Dotcom description: Configuration options for Sourcegraph.com only.
 	Dotcom *Dotcom `json:"dotcom,omitempty"`
@@ -2470,6 +2527,8 @@ type SiteConfiguration struct {
 	ExecutorsFrontendURL string `json:"executors.frontendURL,omitempty"`
 	// ExecutorsLsifGoImage description: The tag to use for the lsif-go image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.
 	ExecutorsLsifGoImage string `json:"executors.lsifGoImage,omitempty"`
+	// ExecutorsMultiqueue description: The configuration for multiqueue executors.
+	ExecutorsMultiqueue *ExecutorsMultiqueue `json:"executors.multiqueue,omitempty"`
 	// ExecutorsSrcCLIImage description: The image to use for src-cli in executors. Use this value to pull from a custom image registry.
 	ExecutorsSrcCLIImage string `json:"executors.srcCLIImage,omitempty"`
 	// ExecutorsSrcCLIImageTag description: The tag to use for the src-cli image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.
@@ -2491,7 +2550,7 @@ type SiteConfiguration struct {
 	GitMaxCodehostRequestsPerSecond *int `json:"gitMaxCodehostRequestsPerSecond,omitempty"`
 	// GitMaxConcurrentClones description: Maximum number of git clone processes that will be run concurrently per gitserver to update repositories. Note: the global git update scheduler respects gitMaxConcurrentClones. However, we allow each gitserver to run upto gitMaxConcurrentClones to allow for urgent fetches. Urgent fetches are used when a user is browsing a PR and we do not have the commit yet.
 	GitMaxConcurrentClones int `json:"gitMaxConcurrentClones,omitempty"`
-	// GitRecorder description: Record git operations that are executed on configured repositories. The following commands are not recorded: show, log, rev-parse and diff.
+	// GitRecorder description: Record git operations that are executed on configured repositories.
 	GitRecorder *GitRecorder `json:"gitRecorder,omitempty"`
 	// GitUpdateInterval description: JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.
 	GitUpdateInterval []*UpdateIntervalRule `json:"gitUpdateInterval,omitempty"`
@@ -2579,7 +2638,7 @@ type SiteConfiguration struct {
 	PermissionsSyncUsersBackoffSeconds int `json:"permissions.syncUsersBackoffSeconds,omitempty"`
 	// PermissionsSyncUsersMaxConcurrency description: The maximum number of user-centric permissions syncing jobs that can be spawned concurrently. Service restart is required to take effect for changes.
 	PermissionsSyncUsersMaxConcurrency int `json:"permissions.syncUsersMaxConcurrency,omitempty"`
-	// PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
+	// PermissionsUserMapping description: Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This will mark repositories as restricted by default.
 	PermissionsUserMapping *PermissionsUserMapping `json:"permissions.userMapping,omitempty"`
 	// ProductResearchPageEnabled description: Enables users access to the product research page in their settings.
 	ProductResearchPageEnabled *bool `json:"productResearchPage.enabled,omitempty"`
@@ -2591,7 +2650,9 @@ type SiteConfiguration struct {
 	RepoListUpdateInterval int `json:"repoListUpdateInterval,omitempty"`
 	// RepoPurgeWorker description: Configuration for repository purge worker.
 	RepoPurgeWorker *RepoPurgeWorker `json:"repoPurgeWorker,omitempty"`
-	// ScimAuthToken description: DISCLAIMER: UNDER DEVELOPMENT. THE ENDPOINT DOES NOT COMPLY WITH THE SCIM STANDARD YET. The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.
+	// Repositories description: Top level configuration key for all things repositories.
+	Repositories *Repositories `json:"repositories,omitempty"`
+	// ScimAuthToken description: The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.
 	ScimAuthToken string `json:"scim.authToken,omitempty"`
 	// ScimIdentityProvider description: Identity provider used for SCIM support.  "STANDARD" should be used unless a more specific value is available
 	ScimIdentityProvider string `json:"scim.identityProvider,omitempty"`
@@ -2699,6 +2760,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "executors.batcheshelperImageTag")
 	delete(m, "executors.frontendURL")
 	delete(m, "executors.lsifGoImage")
+	delete(m, "executors.multiqueue")
 	delete(m, "executors.srcCLIImage")
 	delete(m, "executors.srcCLIImageTag")
 	delete(m, "experimentalFeatures")
@@ -2760,6 +2822,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "repoConcurrentExternalServiceSyncers")
 	delete(m, "repoListUpdateInterval")
 	delete(m, "repoPurgeWorker")
+	delete(m, "repositories")
 	delete(m, "scim.authToken")
 	delete(m, "scim.identityProvider")
 	delete(m, "search.index.symbols.enabled")

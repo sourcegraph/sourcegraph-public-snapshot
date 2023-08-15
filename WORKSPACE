@@ -43,10 +43,10 @@ http_archive(
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "dd926a88a564a9246713a9c00b35315f54cbd46b31a26d5d8fb264c07045f05d",
+    sha256 = "51dc53293afe317d2696d4d6433a4c33feedb7748a9e352072e2ec3c0dafd2c6",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.38.1/rules_go-v0.38.1.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.38.1/rules_go-v0.38.1.zip",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.40.1/rules_go-v0.40.1.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.40.1/rules_go-v0.40.1.zip",
     ],
 )
 
@@ -89,21 +89,6 @@ http_archive(
         "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.8.1/rules_pkg-0.8.1.tar.gz",
         "https://github.com/bazelbuild/rules_pkg/releases/download/0.8.1/rules_pkg-0.8.1.tar.gz",
     ],
-)
-
-SRC_CLI_VERSION = "5.0.3"
-
-http_archive(
-    name = "src-cli-linux-amd64",
-    build_file_content = """
-filegroup(
-    name = "src-cli-linux-amd64",
-    srcs = ["src"],
-    visibility = ["//visibility:public"],
-)
-    """,
-    sha256 = "d125d732ad4c47ae6977c49574b01cc1b3c943b2a2108142267438e829538aa3",
-    url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_linux_amd64.tar.gz".format(SRC_CLI_VERSION),
 )
 
 http_archive(
@@ -293,7 +278,7 @@ go_rules_dependencies()
 
 go_register_toolchains(
     nogo = "@//:sg_nogo",
-    version = "1.19.8",
+    version = "1.20.5",
 )
 
 linter_dependencies()
@@ -382,3 +367,7 @@ embbedings_assets_deps()
 load("@container_structure_test//:repositories.bzl", "container_structure_test_register_toolchain")
 
 container_structure_test_register_toolchain(name = "cst")
+
+load("//dev:tool_deps.bzl", "tool_deps")
+
+tool_deps()

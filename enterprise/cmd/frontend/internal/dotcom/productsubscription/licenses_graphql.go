@@ -10,11 +10,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 )
 
 // productLicense implements the GraphQL type ProductLicense.
@@ -86,12 +87,14 @@ func (r *productLicense) Info() (*graphqlbackend.ProductLicenseInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	hashedKeyValue := conf.HashedLicenseKeyForAnalytics(r.v.LicenseKey)
 	return &graphqlbackend.ProductLicenseInfo{
 		TagsValue:                     info.Tags,
 		UserCountValue:                info.UserCount,
 		ExpiresAtValue:                info.ExpiresAt,
 		SalesforceSubscriptionIDValue: info.SalesforceSubscriptionID,
 		SalesforceOpportunityIDValue:  info.SalesforceOpportunityID,
+		HashedKeyValue:                &hashedKeyValue,
 	}, nil
 }
 
@@ -153,7 +156,7 @@ func (r ProductSubscriptionLicensingResolver) GenerateProductLicenseForSubscript
 
 func (r ProductSubscriptionLicensingResolver) ProductLicenses(ctx context.Context, args *graphqlbackend.ProductLicensesArgs) (graphqlbackend.ProductLicenseConnection, error) {
 	// 🚨 SECURITY: Only site admins may list product licenses.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+	if err := serviceAccountOrSiteAdmin(ctx, r.DB, true); err != nil {
 		return nil, err
 	}
 

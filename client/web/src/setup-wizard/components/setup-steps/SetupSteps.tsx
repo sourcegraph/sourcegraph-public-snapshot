@@ -1,25 +1,25 @@
 import {
     createContext,
-    ComponentType,
-    FC,
-    HTMLAttributes,
+    type ComponentType,
+    type FC,
+    type HTMLAttributes,
     useMemo,
     useContext,
     useCallback,
     useEffect,
     useState,
-    ReactNode,
-    PropsWithChildren,
+    type ReactNode,
+    type PropsWithChildren,
 } from 'react'
 
-import { ApolloClient, useApolloClient } from '@apollo/client'
+import { type ApolloClient, useApolloClient } from '@apollo/client'
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import { createPortal } from 'react-dom'
 import { useLocation, useNavigate, Routes, Route, Navigate, matchPath } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './SetupSteps.module.scss'
@@ -27,6 +27,7 @@ import styles from './SetupSteps.module.scss'
 export interface StepComponentProps extends TelemetryProps {
     baseURL: string
     className?: string
+    isSourcegraphApp: boolean
 }
 
 export interface StepConfiguration {
@@ -164,10 +165,11 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
 
 interface SetupStepsContentProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
     contentContainerClass?: string
+    isSourcegraphApp: boolean
 }
 
 export const SetupStepsContent: FC<SetupStepsContentProps> = props => {
-    const { contentContainerClass, className, telemetryService, ...attributes } = props
+    const { contentContainerClass, className, telemetryService, isSourcegraphApp, ...attributes } = props
     const { steps, activeStepIndex } = useContext(SetupStepsContext)
 
     return (
@@ -182,6 +184,7 @@ export const SetupStepsContent: FC<SetupStepsContentProps> = props => {
                                 baseURL={path}
                                 className={classNames(contentContainerClass, styles.content)}
                                 telemetryService={telemetryService}
+                                isSourcegraphApp={isSourcegraphApp}
                             />
                         }
                     />

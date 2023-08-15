@@ -1,4 +1,4 @@
-import { FC, useEffect, useMemo } from 'react'
+import { type FC, useEffect, useMemo } from 'react'
 
 import { capitalize } from 'lodash'
 import { useLocation } from 'react-router-dom'
@@ -6,11 +6,11 @@ import { useLocation } from 'react-router-dom'
 import { basename, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Code, Heading, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { BreadcrumbSetters } from '../../components/Breadcrumbs'
+import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
@@ -22,10 +22,10 @@ import {
 } from '../../components/FilteredConnection/ui'
 import { PageTitle } from '../../components/PageTitle'
 import {
-    GitCommitFields,
-    RepositoryFields,
-    RepositoryGitCommitsResult,
-    RepositoryGitCommitsVariables,
+    type GitCommitFields,
+    type RepositoryFields,
+    type RepositoryGitCommitsResult,
+    type RepositoryGitCommitsVariables,
     RepositoryType,
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'

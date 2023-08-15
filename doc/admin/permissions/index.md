@@ -112,7 +112,7 @@ of `alice` are the following union set: [`horsegraph/global`, `horsegraph/hay-v1
 1. Go to **Site Admin > Migrations** page. There is a migration called `Migrate data from user_permissions table to unified user_repo_permissions.`. 
 Make sure that it finished migrating all the data (it reports as 100%). Contact support if the migration does not seem to complete for a long time (multiple days). 
 
-1. Enable the experimental feature in the [site configuration](../config/site_config.md):
+1. (Not required for Sourcegraph 5.1+) Enable the experimental feature in the [site configuration](../config/site_config.md):
 ```json
 {
   "experimentalFeatures": {
@@ -122,8 +122,6 @@ Make sure that it finished migrating all the data (it reports as 100%). Contact 
 }
 ```
 1. Continue [configuring the explicit permissions API](api.md#configuration) as you would before. 
-Both mechanisms work at the same time, thanks to a new behind the scenes data model that allows 
-what was previously impossible. 
 
 ### Permission updates
 

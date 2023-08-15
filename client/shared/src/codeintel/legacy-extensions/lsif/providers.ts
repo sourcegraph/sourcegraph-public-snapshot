@@ -1,21 +1,21 @@
 import { once } from 'lodash'
 
 import * as scip from '../../scip'
-import * as sourcegraph from '../api'
-import { Logger } from '../logging'
-import { CombinedProviders, DefinitionAndHover } from '../providers'
+import type * as sourcegraph from '../api'
+import type { Logger } from '../logging'
+import type { CombinedProviders, DefinitionAndHover } from '../providers'
 import { cache } from '../util'
 import { API } from '../util/api'
-import { queryGraphQL as sgQueryGraphQL, QueryGraphQLFn } from '../util/graphql'
+import { queryGraphQL as sgQueryGraphQL, type QueryGraphQLFn } from '../util/graphql'
 import { asyncGeneratorFromPromise } from '../util/ix'
 import { raceWithDelayOffset } from '../util/promise'
 
 import { definitionAndHoverForPosition, hoverPayloadToHover } from './definition-hover'
 import { filterLocationsForDocumentHighlights } from './highlights'
 import { implementationsForPosition } from './implementations'
-import { RangeWindowFactoryFn, makeRangeWindowFactory } from './ranges'
+import { type RangeWindowFactoryFn, makeRangeWindowFactory } from './ranges'
 import { referencesForPosition, referencePageForPosition } from './references'
-import { makeStencilFn, StencilFn } from './stencil'
+import { makeStencilFn, type StencilFn } from './stencil'
 
 /**
  * Creates providers powered by LSIF-based code intelligence. This particular

@@ -92,7 +92,8 @@ func unpackPythonPackage(pkg io.Reader, packageURL, reposDir, workDir string) er
 	filename := path.Base(u.Path)
 
 	opts := unpack.Opts{
-		SkipInvalid: true,
+		SkipInvalid:    true,
+		SkipDuplicates: true,
 		Filter: func(path string, file fs.FileInfo) bool {
 			size := file.Size()
 

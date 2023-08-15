@@ -11,9 +11,9 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//enterprise/dev/ci/integration/executors/tester/config",
-        "//enterprise/internal/batches/store",
-        "//enterprise/internal/batches/types",
         "//internal/authz",
+        "//internal/batches/store",
+        "//internal/batches/types",
         "//internal/database",
         "//internal/database/connections/live",
         "//internal/env",

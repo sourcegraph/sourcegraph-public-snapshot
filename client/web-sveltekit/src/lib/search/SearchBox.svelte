@@ -95,7 +95,7 @@
                 <Icon svgPath={mdiLightningBolt} inline />
             </button>
         </Tooltip>
-        <div slot="content" class="popover-content">
+        <div slot="content" class="popover-content" let:toggle>
             {@const delayedClose = () => setTimeout(() => toggle(false), 100)}
             <div class="d-flex align-items-center px-3 py-2">
                 <h4 class="m-0 mr-auto">SmartSearch</h4>

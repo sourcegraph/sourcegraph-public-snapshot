@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -20,7 +21,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -31,10 +31,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -49,8 +50,8 @@ const git = "git"
 var (
 	clientFactory  = httpcli.NewInternalClientFactory("gitserver")
 	defaultDoer, _ = clientFactory.Doer()
+	// defaultLimiter limits concurrent HTTP requests per running process to gitserver.
 	defaultLimiter = limiter.New(500)
-	conns          = &atomicGitServerConns{}
 )
 
 var ClientMocks, emptyClientMocks struct {
@@ -58,6 +59,23 @@ var ClientMocks, emptyClientMocks struct {
 	Archive                 func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
 	LocalGitserver          bool
 	LocalGitCommandReposDir string
+}
+
+// initConnsOnce is used internally in getAtomicGitServerConns. Only use it there.
+var initConnsOnce sync.Once
+
+// conns is the global variable holding a reference to the gitserver connections.
+//
+// WARNING: Do not use it directly. Instead use getAtomicGitServerConns to ensure conns is
+// initialised correctly.
+var conns *atomicGitServerConns
+
+func getAtomicGitserverConns(logger sglog.Logger, db database.DB) *atomicGitServerConns {
+	initConnsOnce.Do(func() {
+		conns = &atomicGitServerConns{db: db, logger: logger}
+	})
+
+	return conns
 }
 
 // ResetClientMocks clears the mock functions set on Mocks (so that subsequent
@@ -72,19 +90,18 @@ var _ Client = &clientImplementor{}
 // It allows for mocking out the client source in tests.
 type ClientSource interface {
 	// ClientForRepo returns a Client for the given repo.
-	ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error)
-	// ConnForRepo returns a grpc.ClientConn for the given repo.
-	ConnForRepo(userAgent string, repo api.RepoName) (*grpc.ClientConn, error)
+	ClientForRepo(ctx context.Context, userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error)
 	// AddrForRepo returns the address of the gitserver for the given repo.
-	AddrForRepo(userAgent string, repo api.RepoName) string
+	AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName) string
 	// Address the current list of gitserver addresses.
 	Addresses() []AddressWithClient
 }
 
 // NewClient returns a new gitserver.Client.
-func NewClient() Client {
+func NewClient(db database.DB) Client {
+	logger := sglog.Scoped("GitserverClient", "Client to talk from other services to Gitserver")
 	return &clientImplementor{
-		logger:      sglog.Scoped("NewClient", "returns a new gitserver.Client"),
+		logger:      logger,
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
 		// Use the binary name for userAgent. This should effectively identify
@@ -92,7 +109,7 @@ func NewClient() Client {
 		// frontend internal API)
 		userAgent:    filepath.Base(os.Args[0]),
 		operations:   getOperations(),
-		clientSource: conns,
+		clientSource: getAtomicGitserverConns(logger, db),
 	}
 }
 
@@ -228,7 +245,7 @@ type CommitLog struct {
 
 type Client interface {
 	// AddrForRepo returns the gitserver address to use for the given repo name.
-	AddrForRepo(api.RepoName) string
+	AddrForRepo(ctx context.Context, repoName api.RepoName) string
 
 	// ArchiveReader streams back the file contents of an archived git repo.
 	ArchiveReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, options ArchiveOptions) (io.ReadCloser, error)
@@ -344,10 +361,6 @@ type Client interface {
 	// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
 	DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error)
 
-	// ListFiles returns a list of root-relative file paths matching the given
-	// pattern in a particular commit of a repository.
-	ListFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, opts *protocol.ListFilesOpts) ([]string, error)
-
 	// Commits returns all commits matching the options.
 	Commits(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error)
 
@@ -460,16 +473,12 @@ func (c *clientImplementor) Addrs() []string {
 	return addrs
 }
 
-func (c *clientImplementor) AddrForRepo(repo api.RepoName) string {
-	return c.clientSource.AddrForRepo(c.userAgent, repo)
+func (c *clientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) string {
+	return c.clientSource.AddrForRepo(ctx, c.userAgent, repo)
 }
 
-func (c *clientImplementor) ClientForRepo(repo api.RepoName) (proto.GitserverServiceClient, error) {
-	return c.clientSource.ClientForRepo(c.userAgent, repo)
-}
-
-func (c *clientImplementor) ConnForRepo(repo api.RepoName) (*grpc.ClientConn, error) {
-	return c.clientSource.ConnForRepo(c.userAgent, repo)
+func (c *clientImplementor) ClientForRepo(ctx context.Context, repo api.RepoName) (proto.GitserverServiceClient, error) {
+	return c.clientSource.ClientForRepo(ctx, c.userAgent, repo)
 }
 
 // ArchiveOptions contains options for the Archive func.
@@ -557,7 +566,7 @@ func (a *archiveReader) Close() error {
 
 // archiveURL returns a URL from which an archive of the given Git repository can
 // be downloaded from.
-func (c *clientImplementor) archiveURL(repo api.RepoName, opt ArchiveOptions) *url.URL {
+func (c *clientImplementor) archiveURL(ctx context.Context, repo api.RepoName, opt ArchiveOptions) *url.URL {
 	q := url.Values{
 		"repo":    {string(repo)},
 		"treeish": {opt.Treeish},
@@ -568,7 +577,7 @@ func (c *clientImplementor) archiveURL(repo api.RepoName, opt ArchiveOptions) *u
 		q.Add("path", string(pathspec))
 	}
 
-	addrForRepo := c.AddrForRepo(repo)
+	addrForRepo := c.AddrForRepo(ctx, repo)
 	return &url.URL{
 		Scheme:   "http",
 		Host:     addrForRepo,
@@ -584,7 +593,7 @@ func (e badRequestError) BadRequest() bool { return true }
 func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	ctx, _, endObservation := c.execOp.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(c.repo)),
+		c.repo.Attr(),
 		attribute.StringSlice("args", c.args[1:]),
 	}})
 	done := func() {
@@ -605,8 +614,8 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 		return nil, err
 	}
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
-		client, err := c.execer.ClientForRepo(repoName)
+	if conf.IsGRPCEnabled(ctx) {
+		client, err := c.execer.ClientForRepo(ctx, repoName)
 		if err != nil {
 			return nil, err
 		}
@@ -753,7 +762,7 @@ func isRevisionNotFound(err string) bool {
 
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
 	ctx, _, endObservation := c.operations.search.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(args.Repo)),
+		args.Repo.Attr(),
 		attribute.Stringer("query", args.Query),
 		attribute.Bool("diff", args.IncludeDiff),
 		attribute.Int("limit", args.Limit),
@@ -762,8 +771,8 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 
 	repoName := protocol.NormalizeRepo(args.Repo)
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(repoName)
+	if conf.IsGRPCEnabled(ctx) {
+		client, err := c.ClientForRepo(ctx, repoName)
 		if err != nil {
 			return false, err
 		}
@@ -791,7 +800,7 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 		}
 	}
 
-	addrForRepo := c.AddrForRepo(repoName)
+	addrForRepo := c.AddrForRepo(ctx, repoName)
 
 	protocol.RegisterGob()
 	var buf bytes.Buffer
@@ -883,8 +892,8 @@ func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password str
 		P4Passwd: password,
 		Args:     args,
 	}
-	if internalgrpc.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo("")
+	if conf.IsGRPCEnabled(ctx) {
+		client, err := c.ClientForRepo(ctx, "")
 		if err != nil {
 			return nil, nil, err
 		}
@@ -976,10 +985,15 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 	ctx, _, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	defer endObservation(1, observation.Args{})
 
+	type clientAndError struct {
+		client  proto.GitserverServiceClient
+		dialErr error // non-nil if there was an error dialing the client
+	}
+
 	// Make a request to a single gitserver shard and feed the results to the user-supplied
 	// callback. This function is invoked multiple times (and concurrently) in the loops below
 	// this function definition.
-	performLogRequestToShard := func(ctx context.Context, addr string, repoCommits []api.RepoCommit) (err error) {
+	performLogRequestToShard := func(ctx context.Context, addr string, grpcClient clientAndError, repoCommits []api.RepoCommit) (err error) {
 		var numProcessed int
 		repoNames := repoNamesFromRepoCommits(repoCommits)
 
@@ -998,9 +1012,6 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 			})
 		}()
 
-		uri := "http://" + addr + "/batch-log"
-		repoName := api.RepoName(strings.Join(repoNames, ",")) // only used to label spans
-
 		request := protocol.BatchLogRequest{
 			RepoCommits: repoCommits,
 			Format:      opts.Format,
@@ -1008,8 +1019,8 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 
 		var response protocol.BatchLogResponse
 
-		if internalgrpc.IsGRPCEnabled(ctx) {
-			client, err := c.ClientForRepo(repoName)
+		if conf.IsGRPCEnabled(ctx) {
+			client, err := grpcClient.client, grpcClient.dialErr
 			if err != nil {
 				return err
 			}
@@ -1021,15 +1032,14 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 
 			response.FromProto(resp)
 			logger.AddEvent("read response", attribute.Int("numResults", len(response.Results)))
-
 		} else {
-
 			var buf bytes.Buffer
 			if err := json.NewEncoder(&buf).Encode(request); err != nil {
 				return err
 			}
 
-			resp, err := c.do(ctx, repoName, "POST", uri, buf.Bytes())
+			uri := "http://" + addr + "/batch-log"
+			resp, err := c.do(ctx, api.RepoName(strings.Join(repoNames, ",")), "POST", uri, buf.Bytes())
 			if err != nil {
 				return err
 			}
@@ -1076,7 +1086,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 	for _, repoCommit := range opts.RepoCommits {
 		addr, ok := addrsByName[repoCommit.Repo]
 		if !ok {
-			addr = c.AddrForRepo(repoCommit.Repo)
+			addr = c.AddrForRepo(ctx, repoCommit.Repo)
 			addrsByName[repoCommit.Repo] = addr
 		}
 
@@ -1111,10 +1121,17 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 			return err
 		}
 
+		client, err := c.ClientForRepo(ctx, repoCommits[0].Repo)
+		if err != nil {
+			err = errors.Wrapf(err, "getting gRPC client for repository %q", repoCommits[0].Repo)
+		}
+
+		ce := clientAndError{client: client, dialErr: err}
+
 		g.Go(func() (err error) {
 			defer sem.Release(1)
 
-			return performLogRequestToShard(ctx, addr, repoCommits)
+			return performLogRequestToShard(ctx, addr, ce, repoCommits)
 		})
 	}
 
@@ -1159,8 +1176,8 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 		Since: since,
 	}
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(repo)
+	if conf.IsGRPCEnabled(ctx) {
+		client, err := c.ClientForRepo(ctx, repo)
 		if err != nil {
 			return nil, err
 		}
@@ -1197,8 +1214,8 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 
 // RequestRepoClone requests that the gitserver does an asynchronous clone of the repository.
 func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoName) (*protocol.RepoCloneResponse, error) {
-	if internalgrpc.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(repo)
+	if conf.IsGRPCEnabled(ctx) {
+		client, err := c.ClientForRepo(ctx, repo)
 		if err != nil {
 			return nil, err
 		}
@@ -1250,8 +1267,8 @@ func (c *clientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoNa
 
 	var resp protocol.IsRepoCloneableResponse
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(repo)
+	if conf.IsGRPCEnabled(ctx) {
+		client, err := c.ClientForRepo(ctx, repo)
 		if err != nil {
 			return err
 		}
@@ -1328,10 +1345,10 @@ func (e *RepoNotCloneableErr) Error() string {
 func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
 	numPossibleShards := len(c.Addrs())
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		shards := make(map[proto.GitserverServiceClient]*proto.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 		for _, r := range repos {
-			client, err := c.ClientForRepo(r)
+			client, err := c.ClientForRepo(ctx, r)
 			if err != nil {
 				return nil, err
 			}
@@ -1381,7 +1398,7 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 		shards := make(map[string]*protocol.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
 		for _, r := range repos {
-			addr := c.AddrForRepo(r)
+			addr := c.AddrForRepo(ctx, r)
 			shard := shards[addr]
 
 			if shard == nil {
@@ -1450,7 +1467,7 @@ func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protoco
 	stats := map[string]*protocol.ReposStats{}
 	var allErr error
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		for _, addr := range c.clientSource.Addresses() {
 			client, err := addr.GRPCClient()
 			if err != nil {
@@ -1502,8 +1519,8 @@ func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) error
 	// In case the repo has already been deleted from the database we need to pass
 	// the old name in order to land on the correct gitserver instance
 	repo = api.UndeletedRepoName(repo)
-	if internalgrpc.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(repo)
+	if conf.IsGRPCEnabled(ctx) {
+		client, err := c.ClientForRepo(ctx, repo)
 		if err != nil {
 			return err
 		}
@@ -1512,7 +1529,7 @@ func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) error
 		})
 		return err
 	} else {
-		addr := c.AddrForRepo(repo)
+		addr := c.AddrForRepo(ctx, repo)
 		return c.RemoveFrom(ctx, repo, addr)
 	}
 }
@@ -1550,7 +1567,7 @@ func (c *clientImplementor) httpPost(ctx context.Context, repo api.RepoName, op 
 		return nil, err
 	}
 
-	addrForRepo := c.AddrForRepo(repo)
+	addrForRepo := c.AddrForRepo(ctx, repo)
 	uri := "http://" + addrForRepo + "/" + op
 	return c.do(ctx, repo, "POST", uri, b)
 }
@@ -1558,16 +1575,16 @@ func (c *clientImplementor) httpPost(ctx context.Context, repo api.RepoName, op 
 // do performs a request to a gitserver instance based on the address in the uri
 // argument.
 //
-// Repo parameter is optional. If it is provided, then "repo" attribute is added
+// repoForTracing parameter is optional. If it is provided, then "repo" attribute is added
 // to trace span.
-func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
+func (c *clientImplementor) do(ctx context.Context, repoForTracing api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
 	parsedURL, err := url.ParseRequestURI(uri)
 	if err != nil {
 		return nil, errors.Wrap(err, "do")
 	}
 
 	ctx, trLogger, endObservation := c.operations.do.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(repo)),
+		repoForTracing.Attr(),
 		attribute.String("method", method),
 		attribute.String("path", parsedURL.Path),
 	}})
@@ -1593,8 +1610,8 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 }
 
 func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
-	if internalgrpc.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(req.Repo)
+	if conf.IsGRPCEnabled(ctx) {
+		client, err := c.ClientForRepo(ctx, req.Repo)
 		if err != nil {
 			return nil, err
 		}
@@ -1648,8 +1665,8 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 		Repo:       repo,
 		ObjectName: objectName,
 	}
-	if internalgrpc.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(req.Repo)
+	if conf.IsGRPCEnabled(ctx) {
+		client, err := c.ClientForRepo(ctx, req.Repo)
 		if err != nil {
 			return nil, err
 		}

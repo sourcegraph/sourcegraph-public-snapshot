@@ -1,4 +1,4 @@
-import { FC, ReactNode, useLayoutEffect, useMemo } from 'react'
+import { type FC, type ReactNode, useLayoutEffect, useMemo } from 'react'
 
 import { mdiGit, mdiDelete, mdiFolderMultipleOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -17,8 +17,8 @@ import {
     CollapsePanel,
 } from '@sourcegraph/wildcard'
 
-import { LocalRepository } from '../../../../graphql-operations'
-import { callFilePicker, useLocalExternalServices, LocalCodeHost } from '../../../../setup-wizard/components'
+import type { LocalRepository } from '../../../../graphql-operations'
+import { callFilePicker, useLocalExternalServices, type LocalCodeHost } from '../../../../setup-wizard/components'
 import { NoReposAddedState } from '../../components'
 
 import styles from './LocalRepositoriesTab.module.scss'
@@ -203,10 +203,13 @@ interface RepositoryItemProps {
 const RepositoryItem: FC<RepositoryItemProps> = ({ service, repository, onDelete }) => (
     <li className={styles.listItem}>
         <span className={styles.listItemContent}>
-            <Icon aria-hidden={true} svgPath={mdiGit} inline={false} className={styles.listItemIcon} />
-            <Text weight="bold" className={styles.listItemName}>
-                {repository.name}
-            </Text>
+            <div className={styles.listItemDirectoryPath}>
+                <Icon aria-hidden={true} svgPath={mdiGit} inline={false} className={styles.listItemIcon} />
+                <Text weight="bold" className={styles.listItemName}>
+                    {repository.name}
+                </Text>
+            </div>
+
             <Text size="small" className={styles.listItemDescription}>
                 {repository.path}
             </Text>

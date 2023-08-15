@@ -147,6 +147,7 @@ func (s *AWSCodeCommitSource) makeRepo(r *awscodecommit.Repository) *types.Repo 
 			},
 		},
 		Metadata: r,
+		Private:  !s.svc.Unrestricted,
 	}
 }
 

@@ -1,5 +1,5 @@
 /* eslint-disable no-template-curly-in-string */
-import { Completion, resolveFieldAlias } from './filters'
+import { type Completion, resolveFieldAlias } from './filters'
 
 interface Access {
     name: string

@@ -40,6 +40,9 @@ var SelfHostedSiteInitEventID = "000010399089"
 // CodyClientInstalledEventID is the HubSpot Event ID for when a user reports installing a Cody client.
 var CodyClientInstalledEventID = "000018021981"
 
+// AppDownloadButtonClickedEventID is the HubSpot Event ID for when a user clicks on a button to download Cody App.
+var AppDownloadButtonClickedEventID = "000019179879"
+
 var client *hubspot.Client
 
 // HasAPIKey returns true if a HubspotAPI key is present. A subset of requests require a HubSpot API key.

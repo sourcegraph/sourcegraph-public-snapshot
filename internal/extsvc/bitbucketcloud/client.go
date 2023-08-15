@@ -210,8 +210,8 @@ func (c *client) reqPage(ctx context.Context, url string, results any) (*PageTok
 }
 
 func (c *client) do(ctx context.Context, req *http.Request, result any) (code int, err error) {
-	tr, ctx := trace.New(ctx, "Bitbucket Cloud", "do")
-	defer tr.FinishWithErr(&err)
+	tr, ctx := trace.New(ctx, "BitbucketCloud.do")
+	defer tr.EndWithErr(&err)
 	req = req.WithContext(ctx)
 
 	req.URL = c.URL.ResolveReference(req.URL)

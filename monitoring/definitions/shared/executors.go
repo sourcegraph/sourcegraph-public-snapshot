@@ -52,3 +52,22 @@ func (executors) NewExecutorQueueGroup(namespace, containerName, queueFilter str
 	}
 	return Queue.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, opts)
 }
+
+func (executors) NewExecutorMultiqueueGroup(namespace, containerName, queueFilter string) monitoring.Group {
+	opts := MultiqueueGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       namespace,
+			DescriptionRoot: "Executor jobs",
+
+			// if updating this, also update in NewExecutorProcessorGroup
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "executor",
+				MetricDescriptionRoot: "unprocessed executor job",
+				Filters:               []string{fmt.Sprintf(`queue=~%q`, queueFilter)},
+				By:                    []string{"queue"},
+			},
+		},
+		QueueDequeueCacheSize: NoAlertsOption("none"),
+	}
+	return Queue.NewMultiqueueGroup(containerName, monitoring.ObservableOwnerCodeIntel, opts)
+}

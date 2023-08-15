@@ -13,27 +13,138 @@ All notable changes to Sourcegraph are documented in this file.
 
 <!-- START CHANGELOG -->
 
-## Unreleased 5.2.0
+## Unreleased 5.2.0 (planned release date: October 4, 2023)
 
 ### Added
 
--
+### Changed
+
+- OpenTelemetry Collector has been upgraded to v0.81, and OpenTelemetry packages have been upgraded to v1.16. [#54969](https://github.com/sourcegraph/sourcegraph/pull/54969), [#54999](https://github.com/sourcegraph/sourcegraph/pull/54999)
+- Bitbucket Cloud code host connections no longer automatically syncs the repository of the username used. The appropriate workspace name will have to be added to the `teams` list if repositories for that account need to be synced. [#55095](https://github.com/sourcegraph/sourcegraph/pull/55095)
+- Pressing `Mod-f` will always select the input value in the file view search [#55546](https://github.com/sourcegraph/sourcegraph/pull/55546)
+- The commit message defined in a batch spec will now be passed to `git commit` on stdin using `--file=-` instead of being included inline with `git commit -m` to improve how the message is interpreted by `git` in certain edge cases, such as when the commit message begins with a dash, and to prevent extra quotes being added to the message. This may mean that previous escaping strategies will behave differently.
+
+### Fixed
+
+### Removed
+
+- indexed-search has removed the deprecated environment variable ZOEKT_ENABLE_LAZY_DOC_SECTIONS [zoekt#620](https://github.com/sourcegraph/zoekt/pull/620)
+- The federation feature that could redirect users from their own Sourcegraph instance to public repositories on Sourcegraph.com has been removed. It allowed users to open a repository URL on their own Sourcegraph instance and, if the repository wasn't found on that instance, the user would be redirect to the repository on Sourcegraph.com, where it was possibly found. The feature has been broken for over a year though and we don't know that it was used. If you want to use it, please open a feature-request issue and tag the `@sourcegraph/source` team. [#55161](https://github.com/sourcegraph/sourcegraph/pull/55161)
+
+## Unreleased 5.1.7 (planned release date: August 23, 2023)
+
+### Added
 
 ### Changed
 
+### Fixed
+
+### Removed
+
+## 5.1.6
+
+### Added
+
+- New Prometheus metrics have been added to track the response / request sizes of gRPC calls. [#55381](https://github.com/sourcegraph/sourcegraph/pull/55381)
+- A new embeddings site configuration setting `excludeChunkOnError` allows embedding jobs to complete job execution despite chunks of code or text that fail. When enabled the chunks are skipped after failed retries but the index can continue being populated. When disabled the entire job fails and the index is not saved. This setting is enabled by default. Embedding job statistics now capture `code_chunks_excluded` and `text_chunks_excluded` for successfully completed jobs. Total excluded chunks and file names for excluded chunks are logged as warnings. [#55180](https://github.com/sourcegraph/sourcegraph/pull/55180)
+- Experimental support for Azure OpenAI for the completions and embeddings provider has been added. [#55178](https://github.com/sourcegraph/sourcegraph/pull/55178)
+- Added a feature flag for alternate GitLab project visibility resolution. This may solve some weird cases with not being able to see GitLab internal projects. [#54426](https://github.com/sourcegraph/sourcegraph/pull/54426)
+  - To use this feature flag, create a Boolean feature flag named "gitLabProjectVisibilityExperimental" and set the value to True.
+- It is now possible to add annotations to pods spawned by jobs created by the Kubernetes executor. [#55361](https://github.com/sourcegraph/sourcegraph/pull/55361)
+
+### Changed
+
+- Updated all packages in container images to latest versions
+- Updated Docker-in-Docker image from 23.0.1 to 23.0.6
+- The gRPC implementation for the Symbol service's `LocalCodeIntel` endpoint has been changed to stream its results. [#55242](https://github.com/sourcegraph/sourcegraph/pull/55242)
+- When using OpenAI or Azure OpenAI for Cody completions, code completions will be disabled - chat will continue to work. This is because we currently don't support code completions with OpenAI. [#55624](https://github.com/sourcegraph/sourcegraph/pull/55624)
+
+### Fixed
+
+- Fixed a bug where user account requests could not be approved even though the license would permit user creation otherwise. [#55482](https://github.com/sourcegraph/sourcegraph/pull/55482)
+- Fixed a bug where the background scheduler for embedding jobs based on policies would not schedule jobs for private repositories. [#55698](https://github.com/sourcegraph/sourcegraph/pull/55698)
+- Fixed a source of inconsistency in precise code navigation, affecting implementations and prototypes especially. [#54410](https://github.com/sourcegraph/sourcegraph/pull/54410)
+
+### Removed
+
+## 5.1.5
+
+### Known Issues
+
+- Standard and multi-version upgrades are not currently working from Sourcegraph versions 5.0.X to 5.1.5. As a temporary workaround, please upgrade 5.0.X to 5.1.0, then 5.1.0 to 5.1.5.
+
+### Fixed
+
+- Fixed an embeddings job scheduler bug where if we cannot resolve one of the repositories or its default branch then all repositories submitted will not have their respective embeddings job enqueued. Embeddings job scheduler will now continue to schedule jobs for subsequent repositories in the submitted repositories set. [#54701](https://github.com/sourcegraph/sourcegraph/pull/54701)
+- Creation of GitHub Apps will now respect system certificate authorities when specifying certificates for the tls.external site configuration. [#55084](https://github.com/sourcegraph/sourcegraph/pull/55084)
+- Passing multi-line Coursier credentials in JVM packages configuration should now work correctly. [#55113](https://github.com/sourcegraph/sourcegraph/pull/55113)
+- SCIP indexes are now ingested in a streaming fashion, eliminating out-of-memory errors in most cases, even when uploading very large indexes (1GB+ uncompressed). [#53828](https://github.com/sourcegraph/sourcegraph/pull/53828)
+- Moved the license checks to worker service. We make sure to run only 1 instance of license checks this way. [54854](https://github.com/sourcegraph/sourcegraph/pull/54854)
+- Updated base images to resolve issues in curl, OpenSSL, and OpenSSL. [55310](https://github.com/sourcegraph/sourcegraph/pull/55310)
+- The default message size limit for gRPC clients has been raised from 4MB to 90MB. [#55209](https://github.com/sourcegraph/sourcegraph/pull/55209)
+- The message printing feature for the custom gRPC internal error interceptor now supports logging all internal error types, instead of just non-utf 8 errors. [#55130](https://github.com/sourcegraph/sourcegraph/pull/55130)
+- Fixed an issue where GitHub Apps could not be set up using Firefox. [#55305](https://github.com/sourcegraph/sourcegraph/pull/55305)
+- Fixed nil panic on certain GraphQL fields when listing users. [#55322](https://github.com/sourcegraph/sourcegraph/pull/55322)
+
+### Changed
+
+- The "Files" tab of the fuzzy finder now allows you to navigate directly to a line number by appending `:NUMBER`. For example, the fuzzy query `main.ts:100` opens line 100 in the file `main.ts`. [#55064](https://github.com/sourcegraph/sourcegraph/pull/55064)
+- The gRPC implementation for the Symbol service's `LocalCodeIntel` endpoint has been changed to stream its results. [#55242](https://github.com/sourcegraph/sourcegraph/pull/55242)
+- GitLab auth providers now support an `ssoURL` option that facilitates scenarios where a GitLab group requires SAML/SSO. [#54957](https://github.com/sourcegraph/sourcegraph/pull/54957)
+
+### Added
+
+### Removed
+
+## 5.1.4
+
+### Fixed
+
+- A bug where we would temporarily use much more memory than needed during embeddings fetching. [#54972](https://github.com/sourcegraph/sourcegraph/pull/54972)
+
+### Changed
+
+- The UI for license keys now displays more information about license validity. [#54990](https://github.com/sourcegraph/sourcegraph/pull/54990)
+- Sourcegraph now supports more than one auth provider per URL. [#54289](https://github.com/sourcegraph/sourcegraph/pull/54289)
+- Site-admins can now list, view and edit all code monitors. [#54981](https://github.com/sourcegraph/sourcegraph/pull/54981)
+
+## 5.1.3
+
+### Changed
+
+- Cody source code (for the VS Code extension, CLI, and client shared libraries) has been moved to the [sourcegraph/cody repository](https://github.com/sourcegraph/cody).
 - `golang.org/x/net/trace` instrumentation, previously available under `/debug/requests` and `/debug/events`, has been removed entirely from core Sourcegraph services. It remains available for Zoekt. [#53795](https://github.com/sourcegraph/sourcegraph/pull/53795)
 
 ### Fixed
 
--
+- Fixed an embeddings job scheduler bug where if we cannot resolve one of the repositories or its default branch then all repositories submitted will not have their respective embeddings job enqueued. Embeddings job scheduler will now continue to schedule jobs for subsequent repositories in the submitted repositories set. [#54701](https://github.com/sourcegraph/sourcegraph/pull/54701)
 
-### Removed
+## 5.1.2
 
--
+### Fixed
+
+- Fixes a crash when uploading indexes with malformed source ranges (this was a bug in scip-go). [#54304](https://github.com/sourcegraph/sourcegraph/pull/54304)
+- Fixed validation of Bitbucket Cloud configuration in site-admin create/update form. [#54494](https://github.com/sourcegraph/sourcegraph/pull/54494)
+- Fixed race condition with grpc `server.send` message. [#54500](https://github.com/sourcegraph/sourcegraph/pull/54500)
+- Fixed a configuration initialization issue that broke the outbound request in the site admin page. [#54745](https://github.com/sourcegraph/sourcegraph/pull/54745)
+- Fixed Postgres DSN construction edge-case. [#54858](https://github.com/sourcegraph/sourcegraph/pull/54858)
+
+## 5.1.1
+
+### Fixed
+
+- Fixed the default behaviour when the explicit permissions API is enabled. Repositories are no longer marked as unrestricted by default. [#54419](https://github.com/sourcegraph/sourcegraph/pull/54419)
 
 ## 5.1.0
 
-> **Note**: As of 5.1.0, Sourcegraph OSS is removed and has been relicensed to Sourcegraph Enterprise. A blog post with much more detail will come soon!
+> **Note**: As of 5.1.0, the limited OSS subset of Sourcegraph has been removed, and code search OSS code has been relicensed going forward. See https://github.com/sourcegraph/sourcegraph/issues/53528#issuecomment-1594967818 for more information (blog post coming soon).
+
+> **Note**: As of 5.1.0, the `rsa-sha` signature algorithm is no longer supported when connecting to code hosts over SSH. If you encounter the error `sign_and_send_pubkey: no mutual signature supported` when syncing repositories, see [Repository authentication](https://docs.sourcegraph.com/admin/repo/auth#error-sign_and_send_pubkey-no-mutual-signature-supported) for more information and steps to resolve the issue.
+
+### [Known issues](KNOWN-ISSUES.md)
+
+- There is an issue with Sourcegraph instances configured to use explicit permissions using permissions.userMapping in Site configuration, where repository permissions are not enforced. Customers using the explicit permissions API are advised to upgrade to v5.1.1 directly.
+- There is an issue with creating and updating existing Bitbucket.org (Cloud) code host connections due to problem with JSON schema validation which prevents the JSON editor from loading and surfaces as an error in the UI.
 
 ### Added
 
@@ -61,6 +172,11 @@ All notable changes to Sourcegraph are documented in this file.
 - Latest repository clone/sync output is surfaced in the "Mirroring and cloning" page (`{REPO}/-/settings/mirror`). Added primarily to enable easier debugging of issues with Perforce depots, it can also be useful for other code hosts. [#51598](https://github.com/sourcegraph/sourcegraph/pull/51598)
 - New `file:has.contributor(...)` predicate for filtering files based on contributors. [#53206](https://github.com/sourcegraph/sourcegraph/pull/53206)
 - Added multi-repo scope selector for Cody on the web supporting unified context generation API which uses combination of embeddings search and keyword search as fallback for context generation. [53046](https://github.com/sourcegraph/sourcegraph/pull/53046)
+- Batch Changes can now sign commits for changesets published on GitHub code hosts via GitHub Apps. [#52333](https://github.com/sourcegraph/sourcegraph/pull/52333)
+- Added history of changes to the site configuration page. Site admins can now see information about changes made to the site configuration, by whom and when. [#49842](https://github.com/sourcegraph/sourcegraph/pull/49842)
+- For Perforce depots, users will now see the changelist ID (CL) instead of Git commit SHAs when visiting a depot or the view changelists page [#51195](https://github.com/sourcegraph/sourcegraph/pull/51195)
+- Visiting a specific CL will now use the CL ID in the URL instead of the commit SHA. Other areas affected by this change are browsing files at a specific CL, viewing a specific file changed as part of a specific CL. To enable this behaviour, site admins should set `"perforceChangelistMapping": "enabled"` under experimentalFeatures in the site configuration. Note that currently we process only one perforce depot at a time to map the commit SHAs to their CL IDs in the backend. In a subsequent release we will add support to process multiple depots in parallel. Other areas where currently commit SHAs are used will be updated in future releases. [#53253](https://github.com/sourcegraph/sourcegraph/pull/53253) [#53608](https://github.com/sourcegraph/sourcegraph/pull/53608) [#54051](https://github.com/sourcegraph/sourcegraph/pull/54051)
+- Added autoupgrading to automatically perform multi-version upgrades, without manual `migrator` invocations, through the `frontend` deployment. Please see the [documentation](https://docs.sourcegraph.com/admin/updates/automatic) for details. [#52242](https://github.com/sourcegraph/sourcegraph/pull/52242) [#53196](https://github.com/sourcegraph/sourcegraph/pull/53196)
 
 ### Changed
 
@@ -88,6 +204,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Update Jaeger to 1.45.0, and Opentelemetry-Collector to 0.75.0 [#54000](https://github.com/sourcegraph/sourcegraph/pull/54000)
 - Switched container OS to Wolfi for hardened containers [#47182](https://github.com/sourcegraph/sourcegraph/pull/47182), [#47368](https://github.com/sourcegraph/sourcegraph/pull/47368)
 - Batches changes now supports for CODEOWNERS for Github. Pull requests requiring CODEOWNERS approval, will no longer show as approved unless explicitly approved by a CODEOWNER. https://github.com/sourcegraph/sourcegraph/pull/53601
+- The insecure `rsa-sha` signature algorithm is no longer supported when connecting to code hosts over SSH. See the [Repository authentication](https://docs.sourcegraph.com/admin/repo/auth#error-sign_and_send_pubkey-no-mutual-signature-supported) page for further details.
 
 ### Fixed
 
@@ -104,6 +221,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where commenting out redacted site-config secrets would re-add the secrets. [#53152](https://github.com/sourcegraph/sourcegraph/pull/53152)
 - Fixed an issue where SCIP packages would sometimes not be written to the database, breaking cross-repository jump to definition. [#53763](https://github.com/sourcegraph/sourcegraph/pull/53763)
 - Fixed an issue when adding a new user external account was not scheduling a new permission sync for the user. [#54144](https://github.com/sourcegraph/sourcegraph/pull/54144)
+- Adding a new user account now correctly schedules a permission sync for the user. [#54258](https://github.com/sourcegraph/sourcegraph/pull/54258)
+- Users/repos without an existing sync job in the permission_sync_jobs table are now scheduled properly. [#54278](https://github.com/sourcegraph/sourcegraph/pull/54278)
 
 ### Removed
 

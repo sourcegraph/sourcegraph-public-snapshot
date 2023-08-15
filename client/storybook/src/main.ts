@@ -1,11 +1,11 @@
 import path from 'path'
 
-import { Options, StorybookConfig } from '@storybook/core-common'
+import type { Options, StorybookConfig } from '@storybook/core-common'
 import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin'
 import { remove } from 'lodash'
 import signale from 'signale'
 import SpeedMeasurePlugin from 'speed-measure-webpack-plugin'
-import { Configuration, DefinePlugin, DllReferencePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
+import { type Configuration, DefinePlugin, DllReferencePlugin, ProgressPlugin, type RuleSetRule } from 'webpack'
 
 import {
     getBabelLoader,
@@ -43,21 +43,9 @@ const getStoriesGlob = (): string[] => {
     // Due to an issue with constant recompiling (https://github.com/storybookjs/storybook/issues/14342)
     // we need to make the globs more specific (`(web|shared..)` also doesn't work). Once the above issue
     // is fixed, this can be removed and watched for `client/**/*.story.tsx` again.
-    const directoriesWithStories = [
-        'branded',
-        'browser',
-        'jetbrains/webview',
-        'shared',
-        'web',
-        'wildcard',
-        'cody-ui',
-        'cody',
-    ]
+    const directoriesWithStories = ['branded', 'browser', 'jetbrains/webview', 'shared', 'web', 'wildcard']
     const storiesGlobs = directoriesWithStories.map(packageDirectory =>
-        path.resolve(
-            ROOT_PATH,
-            `client/${packageDirectory}/${packageDirectory === 'cody' ? 'webviews' : 'src'}/**/*.story.tsx`
-        )
+        path.resolve(ROOT_PATH, `client/${packageDirectory}/src/**/*.story.tsx`)
     )
 
     return [...storiesGlobs]

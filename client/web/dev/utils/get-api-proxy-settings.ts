@@ -1,7 +1,7 @@
 import type * as http from 'http'
 import * as zlib from 'zlib'
 
-import { Options, responseInterceptor } from 'http-proxy-middleware'
+import { type Options, responseInterceptor } from 'http-proxy-middleware'
 
 import { ENVIRONMENT_CONFIG, HTTPS_WEB_SERVER_URL } from './environment-config'
 import { STREAMING_ENDPOINTS } from './should-compress-response'

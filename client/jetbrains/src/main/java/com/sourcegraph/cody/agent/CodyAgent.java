@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.agent;
 
+import com.google.gson.GsonBuilder;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.Disposable;
@@ -29,7 +30,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Orchestrator for the Cody agent, which is a Node.js program that implements the prompt logic for
  * Cody. The agent communicates via a JSON-RPC protocol that is documented in the file
- * "client/cody-agent/src/protocol.ts".
+ * "cody/agent/src/protocol.ts".
  *
  * <p>The class {{{@link com.sourcegraph.cody.CodyAgentProjectListener}}} is responsible for
  * initializing and shutting down the agent.
@@ -107,12 +108,12 @@ public class CodyAgent implements Disposable {
             } catch (Exception e) {
               initializationErrorMessage =
                   "failed to send 'initialize' JSON-RPC request Cody agent";
-              logger.error(initializationErrorMessage, e);
+              logger.warn(initializationErrorMessage, e);
             }
           });
     } catch (Exception e) {
       initializationErrorMessage = "unable to start Cody agent";
-      logger.error(initializationErrorMessage, e);
+      logger.warn(initializationErrorMessage, e);
     }
   }
 
@@ -142,7 +143,6 @@ public class CodyAgent implements Disposable {
 
   private static String agentBinaryName() {
     String os = SystemInfoRt.isMac ? "macos" : SystemInfoRt.isWindows ? "windows" : "linux";
-    @SuppressWarnings("MissingRecentApi")
     String arch = CpuArch.isArm64() ? "arm64" : "x64";
     return "agent-" + os + "-" + arch + binarySuffix();
   }
@@ -164,7 +164,7 @@ public class CodyAgent implements Disposable {
   private static File agentBinary() throws CodyAgentException {
     Path pluginPath = agentDirectory();
     if (pluginPath == null) {
-      throw new CodyAgentException("Sourcegraph plugin path not found");
+      throw new CodyAgentException("Cody AI by Sourcegraph plugin path not found");
     }
     Path binarySource = pluginPath.resolve("agent").resolve(agentBinaryName());
     if (!Files.isRegularFile(binarySource)) {
@@ -198,7 +198,7 @@ public class CodyAgent implements Disposable {
             Files.newOutputStream(
                 trace, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING));
       } catch (IOException e) {
-        logger.error("unable to trace JSON-RPC debugging information to path " + tracePath, e);
+        logger.warn("unable to trace JSON-RPC debugging information to path " + tracePath, e);
       }
     }
     return null;
@@ -213,6 +213,9 @@ public class CodyAgent implements Disposable {
             .start();
     Launcher<CodyAgentServer> launcher =
         new Launcher.Builder<CodyAgentServer>()
+            // emit `null` instead of leaving fields undefined because Cody in VSC has
+            // many `=== null` checks that return false for undefined fields.
+            .configureGson(GsonBuilder::serializeNulls)
             .setRemoteInterface(CodyAgentServer.class)
             .traceMessages(traceWriter())
             .setExecutorService(executorService)

@@ -2,17 +2,31 @@
 
 Site admins can sync Git repositories hosted on [Azure DevOps](https://dev.azure.com) with Sourcegraph so that users can search and navigate the repositories.
 
-To connect Azure DevOps to Sourcegraph, create a personal access token from your user settings page. Ensure that you select the following scopes:
+To connect Azure DevOps to Sourcegraph, create a personal access token from your user settings page by following the below steps:
 
-- Code (Read)
-- Project and Team
-- User Profile
+1. Navigate to the `Personal Access Tokens` page from the user settings.
 
-Additionally, under the `Organization` menu, select `All accessible organizations` to allow access to all organizations. This is required to be able to sync repositories from multiple organizations. Alternatively, site admins may also create a unique user that has access to only the selective organizations that they would like to sync with Sourcegraph.
+![Visit the Personal Access Tokens page](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/config/azure-devops-personal-access-token-step-1.png)
+
+2. Click on `New Token`.
+
+![Click on New Token](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/config/azure-devops-personal-access-token-step-2.png)
+
+3. Under the `Organization` menu, select `All accessible organizations` to allow access to all organizations. This is required to be able to perform connection checks from the code host page and to sync repositories from multiple organizations. Alternatively, site admins may also create a unique user that has access to only the selective organizations that they would like to sync with Sourcegraph. However the token being created **must** have access to `All accessible organizations` as shown below.
+
+![Select All accessible organizations](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/config/azure-devops-personal-access-token-step-3.png)
+
+4. Select the following scopes:
+
+   - Code (Read)
+   - Project and Team
+   - User Profile
+
+Next, configure the code host connection by following the next steps:
 
 1. Go to **Site admin > Manage code hosts > Add repositories**.
-2. Select **Azure DevOps**.
-3. Provide a [configuration](#configuration) for the Azure DevOps code host connection. Here is an example configuration:
+1. Select **Azure DevOps**.
+1. Provide a [configuration](#configuration) for the Azure DevOps code host connection. Here is an example configuration:
 
    ```json
    {
@@ -24,7 +38,7 @@ Additionally, under the `Organization` menu, select `All accessible organization
    }
    ```
 
-4. Press **Add repositories**.
+1. Select **Add repositories**.
 
 ## Repository syncing
 

@@ -1,17 +1,17 @@
-import { FC, useCallback, useMemo, useState, useEffect } from 'react'
+import { type FC, useCallback, useMemo, useState, useEffect } from 'react'
 
 import { Navigate } from 'react-router-dom'
 
-import { RepoMetadata, RepoMetadataItem } from '@sourcegraph/branded'
+import { RepoMetadata, type RepoMetadataItem } from '@sourcegraph/branded'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader, ErrorAlert, Input, Text, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
-import { BreadcrumbSetters } from '../../components/Breadcrumbs'
+import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
-import {
+import type {
     GetRepoMetadataResult,
     GetRepoMetadataVariables,
     DeleteRepoMetadataResult,

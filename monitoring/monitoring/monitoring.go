@@ -501,10 +501,10 @@ var (
 		handbookSlug: "security",
 		teamName:     "Security",
 	}
-	ObservableOwnerRepoManagement = ObservableOwner{
-		identifier:   "repo-management",
-		handbookSlug: "repo-management",
-		teamName:     "Repo Management",
+	ObservableOwnerSource = ObservableOwner{
+		identifier:   "source",
+		handbookSlug: "source",
+		teamName:     "Source",
 	}
 	ObservableOwnerCodeInsights = ObservableOwner{
 		identifier:   "code-insights",
@@ -515,11 +515,6 @@ var (
 		identifier:   "devops",
 		handbookSlug: "devops",
 		teamName:     "Cloud DevOps",
-	}
-	ObservableOwnerIAM = ObservableOwner{
-		identifier:   "iam",
-		handbookSlug: "iam",
-		teamName:     "Identity and Access Management",
 	}
 	ObservableOwnerDataAnalytics = ObservableOwner{
 		identifier:   "data-analytics",

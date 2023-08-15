@@ -25,18 +25,44 @@ In particular, this means the Sourcegraph instance needs to be able to access th
 
 #### Is there a public facing Cody API?
 
-Not at the moment. 
+Not at the moment.
 
 #### Does Cody require Sourcegraph to function?
 
 Yes. Sourcegraph is needed both to retrieve context and as a proxy for the LLM provider.
+
+#### What programming languages Cody supports?
+
+- JavaScript
+- TypeScript
+- PHP
+- Python
+- Java
+- C/C++
+- C#
+- Ruby
+- Go
+- Shell scripting languages (Bash, PowerShell, etc.)
+- SQL
+- Swift
+- Objective-C
+- Perl
+- Rust
+- Kotlin
+- Scala
+- Groovy
+- R
+- MATLAB
+- Dart
+- Lua
+- Julia
+- Cobol
 
 ### Embeddings
 
 #### What are embeddings for?
 
 Embeddings are one of the many ways Sourcegraph uses to retrieve relevant code to feed the large language model as context. Embeddings / vector search are complementary to other strategies. While it matches really well semantically ("what is this code about, what does it do?"), it drops syntax and other important precise matching info. Sourcegraph's overall approach is to blend results from multiple sources to provide the best answer possible.
-
 
 #### When using embeddings, are permissions enforced? Does Cody get fed code that the users doesn't have access to?
 
@@ -47,6 +73,25 @@ In the future, here are the steps that Sourcegraph will follow:
 - determine which repo you have access to
 - query embeddings for each of those repo
 - pick the best results and send it back
+
+### I scheduled a one-off embeddings job but it is not showing up in the list of jobs. What happened?
+
+There can be several reasons why a job is not showing up in the list of jobs:
+
+- The repository is already queued or being processed
+- A job for the same repository and the same revision already completed successfully
+- Another job for the same repository has been queued for processing within the [embeddings.MinimumInterval](./explanations/code_graph_context.md#adjust-the-minimum-time-interval-between-automatically-scheduled-embeddings) time window
+
+### How do I stop a running embeddings job?
+
+Jobs in state _QUEUED_ or _PROCESSING_ can be canceled by admins from the **Cody > Embeddings Jobs** page. To cancel a job, click on the _Cancel_ button of the job you want to cancel. The job will be marked for cancellation. Note that, depending on the state of the job, it might take a few seconds or minutes for the job to actually be canceled.
+#### What are the reasons files are skipped?
+
+Files are skipped for the following reasons:
+
+- The file is too large (1 MB)
+- The file path matches an [exclusion pattern](./explanations/code_graph_context.md#excluding-files-from-embeddings)
+- We have already generated more than [`embeddings.maxCodeEmbeddingsPerRepo`](./explanations/code_graph_context.md#limitting-the-number-of-embeddings-that-can-be-generated) or [`embeddings.maxTextEmbeddingsPerRepo`](./explanations/code_graph_context.md#limitting-the-number-of-embeddings-that-can-be-generated) embeddings for the repo.
 
 ### Third party dependencies
 
@@ -68,4 +113,3 @@ See our [terms](https://about.sourcegraph.com/terms/cody-notice).
 #### Can I use my own API keys?
 
 Yes!
-

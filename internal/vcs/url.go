@@ -36,6 +36,7 @@ import (
 // Code copied and modified from github.com/whilp/git-urls to support perforce scheme.
 func ParseURL(rawurl string) (u *URL, err error) {
 	parsers := []func(string) (*URL, error){
+		parseFile,
 		parseScheme,
 		parseScp,
 		parseLocal,
@@ -123,6 +124,19 @@ func parseScp(rawurl string) (*URL, error) {
 	}, nil
 }
 
+func parseFile(rawurl string) (*URL, error) {
+	if !strings.HasPrefix(rawurl, "file://") {
+		return nil, errors.Errorf("no file scheme found in %q", rawurl)
+	}
+	return &URL{
+		format: formatStdlib,
+		URL: url.URL{
+			Scheme: "file",
+			Path:   strings.TrimPrefix(rawurl, "file://"),
+		},
+	}, nil
+}
+
 // parseLocal parses rawurl into a URL object with a "file"
 // scheme. This will effectively never return an error.
 func parseLocal(rawurl string) (*URL, error) {
@@ -196,36 +210,6 @@ func (u *URL) JoinPath(elem ...string) *URL {
 	u2.RawPath = strings.TrimPrefix(up.RawPath, "/")
 
 	return &u2
-}
-
-// String will return standard url.URL.String() if the url has a .Scheme set, but if
-// not it will produce an rsync format URL, eg `git@foo.com:foo/bar.git`
-func (u *URL) String() string {
-	// only use custom String() implementation for rsync format URLs
-	if u.format != formatRsync {
-		return u.URL.String()
-	}
-	// otherwise attempt to marshal scp style URLs
-	var buf strings.Builder
-	if u.User != nil {
-		buf.WriteString(u.User.String())
-		buf.WriteByte('@')
-	}
-	if h := u.Host; h != "" {
-		buf.WriteString(h)
-		// key difference here, add : and don't add a leading / to the path
-		buf.WriteByte(':')
-	}
-	buf.WriteString(u.EscapedPath())
-	if u.RawQuery != "" {
-		buf.WriteByte('?')
-		buf.WriteString(u.RawQuery)
-	}
-	if u.Fragment != "" {
-		buf.WriteByte('#')
-		buf.WriteString(u.EscapedFragment())
-	}
-	return buf.String()
 }
 
 // IsSSH returns whether this URL is SSH based, which for vcs.URL means

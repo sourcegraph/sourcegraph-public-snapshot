@@ -12,11 +12,10 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
-	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/github_apps/store"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -33,7 +32,7 @@ func TestResolver_DeleteGitHubApp(t *testing.T) {
 	id := 1
 	graphqlID := MarshalGitHubAppID(int64(id))
 
-	userStore := database.NewMockUserStore()
+	userStore := dbmocks.NewMockUserStore()
 	userStore.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
 		a := actor.FromContext(ctx)
 		if a.UID == 1 {
@@ -53,7 +52,7 @@ func TestResolver_DeleteGitHubApp(t *testing.T) {
 		return nil
 	})
 
-	db := edb.NewStrictMockEnterpriseDB()
+	db := dbmocks.NewStrictMockDB()
 
 	db.GitHubAppsFunc.SetDefaultReturn(gitHubAppsStore)
 	db.UsersFunc.SetDefaultReturn(userStore)
@@ -61,7 +60,7 @@ func TestResolver_DeleteGitHubApp(t *testing.T) {
 	adminCtx := userCtx(1)
 	userCtx := userCtx(2)
 
-	schema, err := graphqlbackend.NewSchema(db, gitserver.NewClient(), nil, []graphqlbackend.OptionalResolver{{GitHubAppsResolver: NewResolver(logger, db)}})
+	schema, err := graphqlbackend.NewSchema(db, gitserver.NewClient(db), []graphqlbackend.OptionalResolver{{GitHubAppsResolver: NewResolver(logger, db)}})
 	require.NoError(t, err)
 
 	graphqlbackend.RunTests(t, []*graphqlbackend.Test{{
@@ -109,7 +108,7 @@ func TestResolver_GitHubApps(t *testing.T) {
 	id2 := 2
 	graphqlID2 := MarshalGitHubAppID(int64(id2))
 
-	userStore := database.NewMockUserStore()
+	userStore := dbmocks.NewMockUserStore()
 	userStore.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
 		a := actor.FromContext(ctx)
 		if a.UID == 1 {
@@ -129,7 +128,7 @@ func TestResolver_GitHubApps(t *testing.T) {
 		return []*ghtypes.GitHubApp{{ID: 1}, {ID: 2}}, nil
 	})
 
-	db := edb.NewStrictMockEnterpriseDB()
+	db := dbmocks.NewStrictMockDB()
 
 	db.GitHubAppsFunc.SetDefaultReturn(gitHubAppsStore)
 	db.UsersFunc.SetDefaultReturn(userStore)
@@ -137,7 +136,7 @@ func TestResolver_GitHubApps(t *testing.T) {
 	adminCtx := userCtx(1)
 	userCtx := userCtx(2)
 
-	schema, err := graphqlbackend.NewSchema(db, gitserver.NewClient(), nil, []graphqlbackend.OptionalResolver{{GitHubAppsResolver: NewResolver(logger, db)}})
+	schema, err := graphqlbackend.NewSchema(db, gitserver.NewClient(db), []graphqlbackend.OptionalResolver{{GitHubAppsResolver: NewResolver(logger, db)}})
 	require.NoError(t, err)
 
 	graphqlbackend.RunTests(t, []*graphqlbackend.Test{
@@ -208,7 +207,7 @@ func TestResolver_GitHubApp(t *testing.T) {
 	id := 1
 	graphqlID := MarshalGitHubAppID(int64(id))
 
-	userStore := database.NewMockUserStore()
+	userStore := dbmocks.NewMockUserStore()
 	userStore.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
 		a := actor.FromContext(ctx)
 		if a.UID == 1 {
@@ -227,7 +226,7 @@ func TestResolver_GitHubApp(t *testing.T) {
 		BaseURL: "https://github.com",
 	}, nil)
 
-	db := edb.NewStrictMockEnterpriseDB()
+	db := dbmocks.NewStrictMockDB()
 
 	db.GitHubAppsFunc.SetDefaultReturn(gitHubAppsStore)
 	db.UsersFunc.SetDefaultReturn(userStore)
@@ -235,7 +234,7 @@ func TestResolver_GitHubApp(t *testing.T) {
 	adminCtx := userCtx(1)
 	userCtx := userCtx(2)
 
-	schema, err := graphqlbackend.NewSchema(db, gitserver.NewClient(), nil, []graphqlbackend.OptionalResolver{{GitHubAppsResolver: NewResolver(logger, db)}})
+	schema, err := graphqlbackend.NewSchema(db, gitserver.NewClient(db), []graphqlbackend.OptionalResolver{{GitHubAppsResolver: NewResolver(logger, db)}})
 	require.NoError(t, err)
 
 	graphqlbackend.RunTests(t, []*graphqlbackend.Test{{
@@ -276,7 +275,7 @@ func TestResolver_GitHubAppByAppID(t *testing.T) {
 	baseURL := "https://github.com"
 	name := "Horsegraph App"
 
-	userStore := database.NewMockUserStore()
+	userStore := dbmocks.NewMockUserStore()
 	userStore.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
 		a := actor.FromContext(ctx)
 		if a.UID == 1 {
@@ -296,7 +295,7 @@ func TestResolver_GitHubAppByAppID(t *testing.T) {
 		Name:    name,
 	}, nil)
 
-	db := edb.NewStrictMockEnterpriseDB()
+	db := dbmocks.NewStrictMockDB()
 
 	db.GitHubAppsFunc.SetDefaultReturn(gitHubAppsStore)
 	db.UsersFunc.SetDefaultReturn(userStore)
@@ -304,7 +303,7 @@ func TestResolver_GitHubAppByAppID(t *testing.T) {
 	adminCtx := userCtx(1)
 	userCtx := userCtx(2)
 
-	schema, err := graphqlbackend.NewSchema(db, gitserver.NewClient(), nil, []graphqlbackend.OptionalResolver{{GitHubAppsResolver: NewResolver(logger, db)}})
+	schema, err := graphqlbackend.NewSchema(db, gitserver.NewClient(db), []graphqlbackend.OptionalResolver{{GitHubAppsResolver: NewResolver(logger, db)}})
 	require.NoError(t, err)
 
 	graphqlbackend.RunTests(t, []*graphqlbackend.Test{{

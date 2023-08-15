@@ -15,15 +15,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestUser(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	t.Run("by username", func(t *testing.T) {
 		checkUserByUsername := func(t *testing.T) {
 			t.Helper()
@@ -48,7 +48,7 @@ func TestUser(t *testing.T) {
 			})
 		}
 
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByUsernameFunc.SetDefaultHook(func(ctx context.Context, username string) (*types.User, error) {
 			assert.Equal(t, "alice", username)
 			return &types.User{ID: 1, Username: "alice"}, nil
@@ -69,7 +69,7 @@ func TestUser(t *testing.T) {
 	})
 
 	t.Run("by email", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByVerifiedEmailFunc.SetDefaultHook(func(ctx context.Context, email string) (*types.User, error) {
 			assert.Equal(t, "alice@example.com", email)
 			return &types.User{ID: 1, Username: "alice"}, nil
@@ -140,16 +140,16 @@ func TestUser(t *testing.T) {
 }
 
 func TestUser_Email(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	user := &types.User{ID: 1}
 	ctx := actor.WithActor(context.Background(), actor.FromActualUser(user))
 
 	t.Run("allowed by authenticated site admin user", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, SiteAdmin: true}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		userEmails := database.NewMockUserEmailsStore()
+		userEmails := dbmocks.NewMockUserEmailsStore()
 		userEmails.GetPrimaryEmailFunc.SetDefaultReturn("john@doe.com", true, nil)
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
@@ -160,11 +160,11 @@ func TestUser_Email(t *testing.T) {
 	})
 
 	t.Run("allowed by authenticated user", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		userEmails := database.NewMockUserEmailsStore()
+		userEmails := dbmocks.NewMockUserEmailsStore()
 		userEmails.GetPrimaryEmailFunc.SetDefaultReturn("john@doe.com", true, nil)
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
@@ -176,9 +176,9 @@ func TestUser_Email(t *testing.T) {
 }
 
 func TestUser_LatestSettings(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		orig := envvar.SourcegraphDotComMode()
@@ -230,9 +230,9 @@ func TestUser_LatestSettings(t *testing.T) {
 }
 
 func TestUser_ViewerCanAdminister(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	t.Run("settings edit only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		orig := envvar.SourcegraphDotComMode()
@@ -263,7 +263,7 @@ func TestUser_ViewerCanAdminister(t *testing.T) {
 	})
 
 	t.Run("allowed by same user or site admin", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		tests := []struct {
@@ -297,10 +297,10 @@ func TestUser_ViewerCanAdminister(t *testing.T) {
 }
 
 func TestNode_User(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1, Username: "alice"}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	RunTests(t, []*Test{
@@ -329,10 +329,10 @@ func TestNode_User(t *testing.T) {
 }
 
 func TestUpdateUser(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 
 	t.Run("not site admin nor the same user", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 			return &types.User{
 				ID:       id,
@@ -342,7 +342,7 @@ func TestUpdateUser(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).UpdateUser(context.Background(),
+		result, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateUser(context.Background(),
 			&updateUserArgs{
 				User: "VXNlcjox",
 			},
@@ -358,12 +358,12 @@ func TestUpdateUser(t *testing.T) {
 		envvar.MockSourcegraphDotComMode(true)
 		defer envvar.MockSourcegraphDotComMode(orig)
 
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).UpdateUser(ctx,
+		_, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateUser(ctx,
 			&updateUserArgs{
 				User:     MarshalUserID(1),
 				Username: strptr("about"),
@@ -382,7 +382,7 @@ func TestUpdateUser(t *testing.T) {
 		})
 		defer conf.Mock(nil)
 
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 			return &types.User{ID: id}, nil
 		})
@@ -390,7 +390,7 @@ func TestUpdateUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).UpdateUser(ctx,
+		result, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateUser(ctx,
 			&updateUserArgs{
 				User:     "VXNlcjox",
 				Username: strptr("alice"),
@@ -416,7 +416,7 @@ func TestUpdateUser(t *testing.T) {
 			DisplayName: "alice-updated",
 			AvatarURL:   "http://www.example.com/alice-updated",
 		}
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultReturn(mockUser, nil)
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(mockUser, nil)
 		users.UpdateFunc.SetDefaultReturn(nil)
@@ -451,7 +451,7 @@ func TestUpdateUser(t *testing.T) {
 	})
 
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		orig := envvar.SourcegraphDotComMode()
@@ -493,7 +493,7 @@ func TestUpdateUser(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).UpdateUser(
+				_, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateUser(
 					test.ctx,
 					&updateUserArgs{
 						User: MarshalUserID(1),
@@ -525,7 +525,7 @@ func TestUpdateUser(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				_, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).UpdateUser(
+				_, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateUser(
 					actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
 					&updateUserArgs{
 						User:      MarshalUserID(2),
@@ -539,7 +539,7 @@ func TestUpdateUser(t *testing.T) {
 	})
 
 	t.Run("success with an empty avatarURL", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		siteAdminUser := &types.User{SiteAdmin: true}
 		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 			if id == 0 {
@@ -581,7 +581,7 @@ func TestUpdateUser(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		siteAdminUser := &types.User{SiteAdmin: true}
 		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 			if id == 0 {
@@ -623,7 +623,7 @@ func TestUpdateUser(t *testing.T) {
 }
 
 func TestUser_Organizations(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 		// Set up a mock set of users, consisting of two regular users and one site admin.
 		knownUsers := map[int32]*types.User{
@@ -649,7 +649,7 @@ func TestUser_Organizations(t *testing.T) {
 		return users.GetByID(ctx, actor.FromContext(ctx).UID)
 	})
 
-	orgs := database.NewMockOrgStore()
+	orgs := dbmocks.NewMockOrgStore()
 	orgs.GetByUserIDFunc.SetDefaultHook(func(_ context.Context, userID int32) ([]*types.Org, error) {
 		if want := int32(1); userID != want {
 			t.Errorf("got %q, want %q", userID, want)
@@ -662,7 +662,7 @@ func TestUser_Organizations(t *testing.T) {
 		}, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgsFunc.SetDefaultReturn(orgs)
 
@@ -758,10 +758,10 @@ func TestUser_Organizations(t *testing.T) {
 }
 
 func TestSchema_SetUserCompletionsQuota(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 
 	t.Run("not site admin", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 			return &types.User{
 				ID:       id,
@@ -772,7 +772,7 @@ func TestSchema_SetUserCompletionsQuota(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).SetUserCompletionsQuota(context.Background(),
+		result, err := newSchemaResolver(db, gitserver.NewClient(db)).SetUserCompletionsQuota(context.Background(),
 			SetUserCompletionsQuotaArgs{
 				User:  MarshalUserID(1),
 				Quota: nil,
@@ -790,7 +790,7 @@ func TestSchema_SetUserCompletionsQuota(t *testing.T) {
 			Username:  "alice",
 			SiteAdmin: true,
 		}
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultReturn(mockUser, nil)
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(mockUser, nil)
 		users.UpdateFunc.SetDefaultReturn(nil)
@@ -833,10 +833,10 @@ func TestSchema_SetUserCompletionsQuota(t *testing.T) {
 }
 
 func TestSchema_SetUserCodeCompletionsQuota(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 
 	t.Run("not site admin", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 			return &types.User{
 				ID:       id,
@@ -847,7 +847,7 @@ func TestSchema_SetUserCodeCompletionsQuota(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		schemaResolver := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs())
+		schemaResolver := newSchemaResolver(db, gitserver.NewClient(db))
 		result, err := schemaResolver.SetUserCodeCompletionsQuota(context.Background(),
 			SetUserCodeCompletionsQuotaArgs{
 				User:  MarshalUserID(1),
@@ -866,7 +866,7 @@ func TestSchema_SetUserCodeCompletionsQuota(t *testing.T) {
 			Username:  "alice",
 			SiteAdmin: true,
 		}
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultReturn(mockUser, nil)
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(mockUser, nil)
 		users.UpdateFunc.SetDefaultReturn(nil)
@@ -905,5 +905,109 @@ func TestSchema_SetUserCodeCompletionsQuota(t *testing.T) {
 		`,
 			},
 		})
+	})
+}
+
+func TestSchema_SetCompletedPostSignup(t *testing.T) {
+	db := dbmocks.NewMockDB()
+
+	currentUserID := int32(2)
+
+	t.Run("not site admin, not current user", func(t *testing.T) {
+		users := dbmocks.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{
+				ID:       id,
+				Username: strconv.Itoa(int(id)),
+			}, nil
+		})
+		// Different user.
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: currentUserID, Username: "2"}, nil)
+		db.UsersFunc.SetDefaultReturn(users)
+
+		userID := MarshalUserID(1)
+		result, err := newSchemaResolver(db, gitserver.NewClient(db)).SetCompletedPostSignup(context.Background(),
+			&userMutationArgs{UserID: &userID},
+		)
+		got := fmt.Sprintf("%v", err)
+		want := auth.ErrMustBeSiteAdminOrSameUser.Error()
+		assert.Equal(t, want, got)
+		assert.Nil(t, result)
+	})
+
+	t.Run("current user can set field on themselves", func(t *testing.T) {
+		currentUser := &types.User{ID: currentUserID, Username: "2", SiteAdmin: true}
+
+		users := dbmocks.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultReturn(currentUser, nil)
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(currentUser, nil)
+		db.UsersFunc.SetDefaultReturn(users)
+		var called bool
+		users.UpdateFunc.SetDefaultHook(func(ctx context.Context, id int32, update database.UserUpdate) error {
+			called = true
+			return nil
+		})
+
+		RunTest(t, &Test{
+			Context: actor.WithActor(context.Background(), &actor.Actor{UID: currentUserID}),
+			Schema:  mustParseGraphQLSchema(t, db),
+			Query: `
+			mutation {
+				setCompletedPostSignup(userID: "VXNlcjoy") {
+					alwaysNil
+				}
+			}
+		`,
+			ExpectedResult: `
+			{
+				"setCompletedPostSignup": {
+					"alwaysNil": null
+				}
+			}
+		`,
+		})
+
+		if !called {
+			t.Errorf("updatefunc was not called, but should have been")
+		}
+	})
+
+	t.Run("site admin can set post-signup complete", func(t *testing.T) {
+		mockUser := &types.User{
+			ID:       1,
+			Username: "alice",
+		}
+		users := dbmocks.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultReturn(mockUser, nil)
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: currentUserID, Username: "2", SiteAdmin: true}, nil)
+		db.UsersFunc.SetDefaultReturn(users)
+		var called bool
+		users.UpdateFunc.SetDefaultHook(func(ctx context.Context, id int32, update database.UserUpdate) error {
+			called = true
+			return nil
+		})
+
+		RunTest(t, &Test{
+			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+			Schema:  mustParseGraphQLSchema(t, db),
+			Query: `
+			mutation {
+				setCompletedPostSignup(userID: "VXNlcjox") {
+					alwaysNil
+				}
+			}
+		`,
+			ExpectedResult: `
+			{
+				"setCompletedPostSignup": {
+					"alwaysNil": null
+				}
+			}
+		`,
+		})
+
+		if !called {
+			t.Errorf("updatefunc was not called, but should have been")
+		}
 	})
 }

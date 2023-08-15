@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { mdiOpenInNew, mdiAccount, mdiCommentOutline } from '@mdi/js'
 import ShieldHalfFullIcon from 'mdi-react/ShieldHalfFullIcon'
@@ -47,7 +47,7 @@ export const SentinelLandingPage: FC = () => {
                                 <li>Use Batch Changes to fix vulnerabilities across repos and code-hosts</li>
                                 <li>Track the number of occurrences over time</li>
                                 <li>Configure alerts for new vulnerabilities, based on severity or scope</li>
-                                <li>Assign remediation to the best owner with Sourcegraph Own</li>
+                                <li>Assign remediation to the best code owner</li>
                             </ul>
                         </div>
                         <div className={styles.buttonContainer}>

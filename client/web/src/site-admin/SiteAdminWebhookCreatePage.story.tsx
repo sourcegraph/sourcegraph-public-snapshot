@@ -1,5 +1,5 @@
-import { MockedResponse } from '@apollo/client/testing'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -27,7 +27,7 @@ export const WebhookCreatePage: Story = () => {
         {
             request: {
                 query: getDocumentNode(EXTERNAL_SERVICES),
-                variables: { first: null, after: null },
+                variables: { first: null, after: null, repo: null },
             },
             result: {
                 data: {
@@ -70,7 +70,7 @@ export const WebhookCreatePageWithError: Story = () => {
         {
             request: {
                 query: getDocumentNode(EXTERNAL_SERVICES),
-                variables: { first: null, after: null },
+                variables: { first: null, after: null, repo: null },
             },
             error: new Error('oops'),
         },

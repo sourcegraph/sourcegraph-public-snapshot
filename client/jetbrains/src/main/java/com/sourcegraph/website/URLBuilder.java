@@ -94,7 +94,7 @@ public class URLBuilder {
       @NotNull String productName,
       @NotNull String productVersion) {
     if (sourcegraphBase.equals("")) {
-      throw new RuntimeException("Missing sourcegraph URI for commit uri.");
+      throw new RuntimeException("Missing Sourcegraph URI for commit uri.");
     } else if (revisionNumber.equals("")) {
       throw new RuntimeException("Missing revision number for commit uri.");
     } else if (remoteUrl.equals("")) {

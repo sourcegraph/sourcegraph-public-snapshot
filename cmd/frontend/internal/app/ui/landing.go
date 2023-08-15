@@ -40,8 +40,8 @@ func serveRepoLanding(db database.DB) func(http.ResponseWriter, *http.Request) e
 }
 
 func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
-	tr, ctx := trace.New(r.Context(), "serveDefLanding", "")
-	defer tr.FinishWithErr(&err)
+	tr, ctx := trace.New(r.Context(), "serveDefLanding")
+	defer tr.EndWithErr(&err)
 	r = r.WithContext(ctx)
 
 	legacyDefLandingCounter.Inc()

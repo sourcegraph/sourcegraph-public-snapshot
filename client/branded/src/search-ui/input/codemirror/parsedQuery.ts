@@ -1,10 +1,10 @@
-import { EditorState, Extension, Facet, StateEffect, StateField } from '@codemirror/state'
+import { type EditorState, type Extension, Facet, StateEffect, StateField } from '@codemirror/state'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { decorate, DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
-import { ParseResult, parseSearchQuery, Node } from '@sourcegraph/shared/src/search/query/parser'
+import { decorate, type DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
+import { type ParseResult, parseSearchQuery, type Node } from '@sourcegraph/shared/src/search/query/parser'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
+import type { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 
 export interface QueryTokens {
     patternType: SearchPatternType

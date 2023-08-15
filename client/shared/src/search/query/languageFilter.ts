@@ -1,6 +1,6 @@
 import uniq from 'lodash/uniq'
 
-import { Literal } from './token'
+import type { Literal } from './token'
 
 /**
  * List of languages that is shown initially when the `lang:` filter doesn't

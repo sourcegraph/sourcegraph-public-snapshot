@@ -1,11 +1,11 @@
 <script lang="ts">
-    import { onMount, setContext } from 'svelte'
+    import { setContext } from 'svelte'
     import { readable, writable, type Readable } from 'svelte/store'
 
     import { browser } from '$app/environment'
     import { isErrorLike } from '$lib/common'
     import { TemporarySettingsStorage } from '$lib/shared'
-    import { KEY, type SourcegraphContext } from '$lib/stores'
+    import { KEY, scrollAll, type SourcegraphContext } from '$lib/stores'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
 
     import Header from './Header.svelte'
@@ -15,6 +15,7 @@
     import { beforeNavigate } from '$app/navigation'
 
     import type { LayoutData, Snapshot } from './$types'
+    import { createFeatureFlagStore, fetchEvaluatedFeatureFlags } from '$lib/featureflags'
 
     export let data: LayoutData
 
@@ -34,7 +35,6 @@
 
     const user = writable(data.user ?? null)
     const settings = writable(isErrorLike(data.settings) ? null : data.settings.final)
-    const platformContext = writable(data.platformContext)
     const isLightTheme = createLightThemeStore()
     // It's OK to set the temporary storage during initialization time because
     // sign-in/out currently performs a full page refresh
@@ -45,23 +45,15 @@
     setContext<SourcegraphContext>(KEY, {
         user,
         settings,
-        platformContext,
         isLightTheme,
         temporarySettingsStorage,
+        featureFlags: createFeatureFlagStore(data.featureFlags, fetchEvaluatedFeatureFlags),
+        client: readable(data.graphqlClient),
     })
 
-    onMount(() => {
-        // Settings can change over time. This ensures that the store is always
-        // up-to-date.
-        const settingsSubscription = data.platformContext?.settings.subscribe(newSettings => {
-            settings.set(isErrorLike(newSettings.final) ? null : newSettings.final)
-        })
-        return () => settingsSubscription?.unsubscribe()
-    })
-
+    // Update stores when data changes
     $: $user = data.user ?? null
     $: $settings = isErrorLike(data.settings) ? null : data.settings.final
-    $: $platformContext = data.platformContext
 
     $: if (browser) {
         document.documentElement.classList.toggle('theme-light', $isLightTheme)
@@ -103,7 +95,7 @@
     <meta name="description" content="Code search" />
 </svelte:head>
 
-<div class="app">
+<div class="app" class:overflowHidden={!$scrollAll}>
     <Header authenticatedUser={$user} />
 
     <main bind:this={main}>
@@ -116,7 +108,15 @@
         display: flex;
         flex-direction: column;
         height: 100vh;
-        overflow: hidden;
+        overflow-y: auto;
+
+        &.overflowHidden {
+            overflow: hidden;
+
+            main {
+                overflow-y: auto;
+            }
+        }
     }
 
     main {
@@ -124,6 +124,5 @@
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
-        overflow: auto;
     }
 </style>

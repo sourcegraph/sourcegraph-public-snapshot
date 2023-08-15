@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/fatih/color"
@@ -27,7 +28,10 @@ type CleanupFunc func() error
 
 func Init(logger log.Logger) CleanupFunc {
 	if deploy.IsApp() {
-		fmt.Fprintln(os.Stderr, "✱ Sourcegraph App version:", version.Version())
+		fmt.Fprintln(os.Stderr, "✱ Sourcegraph App version:", version.Version(), runtime.GOOS, runtime.GOARCH)
+	}
+	if deploy.IsAppFullSourcegraph() {
+		fmt.Fprintln(os.Stderr, "✱✱✱ Sourcegraph App ✱✱✱ full Sourcegraph mode enabled!")
 	}
 
 	// TODO(sqs) TODO(single-binary): see the env.HackClearEnvironCache docstring, we should be able to remove this
@@ -37,6 +41,12 @@ func Init(logger log.Logger) CleanupFunc {
 	// INDEXED_SEARCH_SERVERS is empty (but defined) so that indexed search is disabled.
 	setDefaultEnv(logger, "INDEXED_SEARCH_SERVERS", "")
 
+	if runtime.GOOS == "windows" {
+		// POSTGRES database, specifying a non-default port to avoid conflicting with developer's
+		// local servers, if they happen to have PostgreSQL running on their machines.
+		setDefaultEnv(logger, "PGPORT", "5434")
+	}
+
 	// GITSERVER_EXTERNAL_ADDR is used by gitserver to identify itself in the
 	// list in SRC_GIT_SERVERS.
 	setDefaultEnv(logger, "GITSERVER_ADDR", "127.0.0.1:3178")
@@ -45,7 +55,7 @@ func Init(logger log.Logger) CleanupFunc {
 
 	setDefaultEnv(logger, "SYMBOLS_URL", "http://127.0.0.1:3184")
 	setDefaultEnv(logger, "SEARCHER_URL", "http://127.0.0.1:3181")
-	setDefaultEnv(logger, "BLOBSTORE_URL", "http://127.0.0.1:9000")
+	setDefaultEnv(logger, "BLOBSTORE_URL", deploy.BlobstoreDefaultEndpoint())
 	setDefaultEnv(logger, "EMBEDDINGS_URL", "http://127.0.0.1:9991")
 
 	// The syntax-highlighter might not be running, but this is a better default than an internal
@@ -62,9 +72,9 @@ func Init(logger log.Logger) CleanupFunc {
 	// setDefaultEnv(logger, "JAEGER_SERVER_URL", "http://localhost:16686")
 
 	// Use blobstore on localhost.
-	setDefaultEnv(logger, "PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", "http://localhost:9000")
+	setDefaultEnv(logger, "PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", deploy.BlobstoreDefaultEndpoint())
 	setDefaultEnv(logger, "PRECISE_CODE_INTEL_UPLOAD_BACKEND", "blobstore")
-	setDefaultEnv(logger, "EMBEDDINGS_UPLOAD_AWS_ENDPOINT", "http://localhost:9000")
+	setDefaultEnv(logger, "EMBEDDINGS_UPLOAD_AWS_ENDPOINT", deploy.BlobstoreDefaultEndpoint())
 
 	// Need to override this because without a host (eg ":3080") it listens only on localhost, which
 	// is not accessible from the containers
@@ -152,37 +162,39 @@ func Init(logger log.Logger) CleanupFunc {
 		}
 	}
 
-	setDefaultEnv(logger, "CTAGS_PROCESSES", "2")
+	if deploy.IsAppFullSourcegraph() || !deploy.IsApp() {
+		setDefaultEnv(logger, "CTAGS_PROCESSES", "2")
 
-	haveDocker := isDockerAvailable()
-	if !haveDocker {
-		printStatusCheckError(
-			"Docker is unavailable",
-			"Sourcegraph is better when Docker is available; some features may not work:",
-			"- Batch changes",
-			"- Symbol search",
-			"- Symbols overview tab (on repository pages)",
-		)
-	}
+		haveDocker := isDockerAvailable()
+		if !haveDocker {
+			printStatusCheckError(
+				"Docker is unavailable",
+				"Sourcegraph is better when Docker is available; some features may not work:",
+				"- Batch changes",
+				"- Symbol search",
+				"- Symbols overview tab (on repository pages)",
+			)
+		}
 
-	if _, err := exec.LookPath("src"); err != nil {
-		printStatusCheckError(
-			"src-cli is unavailable",
-			"Sourcegraph is better when src-cli is available; batch changes may not work.",
-			"Installation: https://github.com/sourcegraph/src-cli",
-		)
-	}
+		if _, err := exec.LookPath("src"); err != nil {
+			printStatusCheckError(
+				"src-cli is unavailable",
+				"Sourcegraph is better when src-cli is available; batch changes may not work.",
+				"Installation: https://github.com/sourcegraph/src-cli",
+			)
+		}
 
-	// generate a shell script to run a ctags Docker image
-	// unless the environment is already set up to find ctags
-	ctagsPath := os.Getenv("CTAGS_COMMAND")
-	if stat, err := os.Stat(ctagsPath); err != nil || stat.IsDir() {
-		// Write script that invokes universal-ctags via Docker, if Docker is available.
-		// TODO(single-binary): stop relying on a ctags Docker image
-		if haveDocker {
-			ctagsPath = filepath.Join(cacheDir, "universal-ctags-dev")
-			writeFile(ctagsPath, []byte(universalCtagsDevScript), 0700)
-			setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
+		// generate a shell script to run a ctags Docker image
+		// unless the environment is already set up to find ctags
+		ctagsPath := os.Getenv("CTAGS_COMMAND")
+		if stat, err := os.Stat(ctagsPath); err != nil || stat.IsDir() {
+			// Write script that invokes universal-ctags via Docker, if Docker is available.
+			// TODO(single-binary): stop relying on a ctags Docker image
+			if haveDocker {
+				ctagsPath = filepath.Join(cacheDir, "universal-ctags-dev")
+				writeFile(ctagsPath, []byte(universalCtagsDevScript), 0700)
+				setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
+			}
 		}
 	}
 	return func() error {

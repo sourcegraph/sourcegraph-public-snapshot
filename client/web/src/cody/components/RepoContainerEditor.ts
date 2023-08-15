@@ -1,9 +1,10 @@
-import {
+import type {
     ActiveTextEditor,
+    ActiveTextEditorDiagnostic,
     ActiveTextEditorSelection,
     ActiveTextEditorVisibleContent,
     Editor,
-} from '@sourcegraph/cody-shared/src/editor'
+} from '@sourcegraph/cody-shared/dist/editor'
 
 export class RepoContainerEditor implements Editor {
     constructor(private repoName: string) {}
@@ -29,6 +30,16 @@ export class RepoContainerEditor implements Editor {
     }
 
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
+        return null
+    }
+
+    public getWorkspaceRootUri(): null {
+        // Not implemented.
+        return null
+    }
+
+    public getActiveTextEditorDiagnosticsForRange(): ActiveTextEditorDiagnostic[] | null {
+        // Not implemented.
         return null
     }
 

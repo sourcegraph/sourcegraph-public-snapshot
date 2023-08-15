@@ -252,13 +252,13 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	var resp *http.Response
 
-	tr, ctx := trace.New(ctx, "GitLab", "",
+	tr, ctx := trace.New(ctx, "GitLab",
 		attribute.Stringer("url", req.URL))
 	defer func() {
 		if resp != nil {
 			tr.SetAttributes(attribute.String("status", resp.Status))
 		}
-		tr.FinishWithErr(&err)
+		tr.EndWithErr(&err)
 	}()
 	req = req.WithContext(ctx)
 

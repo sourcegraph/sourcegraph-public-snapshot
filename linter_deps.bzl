@@ -175,3 +175,10 @@ def linter_dependencies():
     version = "v0.0.0-20230312165513-e84e2d14e3b8",
     sum = "h1:VuJo4Mt0EVPychre4fNlDWDuE5AjXtPJpRUWqZDQhaI=",
   )
+
+  go_repository(
+    name ="com_4d63_gocheckcompilerdirectives",
+    importpath = "4d63.com/gocheckcompilerdirectives",
+    version = "v1.2.1",
+    sum = "h1:AHcMYuw56NPjq/2y615IGg2kYkBdTvOaojYCBcRE7MA=",
+  )

@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -23,10 +22,6 @@ import (
 // field, and enqueues the contained repo for permissions synchronisation.
 func handleGitHubRepoAuthzEvent(logger log.Logger, opts authz.FetchPermsOptions) webhooks.Handler {
 	return func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
-		if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
-			return nil
-		}
-
 		logger.Debug("handleGitHubRepoAuthzEvent: Got github event", log.String("type", fmt.Sprintf("%T", payload)))
 
 		e, ok := payload.(repoGetter)

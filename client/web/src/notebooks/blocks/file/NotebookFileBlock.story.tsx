@@ -1,10 +1,10 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 import { of } from 'rxjs'
 
 import { HIGHLIGHTED_FILE_LINES_LONG } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
-import { FileBlockInput } from '../..'
+import type { FileBlockInput } from '../..'
 import { WebStory } from '../../../components/WebStory'
 
 import { NotebookFileBlock } from './NotebookFileBlock'

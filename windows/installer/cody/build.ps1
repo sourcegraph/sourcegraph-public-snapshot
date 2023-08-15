@@ -7,8 +7,8 @@ $INSTALLER_OUTPUT = "bin\${ARCH}\${CFG}\en-US"
 
 # Core version
 $major = 5
-$minor = 0
-$build = 6
+$minor = 1
+$build = 0
 
 # Creates the BUILD version
 $epoch =  Get-Date -Year 2023 -Month 05 -Day 22 -Hour 08 -Minute 00 -Second 00

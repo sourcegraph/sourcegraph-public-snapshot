@@ -187,3 +187,58 @@ Verify that the machine type in use is of type `.metal` (e.g. `M5.metal`).
 | Guest to host       | Block outbound traffic (e.g. other executors or the Docker registry) | `iptables -A INPUT -s 10.61.0.0/16 -j DROP`                   |
 | Guest to guest      | Block outbound traffic to other Firecracker VMs                      | `iptables -A INPUT -s 10.61.0.0/16 -d 10.61.0.0/16 -j DROP`   |
 | Guest to link-local | Block Cloud provider resources such as instance metadata             | `iptables -A INPUT -s 10.61.0.0/16 -d 169.254.0.0/16 -j DROP` |
+
+## Kubernetes Job Scheduling
+
+There are a few environment variables available that can be used to determine which node an Executor Job Pod will be 
+scheduled in. The Job Pods need to be scheduled in the same node as the Executor Pod (in order to mount the 
+Persistence Volume Claim).
+
+The following environment variables can be used to determine where the Job Pods will be scheduled.
+
+| Name                                                         | Default Value | Description                                                                                                                                                                                            |
+|--------------------------------------------------------------|:--------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| EXECUTOR_KUBERNETES_NODE_NAME                                | N/A           | The name of the Kubernetes Node to create Jobs in. If not specified, the Pods are created in the first available node.                                                                                 |
+| EXECUTOR_KUBERNETES_NODE_SELECTOR                            | N/A           | A comma separated list of values to use as a node selector for Kubernetes Jobs. e.g. `foo=bar,app=my-app`                                                                                              |
+| EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_EXPRESSIONS | N/A           | The JSON encoded required affinity match expressions for Kubernetes Jobs. e.g. `[{"key": "foo", "operator": "In", "values": ["bar"]}]`                                                                 |
+| EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS      | N/A           | The JSON encoded required affinity match fields for Kubernetes Jobs. e.g. `[{"key": "foo", "operator": "In", "values": ["bar"]}]`                                                                      |
+| EXECUTOR_KUBERNETES_POD_AFFINITY                             | N/A           | The JSON encoded pod affinity for Kubernetes Jobs. e.g. [{"labelSelector": {"matchExpressions": [{"key": "foo", "operator": "In", "values": ["bar"]}]}, "topologyKey": "kubernetes.io/hostname"}]      |
+| EXECUTOR_KUBERNETES_POD_ANTI_AFFINITY                        | N/A           | The JSON encoded pod anti-affinity for Kubernetes Jobs. e.g. [{"labelSelector": {"matchExpressions": [{"key": "foo", "operator": "In", "values": ["bar"]}]}, "topologyKey": "kubernetes.io/hostname"}] |
+
+### Scheduling Errors
+
+If you encounter the following errors,
+
+```text
+deleted by scheduler: pod could not be scheduled
+```
+
+or
+
+```text
+unexpected end of watch
+```
+
+Add/update the environment variable `SRC_LOG_LEVEL` to `dbug` to start receiving debug logs. The specific debug logs 
+that may help troubleshoot the errors is `Watching pod`
+
+The `Watching pod` debug logs contain `conditions` that may describe _why_ a Job Pod is not being scheduled correctly. 
+For example,
+
+```json
+{
+  "conditions": {
+    "condition[0]": {
+      "type": "PodScheduled",
+      "status": "False",
+      "reason": "Unschedulable",
+      "message": "0/1 nodes are available: 1 node(s) didn't match pod affinity rules. preemption: 0/1 nodes are available: 1 Preemption is not helpful for scheduling."
+    }
+  }
+}
+```
+
+Tells us that the Pod cannot be scheduled because the pod affinity rules (`EXECUTOR_KUBERNETES_POD_AFFINITY`) we 
+configured do not match any nodes.
+
+In this case, the `EXECUTOR_KUBERNETES_POD_AFFINITY` needs to be modified to correctly target the node.

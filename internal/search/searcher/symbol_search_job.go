@@ -46,7 +46,7 @@ func (s *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 		}
 
 		p.Go(func(ctx context.Context) error {
-			matches, err := searchInRepo(ctx, repoRevs, s.PatternInfo, s.Limit)
+			matches, err := searchInRepo(ctx, clients.Gitserver, repoRevs, s.PatternInfo, s.Limit)
 			status, limitHit, err := search.HandleRepoSearchResult(repoRevs.Repo.ID, repoRevs.Revs, len(matches) > s.Limit, false, err)
 			stream.Send(streaming.SearchEvent{
 				Results: matches,
@@ -56,7 +56,7 @@ func (s *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 				},
 			})
 			if err != nil {
-				tr.SetAttributes(attribute.String("repo", string(repoRevs.Repo.Name)), trace.Error(err))
+				tr.SetAttributes(repoRevs.Repo.Name.Attr(), trace.Error(err))
 			}
 			return err
 		})
@@ -86,22 +86,22 @@ func (s *SymbolSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue)
 func (s *SymbolSearchJob) Children() []job.Describer       { return nil }
 func (s *SymbolSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
-func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
+func searchInRepo(ctx context.Context, gitserverClient gitserver.Client, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
 	inputRev := repoRevs.Revs[0]
-	tr, ctx := trace.New(ctx, "symbols", "searchInRepo",
-		attribute.String("repo", string(repoRevs.Repo.Name)),
+	tr, ctx := trace.New(ctx, "symbols.searchInRepo",
+		repoRevs.Repo.Name.Attr(),
 		attribute.String("rev", inputRev))
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	// Do not trigger a repo-updater lookup (e.g.,
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commitID, err := gitserver.NewClient().ResolveRevision(ctx, repoRevs.GitserverRepo(), inputRev, gitserver.ResolveRevisionOptions{})
+	commitID, err := gitserverClient.ResolveRevision(ctx, repoRevs.GitserverRepo(), inputRev, gitserver.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, err
 	}
-	tr.SetAttributes(attribute.String("commit", string(commitID)))
+	tr.SetAttributes(commitID.Attr())
 
 	symbols, err := backend.Symbols.ListTags(ctx, search.SymbolsParameters{
 		Repo:            repoRevs.Repo.Name,

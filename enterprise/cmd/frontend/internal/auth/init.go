@@ -24,10 +24,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/openidconnect"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/saml"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/sourcegraphoperator"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 )
 
 // Init must be called by the frontend to initialize the auth middlewares.
@@ -109,6 +109,7 @@ func Init(logger log.Logger, db database.DB) {
 
 		sort.Strings(names)
 		return []*graphqlbackend.Alert{{
+			GroupValue:   graphqlbackend.AlertGroupLicense,
 			TypeValue:    graphqlbackend.AlertTypeError,
 			MessageValue: fmt.Sprintf("A Sourcegraph license is required to enable following authentication providers: %s. [**Get a license.**](/site-admin/license)", strings.Join(names, ", ")),
 		}}

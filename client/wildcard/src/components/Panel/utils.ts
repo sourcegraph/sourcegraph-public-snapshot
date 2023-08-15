@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
-import { PANEL_POSITIONS } from './constants'
+import type { PANEL_POSITIONS } from './constants'
 
 import styles from './Panel.module.scss'
 

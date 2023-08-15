@@ -1,4 +1,4 @@
-import { FC, useState } from 'react'
+import { type FC, useState, useEffect } from 'react'
 
 import classNames from 'classnames'
 
@@ -11,14 +11,14 @@ import {
     PopoverTail,
     Popover,
     Position,
-    BadgeVariantType,
+    type BadgeVariantType,
     Link,
     H4,
     Alert,
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import { RepoEmbeddingJobFields, RepoEmbeddingJobState } from '../../../graphql-operations'
+import { type RepoEmbeddingJobFields, RepoEmbeddingJobState } from '../../../graphql-operations'
 
 import styles from './RepoEmbeddingJobNode.module.scss'
 
@@ -58,6 +58,8 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
                                 {repo.name}@{revision.abbreviatedOID}
                             </Link>
                         )
+                    ) : repo ? (
+                        <>{repo.name}</>
                     ) : (
                         <div>Unknown repository</div>
                     )}
@@ -100,12 +102,13 @@ const RepoEmbeddingJobExecutionInfo: FC<
     >
 > = ({ state, cancel, finishedAt, queuedAt, startedAt, failureMessage, stats }) => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
-    const estimatedFinish = calculateEstimatedFinish(
-        startedAt,
-        stats.filesScheduled,
-        stats.filesEmbedded,
-        stats.filesSkipped
-    )
+
+    const [estimatedFinish, setEstimatedFinish] = useState<Date | null>(null)
+    useEffect(() => {
+        setEstimatedFinish(
+            calculateEstimatedFinish(startedAt, stats.filesScheduled, stats.filesEmbedded, stats.filesSkipped)
+        )
+    }, [startedAt, stats.filesScheduled, stats.filesEmbedded, stats.filesSkipped])
 
     return (
         <>

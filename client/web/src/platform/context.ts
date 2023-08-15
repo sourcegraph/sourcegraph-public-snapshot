@@ -1,20 +1,20 @@
-import { ApolloQueryResult, ObservableQuery } from '@apollo/client'
+import type { ApolloQueryResult, ObservableQuery } from '@apollo/client'
 import { map, publishReplay, refCount, shareReplay } from 'rxjs/operators'
 
 import { createAggregateError, asError, logger } from '@sourcegraph/common'
 import { fromObservableQueryPromise, getDocumentNode } from '@sourcegraph/http-client'
 import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
-import { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
-import { gqlToCascade, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
+import { gqlToCascade, type SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import {
     toPrettyBlobURL,
-    RepoFile,
-    UIPositionSpec,
-    ViewStateSpec,
-    RenderModeSpec,
-    UIRangeSpec,
+    type RepoFile,
+    type UIPositionSpec,
+    type ViewStateSpec,
+    type RenderModeSpec,
+    type UIRangeSpec,
 } from '@sourcegraph/shared/src/util/url'
 
 import { getWebGraphQLClient, requestGraphQL } from '../backend/graphql'

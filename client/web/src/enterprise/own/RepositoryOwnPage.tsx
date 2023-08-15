@@ -12,7 +12,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { TreeOwnershipPanel } from '../../repo/blob/own/TreeOwnershipPanel'
 import { FilePathBreadcrumbs } from '../../repo/FilePathBreadcrumbs'
 
-import { RepositoryOwnAreaPageProps } from './RepositoryOwnEditPage'
+import type { RepositoryOwnAreaPageProps } from './RepositoryOwnEditPage'
 
 import styles from './RepositoryOwnPageContents.module.scss'
 
@@ -81,8 +81,8 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
                 <PageHeader
                     description={
                         <>
-                            Sourcegraph Own can provide code ownership data for this repository via an upload or a
-                            committed CODEOWNERS file. <Link to="/help/own">Learn more about Sourcegraph Own.</Link>
+                            Code ownership data for this repository can be provided via an upload or a committed
+                            CODEOWNERS file. <Link to="/help/own">Learn more about code ownership.</Link>
                         </>
                     }
                 >

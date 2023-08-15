@@ -16,7 +16,7 @@ go_library(
 copy_to_directory(
     name = "copy_bundle",
     srcs = [
-        "//:CHANGELOG.md",
+        "//:CONTRIBUTING.md",
         "//client/web:bundle",
         "//ui/assets/img",
     ],

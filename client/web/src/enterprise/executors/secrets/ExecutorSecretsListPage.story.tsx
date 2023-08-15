@@ -1,5 +1,5 @@
-import { MockedResponse } from '@apollo/client/testing'
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import type { DecoratorFn, Story, Meta } from '@storybook/react'
 import { subDays } from 'date-fns'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -7,9 +7,9 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
 import {
-    GlobalExecutorSecretsResult,
+    type GlobalExecutorSecretsResult,
     ExecutorSecretScope,
-    UserExecutorSecretsResult,
+    type UserExecutorSecretsResult,
 } from '../../../graphql-operations'
 
 import { GLOBAL_EXECUTOR_SECRETS, USER_EXECUTOR_SECRETS } from './backend'
@@ -45,7 +45,12 @@ const EXECUTOR_SECRET_LIST_MOCK: MockedResponse<UserExecutorSecretsResult> = {
             node: {
                 __typename: 'User',
                 executorSecrets: {
-                    pageInfo: { hasNextPage: false, endCursor: null },
+                    __typename: 'ExecutorSecretConnection',
+                    pageInfo: {
+                        hasNextPage: false,
+                        endCursor: null,
+                        __typename: 'PageInfo',
+                    },
                     totalCount: 5,
                     nodes: [
                         // Global secret.
@@ -178,7 +183,12 @@ const EMPTY_EXECUTOR_SECRET_LIST_MOCK: MockedResponse<GlobalExecutorSecretsResul
     result: {
         data: {
             executorSecrets: {
-                pageInfo: { hasNextPage: false, endCursor: null },
+                __typename: 'ExecutorSecretConnection',
+                pageInfo: {
+                    hasNextPage: false,
+                    endCursor: null,
+                    __typename: 'PageInfo',
+                },
                 totalCount: 0,
                 nodes: [],
             },

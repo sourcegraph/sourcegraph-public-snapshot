@@ -1,22 +1,30 @@
 package com.sourcegraph.cody.vscode;
 
+import com.intellij.lang.Language;
+import com.intellij.lang.LanguageUtil;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.sourcegraph.cody.completions.CompletionDocumentContext;
+import com.sourcegraph.cody.autocomplete.AutoCompleteDocumentContext;
 import java.net.URI;
 import java.nio.file.Paths;
+import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 
 /** Implementation of vscode.TextDocument backed by IntelliJ's Editor. */
 public class IntelliJTextDocument implements TextDocument {
   public final Editor editor;
   public VirtualFile file;
+  public Language language;
 
-  public IntelliJTextDocument(Editor editor) {
+  public IntelliJTextDocument(Editor editor, Project project) {
     this.editor = editor;
-    this.file = FileDocumentManager.getInstance().getFile(editor.getDocument());
+    Document document = editor.getDocument();
+    this.file = FileDocumentManager.getInstance().getFile(document);
+    this.language = LanguageUtil.getLanguageForPsi(project, file);
   }
 
   @Override
@@ -25,6 +33,7 @@ public class IntelliJTextDocument implements TextDocument {
   }
 
   @Override
+  @NotNull
   public String fileName() {
     return file.getName();
   }
@@ -54,13 +63,18 @@ public class IntelliJTextDocument implements TextDocument {
   }
 
   @Override
-  public CompletionDocumentContext getCompletionContext(int offset) {
+  public AutoCompleteDocumentContext getAutoCompleteContext(int offset) {
     Document document = this.editor.getDocument();
     int line = document.getLineNumber(offset);
     int lineEndOffset = document.getLineEndOffset(line);
     String sameLineSuffix = document.getText(TextRange.create(offset, lineEndOffset));
     int lineStartOffset = document.getLineStartOffset(line);
     String sameLinePrefix = document.getText(TextRange.create(lineStartOffset, offset));
-    return new CompletionDocumentContext(sameLinePrefix, sameLineSuffix);
+    return new AutoCompleteDocumentContext(sameLinePrefix, sameLineSuffix);
+  }
+
+  @Override
+  public @NotNull Optional<String> getLanguageId() {
+    return Optional.ofNullable(this.language).map(Language::getID);
   }
 }

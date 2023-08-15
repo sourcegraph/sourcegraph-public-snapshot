@@ -3,7 +3,7 @@ package sourcegraphoperator
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
+	"github.com/sourcegraph/sourcegraph/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )

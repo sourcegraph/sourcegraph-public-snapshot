@@ -4,21 +4,21 @@ import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Routes, Route } from 'react-router-dom'
 
-import { SiteSettingFields } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { SiteSettingFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
-import { BatchChangesProps } from '../batches'
+import type { BatchChangesProps } from '../batches'
 import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { Page } from '../components/Page'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useUserExternalAccounts } from '../hooks/useUserExternalAccounts'
-import { RouteV6Descriptor } from '../util/contributions'
+import type { RouteV6Descriptor } from '../util/contributions'
 
 import {
     maintenanceGroupHeaderLabel,
@@ -28,7 +28,7 @@ import {
     maintenanceGroupUpdatesItemLabel,
     maintenanceGroupTracingItemLabel,
 } from './sidebaritems'
-import { SiteAdminSidebar, SiteAdminSideBarGroups } from './SiteAdminSidebar'
+import { SiteAdminSidebar, type SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 import styles from './SiteAdminArea.module.scss'
 
@@ -56,6 +56,8 @@ export interface SiteAdminAreaRouteContext
 
     /** This property is only used by {@link SiteAdminOverviewPage}. */
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<{}>>[]
+
+    codeInsightsEnabled: boolean
 }
 
 export interface SiteAdminAreaRoute extends RouteV6Descriptor<SiteAdminAreaRouteContext> {}
@@ -67,6 +69,7 @@ interface SiteAdminAreaProps extends PlatformContextProps, SettingsCascadeProps,
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
     isSourcegraphApp: boolean
+    codeInsightsEnabled: boolean
 }
 
 const sourcegraphOperatorSiteAdminMaintenanceBlockItems = new Set([
@@ -130,6 +133,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         site: { __typename: 'Site' as const, id: window.context.siteGQLID },
         overviewComponents: props.overviewComponents,
         telemetryService: props.telemetryService,
+        codeInsightsEnabled: props.codeInsightsEnabled,
     }
 
     return (
@@ -150,6 +154,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
                     batchChangesEnabled={props.batchChangesEnabled}
                     batchChangesExecutionEnabled={props.batchChangesExecutionEnabled}
                     batchChangesWebhookLogsEnabled={props.batchChangesWebhookLogsEnabled}
+                    codeInsightsEnabled={props.codeInsightsEnabled}
                 />
                 <div className="flex-bounded">
                     <React.Suspense fallback={<LoadingSpinner className="m-2" />}>

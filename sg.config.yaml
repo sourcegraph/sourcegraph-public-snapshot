@@ -44,6 +44,7 @@ env:
   PROMETHEUS_URL: http://localhost:9090
   JAEGER_SERVER_URL: http://localhost:16686
 
+  SRC_GRPC_ENABLE_CONF: "true"
   SRC_DEVELOPMENT: "true"
   SRC_PROF_HTTP: ""
   SRC_PROF_SERVICES: |
@@ -118,9 +119,10 @@ env:
   # OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
   # OTEL_EXPORTER_OTLP_PROTOCOL: http/json
 
-  # Enable full protobuf message logging when a non-utf8 string error occurs
-  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_NON_UTF8_PROTOBUF_MESSAGES_ENABLED: "true"
-  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_NON_UTF8_PROTOBUF_MESSAGES_MAX_SIZE_BYTES: 1024
+  # Enable full protobuf message logging when an internal error occurred
+  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED: "true"
+  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: "1KB"
+  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: "100MB"
 
 commands:
   server:
@@ -159,7 +161,6 @@ commands:
       - lib
       - internal
       - cmd/frontend
-      - enterprise/internal
       - enterprise/cmd/frontend
 
   gitserver-template: &gitserver_template
@@ -176,7 +177,6 @@ commands:
       - lib
       - internal
       - cmd/gitserver
-      - enterprise/internal
       - enterprise/cmd/gitserver
 
   # This is only here to stay backwards-compatible with people's custom
@@ -223,7 +223,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
+      go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
     checkBinary: .bin/repo-updater
     env:
       ENTERPRISE: 1
@@ -231,8 +231,6 @@ commands:
       - lib
       - internal
       - cmd/repo-updater
-      - enterprise/internal
-      - enterprise/cmd/repo-updater
 
   symbols:
     cmd: .bin/symbols
@@ -254,7 +252,7 @@ commands:
       - internal
       - cmd/symbols
       - enterprise/cmd/symbols
-      - enterprise/internal/rockskip
+      - internal/rockskip
 
   embeddings:
     cmd: |
@@ -271,7 +269,13 @@ commands:
       - lib
       - internal
       - enterprise/cmd/embeddings
-      - enterprise/internal/embeddings
+      - internal/embeddings
+  qdrant:
+    cmd: |
+      docker run -p 6333:6333 -p 6334:6334 \
+        -v $HOME/.sourcegraph-dev/data/qdrant_data:/qdrant/storage \
+        -e QDRANT__SERVICE__GRPC_PORT="6334" \
+        qdrant/qdrant
   worker:
     cmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -284,7 +288,6 @@ commands:
     watch:
       - lib
       - internal
-      - enterprise/internal
       - cmd/worker
       - enterprise/cmd/worker
 
@@ -296,19 +299,22 @@ commands:
         export GCFLAGS='-N -l'
       fi
 
-      go build -gcflags="$GCFLAGS" -o .bin/cody-gateway github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway
+      go build -gcflags="$GCFLAGS" -o .bin/cody-gateway github.com/sourcegraph/sourcegraph/cmd/cody-gateway
     checkBinary: .bin/cody-gateway
     env:
       CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN: foobar
-      CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: foobar
+      # Set in override if you want to test local Cody Gateway: https://docs.sourcegraph.com/dev/how-to/cody_gateway
+      CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: ""
       CODY_GATEWAY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
       CODY_GATEWAY_ALLOW_ANONYMOUS: true
       CODY_GATEWAY_DIAGNOSTICS_SECRET: sekret
-      SRC_LOG_LEVEL: dbug
+      SRC_LOG_LEVEL: info
+      # Enables metrics in dev via debugserver
+      SRC_PROF_HTTP: "127.0.0.1:6098"
     watch:
       - lib
       - internal
-      - enterprise/cmd/cody-gateway
+      - cmd/cody-gateway
 
   searcher:
     cmd: .bin/searcher
@@ -373,40 +379,9 @@ commands:
       INTEGRATION_TESTS: true
       NODE_ENV: production
 
-  cody-slack-dev:
-    description: Start Cody-Slack dev locally
-    cmd: pnpm --filter @sourcegraph/cody-slack run start
-    env: &cody_slack_env
-      GITHUB_TOKEN: XXX
-      OPENAI_API_KEY: XXX
-      SLACK_APP_TOKEN: XXX
-      SLACK_SIGNING_SECRET: XXX
-      SLACK_BOT_TOKEN: XXX
-      SOURCEGRAPH_ACCESS_TOKEN: XXX
-
-  cody-slack-docker:
-    description: Start Cody-Slack locally prod in Docker
-    cmd: |
-      docker run -p 0.0.0.0:${PORT}:${PORT} \
-      -e SRC_FRONTEND_INTERNAL="${SRC_FRONTEND_INTERNAL}" \
-      -e GITHUB_TOKEN="${GITHUB_TOKEN}" \
-      -e OPENAI_API_KEY="${OPENAI_API_KEY}" \
-      -e SLACK_APP_TOKEN="${SLACK_APP_TOKEN}" \
-      -e SLACK_SIGNING_SECRET="${SLACK_SIGNING_SECRET}" \
-      -e SLACK_BOT_TOKEN="${SLACK_BOT_TOKEN}" \
-      -e SOURCEGRAPH_ACCESS_TOKEN="${SOURCEGRAPH_ACCESS_TOKEN}" \
-      ${IMAGE}
-    env:
-      <<: *cody_slack_env
-      PORT: 3000
-      IMAGE: cody-slack:0.0.1
-
   docsite:
     description: Docsite instance serving the docs
-    cmd: .bin/docsite_${DOCSITE_VERSION} -config doc/docsite.json serve -http=localhost:5080
-    install_func: "installDocsite"
-    env:
-      DOCSITE_VERSION: v1.9.2 # Update in all places (including outside this repo)
+    cmd: bazel run --noshow_progress --noshow_loading_progress //doc:serve
 
   syntax-highlighter:
     ignoreStdout: true
@@ -488,13 +463,12 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/codeintel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
+      go build -gcflags="$GCFLAGS" -o .bin/codeintel-worker github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker
     checkBinary: .bin/codeintel-worker
     watch:
       - lib
       - internal
-      - enterprise/cmd/precise-code-intel-worker
-      - enterprise/internal
+      - cmd/precise-code-intel-worker
       - lib/codeintel
 
   executor-template:
@@ -505,7 +479,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor
+      go build -gcflags="$GCFLAGS" -o .bin/executor github.com/sourcegraph/sourcegraph/cmd/executor
     checkBinary: .bin/executor
     env:
       # Required for frontend and executor to communicate
@@ -518,8 +492,7 @@ commands:
     watch:
       - lib
       - internal
-      - enterprise/internal
-      - enterprise/cmd/executor
+      - cmd/executor
 
   executor-kubernetes-template: &executor_kubernetes_template
     cmd: |
@@ -550,8 +523,7 @@ commands:
     watch:
       - lib
       - internal
-      - enterprise/internal
-      - enterprise/cmd/executor
+      - cmd/executor
 
   codeintel-executor:
     <<: *executor_template
@@ -575,7 +547,7 @@ commands:
   codeintel-executor-kubernetes:
     <<: *executor_kubernetes_template
     env:
-      MANIFEST_PATH: ./enterprise/cmd/executor/kubernetes/codeintel
+      MANIFEST_PATH: ./cmd/executor/kubernetes/codeintel
 
   batches-executor:
     <<: *executor_template
@@ -600,7 +572,7 @@ commands:
   batches-executor-kubernetes:
     <<: *executor_kubernetes_template
     env:
-      MANIFEST_PATH: ./enterprise/cmd/executor/kubernetes/batches
+      MANIFEST_PATH: ./cmd/executor/kubernetes/batches
 
   # This tool rebuilds the batcheshelper image every time the source of it is changed.
   batcheshelper-builder:
@@ -608,18 +580,18 @@ commands:
     cmd: exit 0
     install: |
       if [[ $(uname) == "Linux" ]]; then
-        bazel build //enterprise/cmd/batcheshelper:image_tarball
-        docker load --input $(bazel cquery //enterprise/cmd/batcheshelper:image_tarball --output=files)
+        bazel build //cmd/batcheshelper:image_tarball
+        docker load --input $(bazel cquery //cmd/batcheshelper:image_tarball --output=files)
       else
-        bazel build //enterprise/cmd/batcheshelper:image_tarball --config darwin-docker
-        docker load --input $(bazel cquery //enterprise/cmd/batcheshelper:image_tarball --config darwin-docker --output=files)
+        bazel build //cmd/batcheshelper:image_tarball --config darwin-docker
+        docker load --input $(bazel cquery //cmd/batcheshelper:image_tarball --config darwin-docker --output=files)
       fi
     env:
       IMAGE: batcheshelper:candidate
       # TODO: This is required but should only be set on M1 Macs.
       PLATFORM: linux/arm64
     watch:
-      - enterprise/cmd/batcheshelper
+      - cmd/batcheshelper
       - lib/batches
     continueWatchOnExit: true
 
@@ -790,12 +762,8 @@ commands:
     cmd: ./dev/postgres_exporter.sh
 
   monitoring-generator:
-    cmd: (cd monitoring/ && go generate ./... )
+    cmd: echo "monitoring-generator is deprecated, please run 'sg generate go' or 'bazel run //dev:write_all_generated' instead"
     env:
-      RELOAD: true
-    watch:
-      - monitoring
-    continueWatchOnExit: true
 
   loki:
     cmd: |
@@ -936,7 +904,7 @@ bazelCommands:
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
   repo-updater:
-    target: //enterprise/cmd/repo-updater
+    target: //cmd/repo-updater
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
     env:
@@ -977,9 +945,9 @@ bazelCommands:
   codeintel-worker:
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
-    target: //enterprise/cmd/precise-code-intel-worker
+    target: //cmd/precise-code-intel-worker
   executor-template: &executor_template_bazel
-    target: //enterprise/cmd/executor
+    target: //cmd/executor
     env:
       EXECUTOR_QUEUE_NAME: TEMPLATE
       TMPDIR: $HOME/.sourcegraph/executor-temp
@@ -1054,6 +1022,9 @@ commandsets:
       - zoekt-web-1
       - blobstore
       - embeddings
+    env:
+      DISABLE_CODE_INSIGHTS_HISTORICAL: false
+      DISABLE_CODE_INSIGHTS: false
 
   enterprise-e2e:
     <<: *enterprise_set
@@ -1389,7 +1360,6 @@ commandsets:
       - prometheus
       - grafana
       - postgres_exporter
-      - monitoring-generator
 
   monitoring-alerts:
     checks:
@@ -1442,12 +1412,39 @@ commandsets:
       DISABLE_CODE_INSIGHTS: true
       SOURCEGRAPH_APP: 1
       EXTSVC_CONFIG_ALLOW_EDITS: true
+      PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT: http://localhost:49000
+      EMBEDDINGS_UPLOAD_AWS_ENDPOINT: http://localhost:49000
 
   cody-gateway:
     checks:
       - redis
     commands:
       - cody-gateway
+
+  qdrant:
+    commands:
+      - qdrant
+      - frontend
+      - worker
+      - repo-updater
+      - web
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - caddy
+      - symbols
+      - docsite
+      - syntax-highlighter
+      - github-proxy
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - blobstore
+      - embeddings
+    env:
+      QDRANT_ENDPOINT: 'localhost:6334'
+
 
 tests:
   # These can be run with `sg test [name]`
@@ -1480,21 +1477,6 @@ tests:
 
   client:
     cmd: pnpm jest --testPathIgnorePatterns end-to-end regression integration storybook
-
-  cody-e2e:
-    cmd: pnpm --filter @sourcegraph/cody run test:e2e
-    env:
-      CODY_TESTING: true
-
-  cody-integration:
-    cmd: pnpm --filter @sourcegraph/cody run test:integration
-    env:
-      CODY_TESTING: true
-
-  cody-unit:
-    cmd: pnpm --filter @sourcegraph/cody run test:unit
-    env:
-      CODY_TESTING: true
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc

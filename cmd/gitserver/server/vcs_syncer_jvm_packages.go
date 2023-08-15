@@ -129,12 +129,13 @@ func unzipJarFile(jarPath, destination string) (err error) {
 
 	zipFile, err := os.ReadFile(jarPath)
 	if err != nil {
-		errors.Wrap(err, "bad jvm package")
+		return errors.Wrap(err, "bad jvm package")
 	}
 
 	r := bytes.NewReader(zipFile)
 	opts := unpack.Opts{
-		SkipInvalid: true,
+		SkipInvalid:    true,
+		SkipDuplicates: true,
 		Filter: func(path string, file fs.FileInfo) bool {
 			size := file.Size()
 

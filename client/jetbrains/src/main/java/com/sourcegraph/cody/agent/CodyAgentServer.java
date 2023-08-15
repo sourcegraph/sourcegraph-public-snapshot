@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.agent;
 
 import com.sourcegraph.cody.agent.protocol.*;
+import com.sourcegraph.cody.autocomplete.prompt_library.InlineAutoCompleteList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;
@@ -8,9 +9,9 @@ import org.eclipse.lsp4j.jsonrpc.services.JsonRequest;
 
 /**
  * Interface for the server-part of the Cody agent protocol. The implementation of this interface is
- * written in TypeScript in the file "client/cody-agent/src/agent.ts". The Eclipse LSP4J bindings
- * create a Java implementation of this interface by using a JVM-reflection feature called "Proxy",
- * which works similar to JavaScript Proxy.
+ * written in TypeScript in the file "cody/agent/src/agent.ts". The Eclipse LSP4J bindings create a
+ * Java implementation of this interface by using a JVM-reflection feature called "Proxy", which
+ * works similar to JavaScript Proxy.
  */
 public interface CodyAgentServer {
 
@@ -26,6 +27,9 @@ public interface CodyAgentServer {
 
   @JsonRequest("recipes/execute")
   CompletableFuture<Void> recipesExecute(ExecuteRecipeParams params);
+
+  @JsonRequest("autocomplete/execute")
+  CompletableFuture<InlineAutoCompleteList> autocompleteExecute(AutocompleteExecuteParams params);
 
   // Notifications
   @JsonNotification("initialized")
@@ -48,4 +52,7 @@ public interface CodyAgentServer {
 
   @JsonNotification("textDocument/didClose")
   void textDocumentDidClose(TextDocument document);
+
+  @JsonNotification("debug/message")
+  void debugMessage(DebugMessage message);
 }

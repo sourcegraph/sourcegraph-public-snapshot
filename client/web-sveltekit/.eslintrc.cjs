@@ -1,13 +1,19 @@
 const baseConfig = require('../../.eslintrc')
 module.exports = {
     root: true,
-    extends: '../../.eslintrc.js',
+    extends: ['../../.eslintrc.js', 'plugin:storybook/recommended'],
     parserOptions: {
         ...baseConfig.parserOptions,
         project: [__dirname + '/tsconfig.json', __dirname + '/src/**/tsconfig.json'],
     },
     plugins: [...baseConfig.plugins, 'svelte3'],
-    overrides: [...baseConfig.overrides, { files: ['*.svelte'], processor: 'svelte3/svelte3' }],
+    overrides: [
+        ...baseConfig.overrides,
+        {
+            files: ['*.svelte'],
+            processor: 'svelte3/svelte3',
+        },
+    ],
     settings: {
         ...baseConfig.settings,
         'svelte3/typescript': () => require('typescript'),

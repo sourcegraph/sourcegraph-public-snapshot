@@ -2,7 +2,7 @@
 
 package schema
 
-// ChangesetSpecJSON is the content of the file "../../../schema/changeset_spec.schema.json".
+// ChangesetSpecJSON is the content of the file "schema/changeset_spec.schema.json".
 const ChangesetSpecJSON = `{
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ChangesetSpec",

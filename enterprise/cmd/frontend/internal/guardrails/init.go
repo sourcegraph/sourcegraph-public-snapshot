@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/guardrails/attribution"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/guardrails/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/guardrails/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -26,7 +26,7 @@ func Init(
 	enterpriseServices *enterprise.Services,
 ) error {
 	opts := attribution.ServiceOpts{
-		SearchClient: client.New(observationCtx.Logger, db, enterpriseServices.EnterpriseSearchJobs),
+		SearchClient: client.New(observationCtx.Logger, db),
 	}
 
 	// TODO(keegancsmith) configuration for access token and enabling.

@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -83,6 +82,9 @@ const (
 	routeOwn                     = "own"
 	routeAppComingSoon           = "app-coming-soon"
 	routeAppAuthCallback         = "app-auth-callback"
+	routeCody                    = "cody"
+	routeCodyChat                = "cody-chat"
+	routeGetCody                 = "get-cody"
 
 	routeSearchStream  = "search.stream"
 	routeSearchConsole = "search.console"
@@ -124,9 +126,9 @@ func Router() *mux.Router {
 // InitRouter create the router that serves pages for our web app
 // and assigns it to uirouter.Router.
 // The router can be accessed by calling Router().
-func InitRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs) {
+func InitRouter(db database.DB) {
 	router := newRouter()
-	initRouter(db, enterpriseJobs, router)
+	initRouter(db, router)
 }
 
 var mockServeRepo func(w http.ResponseWriter, r *http.Request)
@@ -182,6 +184,9 @@ func newRouter() *mux.Router {
 	r.Path("/app/coming-soon").Methods("GET").Name(routeAppComingSoon)
 	r.Path("/app/auth/callback").Methods("GET").Name(routeAppAuthCallback)
 	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
+	r.Path("/get-cody").Methods("GET").Name(routeGetCody)
+	r.Path("/cody").Methods("GET").Name(routeCody)
+	r.Path("/cody/{chatID}").Methods("GET").Name(routeCodyChat)
 
 	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
 	// Any changes to the embedding route could have security implications. Please consult the security team
@@ -241,7 +246,7 @@ func brandNameSubtitle(titles ...string) string {
 	return strings.Join(append(titles, globals.Branding().BrandName), " - ")
 }
 
-func initRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs, router *mux.Router) {
+func initRouter(db database.DB, router *mux.Router) {
 	uirouter.Router = router // make accessible to other packages
 
 	brandedIndex := func(titles string) http.Handler {
@@ -298,6 +303,9 @@ func initRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs, router *m
 	router.Get(routeAppComingSoon).Handler(brandedNoIndex("Coming soon"))
 	router.Get(routeAppAuthCallback).Handler(brandedNoIndex("Auth callback"))
 	router.Get(uirouter.RoutePingFromSelfHosted).Handler(handler(db, servePingFromSelfHosted))
+	router.Get(routeCody).Handler(brandedNoIndex("Cody"))
+	router.Get(routeCodyChat).Handler(brandedNoIndex("Cody"))
+	router.Get(routeGetCody).Handler(brandedNoIndex("Cody"))
 
 	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
 	// Any changes to the embedding route could have security implications. Please consult the security team
@@ -333,7 +341,7 @@ func initRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs, router *m
 	}, nil, index)))
 
 	// streaming search
-	router.Get(routeSearchStream).Handler(search.StreamHandler(db, enterpriseJobs))
+	router.Get(routeSearchStream).Handler(search.StreamHandler(db))
 
 	// search badge
 	router.Get(routeSearchBadge).Handler(searchBadgeHandler())
@@ -387,7 +395,7 @@ func initRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs, router *m
 	})))
 
 	// raw
-	router.Get(routeRaw).Handler(handler(db, serveRaw(db, gitserver.NewClient())))
+	router.Get(routeRaw).Handler(handler(db, serveRaw(db, gitserver.NewClient(db))))
 
 	// All other routes that are not found.
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -497,7 +505,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 
 	// Determine trace URL and log the error.
 	var traceURL string
-	if tr := trace.TraceFromContext(r.Context()); tr != nil {
+	if tr := trace.FromContext(r.Context()); tr.IsRecording() {
 		tr.SetError(err)
 		tr.SetAttributes(attribute.String("error-id", errorID))
 		traceURL = trace.URL(trace.ID(r.Context()), conf.DefaultClient())

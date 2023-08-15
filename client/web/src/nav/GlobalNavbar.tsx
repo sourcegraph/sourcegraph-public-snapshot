@@ -1,4 +1,4 @@
-import React, { SetStateAction, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import React, { type SetStateAction, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import BarChartIcon from 'mdi-react/BarChartIcon'
@@ -6,40 +6,42 @@ import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import CommentQuoteOutline from 'mdi-react/CommentQuoteOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import ShieldHalfFullIcon from 'mdi-react/ShieldHalfFullIcon'
-import { RouteObject, useLocation } from 'react-router-dom'
+import { type RouteObject, useLocation } from 'react-router-dom'
 
 import { isMacPlatform } from '@sourcegraph/common'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SearchContextInputProps } from '@sourcegraph/shared/src/search'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import type { SearchContextInputProps } from '@sourcegraph/shared/src/search'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Button, Link, ButtonLink, useWindowSize, Tooltip, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Link, ProductStatusBadge, useWindowSize } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
-import { BatchChangesProps } from '../batches'
+import type { AuthenticatedUser } from '../auth'
+import type { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
-import { CodeMonitoringProps } from '../codeMonitoring'
+import type { CodeMonitoringProps } from '../codeMonitoring'
 import { CodyLogo } from '../cody/components/CodyLogo'
+import { UpdateGlobalNav } from '../cody/update/UpdateGlobalNav'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useRoutesMatch } from '../hooks'
-import { CodeInsightsProps } from '../insights/types'
-import { NotebookProps } from '../notebooks'
-import { OwnConfigProps } from '../own/OwnConfigProps'
+import type { CodeInsightsProps } from '../insights/types'
+import type { NotebookProps } from '../notebooks'
+import type { OwnConfigProps } from '../own/OwnConfigProps'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
-import { SentinelProps } from '../sentinel/types'
+import type { SentinelProps } from '../sentinel/types'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
+import { NotificationsNavbarItem } from '../site-admin/notifications/NotificationsNavbarItem'
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
 
-import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
-import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
+import { NavAction, NavActions, NavBar, NavGroup, NavItem, NavLink } from '.'
+import { NavDropdown, type NavDropdownItem } from './NavBar/NavDropdown'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
 
@@ -145,10 +147,10 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     // but should not show in the navbar. Users can still
     // access this feature via the context dropdown.
     const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
-    const showCodeMonitoring = codeMonitoringEnabled && !isSourcegraphApp
-    const showSearchNotebook = notebooksEnabled && !isSourcegraphApp
+    const showCodeMonitoring = codeMonitoringEnabled && !isSourcegraphApp && !isSourcegraphDotCom
+    const showSearchNotebook = notebooksEnabled && !isSourcegraphApp && !isSourcegraphDotCom
     const isLicensed = !!window.context?.licenseInfo || isSourcegraphApp // Assume licensed when running as a native app
-    const showBatchChanges = ((props.batchChangesEnabled && isLicensed) || isSourcegraphDotCom) && !isSourcegraphApp // Batch changes are enabled on sourcegraph.com so users can see the Getting Started page
+    const showBatchChanges = props.batchChangesEnabled && isLicensed && !isSourcegraphApp && !isSourcegraphDotCom
     const [codySearchEnabled] = useFeatureFlag('cody-web-search')
 
     const [isSentinelEnabled] = useFeatureFlag('sentinel')
@@ -170,12 +172,12 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const navLinkVariant = useCalculatedNavLinkVariant(navbarReference, props.authenticatedUser)
 
     // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
-    const codeInsights = codeInsightsEnabled && !isSourcegraphApp
+    const codeInsights = codeInsightsEnabled && !isSourcegraphApp && !isSourcegraphDotCom
 
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
             !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
-            ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
+            ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Code ownership' },
             codySearchEnabled && {
                 path: EnterprisePageRoutes.CodySearch,
                 content: (
@@ -191,6 +193,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
     const isLightTheme = useIsLightTheme()
+
+    const [isSetupChecklistEnabled] = useFeatureFlag('setup-checklist', false)
 
     return (
         <>
@@ -293,49 +297,26 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                 </NavGroup>
                 <NavActions>
-                    {!props.authenticatedUser && (
-                        <>
-                            <NavAction>
-                                <Link className={styles.link} to="https://about.sourcegraph.com">
-                                    About Sourcegraph
-                                </Link>
-                            </NavAction>
-
-                            {isSourcegraphDotCom && (
-                                <NavAction>
-                                    <Link className={styles.link} to="/help" target="_blank">
-                                        Docs
-                                    </Link>
-                                </NavAction>
-                            )}
-                        </>
+                    {isSourcegraphApp && <UpdateGlobalNav />}
+                    {!props.authenticatedUser && !isSourcegraphDotCom && (
+                        <NavAction>
+                            <Link className={styles.link} to="https://about.sourcegraph.com">
+                                About Sourcegraph
+                            </Link>
+                        </NavAction>
                     )}
+                    {isSetupChecklistEnabled && <NotificationsNavbarItem />}
                     {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {isSourcegraphDotCom && (
-                        <>
-                            <NavAction>
-                                <Tooltip content="The AI code assistant you can trust to answer questions and write code for you.">
-                                    <Link
-                                        to="https://about.sourcegraph.com/cody"
-                                        className={classNames(styles.link, 'small')}
-                                        onClick={() => eventLogger.log('ClickedOnCodyCTA', { location: 'NavBar' })}
-                                    >
-                                        Cody
-                                    </Link>
-                                </Tooltip>
-                            </NavAction>
-                            <NavAction>
-                                <Tooltip content="The Sourcegraph desktop app runs locally and works on your own private code.">
-                                    <Link
-                                        to="https://about.sourcegraph.com/app"
-                                        className={classNames(styles.link, 'small')}
-                                        onClick={() => eventLogger.log('ClickedOnAppCTA', { location: 'NavBar' })}
-                                    >
-                                        App
-                                    </Link>
-                                </Tooltip>
-                            </NavAction>
-                        </>
+                        <NavAction>
+                            <Link
+                                to="/get-cody"
+                                className={classNames(styles.link, 'small')}
+                                onClick={() => eventLogger.log('ClickedOnCodyCTA', { location: 'NavBar' })}
+                            >
+                                Install Cody locally
+                            </Link>
+                        </NavAction>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
                     {props.authenticatedUser?.siteAdmin && !isSourcegraphApp && (

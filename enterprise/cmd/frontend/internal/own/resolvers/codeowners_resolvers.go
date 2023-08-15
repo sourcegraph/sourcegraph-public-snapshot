@@ -10,10 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
-	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -23,6 +19,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
+	"github.com/sourcegraph/sourcegraph/internal/own/types"
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -227,7 +226,7 @@ func (r *ownResolver) RepoIngestedCodeowners(ctx context.Context, repoID api.Rep
 
 type codeownersIngestedFileResolver struct {
 	gitserver      gitserver.Client
-	db             edb.EnterpriseDB
+	db             database.DB
 	codeownersFile *types.CodeownersFile
 	repository     *itypes.Repo
 }
@@ -255,7 +254,7 @@ func (r *codeownersIngestedFileResolver) UpdatedAt() gqlutil.DateTime {
 }
 
 type codeownersIngestedFileConnectionResolver struct {
-	codeownersStore edb.CodeownersStore
+	codeownersStore database.CodeownersStore
 
 	once     sync.Once
 	cursor   int32
@@ -268,7 +267,7 @@ type codeownersIngestedFileConnectionResolver struct {
 
 func (r *codeownersIngestedFileConnectionResolver) compute(ctx context.Context) {
 	r.once.Do(func() {
-		opts := edb.ListCodeownersOpts{
+		opts := database.ListCodeownersOpts{
 			Cursor: r.cursor,
 		}
 		if r.limit != 0 {

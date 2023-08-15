@@ -176,8 +176,8 @@ type RemoteGitCommand struct {
 
 type execer interface {
 	httpPost(ctx context.Context, repo api.RepoName, op string, payload any) (resp *http.Response, err error)
-	AddrForRepo(repo api.RepoName) string
-	ClientForRepo(repo api.RepoName) (proto.GitserverServiceClient, error)
+	AddrForRepo(ctx context.Context, repo api.RepoName) string
+	ClientForRepo(ctx context.Context, repo api.RepoName) (proto.GitserverServiceClient, error)
 }
 
 // DividedOutput runs the command and returns its standard output and standard error.

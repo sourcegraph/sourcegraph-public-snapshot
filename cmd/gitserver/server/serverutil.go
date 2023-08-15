@@ -1,14 +1,11 @@
 package server
 
 import (
-	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -22,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -31,10 +27,10 @@ func (s *Server) dir(name api.RepoName) common.GitDir {
 	return common.GitDir(filepath.Join(s.ReposDir, filepath.FromSlash(p), ".git"))
 }
 
-func (s *Server) name(dir common.GitDir) api.RepoName {
+func repoNameFromDir(reposDir string, dir common.GitDir) api.RepoName {
 	// dir == ${s.ReposDir}/${name}/.git
 	parent := filepath.Dir(string(dir))                   // remove suffix "/.git"
-	name := strings.TrimPrefix(parent, s.ReposDir)        // remove prefix "${s.ReposDir}"
+	name := strings.TrimPrefix(parent, reposDir)          // remove prefix "${s.ReposDir}"
 	name = strings.Trim(name, string(filepath.Separator)) // remove /
 	name = filepath.ToSlash(name)                         // filepath -> path
 	return protocol.NormalizeRepo(api.RepoName(name))
@@ -103,50 +99,6 @@ var repoLastChanged = func(dir common.GitDir) (time.Time, error) {
 		return time.Time{}, err
 	}
 	return fi.ModTime(), nil
-}
-
-// repoRemoteRefs returns a map containing ref + commit pairs from the
-// remote Git repository starting with the specified prefix.
-//
-// The ref prefix `ref/<ref type>/` is stripped away from the returned
-// refs.
-var repoRemoteRefs = func(ctx context.Context, remoteURL *vcs.URL, prefix string) (map[string]string, error) {
-	// The expected output of this git command is a list of:
-	// <commit hash> <ref name>
-	cmd := exec.Command("git", "ls-remote", remoteURL.String(), prefix+"*")
-
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	_, err := runCommand(ctx, wrexec.Wrap(ctx, nil, cmd))
-	if err != nil {
-		stderr := stderr.Bytes()
-		if len(stderr) > 200 {
-			stderr = stderr[:200]
-		}
-		return nil, errors.Errorf("git %s failed: %s (%q)", cmd.Args, err, stderr)
-	}
-
-	refs := make(map[string]string)
-	raw := stdout.String()
-	for _, line := range strings.Split(raw, "\n") {
-		if line == "" {
-			continue
-		}
-
-		fields := strings.Fields(line)
-		if len(fields) != 2 {
-			return nil, errors.Errorf("git %s failed (invalid output): %s", cmd.Args, line)
-		}
-
-		split := strings.SplitN(fields[1], "/", 3)
-		if len(split) != 3 {
-			return nil, errors.Errorf("git %s failed (invalid refname): %s", cmd.Args, fields[1])
-		}
-
-		refs[split[2]] = fields[0]
-	}
-	return refs, nil
 }
 
 // writeCounter wraps an io.Writer and keeps track of bytes written.
@@ -319,4 +271,19 @@ func bestEffortWalk(root string, walkFn func(path string, entry fs.DirEntry) err
 
 		return walkFn(path, d)
 	})
+}
+
+// hostnameMatch checks whether the hostname matches the given address.
+// If we don't find an exact match, we look at the initial prefix.
+func hostnameMatch(shardID, addr string) bool {
+	if !strings.HasPrefix(addr, shardID) {
+		return false
+	}
+	if addr == shardID {
+		return true
+	}
+	// We know that shardID is shorter than addr so we can safely check the next
+	// char
+	next := addr[len(shardID)]
+	return next == '.' || next == ':'
 }

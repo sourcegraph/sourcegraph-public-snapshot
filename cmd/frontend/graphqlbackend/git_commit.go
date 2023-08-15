@@ -279,9 +279,8 @@ func (r *GitCommitResolver) Path(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) path(ctx context.Context, path string, validate func(fs.FileInfo) error) (_ *GitTreeEntryResolver, err error) {
-	tr, ctx := trace.New(ctx, "GitCommitResolver", "path",
-		attribute.String("path", path))
-	defer tr.FinishWithErr(&err)
+	tr, ctx := trace.New(ctx, "GitCommitResolver.path", attribute.String("path", path))
+	defer tr.EndWithErr(&err)
 
 	stat, err := r.gitserverClient.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), path)
 	if err != nil {

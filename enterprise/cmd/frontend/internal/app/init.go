@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -23,7 +23,7 @@ func Init(
 	enterpriseServices *enterprise.Services,
 ) error {
 	if deploy.IsApp() {
-		gitserverClient := gitserver.NewClient()
+		gitserverClient := gitserver.NewClient(db)
 		enterpriseServices.OptionalResolver.AppResolver = resolvers.NewAppResolver(observationCtx.Logger, db, gitserverClient)
 	}
 	return nil

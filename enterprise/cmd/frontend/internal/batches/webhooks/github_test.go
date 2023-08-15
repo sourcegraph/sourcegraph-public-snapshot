@@ -21,12 +21,12 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
-	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
+	"github.com/sourcegraph/sourcegraph/internal/batches/store"
+	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
+	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -80,7 +80,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		githubSrc, err := repos.NewGitHubSource(ctx, logtest.Scoped(t), extSvc, cf)
+		githubSrc, err := repos.NewGitHubSource(ctx, logtest.Scoped(t), db, extSvc, cf)
 		if err != nil {
 			t.Fatal(t)
 		}

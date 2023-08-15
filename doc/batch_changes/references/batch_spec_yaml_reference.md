@@ -593,7 +593,7 @@ The Git commit message.
 <span class="badge badge-feature">Templating</span> <code>changesetTemplate.commit.message</code> can include <a href="batch_spec_templating">template variables</a>.
 </aside>
 
-##[`changesetTemplate.commit.author`
+## `changesetTemplate.commit.author`
 
 The `name` and `email` of the Git commit author.
 
@@ -613,7 +613,7 @@ changesetTemplate:
 
 ## `changesetTemplate.published`
 
-Whether to publish the changeset. This may be a boolean value (ie `true` or `false`), `'draft'`, or [an array to only publish some changesets within the batch change](#publishing-only-specific-changesets). This may also be omitted, in which case the publication state will be controlled through the Sourcegraph UI, and will default to unpublished (that is, the same as specifying `false`).
+Whether to publish the changesets as soon as the spec is applied. This may be a boolean value (ie `true` or `false`), `'draft'`, or [an array to only publish some changesets within the batch change](#publishing-only-specific-changesets). This may also be omitted, in which case the publication state will be controlled through the Sourcegraph UI, and will default to unpublished (that is, the same as specifying `false`).
 
 An unpublished changeset can be previewed on Sourcegraph by any person who can view the batch change, but its commit, branch, and pull request aren't created on the code host.
 
@@ -728,6 +728,34 @@ changesetTemplate:
 ```
 
 (Multiple changesets in a single repository can be produced, for example, [per project in a monorepo](../how-tos/creating_changesets_per_project_in_monorepos.md) or by [transforming large changes into multiple changesets](../how-tos/creating_multiple_changesets_in_large_repositories.md)).
+
+## `changesetTemplate.fork`
+
+<span class="badge badge-note">Sourcegraph 5.1+</span>
+
+Whether or not each changeset should be created on a fork of the upstream repository in the namespace of the user publishing them (or the namespace of the service account if [global credentials](../how-tos/configuring_credentials.md#global-service-account-tokens) are used).
+
+If the site config setting [`batchChanges.enforceForks`](../../admin/config/batch_changes.md#forks) is enabled, this value will override the setting. For example, explicitly setting `fork: false` when the site config setting is enabled will result in changesets being published directly to the target repos. If omitted, the site config setting will be used.
+
+The name of the fork Sourcegraph creates will be prefixed with the name of the original repo's namespace in order to prevent potential repo name collisions. For example, a batch spec targeting `github.com/my-org/project` would create or use any existing fork by the name `github.com/user/my-org-project`.
+
+> NOTE: If your code host does not support forking (e.g. Gerrit), trying to publish a changeset with `fork: true` will result in an error.
+
+### Examples
+
+To publish all changesets created by this batch change to forks:
+
+```yaml
+changesetTemplate:
+  fork: true
+```
+
+To publish all changesets created by this batch change to the target repository:
+
+```yaml
+changesetTemplate:
+  fork: false
+```
 
 ## `transformChanges`
 

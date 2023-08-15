@@ -1,8 +1,8 @@
-import { MockedProviderProps } from '@apollo/client/testing'
+import type { MockedProviderProps } from '@apollo/client/testing'
 import { cleanup, fireEvent, within, waitFor } from '@testing-library/react'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+import { type RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SurveyPage } from './SurveyPage'
 import { mockVariables, submitSurveyMock } from './SurveyPage.mocks'

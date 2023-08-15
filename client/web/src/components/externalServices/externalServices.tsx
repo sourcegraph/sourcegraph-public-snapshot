@@ -1,6 +1,6 @@
-import React, { ReactNode } from 'react'
+import React, { type ReactNode } from 'react'
 
-import { Edit, JSONPath, ModificationOptions, modify, parse as parseJSONC } from 'jsonc-parser'
+import { type Edit, type JSONPath, type ModificationOptions, modify, parse as parseJSONC } from 'jsonc-parser'
 import AwsIcon from 'mdi-react/AwsIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
@@ -37,15 +37,15 @@ import pythonPackagesJSON from '../../../../../schema/python-packages.schema.jso
 import rubyPackagesSchemaJSON from '../../../../../schema/ruby-packages.schema.json'
 import rustPackagesJSON from '../../../../../schema/rust-packages.schema.json'
 import {
-    ExternalRepositoryFields,
+    type ExternalRepositoryFields,
     ExternalServiceKind,
     ExternalServiceSyncJobState,
-    GitHubAppByAppIDResult,
+    type GitHubAppByAppIDResult,
 } from '../../graphql-operations'
-import { EditorAction } from '../../settings/EditorActionsGroup'
+import type { EditorAction } from '../../settings/EditorActionsGroup'
 import { GitHubAppSelector } from '../gitHubApps/GitHubAppSelector'
 
-import { ExternalServiceFieldsWithConfig } from './backend'
+import type { ExternalServiceFieldsWithConfig } from './backend'
 import { GerritIcon } from './GerritIcon'
 
 /**
@@ -583,34 +583,26 @@ const azureDevOpsEditorActions = (): EditorAction[] => [
     },
 ]
 
-const GITHUB_DOTCOM: AddExternalServiceOptions = {
+export const GITHUB: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITHUB,
-    title: 'GitHub',
+    shortDescription: 'Cloud-hosted or Self-hosted using an access token',
+    title: 'GitHub.com or Enterprise',
     icon: GithubIcon,
     jsonSchema: githubSchemaJSON,
     editorActions: githubEditorActions(false),
     Instructions: () => <GitHubInstructions isEnterprise={false} />,
     defaultDisplayName: 'GitHub',
     defaultConfig: `{
-  "url": "https://github.com",
-  "token": "<access token>",
-  "orgs": []
-}`,
-}
-const GITHUB_ENTERPRISE: AddExternalServiceOptions = {
-    ...GITHUB_DOTCOM,
-    title: 'GitHub Enterprise',
-    defaultConfig: `{
   "url": "https://github.example.com",
   "token": "<access token>",
   "orgs": []
 }`,
-    editorActions: githubEditorActions(true),
-    Instructions: () => <GitHubInstructions isEnterprise={true} />,
 }
 const GITHUB_APP: AddExternalServiceOptions = {
-    ...GITHUB_DOTCOM,
+    ...GITHUB,
     title: 'GitHub App',
+    shortDescription:
+        'Connect repositories on GitHub.com or self-hosted GitHub Enterprise installations using a GitHub App installation',
     editorActions: gitHubAppEditorActions(false),
     Instructions: () => <GitHubAppInstructions />,
     additionalFormComponent: <GitHubAppSelector />,
@@ -815,8 +807,24 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
                     >
                         instructions
                     </Link>
-                    ) with <b>read</b> scope over your repositories and teams. Set it to be the value of the{' '}
-                    <Field>appPassword</Field> field in the configuration below.
+                    ) with the following scopes:
+                    <ul>
+                        <li>
+                            <strong>Workspace membership</strong>: Read
+                        </li>
+                        <li>
+                            <strong>Repositories</strong>: Read
+                            <ul>
+                                <li>
+                                    To enable repository permissions syncing, <strong>Repositories</strong>: Admin is
+                                    required.
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    Paste your app password in the <Field>appPassword</Field> field in the configuration below.
                 </li>
                 <li>
                     Set the <Field>username</Field> field to be the username corresponding to <Field>appPassword</Field>
@@ -840,6 +848,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
             </Text>
         </div>
     ),
+    shortDescription: 'Cloud-hosted using credentials',
 }
 const BITBUCKET_SERVER: AddExternalServiceOptions = {
     kind: ExternalServiceKind.BITBUCKETSERVER,
@@ -1003,28 +1012,15 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             },
         },
     ],
+    shortDescription: 'Self-hosted using an access token',
 }
-const GITLAB_DOTCOM: AddExternalServiceOptions = {
+const GITLAB: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITLAB,
     title: 'GitLab',
     icon: GitLabIcon,
+    shortDescription: 'Connect cloud-hosted or self-hosted repositories on GitLab',
     jsonSchema: gitlabSchemaJSON,
     defaultDisplayName: 'GitLab',
-    defaultConfig: `{
-  "url": "https://gitlab.com",
-  "token": "<access token>",
-  "projectQuery": [
-    "projects?membership=true&archived=no"
-  ]
-}`,
-    editorActions: gitlabEditorActions(false),
-    Instructions: () => <GitLabInstructions isSelfManaged={false} />,
-}
-const GITLAB_SELF_MANAGED: AddExternalServiceOptions = {
-    ...GITLAB_DOTCOM,
-    title: 'GitLab Self-Managed',
-    Instructions: () => <GitLabInstructions isSelfManaged={true} />,
-    editorActions: gitlabEditorActions(true),
     defaultConfig: `{
   "url": "https://gitlab.example.com",
   "token": "<access token>",
@@ -1032,6 +1028,8 @@ const GITLAB_SELF_MANAGED: AddExternalServiceOptions = {
     "projects?membership=true&archived=no"
   ]
 }`,
+    editorActions: gitlabEditorActions(false),
+    Instructions: () => <GitLabInstructions isSelfManaged={false} />,
 }
 const SRC_SERVE_GIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.OTHER,
@@ -1147,13 +1145,13 @@ const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
     jsonSchema: phabricatorSchemaJSON,
     defaultDisplayName: 'Phabricator',
     defaultConfig: `{
-// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
-// Configuration options are documented here:
-// https://docs.sourcegraph.com/admin/external_service/phabricator#configuration
+  // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+  // Configuration options are documented here:
+  // https://docs.sourcegraph.com/admin/external_service/phabricator#configuration
 
-"url": "https://phabricator.example.com",
-"token": "",
-"repos": []
+  "url": "https://phabricator.example.com",
+  "token": "",
+  "repos": []
 }`,
     editorActions: [
         {
@@ -1366,13 +1364,23 @@ const GERRIT: AddExternalServiceOptions = {
     jsonSchema: gerritSchemaJSON,
     defaultDisplayName: 'Gerrit',
     defaultConfig: `{
-  "url": "https://gerrit.example.com"
+  "url": "https://gerrit.example.com",
+  "username": "<fill in>",
+  "password": "<fill in>"
 }`,
     Instructions: () => (
         <div>
             <ol>
                 <li>
                     In the configuration below, set <Field>url</Field> to the URL of Gerrit instance.
+                </li>
+                <li>
+                    Provide <Field>username</Field> and <Field>password</Field> of a user account that has access to all
+                    the repositories you want to sync.
+                </li>
+                <li>
+                    Optionally, use <Field>projects</Field> to limit syncing from the Gerrit instance to specific
+                    projects.
                 </li>
             </ol>
         </div>
@@ -1584,11 +1592,9 @@ const RUBY_PACKAGES: AddExternalServiceOptions = {
 }
 
 export const codeHostExternalServices: Record<string, AddExternalServiceOptions> = {
-    github: GITHUB_DOTCOM,
-    ghe: GITHUB_ENTERPRISE,
+    github: GITHUB,
     ghapp: GITHUB_APP,
-    gitlabcom: GITLAB_DOTCOM,
-    gitlab: GITLAB_SELF_MANAGED,
+    gitlabcom: GITLAB,
     bitbucket: BITBUCKET_CLOUD,
     bitbucketserver: BITBUCKET_SERVER,
     aws_codecommit: AWS_CODE_COMMIT,
@@ -1597,18 +1603,18 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     git: GENERIC_GIT,
     gerrit: GERRIT,
     azuredevops: AZUREDEVOPS,
+    phabricator: PHABRICATOR_SERVICE,
+    ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
+    ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
+}
+
+export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {
     ...(window.context?.experimentalFeatures?.pythonPackages === 'enabled' ? { pythonPackages: PYTHON_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rustPackages === 'enabled' ? { rustPackages: RUST_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rubyPackages === 'enabled' ? { rubyPackages: RUBY_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.goPackages === 'enabled' ? { goModules: GO_MODULES } : {}),
     ...(window.context?.experimentalFeatures?.jvmPackages === 'enabled' ? { jvmPackages: JVM_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.npmPackages === 'enabled' ? { npmPackages: NPM_PACKAGES } : {}),
-    ...(window.context?.experimentalFeatures?.perforce !== 'disabled' ? { perforce: PERFORCE } : {}),
-    ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
-}
-
-export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {
-    phabricator: PHABRICATOR_SERVICE,
 }
 
 export const allExternalServices = {
@@ -1617,11 +1623,11 @@ export const allExternalServices = {
 }
 
 export const defaultExternalServices: Record<ExternalServiceKind, AddExternalServiceOptions> = {
-    [ExternalServiceKind.GITHUB]: GITHUB_DOTCOM,
+    [ExternalServiceKind.GITHUB]: GITHUB,
     [ExternalServiceKind.AZUREDEVOPS]: AZUREDEVOPS,
     [ExternalServiceKind.BITBUCKETCLOUD]: BITBUCKET_CLOUD,
     [ExternalServiceKind.BITBUCKETSERVER]: BITBUCKET_SERVER,
-    [ExternalServiceKind.GITLAB]: GITLAB_DOTCOM,
+    [ExternalServiceKind.GITLAB]: GITLAB,
     [ExternalServiceKind.GITOLITE]: GITOLITE,
     [ExternalServiceKind.PHABRICATOR]: PHABRICATOR_SERVICE,
     [ExternalServiceKind.OTHER]: GENERIC_GIT,

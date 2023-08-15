@@ -2,6 +2,7 @@
     display: flex;
     flex-direction: column;
     width: 100%;
+    min-width: 0;
 }
 
 .header-actions {
@@ -23,14 +24,16 @@
     list-style: none;
 
     &--sub-list {
-        margin-top: 1.25rem;
-        margin-left: 1.5rem;
+        padding-top: 1.25rem;
+        padding-left: 1.5rem;
         gap: 0.75rem;
     }
 }
 
 .list-item {
+    max-width: 100%;
     display: flex;
+    gap: 0.5rem;
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 1rem;
 
@@ -54,6 +57,7 @@
         display: flex;
         column-gap: 0.5rem;
         flex: 1;
+        min-width: 0;
     }
 
     &-content {
@@ -61,7 +65,7 @@
         flex-wrap: wrap;
         column-gap: 0.5rem;
         row-gap: 0.25rem;
-        flex-grow: 1;
+        min-width: 0;
     }
 
     &-directory-content {
@@ -83,6 +87,9 @@
 
     &-name {
         margin-bottom: 0;
+        text-align: left;
+        min-width: 0;
+        overflow-wrap: break-word;
     }
 
     &-icon {
@@ -100,10 +107,13 @@
         text-align: left;
         color: var(--text-muted);
         font-weight: normal;
+        min-width: 0;
+        overflow-wrap: break-word;
     }
 
     &-action {
         align-self: flex-start;
         flex-grow: 0;
+        margin-left: auto;
     }
 }

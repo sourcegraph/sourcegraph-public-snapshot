@@ -8,19 +8,37 @@ Sourcegraph supports [Perforce Helix](https://www.perforce.com/solutions/version
 
 As of Sourcegraph 5.1, there are new features for Perforce depots that need to be enabled.
 
-### Changelist Id in URLs
+### Changelist ID in URLs
+
+Note: When enabling changelist IDs in URLs for the first time, Perforce depots can be unavailable for a few minutes on the Sourcegraph instance, due to the initial mapping of changelist IDs to generated commit ID happening in the background. If you have a large number of Perforce depots, we recommend proceeding with the following steps in a maintenance window in which you don't expect large amounts of traffic on your Sourcegraph instance.
 
 Add `"perforceChangelistMapping": "enabled",` to `experimentalFeatures` in the [site configuration](../config/site_config.md):
 
 ```json
 {
   "experimentalFeatures": {
-   "perforceChangelistMapping": "enabled",
+    "perforceChangelistMapping": "enabled"
   }
 }
 ```
 
-When it is enabled, Sourcegraph URLs for Perforce code hosts will use the Changelist Id instead of commit hashes.
+When enabled, URLs for Perforce code hosts will use the Changelist (CL) ID instead of commit SHAs. Areas that benefit from this at the moment are:
+
+- Viewing a specific CL
+- Viewing the files of a depot at a specific CL
+- Viewing a specific file added / removed / modified in a specific CL
+- Viewing the list of CLs
+
+#### Limitations
+
+- After a depot is cloned or fetched, Sourcegraph computes and stores mappings of CL IDs to commit SHAs. This mapping can take several minutes for large clones/fetches. When a background mapping job is running, the depot won't be serviceable as URLs referring to CL IDs may not resolve and users may see an error while interacting with the depot.
+- This experimental configuration can not be selectively enabled for a specific perforce depot.
+
+#### Mechanism
+
+To support CLs natively in the URLs, Sourcegraph performs background computation after syncing the contents of a depot. That's done by parsing each generated commit to retrieve the corresponding CL ID and store it in the `repo_commits_changelists` table. This is currently performed on only one depot at a time and we are working to support this for multiple depots in parallel in an upcoming release.
+
+Additionally, while removing a depot from a code host config will mark it as "deleted", the mapped information will **not** be deleted to prevent forced re-computation after an accidental removal of depot from a code host config. Similarly recloning a depot will **not** trigger a computation of all the CLs from the beginning of the depot's source control history. If site admins are recloning or deleting and re-adding a depot to Sourcegraph as a result of history rewrite of a depot in Perforce, they should get in [touch with us](mailto:support@sourcegraph.com) for next steps.
 
 ### Batch Changes support for Perforce depots
 

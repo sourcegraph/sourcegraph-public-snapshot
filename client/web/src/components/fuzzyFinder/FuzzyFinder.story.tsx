@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
@@ -23,6 +23,17 @@ export default config
 export const ReadyStory: Story = () => (
     <MockedTestProvider mocks={[FUZZY_FILES_MOCK]}>
         <FuzzyWrapper url="/github.com/sourcegraph/sourcegraph@main" experimentalFeatures={{}} initialQuery="clientb" />
+    </MockedTestProvider>
+)
+
+export const ReadyFileLineStory: Story = () => (
+    <MockedTestProvider mocks={[FUZZY_FILES_MOCK]}>
+        <FuzzyWrapper
+            url="/github.com/sourcegraph/sourcegraph@main"
+            experimentalFeatures={{}}
+            activeTab="files"
+            initialQuery="clientb:100"
+        />
     </MockedTestProvider>
 )
 

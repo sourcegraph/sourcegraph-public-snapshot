@@ -93,7 +93,7 @@ func Worker() *monitoring.Dashboard {
 						Panel:       monitoring.Panel().LegendFormat("{{tableName}}").Unit(monitoring.Percentage).Min(0).Max(100),
 						Owner:       owner,
 					}
-				}(monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+				}(monitoring.ObservableOwnerSource).WithNoAlerts(`
 					Percentage of encrypted database records
 				`).Observable(),
 
@@ -101,7 +101,7 @@ func Worker() *monitoring.Dashboard {
 					MetricNameRoot:        "records_encrypted",
 					MetricDescriptionRoot: "database",
 					By:                    []string{"tableName"},
-				})(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+				})(containerName, monitoring.ObservableOwnerSource).WithNoAlerts(`
 					Number of encrypted database records every 5m
 				`).Observable(),
 
@@ -109,14 +109,14 @@ func Worker() *monitoring.Dashboard {
 					MetricNameRoot:        "records_decrypted",
 					MetricDescriptionRoot: "database",
 					By:                    []string{"tableName"},
-				})(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+				})(containerName, monitoring.ObservableOwnerSource).WithNoAlerts(`
 					Number of encrypted database records every 5m
 				`).Observable(),
 
 				shared.Observation.Errors(shared.ObservableConstructorOptions{
 					MetricNameRoot:        "record_encryption",
 					MetricDescriptionRoot: "encryption",
-				})(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+				})(containerName, monitoring.ObservableOwnerSource).WithNoAlerts(`
 					Number of database record encryption/decryption errors every 5m
 				`).Observable(),
 			},

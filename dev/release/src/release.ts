@@ -17,7 +17,7 @@ import {
     addScheduledRelease,
     loadReleaseConfig,
     newReleaseFromInput,
-    ReleaseConfig,
+    type ReleaseConfig,
     getActiveRelease,
     removeScheduledRelease,
     saveReleaseConfig,
@@ -34,10 +34,10 @@ import {
     closeTrackingIssue,
     commentOnIssue,
     createChangesets,
-    CreatedChangeset,
+    type CreatedChangeset,
     createLatestRelease,
     createTag,
-    Edit,
+    type Edit,
     ensureTrackingIssues,
     getAuthenticatedGitHubClient,
     getTrackingIssue,
@@ -47,7 +47,7 @@ import {
     releaseBlockerLabel,
     releaseName,
 } from './github'
-import { calendarTime, ensureEvent, EventOptions, getClient } from './google-calendar'
+import { calendarTime, ensureEvent, type EventOptions, getClient } from './google-calendar'
 import { postMessage, slackURL } from './slack'
 import {
     bakeAWSExecutorsSteps,
@@ -81,7 +81,8 @@ import {
     validateNoOpenBackports,
     validateNoReleaseBlockers,
     verifyWithInput,
-    ReleaseTag,
+    type ReleaseTag,
+    updateMigratorBazelOuts,
 } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
@@ -717,16 +718,17 @@ cc @${release.captainGitHubUsername}
                                 : `comby -in-place 'currentReleaseRevspec := ":[1]"' 'currentReleaseRevspec := "v${release.version.version}"' doc/_resources/templates/document.html`,
 
                             // Update references to Sourcegraph deployment versions
-                            `comby -in-place 'latestReleaseKubernetesBuild = newPingResponse(":[1]")' "latestReleaseKubernetesBuild = newPingResponse(\\"${release.version.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
-                            `comby -in-place 'latestReleaseDockerServerImageBuild = newPingResponse(":[1]")' "latestReleaseDockerServerImageBuild = newPingResponse(\\"${release.version.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
-                            `comby -in-place 'latestReleaseDockerComposeOrPureDocker = newPingResponse(":[1]")' "latestReleaseDockerComposeOrPureDocker = newPingResponse(\\"${release.version.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+                            `comby -in-place 'latestReleaseKubernetesBuild = newPingResponse(":[1]")' "latestReleaseKubernetesBuild = newPingResponse(\\"${release.version.version}\\")" internal/updatecheck/handler.go`,
+                            `comby -in-place 'latestReleaseDockerServerImageBuild = newPingResponse(":[1]")' "latestReleaseDockerServerImageBuild = newPingResponse(\\"${release.version.version}\\")" internal/updatecheck/handler.go`,
+                            `comby -in-place 'latestReleaseDockerComposeOrPureDocker = newPingResponse(":[1]")' "latestReleaseDockerComposeOrPureDocker = newPingResponse(\\"${release.version.version}\\")" internal/updatecheck/handler.go`,
 
                             // Support current release as the "previous release" going forward
                             notPatchRelease
                                 ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version.version}"' enterprise/dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
                             updateUpgradeGuides(release.previous.version, release.version.version),
-                            `comby -in-place 'git_versions=(:[1])' 'git_versions=(:[1] v${release.version.version})' cmd/migrator/build.sh`,
+                            `comby -in-place 'git_versions=(:[1])' 'git_versions=(:[1] v${release.version.version})' cmd/migrator/generate.sh`,
+                            updateMigratorBazelOuts(release.version.version),
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
@@ -773,7 +775,10 @@ cc @${release.captainGitHubUsername}
                         head: `publish-${release.version.version}`,
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
-                        edits: [`sg ops update-images -pin-tag ${release.version.version} base/`],
+                        edits: [
+                            `sg ops update-images -pin-tag ${release.version.version} base/`,
+                            `sg ops update-images -pin-tag ${release.version.version} components/executors/`,
+                        ],
                         ...prBodyAndDraftState([]),
                     },
                     {
@@ -828,7 +833,7 @@ cc @${release.captainGitHubUsername}
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
                         edits: [
-                            `for i in charts/*; do sg ops update-images -kind helm -pin-tag ${release.version.version} $i/.; done`,
+                            `for i in charts/{sourcegraph,sourcegraph-executor/{dind,k8s},sourcegraph-migrator}; do sg ops update-images -kind helm -pin-tag ${release.version.version} $i/.; done`,
                             `${sed} -i 's/appVersion:.*/appVersion: "${release.version.version}"/g' charts/*/Chart.yaml`,
                             `${sed} -i 's/version:.*/version: "${release.version.version}"/g' charts/*/Chart.yaml`,
                             './scripts/helm-docs.sh',

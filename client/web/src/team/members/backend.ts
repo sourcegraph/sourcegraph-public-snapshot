@@ -1,12 +1,12 @@
-import { MutationTuple } from '@apollo/client'
+import type { MutationTuple } from '@apollo/client'
 
 import { dataOrThrowErrors, gql, useMutation } from '@sourcegraph/http-client'
 
 import {
     useShowMorePagination,
-    UseShowMorePaginationResult,
+    type UseShowMorePaginationResult,
 } from '../../components/FilteredConnection/hooks/useShowMorePagination'
-import {
+import type {
     AddTeamMembersResult,
     AddTeamMembersVariables,
     ListTeamMemberFields,

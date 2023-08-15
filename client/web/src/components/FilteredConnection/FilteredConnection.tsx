@@ -1,9 +1,9 @@
 import * as React from 'react'
 
-import * as H from 'history'
+import type * as H from 'history'
 import { isEqual, uniq } from 'lodash'
-import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom'
-import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
+import { type NavigateFunction, useLocation, useNavigate } from 'react-router-dom'
+import { combineLatest, merge, type Observable, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
     debounceTime,
@@ -20,12 +20,17 @@ import {
     tap,
 } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
+import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 
-import { ConnectionNodes, ConnectionNodesDisplayProps, ConnectionNodesState, ConnectionProps } from './ConnectionNodes'
-import { Connection, ConnectionQueryArguments } from './ConnectionType'
+import {
+    ConnectionNodes,
+    type ConnectionNodesDisplayProps,
+    type ConnectionNodesState,
+    type ConnectionProps,
+} from './ConnectionNodes'
+import type { Connection, ConnectionQueryArguments } from './ConnectionType'
 import { QUERY_KEY } from './constants'
-import { FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
+import type { FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
 import { ConnectionContainer, ConnectionError, ConnectionForm, ConnectionLoading } from './ui'
 import type { ConnectionFormProps } from './ui/ConnectionForm'
 import { getFilterFromURL, getUrlQuery, hasID, parseQueryInt } from './utils'

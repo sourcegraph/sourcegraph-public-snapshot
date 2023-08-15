@@ -4,6 +4,7 @@ export enum PageRoutes {
     SearchConsole = '/search/console',
     SignIn = '/sign-in',
     SignUp = '/sign-up',
+    PostSignUp = '/post-sign-up',
     UnlockAccount = '/unlock-account/:token',
     Welcome = '/welcome',
     Settings = '/settings',
@@ -23,6 +24,7 @@ export enum PageRoutes {
     InstallGitHubAppSuccess = '/install-github-app-success',
     Teams = '/teams/*',
     RequestAccess = '/request-access/*',
+    GetCody = '/get-cody',
 }
 
 export enum EnterprisePageRoutes {

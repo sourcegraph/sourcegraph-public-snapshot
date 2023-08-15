@@ -116,8 +116,8 @@ func (r *Resolver) Iterator(ctx context.Context, opts search.RepoOptions) *itera
 }
 
 func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolved, errs error) {
-	tr, ctx := trace.New(ctx, "searchrepos.Resolve", op.String())
-	defer tr.FinishWithErr(&errs)
+	tr, ctx := trace.New(ctx, "searchrepos.Resolve", attribute.Stringer("opts", &op))
+	defer tr.EndWithErr(&errs)
 
 	excludePatterns := op.MinusRepoFilters
 	includePatterns, includePatternRevs := findPatternRevs(op.RepoFilters)
@@ -188,9 +188,9 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		options.OrgID = searchContext.NamespaceOrgID
 	}
 
-	tr.LazyPrintf("Repos.ListMinimalRepos - start")
+	tr.AddEvent("Repos.ListMinimalRepos - start")
 	repos, errs := r.db.Repos().ListMinimalRepos(ctx, options)
-	tr.LazyPrintf("Repos.ListMinimalRepos - done (%d repos, err %v)", len(repos), errs)
+	tr.AddEvent("Repos.ListMinimalRepos - done", attribute.Int("numRepos", len(repos)), trace.Error(errs))
 
 	if errs != nil {
 		return Resolved{}, errs
@@ -244,32 +244,32 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		}
 	}
 
-	tr.LazyPrintf("starting rev association")
+	tr.AddEvent("starting rev association")
 	associatedRepoRevs, missingRepoRevs := r.associateReposWithRevs(repos, searchContextRepositoryRevisions, includePatternRevs)
-	tr.LazyPrintf("completed rev association")
+	tr.AddEvent("completed rev association")
 
-	tr.LazyPrintf("starting glob expansion")
+	tr.AddEvent("starting glob expansion")
 	normalized, normalizedMissingRepoRevs, err := r.normalizeRefs(ctx, associatedRepoRevs)
 	missingRepoRevs = append(missingRepoRevs, normalizedMissingRepoRevs...)
 	if err != nil {
 		return Resolved{}, errors.Wrap(err, "normalize refs")
 	}
-	tr.LazyPrintf("finished glob expansion")
+	tr.AddEvent("finished glob expansion")
 
-	tr.LazyPrintf("starting rev filtering")
+	tr.AddEvent("starting rev filtering")
 	filteredRepoRevs, err := r.filterHasCommitAfter(ctx, normalized, op)
 	if err != nil {
 		return Resolved{}, errors.Wrap(err, "filter has commit after")
 	}
-	tr.LazyPrintf("completed rev filtering")
+	tr.AddEvent("completed rev filtering")
 
-	tr.LazyPrintf("starting contains filtering")
+	tr.AddEvent("starting contains filtering")
 	filteredRepoRevs, missingHasFileContentRevs, backendsMissing, err := r.filterRepoHasFileContent(ctx, filteredRepoRevs, op)
 	missingRepoRevs = append(missingRepoRevs, missingHasFileContentRevs...)
 	if err != nil {
 		return Resolved{}, errors.Wrap(err, "filter has file content")
 	}
-	tr.LazyPrintf("finished contains filtering")
+	tr.AddEvent("finished contains filtering")
 
 	if len(missingRepoRevs) > 0 {
 		err = errors.Append(err, &MissingRepoRevsError{Missing: missingRepoRevs})
@@ -532,11 +532,11 @@ func (r *Resolver) filterRepoHasFileContent(
 	_ int,
 	err error,
 ) {
-	tr, ctx := trace.New(ctx, "Resolve.FilterHasFileContent", "")
+	tr, ctx := trace.New(ctx, "Resolve.FilterHasFileContent")
 	tr.SetAttributes(attribute.Int("inputRevCount", len(repoRevs)))
 	defer func() {
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}()
 
 	// Early return if there are no filters
@@ -617,7 +617,7 @@ func (r *Resolver) filterRepoHasFileContent(
 				q := searchzoekt.QueryForFileContentArgs(opt, op.CaseSensitiveRepoFilters)
 				q = zoektquery.NewAnd(&zoektquery.BranchesRepos{List: indexed.BranchRepos()}, q)
 
-				repos, err := r.zoekt.List(ctx, q, &zoekt.ListOptions{Minimal: true})
+				repos, err := r.zoekt.List(ctx, q, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap})
 				if err != nil {
 					return err
 				}
@@ -625,7 +625,7 @@ func (r *Resolver) filterRepoHasFileContent(
 				addBackendsMissing(repos.Crashes)
 
 				foundRevs := Set[repoAndRev]{}
-				for repoID, repo := range repos.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+				for repoID, repo := range repos.ReposMap {
 					inputRevs := indexed.RepoRevs[api.RepoID(repoID)].Revs
 					for _, branch := range repo.Branches {
 						for _, inputRev := range inputRevs {
@@ -756,11 +756,12 @@ func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, repo types.Mi
 // computeExcludedRepos computes the ExcludedRepos that the given RepoOptions would not match. This is
 // used to show in the search UI what repos are excluded precisely.
 func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOptions) (ex ExcludedRepos, err error) {
-	tr, ctx := trace.New(ctx, "searchrepos.Excluded", op.String())
+	tr, ctx := trace.New(ctx, "searchrepos.Excluded", attribute.Stringer("opts", &op))
 	defer func() {
-		tr.LazyPrintf("excluded repos: %+v", ex)
-		tr.SetError(err)
-		tr.Finish()
+		tr.SetAttributes(
+			attribute.Int("excludedForks", ex.Forks),
+			attribute.Int("excludedArchived", ex.Archived))
+		tr.EndWithErr(&err)
 	}()
 
 	excludePatterns := op.MinusRepoFilters

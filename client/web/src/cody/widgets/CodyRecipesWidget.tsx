@@ -4,12 +4,12 @@ import React, { useEffect } from 'react'
 
 import { mdiCardBulletedOutline, mdiDotsVertical, mdiProgressPencil, mdiShuffleVariant } from '@mdi/js'
 
-import { TranslateToLanguage } from '@sourcegraph/cody-shared/src/chat/recipes/translate'
+import { TranslateToLanguage } from '@sourcegraph/cody-shared/dist/chat/recipes/translate'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
-import { CodeMirrorEditor } from '../components/CodeMirrorEditor'
-import { useCodySidebar } from '../sidebar/Provider'
+import type { CodeMirrorEditor } from '../components/CodeMirrorEditor'
+import type { useCodySidebar } from '../sidebar/Provider'
 
 import { Recipe } from './components/Recipe'
 import { RecipeAction } from './components/RecipeAction'

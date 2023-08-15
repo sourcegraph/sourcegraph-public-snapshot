@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
+import React, { type FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import {
@@ -19,13 +19,13 @@ import { Subject } from 'rxjs'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge, Button, Container, ErrorAlert, H3, Icon, Link, PageHeader, Text, Tooltip } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../auth'
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
+import type { AuthenticatedUser } from '../../../../auth'
+import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
-import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
+import type { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
 import { CreatePolicyButtons } from '../components/CreatePolicyButtons'
 import { Duration } from '../components/Duration'
 import { EmptyPoliciesList } from '../components/EmptyPoliciesList'

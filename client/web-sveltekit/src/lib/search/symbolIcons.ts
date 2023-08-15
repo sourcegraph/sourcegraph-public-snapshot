@@ -1,4 +1,5 @@
 // TODO: Reuse code from main app
+
 import {
     mdiCodeArray,
     mdiCodeBraces,
@@ -26,7 +27,7 @@ import {
     mdiWrench,
 } from '@mdi/js'
 
-import type { SymbolKind } from '$lib/graphql/shared'
+import type { SymbolKind } from '$lib/graphql-operations'
 
 /**
  * Returns the icon path for a given symbol kind

@@ -2,8 +2,8 @@
     <Package Name="Cody App"
              Manufacturer="Sourcegraph"
              Version="$(var.InstallerMajorVersion).$(var.InstallerMinorVersion).$(var.InstallerBuildVersion).$(var.InstallerRevVersion)"
-             ProductCode="0C5AC665-C900-4269-9C76-3C96DF5AD1D9"
-             UpgradeCode="54d20194-73ce-41d2-aa4e-02e72f94ed54"
+             ProductCode="{0C5AC665-C900-4269-9C76-3C96DF5AD1D9}"
+             UpgradeCode="{54d20194-73ce-41d2-aa4e-02e72f94ed54}"
              Compressed="yes"
              Language="1033"
              InstallerVersion="200">

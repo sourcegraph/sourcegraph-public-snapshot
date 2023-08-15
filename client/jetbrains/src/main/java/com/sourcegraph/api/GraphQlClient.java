@@ -6,15 +6,18 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,7 +33,11 @@ public class GraphQlClient {
       throws IOException {
     HttpPost request =
         createRequest(instanceUrl, accessToken, customRequestHeaders, query, variables);
-    try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+    try (CloseableHttpClient client =
+        HttpClients.custom()
+            .setDefaultRequestConfig(
+                RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build())
+            .build()) {
       CloseableHttpResponse httpResponse = client.execute(request);
       GraphQlResponse response =
           new GraphQlResponse(getStatusCode(httpResponse), getResponseBody(httpResponse));
@@ -65,7 +72,7 @@ public class GraphQlClient {
 
     request.setHeader("Content-Type", "application/json");
     request.setHeader("X-Sourcegraph-Should-Trace", "false");
-    if (accessToken != null) {
+    if (!StringUtils.isEmpty(accessToken)) {
       request.setHeader("Authorization", "token " + accessToken);
     }
     // Do some checks to make sure the string and its parts are well-formed, but fail silently in

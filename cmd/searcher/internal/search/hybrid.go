@@ -1,6 +1,7 @@
 package search
 
 import (
+	"bytes"
 	"context"
 	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"time"
@@ -312,12 +313,12 @@ func zoektIndexedCommit(ctx context.Context, client zoekt.Streamer, repo api.Rep
 	// NewSingleBranchesRepos and it went through a slow path.
 	q := zoektquery.NewRepoSet(string(repo))
 
-	resp, err := client.List(ctx, q, &zoekt.ListOptions{Minimal: true})
+	resp, err := client.List(ctx, q, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap})
 	if err != nil {
 		return "", false, err
 	}
 
-	for _, v := range resp.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+	for _, v := range resp.ReposMap {
 		return api.CommitID(v.Branches[0].Version), true, nil
 	}
 
@@ -348,7 +349,7 @@ func zoektChunkMatches(chunkMatches []zoekt.ChunkMatch) []protocol.ChunkMatch {
 		}
 
 		cms = append(cms, protocol.ChunkMatch{
-			Content: string(cm.Content),
+			Content: string(bytes.ToValidUTF8(cm.Content, []byte("�"))),
 			ContentStart: protocol.Location{
 				Offset: int32(cm.ContentStart.ByteOffset),
 				Line:   int32(cm.ContentStart.LineNumber) - 1,

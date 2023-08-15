@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "shared",
+    srcs = [
+        "db.go",
+        "noop.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/shared",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database/basestore",
+        "//internal/database/dbutil",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

@@ -1,7 +1,7 @@
-import { FC, Suspense, useCallback, useLayoutEffect, useState } from 'react'
+import { type FC, Suspense, useCallback, useLayoutEffect, useState } from 'react'
 
 import classNames from 'classnames'
-import { matchPath, useLocation, Route, Routes, Navigate, RouteObject } from 'react-router-dom'
+import { matchPath, useLocation, Route, Routes, Navigate, type RouteObject } from 'react-router-dom'
 
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
@@ -10,6 +10,7 @@ import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackPrompt, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
+import { StartupUpdateChecker } from './cody/update/StartupUpdateChecker'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
 import { RouteError } from './components/ErrorBoundary'
@@ -21,8 +22,8 @@ import { GlobalContributions } from './contributions'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { useHandleSubmitFeedback } from './hooks'
-import { LegacyLayoutRouteContext } from './LegacyRouteContext'
-import { CodySurveyToast, SurveyToast } from './marketing/toast'
+import type { LegacyLayoutRouteContext } from './LegacyRouteContext'
+import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery } from './search'
@@ -74,8 +75,11 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
 
     const isFullPageRoute = !!route?.handle?.isFullPage || isAuthTokenCallbackPage
 
-    // eslint-disable-next-line no-restricted-syntax
-    const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
+    const [isSetupChecklistEnabled, flagLoading] = useFeatureFlag('setup-checklist')
+    const [setupSkipped] = useLocalStorage('setup.skipped', false)
+    // navigate to setup wizard if not skipped and new setup-checklist is disabled
+    const wasSetupWizardSkipped = flagLoading || isSetupChecklistEnabled || setupSkipped
+
     const [wasAppSetupFinished] = useLocalStorage('app.setup.finished', false)
 
     const { fuzzyFinder } = useExperimentalFeatures(features => ({
@@ -104,6 +108,8 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
             PageRoutes.Welcome,
             PageRoutes.RequestAccess,
         ].includes(routeMatch as PageRoutes)
+    const isGetCodyPage = location.pathname === PageRoutes.GetCody
+    const isPostSignUpPage = location.pathname === PageRoutes.PostSignUp
 
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
@@ -152,7 +158,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     </div>
                 }
             >
-                <LazySetupWizard isSourcegraphApp={props.isSourcegraphApp} telemetryService={props.telemetryService} />
+                <LazySetupWizard telemetryService={props.telemetryService} />
             </Suspense>
         )
     }
@@ -194,6 +200,15 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         return <ApplicationRoutes routes={props.routes} />
     }
 
+    if (
+        props.isSourcegraphDotCom &&
+        props.authenticatedUser &&
+        !props.authenticatedUser.completedPostSignup &&
+        !isPostSignUpPage
+    ) {
+        return <Navigate to={PageRoutes.PostSignUp} replace={true} />
+    }
+
     return (
         <div
             className={classNames(
@@ -229,13 +244,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 !props.isSourcegraphDotCom &&
                 !disableFeedbackSurvey &&
                 !props.isSourcegraphApp && <SurveyToast authenticatedUser={props.authenticatedUser} />}
-            {props.isSourcegraphDotCom && props.authenticatedUser && (
-                <CodySurveyToast
-                    authenticatedUser={props.authenticatedUser}
-                    telemetryService={props.telemetryService}
-                />
-            )}
-            {!isSiteInit && !isSignInOrUp && (
+            {!isSiteInit && !isSignInOrUp && !isGetCodyPage && !isPostSignUpPage && (
                 <GlobalNavbar
                     {...props}
                     showSearchBox={
@@ -252,6 +261,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     showFeedbackModal={showFeedbackModal}
                 />
             )}
+            {props.isSourcegraphApp && <StartupUpdateChecker />}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
             <ApplicationRoutes routes={props.routes} />
             <GlobalContributions

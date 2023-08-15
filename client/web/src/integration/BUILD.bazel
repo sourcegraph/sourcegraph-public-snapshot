@@ -119,7 +119,6 @@ mocha_test(
     flaky = True,
     is_percy_enabled = True,
     tags = [
-        "manual",
         "no-sandbox",
         "requires-network",
     ],

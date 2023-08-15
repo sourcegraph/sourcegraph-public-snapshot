@@ -131,6 +131,7 @@ func (s *Service) putObject(ctx context.Context, bucketName, objectName string, 
 		return nil, errors.Wrap(err, "sync tmp file")
 	}
 	objectFile := s.objectFilePath(bucketName, objectName)
+	tmpFile.Close()
 	if err := os.Rename(tmpFile.Name(), objectFile); err != nil {
 		return nil, errors.Wrap(err, "renaming object file")
 	}
@@ -149,18 +150,6 @@ func (s *Service) putObject(ctx context.Context, bucketName, objectName string, 
 		LastModified: age,
 		Name:         objectName,
 	}, nil
-}
-
-func fsync(path string) error {
-	f, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	err = f.Sync()
-	if err1 := f.Close(); err == nil {
-		err = err1
-	}
-	return err
 }
 
 func (s *Service) getObject(ctx context.Context, bucketName, objectName string) (io.ReadCloser, error) {

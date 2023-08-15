@@ -1,8 +1,8 @@
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
-import { BatchChangesLicenseInfo } from '@sourcegraph/shared/src/testing/batches'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import type { BatchChangesLicenseInfo } from '@sourcegraph/shared/src/testing/batches'
 
-import { TemporarySettingsResult } from './graphql-operations'
+import type { TemporarySettingsResult } from './graphql-operations'
 
 export type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 'pure-docker' | 'dev' | 'helm'
 
@@ -27,6 +27,7 @@ export interface AuthProvider {
     isBuiltin: boolean
     authenticationURL: string
     serviceID: string
+    clientID: string
 }
 
 /**
@@ -57,6 +58,7 @@ export type SourcegraphContextCurrentUser = Pick<
     | 'latestSettings'
     | 'permissions'
     | 'hasVerifiedEmail'
+    | 'completedPostSignup'
 >
 
 /**
@@ -269,6 +271,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         batchChanges?: BatchChangesLicenseInfo
         knownLicenseTags?: string[]
     }
+
+    /** sha256 hashed license key */
+    hashedLicenseKey?: string
 
     /** Prompt users with browsers that would crash to download a modern browser. */
     RedirectUnsupportedBrowser?: boolean

@@ -1,6 +1,6 @@
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { RepoSettingsAreaRoute } from './RepoSettingsArea'
+import type { RepoSettingsAreaRoute } from './RepoSettingsArea'
 
 export const repoSettingsAreaPath = '/-/settings/*'
 

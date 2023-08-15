@@ -22,7 +22,7 @@ git merge v3.43.2
 
 #### Address any merge conflicts you might have
 
-For each conflict, you need to reconcile any customizations you made with the updates from the new version. Use the information you gathered earlier from the change log and changes list to interpret the merge conflict and to ensure that it doesn't over-write your customizations. You may need to update your customizations to accommodate the new version. 
+For each conflict, you need to reconcile any customizations you made with the updates from the new version. Use the information you gathered earlier from the change log and changes list to interpret the merge conflict and to ensure that it doesn't over-write your customizations. You may need to update your customizations to accommodate the new version.
 
 > NOTE: If you have made no changes or only very minimal changes to your configuration, you can also ask git to always select incoming changes in the event of merge conflicts. In the following example merges will be accepted from the upstream version v3.43.2:
 >
@@ -32,7 +32,7 @@ For each conflict, you need to reconcile any customizations you made with the up
 
 #### Clone the updated release branch to your server
 
-SSH into your instance and navigate to the appropriate folder:  
+SSH into your instance and navigate to the appropriate folder:
 
 ```sh
 # AWS
@@ -55,7 +55,7 @@ $ docker-compose up -d --remove-orphans
 
 ### Multi-version upgrades
 
-If you are upgrading to **Sourcegraph 5.1 or later**, we encourage you to perform an [**automatic multi-version upgrade**](../../updates/automatic.md). The following instructions are still applicable, just the manual version of what automatic multi-version upgrade do for you now (and therefore is valuable information during a bumpy upgrade).
+If you are upgrading to **Sourcegraph 5.1 or later**, we encourage you to perform an [**automatic multi-version upgrade**](../../updates/automatic.md). The following procedure has been automated, but is still applicable should errors occur in an automated upgrade.
 
 ---
 

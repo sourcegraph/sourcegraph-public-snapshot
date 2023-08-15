@@ -139,6 +139,18 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.invalidate_session_for_userid_on_password_change()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        IF OLD.passwd != NEW.passwd THEN\n            NEW.invalidated_sessions_at = now() + (1 * interval '1 second');\n            RETURN NEW;\n        END IF;\n    RETURN NEW;\n    END;\n$function$\n"
     },
     {
+      "Name": "iscodyactiveevent",
+      "Definition": "CREATE OR REPLACE FUNCTION public.iscodyactiveevent(name text)\n RETURNS boolean\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$\nBEGIN\n  RETURN\n    (name LIKE '%%cody%%' OR name LIKE '%%Cody%%')\n    AND name NOT IN (\n        '%completion:started%',\n        '%completion:suggested%',\n        '%cta%',\n        '%Cta%',\n        'CodyVSCodeExtension:CodySavedLogin:executed',\n        'web:codyChat:tryOnPublicCode',\n        'web:codyEditorWidget:viewed',\n        'web:codyChat:pageViewed',\n        'CodyConfigurationPageViewed',\n        'ClickedOnTryCodySearchCTA',\n        'TryCodyWebOnboardingDisplayed',\n        'AboutGetCodyPopover',\n        'TryCodyWeb',\n        'CodySurveyToastViewed',\n        'SiteAdminCodyPageViewed',\n        'CodyUninstalled',\n        'SpeakToACodyEngineerCTA'\n    );\nEND;\n$function$\n"
+    },
+    {
+      "Name": "iscodyexplanationevent",
+      "Definition": "CREATE OR REPLACE FUNCTION public.iscodyexplanationevent(name text)\n RETURNS boolean\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$\nBEGIN\n  RETURN name = ANY(ARRAY[\n    'CodyVSCodeExtension:recipe:explain-code-high-level:executed',\n    'CodyVSCodeExtension:recipe:explain-code-detailed:executed',\n    'CodyVSCodeExtension:recipe:find-code-smells:executed',\n    'CodyVSCodeExtension:recipe:git-history:executed',\n    'CodyVSCodeExtension:recipe:rate-code:executed'\n  ]);\nEND;\n$function$\n"
+    },
+    {
+      "Name": "iscodygenerationevent",
+      "Definition": "CREATE OR REPLACE FUNCTION public.iscodygenerationevent(name text)\n RETURNS boolean\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$\nBEGIN\n  RETURN name = ANY(ARRAY[\n    'CodyVSCodeExtension:recipe:rewrite-to-functional:executed',\n    'CodyVSCodeExtension:recipe:improve-variable-names:executed',\n    'CodyVSCodeExtension:recipe:replace:executed',\n    'CodyVSCodeExtension:recipe:generate-docstring:executed',\n    'CodyVSCodeExtension:recipe:generate-unit-test:executed',\n    'CodyVSCodeExtension:recipe:rewrite-functional:executed',\n    'CodyVSCodeExtension:recipe:code-refactor:executed',\n    'CodyVSCodeExtension:recipe:fixup:executed',\n\t'CodyVSCodeExtension:recipe:translate-to-language:executed'\n  ]);\nEND;\n$function$\n"
+    },
+    {
       "Name": "merge_audit_log_transitions",
       "Definition": "CREATE OR REPLACE FUNCTION public.merge_audit_log_transitions(internal hstore, arrayhstore hstore[])\n RETURNS hstore\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$\n    DECLARE\n        trans hstore;\n    BEGIN\n      FOREACH trans IN ARRAY arrayhstore\n      LOOP\n          internal := internal || hstore(trans-\u003e'column', trans-\u003e'new');\n      END LOOP;\n\n      RETURN internal;\n    END;\n$function$\n"
     },
@@ -426,6 +438,15 @@
       "StartValue": 1,
       "MinimumValue": 1,
       "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "code_hosts_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
       "Increment": 1,
       "CycleOption": "NO"
     },
@@ -7184,6 +7205,153 @@
       "Triggers": []
     },
     {
+      "Name": "code_hosts",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "api_rate_limit_interval_seconds",
+          "Index": 5,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "api_rate_limit_quota",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "created_at",
+          "Index": 8,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "git_rate_limit_interval_seconds",
+          "Index": 7,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "git_rate_limit_quota",
+          "Index": 6,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('code_hosts_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "kind",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 9,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "url",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "code_hosts_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX code_hosts_pkey ON code_hosts USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "code_hosts_url_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX code_hosts_url_key ON code_hosts USING btree (url)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (url)"
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
       "Name": "codeintel_autoindex_queue",
       "Comment": "",
       "Columns": [
@@ -10184,6 +10352,45 @@
           "Comment": ""
         },
         {
+          "Name": "billing_event_id",
+          "Index": 19,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "billing_product_category",
+          "Index": 18,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "client",
+          "Index": 20,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "cohort_id",
           "Index": 11,
           "TypeName": "date",
@@ -10397,6 +10604,36 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX event_logs_anonymous_user_id ON event_logs USING btree (anonymous_user_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "event_logs_name_is_cody_active_event",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX event_logs_name_is_cody_active_event ON event_logs USING btree (iscodyactiveevent(name))",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "event_logs_name_is_cody_explanation_event",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX event_logs_name_is_cody_explanation_event ON event_logs USING btree (iscodyexplanationevent(name))",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "event_logs_name_is_cody_generation_event",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX event_logs_name_is_cody_generation_event ON event_logs USING btree (iscodygenerationevent(name))",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -12066,6 +12303,19 @@
           "Comment": ""
         },
         {
+          "Name": "code_host_id",
+          "Index": 17,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "config",
           "Index": 4,
           "TypeName": "text",
@@ -12340,6 +12590,13 @@
           "RefTableName": "",
           "IsDeferrable": false,
           "ConstraintDefinition": "CHECK (btrim(config) \u003c\u003e ''::text)"
+        },
+        {
+          "Name": "external_services_code_host_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "code_hosts",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (code_host_id) REFERENCES code_hosts(id) ON UPDATE CASCADE ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED"
         },
         {
           "Name": "external_services_max_1_namespace",
@@ -13446,6 +13703,19 @@
           "Comment": ""
         },
         {
+          "Name": "pool_repo_id",
+          "Index": 13,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "This is used to refer to the pool repository for deduplicated repos"
+        },
+        {
           "Name": "repo_id",
           "Index": 1,
           "TypeName": "integer",
@@ -13591,6 +13861,13 @@
         }
       ],
       "Constraints": [
+        {
+          "Name": "gitserver_repos_pool_repo_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (pool_repo_id) REFERENCES repo(id)"
+        },
         {
           "Name": "gitserver_repos_repo_id_fkey",
           "ConstraintType": "f",
@@ -13840,7 +14117,7 @@
     },
     {
       "Name": "insights_query_runner_jobs",
-      "Comment": "See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job\u0026patternType=literal)",
+      "Comment": "See [internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:internal/insights/background/queryrunner/worker.go+type+Job\u0026patternType=literal)",
       "Columns": [
         {
           "Name": "cancel",
@@ -23061,6 +23338,19 @@
           "Comment": ""
         },
         {
+          "Name": "code_chunks_excluded",
+          "Index": 13,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "code_files_embedded",
           "Index": 4,
           "TypeName": "integer",
@@ -23141,6 +23431,19 @@
         {
           "Name": "text_chunks_embedded",
           "Index": 10,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "text_chunks_excluded",
+          "Index": 14,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "0",
@@ -24993,32 +25296,6 @@
       "Comment": "Responsible for storing permissions at a finer granularity than repo",
       "Columns": [
         {
-          "Name": "path_excludes",
-          "Index": 5,
-          "TypeName": "text[]",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "path_includes",
-          "Index": 4,
-          "TypeName": "text[]",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "paths",
           "Index": 7,
           "TypeName": "text[]",
@@ -26793,6 +27070,19 @@
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "completed_post_signup",
+          "Index": 22,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",

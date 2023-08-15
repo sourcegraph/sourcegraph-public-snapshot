@@ -131,7 +131,7 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, LastSourceURL: creds.LastSourceURL, DatabaseID: usr.ID})
 	}
 
-	if err = usagestats.LogBackendEvent(db, sgactor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
+	if err = usagestats.LogBackendEvent(db, usr.ID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
 		logger.Warn("Failed to log event SignUpSucceeded", log.Error(err))
 	}
 }

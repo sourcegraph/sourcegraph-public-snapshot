@@ -3,8 +3,8 @@ import React from 'react'
 import { mdiChevronRight, mdiMicrosoftVisualStudioCode } from '@mdi/js'
 import classNames from 'classnames'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ButtonLink, H1, H2, Icon, Link, Text } from '@sourcegraph/wildcard'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ButtonLink, H1, H2, Icon, Link, ProductStatusBadge, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
 import { EventName } from '../../../util/constants'
@@ -101,10 +101,14 @@ export const TryCodySignUpCtaSection: React.FC<TelemetryProps & { className?: st
                         VS Code extension
                     </Text>
                     <Text as="li" size="small" className="mb-2">
-                        the Sourcegraph web application{' '}
+                        the Sourcegraph web application
+                    </Text>
+                    <Text as="li" size="small" className="mb-2">
+                        our JetBrains IDE plugin{' '}
+                        <ProductStatusBadge status="experimental" className={styles.experimentalBadge} />
                     </Text>
                     <Text as="li" size="small" className="text-muted">
-                        JetBrains and other editors (Coming soon!)
+                        Neovim and other editors (Coming soon!)
                     </Text>
                 </ul>
                 <div className="mb-2">

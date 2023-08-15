@@ -6,6 +6,8 @@ go_library(
     srcs = [
         "fileinfo.go",
         "fileutil.go",
+        "fileutil_posix.go",
+        "fileutil_windows.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/fileutil",
     visibility = ["//:__subpackages__"],
