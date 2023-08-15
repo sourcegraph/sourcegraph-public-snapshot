@@ -26,6 +26,8 @@ type ListCodeHostsOpts struct {
 	IncludeDeleted bool
 	// Search is an optional string to search through kind and URL.
 	Search string
+	// NoPagination will return all code hosts matching the options with no need for pagination.
+	NoPagination bool
 }
 
 // CodeHostStore provides access to the code_hosts table.
@@ -210,16 +212,19 @@ func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("(code_hosts.kind ILIKE %s OR code_hosts.url ILIKE %s)", "%"+opts.Search+"%", "%"+opts.Search+"%"))
 	}
 
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("TRUE"))
+	}
+
+	if opts.NoPagination {
+		return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Join(codeHostColumnExpressions, ","), sqlf.Join(conds, "AND"), sqlf.Sprintf(""))
+	}
+
 	// We fetch an extra one so that we have the `next` value
 	newLimitOffset := opts.LimitOffset
 	if newLimitOffset.Limit > 0 {
 		newLimitOffset.Limit += 1
 	}
-
-	if len(conds) == 0 {
-		return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Join(codeHostColumnExpressions, ","), sqlf.Sprintf("TRUE"), newLimitOffset.SQL())
-	}
-
 	return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Join(codeHostColumnExpressions, ","), sqlf.Join(conds, "AND"), newLimitOffset.SQL())
 }
 

@@ -20,7 +20,6 @@ go_library(
         "//internal/observation",
         "//internal/ratelimit",
         "//internal/redispool",
-        "//internal/types",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
         "@org_golang_x_time//rate",

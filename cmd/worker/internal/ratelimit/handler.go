@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.org/x/time/rate"
 )
@@ -26,34 +25,32 @@ type handler struct {
 }
 
 func (h *handler) Handle(ctx context.Context, observationCtx *observation.Context) error {
-	var err error
-	var next int32
-	for {
-		var codeHosts []*types.CodeHost
-		codeHosts, next, err = h.codeHostStore.List(ctx, database.ListCodeHostsOpts{
-			LimitOffset: database.LimitOffset{
-				Limit: 20,
-			},
-			Cursor: next,
-		})
+	codeHosts, _, err := h.codeHostStore.List(ctx, database.ListCodeHostsOpts{
+		NoPagination: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	var fallbackGitQuota int32
+	siteCfg := conf.Get()
+	if siteCfg.GitMaxCodehostRequestsPerSecond != nil {
+		fallbackGitQuota = int32(*siteCfg.GitMaxCodehostRequestsPerSecond)
+	} else {
+		fallbackGitQuota = math.MaxInt32
+	}
+
+	for _, codeHost := range codeHosts {
+		err = h.processCodeHost(ctx, codeHost.URL, fallbackGitQuota)
 		if err != nil {
-			return err
-		}
-		for _, codeHost := range codeHosts {
-			err = h.processCodeHost(ctx, codeHost.URL)
-			if err != nil {
-				observationCtx.Logger.Error("error setting rate limit configuration", log.String("url", codeHost.URL), log.Error(err))
-			}
-		}
-		if next == 0 {
-			break
+			observationCtx.Logger.Error("error setting rate limit configuration", log.String("url", codeHost.URL), log.Error(err))
 		}
 	}
 	return err
 }
 
-func (h *handler) processCodeHost(ctx context.Context, codeHostURL string) error {
-	configs, err := h.getRateLimitConfigsOrDefaults(ctx, codeHostURL)
+func (h *handler) processCodeHost(ctx context.Context, codeHostURL string, fallbackGitQuota int32) error {
+	configs, err := h.getRateLimitConfigsOrDefaults(ctx, codeHostURL, fallbackGitQuota)
 	if err != nil {
 		return err
 	}
@@ -65,7 +62,7 @@ func (h *handler) processCodeHost(ctx context.Context, codeHostURL string) error
 	return errors.CombineErrors(err, err2)
 }
 
-func (h *handler) getRateLimitConfigsOrDefaults(ctx context.Context, codeHostURL string) (CodeHostRateLimitConfigs, error) {
+func (h *handler) getRateLimitConfigsOrDefaults(ctx context.Context, codeHostURL string, fallbackGitQuota int32) (CodeHostRateLimitConfigs, error) {
 	var configs CodeHostRateLimitConfigs
 	// Retrieve the actual rate limit values from the source of truth (database).
 	codeHost, err := h.codeHostStore.GetByURL(ctx, codeHostURL)
@@ -94,12 +91,7 @@ func (h *handler) getRateLimitConfigsOrDefaults(ctx context.Context, codeHostURL
 	if codeHost.GitRateLimitQuota != nil {
 		configs.GitQuota = *codeHost.GitRateLimitQuota
 	} else {
-		siteCfg := conf.Get()
-		if siteCfg.GitMaxCodehostRequestsPerSecond != nil {
-			configs.GitQuota = int32(*siteCfg.GitMaxCodehostRequestsPerSecond)
-		} else {
-			configs.GitQuota = math.MaxInt32
-		}
+		configs.GitQuota = fallbackGitQuota
 	}
 
 	if codeHost.GitRateLimitIntervalSeconds != nil {
