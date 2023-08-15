@@ -1116,6 +1116,7 @@ go_library(
         "frontend/1690323910_add_chunks_excluded_embeddings_stats/up.sql",
         "frontend/1692130477_add_event_logs_functions/down.sql",
         "frontend/1692130477_add_event_logs_functions/metadata.yaml",
+        "frontend/1692130477_add_event_logs_functions/up.sql",
         "frontend/1692130613_add_event_logs_index_active/down.sql",
         "frontend/1692130613_add_event_logs_index_active/metadata.yaml",
         "frontend/1692130613_add_event_logs_index_active/up.sql",

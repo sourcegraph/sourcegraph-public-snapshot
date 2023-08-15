@@ -1,2 +1,3 @@
 name: add_event_logs_index_explanation
 parents: [1692130682]
+createIndexConcurrently: true
