@@ -4,16 +4,14 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type WriterStat struct {
-	Event    string
-	Bytes    int
-	Duration time.Duration
-	Error    error
+	Event string
+	Bytes int
+	Error error
 }
 
 type Writer struct {
@@ -72,7 +70,6 @@ func (e *Writer) EventBytes(event string, dataLine []byte) (err error) {
 
 	// write is a helper to avoid error handling. Additionally it counts the
 	// number of bytes written.
-	start := time.Now()
 	bytes := 0
 	write := func(b []byte) {
 		if err != nil {
@@ -86,10 +83,9 @@ func (e *Writer) EventBytes(event string, dataLine []byte) (err error) {
 	defer func() {
 		if hook := e.StatHook; hook != nil {
 			hook(WriterStat{
-				Event:    event,
-				Bytes:    bytes,
-				Duration: time.Since(start),
-				Error:    err,
+				Event: event,
+				Bytes: bytes,
+				Error: err,
 			})
 		}
 	}()
