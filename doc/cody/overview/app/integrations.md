@@ -15,7 +15,7 @@ The `app.json` file is placed in the app's local data directory when it runs for
 The location of the file varies by OS:
 
 - Mac OS: `~/Library/Application Support/com.sourcegraph.cody/app.json`
-- Linux: 
+- Linux:
  - `$XDG_DATA_HOME/com.sourcegraph.cody/app.json`
  - or: `$HOME/.local/share/com.sourcegraph.cody/app.json`
 - Windows: `{FOLDERID_LocalAppData}/com.sourcegraph.cody/app.json`
@@ -32,7 +32,7 @@ Example contents of `app.json`:
 
 ## Token
 
-API requests require a token. The token is generated when the Cody app runs for the first time and placed in `app.json` in the app's config directory. See the [Sourcegraph API docs](../api/graphql/index.md) for how to make requests with the token.
+API requests require a token. The token is generated when the Cody app runs for the first time and placed in `app.json` in the app's config directory. See the [Sourcegraph API docs](../../../api/graphql/index.md) for how to make requests with the token.
 
 ## Endpoint
 
@@ -48,4 +48,3 @@ To detect if the Cody app is running a GET request to the version endpoint can b
 ## Deep links
 
 The Cody app supports opening deep links that start with the `sourcegraph://` prefix. Opening of a deep links from a browser or from another application will launch the app if it's not already running and will navigate the app's UI to the destination.
-

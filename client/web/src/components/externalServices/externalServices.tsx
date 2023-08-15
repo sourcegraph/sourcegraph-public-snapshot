@@ -583,35 +583,23 @@ const azureDevOpsEditorActions = (): EditorAction[] => [
     },
 ]
 
-const GITHUB_DOTCOM: AddExternalServiceOptions = {
+export const GITHUB: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITHUB,
-    shortDescription: 'Connect GitHub.com hosted repositories using an access token',
-    title: 'GitHub.com',
+    shortDescription: 'Cloud-hosted or Self-hosted using an access token',
+    title: 'GitHub.com or Enterprise',
     icon: GithubIcon,
     jsonSchema: githubSchemaJSON,
     editorActions: githubEditorActions(false),
     Instructions: () => <GitHubInstructions isEnterprise={false} />,
     defaultDisplayName: 'GitHub',
     defaultConfig: `{
-  "url": "https://github.com",
-  "token": "<access token>",
-  "orgs": []
-}`,
-}
-const GITHUB_ENTERPRISE: AddExternalServiceOptions = {
-    ...GITHUB_DOTCOM,
-    title: 'GitHub Enterprise',
-    shortDescription: 'Connect repositories on self-hosted GitHub Enterprise installations using an access token',
-    defaultConfig: `{
   "url": "https://github.example.com",
   "token": "<access token>",
   "orgs": []
 }`,
-    editorActions: githubEditorActions(true),
-    Instructions: () => <GitHubInstructions isEnterprise={true} />,
 }
 const GITHUB_APP: AddExternalServiceOptions = {
-    ...GITHUB_DOTCOM,
+    ...GITHUB,
     title: 'GitHub App',
     shortDescription:
         'Connect repositories on GitHub.com or self-hosted GitHub Enterprise installations using a GitHub App installation',
@@ -860,6 +848,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
             </Text>
         </div>
     ),
+    shortDescription: 'Cloud-hosted using credentials',
 }
 const BITBUCKET_SERVER: AddExternalServiceOptions = {
     kind: ExternalServiceKind.BITBUCKETSERVER,
@@ -1023,30 +1012,15 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             },
         },
     ],
+    shortDescription: 'Self-hosted using an access token',
 }
-const GITLAB_DOTCOM: AddExternalServiceOptions = {
+const GITLAB: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITLAB,
-    title: 'GitLab.com',
+    title: 'GitLab',
     icon: GitLabIcon,
-    shortDescription: 'Connect GitLab.com hosted repositories using an access token',
+    shortDescription: 'Connect cloud-hosted or self-hosted repositories on GitLab',
     jsonSchema: gitlabSchemaJSON,
     defaultDisplayName: 'GitLab',
-    defaultConfig: `{
-  "url": "https://gitlab.com",
-  "token": "<access token>",
-  "projectQuery": [
-    "projects?membership=true&archived=no"
-  ]
-}`,
-    editorActions: gitlabEditorActions(false),
-    Instructions: () => <GitLabInstructions isSelfManaged={false} />,
-}
-const GITLAB_SELF_MANAGED: AddExternalServiceOptions = {
-    ...GITLAB_DOTCOM,
-    title: 'GitLab Self-Managed',
-    shortDescription: 'Connect repositories on self-hosted GitLab installations using an access token',
-    Instructions: () => <GitLabInstructions isSelfManaged={true} />,
-    editorActions: gitlabEditorActions(true),
     defaultConfig: `{
   "url": "https://gitlab.example.com",
   "token": "<access token>",
@@ -1054,6 +1028,8 @@ const GITLAB_SELF_MANAGED: AddExternalServiceOptions = {
     "projects?membership=true&archived=no"
   ]
 }`,
+    editorActions: gitlabEditorActions(false),
+    Instructions: () => <GitLabInstructions isSelfManaged={false} />,
 }
 const SRC_SERVE_GIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.OTHER,
@@ -1169,13 +1145,13 @@ const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
     jsonSchema: phabricatorSchemaJSON,
     defaultDisplayName: 'Phabricator',
     defaultConfig: `{
-// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
-// Configuration options are documented here:
-// https://docs.sourcegraph.com/admin/external_service/phabricator#configuration
+  // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+  // Configuration options are documented here:
+  // https://docs.sourcegraph.com/admin/external_service/phabricator#configuration
 
-"url": "https://phabricator.example.com",
-"token": "",
-"repos": []
+  "url": "https://phabricator.example.com",
+  "token": "",
+  "repos": []
 }`,
     editorActions: [
         {
@@ -1616,11 +1592,9 @@ const RUBY_PACKAGES: AddExternalServiceOptions = {
 }
 
 export const codeHostExternalServices: Record<string, AddExternalServiceOptions> = {
-    github: GITHUB_DOTCOM,
-    ghe: GITHUB_ENTERPRISE,
+    github: GITHUB,
     ghapp: GITHUB_APP,
-    gitlabcom: GITLAB_DOTCOM,
-    gitlab: GITLAB_SELF_MANAGED,
+    gitlabcom: GITLAB,
     bitbucket: BITBUCKET_CLOUD,
     bitbucketserver: BITBUCKET_SERVER,
     aws_codecommit: AWS_CODE_COMMIT,
@@ -1629,18 +1603,18 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     git: GENERIC_GIT,
     gerrit: GERRIT,
     azuredevops: AZUREDEVOPS,
+    phabricator: PHABRICATOR_SERVICE,
+    ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
+    ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
+}
+
+export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {
     ...(window.context?.experimentalFeatures?.pythonPackages === 'enabled' ? { pythonPackages: PYTHON_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rustPackages === 'enabled' ? { rustPackages: RUST_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rubyPackages === 'enabled' ? { rubyPackages: RUBY_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.goPackages === 'enabled' ? { goModules: GO_MODULES } : {}),
     ...(window.context?.experimentalFeatures?.jvmPackages === 'enabled' ? { jvmPackages: JVM_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.npmPackages === 'enabled' ? { npmPackages: NPM_PACKAGES } : {}),
-    ...(window.context?.experimentalFeatures?.perforce !== 'disabled' ? { perforce: PERFORCE } : {}),
-    ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
-}
-
-export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {
-    phabricator: PHABRICATOR_SERVICE,
 }
 
 export const allExternalServices = {
@@ -1649,11 +1623,11 @@ export const allExternalServices = {
 }
 
 export const defaultExternalServices: Record<ExternalServiceKind, AddExternalServiceOptions> = {
-    [ExternalServiceKind.GITHUB]: GITHUB_DOTCOM,
+    [ExternalServiceKind.GITHUB]: GITHUB,
     [ExternalServiceKind.AZUREDEVOPS]: AZUREDEVOPS,
     [ExternalServiceKind.BITBUCKETCLOUD]: BITBUCKET_CLOUD,
     [ExternalServiceKind.BITBUCKETSERVER]: BITBUCKET_SERVER,
-    [ExternalServiceKind.GITLAB]: GITLAB_DOTCOM,
+    [ExternalServiceKind.GITLAB]: GITLAB,
     [ExternalServiceKind.GITOLITE]: GITOLITE,
     [ExternalServiceKind.PHABRICATOR]: PHABRICATOR_SERVICE,
     [ExternalServiceKind.OTHER]: GENERIC_GIT,
