@@ -10613,7 +10613,7 @@
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX CONCURRENTLY event_logs_name_is_cody_active_event ON event_logs USING btree (iscodyactiveevent(name))",
+          "IndexDefinition": "CREATE INDEX event_logs_name_is_cody_active_event ON event_logs USING btree (iscodyactiveevent(name))",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -10623,7 +10623,7 @@
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX CONCURRENTLY event_logs_name_is_cody_explanation_event ON event_logs USING btree (iscodyexplanationevent(name))",
+          "IndexDefinition": "CREATE INDEX event_logs_name_is_cody_explanation_event ON event_logs USING btree (iscodyexplanationevent(name))",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -10633,7 +10633,7 @@
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX CONCURRENTLY event_logs_name_is_cody_generation_event ON event_logs USING btree (iscodygenerationevent(name))",
+          "IndexDefinition": "CREATE INDEX event_logs_name_is_cody_generation_event ON event_logs USING btree (iscodygenerationevent(name))",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
