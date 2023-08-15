@@ -144,7 +144,7 @@ const getBorderClassname = (entryType: EntryType): string => {
 }
 
 const StatusMessagesNavItemEntry: React.FunctionComponent<React.PropsWithChildren<StatusMessageEntryProps>> = props => (
-    <div key={props.message} className={styles.entry}>
+    <div className={styles.entry}>
         <H4 className="d-flex align-items-center mb-0">
             {entryIcon(props.entryType)}
             {props.title ? props.title : 'Your repositories'}

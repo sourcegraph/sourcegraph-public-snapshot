@@ -79,7 +79,7 @@ export const NotificationsNavbarItem: React.FC = () => {
             <PopoverTrigger as={Button}>
                 <div className="d-flex align-items-center">
                     <Icon
-                        svgPath={hasError ? mdiBellAlert : hasWarning || hasInfo ? mdiBellBadge : mdiBellCheck}
+                        svgPath={(hasError ? mdiBellAlert : hasWarning || hasInfo) ? mdiBellBadge : mdiBellCheck}
                         aria-label="Notifications"
                         size="md"
                     />
