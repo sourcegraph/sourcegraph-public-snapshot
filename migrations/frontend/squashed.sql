@@ -5926,11 +5926,11 @@ CREATE INDEX event_logs_anonymous_user_id ON event_logs USING btree (anonymous_u
 
 CREATE UNIQUE INDEX event_logs_export_allowlist_event_name_idx ON event_logs_export_allowlist USING btree (event_name);
 
-CREATE INDEX event_logs_name_is_cody_active_event ON event_logs USING btree (iscodyactiveevent(name));
+CREATE INDEX CONCURRENTLY event_logs_name_is_cody_active_event ON event_logs USING btree (iscodyactiveevent(name));
 
-CREATE INDEX event_logs_name_is_cody_explanation_event ON event_logs USING btree (iscodyexplanationevent(name));
+CREATE INDEX CONCURRENTLY event_logs_name_is_cody_explanation_event ON event_logs USING btree (iscodyexplanationevent(name));
 
-CREATE INDEX event_logs_name_is_cody_generation_event ON event_logs USING btree (iscodygenerationevent(name));
+CREATE INDEX CONCURRENTLY event_logs_name_is_cody_generation_event ON event_logs USING btree (iscodygenerationevent(name));
 
 CREATE INDEX event_logs_name_timestamp ON event_logs USING btree (name, "timestamp" DESC);
 
