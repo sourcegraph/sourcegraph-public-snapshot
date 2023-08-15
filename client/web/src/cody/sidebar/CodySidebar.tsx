@@ -101,18 +101,19 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose }) => {
                                 <Icon aria-hidden={true} svgPath={mdiPlus} />
                             </Button>
                         </Tooltip>
-                        {showHistory && transcriptHistory[0].interactions.length > 0 && (
-                            <Tooltip content="Clear all chats">
-                                <Button
-                                    variant="icon"
-                                    className="ml-2"
-                                    aria-label="Clear all chats"
-                                    onClick={clearHistory}
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiDelete} />
-                                </Button>
-                            </Tooltip>
-                        )}
+                        {showHistory &&
+                            (transcriptHistory.length > 1 || !!transcriptHistory[0]?.interactions?.length) && (
+                                <Tooltip content="Clear all chats">
+                                    <Button
+                                        variant="icon"
+                                        className="ml-2"
+                                        aria-label="Clear all chats"
+                                        onClick={clearHistory}
+                                    >
+                                        <Icon aria-hidden={true} svgPath={mdiDelete} />
+                                    </Button>
+                                </Tooltip>
+                            )}
                     </div>
                     <div className="col-8 d-flex justify-content-center">
                         <div className="d-flex flex-shrink-0 align-items-center">
