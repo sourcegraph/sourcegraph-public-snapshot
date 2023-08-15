@@ -106,7 +106,7 @@ func SetupPackageBuild(name string) (manifestBaseName string, buildDir string, e
 	}
 
 	// Create a temp dir
-	buildDir, err = os.MkdirTemp("/tmp", "sg-wolfi-package-tmp")
+	buildDir, err = os.MkdirTemp("", "sg-wolfi-package-tmp")
 	if err != nil {
 		return "", "", errors.Wrap(err, "unable to create temporary build directory")
 	}
