@@ -340,6 +340,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		for key := range path.paths {
 			pathspec = append(pathspec, key)
 		}
+		fmt.Printf("Pathspecs: %v\n", pathspec)
 		opts := gitserver.ArchiveOptions{
 			Treeish:   parts[1],
 			Format:    gitserver.ArchiveFormatTar,
@@ -371,6 +372,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			// the returned filepaths.
 			file := buf.String()
 			p := strings.TrimPrefix(header.Name, ":(literal)")
+			fmt.Printf("Read path from archive: %q\n", p)
 			fileToPath[file] = struct {
 				path string
 				dump shared.Dump
@@ -381,6 +383,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		}
 	}
 
+	var cacheKeys []string
 	for file, path := range fileToPath {
 		syntectDocs, err := s.getSCIPDocumentByContent(ctx, file, path.path)
 		if err != nil {
@@ -388,10 +391,11 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		}
 		key := fmt.Sprintf("%s@%s:%s", path.dump.RepositoryName, path.dump.Commit, filepath.Join(path.dump.Root, path.path))
 		cache[key] = NewDocumentAndText(file, syntectDocs)
+		cacheKeys = append(cacheKeys, key)
 	}
 
 	// DEBUGGING
-	lap(map[string]any{"event": "phase 4"})
+	lap(map[string]any{"event": "phase 4", "cache keys": cacheKeys})
 
 	// PHASE 5: Extract the definitions for each of the relevant syntect symbols
 	// we originally requested.
@@ -404,8 +408,11 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	for _, pd := range preciseDataList {
 		for _, l := range pd.Location {
 			key := fmt.Sprintf("%s@%s:%s", l.Dump.RepositoryName, l.Dump.Commit, filepath.Join(l.Dump.Root, l.Path))
-			documentAndText := cache[key]
-			fmt.Printf("FETCHING %q\n", l.SymbolName)
+			fmt.Printf("FETCHING %q at %q\n", l.SymbolName, key)
+			documentAndText, ok := cache[key]
+			if !ok {
+				fmt.Printf("WTF???\n\n\n")
+			}
 
 			for _, occ := range documentAndText.SCIP.Occurrences {
 				r := scip.NewRange(occ.Range)
@@ -426,12 +433,10 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				if r.Start.Line != int32(rd.StartLine) || r.Start.Character != int32(rd.StartCharacter) {
 					continue
 				}
-				fmt.Print("FOUND IT!\n")
 
 				if len(occ.EnclosingRange) > 0 {
 					ex, err := symbols.NewExplodedSymbol(pd.SCIP)
 					if err != nil {
-						fmt.Printf("OOPS 1: %q\n", pd.SCIP)
 						return nil, "", err
 					}
 
@@ -439,7 +444,6 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 					if pd.Fuzzy != "" {
 						fex, err := symbols.NewExplodedSymbol(pd.Fuzzy)
 						if err != nil {
-							fmt.Printf("OOPS 2: %q\n", pd.Fuzzy)
 							return nil, "", err
 						}
 						if fex.FuzzyDescriptorSuffix != "" {
