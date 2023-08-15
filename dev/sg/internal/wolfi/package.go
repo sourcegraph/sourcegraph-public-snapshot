@@ -174,7 +174,7 @@ func RemoveBuildDir(path string) {
 		// wait a bit in case any build processes (I'm looking at you, Docker!) are still using the directory
 		time.Sleep(50 * time.Millisecond)
 		if err := os.RemoveAll(path); err != nil {
-			std.Out.WriteLine(output.Linef("⛔️", output.StyleWarning, "\nCould not delete temp build dir %s because %s\n", path, err))
+			std.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleWarning, " Could not delete temp build dir %s because %s", path, err))
 		}
 	}
 }
