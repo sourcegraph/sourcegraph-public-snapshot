@@ -150,7 +150,7 @@ func (c PackageRepoConfig) DoPackageBuild(name string, buildDir string) error {
 	std.Out.Write("")
 
 	if err := deleteBuildDir(buildDir); err != nil {
-		std.Out.WriteLine(output.Linef("⛔️", output.StyleWarning, "\nCould not delete temp build dir %s\n", buildDir))
+		std.Out.WriteLine(output.Linef("⛔️", output.StyleWarning, "\nCould not delete temp build dir %s because %s\n", buildDir, err))
 	}
 
 	if cmdErr != nil {
