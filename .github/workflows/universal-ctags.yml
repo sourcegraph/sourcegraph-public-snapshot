@@ -9,7 +9,7 @@ on:
 jobs:
   x86_64-darwin:
     name: Build ctags
-    runs-on: macos-11
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
       - name: Install Nix
@@ -23,7 +23,7 @@ jobs:
         name: Run `nix build`
         run: |
           nix build .#ctags
-          codesign --force -s - ./result/bin/ctags-*
+          sudo codesign --force -s - ./result/bin/ctags-*
 
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
@@ -33,7 +33,7 @@ jobs:
           glob: 'ctags-*'
   aarch64-darwin:
     name: Build ctags
-    runs-on: macos-11
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
       - name: Install Nix
@@ -47,7 +47,7 @@ jobs:
         name: Run `nix build`
         run: |
           nix build .#ctags-aarch64-darwin
-          codesign --force -vvvv -s - ./result/bin/ctags-*
+          sudo codesign --force -vvvv -s - ./result/bin/ctags-*
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
