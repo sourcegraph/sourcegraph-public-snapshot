@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var repoSearchJobWorkerOpts = dbworkerstore.Options[*types.ExhaustiveSearchRepoJob]{
@@ -65,6 +66,13 @@ func (s *Store) CreateExhaustiveSearchRepoJob(ctx context.Context, job types.Exh
 	ctx, _, endObservation := s.operations.createExhaustiveSearchRepoJob.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
+	if job.SearchJobID <= 0 {
+		return 0, MissingSearchJobIDErr
+	}
+	if job.RepoID <= 0 {
+		return 0, MissingRepoIDErr
+	}
+
 	row := s.Store.QueryRow(
 		ctx,
 		sqlf.Sprintf(createExhaustiveSearchRepoJobQueryFmtr, job.RepoID, job.SearchJobID),
@@ -76,6 +84,12 @@ func (s *Store) CreateExhaustiveSearchRepoJob(ctx context.Context, job types.Exh
 	}
 	return id, nil
 }
+
+// MissingSearchJobIDErr is returned when a search job ID is missing.
+var MissingSearchJobIDErr = errors.New("missing search job ID")
+
+// MissingRepoIDErr is returned when a repo ID is missing.
+var MissingRepoIDErr = errors.New("missing repo ID")
 
 const createExhaustiveSearchRepoJobQueryFmtr = `
 INSERT INTO exhaustive_search_repo_jobs (repo_id, search_job_id)

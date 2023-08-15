@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,17 +22,15 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	bs := basestore.NewWithHandle(db.Handle())
-	q := sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice') RETURNING id`)
-	row := bs.QueryRow(context.Background(), q)
-	var userID int
-	err := row.Scan(&userID)
-	require.NoError(t, err)
 
 	t.Cleanup(func() {
-		q := sqlf.Sprintf(`TRUNCATE TABLE users RESTART IDENTITY CASCADE`)
-		err := bs.Exec(context.Background(), q)
-		require.NoError(t, err)
+		cleanupUsers(bs)
 	})
+
+	userID, err := createUser(bs, "alice")
+	require.NoError(t, err)
+
+	s := store.New(db, &observation.TestContext)
 
 	tests := []struct {
 		name        string
@@ -44,7 +41,7 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 		{
 			name: "New job",
 			job: types.ExhaustiveSearchJob{
-				InitiatorID: int32(userID),
+				InitiatorID: userID,
 				Query:       "repo:^github\\.com/hashicorp/errwrap$ hello",
 			},
 			expectedErr: nil,
@@ -59,7 +56,7 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 		{
 			name: "Missing query",
 			job: types.ExhaustiveSearchJob{
-				InitiatorID: int32(userID),
+				InitiatorID: userID,
 			},
 			expectedErr: errors.New("missing query"),
 		},
@@ -67,13 +64,13 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 			name: "Search already exists",
 			setup: func(t *testing.T, s *store.Store) {
 				_, err := s.CreateExhaustiveSearchJob(context.Background(), types.ExhaustiveSearchJob{
-					InitiatorID: int32(userID),
+					InitiatorID: userID,
 					Query:       "repo:^github\\.com/hashicorp/errwrap$ hello",
 				})
 				require.NoError(t, err)
 			},
 			job: types.ExhaustiveSearchJob{
-				InitiatorID: int32(userID),
+				InitiatorID: userID,
 				Query:       "repo:^github\\.com/hashicorp/errwrap$ hello",
 			},
 			expectedErr: errors.New("ERROR: duplicate key value violates unique constraint \"exhaustive_search_jobs_query_initiator_id_key\" (SQLSTATE 23505)"),
@@ -81,8 +78,6 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			s := store.New(db, &observation.TestContext)
-
 			if test.setup != nil {
 				test.setup(t, s)
 			}
