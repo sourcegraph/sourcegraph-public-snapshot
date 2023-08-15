@@ -4,7 +4,7 @@ import {
     gql as apolloGql,
     useQuery as useApolloQuery,
     useMutation as useApolloMutation,
-    useSuspenseQuery_experimental as useApolloSuspenseQuery,
+    useSuspenseQuery as useApolloSuspenseQuery,
     useLazyQuery as useApolloLazyQuery,
     DocumentNode,
     OperationVariables,
