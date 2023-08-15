@@ -21,7 +21,7 @@ func TestRateLimiter(t *testing.T) {
 
 	// Set up the test by initializing the bucket with some initial capacity and replenishment rate
 	ctx := context.Background()
-	bucketName := "github.com:" + CodeHostAPITokenBucketSuffix
+	bucketName := "github.com:api_tokens"
 	bucketCapacity := int32(100)
 	bucketReplenishRateSeconds := int32(10)
 
