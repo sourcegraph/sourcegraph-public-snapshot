@@ -167,7 +167,7 @@ func (c PackageRepoConfig) DoPackageBuild(name string, buildDir string) error {
 
 // deleteTempDir deletes a build directory after checking that it's a temporary directory
 func deleteBuildDir(path string) error {
-	if !strings.HasPrefix(path, "/tmp/") {
+	if !strings.HasPrefix(path, os.TempDir()) {
 		return errors.New(fmt.Sprintf("directory '%s' is not a temporary directory - not cleaning up", path))
 	}
 
