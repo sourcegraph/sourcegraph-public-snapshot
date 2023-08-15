@@ -145,16 +145,19 @@ func (c PackageRepoConfig) DoPackageBuild(name string, buildDir string) error {
 	)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if err != nil {
-		return errors.Wrap(err, "failed to build package")
-	}
+	cmdErr := cmd.Run()
 
 	std.Out.Write("")
 
 	if err := deleteBuildDir(buildDir); err != nil {
-		return err
+		std.Out.WriteLine(output.Linef("⛔️", output.StyleWarning, "\nCould not delete temp build dir %s\n", buildDir))
 	}
+
+	if cmdErr != nil {
+		return errors.Wrap(cmdErr, "failed to build package")
+	}
+
+	std.Out.Write("")
 
 	std.Out.WriteSuccessf("Successfully built package %s\n", name)
 	std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Use this package in local image builds by adding the package '%s@local' to the base image config\n", name))
