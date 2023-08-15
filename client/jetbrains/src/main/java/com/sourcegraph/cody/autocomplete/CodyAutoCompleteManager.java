@@ -97,7 +97,7 @@ public class CodyAutoCompleteManager {
    */
   public void triggerAutoComplete(@NotNull Editor editor, int offset) {
     // Check if auto-complete is enabled via the config
-    if (!ConfigUtil.isCodyAutoCompleteEnabled()) {
+    if (!ConfigUtil.isCodyEnabled() || !ConfigUtil.isCodyAutoCompleteEnabled()) {
       return;
     }
 
