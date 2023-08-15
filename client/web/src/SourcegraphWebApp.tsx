@@ -2,7 +2,7 @@ import 'focus-visible'
 
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { ApolloProvider, SuspenseCache } from '@apollo/client'
+import { ApolloProvider } from '@apollo/client'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription, fromEvent } from 'rxjs'
 
@@ -88,8 +88,6 @@ export interface DynamicSourcegraphWebAppContext {
 const WILDCARD_THEME: WildcardTheme = {
     isBranded: true,
 }
-
-const suspenseCache = new SuspenseCache()
 
 /**
  * The synchronous and static value that creates the `platformContext.settings`
@@ -279,7 +277,7 @@ export const SourcegraphWebApp: FC<SourcegraphWebAppProps> = props => {
             components={[
                 // `ComponentsComposer` provides children via `React.cloneElement`.
                 /* eslint-disable react/no-children-prop, react/jsx-key */
-                <ApolloProvider client={graphqlClient} children={undefined} suspenseCache={suspenseCache} />,
+                <ApolloProvider client={graphqlClient} children={undefined} />,
                 <WildcardThemeContext.Provider value={WILDCARD_THEME} />,
                 <SettingsProvider settingsCascade={settingsCascade} />,
                 <ErrorBoundary location={null} />,

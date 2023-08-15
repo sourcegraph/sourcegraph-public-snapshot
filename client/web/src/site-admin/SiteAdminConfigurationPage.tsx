@@ -46,7 +46,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { RELOAD_SITE, SITE_CONFIG_QUERY, UPDATE_SITE_CONFIG } from './backend'
 import { ChecklistInfo } from './setup-checklist/ChecklistInfo'
 import { SiteConfigurationChangeList } from './SiteConfigurationChangeList'
-import { SMTPConfigForm } from './smtp/SMTPConfigForm'
+import { SMTPConfigForm } from './smtp/SMTPConfigFormSchema'
 
 import styles from './SiteAdminConfigurationPage.module.scss'
 
@@ -251,7 +251,9 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
     const [isSetupChecklistEnabled] = useFeatureFlag('setup-checklist', false)
 
     useEffect(() => {
-        if (isSetupChecklistEnabled) {setSearchParams({ tab: tabIndex.toString() })}
+        if (isSetupChecklistEnabled) {
+            setSearchParams({ tab: tabIndex.toString() })
+        }
     }, [tabIndex, isSetupChecklistEnabled])
 
     const { data, loading, error } = useQuery<SiteResult, SiteVariables>(SITE_CONFIG_QUERY, {
