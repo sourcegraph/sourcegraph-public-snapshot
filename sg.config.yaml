@@ -316,6 +316,23 @@ commands:
       - internal
       - cmd/cody-gateway
 
+  pings:
+    cmd: |
+      .bin/pings
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='-N -l'
+      fi
+
+      go build -gcflags="$GCFLAGS" -o .bin/pings github.com/sourcegraph/sourcegraph/cmd/pings
+    checkBinary: .bin/pings
+    env:
+      SRC_LOG_LEVEL: info
+    watch:
+      - lib
+      - internal
+      - cmd/pings
+
   searcher:
     cmd: .bin/searcher
     install: |
