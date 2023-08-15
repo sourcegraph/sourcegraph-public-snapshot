@@ -23,7 +23,7 @@ export interface ScopeSelectorProps {
     toggleIncludeInferredFile: () => void
     fetchRepositoryNames: (count: number) => Promise<string[]>
     isSourcegraphApp?: boolean
-    transcript?: Transcript
+    transcript: Transcript | null
     className?: string
     renderHint?: (repos: IRepo[]) => React.ReactNode
 }
