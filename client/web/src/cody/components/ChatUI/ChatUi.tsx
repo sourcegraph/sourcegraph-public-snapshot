@@ -219,13 +219,13 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = React.mem
     )
 
     return (
-        <div className={classNames('d-flex', styles.feedbackButtonsWrapper)}>
+        <div className={styles.feedbackButtonsWrapper}>
             {feedbackSubmitted ? (
                 <Button title="Feedback submitted." disabled={true} className="ml-1 p-1">
                     <Icon aria-label="Feedback submitted" svgPath={mdiCheck} />
                 </Button>
             ) : (
-                <>
+                <div className="d-flex">
                     <Button
                         title="Thumbs up"
                         className="ml-1 p-1"
@@ -242,8 +242,15 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = React.mem
                     >
                         <Icon aria-label="Thumbs down" svgPath={mdiThumbDown} />
                     </Button>
-                </>
+                </div>
             )}
+            <Link
+                to="/get-cody"
+                className="d-inline-block w-100 ml-auto text-right font-italic"
+                onClick={() => eventLogger.log('ClickedOnCodyCTA', { location: 'Chat Response' })}
+            >
+                Use commands, autocomplete and more in your IDE
+            </Link>
         </div>
     )
 })

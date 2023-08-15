@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react'
 
 import { mdiCardBulletedOutline, mdiDotsVertical, mdiProgressPencil, mdiShuffleVariant } from '@mdi/js'
+import { useNavigate } from 'react-router-dom'
 
 import { TranslateToLanguage } from '@sourcegraph/cody-shared/dist/chat/recipes/translate'
 
@@ -31,6 +32,8 @@ export const CodyRecipesWidget: React.FC<{ editor?: CodeMirrorEditor }> = ({ edi
     if (!loaded) {
         return null
     }
+
+    // let navigate = useNavigate()
 
     return (
         <Recipes>
@@ -87,6 +90,7 @@ export const CodyRecipesWidget: React.FC<{ editor?: CodeMirrorEditor }> = ({ edi
                     onClick={() => void executeRecipe('find-code-smells', { scope: { editor } })}
                     disabled={isMessageInProgress}
                 />
+                <RecipeAction title="Use locally" onClick={() => {}} disabled={isMessageInProgress} />
             </Recipe>
         </Recipes>
     )
