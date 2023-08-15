@@ -173,7 +173,7 @@ digraph architecture {
             label="executor"
             shape="box3d"
             fillcolor="#0dc9b6"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/main/enterprise/cmd/executor"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/main/cmd/executor"
         ]
     }
 

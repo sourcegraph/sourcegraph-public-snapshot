@@ -6,6 +6,7 @@ import com.intellij.openapi.editor.Inlay;
 import com.intellij.openapi.editor.colors.EditorFontType;
 import com.intellij.openapi.editor.impl.EditorImpl;
 import com.intellij.openapi.editor.markup.TextAttributes;
+import com.sourcegraph.cody.vscode.InlineAutoCompleteItem;
 import java.awt.*;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
@@ -13,13 +14,18 @@ import org.jetbrains.annotations.Nullable;
 
 public abstract class CodyAutoCompleteElementRenderer implements EditorCustomElementRenderer {
   @NotNull public final String text;
+  @Nullable public final InlineAutoCompleteItem completionItem;
   @NotNull protected final TextAttributes themeAttributes;
   @NotNull protected final Editor editor;
   @Nullable protected final AutoCompleteRendererType type;
 
   public CodyAutoCompleteElementRenderer(
-      @NotNull String text, @NotNull Editor editor, @Nullable AutoCompleteRendererType type) {
+      @NotNull String text,
+      @Nullable InlineAutoCompleteItem completionItem,
+      @NotNull Editor editor,
+      @Nullable AutoCompleteRendererType type) {
     this.text = text;
+    this.completionItem = completionItem;
     this.themeAttributes = AutoCompleteRenderUtils.getTextAttributesForEditor(editor);
     this.editor = editor;
     this.type = type;

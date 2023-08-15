@@ -5,26 +5,26 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, Routes } from 'react-router-dom'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { RouteError } from '../../components/ErrorBoundary'
 import { HeroPage, NotFoundPage } from '../../components/HeroPage'
-import {
+import type {
     UserAreaUserFields,
     UserSettingsAreaUserFields,
     UserSettingsAreaUserProfileResult,
     UserSettingsAreaUserProfileVariables,
 } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { RouteV6Descriptor } from '../../util/contributions'
-import { UserAreaRouteContext } from '../area/UserArea'
+import type { RouteV6Descriptor } from '../../util/contributions'
+import type { UserAreaRouteContext } from '../area/UserArea'
 
 import { isAccessTokenCallbackPage } from './accessTokens/UserSettingsCreateAccessTokenCallbackPage'
 import { EditUserProfilePageGQLFragment } from './profile/UserSettingsProfilePage'
-import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSidebar'
+import { UserSettingsSidebar, type UserSettingsSidebarItems } from './UserSettingsSidebar'
 
 import styles from './UserSettingsArea.module.scss'
 

@@ -57,8 +57,10 @@ public class SettingsConfigurable implements Configurable {
         || mySettingsComponent.isUrlNotificationDismissed()
             != ConfigUtil.isUrlNotificationDismissed()
         || mySettingsComponent.isCodyEnabled() != ConfigUtil.isCodyEnabled()
-        || mySettingsComponent.isCodyAutoCompleteEnabled()
-            != ConfigUtil.isCodyAutoCompleteEnabled();
+        || mySettingsComponent.isCodyAutoCompleteEnabled() != ConfigUtil.isCodyAutoCompleteEnabled()
+        || mySettingsComponent.isCodyDebugEnabled() != ConfigUtil.isCodyDebugEnabled()
+        || mySettingsComponent.isCodyVerboseDebugEnabled()
+            != ConfigUtil.isCodyVerboseDebugEnabled();
   }
 
   @Override
@@ -72,6 +74,8 @@ public class SettingsConfigurable implements Configurable {
 
     boolean oldCodyEnabled = ConfigUtil.isCodyEnabled();
     boolean oldCodyAutoCompleteEnabled = ConfigUtil.isCodyAutoCompleteEnabled();
+    boolean oldCodyDebugEnabled = ConfigUtil.isCodyDebugEnabled();
+    boolean oldCodyVerboseDebugEnabled = ConfigUtil.isCodyVerboseDebugEnabled();
     String oldUrl = ConfigUtil.getSourcegraphUrl(project);
     String newDotComAccessToken = mySettingsComponent.getDotComAccessToken();
     String newEnterpriseAccessToken = mySettingsComponent.getEnterpriseAccessToken();
@@ -90,12 +94,16 @@ public class SettingsConfigurable implements Configurable {
             oldCodyEnabled,
             oldCodyAutoCompleteEnabled,
             oldUrl,
+            oldCodyDebugEnabled,
+            oldCodyVerboseDebugEnabled,
             newUrl,
             mySettingsComponent.isDotComAccessTokenChanged(),
             mySettingsComponent.isEnterpriseAccessTokenChanged(),
             mySettingsComponent.getCustomRequestHeaders(),
             mySettingsComponent.isCodyEnabled(),
-            mySettingsComponent.isCodyAutoCompleteEnabled());
+            mySettingsComponent.isCodyAutoCompleteEnabled(),
+            mySettingsComponent.isCodyDebugEnabled(),
+            mySettingsComponent.isCodyVerboseDebugEnabled());
 
     publisher.beforeAction(context);
 
@@ -144,6 +152,8 @@ public class SettingsConfigurable implements Configurable {
     aSettings.isUrlNotificationDismissed = mySettingsComponent.isUrlNotificationDismissed();
     aSettings.setCodyEnabled(mySettingsComponent.isCodyEnabled());
     aSettings.isCodyAutoCompleteEnabled = mySettingsComponent.isCodyAutoCompleteEnabled();
+    aSettings.isCodyDebugEnabled = mySettingsComponent.isCodyDebugEnabled();
+    aSettings.isCodyVerboseDebugEnabled = mySettingsComponent.isCodyVerboseDebugEnabled();
 
     publisher.afterAction(context);
   }
@@ -162,6 +172,8 @@ public class SettingsConfigurable implements Configurable {
     mySettingsComponent.setUrlNotificationDismissedEnabled(ConfigUtil.isUrlNotificationDismissed());
     mySettingsComponent.setCodyEnabled(ConfigUtil.isCodyEnabled());
     mySettingsComponent.setCodyAutoCompleteEnabled(ConfigUtil.isCodyAutoCompleteEnabled());
+    mySettingsComponent.setIsCodyDebugEnabled(ConfigUtil.isCodyDebugEnabled());
+    mySettingsComponent.setIsCodyVerboseDebugEnabled(ConfigUtil.isCodyVerboseDebugEnabled());
     mySettingsComponent.getPanel().requestFocusInWindow();
   }
 

@@ -1,5 +1,5 @@
 import { mdiClose } from '@mdi/js'
-import { Story, Meta } from '@storybook/react'
+import type { Story, Meta } from '@storybook/react'
 import CloseIcon from 'mdi-react/CloseIcon'
 
 import { Icon } from '..'

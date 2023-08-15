@@ -1,4 +1,4 @@
-import { MatchItem } from './PerFileResultRanking'
+import type { MatchItem } from './PerFileResultRanking'
 
 // Real match data from searching a file for `error` with results returned in order of line number.
 export const testDataRealMatchesByLineNumber: MatchItem[] = [

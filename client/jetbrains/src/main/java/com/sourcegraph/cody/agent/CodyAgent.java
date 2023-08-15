@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.agent;
 
+import com.google.gson.GsonBuilder;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.Disposable;
@@ -212,6 +213,9 @@ public class CodyAgent implements Disposable {
             .start();
     Launcher<CodyAgentServer> launcher =
         new Launcher.Builder<CodyAgentServer>()
+            // emit `null` instead of leaving fields undefined because Cody in VSC has
+            // many `=== null` checks that return false for undefined fields.
+            .configureGson(GsonBuilder::serializeNulls)
             .setRemoteInterface(CodyAgentServer.class)
             .traceMessages(traceWriter())
             .setExecutorService(executorService)

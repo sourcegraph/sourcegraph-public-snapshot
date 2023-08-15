@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox"
+	"github.com/sourcegraph/sourcegraph/internal/luasandbox/util"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
@@ -95,7 +96,7 @@ func (s *Service) InferIndexJobs(ctx context.Context, repo api.RepoName, commit,
 		linearize: luatypes.LinearizeGenerator,
 		callback:  func(recognizer *luatypes.Recognizer) *baselua.LFunction { return recognizer.Generator() },
 		scanLuaValue: func(value baselua.LValue) ([]indexJobOrHint, error) {
-			jobs, err := luatypes.IndexJobsFromTable(value)
+			jobs, err := util.MapSliceOrSingleton(value, luatypes.IndexJobFromTable)
 			if err != nil {
 				return nil, err
 			}
@@ -145,7 +146,7 @@ func (s *Service) InferIndexJobHints(ctx context.Context, repo api.RepoName, com
 		linearize: luatypes.LinearizeHinter,
 		callback:  func(recognizer *luatypes.Recognizer) *baselua.LFunction { return recognizer.Hinter() },
 		scanLuaValue: func(value baselua.LValue) ([]indexJobOrHint, error) {
-			jobHints, err := luatypes.IndexJobHintsFromTable(value)
+			jobHints, err := util.MapSliceOrSingleton(value, luatypes.IndexJobHintFromTable)
 			if err != nil {
 				return nil, err
 			}
@@ -451,6 +452,11 @@ type registrationAPI struct {
 	recognizers []*luatypes.Recognizer
 }
 
+// Register adds another recognizer to be run at a later point.
+//
+// WARNING: This function is exposed directly to Lua through the 'api' parameter
+// of the generate(..) function, so changing the signature may break existing
+// auto-indexing scripts.
 func (api *registrationAPI) Register(recognizer *luatypes.Recognizer) {
 	api.recognizers = append(api.recognizers, recognizer)
 }

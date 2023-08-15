@@ -1,8 +1,8 @@
-import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+import type { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 
 import { useFuzzyFinderFeatureFlags } from './FuzzyFinderFeatureFlag'
-import { FuzzyTabKey } from './FuzzyTabs'
+import type { FuzzyTabKey } from './FuzzyTabs'
 
 interface FuzzyShortcut {
     name: FuzzyTabKey

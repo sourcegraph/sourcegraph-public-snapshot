@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react'
 
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subMonths } from 'date-fns'
 import { useDarkMode } from 'storybook-dark-mode'
 
-import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import type { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { usePrependStyles } from '@sourcegraph/wildcard/src/stories'
 

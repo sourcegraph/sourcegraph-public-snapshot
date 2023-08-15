@@ -19,7 +19,7 @@ The steps to index the repository are serialized into an index record and [inser
 
 ## Processing
 
-Because indexing an arbitrary code base may require arbitrary commands to be run (e.g., dependency gathering, compilation steps, code generation, etc), we process each index job in a [Firecracker](https://firecracker-microvm.github.io/) virtual machine managed by [Weave Ignite](https://ignite.readthedocs.io/en/stable/). These virtual machines are coordinated by the [executor](https://github.com/sourcegraph/sourcegraph/tree/main/enterprise/cmd/executor) service which is [deployed directly on GCP compute nodes](./deployment.md).
+Because indexing an arbitrary code base may require arbitrary commands to be run (e.g., dependency gathering, compilation steps, code generation, etc), we process each index job in a [Firecracker](https://firecracker-microvm.github.io/) virtual machine managed by [Weave Ignite](https://ignite.readthedocs.io/en/stable/). These virtual machines are coordinated by the [executor](https://github.com/sourcegraph/sourcegraph/tree/main/cmd/executor) service which is [deployed directly on GCP compute nodes](./deployment.md).
 
 <a href="diagrams/executor.svg" target="_blank">
   <img src="diagrams/executor.svg">

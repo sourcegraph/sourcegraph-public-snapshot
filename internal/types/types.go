@@ -593,8 +593,6 @@ type GitserverRepo struct {
 	CloningProgress string
 	// The last error that occurred or empty if the last action was successful
 	LastError string
-	// the output of the most recent repo sync job
-	LastSyncOutput string
 	// The last time fetch was called.
 	LastFetched time.Time
 	// The last time a fetch updated the repository.

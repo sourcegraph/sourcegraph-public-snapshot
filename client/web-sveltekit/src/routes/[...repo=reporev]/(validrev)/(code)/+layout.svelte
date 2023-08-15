@@ -3,7 +3,6 @@
 
     import { afterNavigate, disableScrollHandling } from '$app/navigation'
     import { page } from '$app/stores'
-    import { isErrorLike } from '$lib/common'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { fetchSidebarFileTree, FileTreeProvider, type FileTreeLoader } from '$lib/repo/api/tree'
     import BottomPanel from '$lib/repo/BottomPanel.svelte'
@@ -14,6 +13,7 @@
 
     import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
+    import type { Scalars } from '$lib/graphql-operations'
 
     export let data: LayoutData
 
@@ -42,12 +42,7 @@
         )
     let treeProvider: FileTreeProvider | null = null
 
-    async function updateFileTreeProvider(
-        repoName: string,
-        revision: string | undefined,
-        commitID: string,
-        parentPath: string
-    ) {
+    async function updateFileTreeProvider(repoID: Scalars['ID'], commitID: string, parentPath: string) {
         const result = await data.deferred.fileTree
         if (!result) {
             treeProvider = null
@@ -56,24 +51,28 @@
         const { root, values } = result
 
         // Do nothing if update was called with new arguments in the meantime
-        if (repoName !== data.repoName || revision !== data.revision || parentPath !== data.parentPath) {
+        if (
+            repoID !== data.resolvedRevision.repo.id ||
+            commitID !== data.resolvedRevision.commitID ||
+            parentPath !== data.parentPath
+        ) {
             return
         }
         treeProvider = new FileTreeProvider({
             root,
             values,
-            repoName,
-            revision: revision ?? '',
+            repoID,
             commitID,
             loader: fileTreeLoader,
         })
     }
 
-    $: ({ repoName, revision, parentPath, resolvedRevision } = data)
-    $: commitID = isErrorLike(resolvedRevision) ? '' : resolvedRevision.commitID
+    $: ({ revision, parentPath, resolvedRevision } = data)
+    $: commitID = resolvedRevision.commitID
+    $: repoID = resolvedRevision.repo.id
     // Only update the file tree provider (which causes the tree to rerender) when repo, revision/commit or file path
     // update
-    $: updateFileTreeProvider(repoName, revision, commitID, parentPath)
+    $: updateFileTreeProvider(repoID, commitID, parentPath)
 
     const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)
     $: sidebarWidth = `max(200px, ${$sidebarSize * 100}%)`
@@ -96,7 +95,7 @@
             <SidebarToggleButton />&nbsp; Files
         </h3>
         {#if treeProvider}
-            <FileTree {treeProvider} selectedPath={$page.params.path ?? ''} />
+            <FileTree revision={revision ?? ''} {treeProvider} selectedPath={$page.params.path ?? ''} />
         {:else}
             <LoadingSpinner center={false} />
         {/if}

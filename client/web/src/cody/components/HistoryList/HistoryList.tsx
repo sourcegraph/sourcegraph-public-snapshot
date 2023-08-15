@@ -4,10 +4,10 @@ import { mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { Transcript, TranscriptJSON } from '@sourcegraph/cody-shared/dist/chat/transcript'
+import type { Transcript, TranscriptJSON } from '@sourcegraph/cody-shared/dist/chat/transcript'
 import { Text, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { CodyChatStore, safeTimestampToDate } from '../../useCodyChat'
+import { type CodyChatStore, safeTimestampToDate } from '../../useCodyChat'
 
 import styles from './HistoryList.module.scss'
 

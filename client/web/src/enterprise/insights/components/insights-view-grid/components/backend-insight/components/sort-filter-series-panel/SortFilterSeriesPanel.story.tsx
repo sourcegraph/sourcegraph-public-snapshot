@@ -1,11 +1,11 @@
 import { useState } from 'react'
 
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 
 import { SeriesSortMode, SeriesSortDirection } from '@sourcegraph/shared/src/graphql-operations'
 
 import { WebStory } from '../../../../../../../../components/WebStory'
-import { DrillDownFiltersFormValues } from '../drill-down-filters-panel'
+import type { DrillDownFiltersFormValues } from '../drill-down-filters-panel'
 
 import { SortFilterSeriesPanel } from './SortFilterSeriesPanel'
 

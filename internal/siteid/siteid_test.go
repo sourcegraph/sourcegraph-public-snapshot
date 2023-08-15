@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -34,10 +35,10 @@ func TestGet(t *testing.T) {
 
 	t.Run("from DB", func(t *testing.T) {
 		defer reset()
-		gss := database.NewMockGlobalStateStore()
+		gss := dbmocks.NewMockGlobalStateStore()
 		gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
 
 		got, err := tryGet(db)
@@ -52,10 +53,10 @@ func TestGet(t *testing.T) {
 
 	t.Run("panics if DB unavailable", func(t *testing.T) {
 		defer reset()
-		gss := database.NewMockGlobalStateStore()
+		gss := dbmocks.NewMockGlobalStateStore()
 		gss.GetFunc.SetDefaultReturn(database.GlobalState{}, errors.New("x"))
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
 
 		want := errors.Errorf("panic: [Error initializing global state: x]")
@@ -72,7 +73,7 @@ func TestGet(t *testing.T) {
 		defer reset()
 		t.Setenv("TRACKING_APP_ID", "a")
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 
 		got, err := tryGet(db)
 		if err != nil {
@@ -88,10 +89,10 @@ func TestGet(t *testing.T) {
 		defer reset()
 		t.Setenv("TRACKING_APP_ID", "a")
 
-		gss := database.NewMockGlobalStateStore()
+		gss := dbmocks.NewMockGlobalStateStore()
 		gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "b"}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
 
 		got, err := tryGet(db)

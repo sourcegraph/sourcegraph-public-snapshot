@@ -50,6 +50,7 @@ Available comamndsets in `sg.config.yaml`:
 * monitoring
 * monitoring-alerts
 * otel
+* qdrant
 * web-standalone
 * web-standalone-prod
 
@@ -124,6 +125,7 @@ Available commands in `sg.config.yaml`:
 * otel-collector: OpenTelemetry collector
 * postgres_exporter
 * prometheus
+* qdrant
 * redis-postgres: Dockerized version of redis and postgres
 * repo-updater
 * searcher
@@ -261,7 +263,6 @@ This command is useful when:
 
 Supported run types when providing an argument for 'sg ci build [runtype]':
 
-* wolfi - Wolfi Exp Branch
 * _manually_triggered_external - Manually Triggered External Build
 * main-dry-run - Main dry run
 * docker-images-patch - Patch image

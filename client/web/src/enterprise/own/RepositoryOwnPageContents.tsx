@@ -4,7 +4,7 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery } from '@sourcegraph/http-client'
 import { H3, Text, Code, Card, LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
-import {
+import type {
     GetIngestedCodeownersResult,
     GetIngestedCodeownersVariables,
     IngestedCodeowners,
@@ -14,7 +14,7 @@ import {
 import { DeleteFileButton } from './DeleteFileButton'
 import { GET_INGESTED_CODEOWNERS_QUERY } from './graphqlQueries'
 import { IngestedFileViewer } from './IngestedFileViewer'
-import { RepositoryOwnAreaPageProps } from './RepositoryOwnEditPage'
+import type { RepositoryOwnAreaPageProps } from './RepositoryOwnEditPage'
 import { UploadFileButton } from './UploadFileButton'
 
 import styles from './RepositoryOwnPageContents.module.scss'

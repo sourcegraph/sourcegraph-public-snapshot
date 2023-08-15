@@ -5,12 +5,12 @@ import * as sinon from 'sinon'
 
 import * as scip from '../../scip'
 import * as sourcegraph from '../api'
-import { QueryGraphQLFn } from '../util/graphql'
+import type { QueryGraphQLFn } from '../util/graphql'
 
-import { GenericLSIFResponse } from './api'
-import { DefinitionResponse, DefinitionAndHoverResponse } from './definition-hover'
+import type { GenericLSIFResponse } from './api'
+import type { DefinitionResponse, DefinitionAndHoverResponse } from './definition-hover'
 import { createGraphQLProviders as createProviders, searchStencil } from './providers'
-import { ReferencesResponse, MAX_REFERENCE_PAGE_REQUESTS } from './references'
+import { type ReferencesResponse, MAX_REFERENCE_PAGE_REQUESTS } from './references'
 import { makeStencilFn } from './stencil'
 import {
     gatherValues,

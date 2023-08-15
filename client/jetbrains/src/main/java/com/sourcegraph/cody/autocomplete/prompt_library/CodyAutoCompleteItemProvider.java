@@ -78,16 +78,26 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
     return toks * charsPerToken;
   }
 
+  /**
+   * Provides inline auto-complete items for the given context.
+   *
+   * @param document The text document to provide completions for.
+   * @param position The position in the document to provide completions at.
+   * @param context Additional context about the auto-complete invocation.
+   * @param token A cancellation token to abort the operation.
+   */
   private CompletableFuture<InlineAutoCompleteList> provideInlineAutoCompleteItemsInner(
       TextDocument document,
       Position position,
       InlineAutoCompleteContext context,
       CancellationToken token) {
+    // Abort any previously open inline completion requests
     this.abortOpenInlineCompletions.run();
     CancellationToken abortController = new CancellationToken();
     token.onCancellationRequested(abortController::abort);
     this.abortOpenInlineCompletions = abortController::abort;
 
+    // Get the current document context around the position
     DocContext docContext =
         getCurrentDocContext(
             document, position, tokToChar(maxPrefixTokens), tokToChar(maxSuffixTokens));

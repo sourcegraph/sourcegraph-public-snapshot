@@ -1,6 +1,6 @@
 import { canWriteBatchChanges } from '../../../batches/utils'
 import { userSettingsSideBarItems } from '../../../user/settings/sidebaritems'
-import { UserSettingsSidebarItems } from '../../../user/settings/UserSettingsSidebar'
+import type { UserSettingsSidebarItems } from '../../../user/settings/UserSettingsSidebar'
 import { SHOW_BUSINESS_FEATURES } from '../../dotcom/productSubscriptions/features'
 
 export const enterpriseUserSettingsSideBarItems: UserSettingsSidebarItems = [

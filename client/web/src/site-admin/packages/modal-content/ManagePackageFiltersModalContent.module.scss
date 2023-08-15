@@ -7,6 +7,9 @@
 
 .content {
     min-height: 5rem;
+    max-height: 30rem;
+    overflow-y: scroll;
+    padding-right: 1rem;
 }
 
 .close-action {

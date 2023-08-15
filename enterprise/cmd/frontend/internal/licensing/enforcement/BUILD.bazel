@@ -42,7 +42,7 @@ go_test(
         "//internal/actor",
         "//internal/auth",
         "//internal/cloud",
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/extsvc",
         "//internal/license",
         "//internal/licensing",

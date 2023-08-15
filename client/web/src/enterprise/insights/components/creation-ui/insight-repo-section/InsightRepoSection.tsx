@@ -1,4 +1,12 @@
-import { ChangeEvent, FC, MutableRefObject, PropsWithChildren, ReactElement, ReactNode, useRef } from 'react'
+import {
+    type ChangeEvent,
+    type FC,
+    type MutableRefObject,
+    type PropsWithChildren,
+    type ReactElement,
+    type ReactNode,
+    useRef,
+} from 'react'
 
 import { gql, useQuery } from '@apollo/client'
 import classNames from 'classnames'
@@ -6,7 +14,7 @@ import LinkExternalIcon from 'mdi-react/OpenInNewIcon'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { EditorHint, QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search'
+import { EditorHint, QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import {
     Button,
@@ -19,14 +27,17 @@ import {
     useDebounce,
     Link,
     FormGroup,
-    useFieldAPI,
+    type useFieldAPI,
     getDefaultInputProps,
     getDefaultInputStatus,
     getDefaultInputError,
 } from '@sourcegraph/wildcard'
 
-import { InsightRepositoriesCountResult, InsightRepositoriesCountVariables } from '../../../../../graphql-operations'
-import { CreateInsightFormFields } from '../../../pages/insights/creation/search-insight'
+import type {
+    InsightRepositoriesCountResult,
+    InsightRepositoriesCountVariables,
+} from '../../../../../graphql-operations'
+import type { CreateInsightFormFields } from '../../../pages/insights/creation/search-insight'
 import { getRepoQueryPreview, RepositoriesField, MonacoField } from '../../form'
 import { MonacoPreviewLink } from '../../form/monaco-field'
 

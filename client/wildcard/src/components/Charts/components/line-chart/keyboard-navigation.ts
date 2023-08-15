@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 
 import { Key } from 'ts-key-enum'
 
-import { decodePointId, getDatumValue, SeriesDatum, SeriesWithData } from './utils'
+import { decodePointId, getDatumValue, type SeriesDatum, type SeriesWithData } from './utils'
 
 interface Props<Datum> {
     element: SVGSVGElement | null

@@ -3,13 +3,13 @@ import * as os from 'os'
 import * as path from 'path'
 import { promisify } from 'util'
 
-import Octokit, { IssuesAddLabelsParams } from '@octokit/rest'
+import Octokit, { type IssuesAddLabelsParams } from '@octokit/rest'
 import commandExists from 'command-exists'
 import execa from 'execa'
 import fetch from 'node-fetch'
 import * as semver from 'semver'
 
-import { ActiveRelease } from './config'
+import type { ActiveRelease } from './config'
 import { cacheFolder, changelogURL, formatDate, getContainerRegistryCredential, readLine, timezoneLink } from './util'
 
 const mkdtemp = promisify(original_mkdtemp)

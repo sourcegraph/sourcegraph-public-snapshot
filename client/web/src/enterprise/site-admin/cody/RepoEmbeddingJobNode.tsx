@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from 'react'
+import { type FC, useState, useEffect } from 'react'
 
 import classNames from 'classnames'
 
@@ -11,14 +11,14 @@ import {
     PopoverTail,
     Popover,
     Position,
-    BadgeVariantType,
+    type BadgeVariantType,
     Link,
     H4,
     Alert,
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import { RepoEmbeddingJobFields, RepoEmbeddingJobState } from '../../../graphql-operations'
+import { type RepoEmbeddingJobFields, RepoEmbeddingJobState } from '../../../graphql-operations'
 
 import styles from './RepoEmbeddingJobNode.module.scss'
 

@@ -116,6 +116,7 @@ func (l Info) encode() ([]byte, error) {
 	return json.Marshal(e)
 }
 
+//nolint:unused // used in tests
 func (l *Info) decode(data []byte) error {
 	var e encodedInfo
 	if err := json.Unmarshal(data, &e); err != nil {

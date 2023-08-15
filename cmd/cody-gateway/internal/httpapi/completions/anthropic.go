@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -40,6 +41,12 @@ func NewAnthropicHandler(
 		anthropicAPIURL,
 		allowedModels,
 		upstreamHandlerMethods[anthropicRequest]{
+			validateRequest: func(_ codygateway.Feature, ar anthropicRequest) (int, error) {
+				if ar.MaxTokensToSample > int32(maxTokensToSample) {
+					return http.StatusBadRequest, errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", maxTokensToSample, ar.MaxTokensToSample)
+				}
+				return 0, nil
+			},
 			transformBody: func(body *anthropicRequest, act *actor.Actor) {
 				// Overwrite the metadata field, we don't want to allow users to specify it:
 				body.Metadata = &anthropicRequestMetadata{
@@ -98,13 +105,15 @@ func NewAnthropicHandler(
 				}
 				return len(lastCompletion)
 			},
-			validateRequest: func(ar anthropicRequest) error {
-				if ar.MaxTokensToSample > int32(maxTokensToSample) {
-					return errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", maxTokensToSample, ar.MaxTokensToSample)
-				}
-				return nil
-			},
 		},
+
+		// Anthropic primarily uses concurrent requests to rate-limit spikes
+		// in requests, so set a default retry-after that is likely to be
+		// acceptable for Sourcegraph clients to retry (the default
+		// SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION) since we might be
+		// able to circumvent concurrents limits without raising an error to the
+		// user.
+		2, // seconds
 	)
 }
 

@@ -1,4 +1,4 @@
-import { RepoSettingsSideBarGroups } from '../../../repo/settings/RepoSettingsSidebar'
+import type { RepoSettingsSideBarGroups } from '../../../repo/settings/RepoSettingsSidebar'
 import { repoSettingsSideBarGroups, settingsGroup } from '../../../repo/settings/sidebaritems'
 
 export const enterpriseRepoSettingsSidebarGroups: RepoSettingsSideBarGroups =

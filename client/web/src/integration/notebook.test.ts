@@ -4,26 +4,26 @@ import path from 'path'
 import { subDays } from 'date-fns'
 import expect from 'expect'
 
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import {
     highlightFileResult,
     mixedSearchStreamEvents,
 } from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
-import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
+import type { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import {
-    CreateNotebookBlockInput,
-    NotebookFields,
-    WebGraphQlOperations,
+    type CreateNotebookBlockInput,
+    type NotebookFields,
+    type WebGraphQlOperations,
     NotebookBlockType,
     SymbolKind,
 } from '../graphql-operations'
-import { BlockType } from '../notebooks'
+import type { BlockType } from '../notebooks'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { type WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { createResolveRepoRevisionResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'

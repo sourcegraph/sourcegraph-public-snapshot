@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -139,9 +140,9 @@ func TestRevisionValidation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.repoFilters[0], func(t *testing.T) {
-			repos := database.NewMockRepoStore()
+			repos := dbmocks.NewMockRepoStore()
 			repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{{Name: "repoFoo"}}, nil)
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			op := search.RepoOptions{RepoFilters: toParsedRepoFilters(tt.repoFilters...)}
@@ -426,7 +427,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 		return api.CommitID(spec), nil
 	})
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if op.SearchContextID != searchContext.ID {
 			t.Fatalf("got %q, want %q", op.SearchContextID, searchContext.ID)
@@ -434,7 +435,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 		return []types.MinimalRepo{repoA, repoB}, nil
 	})
 
-	sc := database.NewMockSearchContextsStore()
+	sc := dbmocks.NewMockSearchContextsStore()
 	sc.GetSearchContextFunc.SetDefaultHook(func(ctx context.Context, opts database.GetSearchContextOptions) (*types.SearchContext, error) {
 		if opts.Name != searchContext.Name {
 			t.Fatalf("got %q, want %q", opts.Name, searchContext.Name)
@@ -448,7 +449,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 		return searchContextRepositoryRevisions, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.SearchContextsFunc.SetDefaultReturn(sc)
 
@@ -483,12 +484,12 @@ func TestRepoHasFileContent(t *testing.T) {
 		}
 	}
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.ListMinimalReposFunc.SetDefaultHook(func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
 		return []types.MinimalRepo{repoA, repoB, repoC, repoD, repoE}, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
 	mockGitserver := gitserver.NewMockClient()
@@ -668,7 +669,7 @@ func TestRepoHasCommitAfter(t *testing.T) {
 		}
 	})
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.ListMinimalReposFunc.SetDefaultHook(func(_ context.Context, opts database.ReposListOptions) ([]types.MinimalRepo, error) {
 		res := []types.MinimalRepo{}
 		for _, r := range []types.MinimalRepo{repoA, repoB, repoC, repoD} {
@@ -679,7 +680,7 @@ func TestRepoHasCommitAfter(t *testing.T) {
 		return res, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
 	cases := []struct {

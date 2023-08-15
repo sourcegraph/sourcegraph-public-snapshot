@@ -2,7 +2,7 @@ import { forwardRef } from 'react'
 
 import classNames from 'classnames'
 
-import { LoadingSpinner, Button, ButtonProps } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, type ButtonProps } from '@sourcegraph/wildcard'
 
 export interface LoaderButtonProps extends ButtonProps {
     loading?: boolean

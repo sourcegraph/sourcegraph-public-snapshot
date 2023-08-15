@@ -4,14 +4,12 @@ import type { PageLoad } from './$types'
 
 export const load: PageLoad = async ({ parent, params }) => {
     const { resolvedRevision } = await parent()
-    const commit = fetchRepoCommit(resolvedRevision.repo.id, params.revspec)
-        .toPromise()
-        .then(result => {
-            if (result.data?.node?.__typename === 'Repository') {
-                return { commit: result.data.node.commit, repo: resolvedRevision.repo }
-            }
-            return { commit: null, repo: resolvedRevision.repo }
-        })
+    const commit = fetchRepoCommit(resolvedRevision.repo.id, params.revspec).then(data => {
+        if (data?.node?.__typename === 'Repository') {
+            return { commit: data.node.commit, repo: resolvedRevision.repo }
+        }
+        return { commit: null, repo: resolvedRevision.repo }
+    })
 
     return {
         deferred: {
@@ -27,7 +25,7 @@ export const load: PageLoad = async ({ parent, params }) => {
                     paths: [],
                     first: null,
                     after: null,
-                }).toPromise()
+                })
             }),
         },
     }

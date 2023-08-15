@@ -6,8 +6,8 @@ import { noop } from 'lodash'
 import { pluralize } from '@sourcegraph/common'
 import { Button, useObservable, Icon } from '@sourcegraph/wildcard'
 
-import { BatchSpecApplyPreviewVariables, Scalars } from '../../../../graphql-operations'
-import { Action, DropdownButton } from '../../DropdownButton'
+import type { BatchSpecApplyPreviewVariables, Scalars } from '../../../../graphql-operations'
+import { type Action, DropdownButton } from '../../DropdownButton'
 import { MultiSelectContext } from '../../MultiSelectContext'
 import { BatchChangePreviewContext } from '../BatchChangePreviewContext'
 

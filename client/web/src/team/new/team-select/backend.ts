@@ -1,8 +1,8 @@
-import { QueryResult } from '@apollo/client'
+import type { QueryResult } from '@apollo/client'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 
-import { ParentTeamSelectSearchResult, ParentTeamSelectSearchVariables } from '../../../graphql-operations'
+import type { ParentTeamSelectSearchResult, ParentTeamSelectSearchVariables } from '../../../graphql-operations'
 
 const PARENT_TEAM_SELECT_SEARCH_FIELDS = gql`
     fragment ParentTeamSelectSearchFields on Team {

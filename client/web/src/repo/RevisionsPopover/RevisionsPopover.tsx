@@ -3,10 +3,10 @@ import React, { useCallback, useEffect, useMemo } from 'react'
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
-import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { GitRefType, type Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Button, useLocalStorage, Tab, TabList, TabPanel, TabPanels, Icon } from '@sourcegraph/wildcard'
 
-import { GitCommitAncestorFields, GitRefFields } from '../../graphql-operations'
+import type { GitCommitAncestorFields, GitRefFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { replaceRevisionInURL } from '../../util/url'
 import { isPackageServiceType } from '../packages/isPackageServiceType'

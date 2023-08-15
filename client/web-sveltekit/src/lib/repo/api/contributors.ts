@@ -1,9 +1,9 @@
+import { gql, query } from '$lib/graphql'
 import type {
     PagedRepositoryContributorConnectionFields,
     PagedRepositoryContributorsResult,
     PagedRepositoryContributorsVariables,
 } from '$lib/graphql-operations'
-import { getDocumentNode, gql, type GraphQLClient } from '$lib/http-client'
 
 const CONTRIBUTORS_QUERY = gql`
     query PagedRepositoryContributors(
@@ -17,8 +17,9 @@ const CONTRIBUTORS_QUERY = gql`
         $path: String
     ) {
         node(id: $repo) {
+            __typename
+            id
             ... on Repository {
-                __typename
                 contributors(
                     first: $first
                     last: $last
@@ -64,9 +65,10 @@ const CONTRIBUTORS_QUERY = gql`
         count
         commits(first: 1) {
             nodes {
+                id
                 oid
                 abbreviatedOID
-                url
+                canonicalURL
                 subject
                 author {
                     date
@@ -88,16 +90,15 @@ const emptyPage: Extract<PagedRepositoryContributorsResult['node'], { __typename
 }
 
 export async function fetchContributors(
-    client: GraphQLClient,
     options: PagedRepositoryContributorsVariables
 ): Promise<PagedRepositoryContributorConnectionFields> {
-    const response = await client.query<PagedRepositoryContributorsResult, PagedRepositoryContributorsVariables>({
-        query: getDocumentNode(CONTRIBUTORS_QUERY),
-        variables: options,
-    })
+    const data = await query<PagedRepositoryContributorsResult, PagedRepositoryContributorsVariables>(
+        CONTRIBUTORS_QUERY,
+        options
+    )
 
-    if (response.data?.node?.__typename === 'Repository') {
-        return response.data.node.contributors
+    if (data?.node?.__typename === 'Repository') {
+        return data.node.contributors
     }
 
     return emptyPage

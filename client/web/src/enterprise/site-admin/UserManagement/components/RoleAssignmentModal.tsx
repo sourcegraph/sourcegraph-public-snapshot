@@ -1,4 +1,4 @@
-import React, { useId, useState, useMemo, PropsWithChildren } from 'react'
+import React, { useId, useState, useMemo, type PropsWithChildren } from 'react'
 
 import { mdiClose } from '@mdi/js'
 import { noop } from 'lodash'
@@ -22,7 +22,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
-import { RoleFields, Scalars } from '../../../../graphql-operations'
+import type { RoleFields, Scalars } from '../../../../graphql-operations'
 import { prettifySystemRole } from '../../../../util/settings'
 import { useGetUserRolesAndAllRoles, useSetRoles } from '../backend'
 

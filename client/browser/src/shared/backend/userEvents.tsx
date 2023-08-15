@@ -1,7 +1,7 @@
 import { gql } from '@sourcegraph/http-client'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
-import { EventSource, logEventResult } from '../../graphql-operations'
+import { EventSource, type logEventResult } from '../../graphql-operations'
 
 /**
  * Log a raw user action on the associated Sourcegraph instance

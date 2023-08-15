@@ -7,6 +7,9 @@ export {
     parseQueryAndHash,
     buildSearchURLQuery,
     makeRepoURI,
+    type RevisionSpec,
+    type ResolvedRevisionSpec,
+    type RepoSpec,
 } from '@sourcegraph/shared/src/util/url'
 export {
     isCloneInProgressErrorLike,
@@ -14,11 +17,14 @@ export {
     isRepoNotFoundErrorLike,
     isRevisionNotFoundErrorLike,
     CloneInProgressError,
+    RepoNotFoundError,
+    RepoSeeOtherError,
+    RevisionNotFoundError,
 } from '@sourcegraph/shared/src/backend/errors'
+export { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
 export { SectionID as SearchSidebarSectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 export { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 export {
-    type ContentMatch,
     type Skipped,
     getFileMatchUrl,
     getRepositoryUrl,
@@ -26,26 +32,35 @@ export {
     LATEST_VERSION,
     type AggregateStreamingSearchResults,
     type StreamSearchOptions,
-    type SearchMatch,
-    type OwnerMatch,
     getRepoMatchLabel,
     getRepoMatchUrl,
+    getMatchUrl,
     type RepositoryMatch,
     type SymbolMatch,
+    type PathMatch,
+    type ContentMatch,
+    type SearchMatch,
+    type OwnerMatch,
+    type TeamMatch,
+    type PersonMatch,
+    type CommitMatch,
     type Progress,
+    type Range,
 } from '@sourcegraph/shared/src/search/stream'
 export type {
     MatchItem,
     MatchGroupMatch,
     MatchGroup,
+    PerFileResultRanking,
+    RankingResult,
 } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 export { ZoektRanking } from '@sourcegraph/shared/src/components/ranking/ZoektRanking'
-export type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+export { LineRanking } from '@sourcegraph/shared/src/components/ranking/LineRanking'
+export { type AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 export { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 export { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-export { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
-export { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
-export type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+export { getGlobalSearchContextFilter, findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
+export { omitFilter, appendFilter } from '@sourcegraph/shared/src/search/query/transformer'
 export {
     type SettingsCascade,
     type SettingsSubject,
@@ -58,7 +73,6 @@ export { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/sear
 export { migrateLocalStorageToTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/migrateLocalStorageToTemporarySettings'
 export type { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 export { SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
-export { type FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 
 // Copies of non-reusable code
 

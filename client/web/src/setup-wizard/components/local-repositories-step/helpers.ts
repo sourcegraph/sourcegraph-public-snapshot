@@ -1,6 +1,6 @@
 import { open } from '@tauri-apps/api/dialog'
 
-import { GetLocalCodeHostsResult, LocalRepository } from '../../../graphql-operations'
+import type { GetLocalCodeHostsResult, LocalRepository } from '../../../graphql-operations'
 
 export interface LocalCodeHost {
     id: string
