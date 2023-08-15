@@ -1687,6 +1687,7 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 		btypes.ChangesetJobTypeMerge:     0,
 		btypes.ChangesetJobTypePublish:   0,
 		btypes.ChangesetJobTypeReenqueue: 0,
+		btypes.ChangesetJobTypeExport:    0,
 	}
 
 	changesets, _, err := s.store.ListChangesets(ctx, store.ListChangesetsOpts{
@@ -1698,6 +1699,7 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 	}
 
 	for _, changeset := range changesets {
+		bulkOperationsCounter[btypes.ChangesetJobTypeExport]++
 		isChangesetArchived := changeset.ArchivedIn(opts.BatchChange)
 		isChangesetDraft := changeset.ExternalState == btypes.ChangesetExternalStateDraft
 		isChangesetOpen := changeset.ExternalState == btypes.ChangesetExternalStateOpen
@@ -1710,8 +1712,8 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 		isChangesetCommentable := isChangesetOpen || isChangesetDraft || isChangesetMerged || isChangesetClosed
 		isChangesetClosable := isChangesetOpen || isChangesetDraft
 
-		// check what operations this changeset support, most likely from the state
-		// so get the changeset then derive the operations from it's state.
+		// check what operations this changeset supports, most likely from the state
+		// so get the changeset then derive the operations from its state.
 
 		// No operations are available for read-only changesets.
 		if isChangesetReadOnly {
@@ -1720,32 +1722,32 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 
 		// DETACH
 		if isChangesetArchived {
-			bulkOperationsCounter[btypes.ChangesetJobTypeDetach] += 1
+			bulkOperationsCounter[btypes.ChangesetJobTypeDetach]++
 		}
 
 		// REENQUEUE
 		if !isChangesetArchived && isChangesetJobFailed {
-			bulkOperationsCounter[btypes.ChangesetJobTypeReenqueue] += 1
+			bulkOperationsCounter[btypes.ChangesetJobTypeReenqueue]++
 		}
 
 		// PUBLISH
 		if !isChangesetArchived && !changeset.IsImported() {
-			bulkOperationsCounter[btypes.ChangesetJobTypePublish] += 1
+			bulkOperationsCounter[btypes.ChangesetJobTypePublish]++
 		}
 
 		// CLOSE
 		if !isChangesetArchived && isChangesetClosable {
-			bulkOperationsCounter[btypes.ChangesetJobTypeClose] += 1
+			bulkOperationsCounter[btypes.ChangesetJobTypeClose]++
 		}
 
 		// MERGE
 		if !isChangesetArchived && !isChangesetJobFailed && isChangesetOpen {
-			bulkOperationsCounter[btypes.ChangesetJobTypeMerge] += 1
+			bulkOperationsCounter[btypes.ChangesetJobTypeMerge]++
 		}
 
 		// COMMENT
 		if isChangesetCommentable {
-			bulkOperationsCounter[btypes.ChangesetJobTypeComment] += 1
+			bulkOperationsCounter[btypes.ChangesetJobTypeComment]++
 		}
 	}
 
