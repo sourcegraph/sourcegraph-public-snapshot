@@ -84,13 +84,13 @@ func HandlerWithLog(logger log.Logger) (http.HandlerFunc, error) {
 		}
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		handler(logger, pubsubClient, w, r)
+		HandlePingRequest(logger, pubsubClient, w, r)
 	}, nil
 }
 
-// handler is an HTTP handler that responds with information about software updates
-// for Sourcegraph.
-func handler(logger log.Logger, pubsubClient pubsub.TopicClient, w http.ResponseWriter, r *http.Request) {
+// HandlePingRequest handles the ping requests and responds with information
+// about software updates for Sourcegraph.
+func HandlePingRequest(logger log.Logger, pubsubClient pubsub.TopicClient, w http.ResponseWriter, r *http.Request) {
 	requestCounter.Inc()
 
 	pr, err := readPingRequest(r)

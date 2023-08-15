@@ -122,6 +122,7 @@ Available commands in `sg.config.yaml`:
 * monitoring-generator
 * multiqueue-executor
 * otel-collector: OpenTelemetry collector
+* pings
 * postgres_exporter
 * prometheus
 * redis-postgres: Dockerized version of redis and postgres
