@@ -11,6 +11,8 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/tj/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -20,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/tj/assert"
 )
 
 func TestRepository_FileSystem(t *testing.T) {
@@ -63,7 +64,7 @@ func TestRepository_FileSystem(t *testing.T) {
 
 	db := database.NewMockDB()
 	source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
-	client := gitserver.NewTestClient(http.DefaultClient, source)
+	client := gitserver.NewTestClient(http.DefaultClient, db, source)
 	for label, test := range tests {
 		// notafile should not exist.
 		if _, err := client.Stat(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "notafile"); !os.IsNotExist(err) {
@@ -90,7 +91,7 @@ func TestRepository_FileSystem(t *testing.T) {
 			t.Errorf("%s: got dir1 OID %q, want %q", label, got, want)
 		}
 		source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
-		client := gitserver.NewTestClient(http.DefaultClient, source)
+		client := gitserver.NewTestClient(http.DefaultClient, db, source)
 
 		// dir1 should contain one entry: file1.
 		dir1Entries, err := client.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir1", false)
@@ -258,7 +259,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 
 	db := database.NewMockDB()
 	source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
-	client := gitserver.NewTestClient(http.DefaultClient, source)
+	client := gitserver.NewTestClient(http.DefaultClient, db, source)
 	for label, test := range tests {
 		commitID, err := client.ResolveRevision(ctx, test.repo, "master", gitserver.ResolveRevisionOptions{})
 		if err != nil {
@@ -320,7 +321,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 
 	db := database.NewMockDB()
 	source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
-	client := gitserver.NewTestClient(http.DefaultClient, source)
+	client := gitserver.NewTestClient(http.DefaultClient, db, source)
 	for label, test := range tests {
 		commitID, err := client.ResolveRevision(ctx, test.repo, "master", gitserver.ResolveRevisionOptions{})
 		if err != nil {
@@ -419,7 +420,7 @@ func TestReadDir_SubRepoFiltering(t *testing.T) {
 
 	db := database.NewMockDB()
 	source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
-	client := gitserver.NewTestClient(http.DefaultClient, source)
+	client := gitserver.NewTestClient(http.DefaultClient, db, source)
 	files, err := client.ReadDir(ctx, checker, repo, commitID, "", false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)

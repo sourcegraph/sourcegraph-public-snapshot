@@ -405,7 +405,7 @@ func TestClient_Remove(t *testing.T) {
 					return nil, errors.Newf("unexpected URL: %q", r.URL.String())
 				}
 			}),
-
+			db,
 			source,
 		)
 
@@ -518,8 +518,9 @@ func TestClient_ArchiveReader(t *testing.T) {
 	runArchiveReaderTestfunc := func(t *testing.T, mkClient func(t *testing.T, addrs []string) gitserver.Client, name api.RepoName, test test) {
 		t.Run(string(name), func(t *testing.T) {
 			// Setup: Prepare the test Gitserver server + register the gRPC server
+			logger := logtest.Scoped(t)
 			s := &server.Server{
-				Logger:   logtest.Scoped(t),
+				Logger:   logger,
 				ReposDir: filepath.Join(root, "repos"),
 				DB:       newMockDB(),
 				GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
@@ -534,7 +535,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 			}
 
-			grpcServer := defaults.NewServer(logtest.Scoped(t))
+			grpcServer := defaults.NewServer(logger)
 
 			proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: s})
 			handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
@@ -548,7 +549,8 @@ func TestClient_ArchiveReader(t *testing.T) {
 			ctx := context.Background()
 
 			if test.remote != "" {
-				if _, err := cli.RequestRepoUpdate(ctx, name, 0); err != nil {
+				if _, err := s.HandleRepoUpdateRequest(ctx, &protocol.RepoUpdateRequest{Repo: name}, logger); err != nil {
+					// if _, err := cli.RequestRepoUpdate(ctx, 0, 0); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -644,7 +646,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 					}
 				})
 
-				return gitserver.NewTestClient(&http.Client{}, source)
+				return gitserver.NewTestClient(&http.Client{}, db, source)
 			}
 
 			runArchiveReaderTestfunc(t, mkClient, repoName, test)
@@ -686,7 +688,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 					}
 				})
 
-				return gitserver.NewTestClient(&http.Client{}, source)
+				return gitserver.NewTestClient(&http.Client{}, db, source)
 			}
 
 			runArchiveReaderTestfunc(t, mkClient, repoName, test)
@@ -919,7 +921,7 @@ func TestClient_P4ExecGRPC(t *testing.T) {
 				}
 			})
 
-			cli := gitserver.NewTestClient(&http.Client{}, source)
+			cli := gitserver.NewTestClient(&http.Client{}, db, source)
 			runTest(t, test, cli, called)
 
 			if !called {
@@ -1037,7 +1039,7 @@ func TestClient_P4Exec(t *testing.T) {
 			source := gitserver.NewTestClientSource(t, db, addrs)
 			called := false
 
-			cli := gitserver.NewTestClient(&http.Client{}, source)
+			cli := gitserver.NewTestClient(&http.Client{}, db, source)
 			runTest(t, test, cli, called)
 
 			if called {
@@ -1113,11 +1115,11 @@ func TestClient_ResolveRevisions(t *testing.T) {
 	addrs := []string{u.Host}
 	source := gitserver.NewTestClientSource(t, db, addrs)
 
-	cli := gitserver.NewTestClient(&http.Client{}, source)
+	cli := gitserver.NewTestClient(&http.Client{}, db, source)
 
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {
-			_, err := cli.RequestRepoUpdate(ctx, api.RepoName(remote), 0)
+			_, err := s.HandleRepoUpdateRequest(ctx, &protocol.RepoUpdateRequest{Repo: api.RepoName(remote)}, logger)
 			require.NoError(t, err)
 
 			got, err := cli.ResolveRevisions(ctx, api.RepoName(remote), test.input)
@@ -1176,7 +1178,7 @@ func TestClient_BatchLogGRPC(t *testing.T) {
 		}
 	})
 
-	cli := gitserver.NewTestClient(&http.Client{}, source)
+	cli := gitserver.NewTestClient(&http.Client{}, db, source)
 
 	opts := gitserver.BatchLogOptions{
 		RepoCommits: []api.RepoCommit{
@@ -1258,6 +1260,7 @@ func TestClient_BatchLog(t *testing.T) {
 			body := io.NopCloser(strings.NewReader(strings.TrimSpace(string(encoded))))
 			return &http.Response{StatusCode: 200, Body: body}, nil
 		}),
+		db,
 		source,
 	)
 
@@ -1390,6 +1393,7 @@ func TestClient_ReposStats(t *testing.T) {
 				return nil, errors.Newf("unexpected URL: %q", r.URL.String())
 			}
 		}),
+		db,
 		source,
 	)
 
@@ -1430,7 +1434,7 @@ func TestClient_ReposStatsGRPC(t *testing.T) {
 		}
 	})
 
-	cli := gitserver.NewTestClient(http.DefaultClient, source)
+	cli := gitserver.NewTestClient(http.DefaultClient, db, source)
 
 	gotStatsMap, err := cli.ReposStats(context.Background())
 	if err != nil {
@@ -1531,7 +1535,7 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 				}
 			})
 
-			client := gitserver.NewTestClient(http.DefaultClient, source)
+			client := gitserver.NewTestClient(http.DefaultClient, db, source)
 
 			runTests(t, client, tc, called)
 			if !called {
@@ -1584,6 +1588,7 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 						return nil, errors.Newf("unexpected URL: %q", r.URL.String())
 					}
 				}),
+				db,
 				source,
 			)
 

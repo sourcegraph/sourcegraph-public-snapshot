@@ -15,6 +15,7 @@ go_library(
         "//internal/database",
         "//internal/extsvc",
         "//internal/gitserver",
+        "//internal/gitserver/protocol",
         "//internal/gitserver/v1:gitserver",
         "//internal/grpc",
         "//internal/grpc/defaults",
@@ -23,6 +24,7 @@ go_library(
         "//internal/types",
         "//internal/wrexec",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
         "@org_golang_x_sync//semaphore",
     ],
 )

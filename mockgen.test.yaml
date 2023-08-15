@@ -189,6 +189,7 @@
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/background
       interfaces:
         - ExternalServiceStore
+        - RepoStore
         - AutoIndexingService
         - DependenciesService
 - filename: internal/codeintel/autoindexing/mocks_test.go

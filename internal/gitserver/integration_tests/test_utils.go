@@ -14,6 +14,8 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -36,6 +38,7 @@ var root string
 var (
 	testGitserverClient gitserver.Client
 	GitserverAddresses  []string
+	gitserverServer     server.Server
 )
 
 func InitGitserver() {
@@ -88,7 +91,7 @@ func InitGitserver() {
 	grpcServer := defaults.NewServer(logger)
 	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: &s})
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
-
+	gitserverServer = s
 	srv := &http.Server{
 		Handler: handler,
 	}
@@ -100,7 +103,7 @@ func InitGitserver() {
 
 	serverAddress := l.Addr().String()
 	source := gitserver.NewTestClientSource(&t, db, []string{serverAddress})
-	testGitserverClient = gitserver.NewTestClient(httpcli.InternalDoer, source)
+	testGitserverClient = gitserver.NewTestClient(httpcli.InternalDoer, db, source)
 	GitserverAddresses = []string{serverAddress}
 }
 
@@ -110,10 +113,12 @@ func MakeGitRepository(t testing.TB, cmds ...string) api.RepoName {
 	t.Helper()
 	dir := InitGitRepository(t, cmds...)
 	repo := api.RepoName(filepath.Base(dir))
-	if resp, err := testGitserverClient.RequestRepoUpdate(context.Background(), repo, 0); err != nil {
+	// Since gitserver client doesn't make an RPC for repo update request and uses
+	// worker framework, for the sake of simplicity, the server is called directly
+	// as if it has just dequeued the update job.
+	_, err := gitserverServer.HandleRepoUpdateRequest(context.Background(), &protocol.RepoUpdateRequest{Repo: repo}, logtest.Scoped(t))
+	if err != nil {
 		t.Fatal(err)
-	} else if resp.Error != "" {
-		t.Fatal(resp.Error)
 	}
 	return repo
 }

@@ -3,6 +3,7 @@ package background
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -12,6 +13,10 @@ type ExternalServiceStore interface {
 	List(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 	Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error)
 	GetByID(ctx context.Context, id int64) (*types.ExternalService, error)
+}
+
+type RepoStore interface {
+	GetByName(context.Context, api.RepoName) (*types.Repo, error)
 }
 
 type AutoIndexingService interface {

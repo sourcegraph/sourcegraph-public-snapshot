@@ -43,7 +43,7 @@ func TestRepoUpdateJobs(t *testing.T) {
 
 	wantJob := createdJob
 	// Created job should be listed.
-	repoUpdateJobs, err = store.List(ctx, ListRepoUpdateJobOpts{})
+	repoUpdateJobs, err = store.List(ctx, ListRepoUpdateJobOpts{ID: createdJob.ID, States: []string{createdJob.State, "errored", "failed"}})
 	require.NoError(t, err)
 	assert.Len(t, repoUpdateJobs, 1)
 	gotJob := repoUpdateJobs[0]

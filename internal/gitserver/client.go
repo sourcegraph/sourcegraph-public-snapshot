@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/go-diff/diff"
 	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -101,6 +102,7 @@ type ClientSource interface {
 func NewClient(db database.DB) Client {
 	logger := sglog.Scoped("GitserverClient", "Client to talk from other services to Gitserver")
 	return &clientImplementor{
+		db:          db,
 		logger:      logger,
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
@@ -115,10 +117,11 @@ func NewClient(db database.DB) Client {
 
 // NewTestClient returns a test client that will use the given list of
 // addresses provided by the clientSource.
-func NewTestClient(cli httpcli.Doer, clientSource ClientSource) Client {
+func NewTestClient(cli httpcli.Doer, db database.DB, clientSource ClientSource) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
 
 	return &clientImplementor{
+		db:          db,
 		logger:      logger,
 		httpClient:  cli,
 		HTTPLimiter: limiter.New(500),
@@ -204,6 +207,7 @@ func NewMockClientWithExecReader(execReader func(context.Context, api.RepoName, 
 
 // clientImplementor is a gitserver client.
 type clientImplementor struct {
+	db database.DB
 	// Limits concurrency of outstanding HTTP posts
 	HTTPLimiter limiter.Limiter
 
@@ -334,7 +338,7 @@ type Client interface {
 	// Repo updates are not guaranteed to occur. If a repo has been updated
 	// recently (within the Since duration specified in the request), the
 	// update won't happen.
-	RequestRepoUpdate(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
+	RequestRepoUpdate(context.Context, api.RepoID, time.Duration) (*protocol.RepoUpdateResponse, error)
 
 	// RequestRepoClone is an asynchronous request to clone a repository.
 	RequestRepoClone(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error)
@@ -1170,45 +1174,74 @@ func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitComm
 	}
 }
 
-func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since time.Duration) (*protocol.RepoUpdateResponse, error) {
-	req := &protocol.RepoUpdateRequest{
-		Repo:  repo,
-		Since: since,
+func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repoID api.RepoID, since time.Duration) (*protocol.RepoUpdateResponse, error) {
+	repoUpdateJobs := database.RepoUpdateJobStoreWith(c.db)
+	// If the since is zero, we just don't add anything.
+	processAfter := time.Now().Add(since)
+	job, _, err := repoUpdateJobs.Create(ctx, database.RepoUpdateJobOpts{
+		RepoID:       repoID,
+		ProcessAfter: processAfter,
+	})
+	if err != nil {
+		return nil, err
 	}
+	// TODO(sashaostrikov): remove polling when scheduling is moved into the DB
+	// completely.
+	//
+	// Comment: since this is a transitional state of using the DB queue only to
+	// remove the PRC call to gitserver server, we have to "respond to this call" so
+	// that the scheduler gets back updated values, we poll the database for the
+	// same time we used to wait for gitserver response. All errors in this function
+	// are returned in response to simulate the previous behavior better.
+	return waitForUpdateJobToFinish(ctx, job.ID, repoUpdateJobs)
+}
 
-	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(ctx, repo)
-		if err != nil {
-			return nil, err
+func waitForUpdateJobToFinish(ctx context.Context, jobID int, s database.RepoUpdateJobStore) (*protocol.RepoUpdateResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
+	defer cancel()
+	start := time.Now()
+	finalJobStates := []string{"completed", "canceled", "errored", "failed"}
+	for {
+		select {
+		case <-ctx.Done():
+			return &protocol.RepoUpdateResponse{Error: "failed to update repository before timeout"}, nil
+		default:
 		}
-
-		resp, err := client.RepoUpdate(ctx, req.ToProto())
+		jobs, err := s.List(ctx, database.ListRepoUpdateJobOpts{ID: jobID, States: finalJobStates})
 		if err != nil {
-			return nil, err
+			return &protocol.RepoUpdateResponse{Error: err.Error()}, nil
 		}
-
-		var info protocol.RepoUpdateResponse
-		info.FromProto(resp)
-
-		return &info, nil
-
-	} else {
-		resp, err := c.httpPost(ctx, repo, "repo-update", req)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			return nil, &url.Error{
-				URL: resp.Request.URL.String(),
-				Op:  "RepoUpdate",
-				Err: errors.Errorf("RepoUpdate: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		// Because of DB constraints we can either have a length of 0 or 1 here.
+		if len(jobs) == 1 {
+			job := jobs[0]
+			switch job.State {
+			case "completed":
+				return &protocol.RepoUpdateResponse{LastFetched: pointers.Ptr(job.LastFetched), LastChanged: pointers.Ptr(job.LastChanged)}, nil
+			case "canceled":
+				return &protocol.RepoUpdateResponse{Error: "repo update job was canceled"}, nil
+			default:
+				return &protocol.RepoUpdateResponse{Error: pointers.Deref(job.FailureMessage, "repo update job failed to run")}, nil
 			}
 		}
+		time.Sleep(calculatePollingBackoff(time.Since(start)))
+	}
+}
 
-		var info protocol.RepoUpdateResponse
-		err = json.NewDecoder(resp.Body).Decode(&info)
-		return &info, err
+// calculatePollingBackoff returns an interval which is used for pacing DB
+// queries for a finished repo update.
+func calculatePollingBackoff(elapsed time.Duration) time.Duration {
+	// Based on S2, 75 and 99 percentile metrics of RepoUpdate response times, most
+	// responses happen in under 5s or 10s. For slower clones/updates we will
+	// backoff more aggressive.
+	switch {
+	case elapsed < 10*time.Second:
+		return 100 * time.Millisecond
+	case elapsed < 30*time.Second:
+		return 500 * time.Millisecond
+	case elapsed < 60*time.Second:
+		return 1 * time.Second
+	default:
+		return 5 * time.Second
 	}
 }
 

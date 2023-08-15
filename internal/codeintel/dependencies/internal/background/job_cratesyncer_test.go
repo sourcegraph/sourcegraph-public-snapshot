@@ -86,6 +86,10 @@ func TestCrateSyncer(t *testing.T) {
 			LastSyncAt: clock.Now(),
 		}, nil
 	})
+	repoStore := NewMockRepoStore()
+	// It doesn't matter which repo we return, it will be used for a mocked
+	// gitserver client call.
+	repoStore.GetByNameFunc.SetDefaultReturn(&types.Repo{}, nil)
 
 	job := crateSyncerJob{
 		archiveWindowSize: 1,
@@ -93,6 +97,7 @@ func TestCrateSyncer(t *testing.T) {
 		dependenciesSvc:   dependenciesSvc,
 		gitClient:         gitclient,
 		extSvcStore:       extsvcStore,
+		repoStore:         repoStore,
 		clock:             clock,
 		operations:        newOperations(&observation.TestContext),
 	}

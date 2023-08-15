@@ -14,10 +14,12 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/sourcegraph/log"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
+
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/worker"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
@@ -112,6 +114,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// Setup our server megastruct.
 	recordingCommandFactory := wrexec.NewRecordingCommandFactory(nil, 0)
 	cloneQueue := server.NewCloneQueue(observationCtx, list.New())
+	hostname := config.ExternalAddress
 	gitserver := server.Server{
 		Logger:         logger,
 		ObservationCtx: observationCtx,
@@ -130,7 +133,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 				recordingCommandFactory: recordingCommandFactory,
 			})
 		},
-		Hostname:                config.ExternalAddress,
+		Hostname:                hostname,
 		DB:                      db,
 		CloneQueue:              cloneQueue,
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(config.BatchLogGlobalConcurrencyLimit)),
@@ -181,6 +184,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		gitserver.NewClonePipeline(logger, cloneQueue),
 		newRateLimitSyncer(ctx, db, config.RateLimitSyncerLimitPerSecond),
 		gitserver.NewRepoStateSyncer(ctx, config.SyncRepoStateInterval, config.SyncRepoStateBatchSize, config.SyncRepoStateUpdatePerSecond),
+		worker.MakeRepoUpdateWorker(ctx, observationCtx, db, &gitserver, hostname),
 	}
 
 	if runtime.GOOS == "windows" {

@@ -270,7 +270,7 @@ func getCustomInterval(logger log.Logger, c *conf.Unified, repoName string) time
 
 // requestRepoUpdate sends a request to gitserver to request an update.
 var requestRepoUpdate = func(ctx context.Context, db database.DB, repo configuredRepo, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
-	return gitserver.NewClient(db).RequestRepoUpdate(ctx, repo.Name, since)
+	return gitserver.NewClient(db).RequestRepoUpdate(ctx, repo.ID, since)
 }
 
 // configuredLimiter returns a mutable limiter that is

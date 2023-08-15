@@ -15,6 +15,7 @@ go_library(
         "//cmd/gitserver/server",
         "//cmd/gitserver/server/accesslog",
         "//cmd/gitserver/server/perforce",
+        "//cmd/gitserver/worker",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",

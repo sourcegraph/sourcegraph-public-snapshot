@@ -877,10 +877,9 @@ func (s *Server) IsRepoCloneable(ctx context.Context, repo api.RepoName) (protoc
 	return resp, nil
 }
 
-// handleRepoUpdate is a synchronous (waits for update to complete or
-// time out) method so it can yield errors. Updates are not
-// unconditional; we debounce them based on the provided
-// interval, to avoid spam.
+// handleRepoUpdate always returns an empty response because all repo update requests are converted to DB worker jobs.
+//
+// TODO(sashaostrikov): remove this API when the migration to DB worker is complete.
 func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	var req protocol.RepoUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -896,18 +895,16 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
-	logger := s.Logger.Scoped("handleRepoUpdate", "synchronous http handler for repo updates")
+func (s *Server) repoUpdate(_ *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
+	// This does nothing because the worker clones repos.
+	return protocol.RepoUpdateResponse{}
+}
+
+func (s *Server) HandleRepoUpdateRequest(ctx context.Context, req *protocol.RepoUpdateRequest, logger log.Logger) (protocol.RepoUpdateResponse, error) {
 	var resp protocol.RepoUpdateResponse
+	var err error
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 	dir := s.dir(req.Repo)
-
-	// despite the existence of a context on the request, we don't want to
-	// cancel the git commands partway through if the request terminates.
-	ctx, cancel1 := s.serverContext()
-	defer cancel1()
-	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
-	defer cancel2()
 	if !repoCloned(dir) && !s.skipCloneForTests {
 		_, err := s.CloneRepo(ctx, req.Repo, CloneOptions{Block: true})
 		if err != nil {
@@ -923,14 +920,12 @@ func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdate
 
 		// attempts to acquire these values are not contingent on the success of
 		// the update.
-		lastFetched, err := repoLastFetched(dir)
-		if err != nil {
+		if lastFetched, err := repoLastFetched(dir); err != nil {
 			statusErr = err
 		} else {
 			resp.LastFetched = &lastFetched
 		}
-		lastChanged, err := repoLastChanged(dir)
-		if err != nil {
+		if lastChanged, err := repoLastChanged(dir); err != nil {
 			statusErr = err
 		} else {
 			resp.LastChanged = &lastChanged
@@ -941,17 +936,19 @@ func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdate
 			// other information.
 			resp.Error = statusErr.Error()
 		}
+		err = statusErr
 		// If an error occurred during update, report it but don't actually make
 		// it into an http error; we want the client to get the information cleanly.
 		// An update error "wins" over a status error.
 		if updateErr != nil {
 			resp.Error = updateErr.Error()
+			err = updateErr
 		} else {
 			s.Perforce.EnqueueChangelistMappingJob(perforce.NewChangelistMappingJob(req.Repo, dir))
 		}
 	}
 
-	return resp
+	return resp, err
 }
 
 // handleRepoClone is an asynchronous (does not wait for update to complete or

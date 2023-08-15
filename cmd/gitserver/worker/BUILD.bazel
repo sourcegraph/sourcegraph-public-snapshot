@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "worker",
+    srcs = ["repo_update_worker.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/worker",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/gitserver/server",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/errcode",
+        "//internal/gitserver",
+        "//internal/gitserver/protocol",
+        "//internal/observation",
+        "//internal/types",
+        "//internal/workerutil",
+        "//internal/workerutil/dbworker",
+        "//internal/workerutil/dbworker/store",
+        "//lib/errors",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

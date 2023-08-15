@@ -75,7 +75,9 @@ func createRepoUpdateJobQuery(opts RepoUpdateJobOpts) *sqlf.Query {
 }
 
 type ListRepoUpdateJobOpts struct {
+	ID     int
 	RepoID api.RepoID
+	States []string
 }
 
 const listRepoUpdateJobsFmtstr = `
@@ -90,13 +92,23 @@ func (s *repoUpdateJobStore) List(ctx context.Context, opts ListRepoUpdateJobOpt
 
 func createListRepoUpdateJobsQuery(opts ListRepoUpdateJobOpts) *sqlf.Query {
 	preds := []*sqlf.Query{}
+	if opts.ID != 0 {
+		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+	}
 	if opts.RepoID != 0 {
 		preds = append(preds, sqlf.Sprintf("repo_id = %s", opts.RepoID))
+	}
+	if len(opts.States) != 0 {
+		states := []*sqlf.Query{}
+		for _, state := range opts.States {
+			states = append(states, sqlf.Sprintf("%s", state))
+		}
+		preds = append(preds, sqlf.Sprintf("state IN (%s)", sqlf.Join(states, ", ")))
 	}
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
-	return sqlf.Sprintf(listRepoUpdateJobsFmtstr, sqlf.Join(RepoUpdateJobColumns, ", "), sqlf.Join(preds, ", "))
+	return sqlf.Sprintf(listRepoUpdateJobsFmtstr, sqlf.Join(RepoUpdateJobColumns, ", "), sqlf.Join(preds, "AND "))
 }
 
 type SaveUpdateJobResultsOpts struct {
@@ -147,6 +159,12 @@ var RepoUpdateJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("repo_update_jobs.update_interval_seconds"),
 }
 
+// FullRepoUpdateJobColumns is a set of columns of `repo_update_jobs_with_repo_name` view.
+var FullRepoUpdateJobColumns = append(RepoUpdateJobColumns,
+	sqlf.Sprintf("repo_update_jobs.repository_name"),
+	sqlf.Sprintf("repo_update_jobs.pool_repo_id"),
+)
+
 var scanFirstRepoUpdateJob = basestore.NewFirstScanner(ScanRepoUpdateJob)
 var scanRepoUpdateJobs = basestore.NewSliceScanner(ScanRepoUpdateJob)
 
@@ -172,6 +190,36 @@ func ScanRepoUpdateJob(s dbutil.Scanner) (job types.RepoUpdateJob, _ error) {
 		&dbutil.NullTime{Time: &job.LastFetched},
 		&dbutil.NullTime{Time: &job.LastChanged},
 		&dbutil.NullInt{N: &job.UpdateIntervalSeconds},
+	); err != nil {
+		return job, err
+	}
+	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
+	return job, nil
+}
+
+func ScanFullRepoUpdateJob(s dbutil.Scanner) (job types.RepoUpdateJob, _ error) {
+	var executionLogs []executor.ExecutionLogEntry
+	if err := s.Scan(
+		&job.ID,
+		&job.State,
+		&job.FailureMessage,
+		&job.QueuedAt,
+		&job.StartedAt,
+		&job.FinishedAt,
+		&job.ProcessAfter,
+		&job.NumResets,
+		&job.NumFailures,
+		&dbutil.NullTime{Time: &job.LastHeartbeatAt},
+		pq.Array(&executionLogs),
+		&job.WorkerHostname,
+		&job.Cancel,
+		&job.RepoID,
+		&job.Priority,
+		&dbutil.NullTime{Time: &job.LastFetched},
+		&dbutil.NullTime{Time: &job.LastChanged},
+		&dbutil.NullInt{N: &job.UpdateIntervalSeconds},
+		&job.RepositoryName,
+		&job.PoolRepoID,
 	); err != nil {
 		return job, err
 	}
