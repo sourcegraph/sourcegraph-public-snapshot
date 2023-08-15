@@ -10603,3 +10603,44 @@ type PerforceChangelist {
     """
     commit: GitCommit!
 }
+
+extend type Query {
+    """
+    List of all configured code hosts on this instance.
+
+    Site-admin only.
+    """
+    codeHosts(first: Int = 50, after: String, search: String): CodeHostConnection!
+}
+
+type CodeHostConnection {
+    """
+    Only when this flag is true, the connection can be trusted to be complete.
+    This will stop existing in Sourcegraph 5.3 when the migration is ensured
+    to be complete.
+    """
+    isMigrationDone: Boolean!
+    nodes: [CodeHost!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+type CodeHost implements Node {
+    id: ID!
+    kind: ExternalServiceKind!
+    url: String!
+    apiRateLimitQuota: Int
+    """
+    Defined in seconds.
+    """
+    apiRateLimitIntervalSeconds: Int
+    gitRateLimitQuota: Int
+    """
+    Defined in seconds.
+    """
+    gitRateLimitIntervalSeconds: Int
+    """
+    All external services that refer to this code host.
+    """
+    externalServices(first: Int = 50, after: String): ExternalServiceConnection!
+}

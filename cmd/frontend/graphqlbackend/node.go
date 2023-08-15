@@ -371,3 +371,8 @@ func (r *NodeResolver) ToGitHubApp() (GitHubAppResolver, bool) {
 	n, ok := r.Node.(GitHubAppResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToCodeHost() (*codeHostResolver, bool) {
+	n, ok := r.Node.(*codeHostResolver)
+	return n, ok
+}
