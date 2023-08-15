@@ -83,7 +83,8 @@ public class CodyAutoCompleteManager {
 
   @RequiresEdt
   public boolean isEnabledForEditor(Editor editor) {
-    return ConfigUtil.isCodyAutoCompleteEnabled()
+    return ConfigUtil.isCodyEnabled()
+        && ConfigUtil.isCodyAutoCompleteEnabled()
         && editor != null
         && isProjectAvailable(editor.getProject())
         && isEditorSupported(editor);
@@ -96,8 +97,7 @@ public class CodyAutoCompleteManager {
    * @param offset The character offset in the editor to trigger auto-complete at.
    */
   public void triggerAutoComplete(@NotNull Editor editor, int offset) {
-    // Check if auto-complete is enabled via the config
-    if (!ConfigUtil.isCodyAutoCompleteEnabled()) {
+    if (!isEnabledForEditor(editor)) {
       return;
     }
 

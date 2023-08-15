@@ -7591,9 +7591,27 @@ enum AlertType {
 }
 
 """
+The group of alerts.
+"""
+enum AlertGroup {
+    AUTHENTICATION
+    CODEHOST
+    CODY
+    LICENSE
+    OBSERVABILITY
+    SMTP
+    UPDATE
+    OTHER
+}
+
+"""
 An alert message shown to the viewer.
 """
 type Alert {
+    """
+    The group of this alert. Indicates what system it relates to.
+    """
+    group: AlertGroup!
     """
     The type of this alert.
     """

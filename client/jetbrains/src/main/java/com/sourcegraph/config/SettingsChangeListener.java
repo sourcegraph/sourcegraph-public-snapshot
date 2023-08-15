@@ -7,6 +7,7 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.KeyboardShortcut;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.TextEditor;
 import com.intellij.openapi.keymap.KeymapUtil;
@@ -17,6 +18,7 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
+import com.sourcegraph.cody.CodyAgentProjectListener;
 import com.sourcegraph.cody.CodyToolWindowFactory;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
@@ -38,6 +40,7 @@ import org.jetbrains.annotations.NotNull;
 public class SettingsChangeListener implements Disposable {
   private final MessageBusConnection connection;
   private JavaToJSBridge javaToJSBridge;
+  private final Logger logger = Logger.getInstance(SettingsChangeListener.class);
 
   public SettingsChangeListener(@NotNull Project project) {
     MessageBus bus = project.getMessageBus();
@@ -61,9 +64,17 @@ public class SettingsChangeListener implements Disposable {
               javaToJSBridge.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project));
             }
 
+            if (context.oldCodyEnabled && !context.newCodyEnabled) {
+              logger.warn("Stopping Cody agent because of config changes");
+              new CodyAgentProjectListener().stopAgent(project);
+            } else if (!context.oldCodyEnabled && context.newCodyEnabled) {
+              logger.warn("Starting Cody agent because of config changes");
+              new CodyAgentProjectListener().startAgent(project);
+            }
+
             // Notify Cody Agent about config changes.
             CodyAgentServer agentServer = CodyAgent.getServer(project);
-            if (agentServer != null) {
+            if (context.newCodyEnabled && agentServer != null) {
               agentServer.configurationDidChange(ConfigUtil.getAgentConfiguration(project));
             }
 
