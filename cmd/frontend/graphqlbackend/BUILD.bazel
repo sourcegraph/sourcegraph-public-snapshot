@@ -490,6 +490,8 @@ go_test(
         "//internal/gqlutil",
         "//internal/highlight",
         "//internal/inventory",
+        "//internal/license",
+        "//internal/licensing",
         "//internal/oobmigration",
         "//internal/rbac",
         "//internal/rbac/types",

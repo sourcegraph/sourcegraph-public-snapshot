@@ -34,7 +34,6 @@ const NotificationsGroup: React.FC<{ name: string; items: { message: string; typ
                 {name}
             </div>
             <div className="pl-2">
-                {/* todo: handle dismissable alerts */}
                 {items.map(({ message, type }) => (
                     <Text
                         key={message}
