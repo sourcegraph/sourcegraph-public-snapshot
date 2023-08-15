@@ -1,2 +1,3 @@
 name: add_event_logs_index_generation
 parents: [1692140153]
+createIndexConcurrently: true
