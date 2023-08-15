@@ -26,11 +26,10 @@ public class ConfigUtil {
         .setServerEndpoint(getSourcegraphUrl(project))
         .setAccessToken(getProjectAccessToken(project))
         .setCustomHeaders(getCustomRequestHeadersAsMap(project))
-        .setAutocompleteAdvancedProvider(
-            UserLevelConfig.getAutoCompleteProviderType().vscodeSettingString())
-        .setAutocompleteAdvancedServerEndpoint(UserLevelConfig.getAutoCompleteServerEndpoint())
+        .setAutocompleteAdvancedProvider("unstable-codegen")
+        .setAutocompleteAdvancedServerEndpoint("$CUSTOMER_ENDPOINT")
         .setAutocompleteAdvancedAccessToken(UserLevelConfig.getAutoCompleteAccessToken())
-        .setAutocompleteAdvancedEmbeddings(UserLevelConfig.getAutocompleteAdvancedEmbeddings())
+        .setAutocompleteAdvancedEmbeddings(true)
         .setDebug(isCodyDebugEnabled())
         .setVerboseDebug(isCodyVerboseDebugEnabled());
   }
