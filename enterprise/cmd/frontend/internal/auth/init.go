@@ -109,6 +109,7 @@ func Init(logger log.Logger, db database.DB) {
 
 		sort.Strings(names)
 		return []*graphqlbackend.Alert{{
+			GroupValue:   graphqlbackend.AlertGroupLicense,
 			TypeValue:    graphqlbackend.AlertTypeError,
 			MessageValue: fmt.Sprintf("A Sourcegraph license is required to enable following authentication providers: %s. [**Get a license.**](/site-admin/license)", strings.Join(names, ", ")),
 		}}
