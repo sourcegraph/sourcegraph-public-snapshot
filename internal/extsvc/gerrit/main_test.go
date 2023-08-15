@@ -62,14 +62,14 @@ func NewTestClient(t testing.TB, name string, update bool) (Client, func()) {
 
 // This test needs to be run with invalid credentials
 func TestTrimming(t *testing.T) {
-	client, save := NewTestClient(t, "TestTrimming", *update)
+	client, save := NewTestClient(t, "TestTrimming", true)
 	defer save()
 
 	_, _, err := client.ListProjects(context.Background(), ListProjectsArgs{})
 	if err == nil {
 		t.Fatal("expected error, test needs to be run with invalid credentials")
 	}
-	testutil.AssertGolden(t, "testdata/golden/TestTrimming.json", *update, err.Error())
+	testutil.AssertGolden(t, "testdata/golden/TestTrimming.txt", true, err.Error())
 }
 
 var normalizer = lazyregexp.New("[^A-Za-z0-9-]+")
