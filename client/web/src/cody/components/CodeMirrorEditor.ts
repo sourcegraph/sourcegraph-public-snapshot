@@ -42,15 +42,38 @@ export class CodeMirrorEditor implements Editor {
 
     public getActiveTextEditor(): ActiveTextEditor | null {
         const editor = this.editor
-        if (editor) {
-            return {
-                content: editor.content,
-                filePath: editor.filename,
-                repoName: this.repoName,
-                revision: this.revision,
+        if (!editor) {
+            return null
+        }
+
+        const state = editor.view.state
+        const from = state.selection.main.from
+        const to = state.selection.main.to
+
+        let selectionRange: ActiveTextEditorSelectionRange | undefined = undefined
+        if (from !== to) {
+            const headCursor = state.doc.lineAt(from)
+            const tailCursor = state.doc.lineAt(to)
+
+            selectionRange = {
+                start: {
+                    line: headCursor.number - 1,
+                    character: from - headCursor.from,
+                },
+                end: {
+                    line: tailCursor.number - 1,
+                    character: to - tailCursor.from,
+                },
             }
         }
-        return null
+
+        return {
+            content: editor.content,
+            filePath: editor.filename,
+            repoName: this.repoName,
+            revision: this.revision,
+            selectionRange,
+        }
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {

@@ -132,9 +132,9 @@ func (s *store) GetRanges(ctx context.Context, bundleID int, path string, startL
 
 			ranges = append(ranges, shared.CodeIntelligenceRange{
 				Range:           r,
-				Definitions:     convertSCIPRangesToLocations(data.definitions, bundleID, path),
-				References:      convertSCIPRangesToLocations(data.references, bundleID, path),
-				Implementations: convertSCIPRangesToLocations(data.implementations, bundleID, path),
+				Definitions:     convertSCIPRangesToLocations(data.definitions, bundleID, path, "TODO B"),
+				References:      convertSCIPRangesToLocations(data.references, bundleID, path, "TODO C"),
+				Implementations: convertSCIPRangesToLocations(data.implementations, bundleID, path, "TODO D"),
 				HoverText:       strings.Join(data.hoverText, "\n"),
 			})
 		}
@@ -156,13 +156,14 @@ WHERE
 LIMIT 1
 `
 
-func convertSCIPRangesToLocations(ranges []*scip.Range, dumpID int, path string) []shared.Location {
+func convertSCIPRangesToLocations(ranges []*scip.Range, dumpID int, path, symbolName string) []shared.Location {
 	locations := make([]shared.Location, 0, len(ranges))
 	for _, r := range ranges {
 		locations = append(locations, shared.Location{
-			DumpID: dumpID,
-			Path:   path,
-			Range:  translateRange(r),
+			SymbolName: symbolName,
+			DumpID:     dumpID,
+			Path:       path,
+			Range:      translateRange(r),
 		})
 	}
 

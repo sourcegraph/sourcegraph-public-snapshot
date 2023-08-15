@@ -63,7 +63,7 @@ func newService(
 const (
 	maximumIndexesPerMonikerSearch = 500
 	hunkCacheSize                  = 1000
-	enableSyntect                  = true
+	enableSyntect                  = false
 )
 
 func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.GetPreciseContextInput) (_ []*types.PreciseContext, traceLogs string, err error) {
@@ -405,26 +405,46 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		for _, l := range pd.Location {
 			key := fmt.Sprintf("%s@%s:%s", l.Dump.RepositoryName, l.Dump.Commit, filepath.Join(l.Dump.Root, l.Path))
 			documentAndText := cache[key]
+			fmt.Printf("FETCHING %q\n", l.SymbolName)
 
 			for _, occ := range documentAndText.SCIP.Occurrences {
-				// NOTE: assumption made; we may want to look at the precise
-				// range as an alternate or additional indicator for which
-				// syntect occurrences we are interested in
-				if occ.Symbol != pd.Fuzzy && pd.Fuzzy != "" {
+				r := scip.NewRange(occ.Range)
+				rd := precise.RangeData{
+					StartLine:      l.TargetRange.Start.Line,
+					StartCharacter: l.TargetRange.Start.Character,
+					EndLine:        l.TargetRange.End.Line,
+					EndCharacter:   l.TargetRange.End.Character,
+				}
+
+				//  // NOTE: assumption made; we may want to look at the precise
+				// // range as an alternate or additional indicator for which
+				// // syntect occurrences we are interested in
+				// if occ.Symbol != pd.Fuzzy && pd.Fuzzy != "" {
+				// 	continue
+				// }
+				// TODO?
+				if r.Start.Line != int32(rd.StartLine) || r.Start.Character != int32(rd.StartCharacter) {
 					continue
 				}
+				fmt.Print("FOUND IT!\n")
+
 				if len(occ.EnclosingRange) > 0 {
 					ex, err := symbols.NewExplodedSymbol(pd.SCIP)
 					if err != nil {
+						fmt.Printf("OOPS 1: %q\n", pd.SCIP)
 						return nil, "", err
 					}
-					fex, err := symbols.NewExplodedSymbol(pd.Fuzzy)
-					if err != nil {
-						return nil, "", err
-					}
+
 					var fuzzyName *string
-					if fex.FuzzyDescriptorSuffix != "" {
-						fuzzyName = &fex.FuzzyDescriptorSuffix
+					if pd.Fuzzy != "" {
+						fex, err := symbols.NewExplodedSymbol(pd.Fuzzy)
+						if err != nil {
+							fmt.Printf("OOPS 2: %q\n", pd.Fuzzy)
+							return nil, "", err
+						}
+						if fex.FuzzyDescriptorSuffix != "" {
+							fuzzyName = &fex.FuzzyDescriptorSuffix
+						}
 					}
 
 					preciseResponse = append(preciseResponse, &types.PreciseContext{

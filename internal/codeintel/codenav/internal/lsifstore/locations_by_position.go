@@ -164,7 +164,7 @@ func (s *store) getLocations(
 	for _, occurrence := range occurrences {
 		var locations []shared.Location
 		if ranges := scipExtractor(documentData.SCIPData, occurrence); len(ranges) != 0 {
-			locations = append(locations, convertSCIPRangesToLocations(ranges, bundleID, path)...)
+			locations = append(locations, convertSCIPRangesToLocations(ranges, bundleID, path, "TODO A")...)
 		}
 
 		if occurrence.Symbol != "" && !scip.IsLocalSymbol(occurrence.Symbol) {
@@ -472,7 +472,7 @@ func (s *store) extractLocationsFromPosition(
 	var symbols []string
 	for _, occurrence := range occurrences {
 		if ranges := extractRanges(documentData.SCIPData, occurrence); len(ranges) != 0 {
-			locations = append(locations, convertSCIPRangesToLocations(ranges, locationKey.UploadID, locationKey.Path)...)
+			locations = append(locations, convertSCIPRangesToLocations(ranges, locationKey.UploadID, locationKey.Path, occurrence.Symbol)...)
 		}
 
 		if occurrence.Symbol != "" && !scip.IsLocalSymbol(occurrence.Symbol) {
