@@ -1,13 +1,11 @@
 package audit
 
 import (
-	"context"
 	"fmt"
+	"context"
 	"strings"
-
 	"github.com/google/uuid"
 	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
