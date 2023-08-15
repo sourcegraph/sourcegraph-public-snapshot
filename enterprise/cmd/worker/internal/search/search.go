@@ -22,13 +22,13 @@ type Backend interface {
 	NewSearch(ctx context.Context, q string) (Searcher, error)
 }
 
-// UnresolvedUnit represents zero or more revisions we need to search in a
-// repository for a refspec. This can be inferred relativley cheaply from
+// RepositoryRefSpec represents zero or more revisions we need to search in a
+// repository for a refspec. This can be inferred relatively cheaply from
 // parsing a query and the repos table.
 //
 // This type needs to be serializable so that we can persist it to a database
 // or queue.
-type UnresolvedUnit struct {
+type RepositoryRefSpec struct {
 	// Repository is the repository to search.
 	Repository api.RepoID
 
@@ -42,8 +42,8 @@ type UnresolvedUnit struct {
 // This type needs to be serializable so that we can persist it to a database
 // or queue.
 type Unit struct {
-	// UnresolvedUnit is where this Unit got resolved from.
-	UnresolvedUnit
+	// RepositoryRefSpec is where this Unit got resolved from.
+	RepositoryRefSpec
 
 	// Revision is the resolved revision.
 	Revision api.CommitID
@@ -67,9 +67,9 @@ type Unit struct {
 // out like this is so we can report progress, do retries, and spread out the
 // work over time.
 type Searcher interface {
-	UnresolvedUnits(context.Context) ([]UnresolvedUnit, error)
+	UnresolvedUnits(context.Context) ([]RepositoryRefSpec, error)
 
-	ResolveUnit(context.Context, UnresolvedUnit) ([]Unit, error)
+	ResolveUnit(context.Context, RepositoryRefSpec) ([]Unit, error)
 
 	Search(context.Context, Unit, CSVWriter) error
 }
