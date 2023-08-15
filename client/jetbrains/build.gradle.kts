@@ -3,6 +3,7 @@ import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.zip.ZipFile
 
 fun properties(key: String) = project.findProperty(key).toString()
 val isAgentEnabled = findProperty("enableAgent") == "true"
@@ -124,10 +125,10 @@ tasks {
     fun copyAgentBinariesToPluginPath(targetPath: String) {
         val shouldBuildBinaries =
             agentSourceDirectory.isDirectory && (
-                    findProperty("forceAgentBuild") == "true" ||
-                            !Files.isDirectory(agentTargetDirectory) ||
-                            agentTargetDirectory.toFile().list()?.isEmpty() ?: false
-                    )
+                findProperty("forceAgentBuild") == "true" ||
+                    !Files.isDirectory(agentTargetDirectory) ||
+                    agentTargetDirectory.toFile().list()?.isEmpty() ?: false
+                )
         if (shouldBuildBinaries) {
             exec {
                 commandLine("pnpm", "install")
@@ -150,11 +151,30 @@ tasks {
         dependsOn("copyAgentBinariesToPluginPath")
         // Copy agent binaries into the zip file that `buildPlugin` produces.
         from(
-            fileTree(agentTargetDirectory.parent.toString()) {
-                include("agent/*")
+            fileTree(agentTargetDirectory.toString()) {
+                include("*")
             },
         ) {
-            into("agent")
+            into("agent/")
+        }
+    }
+
+    register("buildPluginAndAssertAgentBinariesExist") {
+        dependsOn("buildPlugin")
+        doLast {
+            val pluginPath = buildPlugin.get().outputs.files.first()
+            ZipFile(pluginPath).use { zip ->
+                fun assertExists(name: String): Unit {
+                    if (zip.getEntry("Sourcegraph/agent/$name") == null) {
+                        throw Error("Agent binary '$name' not found in plugin zip $pluginPath")
+                    }
+                }
+                assertExists("agent-macos-arm64")
+                assertExists("agent-macos-x64")
+                assertExists("agent-linux-arm64")
+                assertExists("agent-linux-x64")
+                assertExists("agent-win-x64.exe")
+            }
         }
     }
 
