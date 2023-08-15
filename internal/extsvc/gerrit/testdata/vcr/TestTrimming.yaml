@@ -1,0 +1,35 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://gerrit.sgdev.org/a/projects/?S=0&n=100
+    method: GET
+  response:
+    body: Unauthorized
+    headers:
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 7f72c42c9b193a09-YYZ
+      Content-Length:
+      - "12"
+      Content-Type:
+      - text/plain;charset=iso-8859-1
+      Date:
+      - Tue, 15 Aug 2023 16:20:41 GMT
+      Expires:
+      - Mon, 01 Jan 1990 00:00:00 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15724800; includeSubDomains
+    status: 401 Unauthorized
+    code: 401
+    duration: ""

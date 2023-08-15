@@ -2,6 +2,7 @@
 package gerrit
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -166,8 +167,9 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (*http.R
 				Body:       bs,
 			}
 		}
+
 		// Gerrit attaches this prefix to most of its responses, so if it exists, we cut it, so we can parse it as a json properly.
-		if len(bs) >= 4 && string(bs[:4]) == ")]}'" {
+		if len(bs) >= 4 && bytes.HasPrefix(bs, []byte(")]}'")) {
 			bs = bs[4:]
 		}
 	}
