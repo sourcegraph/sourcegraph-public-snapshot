@@ -15,8 +15,6 @@ import (
 	"github.com/gen2brain/beeep"
 	"github.com/google/uuid"
 	"github.com/grafana/regexp"
-	"github.com/pjlast/llmsp/claude"
-	"github.com/pjlast/llmsp/sourcegraph/embeddings"
 	"github.com/urfave/cli/v2"
 
 	sgrun "github.com/sourcegraph/run"
@@ -610,97 +608,33 @@ The '--job' flag can be used to narrow down the logs returned - you can provide 
 To send logs to a Loki instance, you can provide --out=http://127.0.0.1:3100 after spinning up an instance with 'sg run loki grafana'.
 From there, you can start exploring logs with the Grafana explore panel.
 `,
-		Flags: append(ciTargetFlags,
-			&cli.StringFlag{
-				Name:    "job",
-				Aliases: []string{"j"},
-				Usage:   "ID or name of the job to export logs for",
-			},
-			&cli.StringFlag{
-				Name:    "state",
-				Aliases: []string{"s"},
-				Usage:   "Job `state` to export logs for (provide an empty value for all states)",
-				Value:   "failed",
-			},
-			&cli.StringFlag{
-				Name:    "out",
-				Aliases: []string{"o"},
-				Usage: fmt.Sprintf("Output `format`: one of [%s], or a URL pointing to a Loki instance, such as %s",
-					strings.Join([]string{ciLogsOutTerminal, ciLogsOutSimple, ciLogsOutJSON}, "|"), loki.DefaultLokiURL),
-				Value: ciLogsOutTerminal,
-			},
-			&cli.StringFlag{
-				Name:  "overwrite-state",
-				Usage: "`state` to overwrite the job state metadata",
-			},
-		),
-		Action: func(cmd *cli.Context) error {
-			ctx := cmd.Context
-			client, err := bk.NewClient(ctx, std.Out)
-			if err != nil {
-				return err
-			}
-
-			target, err := getBuildTarget(cmd)
-			if err != nil {
-				return err
-			}
-
-			build, err := target.GetBuild(ctx, client)
-			if err != nil {
-				return err
-			}
-			std.Out.WriteLine(output.Styledf(output.StylePending, "Fetching logs for %s ...",
-				*build.WebURL))
-
-			options := bk.ExportLogsOpts{
-				JobQuery: cmd.String("job"),
-				State:    cmd.String("state"),
-			}
-			logs, err := client.ExportLogs(ctx, "sourcegraph", *build.Number, options)
-			if err != nil {
-				return err
-			}
-			if len(logs) == 0 {
-				std.Out.WriteLine(output.Line("", output.StyleSuggestion,
-					fmt.Sprintf("No logs found matching the given parameters (job: %q, state: %q).", options.JobQuery, options.State)))
-				return nil
-			}
-
-			logsOut := cmd.String("out")
-			switch logsOut {
-			case ciLogsOutTerminal, ciLogsOutSimple:
-				for _, log := range logs {
-					block := std.Out.Block(output.Linef(output.EmojiInfo, output.StyleUnderline, "%s",
-						*log.JobMeta.Name))
-					content := bkTimestamp.ReplaceAllString(*log.Content, "")
-					if logsOut == ciLogsOutSimple {
-						content = bk.CleanANSI(content)
-					}
-					block.Write(content)
-					block.Close()
-				}
-				std.Out.WriteLine(output.Styledf(output.StyleSuccess, "Found and output logs for %d jobs.", len(logs)))
-
-			case ciLogsOutJSON:
-				for _, log := range logs {
-					if logsOut != "" {
-						failed := logsOut
-						log.JobMeta.State = &failed
-					}
-					stream, err := loki.NewStreamFromJobLogs(log)
-					if err != nil {
-						return errors.Newf("build %d job %s: NewStreamFromJobLogs: %s", log.JobMeta.Build, log.JobMeta.Job, err)
-					}
-					b, err := json.MarshalIndent(stream, "", "\t")
-					if err != nil {
-						return errors.Newf("build %d job %s: Marshal: %s", log.JobMeta.Build, log.JobMeta.Job, err)
-					}
-					std.Out.Write(string(b))
-				}
-
-			default:
-				lokiURL, err := url.Parse(logsOut)
+			Flags: append(ciTargetFlags,
+				&cli.StringFlag{
+					Name:    "job",
+					Aliases: []string{"j"},
+					Usage:   "ID or name of the job to export logs for",
+				},
+				&cli.StringFlag{
+					Name:    "state",
+					Aliases: []string{"s"},
+					Usage:   "Job `state` to export logs for (provide an empty value for all states)",
+					Value:   "failed",
+				},
+				&cli.StringFlag{
+					Name:    "out",
+					Aliases: []string{"o"},
+					Usage: fmt.Sprintf("Output `format`: one of [%s], or a URL pointing to a Loki instance, such as %s",
+						strings.Join([]string{ciLogsOutTerminal, ciLogsOutSimple, ciLogsOutJSON}, "|"), loki.DefaultLokiURL),
+					Value: ciLogsOutTerminal,
+				},
+				&cli.StringFlag{
+					Name:  "overwrite-state",
+					Usage: "`state` to overwrite the job state metadata",
+				},
+			),
+			Action: func(cmd *cli.Context) error {
+				ctx := cmd.Context
+				client, err := bk.NewClient(ctx, std.Out)
 				if err != nil {
 					return err
 				}
@@ -734,8 +668,6 @@ From there, you can start exploring logs with the Grafana explore panel.
 				logsOut := cmd.String("out")
 				switch logsOut {
 				case ciLogsOutTerminal, ciLogsOutSimple:
-					// Buildkite's timestamp thingo causes log lines to not render in terminal
-					bkTimestamp := regexp.MustCompile(`\x1b_bk;t=\d{13}\x07`) // \x1b is ESC, \x07 is BEL
 					for _, log := range logs {
 						block := std.Out.Block(output.Linef(output.EmojiInfo, output.StyleUnderline, "%s",
 							*log.JobMeta.Name))
@@ -766,75 +698,138 @@ From there, you can start exploring logs with the Grafana explore panel.
 					}
 
 				default:
-					lokiURL, err := url.Parse(logsOut)
+					target, err := getBuildTarget(cmd)
 					if err != nil {
-						return errors.Newf("invalid Loki target: %w", err)
+						return err
 					}
-					lokiClient := loki.NewLokiClient(lokiURL)
-					std.Out.WriteLine(output.Styledf(output.StylePending, "Pushing to Loki instance at %q", lokiURL.Host))
 
-					var (
-						pushedEntries int
-						pushedStreams int
-						pushErrs      []string
-						pending       = std.Out.Pending(output.Styled(output.StylePending, "Processing logs..."))
-					)
-					for i, log := range logs {
-						job := log.JobMeta.Job
-						if log.JobMeta.Label != nil {
-							job = fmt.Sprintf("%q (%s)", *log.JobMeta.Label, log.JobMeta.Job)
+					build, err := target.GetBuild(ctx, client)
+					if err != nil {
+						return err
+					}
+					std.Out.WriteLine(output.Styledf(output.StylePending, "Fetching logs for %s ...",
+						*build.WebURL))
+
+					options := bk.ExportLogsOpts{
+						JobQuery: cmd.String("job"),
+						State:    cmd.String("state"),
+					}
+					logs, err := client.ExportLogs(ctx, "sourcegraph", *build.Number, options)
+					if err != nil {
+						return err
+					}
+					if len(logs) == 0 {
+						std.Out.WriteLine(output.Line("", output.StyleSuggestion,
+							fmt.Sprintf("No logs found matching the given parameters (job: %q, state: %q).", options.JobQuery, options.State)))
+						return nil
+					}
+
+					logsOut := cmd.String("out")
+					switch logsOut {
+					case ciLogsOutTerminal, ciLogsOutSimple:
+						// Buildkite's timestamp thingo causes log lines to not render in terminal
+						bkTimestamp := regexp.MustCompile(`\x1b_bk;t=\d{13}\x07`) // \x1b is ESC, \x07 is BEL
+						for _, log := range logs {
+							block := std.Out.Block(output.Linef(output.EmojiInfo, output.StyleUnderline, "%s",
+								*log.JobMeta.Name))
+							content := bkTimestamp.ReplaceAllString(*log.Content, "")
+							if logsOut == ciLogsOutSimple {
+								content = bk.CleanANSI(content)
+							}
+							block.Write(content)
+							block.Close()
 						}
-						overwriteState := cmd.String("overwrite-state")
-						if overwriteState != "" {
-							failed := overwriteState
-							log.JobMeta.State = &failed
+						std.Out.WriteLine(output.Styledf(output.StyleSuccess, "Found and output logs for %d jobs.", len(logs)))
+
+					case ciLogsOutJSON:
+						for _, log := range logs {
+							if logsOut != "" {
+								failed := logsOut
+								log.JobMeta.State = &failed
+							}
+							stream, err := loki.NewStreamFromJobLogs(log)
+							if err != nil {
+								return errors.Newf("build %d job %s: NewStreamFromJobLogs: %s", log.JobMeta.Build, log.JobMeta.Job, err)
+							}
+							b, err := json.MarshalIndent(stream, "", "\t")
+							if err != nil {
+								return errors.Newf("build %d job %s: Marshal: %s", log.JobMeta.Build, log.JobMeta.Job, err)
+							}
+							std.Out.Write(string(b))
 						}
 
-						pending.Updatef("Processing build %d job %s (%d/%d)...",
-							log.JobMeta.Build, job, i, len(logs))
-						stream, err := loki.NewStreamFromJobLogs(log)
+					default:
+						lokiURL, err := url.Parse(logsOut)
 						if err != nil {
-							pushErrs = append(pushErrs, fmt.Sprintf("build %d job %s: %s",
-								log.JobMeta.Build, job, err))
-							continue
+							return errors.Newf("invalid Loki target: %w", err)
+						}
+						lokiClient := loki.NewLokiClient(lokiURL)
+						std.Out.WriteLine(output.Styledf(output.StylePending, "Pushing to Loki instance at %q", lokiURL.Host))
+
+						var (
+							pushedEntries int
+							pushedStreams int
+							pushErrs      []string
+							pending       = std.Out.Pending(output.Styled(output.StylePending, "Processing logs..."))
+						)
+						for i, log := range logs {
+							job := log.JobMeta.Job
+							if log.JobMeta.Label != nil {
+								job = fmt.Sprintf("%q (%s)", *log.JobMeta.Label, log.JobMeta.Job)
+							}
+							overwriteState := cmd.String("overwrite-state")
+							if overwriteState != "" {
+								failed := overwriteState
+								log.JobMeta.State = &failed
+							}
+
+							pending.Updatef("Processing build %d job %s (%d/%d)...",
+								log.JobMeta.Build, job, i, len(logs))
+							stream, err := loki.NewStreamFromJobLogs(log)
+							if err != nil {
+								pushErrs = append(pushErrs, fmt.Sprintf("build %d job %s: %s",
+									log.JobMeta.Build, job, err))
+								continue
+							}
+
+							// Set buildkite metadata if available
+							if ciBranch := os.Getenv("BUILDKITE_BRANCH"); ciBranch != "" {
+								stream.Stream.Branch = ciBranch
+							}
+							if ciQueue := os.Getenv("BUILDKITE_AGENT_META_DATA_QUEUE"); ciQueue != "" {
+								stream.Stream.Queue = ciQueue
+							}
+
+							err = lokiClient.PushStreams(ctx, []*loki.Stream{stream})
+							if err != nil {
+								pushErrs = append(pushErrs, fmt.Sprintf("build %d job %q: %s",
+									log.JobMeta.Build, job, err))
+								continue
+							}
+
+							pushedEntries += len(stream.Values)
+							pushedStreams += 1
 						}
 
-						// Set buildkite metadata if available
-						if ciBranch := os.Getenv("BUILDKITE_BRANCH"); ciBranch != "" {
-							stream.Stream.Branch = ciBranch
-						}
-						if ciQueue := os.Getenv("BUILDKITE_AGENT_META_DATA_QUEUE"); ciQueue != "" {
-							stream.Stream.Queue = ciQueue
-						}
-
-						err = lokiClient.PushStreams(ctx, []*loki.Stream{stream})
-						if err != nil {
-							pushErrs = append(pushErrs, fmt.Sprintf("build %d job %q: %s",
-								log.JobMeta.Build, job, err))
-							continue
+						if pushedEntries > 0 {
+							pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess,
+								"Pushed %d entries from %d streams to Loki", pushedEntries, pushedStreams))
+						} else {
+							pending.Destroy()
 						}
 
-						pushedEntries += len(stream.Values)
-						pushedStreams += 1
+						if pushErrs != nil {
+							failedStreams := len(logs) - pushedStreams
+							std.Out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning,
+								"Failed to push %d streams: \n - %s", failedStreams, strings.Join(pushErrs, "\n - ")))
+							if failedStreams == len(logs) {
+								return errors.New("failed to push all logs")
+							}
+						}
 					}
 
-					if pushedEntries > 0 {
-						pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess,
-							"Pushed %d entries from %d streams to Loki", pushedEntries, pushedStreams))
-					} else {
-						pending.Destroy()
-					}
-
-					if pushErrs != nil {
-						failedStreams := len(logs) - pushedStreams
-						std.Out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning,
-							"Failed to push %d streams: \n - %s", failedStreams, strings.Join(pushErrs, "\n - ")))
-						if failedStreams == len(logs) {
-							return errors.New("failed to push all logs")
-						}
-					}
+					return nil
 				}
-
 				return nil
 			},
 		}, {
@@ -1084,14 +1079,6 @@ func fetchJobs(ctx context.Context, client *bk.Client, buildPtr **buildkite.Buil
 		if err != nil {
 			return false, errors.Newf("failed to get most recent build for branch %q: %w", *build.Branch, err)
 		}
-	}
-	if failedJob == nil {
-		return nil, nil, errors.Newf("no failed jobs found on build %d", *build.Number)
-	}
-	logs, err := client.JobRawLog(failedJob)
-	if err != nil {
-		return nil, nil, err
-	}
 
 		// Update the original build reference with the refreshed one.
 		*buildPtr = build
