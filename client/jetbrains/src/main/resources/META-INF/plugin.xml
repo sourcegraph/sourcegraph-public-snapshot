@@ -1,6 +1,6 @@
 <idea-plugin>
     <id>com.sourcegraph.jetbrains</id>
-    <name>Cody AI by Sourcegraph</name>
+    <name>Sourcegraph (Cody AI and Code Search)</name>
     <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
 
     <!--
