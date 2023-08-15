@@ -52,8 +52,8 @@ type RepositoryRevision struct {
 // Searcher represents a search in a way we can break up the work. The flow is
 // something like:
 //
-//  1. UnresolvedUnits -> just speak to the DB to find the list of repos we need to search.
-//  2. ResolveUnit -> speak to gitserver to find out which commits to search.
+//  1. RepositoryRefSpecs -> just speak to the DB to find the list of repos we need to search.
+//  2. ResolveRepositoryRefSpec -> speak to gitserver to find out which commits to search.
 //  3. Search -> actually do a search.
 //
 // This does mean that things like searching a commit in a monorepo are
@@ -67,9 +67,9 @@ type RepositoryRevision struct {
 // out like this is so we can report progress, do retries, and spread out the
 // work over time.
 type Searcher interface {
-	UnresolvedUnits(context.Context) ([]RepositoryRefSpec, error)
+	RepositoryRefSpecs(context.Context) ([]RepositoryRefSpec, error)
 
-	ResolveUnit(context.Context, RepositoryRefSpec) ([]RepositoryRevision, error)
+	ResolveRepositoryRefSpec(context.Context, RepositoryRefSpec) ([]RepositoryRevision, error)
 
 	Search(context.Context, RepositoryRevision, CSVWriter) error
 }
