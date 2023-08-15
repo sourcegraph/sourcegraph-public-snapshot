@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-logr/stdr"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/tmpfriend"
 	sglog "github.com/sourcegraph/log"
@@ -99,6 +100,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 	db := database.NewDB(logger, sqlDB)
+
+	// Used by opentelemetry logging
+	stdr.SetVerbosity(10)
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
 		if !deploy.IsApp() {
