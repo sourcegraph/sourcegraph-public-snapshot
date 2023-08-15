@@ -451,7 +451,6 @@ CREATE FUNCTION invalidate_session_for_userid_on_password_change() RETURNS trigg
     END;
 $$;
 
-
 CREATE FUNCTION iscodyactiveevent(name text) RETURNS boolean
     LANGUAGE plpgsql IMMUTABLE
     AS $$
