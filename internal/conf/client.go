@@ -18,7 +18,7 @@ import (
 
 type client struct {
 	store       *store
-	passthrough ConfigurationSource
+	passthrough configurationSource
 	watchersMu  sync.Mutex
 	watchers    []chan struct{}
 

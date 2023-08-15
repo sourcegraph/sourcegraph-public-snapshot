@@ -64,7 +64,7 @@ func NewStrictMockConfigurationSource() *MockConfigurationSource {
 // NewMockConfigurationSourceFrom creates a new mock of the
 // MockConfigurationSource interface. All methods delegate to the given
 // implementation, unless overwritten.
-func NewMockConfigurationSourceFrom(i ConfigurationSource) *MockConfigurationSource {
+func NewMockConfigurationSourceFrom(i configurationSource) *MockConfigurationSource {
 	return &MockConfigurationSource{
 		ReadFunc: &ConfigurationSourceReadFunc{
 			defaultHook: i.Read,

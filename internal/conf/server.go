@@ -7,9 +7,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
-// ConfigurationSource provides direct access to read and write to the
+// configurationSource provides direct access to read and write to the
 // "raw" configuration.
-type ConfigurationSource interface {
+type configurationSource interface {
 	// Write updates the configuration. The Deployment field is ignored.
 	Write(ctx context.Context, data conftypes.RawUnified, lastID int32, authorUserID int32) error
 	Read(ctx context.Context) (conftypes.RawUnified, error)
@@ -17,7 +17,7 @@ type ConfigurationSource interface {
 
 // Server provides access and manages modifications to the site configuration.
 type Server struct {
-	source ConfigurationSource
+	source configurationSource
 	// sourceWrites signals when our app writes to the configuration source. The
 	// received channel should be closed when server.Raw() would return the new
 	// configuration that has been written to disk.
@@ -29,11 +29,11 @@ type Server struct {
 	startOnce sync.Once
 }
 
-// NewServer returns a new Server instance that mangages the site config file
+// newServer returns a new Server instance that mangages the site config file
 // that is stored at configSource.
 //
 // The server must be started with Start() before it can handle requests.
-func NewServer(source ConfigurationSource) *Server {
+func newServer(source configurationSource) *Server {
 	return &Server{
 		source:       source,
 		sourceWrites: make(chan chan struct{}, 1),

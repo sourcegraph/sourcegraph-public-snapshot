@@ -130,7 +130,7 @@ func initDefaultClient() *client {
 // the number of reads against the underlying configuration source (e.g. a
 // Postgres DB).
 type cachedConfigurationSource struct {
-	source ConfigurationSource
+	source configurationSource
 
 	ttl       time.Duration
 	entryMu   sync.Mutex
@@ -166,7 +166,7 @@ func (c *cachedConfigurationSource) Write(ctx context.Context, input conftypes.R
 // InitConfigurationServerFrontendOnly creates and returns a configuration
 // server. This should only be invoked by the frontend, or else a panic will
 // occur. This function should only ever be called once.
-func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
+func InitConfigurationServerFrontendOnly(source configurationSource) *Server {
 	mode := getMode()
 
 	if mode == modeEmpty {
@@ -177,7 +177,7 @@ func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
 		panic("cannot call this function while in client mode")
 	}
 
-	server := NewServer(&cachedConfigurationSource{
+	server := newServer(&cachedConfigurationSource{
 		source: source,
 		// conf.Watch poll rate is 5s, so we use half that.
 		ttl: 2500 * time.Millisecond,
@@ -211,7 +211,7 @@ var siteConfigEscapeHatchPath = env.Get("SITE_CONFIG_ESCAPE_HATCH_PATH", "$HOME/
 // an escape hatch such that if a site admin configures their instance in a way that they
 // cannot access the UI (for example by configuring auth in a way that locks them out)
 // they can simply edit this file in any of the frontend containers to undo the change.
-func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
+func startSiteConfigEscapeHatchWorker(c configurationSource) {
 	if os.Getenv("NO_SITE_CONFIG_ESCAPE_HATCH") == "1" {
 		return
 	}
