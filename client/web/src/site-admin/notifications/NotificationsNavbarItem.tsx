@@ -5,7 +5,18 @@ import classNames from 'classnames'
 import { groupBy, startCase } from 'lodash'
 
 import { renderMarkdown } from '@sourcegraph/common'
-import { Icon, Badge, Popover, PopoverTrigger, PopoverContent, Text, Button, PopoverTail } from '@sourcegraph/wildcard'
+import {
+    Icon,
+    Badge,
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+    Text,
+    Button,
+    PopoverTail,
+    Alert,
+    Code,
+} from '@sourcegraph/wildcard'
 
 import { AlertType } from '../../graphql-operations'
 
@@ -86,6 +97,12 @@ export const NotificationsNavbarItem: React.FC = () => {
                 </div>
             </PopoverTrigger>
             <PopoverContent className={classNames('p-3', styles.popoverContent)}>
+                {error && (
+                    <Alert variant="danger">
+                        Error happened while loading notifications: <br />
+                        <Code>{JSON.stringify(error, null, 2)}</Code>
+                    </Alert>
+                )}
                 {Object.entries(groups).map(([group, items]) => (
                     <NotificationsGroup name={startCase(group.toLowerCase())} items={items} key={group} />
                 ))}
