@@ -12,7 +12,6 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, Alert, H3, Icon, Text, Container, PageHeader } from '@sourcegraph/wildcard'
 
-import { ChecklistInfo } from '../../site-admin/setup-checklist/ChecklistInfo'
 import { LimitedAccessBanner } from '../LimitedAccessBanner'
 import { PageTitle } from '../PageTitle'
 
@@ -122,7 +121,6 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
             )}
 
             <Container>
-                <ChecklistInfo />
                 {!hasDismissedPrivacyWarning && (
                     <ExternalServicesPrivacyAlert dismissPrivacyWarning={dismissPrivacyWarning} />
                 )}

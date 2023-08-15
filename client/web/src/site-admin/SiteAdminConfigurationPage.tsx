@@ -44,7 +44,6 @@ import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { RELOAD_SITE, SITE_CONFIG_QUERY, UPDATE_SITE_CONFIG } from './backend'
-import { ChecklistInfo } from './setup-checklist/ChecklistInfo'
 import { SiteConfigurationChangeList } from './SiteConfigurationChangeList'
 import { SMTPConfigForm } from './smtp/SMTPConfigForm'
 
@@ -435,7 +434,6 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
         <div className={styles.siteAdminConfigPage}>
             <PageTitle title="Configuration - Admin" />
             <PageHeader path={[{ text: 'Site configuration' }]} headingElement="h2" className="mb-3" />
-            <ChecklistInfo />
             <div>{alerts}</div>
             {loading && <LoadingSpinner />}
             {isSetupChecklistEnabled && data && (
