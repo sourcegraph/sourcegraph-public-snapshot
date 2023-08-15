@@ -50,7 +50,6 @@ go_library(
         "bitbucket_server_util.go",
         "bitbucketcloud_util.go",
         "extension_schema.go",
-        "gen.go",
         "github_util.go",
         "gitlab_util.go",
         "schema.go",
@@ -111,9 +110,12 @@ go_test(
 
 genrule(
     name = "generate",
-    srcs  = glob(["*.schema.json"], ["json-schema-draft*.json"]),
+    srcs = glob(
+        ["*.schema.json"],
+        ["json-schema-draft*.json"],
+    ),
     outs = [
-        "schema.go"
+        "schema.go",
     ],
     cmd = """
     $(location @com_github_sourcegraph_go_jsonschema//cmd/go-jsonschema-compiler:go-jsonschema-compiler) -o $@ -pkg schema $(SRCS)
@@ -122,7 +124,6 @@ genrule(
         "@com_github_sourcegraph_go_jsonschema//cmd/go-jsonschema-compiler",
     ],
 )
-
 
 write_generated_to_source_files(
     name = "write_generated_schema",
