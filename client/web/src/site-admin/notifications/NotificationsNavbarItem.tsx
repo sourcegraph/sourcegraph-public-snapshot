@@ -28,19 +28,20 @@ const NotificationsGroup: React.FC<{ name: string; items: { message: string; typ
     name,
     items,
 }) => {
-    const hasError = items.find(item => item.type === AlertType.ERROR)
-    const hasWarning = items.find(item => item.type === AlertType.WARNING)
-    const hasInfo = items.find(item => item.type === AlertType.INFO)
+    const hasError = items.some(item => item.type === AlertType.ERROR)
+    const hasWarning = !hasError && items.some(item => item.type === AlertType.WARNING)
+    const hasInfo = !hasWarning && items.some(item => item.type === AlertType.INFO)
     return (
         <div>
             <div className="mb-2">
                 <Icon
                     svgPath={hasError || hasWarning || hasInfo ? mdiInformation : mdiCheckCircle}
                     aria-hidden={true}
-                    className={classNames(
-                        styles.icon,
-                        hasError ? styles.danger : hasWarning ? styles.warning : hasInfo ? styles.info : styles.success
-                    )}
+                    className={classNames(styles.icon, {
+                        [styles.danger]: hasError,
+                        [styles.warning]: hasWarning,
+                        [styles.info]: hasInfo,
+                    })}
                 />
                 {name}
             </div>

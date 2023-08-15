@@ -26,6 +26,7 @@
 
 .icon {
     margin-right: 0.5rem;
+    color: var(--success);
     &.warning {
         color: var(--warning);
     }
@@ -36,9 +37,5 @@
 
     &.info {
         color: var(--info);
-    }
-
-    &.success {
-        color: var(--success);
     }
 }
