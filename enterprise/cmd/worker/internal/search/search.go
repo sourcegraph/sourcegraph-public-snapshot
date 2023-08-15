@@ -36,13 +36,13 @@ type RepositoryRefSpec struct {
 	RefSpec string
 }
 
-// Unit represents the smallest unit we can search over, a specific repository
-// and revision.
+// RepositoryRevision represents the smallest unit we can search over, a
+// specific repository and revision.
 //
 // This type needs to be serializable so that we can persist it to a database
 // or queue.
-type Unit struct {
-	// RepositoryRefSpec is where this Unit got resolved from.
+type RepositoryRevision struct {
+	// RepositoryRefSpec is where this RepositoryRevision got resolved from.
 	RepositoryRefSpec
 
 	// Revision is the resolved revision.
@@ -69,9 +69,9 @@ type Unit struct {
 type Searcher interface {
 	UnresolvedUnits(context.Context) ([]RepositoryRefSpec, error)
 
-	ResolveUnit(context.Context, RepositoryRefSpec) ([]Unit, error)
+	ResolveUnit(context.Context, RepositoryRefSpec) ([]RepositoryRevision, error)
 
-	Search(context.Context, Unit, CSVWriter) error
+	Search(context.Context, RepositoryRevision, CSVWriter) error
 }
 
 // CSVWriter makes it so we can avoid caring about search types and leave it
