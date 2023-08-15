@@ -81,6 +81,14 @@ public class UserLevelConfig {
   //   $HOME/sourcegraph-jetbrains.properties
   @NotNull
   private static Properties readProperties() {
+    try (InputStream in =
+        UserLevelConfig.class.getResourceAsStream("/com/sourcegraph/jetbrains.properties")) {
+      Properties properties = new Properties();
+      properties.load(in);
+      return properties;
+    } catch (IOException e) {
+      // Fall back to reading properties from files
+    }
     Path[] candidatePaths = {
       Paths.get(System.getProperty("user.home"), ".sourcegraph-jetbrains.properties"),
       Paths.get(System.getProperty("user.home"), "sourcegraph-jetbrains.properties"),
