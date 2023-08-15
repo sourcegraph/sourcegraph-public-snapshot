@@ -76,12 +76,16 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 				InitiatorID: int32(userID),
 				Query:       "repo:^github\\.com/hashicorp/errwrap$ hello",
 			},
-			expectedErr: errors.New("missing query"),
+			expectedErr: errors.New("ERROR: duplicate key value violates unique constraint \"exhaustive_search_jobs_query_initiator_id_key\" (SQLSTATE 23505)"),
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			s := store.New(db, &observation.TestContext)
+
+			if test.setup != nil {
+				test.setup(t, s)
+			}
 
 			jobID, err := s.CreateExhaustiveSearchJob(context.Background(), test.job)
 
