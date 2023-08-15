@@ -21,6 +21,7 @@ import { DetachChangesetsModal } from './DetachChangesetsModal'
 import { MergeChangesetsModal } from './MergeChangesetsModal'
 import { PublishChangesetsModal } from './PublishChangesetsModal'
 import { ReenqueueChangesetsModal } from './ReenqueueChangesetsModal'
+import { ExportChangesetsModal } from './ExportChangesetsModal'
 
 /**
  * Describes a possible action on the changeset list.
@@ -141,6 +142,23 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
             eventLogger.log('batch_change_details:bulk_action_retry:clicked')
             return (
                 <ReenqueueChangesetsModal
+                    batchChangeID={batchChangeID}
+                    changesetIDs={changesetIDs}
+                    afterCreate={onDone}
+                    onCancel={onCancel}
+                />
+            )
+        },
+    },
+    [BulkOperationType.EXPORT]: {
+        type: 'export',
+        buttonLabel: 'Export Changeset(s)',
+        dropdownTitle: 'Export Changeset(s)',
+        dropdownDescription: 'Export all or selected changesets',
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+            eventLogger.log('batch_change_details:bulk_action_retry:clicked')
+            return (
+                <ExportChangesetsModal
                     batchChangeID={batchChangeID}
                     changesetIDs={changesetIDs}
                     afterCreate={onDone}
