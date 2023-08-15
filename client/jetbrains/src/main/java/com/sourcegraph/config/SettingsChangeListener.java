@@ -31,7 +31,6 @@ import java.awt.event.KeyEvent;
 import java.util.Arrays;
 import java.util.Objects;
 import javax.swing.KeyStroke;
-
 import org.jetbrains.annotations.NotNull;
 
 /**
