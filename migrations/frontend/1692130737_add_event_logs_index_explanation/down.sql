@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS event_logs_name_is_cody_explanation_event;
