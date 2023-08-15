@@ -1,7 +1,7 @@
 import fs from 'fs'
 
 import { CachedInputFileSystem, ResolverFactory } from 'enhanced-resolve'
-import * as esbuild from 'esbuild'
+import type * as esbuild from 'esbuild'
 
 import { NODE_MODULES_PATH, WORKSPACE_NODE_MODULES_PATHS } from '../paths'
 

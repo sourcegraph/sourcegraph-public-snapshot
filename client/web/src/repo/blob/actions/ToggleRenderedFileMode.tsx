@@ -3,11 +3,11 @@ import React from 'react'
 import { mdiEye } from '@mdi/js'
 import { useLocation } from 'react-router-dom'
 
-import { RenderMode } from '@sourcegraph/shared/src/util/url'
+import type { RenderMode } from '@sourcegraph/shared/src/util/url'
 import { createLinkUrl, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { RepoHeaderActionButtonLink, RepoHeaderActionMenuLink } from '../../components/RepoHeaderActions'
-import { RepoHeaderContext } from '../../RepoHeader'
+import type { RepoHeaderContext } from '../../RepoHeader'
 
 import { getURLForMode } from './utils'
 

@@ -13,21 +13,21 @@ import { useNavigate } from 'react-router-dom'
 
 import { dirname } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
     ErrorMessage,
     Icon,
-    TreeNode as WildcardTreeNode,
+    type TreeNode as WildcardTreeNode,
     Link,
     LoadingSpinner,
     Tooltip,
     ErrorAlert,
 } from '@sourcegraph/wildcard'
 
-import { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
+import type { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
 
-import { FocusableTree, FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
+import { FocusableTree, type FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
 
 import styles from './RepoRevisionSidebarFileTree.module.scss'
 

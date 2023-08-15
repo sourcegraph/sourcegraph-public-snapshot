@@ -1,8 +1,8 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { CopyPathAction } from '@sourcegraph/branded'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { RepoRevision, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { type RepoRevision, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { Breadcrumbs } from '@sourcegraph/wildcard'
 
 import { toTreeURL } from '../util/url'

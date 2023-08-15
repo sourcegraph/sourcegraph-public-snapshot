@@ -23,8 +23,24 @@ New issues and feature requests can be filed through our [issue tracker](https:/
 - Run `pnpm generate` in the root directory to generate graphql files
 - Go to `client/jetbrains/` and run `pnpm build` to generate the JS files, or `pnpm watch` to watch for changes and regenerate on the fly
 - You can test the “Find with Sourcegraph” window by running `pnpm standalone` in the `client/jetbrains/` directory and opening [http://localhost:3000/](http://localhost:3000/) in your browser.
-- Run the plugin in a sandboxed IDE by running `./gradlew :runIde`. This will start the platform with the versions defined in `gradle.properties`, [here](https://github.com/sourcegraph/sourcegraph/blob/main/client/jetbrains/gradle.properties#L14-L16).
-  - Note: 2021.3 or later is required for Macs with Apple Silicon chips.
+- Make sure you have Java 11 installed. Two ways to do that:
+  1. CLI: [SDKMAN!](https://github.com/sdkman/homebrew-tap):
+     - `brew tap sdkman/tap`
+     - `brew install sdkman-cli`
+     - Add this to your `.zprofile`:
+       ```sh
+       export SDKMAN_DIR=$(brew --prefix sdkman-cli)/libexec
+       [[ -s "${SDKMAN_DIR}/bin/sdkman-init.sh" ]] && source "${SDKMAN_DIR}/bin/sdkman-init.sh"
+       ```
+     - Try it with `sdk version` in a new terminal. It should work.
+     - Run `sdk install java 11.0.20-amzn`
+  2. GUI:
+     - Open your clone of the repo in IntelliJ
+     - Go to Project Structure (`⌘;`) | Platform Settings | SDK | Plus sign | Download JDK... | set version to 11 | pick Amazon Corretto aarch64
+- Run the plugin in a sandboxed IDE. Two ways to do that:
+  1. CLI: run `./gradlew :runIde`. This will start the platform with the versions defined in `gradle.properties`, [here](https://github.com/sourcegraph/sourcegraph/blob/main/client/jetbrains/gradle.properties#L14-L16).
+  2. Run | Run... (`⌃⌥R`) | Edit Configurations... | Plus sign | Gradle | set Tasks to `runIde` | set Gradle project to `jetbrains` | name it `runIde` | OK | Run it with the green play button at the top right of the IDE.
+  - Note: IntelliJ version 2021.3 or later is required for Macs with Apple Silicon chips.
 - Build a deployable plugin artifact by running `./gradlew buildPlugin`. The output file is `build/distributions/Sourcegraph.zip`.
 - Reformat the codebase with `./gradlew spotlessApply`.
 - Install the google-java-format plugin

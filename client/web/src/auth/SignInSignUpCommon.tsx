@@ -1,8 +1,8 @@
 import * as React from 'react'
 
-import * as H from 'history'
+import type * as H from 'history'
 
-import { Input, InputProps } from '@sourcegraph/wildcard'
+import { Input, type InputProps } from '@sourcegraph/wildcard'
 
 import { USERNAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
 

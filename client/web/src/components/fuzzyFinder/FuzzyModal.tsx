@@ -3,17 +3,17 @@ import React, {
     useEffect,
     useRef,
     useMemo,
-    KeyboardEvent,
+    type KeyboardEvent,
     useLayoutEffect,
     useCallback,
-    SetStateAction,
-    Dispatch,
+    type SetStateAction,
+    type Dispatch,
 } from 'react'
 
 import { mdiClose } from '@mdi/js'
-import { TabsProps } from '@reach/tabs'
+import type { TabsProps } from '@reach/tabs'
 import classNames from 'classnames'
-import * as H from 'history'
+import type * as H from 'history'
 import { escapeRegExp } from 'lodash'
 
 import { pluralize } from '@sourcegraph/common'
@@ -39,14 +39,14 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { AggregateFuzzySearch } from '../../fuzzyFinder/AggregateFuzzySearch'
-import { FuzzySearch, FuzzySearchResult } from '../../fuzzyFinder/FuzzySearch'
-import { SearchValueRankingCache } from '../../fuzzyFinder/SearchValueRankingCache'
+import type { FuzzySearch, FuzzySearchResult } from '../../fuzzyFinder/FuzzySearch'
+import type { SearchValueRankingCache } from '../../fuzzyFinder/SearchValueRankingCache'
 import { mergedHandler } from '../../fuzzyFinder/WordSensitiveFuzzySearch'
 import { Keybindings } from '../KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 
 import { parseFuzzyFileQuery } from './FuzzyFiles'
-import { fuzzyErrors, FuzzyState, FuzzyTabs, FuzzyTabKey, FuzzyScope } from './FuzzyTabs'
-import { HighlightedLink, HighlightedLinkProps, linkStyle } from './HighlightedLink'
+import { fuzzyErrors, type FuzzyState, type FuzzyTabs, type FuzzyTabKey, type FuzzyScope } from './FuzzyTabs'
+import { HighlightedLink, type HighlightedLinkProps, linkStyle } from './HighlightedLink'
 
 import styles from './FuzzyModal.module.scss'
 

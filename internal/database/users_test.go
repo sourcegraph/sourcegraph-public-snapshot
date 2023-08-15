@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // usernamesForTests is a list of test cases containing valid and invalid usernames.
@@ -548,8 +549,8 @@ func TestUsers_Update(t *testing.T) {
 
 	if err := db.Users().Update(ctx, user.ID, UserUpdate{
 		Username:    "u1",
-		DisplayName: strptr("d1"),
-		AvatarURL:   strptr("a1"),
+		DisplayName: pointers.Ptr("d1"),
+		AvatarURL:   pointers.Ptr("a1"),
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -571,7 +572,7 @@ func TestUsers_Update(t *testing.T) {
 	}
 
 	if err := db.Users().Update(ctx, user.ID, UserUpdate{
-		DisplayName: strptr(""),
+		DisplayName: pointers.Ptr(""),
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -591,7 +592,7 @@ func TestUsers_Update(t *testing.T) {
 
 	// Update CompletedPostSignUp
 	if err := db.Users().Update(ctx, user.ID, UserUpdate{
-		CompletedPostSignup: boolptr(true),
+		CompletedPostSignup: pointers.Ptr(true),
 	}); err != nil {
 		t.Fatal(err)
 	}

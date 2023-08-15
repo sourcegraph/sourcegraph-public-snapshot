@@ -1,7 +1,7 @@
 import { gql } from '@sourcegraph/http-client'
 
-import { SearchPageQueryResult, SearchPageQueryVariables } from '../../../graphql-operations'
-import { createPreloadedQuery, QueryReference } from '../../backend/route-loader'
+import type { SearchPageQueryResult, SearchPageQueryVariables } from '../../../graphql-operations'
+import { createPreloadedQuery, type QueryReference } from '../../backend/route-loader'
 
 /**
  * TODO: Move everything from this file into the `SearchPage` module once the `lazy` property

@@ -5,7 +5,7 @@ import { useMutation } from '@sourcegraph/http-client'
 import { Button, Modal, Input, H3, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
-import {
+import type {
     CodyGatewayRateLimitFields,
     Scalars,
     UpdateCodyGatewayConfigResult,

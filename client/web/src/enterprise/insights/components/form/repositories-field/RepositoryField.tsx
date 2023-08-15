@@ -1,4 +1,4 @@
-import { ChangeEvent, forwardRef, InputHTMLAttributes } from 'react'
+import { type ChangeEvent, forwardRef, type InputHTMLAttributes } from 'react'
 
 import { Combobox, ComboboxInput, ComboboxPopover } from '@reach/combobox'
 

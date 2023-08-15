@@ -1,6 +1,6 @@
-import { SpanProcessor } from '@opentelemetry/sdk-trace-base'
+import type { SpanProcessor } from '@opentelemetry/sdk-trace-base'
 
-import { sharedSpanStore, isSharedSpanName, ReadWriteSpan } from '../sdk'
+import { sharedSpanStore, isSharedSpanName, type ReadWriteSpan } from '../sdk'
 
 /**
  * Saves created navigation spans to the `sharedSpanStore` for other spans

@@ -5,16 +5,16 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { trimEnd, uniq } from 'lodash'
 import { createRoot } from 'react-dom/client'
-import { from, noop, Observable, of } from 'rxjs'
+import { from, noop, type Observable, of } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, mapTo } from 'rxjs/operators'
-import { Optional } from 'utility-types'
+import type { Optional } from 'utility-types'
 
 import { asError, isDefined } from '@sourcegraph/common'
-import { gql, GraphQLResult } from '@sourcegraph/http-client'
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { gql, type GraphQLResult } from '@sourcegraph/http-client'
+import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { setLinkComponent, AnchorLink, useObservable } from '@sourcegraph/wildcard'
 
-import { CurrentUserResult } from '../../graphql-operations'
+import type { CurrentUserResult } from '../../graphql-operations'
 import { fetchSite } from '../../shared/backend/server'
 import { WildcardThemeProvider } from '../../shared/components/WildcardThemeProvider'
 import { initSentry } from '../../shared/sentry'
@@ -22,13 +22,13 @@ import { ConditionalTelemetryService, EventLogger } from '../../shared/tracking/
 import { observeSourcegraphURL, getExtensionVersion, isDefaultSourcegraphUrl } from '../../shared/util/context'
 import { featureFlags } from '../../shared/util/featureFlags'
 import {
-    OptionFlagKey,
+    type OptionFlagKey,
     optionFlagDefinitions,
     observeSendTelemetry,
     observeOptionFlagsWithValues,
 } from '../../shared/util/optionFlags'
 import { assertEnvironment } from '../environmentAssertion'
-import { KnownCodeHost, knownCodeHosts } from '../knownCodeHosts'
+import { type KnownCodeHost, knownCodeHosts } from '../knownCodeHosts'
 import { OptionsPage, URL_AUTH_ERROR, URL_FETCH_ERROR } from '../options-menu/OptionsPage'
 import { ThemeWrapper } from '../ThemeWrapper'
 import { checkUrlPermissions } from '../util'

@@ -1,4 +1,4 @@
-import { InsightsDashboardType, VirtualInsightsDashboard } from './core'
+import { InsightsDashboardType, type VirtualInsightsDashboard } from './core'
 
 /**
  * Special virtual dashboard - "All Insights". This dashboard doesn't

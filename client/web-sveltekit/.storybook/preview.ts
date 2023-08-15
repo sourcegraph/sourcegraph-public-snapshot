@@ -1,6 +1,10 @@
 import type { Preview } from '@storybook/svelte'
+import { initialize, mswLoader } from 'msw-storybook-addon'
 
 import '../src/routes/styles.scss'
+
+// Initialize MSW
+initialize()
 
 const preview: Preview = {
     parameters: {
@@ -17,6 +21,7 @@ const preview: Preview = {
             lightClass: 'theme-light',
         },
     },
+    loaders: [mswLoader],
 }
 
 export default preview

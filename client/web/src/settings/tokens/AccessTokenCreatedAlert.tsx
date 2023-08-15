@@ -7,7 +7,7 @@ import { Alert, H5, Text } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../auth/accessToken'
 import { CopyableText } from '../../components/CopyableText'
-import { AccessTokenFields } from '../../graphql-operations'
+import type { AccessTokenFields } from '../../graphql-operations'
 
 interface AccessTokenCreatedAlertProps {
     token: AccessTokenFields

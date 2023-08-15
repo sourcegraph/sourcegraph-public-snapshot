@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { deriveInputClassName, InputValidationState } from '@sourcegraph/shared/src/util/useInputValidation'
+import { deriveInputClassName, type InputValidationState } from '@sourcegraph/shared/src/util/useInputValidation'
 import { Label, LoaderInput } from '@sourcegraph/wildcard'
 
 import { EmailInput } from './SignInSignUpCommon'

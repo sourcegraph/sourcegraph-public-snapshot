@@ -1,6 +1,6 @@
 import { currentUserMock } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
-import { SourcegraphContext } from '../jscontext'
+import type { SourcegraphContext } from '../jscontext'
 
 export const siteID = 'TestSiteID'
 export const siteGQLID = 'TestGQLSiteID'

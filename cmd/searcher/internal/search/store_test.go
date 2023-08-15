@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -301,7 +301,7 @@ func tarArchive(dir string) (*tar.Reader, error) {
 func tmpStore(t *testing.T) *Store {
 	d := t.TempDir()
 	return &Store{
-		GitserverClient: gitserver.NewClient(database.NewMockDB()),
+		GitserverClient: gitserver.NewClient(dbmocks.NewMockDB()),
 		Path:            d,
 		Log:             logtest.Scoped(t),
 

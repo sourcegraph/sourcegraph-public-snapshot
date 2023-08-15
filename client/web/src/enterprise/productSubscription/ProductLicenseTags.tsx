@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Alert, Badge, BadgeVariantType, Tooltip } from '@sourcegraph/wildcard'
+import { Alert, Badge, type BadgeVariantType, Tooltip } from '@sourcegraph/wildcard'
 
 const getBadgeVariant = (tag: string): BadgeVariantType => {
     if (isUnknownTag(tag)) {

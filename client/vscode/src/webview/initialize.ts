@@ -1,9 +1,9 @@
 import * as Comlink from 'comlink'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { filter, first } from 'rxjs/operators'
 import * as vscode from 'vscode'
 
-import { ExtensionCoreAPI, HelpSidebarAPI, SearchPanelAPI, SearchSidebarAPI } from '../contract'
+import type { ExtensionCoreAPI, HelpSidebarAPI, SearchPanelAPI, SearchSidebarAPI } from '../contract'
 import { endpointSetting } from '../settings/endpointSetting'
 
 import { createEndpointsForWebview } from './comlink/extensionEndpoint'

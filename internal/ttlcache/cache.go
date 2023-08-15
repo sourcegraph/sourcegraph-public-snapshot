@@ -115,13 +115,6 @@ func WithSizeWarningThreshold[K comparable, V any](threshold uint) Option[K, V] 
 	}
 }
 
-// withClock sets the clock to be used by the cache. This is useful for testing.
-func withClock[K comparable, V any](clock clock) Option[K, V] {
-	return func(c *Cache[K, V]) {
-		c.clock = clock
-	}
-}
-
 // Get returns the value for the given key. If the key is not in the cache, it
 // will be added using the newEntryFunc and returned to the caller.
 func (c *Cache[K, V]) Get(key K) V {

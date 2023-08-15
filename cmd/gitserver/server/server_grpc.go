@@ -342,7 +342,7 @@ func (gs *GRPCServer) RepoClone(ctx context.Context, in *proto.RepoCloneRequest)
 
 	repo := protocol.NormalizeRepo(api.RepoName(in.GetRepo()))
 
-	if _, err := gs.Server.cloneRepo(ctx, repo, &cloneOptions{Block: false}); err != nil {
+	if _, err := gs.Server.CloneRepo(ctx, repo, CloneOptions{Block: false}); err != nil {
 
 		return &proto.RepoCloneResponse{Error: err.Error()}, nil
 	}

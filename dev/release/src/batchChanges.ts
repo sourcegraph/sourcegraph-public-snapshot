@@ -3,7 +3,7 @@ import execa from 'execa'
 import fetch from 'node-fetch'
 import YAML from 'yaml'
 
-import { CreatedChangeset } from './github'
+import type { CreatedChangeset } from './github'
 import { readLine, cacheFolder } from './util'
 
 // https://handbook.sourcegraph.com/departments/engineering/dev/process/deployments/instances/#sourcegraphsourcegraphcom-s2

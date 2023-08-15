@@ -1,8 +1,8 @@
-import { ApolloError, FetchResult, MutationFunctionOptions, useMutation } from '@apollo/client'
+import { type ApolloError, type FetchResult, type MutationFunctionOptions, useMutation } from '@apollo/client'
 
 import { getDocumentNode, gql } from '@sourcegraph/http-client'
 
-import { DeletePreciseIndexesResult, DeletePreciseIndexesVariables } from '../../../../graphql-operations'
+import type { DeletePreciseIndexesResult, DeletePreciseIndexesVariables } from '../../../../graphql-operations'
 
 type DeletePreciseIndexesResults = Promise<
     FetchResult<DeletePreciseIndexesResult, Record<string, any>, Record<string, any>>

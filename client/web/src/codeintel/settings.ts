@@ -1,5 +1,5 @@
 import { isErrorLike } from '@sourcegraph/common'
-import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import type { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
 export type SettingsGetter = <T>(setting: string, defaultValue: T) => T
 

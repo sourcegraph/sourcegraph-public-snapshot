@@ -372,6 +372,16 @@ func TestReposWithLastOutput(t *testing.T) {
 			if err := db.GitserverRepos().SetLastOutput(ctx, testRepo.Name, tr.lastOutput); err != nil {
 				t.Fatal(err)
 			}
+			haveOut, ok, err := db.GitserverRepos().GetLastSyncOutput(ctx, testRepo.Name)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tr.lastOutput == "" && ok {
+				t.Fatalf("last output is not empty")
+			}
+			if have, want := haveOut, tr.lastOutput; have != want {
+				t.Fatalf("wrong last output returned, have=%s want=%s", have, want)
+			}
 		})
 	}
 }

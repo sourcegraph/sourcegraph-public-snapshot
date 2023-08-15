@@ -1,46 +1,51 @@
 package com.sourcegraph.config;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class PluginSettingChangeContext {
-  @Nullable public final String oldUrl;
-
-  @Nullable public final String oldDotComAccessToken;
-  @Nullable public final String oldEnterpriseAccessToken;
+  @NotNull public final String oldUrl;
   public final boolean oldCodyEnabled;
   public final boolean oldCodyAutoCompleteEnabled;
+  public final boolean oldCodyDebugEnabled;
+  public final boolean oldCodyVerboseDebugEnabled;
 
-  @Nullable public final String newUrl;
-
-  @Nullable public final String newDotComAccessToken;
-  @Nullable public final String newEnterpriseAccessToken;
+  @NotNull public final String newUrl;
+  public final boolean isDotComAccessTokenChanged;
+  public final boolean isEnterpriseAccessTokenChanged;
 
   @Nullable public final String newCustomRequestHeaders;
   public final boolean newCodyEnabled;
   public final boolean newCodyAutoCompleteEnabled;
+  public final boolean newCodyDebugEnabled;
+  public final boolean newCodyVerboseDebugEnabled;
 
   public PluginSettingChangeContext(
-      @Nullable String oldUrl,
-      @Nullable String oldDotComAccessToken,
-      @Nullable String oldEnterpriseAccessToken,
       boolean oldCodyEnabled,
       boolean oldCodyAutoCompleteEnabled,
-      @Nullable String newUrl,
-      @Nullable String newDotComAccessToken,
-      @Nullable String newEnterpriseAccessToken,
+      @NotNull String oldUrl,
+      boolean oldCodyDebugEnabled,
+      boolean oldCodyVerboseDebugEnabled,
+      @NotNull String newUrl,
+      boolean isDotComAccessTokenChanged,
+      boolean isEnterpriseAccessTokenChanged,
       @Nullable String newCustomRequestHeaders,
       boolean newCodyEnabled,
-      boolean newCodyAutoCompleteEnabled) {
-    this.oldUrl = oldUrl;
-    this.oldDotComAccessToken = oldDotComAccessToken;
-    this.oldEnterpriseAccessToken = oldEnterpriseAccessToken;
+      boolean newCodyAutoCompleteEnabled,
+      boolean newCodyDebugEnabled,
+      boolean newCodyVerboseDebugEnabled) {
     this.oldCodyEnabled = oldCodyEnabled;
     this.oldCodyAutoCompleteEnabled = oldCodyAutoCompleteEnabled;
+    this.oldUrl = oldUrl;
+    this.oldCodyDebugEnabled = oldCodyDebugEnabled;
+    this.oldCodyVerboseDebugEnabled = oldCodyVerboseDebugEnabled;
     this.newUrl = newUrl;
-    this.newDotComAccessToken = newDotComAccessToken;
-    this.newEnterpriseAccessToken = newEnterpriseAccessToken;
+    this.isDotComAccessTokenChanged = isDotComAccessTokenChanged;
+    this.isEnterpriseAccessTokenChanged = isEnterpriseAccessTokenChanged;
     this.newCustomRequestHeaders = newCustomRequestHeaders;
     this.newCodyEnabled = newCodyEnabled;
     this.newCodyAutoCompleteEnabled = newCodyAutoCompleteEnabled;
+    this.newCodyDebugEnabled = newCodyDebugEnabled;
+    this.newCodyVerboseDebugEnabled = newCodyVerboseDebugEnabled;
   }
 }

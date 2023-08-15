@@ -1,6 +1,6 @@
 import { gql, useQuery } from '@sourcegraph/http-client'
 
-import { OrgFeatureFlagOverridesResult, OrgFeatureFlagOverridesVariables } from '../graphql-operations'
+import type { OrgFeatureFlagOverridesResult, OrgFeatureFlagOverridesVariables } from '../graphql-operations'
 
 // A union of all feature flags we currently have.
 // If there are no feature flags at the moment, this should be `never`.
@@ -29,6 +29,7 @@ export type FeatureFlagName =
     | 'own-promote'
     | 'own-analytics'
     | 'enable-simple-search'
+    | 'setup-checklist'
 
 interface OrgFlagOverride {
     orgID: string

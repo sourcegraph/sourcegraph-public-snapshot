@@ -7,34 +7,34 @@ import {
     ChangesetSpecOperation,
     ChangesetState,
     ExternalServiceKind,
-    SharedGraphQlOperations,
+    type SharedGraphQlOperations,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import {
-    BatchChangeBatchSpecsResult,
-    BatchChangeBatchSpecsVariables,
-    BatchChangeByNamespaceResult,
-    BatchChangeChangesetsResult,
-    BatchChangeChangesetsVariables,
+    type BatchChangeBatchSpecsResult,
+    type BatchChangeBatchSpecsVariables,
+    type BatchChangeByNamespaceResult,
+    type BatchChangeChangesetsResult,
+    type BatchChangeChangesetsVariables,
     BatchChangeState,
     BatchSpecState,
     ChangesetCheckState,
-    ChangesetCountsOverTimeResult,
-    ChangesetCountsOverTimeVariables,
+    type ChangesetCountsOverTimeResult,
+    type ChangesetCountsOverTimeVariables,
     ChangesetReviewState,
     ChangesetSpecType,
     DiffHunkLineType,
-    ExternalChangesetFileDiffsFields,
-    ExternalChangesetFileDiffsResult,
-    ExternalChangesetFileDiffsVariables,
-    ListBatchChange,
-    WebGraphQlOperations,
+    type ExternalChangesetFileDiffsFields,
+    type ExternalChangesetFileDiffsResult,
+    type ExternalChangesetFileDiffsVariables,
+    type ListBatchChange,
+    type WebGraphQlOperations,
 } from '../graphql-operations'
 
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
 

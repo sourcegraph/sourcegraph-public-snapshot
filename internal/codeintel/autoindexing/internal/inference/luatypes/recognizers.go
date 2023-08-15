@@ -139,39 +139,17 @@ func NamedRecognizersFromUserDataMap(value lua.LValue, allowFalseAsNil bool) (re
 			return nil
 		}
 
-		if value.Type() == lua.LTBool && !lua.LVAsBool(value) {
-			if allowFalseAsNil {
-				recognizers[name] = nil
-				return nil
-			}
+		if allowFalseAsNil && value.Type() == lua.LTBool && !lua.LVAsBool(value) {
+			recognizers[name] = nil
+			return nil
 		}
 
-		return util.UnwrapLuaUserData(value, func(value any) error {
-			recognizer, ok := value.(*Recognizer)
-			if !ok {
-				return util.NewTypeError("*Recognizer", value)
-			}
-
-			recognizers[name] = recognizer
-			return nil
-		})
-	})
-
-	return
-}
-
-// RecognizersFromUserData decodes a single recognize or slice of recognizers from the
-// given Lua value.
-func RecognizersFromUserData(value lua.LValue) (recognizers []*Recognizer, err error) {
-	err = util.UnwrapSliceOrSingleton(value, func(value lua.LValue) error {
-		return util.UnwrapLuaUserData(value, func(value any) error {
-			if recognizer, ok := value.(*Recognizer); ok {
-				recognizers = append(recognizers, recognizer)
-				return nil
-			}
-
-			return util.NewTypeError("*Recognizer", value)
-		})
+		recognizer, err := util.TypecheckUserData[*Recognizer](value, "*Recognizer")
+		if err != nil {
+			return err
+		}
+		recognizers[name] = recognizer
+		return nil
 	})
 
 	return

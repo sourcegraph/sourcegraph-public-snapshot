@@ -1,8 +1,8 @@
 import {
-    FC,
+    type FC,
     forwardRef,
-    MutableRefObject,
-    PropsWithChildren,
+    type MutableRefObject,
+    type PropsWithChildren,
     useCallback,
     useEffect,
     useId,
@@ -13,7 +13,7 @@ import {
 } from 'react'
 
 import { defaultKeymap, historyKeymap, history as codemirrorHistory } from '@codemirror/commands'
-import { Compartment, EditorSelection, EditorState, Extension, Prec } from '@codemirror/state'
+import { Compartment, EditorSelection, EditorState, type Extension, Prec } from '@codemirror/state'
 import { EditorView, keymap, drawSelection } from '@codemirror/view'
 import { mdiClockOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -21,11 +21,11 @@ import inRange from 'lodash/inRange'
 import { useNavigate } from 'react-router-dom'
 import useResizeObserver from 'use-resize-observer'
 
-import { HistoryOrNavigate } from '@sourcegraph/common'
-import { Editor, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import type { HistoryOrNavigate } from '@sourcegraph/common'
+import { type Editor, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import type { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search'
+import { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search'
 import { getTokenLength } from '@sourcegraph/shared/src/search/query/utils'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
@@ -40,7 +40,7 @@ import { useUpdateEditorFromQueryState } from '../CodeMirrorQueryInput'
 import { overrideContextOnPaste } from './codemirror/searchcontext'
 import { filterDecoration } from './codemirror/syntax-highlighting'
 import { modeScope, useInputMode } from './modes'
-import { Source, suggestions, startCompletion } from './suggestionsExtension'
+import { type Source, suggestions, startCompletion } from './suggestionsExtension'
 
 import styles from './CodeMirrorQueryInputWrapper.module.scss'
 

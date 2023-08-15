@@ -1,9 +1,9 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
-import { ErrorLike } from '@sourcegraph/common'
+import type { ErrorLike } from '@sourcegraph/common'
 import {
-    CloneInProgressError,
+    type CloneInProgressError,
     isCloneInProgressErrorLike,
     isRevisionNotFoundErrorLike,
     isRepoNotFoundErrorLike,

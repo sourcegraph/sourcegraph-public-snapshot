@@ -9,7 +9,7 @@ import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../../components/RepoHeaderActions'
-import { RepoHeaderContext } from '../../RepoHeader'
+import type { RepoHeaderContext } from '../../RepoHeader'
 
 /**
  * A repository header action that toggles the line wrapping behavior for long lines in code files.

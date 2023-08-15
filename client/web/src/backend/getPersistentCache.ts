@@ -1,9 +1,9 @@
-import { InMemoryCache, NormalizedCacheObject } from '@apollo/client'
-import { PersistentStorage, CachePersistor } from 'apollo3-cache-persist'
+import type { InMemoryCache, NormalizedCacheObject } from '@apollo/client'
+import { type PersistentStorage, CachePersistor } from 'apollo3-cache-persist'
 
 import { cache } from '@sourcegraph/shared/src/backend/apolloCache'
 
-import { CacheObject, persistenceMapper, ROOT_QUERY_KEY } from './persistenceMapper'
+import { type CacheObject, persistenceMapper, ROOT_QUERY_KEY } from './persistenceMapper'
 
 /**
  * 🚨 SECURITY: Use two unique keys for authenticated and anonymous users

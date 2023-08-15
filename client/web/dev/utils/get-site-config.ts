@@ -3,7 +3,7 @@ import fs from 'fs'
 import { parse } from 'jsonc-parser'
 import lodash from 'lodash'
 
-import { SourcegraphContext } from '../../src/jscontext'
+import type { SourcegraphContext } from '../../src/jscontext'
 
 import { ENVIRONMENT_CONFIG } from './environment-config'
 

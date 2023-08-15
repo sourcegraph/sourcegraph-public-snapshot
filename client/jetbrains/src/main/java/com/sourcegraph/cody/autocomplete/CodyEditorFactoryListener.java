@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.autocomplete;
 
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.editor.Editor;
@@ -77,12 +76,14 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
   private static class CodySelectionListener implements SelectionListener {
     @Override
     public void selectionChanged(@NotNull SelectionEvent e) {
-      if (CodyAutoCompleteManager.getInstance().isEnabledForEditor(e.getEditor())
+      if (!ConfigUtil.isCodyEnabled()) {
+        return;
+      }
+      informAgentAboutEditorChange(e.getEditor());
+      CodyAutoCompleteManager suggestions = CodyAutoCompleteManager.getInstance();
+      if (suggestions.isEnabledForEditor(e.getEditor())
           && CodyEditorFactoryListener.isSelectedEditor(e.getEditor())) {
-        informAgentAboutEditorChange(e.getEditor());
-        ApplicationManager.getApplication()
-            .getService(CodyAutoCompleteManager.class)
-            .clearAutoCompleteSuggestions(e.getEditor());
+        suggestions.clearAutoCompleteSuggestions(e.getEditor());
       }
     }
   }

@@ -1,7 +1,7 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
-import { GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { type GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 /**
  * A GraphQL client to be used from regression test scripts.

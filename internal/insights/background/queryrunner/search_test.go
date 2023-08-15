@@ -13,7 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/insights/types"
@@ -783,7 +783,7 @@ func TestFilterRecordsingsByRepo(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			mockRepoStore := database.NewMockRepoStore()
+			mockRepoStore := dbmocks.NewMockRepoStore()
 			mockRepoStore.ListFunc.SetDefaultReturn(tc.repoList, nil)
 
 			got, _ := filterRecordingsBySeriesRepos(context.Background(), mockRepoStore, &tc.series, recordings)

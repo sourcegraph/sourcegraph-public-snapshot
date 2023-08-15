@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { mdiOpenInNew, mdiAccount, mdiCommentOutline } from '@mdi/js'
 import ShieldHalfFullIcon from 'mdi-react/ShieldHalfFullIcon'

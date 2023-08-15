@@ -17,7 +17,7 @@ import (
 
 func BazelOperations(isMain bool) []operations.Operation {
 	ops := []operations.Operation{}
-	ops = append(ops, bazelConfigure())
+	ops = append(ops, bazelPrechecks())
 	if isMain {
 		ops = append(ops, bazelTest("//...", "//client/web:test", "//testing:codeintel_integration_test", "//testing:grpc_backend_integration_test"))
 	} else {
@@ -105,7 +105,6 @@ func bazelStampedCmd(args ...string) string {
 // bazelAnalysisPhase only runs the analasys phase, ensure that the buildfiles
 // are correct, but do not actually build anything.
 func bazelAnalysisPhase() func(*bk.Pipeline) {
-	// We run :gazelle since 'configure' causes issues on CI, where it doesn't have the go path available
 	cmd := bazelCmd(
 		"build",
 		"--nobuild", // this is the key flag to enable this.
@@ -124,12 +123,13 @@ func bazelAnalysisPhase() func(*bk.Pipeline) {
 		)
 	}
 }
-func bazelConfigure() func(*bk.Pipeline) {
+func bazelPrechecks() func(*bk.Pipeline) {
 	// We run :gazelle since 'configure' causes issues on CI, where it doesn't have the go path available
 	cmds := []bk.StepOpt{
-		bk.Key("bazel-configure"),
+		bk.Key("bazel-prechecks"),
+		bk.SoftFail(100),
 		bk.Agent("queue", "bazel"),
-		bk.AnnotatedCmd("dev/ci/bazel-configure.sh", bk.AnnotatedCmdOpts{
+		bk.AnnotatedCmd("dev/ci/bazel-prechecks.sh", bk.AnnotatedCmdOpts{
 			Annotations: &bk.AnnotationOpts{
 				Type:         bk.AnnotationTypeWarning,
 				IncludeNames: false,
@@ -138,7 +138,7 @@ func bazelConfigure() func(*bk.Pipeline) {
 	}
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":bazel: Ensure buildfiles are up to date",
+		pipeline.AddStep(":bazel: Perform bazel prechecks",
 			cmds...,
 		)
 	}
@@ -151,7 +151,7 @@ func bazelAnnouncef(format string, args ...any) bk.StepOpt {
 
 func bazelTest(targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
-		bk.DependsOn("bazel-configure"),
+		bk.DependsOn("bazel-prechecks"),
 		bk.Agent("queue", "bazel"),
 		bk.Key("bazel-tests"),
 		bk.ArtifactPaths("./bazel-testlogs/enterprise/cmd/embeddings/shared/shared_test/*.log", "./command.profile.gz"),
@@ -185,7 +185,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 
 func bazelBackCompatTest(targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
-		bk.DependsOn("bazel-configure"),
+		bk.DependsOn("bazel-prechecks"),
 		bk.Agent("queue", "bazel"),
 
 		// Generate a patch that backports the migration from the new code into the old one.
