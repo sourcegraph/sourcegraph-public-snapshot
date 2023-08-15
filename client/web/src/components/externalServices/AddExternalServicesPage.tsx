@@ -1,22 +1,24 @@
 import { type FC, useMemo } from 'react'
 
 import { mdiInformation } from '@mdi/js'
+import BitbucketIcon from 'mdi-react/BitbucketIcon'
+import GithubIcon from 'mdi-react/GithubIcon'
+import GitIcon from 'mdi-react/GitIcon'
+import GitLabIcon from 'mdi-react/GitlabIcon'
 import { useLocation } from 'react-router-dom'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, Alert, H2, H3, Icon, Text, Container, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, H3, Icon, Text, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ChecklistInfo } from '../../site-admin/setup-checklist/ChecklistInfo'
 import { LimitedAccessBanner } from '../LimitedAccessBanner'
 import { PageTitle } from '../PageTitle'
 
 import { AddExternalServicePage } from './AddExternalServicePage'
-import { ExternalServiceCard } from './ExternalServiceCard'
+import { ExternalServiceGroup, type AddExternalServiceOptionsWithID } from './ExternalServiceGroup'
 import { allExternalServices, type AddExternalServiceOptions, gitHubAppConfig } from './externalServices'
-
-import styles from './AddExternalServicesPage.module.scss'
 
 export interface AddExternalServicesPageProps extends TelemetryProps {
     /**
@@ -77,6 +79,15 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
         return null
     }, [search, codeHostExternalServices.ghapp])
 
+    const allowedCodeHosts = useMemo(
+        () => computeAllowedCodehosts(codeHostExternalServices),
+        [codeHostExternalServices]
+    )
+    const servicesByGroup = useMemo(
+        () => computeExternalServicesGroup(codeHostExternalServices, allowedCodeHosts),
+        [codeHostExternalServices, allowedCodeHosts]
+    )
+
     if (externalService) {
         return (
             <AddExternalServicePage
@@ -87,16 +98,6 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                 allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
             />
         )
-    }
-
-    const licenseInfo = window.context.licenseInfo
-    let allowedCodeHosts: AddExternalServiceOptions[] | null = null
-    if (licenseInfo && licenseInfo.currentPlan === 'business-0') {
-        allowedCodeHosts = [
-            codeHostExternalServices.github,
-            codeHostExternalServices.gitlabcom,
-            codeHostExternalServices.bitbucket,
-        ]
     }
 
     return (
@@ -120,102 +121,172 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                 </LimitedAccessBanner>
             )}
 
-            <Container className="mb-3">
+            <Container>
                 <ChecklistInfo />
                 {!hasDismissedPrivacyWarning && (
-                    <Alert variant="info">
-                        <Text>
-                            This Sourcegraph installation will never send your code, repository names, file names, or
-                            any other specific code data to Sourcegraph.com or any other destination. Your code is kept
-                            private on this installation.
-                        </Text>
-                        <H3>This Sourcegraph installation will access your code host by:</H3>
-                        <ul>
-                            <li>
-                                Periodically fetching a list of repositories to ensure new, removed, and renamed
-                                repositories are accessible on Sourcegraph.
-                            </li>
-                            <li>Cloning the repositories you specify to create a local cache.</li>
-                            <li>Periodically pulling cloned repositories to ensure search results are current.</li>
-                            <li>
-                                Fetching{' '}
-                                <Link to="/help/admin/permissions" target="_blank" rel="noopener noreferrer">
-                                    user repository access permissions
-                                </Link>
-                                , if you have enabled this feature.
-                            </li>
-                            <li>
-                                Opening pull requests and syncing their metadata as part of{' '}
-                                <Link to="/help/batch_changes" target="_blank" rel="noopener noreferrer">
-                                    batch changes
-                                </Link>
-                                , if you have enabled this feature.
-                            </li>
-                        </ul>
-                        <div className="d-flex justify-content-end">
-                            <Button variant="secondary" onClick={dismissPrivacyWarning}>
-                                Do not show this again
-                            </Button>
-                        </div>
-                    </Alert>
+                    <ExternalServicesPrivacyAlert dismissPrivacyWarning={dismissPrivacyWarning} />
                 )}
-                {Object.entries(codeHostExternalServices)
-                    .filter(externalService => !allowedCodeHosts || allowedCodeHosts.includes(externalService[1]))
-                    .sort(([, externalService1], [, externalService2]) =>
-                        externalService1.title.localeCompare(externalService2.title)
-                    )
-                    .map(([id, externalService]) => (
-                        <div className={styles.addExternalServicesPageCard} key={id}>
-                            <ExternalServiceCard to={getAddURL(id)} {...externalService} />
-                        </div>
-                    ))}
+
                 {allowedCodeHosts && (
                     <>
-                        <br />
                         <Text>
                             <Icon aria-label="Information icon" svgPath={mdiInformation} /> Upgrade to{' '}
                             <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> to add
                             repositories from other code hosts.
                         </Text>
-                        {Object.entries(codeHostExternalServices)
-                            .filter(
-                                externalService => allowedCodeHosts && !allowedCodeHosts.includes(externalService[1])
-                            )
-                            .sort(([, externalService1], [, externalService2]) =>
-                                externalService1.title.localeCompare(externalService2.title)
-                            )
-                            .map(([id, externalService]) => (
-                                <div className={styles.addExternalServicesPageCard} key={id}>
-                                    <ExternalServiceCard
-                                        to={getAddURL(id)}
-                                        {...externalService}
-                                        enabled={false}
-                                        badge="enterprise"
-                                        tooltip="Upgrade to Sourcegraph Enterprise to add repositories from other code hosts"
-                                    />
-                                </div>
-                            ))}
                     </>
                 )}
-                {Object.entries(nonCodeHostExternalServices).length > 0 && (
-                    <>
-                        <br />
-                        <H2>Other connections</H2>
-                        <Text className="mt-2">Add connections to non-code-host services.</Text>
-                        {Object.entries(nonCodeHostExternalServices).map(([id, externalService]) => (
-                            <div className={styles.addExternalServicesPageCard} key={id}>
-                                <ExternalServiceCard to={getAddURL(id)} {...externalService} />
-                            </div>
-                        ))}
-                    </>
+
+                {Object.values(servicesByGroup).map((serviceInfo, index) => (
+                    <ExternalServiceGroup
+                        // We ignore the index key rule here since the grouping doesn't have a
+                        // unique identifier.
+                        //
+                        // eslint-disable-next-line react/no-array-index-key
+                        key={`${index}-${serviceInfo.label}`}
+                        name={serviceInfo.label}
+                        services={serviceInfo.services}
+                        description={serviceInfo.description}
+                        icon={serviceInfo.icon}
+                        renderIcon={serviceInfo.renderIcon}
+                    />
+                ))}
+
+                {Object.values(nonCodeHostExternalServices).length > 0 && (
+                    <ExternalServiceGroup
+                        name="Dependencies"
+                        services={transformNonCodeHostExternalServices(nonCodeHostExternalServices, allowedCodeHosts)}
+                        renderIcon={true}
+                    />
                 )}
             </Container>
         </>
     )
 }
 
-function getAddURL(id: string): string {
-    const parameters = new URLSearchParams()
-    parameters.append('id', id)
-    return `?${parameters.toString()}`
+interface ExternalServicesPrivacyAlertProps {
+    dismissPrivacyWarning: () => void
+}
+
+const ExternalServicesPrivacyAlert: FC<ExternalServicesPrivacyAlertProps> = ({ dismissPrivacyWarning }) => (
+    <Alert variant="info">
+        <Text>
+            This Sourcegraph installation will never send your code, repository names, file names, or any other specific
+            code data to Sourcegraph.com or any other destination. Your code is kept private on this installation.
+        </Text>
+        <H3>This Sourcegraph installation will access your code host by:</H3>
+        <ul>
+            <li>
+                Periodically fetching a list of repositories to ensure new, removed, and renamed repositories are
+                accessible on Sourcegraph.
+            </li>
+            <li>Cloning the repositories you specify to create a local cache.</li>
+            <li>Periodically pulling cloned repositories to ensure search results are current.</li>
+            <li>
+                Fetching{' '}
+                <Link to="/help/admin/permissions" target="_blank" rel="noopener noreferrer">
+                    user repository access permissions
+                </Link>
+                , if you have enabled this feature.
+            </li>
+            <li>
+                Opening pull requests and syncing their metadata as part of{' '}
+                <Link to="/help/batch_changes" target="_blank" rel="noopener noreferrer">
+                    batch changes
+                </Link>
+                , if you have enabled this feature.
+            </li>
+        </ul>
+        <div className="d-flex justify-content-end">
+            <Button variant="secondary" onClick={dismissPrivacyWarning}>
+                Do not show this again
+            </Button>
+        </div>
+    </Alert>
+)
+
+interface ExternalServicesGroup {
+    label: string
+    services: AddExternalServiceOptionsWithID[]
+    icon: React.ComponentType<{ className?: string }>
+    description: string
+    renderIcon: boolean
+    renderAsSingleItem?: boolean
+}
+
+const computeExternalServicesGroup = (
+    services: Record<string, AddExternalServiceOptions>,
+    allowedCodeHosts: Set<AddExternalServiceOptions> | null
+): Record<string, ExternalServicesGroup> => {
+    const groupedServices: Record<string, ExternalServicesGroup> = {
+        github: {
+            label: 'GitHub',
+            services: [],
+            icon: GithubIcon,
+            description: 'Connect with repositories on GitHub',
+            renderIcon: false,
+        },
+        gitlab: {
+            label: 'GitLab',
+            services: [],
+            icon: GitLabIcon,
+            description: 'Connect with repositories on GitLab',
+            renderIcon: false,
+            renderAsSingleItem: true,
+        },
+        bitbucket: {
+            label: 'Bitbucket',
+            services: [],
+            icon: BitbucketIcon,
+            description: 'Connect with repositories on Bitbucket',
+            renderIcon: false,
+        },
+        other: { label: 'Other code hosts', services: [], icon: GitIcon, description: '', renderIcon: true },
+    }
+
+    for (const [serviceID, service] of Object.entries(services)) {
+        const isDisabled = allowedCodeHosts?.has(service)
+        const otherProps = isDisabled
+            ? {
+                  badge: 'enterprise',
+                  tooltip: 'Upgrade your license to Sourcegraph Enterprise to add repositories from other code hosts',
+              }
+            : {}
+        let key = 'other'
+        if (service.kind === ExternalServiceKind.GITHUB || service.kind === ExternalServiceKind.GITLAB) {
+            key = service.kind.toLowerCase()
+        } else if (
+            service.kind === ExternalServiceKind.BITBUCKETCLOUD ||
+            service.kind === ExternalServiceKind.BITBUCKETSERVER
+        ) {
+            key = 'bitbucket'
+        }
+        groupedServices[key].services.push({ ...service, serviceID, enabled: !isDisabled, ...otherProps })
+    }
+
+    return groupedServices
+}
+
+const transformNonCodeHostExternalServices = (
+    services: Record<string, AddExternalServiceOptions>,
+    allowedCodeHosts: Set<AddExternalServiceOptions> | null
+): AddExternalServiceOptionsWithID[] =>
+    Object.entries(services).map(([serviceID, service]) => {
+        const isDisabled = allowedCodeHosts?.has(service)
+        return { ...service, serviceID, enabled: !isDisabled }
+    })
+
+const computeAllowedCodehosts = (
+    codeHostExternalServices: Record<string, AddExternalServiceOptions>
+): Set<AddExternalServiceOptions> | null => {
+    const licenseInfo = window.context.licenseInfo
+    let allowedCodeHosts: Set<AddExternalServiceOptions> | null = null
+    if (licenseInfo && licenseInfo.currentPlan === 'business-0') {
+        allowedCodeHosts = new Set([
+            codeHostExternalServices.github,
+            codeHostExternalServices.gitlabcom,
+            codeHostExternalServices.bitbucket,
+        ])
+    }
+    return allowedCodeHosts
 }
