@@ -24,7 +24,6 @@ export interface ScopeSelectorProps {
     fetchRepositoryNames: (count: number) => Promise<string[]>
     isSourcegraphApp: boolean
     transcript: Transcript
-    isSourcegraphApp?: boolean
     className?: string
     renderHint?: (repos: IRepo[]) => React.ReactNode
 }
