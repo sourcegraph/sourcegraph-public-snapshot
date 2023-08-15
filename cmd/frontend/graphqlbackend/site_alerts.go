@@ -36,30 +36,28 @@ import (
 type AlertGroup string
 
 var (
-	AlertGroupLicense        AlertGroup = "LICENSE"
 	AlertGroupAuthentication AlertGroup = "AUTHENTICATION"
 	AlertGroupCodehost       AlertGroup = "CODEHOST"
-	AlertGroupOther          AlertGroup = "OTHER"
+	AlertGroupCody           AlertGroup = "CODY"
+	AlertGroupLicense        AlertGroup = "LICENSE"
+	AlertGroupObservability  AlertGroup = "OBSERVABILITY"
 	AlertGroupSMTP           AlertGroup = "SMTP"
+	AlertGroupUpdate         AlertGroup = "UPDATE"
+	AlertGroupOther          AlertGroup = "OTHER"
 )
+
+type AlertType string
 
 // Alert implements the GraphQL type Alert.
 type Alert struct {
-	GroupValue *AlertGroup
-	// todo: use dedicated type
-	TypeValue                 string
+	GroupValue                AlertGroup
+	TypeValue                 AlertType
 	MessageValue              string
 	IsDismissibleWithKeyValue string
 }
 
-func (r *Alert) Group() *string {
-	if r.GroupValue != nil {
-		group := string(*r.GroupValue)
-		return &group
-	}
-	return nil
-}
-func (r *Alert) Type() string    { return r.TypeValue }
+func (r *Alert) Group() string   { return string(r.GroupValue) }
+func (r *Alert) Type() string    { return string(r.TypeValue) }
 func (r *Alert) Message() string { return r.MessageValue }
 func (r *Alert) IsDismissibleWithKey() *string {
 	if r.IsDismissibleWithKeyValue == "" {
@@ -70,9 +68,9 @@ func (r *Alert) IsDismissibleWithKey() *string {
 
 // Constants for the GraphQL enum AlertType.
 const (
-	AlertTypeInfo    = "INFO"
-	AlertTypeWarning = "WARNING"
-	AlertTypeError   = "ERROR"
+	AlertTypeInfo    AlertType = "INFO"
+	AlertTypeWarning AlertType = "WARNING"
+	AlertTypeError   AlertType = "ERROR"
 )
 
 // AlertFuncs is a list of functions called to populate the GraphQL Site.alerts value. It may be
@@ -160,6 +158,7 @@ func init() {
 		var alerts []*Alert
 		for _, notification := range conf.Get().Notifications {
 			alerts = append(alerts, &Alert{
+				GroupValue:                AlertGroupOther,
 				TypeValue:                 AlertTypeInfo,
 				MessageValue:              notification.Message,
 				IsDismissibleWithKeyValue: notification.Key,
@@ -181,7 +180,7 @@ func init() {
 		if err != nil {
 			return []*Alert{
 				{
-					GroupValue:   &AlertGroupOther,
+					GroupValue:   AlertGroupOther,
 					TypeValue:    AlertTypeError,
 					MessageValue: `Update [**site configuration**](/site-admin/configuration) to resolve problems: ` + err.Error(),
 				},
@@ -192,7 +191,7 @@ func init() {
 		if err != nil {
 			return []*Alert{
 				{
-					GroupValue:   &AlertGroupOther,
+					GroupValue:   AlertGroupOther,
 					TypeValue:    AlertTypeError,
 					MessageValue: `Update [**site configuration**](/site-admin/configuration) to resolve problems: ` + err.Error(),
 				},
@@ -208,7 +207,7 @@ func init() {
 		siteProblems := problems.Site()
 		if len(siteProblems) > 0 {
 			alerts = append(alerts, &Alert{
-				GroupValue: &AlertGroupOther,
+				GroupValue: AlertGroupOther,
 				TypeValue:  AlertTypeWarning,
 				MessageValue: `[**Update site configuration**](/site-admin/configuration) to resolve problems:` +
 					"\n* " + strings.Join(siteProblems.Messages(), "\n* "),
@@ -218,7 +217,7 @@ func init() {
 		externalServiceProblems := problems.ExternalService()
 		if len(externalServiceProblems) > 0 {
 			alerts = append(alerts, &Alert{
-				GroupValue: &AlertGroupCodehost,
+				GroupValue: AlertGroupCodehost,
 				TypeValue:  AlertTypeWarning,
 				MessageValue: `[**Update external service configuration**](/site-admin/external-services) to resolve problems:` +
 					"\n* " + strings.Join(externalServiceProblems.Messages(), "\n* "),
@@ -240,19 +239,26 @@ func freePlanAlert(args AlertFuncArgs) []*Alert {
 	}
 
 	if !featureflag.FromContext(args.Ctx).GetBoolOr("setup-checklist", false) {
+		log15.Warn("Setup checklist feature flag is disabled, skipping free plan alert.")
 		return nil
 	}
-	licenseInfo := hooks.GetLicenseInfo()
-	if licenseInfo == nil {
+	info, err := licensing.GetConfiguredProductLicenseInfo()
+	if err != nil {
+		log15.Error("Error getting configured product license info", "error", err)
 		return nil
 	}
 
-	plan := licensing.Plan(licenseInfo.CurrentPlan)
+	if info == nil {
+		log15.Error("No license info available")
+		return nil
+	}
+
+	plan := info.Plan()
 	if plan == licensing.PlanFree1 || plan == licensing.PlanFree0 {
 		return []*Alert{{
-			GroupValue:                &AlertGroupLicense,
+			GroupValue:                AlertGroupLicense,
 			TypeValue:                 AlertTypeWarning,
-			MessageValue:              "You're on a free Sourcegraph plan. [Upgrade](https://about.sourcegraph.com/pricing) to unlock more features and support.",
+			MessageValue:              "You're on a free Sourcegraph plan. [Upgrade](https://about.sourcegraph.com/pricing) to unlock more features and support. [Set license key](/site-admin/configuration)",
 			IsDismissibleWithKeyValue: "free-plan-upgrade",
 		}}
 	}
@@ -299,7 +305,7 @@ func userCountExceededAlert(args AlertFuncArgs) []*Alert {
 
 	if licensedUserCount > 0 && int32(userCount) >= licensedUserCount {
 		return []*Alert{{
-			GroupValue:                &AlertGroupLicense,
+			GroupValue:                AlertGroupLicense,
 			TypeValue:                 AlertTypeWarning,
 			MessageValue:              fmt.Sprintf("You have reached the maximum user count (%d) for your current Sourcegraph license. [Upgrade](https://about.sourcegraph.com/pricing) to support more users.", licensedUserCount),
 			IsDismissibleWithKeyValue: "user-count-limit",
@@ -317,13 +323,13 @@ func storageLimitReachedAlert(args AlertFuncArgs) []*Alert {
 
 	if licenseInfo.CodeScaleCloseToLimit {
 		return []*Alert{{
-			GroupValue:   &AlertGroupLicense,
+			GroupValue:   AlertGroupLicense,
 			TypeValue:    AlertTypeWarning,
 			MessageValue: "You're about to reach the 100GiB storage limit. Upgrade to [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing) for unlimited storage for your code.",
 		}}
 	} else if licenseInfo.CodeScaleExceededLimit {
 		return []*Alert{{
-			GroupValue:   &AlertGroupLicense,
+			GroupValue:   AlertGroupLicense,
 			TypeValue:    AlertTypeError,
 			MessageValue: "You've used all 100GiB of storage. Upgrade to [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing) for unlimited storage for your code.",
 		}}
@@ -361,7 +367,7 @@ func updateAvailableAlert(args AlertFuncArgs) []*Alert {
 	// dismission key includes the version so after it is dismissed the alert comes back for the next update.
 	key := "update-available-" + globalUpdateStatus.UpdateVersion
 	return []*Alert{{
-		GroupValue: &AlertGroupOther,
+		GroupValue: AlertGroupOther,
 		TypeValue:  AlertTypeInfo, MessageValue: message, IsDismissibleWithKeyValue: key,
 	}}
 }
@@ -389,7 +395,7 @@ func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
 	}
 	if conf.Get().EmailSmtp == nil || conf.Get().EmailSmtp.Host == "" {
 		return []*Alert{{
-			GroupValue:                &AlertGroupSMTP,
+			GroupValue:                AlertGroupSMTP,
 			TypeValue:                 AlertTypeWarning,
 			MessageValue:              "Warning: Sourcegraph cannot send emails! [Configure `email.smtp`](/help/admin/config/email) so that features such as Code Monitors, password resets, and invitations work. [documentation](/help/admin/config/email)",
 			IsDismissibleWithKeyValue: "email-sending",
@@ -397,7 +403,7 @@ func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
 	}
 	if conf.Get().EmailAddress == "" {
 		return []*Alert{{
-			GroupValue:                &AlertGroupSMTP,
+			GroupValue:                AlertGroupSMTP,
 			TypeValue:                 AlertTypeWarning,
 			MessageValue:              "Warning: Sourcegraph cannot send emails! [Configure `email.address`](/help/admin/config/email) so that features such as Code Monitors, password resets, and invitations work. [documentation](/help/admin/config/email)",
 			IsDismissibleWithKeyValue: "email-sending",
@@ -445,19 +451,19 @@ func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
 		switch {
 		case months < 3:
 			message := fmt.Sprintf("Sourcegraph is %d+ months out of date, for the latest features and bug fixes please upgrade ([changelog](http://about.sourcegraph.com/changelog))", months)
-			return &Alert{TypeValue: AlertTypeInfo, MessageValue: message, IsDismissibleWithKeyValue: key}
+			return &Alert{GroupValue: AlertGroupUpdate, TypeValue: AlertTypeInfo, MessageValue: message, IsDismissibleWithKeyValue: key}
 		case months == 3:
 			message := "Sourcegraph is 3+ months out of date, you may be missing important security or bug fixes. Users will be notified at 4+ months. ([changelog](http://about.sourcegraph.com/changelog))"
-			return &Alert{TypeValue: AlertTypeWarning, MessageValue: message}
+			return &Alert{GroupValue: AlertGroupUpdate, TypeValue: AlertTypeWarning, MessageValue: message}
 		case months == 4:
 			message := "Sourcegraph is 4+ months out of date, you may be missing important security or bug fixes. A notice is shown to users. ([changelog](http://about.sourcegraph.com/changelog))"
-			return &Alert{TypeValue: AlertTypeWarning, MessageValue: message}
+			return &Alert{GroupValue: AlertGroupUpdate, TypeValue: AlertTypeWarning, MessageValue: message}
 		case months == 5:
 			message := "Sourcegraph is 5+ months out of date, you may be missing important security or bug fixes. A notice is shown to users. ([changelog](http://about.sourcegraph.com/changelog))"
-			return &Alert{TypeValue: AlertTypeError, MessageValue: message}
+			return &Alert{GroupValue: AlertGroupUpdate, TypeValue: AlertTypeError, MessageValue: message}
 		default:
 			message := fmt.Sprintf("Sourcegraph is %d+ months out of date, you may be missing important security or bug fixes. A notice is shown to users. ([changelog](http://about.sourcegraph.com/changelog))", months)
-			return &Alert{TypeValue: AlertTypeError, MessageValue: message}
+			return &Alert{GroupValue: AlertGroupUpdate, TypeValue: AlertTypeError, MessageValue: message}
 		}
 	}
 
@@ -467,14 +473,14 @@ func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
 		return nil
 	case 4, 5:
 		message := fmt.Sprintf("Sourcegraph is %d+ months out of date, ask your site administrator to upgrade for the latest features and bug fixes. ([changelog](http://about.sourcegraph.com/changelog))", months)
-		return &Alert{TypeValue: AlertTypeWarning, MessageValue: message, IsDismissibleWithKeyValue: key}
+		return &Alert{GroupValue: AlertGroupUpdate, TypeValue: AlertTypeWarning, MessageValue: message, IsDismissibleWithKeyValue: key}
 	default:
 		alertType := AlertTypeWarning
 		if months > 12 {
 			alertType = AlertTypeError
 		}
 		message := fmt.Sprintf("Sourcegraph is %d+ months out of date, you may be missing important security or bug fixes. Ask your site administrator to upgrade. ([changelog](http://about.sourcegraph.com/changelog))", months)
-		return &Alert{TypeValue: alertType, MessageValue: message, IsDismissibleWithKeyValue: key}
+		return &Alert{GroupValue: AlertGroupUpdate, TypeValue: alertType, MessageValue: message, IsDismissibleWithKeyValue: key}
 	}
 }
 
@@ -497,7 +503,7 @@ func observabilityActiveAlertsAlert(prom srcprometheus.Client) func(AlertFuncArg
 		defer cancel()
 		status, err := prom.GetAlertsStatus(ctx)
 		if err != nil {
-			return []*Alert{{TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Failed to fetch alerts status: %s", err)}}
+			return []*Alert{{GroupValue: AlertGroupObservability, TypeValue: AlertTypeWarning, MessageValue: fmt.Sprintf("Failed to fetch alerts status: %s", err)}}
 		}
 
 		// decide whether to render a message about alerts
@@ -507,7 +513,7 @@ func observabilityActiveAlertsAlert(prom srcprometheus.Client) func(AlertFuncArg
 		msg := fmt.Sprintf("%s across %s currently firing - [view alerts](/-/debug/grafana)",
 			pluralize(status.Critical, "critical alert", "critical alerts"),
 			pluralize(status.ServicesCritical, "service", "services"))
-		return []*Alert{{TypeValue: AlertTypeError, MessageValue: msg}}
+		return []*Alert{{GroupValue: AlertGroupObservability, TypeValue: AlertTypeError, MessageValue: msg}}
 	}
 }
 
@@ -546,6 +552,7 @@ func gitlabVersionAlert(args AlertFuncArgs) []*Alert {
 			log15.Debug("Detected GitLab instance running a version below 12.0.0", "version", chv.Version)
 
 			return []*Alert{{
+				GroupValue:   AlertGroupCodehost,
 				TypeValue:    AlertTypeError,
 				MessageValue: "One or more of your code hosts is running a version of GitLab below 12.0, which is not supported by Sourcegraph. Please upgrade your GitLab instance(s) to prevent disruption.",
 			}}
@@ -575,16 +582,19 @@ func codyGatewayUsageAlert(args AlertFuncArgs) []*Alert {
 		}
 		if usage > 99 {
 			alerts = append(alerts, &Alert{
+				GroupValue:   AlertGroupCody,
 				TypeValue:    AlertTypeError,
 				MessageValue: fmt.Sprintf("The Cody limit for %s has been reached. If you run into this regularly, please contact Sourcegraph.", feat.DisplayName()),
 			})
 		} else if usage >= 90 {
 			alerts = append(alerts, &Alert{
+				GroupValue:   AlertGroupCody,
 				TypeValue:    AlertTypeWarning,
 				MessageValue: fmt.Sprintf("The Cody limit for %s is 90%% used. If you run into this regularly, please contact Sourcegraph.", feat.DisplayName()),
 			})
 		} else if usage >= 75 {
 			alerts = append(alerts, &Alert{
+				GroupValue:   AlertGroupCody,
 				TypeValue:    AlertTypeInfo,
 				MessageValue: fmt.Sprintf("The Cody limit for %s is 75%% used. If you run into this regularly, please contact Sourcegraph.", feat.DisplayName()),
 			})
