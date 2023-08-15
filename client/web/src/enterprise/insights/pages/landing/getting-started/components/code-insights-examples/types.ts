@@ -1,4 +1,4 @@
-import { Series, SeriesLikeChart } from '@sourcegraph/wildcard'
+import type { Series, SeriesLikeChart } from '@sourcegraph/wildcard'
 
 interface SeriesWithQuery<T> extends Series<T> {
     query: string

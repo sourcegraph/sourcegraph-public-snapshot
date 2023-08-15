@@ -4,14 +4,14 @@ import * as sinon from 'sinon'
 
 import * as scip from '../../scip'
 import * as sourcegraph from '../api'
-import { QueryGraphQLFn } from '../util/graphql'
+import type { QueryGraphQLFn } from '../util/graphql'
 
-import { GenericLSIFResponse } from './api'
+import type { GenericLSIFResponse } from './api'
 import {
     calculateRangeWindow,
     rangesInRangeWindow,
     findOverlappingWindows,
-    RangesResponse,
+    type RangesResponse,
     findOverlappingCodeIntelligenceRange,
 } from './ranges'
 import { range1, makeEnvelope, range2, range3, document, makeResource, position } from './util.test'

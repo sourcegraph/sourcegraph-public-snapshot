@@ -1,6 +1,6 @@
 import * as sourcegraph from '../api'
 
-import { SearchBasedCodeIntelligenceSettings } from './settings'
+import type { SearchBasedCodeIntelligenceSettings } from './settings'
 
 /** Retrieves a config value by key. */
 export function getConfig<K extends keyof SearchBasedCodeIntelligenceSettings>(

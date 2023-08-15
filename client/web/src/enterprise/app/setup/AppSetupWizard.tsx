@@ -1,13 +1,13 @@
-import { FC, useCallback, useLayoutEffect } from 'react'
+import { type FC, useCallback, useLayoutEffect } from 'react'
 
 import { appWindow, LogicalSize } from '@tauri-apps/api/window'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Theme, ThemeContext, ThemeSetting, useTheme } from '@sourcegraph/shared/src/theme'
 
 import { PageTitle } from '../../../components/PageTitle'
-import { SetupStepsContent, SetupStepsRoot, StepConfiguration } from '../../../setup-wizard'
+import { SetupStepsContent, SetupStepsRoot, type StepConfiguration } from '../../../setup-wizard'
 import { FooterWidgetPortal } from '../../../setup-wizard/components/setup-steps'
 
 import { AppAllSetSetupStep } from './steps/AppAllSetSetupStep'

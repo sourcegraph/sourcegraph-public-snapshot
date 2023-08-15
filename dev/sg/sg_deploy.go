@@ -174,6 +174,27 @@ spec:
             path: /
             pathType: Prefix
 {{- end }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Name }}
+  namespace: argocd
+spec:
+  destination:
+    namespace: tooling
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    directory:
+      jsonnet: {}
+      recurse: true
+    path: dogfood/kubernetes/tooling/{{ .Name }}
+    repoURL: https://github.com/sourcegraph/infrastructure
+    targetRevision: HEAD
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
 `
 
 var dnsTemplate = `

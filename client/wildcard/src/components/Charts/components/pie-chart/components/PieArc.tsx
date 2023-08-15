@@ -1,10 +1,10 @@
-import { ReactElement, SVGProps } from 'react'
+import type { ReactElement, SVGProps } from 'react'
 
 import { Annotation, Connector, HtmlLabel } from '@visx/annotation'
 import { Group } from '@visx/group'
-import { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
+import type { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
 import classNames from 'classnames'
-import { Arc as ArcType } from 'd3-shape'
+import type { Arc as ArcType } from 'd3-shape'
 
 import { Text } from '../../../../Typography'
 import { DEFAULT_FALLBACK_COLOR } from '../../../constants'

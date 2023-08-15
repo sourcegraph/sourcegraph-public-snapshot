@@ -1,4 +1,4 @@
-import { FunctionComponent, useMemo } from 'react'
+import { type FunctionComponent, useMemo } from 'react'
 
 import { mdiAlertCircle, mdiCheck, mdiCheckCircle, mdiFileUpload, mdiProgressClock, mdiTimerSand } from '@mdi/js'
 import classNames from 'classnames'
@@ -9,8 +9,8 @@ import { Card, CardBody, Code, Icon, LoadingSpinner } from '@sourcegraph/wildcar
 
 import { Collapsible } from '../../../../components/Collapsible'
 import { LogOutput } from '../../../../components/LogOutput'
-import { Timeline, TimelineStage } from '../../../../components/Timeline'
-import { PreciseIndexFields, PreciseIndexState } from '../../../../graphql-operations'
+import { Timeline, type TimelineStage } from '../../../../components/Timeline'
+import { type PreciseIndexFields, PreciseIndexState } from '../../../../graphql-operations'
 import { formatDurationLong } from '../../../../util/time'
 
 import styles from './IndexTimeline.module.scss'

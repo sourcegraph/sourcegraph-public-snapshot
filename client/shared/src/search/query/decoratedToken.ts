@@ -1,6 +1,6 @@
-import * as Monaco from 'monaco-editor'
+import type * as Monaco from 'monaco-editor'
 import { RegExpParser, visitRegExpAST } from 'regexpp'
-import {
+import type {
     Alternative,
     Assertion,
     CapturingGroup,
@@ -14,9 +14,9 @@ import {
 
 import { SearchPatternType } from '../../graphql-operations'
 
-import { Predicate, scanPredicate } from './predicates'
+import { type Predicate, scanPredicate } from './predicates'
 import { scanSearchQuery } from './scanner'
-import { Token, Pattern, Literal, PatternKind, CharacterRange, createLiteral } from './token'
+import { type Token, type Pattern, type Literal, PatternKind, type CharacterRange, createLiteral } from './token'
 
 /* eslint-disable unicorn/better-regex */
 

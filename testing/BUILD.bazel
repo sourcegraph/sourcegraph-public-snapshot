@@ -154,7 +154,6 @@ server_integration_test(
         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
         "SOURCEGRAPH_LICENSE_KEY",
     ],
-    flaky = True,
     port = "7083",
     runner_src = ":codeintel_integration_test.sh",
     tags = [

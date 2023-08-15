@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -94,13 +95,13 @@ type repoPath struct {
 	Path     string
 }
 
-func fakeOwnDb() *database.MockDB {
-	db := database.NewMockDB()
-	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
-	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
-	db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
+func fakeOwnDb() *dbmocks.MockDB {
+	db := dbmocks.NewMockDB()
+	db.RecentContributionSignalsFunc.SetDefaultReturn(dbmocks.NewMockRecentContributionSignalStore())
+	db.RecentViewSignalFunc.SetDefaultReturn(dbmocks.NewMockRecentViewSignalStore())
+	db.AssignedOwnersFunc.SetDefaultReturn(dbmocks.NewMockAssignedOwnersStore())
 
-	configStore := database.NewMockSignalConfigurationStore()
+	configStore := dbmocks.NewMockSignalConfigurationStore()
 	configStore.IsEnabledFunc.SetDefaultReturn(true, nil)
 	db.OwnSignalConfigurationsFunc.SetDefaultReturn(configStore)
 
@@ -168,7 +169,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 			}),
 	}
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
@@ -285,7 +286,7 @@ func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 			}),
 	}
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
@@ -364,7 +365,7 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 	logger := logtest.Scoped(t)
 	repo := &types.Repo{Name: "repo-name", ID: 42}
 	team := &types.Team{Name: "fake-team", DisplayName: "The Fake Team"}
-	var parameterRevision = "revision-parameter"
+	parameterRevision := "revision-parameter"
 	var resolvedRevision api.CommitID = "revision-resolved"
 	git := fakeGitserver{
 		files: repoFiles{
@@ -372,18 +373,18 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 		},
 	}
 	fakeDB := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeDB.TeamStore)
 	db.UsersFunc.SetDefaultReturn(fakeDB.UserStore)
-	db.CodeownersFunc.SetDefaultReturn(database.NewMockCodeownersStore())
-	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
-	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
-	db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
-	db.AssignedTeamsFunc.SetDefaultReturn(database.NewMockAssignedTeamsStore())
-	db.OwnSignalConfigurationsFunc.SetDefaultReturn(database.NewMockSignalConfigurationStore())
+	db.CodeownersFunc.SetDefaultReturn(dbmocks.NewMockCodeownersStore())
+	db.RecentContributionSignalsFunc.SetDefaultReturn(dbmocks.NewMockRecentContributionSignalStore())
+	db.RecentViewSignalFunc.SetDefaultReturn(dbmocks.NewMockRecentViewSignalStore())
+	db.AssignedOwnersFunc.SetDefaultReturn(dbmocks.NewMockAssignedOwnersStore())
+	db.AssignedTeamsFunc.SetDefaultReturn(dbmocks.NewMockAssignedTeamsStore())
+	db.OwnSignalConfigurationsFunc.SetDefaultReturn(dbmocks.NewMockSignalConfigurationStore())
 	own := own.NewService(git, db)
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(repo, nil)
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
@@ -451,7 +452,7 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 	logger := logtest.Scoped(t)
 	repo := &types.Repo{Name: "repo-name", ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}, ID: 42}
 	const ghTeamName = "sourcegraph/own"
-	var parameterRevision = "revision-parameter"
+	parameterRevision := "revision-parameter"
 	var resolvedRevision api.CommitID = "revision-resolved"
 	git := fakeGitserver{
 		files: repoFiles{
@@ -459,18 +460,18 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 		},
 	}
 	fakeDB := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(fakeDB.UserStore)
 	db.TeamsFunc.SetDefaultReturn(fakeDB.TeamStore)
-	db.CodeownersFunc.SetDefaultReturn(database.NewMockCodeownersStore())
-	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
-	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
-	db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
-	db.AssignedTeamsFunc.SetDefaultReturn(database.NewMockAssignedTeamsStore())
-	db.OwnSignalConfigurationsFunc.SetDefaultReturn(database.NewMockSignalConfigurationStore())
+	db.CodeownersFunc.SetDefaultReturn(dbmocks.NewMockCodeownersStore())
+	db.RecentContributionSignalsFunc.SetDefaultReturn(dbmocks.NewMockRecentContributionSignalStore())
+	db.RecentViewSignalFunc.SetDefaultReturn(dbmocks.NewMockRecentViewSignalStore())
+	db.AssignedOwnersFunc.SetDefaultReturn(dbmocks.NewMockAssignedOwnersStore())
+	db.AssignedTeamsFunc.SetDefaultReturn(dbmocks.NewMockAssignedTeamsStore())
+	db.OwnSignalConfigurationsFunc.SetDefaultReturn(dbmocks.NewMockSignalConfigurationStore())
 	own := own.NewService(git, db)
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(repo, nil)
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
@@ -693,7 +694,7 @@ func TestOwnershipPagination(t *testing.T) {
 			}),
 	}
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{}, nil)
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
@@ -770,7 +771,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 	fakeDB := fakedb.New()
 	db := fakeOwnDb()
 
-	recentContribStore := database.NewMockRecentContributionSignalStore()
+	recentContribStore := dbmocks.NewMockRecentContributionSignalStore()
 	recentContribStore.FindRecentAuthorsFunc.SetDefaultReturn([]database.RecentContributorSummary{{
 		AuthorName:        santaName,
 		AuthorEmail:       santaEmail,
@@ -778,7 +779,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 	}}, nil)
 	db.RecentContributionSignalsFunc.SetDefaultReturn(recentContribStore)
 
-	recentViewStore := database.NewMockRecentViewSignalStore()
+	recentViewStore := dbmocks.NewMockRecentViewSignalStore()
 	recentViewStore.ListFunc.SetDefaultReturn([]database.RecentViewSummary{{
 		UserID:     1,
 		FilePathID: 1,
@@ -786,11 +787,11 @@ func TestOwnership_WithSignals(t *testing.T) {
 	}}, nil)
 	db.RecentViewSignalFunc.SetDefaultReturn(recentViewStore)
 
-	userEmails := database.NewMockUserEmailsStore()
+	userEmails := dbmocks.NewMockUserEmailsStore()
 	userEmails.GetPrimaryEmailFunc.SetDefaultReturn(santaEmail, true, nil)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
-	db.UserExternalAccountsFunc.SetDefaultReturn(database.NewMockUserExternalAccountsStore())
+	db.UserExternalAccountsFunc.SetDefaultReturn(dbmocks.NewMockUserExternalAccountsStore())
 
 	fakeDB.Wire(db)
 	repoID := api.RepoID(1)
@@ -810,7 +811,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 			}),
 	}
 	ctx := userCtx(fakeDB.AddUser(types.User{Username: santaName, DisplayName: santaName, SiteAdmin: true}))
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
@@ -937,7 +938,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 	fakeDB := fakedb.New()
 	db := fakeOwnDb()
 
-	recentContribStore := database.NewMockRecentContributionSignalStore()
+	recentContribStore := dbmocks.NewMockRecentContributionSignalStore()
 	recentContribStore.FindRecentAuthorsFunc.SetDefaultReturn([]database.RecentContributorSummary{{
 		AuthorName:        santaName,
 		AuthorEmail:       santaEmail,
@@ -945,7 +946,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 	}}, nil)
 	db.RecentContributionSignalsFunc.SetDefaultReturn(recentContribStore)
 
-	recentViewStore := database.NewMockRecentViewSignalStore()
+	recentViewStore := dbmocks.NewMockRecentViewSignalStore()
 	recentViewStore.ListFunc.SetDefaultReturn([]database.RecentViewSummary{{
 		UserID:     1,
 		FilePathID: 1,
@@ -953,7 +954,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 	}}, nil)
 	db.RecentViewSignalFunc.SetDefaultReturn(recentViewStore)
 
-	userEmails := database.NewMockUserEmailsStore()
+	userEmails := dbmocks.NewMockUserEmailsStore()
 	userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{
 		{
 			UserID:  1,
@@ -963,7 +964,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 	}, nil)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
-	db.UserExternalAccountsFunc.SetDefaultReturn(database.NewMockUserExternalAccountsStore())
+	db.UserExternalAccountsFunc.SetDefaultReturn(dbmocks.NewMockUserExternalAccountsStore())
 
 	fakeDB.Wire(db)
 	repoID := api.RepoID(1)
@@ -983,7 +984,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 			}),
 	}
 	ctx := userCtx(fakeDB.AddUser(types.User{Username: santaName, DisplayName: santaName, SiteAdmin: true}))
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
@@ -1084,7 +1085,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 	graphqlbackend.RunTest(t, test)
 
 	t.Run("disabled recent-contributor signal should not resolve", func(t *testing.T) {
-		mockStore := database.NewMockSignalConfigurationStore()
+		mockStore := dbmocks.NewMockSignalConfigurationStore()
 		db.OwnSignalConfigurationsFunc.SetDefaultReturn(mockStore)
 		mockStore.IsEnabledFunc.SetDefaultHook(func(ctx context.Context, s string) (bool, error) {
 			t.Log(s)
@@ -1123,7 +1124,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 	})
 
 	t.Run("disabled recent-views signal should not resolve", func(t *testing.T) {
-		mockStore := database.NewMockSignalConfigurationStore()
+		mockStore := dbmocks.NewMockSignalConfigurationStore()
 		db.OwnSignalConfigurationsFunc.SetDefaultReturn(mockStore)
 		mockStore.IsEnabledFunc.SetDefaultHook(func(ctx context.Context, s string) (bool, error) {
 			if s == owntypes.SignalRecentViews {
@@ -1166,7 +1167,7 @@ func TestCommitOwnershipSignals(t *testing.T) {
 	fakeDB := fakedb.New()
 	db := fakeOwnDb()
 
-	recentContribStore := database.NewMockRecentContributionSignalStore()
+	recentContribStore := dbmocks.NewMockRecentContributionSignalStore()
 	recentContribStore.FindRecentAuthorsFunc.SetDefaultReturn([]database.RecentContributorSummary{{
 		AuthorName:        "santa claus",
 		AuthorEmail:       "santa@northpole.com",
@@ -1178,7 +1179,7 @@ func TestCommitOwnershipSignals(t *testing.T) {
 	repoID := api.RepoID(1)
 
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
@@ -1318,7 +1319,8 @@ func Test_SignalConfigurations(t *testing.T) {
 				}`,
 		Variables: map[string]any{"input": map[string]any{
 			"configs": []any{map[string]any{
-				"name": owntypes.SignalRecentContributors, "enabled": true, "excludedRepoPatterns": []any{"github.com/*"}}},
+				"name": owntypes.SignalRecentContributors, "enabled": true, "excludedRepoPatterns": []any{"github.com/*"},
+			}},
 		}},
 	}
 
@@ -1405,7 +1407,7 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 	fakeDB := fakedb.New()
 	db := fakeOwnDb()
 
-	userEmails := database.NewMockUserEmailsStore()
+	userEmails := dbmocks.NewMockUserEmailsStore()
 	userEmails.ListByUserFunc.SetDefaultHook(func(ctx context.Context, opts database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		var email string
 		switch opts.UserID {
@@ -1456,13 +1458,13 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 		},
 	}
 	ctx := userCtx(fakeDB.AddUser(types.User{Username: santaName, DisplayName: santaName, SiteAdmin: true}))
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
 		return "deadbeef", nil
 	}
-	db.UserExternalAccountsFunc.SetDefaultReturn(database.NewMockUserExternalAccountsStore())
+	db.UserExternalAccountsFunc.SetDefaultReturn(dbmocks.NewMockUserExternalAccountsStore())
 	git := fakeGitserver{}
 	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
@@ -2228,11 +2230,11 @@ func TestDeleteAssignedTeam(t *testing.T) {
 }
 
 func TestDisplayOwnershipStats(t *testing.T) {
-	db := database.NewMockDB()
-	fakeRepoPaths := database.NewMockRepoPathStore()
+	db := dbmocks.NewMockDB()
+	fakeRepoPaths := dbmocks.NewMockRepoPathStore()
 	fakeRepoPaths.AggregateFileCountFunc.SetDefaultReturn(350000, nil)
 	db.RepoPathsFunc.SetDefaultReturn(fakeRepoPaths)
-	fakeOwnershipStats := database.NewMockOwnershipStatsStore()
+	fakeOwnershipStats := dbmocks.NewMockOwnershipStatsStore()
 	updateTime := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
 	fakeOwnershipStats.QueryAggregateCountsFunc.SetDefaultReturn(
 		database.PathAggregateCounts{

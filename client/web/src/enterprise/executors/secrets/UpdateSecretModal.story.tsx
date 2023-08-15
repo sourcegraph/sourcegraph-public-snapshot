@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays, subHours } from 'date-fns'
 import { noop } from 'lodash'
 

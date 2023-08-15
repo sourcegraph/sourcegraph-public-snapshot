@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import './SourcegraphWebApp.scss'
 
@@ -16,9 +16,9 @@ import { routes } from './routes'
 import { siteAdminAreaRoutes } from './site-admin/routes'
 import { siteAdminSidebarGroups } from './site-admin/sidebaritems'
 import {
-    StaticAppConfig,
-    StaticHardcodedAppConfig,
-    StaticInjectedAppConfig,
+    type StaticAppConfig,
+    type StaticHardcodedAppConfig,
+    type StaticInjectedAppConfig,
     windowContextConfig,
 } from './staticAppConfig'
 import { userAreaHeaderNavItems } from './user/area/navitems'

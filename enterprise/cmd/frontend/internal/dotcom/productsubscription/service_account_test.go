@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -85,8 +85,8 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 			tc := tc
 			t.Parallel()
 
-			db := database.NewMockDB()
-			mockUsers := database.NewMockUserStore()
+			db := dbmocks.NewMockDB()
+			mockUsers := dbmocks.NewMockUserStore()
 
 			user := &types.User{ID: actorID, SiteAdmin: tc.actorSiteAdmin}
 			mockUsers.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)

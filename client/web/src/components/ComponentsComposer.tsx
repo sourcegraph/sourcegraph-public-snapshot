@@ -1,4 +1,4 @@
-import { FC, cloneElement, ReactElement, ReactNode } from 'react'
+import { type FC, cloneElement, type ReactElement, type ReactNode } from 'react'
 
 interface ComponentsComposerProps {
     components: ReactElement[]

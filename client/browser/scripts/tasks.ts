@@ -6,7 +6,7 @@ import { omit, cloneDeep, curry } from 'lodash'
 import shelljs from 'shelljs'
 import signale from 'signale'
 import utcVersion from 'utc-version'
-import { Configuration } from 'webpack'
+import type { Configuration } from 'webpack'
 
 import manifestSpec from '../src/browser-extension/manifest.spec.json'
 import schema from '../src/browser-extension/schema.json'

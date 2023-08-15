@@ -1,10 +1,10 @@
 import {
-    LineChartSearchInsightDataSeriesInput,
+    type LineChartSearchInsightDataSeriesInput,
     TimeIntervalStepUnit,
-    UpdateLineChartSearchInsightInput,
-    UpdatePieChartSearchInsightInput,
+    type UpdateLineChartSearchInsightInput,
+    type UpdatePieChartSearchInsightInput,
 } from '../../../../../../../graphql-operations'
-import {
+import type {
     MinimalCaptureGroupInsightData,
     MinimalComputeInsightData,
     MinimalLangStatsInsightData,

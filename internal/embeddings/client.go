@@ -135,13 +135,6 @@ func (c *client) searchPartition(ctx context.Context, endpoint string, args Embe
 	return &response, nil
 }
 
-func (c *client) url(repo api.RepoName) (string, error) {
-	if c.Endpoints == nil {
-		return "", errors.New("an embeddings service has not been configured")
-	}
-	return c.Endpoints.Get(string(repo))
-}
-
 type repoPartition struct {
 	repoNames []api.RepoName
 	repoIDs   []api.RepoID

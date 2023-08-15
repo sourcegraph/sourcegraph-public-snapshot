@@ -1,4 +1,4 @@
-import { FC, useState, useLayoutEffect } from 'react'
+import { type FC, useState, useLayoutEffect } from 'react'
 
 import { mdiChevronDoubleUp, mdiChevronDoubleDown } from '@mdi/js'
 import classNames from 'classnames'

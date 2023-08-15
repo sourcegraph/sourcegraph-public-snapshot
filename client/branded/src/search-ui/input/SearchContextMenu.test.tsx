@@ -4,13 +4,13 @@ import { act } from 'react-dom/test-utils'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
-import { ListSearchContextsResult, SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { ListSearchContextsResult, SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import { mockGetUserSearchContextNamespaces } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
-import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
+import { SearchContextMenu, type SearchContextMenuProps } from './SearchContextMenu'
 
 const mockFetchSearchContexts = ({ query }: { first: number; query?: string; after?: string }) => {
     const nodes = [

@@ -1,5 +1,5 @@
 import { commitIDFromPermalink } from '../../util/dom'
-import { BlobInfo, DiffInfo } from '../shared/codeHost'
+import type { BlobInfo, DiffInfo } from '../shared/codeHost'
 
 import {
     getDiffFileName,

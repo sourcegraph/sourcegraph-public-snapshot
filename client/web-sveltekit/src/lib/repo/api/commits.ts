@@ -1,26 +1,17 @@
-// We want to limit the number of imported modules as much as possible
-/* eslint-disable no-restricted-imports */
-
-import { memoize } from 'lodash'
-import type { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
-
-import type { Repo, ResolvedRevision } from '@sourcegraph/web/src/repo/backend'
-
-import { browser } from '$app/environment'
-import { isErrorLike, type ErrorLike } from '$lib/common'
+import { query, gql } from '$lib/graphql'
 import type {
     RepositoryCommitResult,
     Scalars,
     RepositoryComparisonDiffResult,
     RepositoryComparisonDiffVariables,
-    GitCommitFields,
     HistoryResult,
     GitHistoryResult,
     GitHistoryVariables,
+    CommitDiffResult,
+    CommitDiffVariables,
+    FileDiffFields,
+    RepositoryCommitVariables,
 } from '$lib/graphql-operations'
-import { dataOrThrowErrors, gql, type GraphQLResult } from '$lib/http-client'
-import { requestGraphQL } from '$lib/web'
 
 // Unfortunately it doesn't seem possible to share fragements across package
 // boundaries
@@ -40,9 +31,8 @@ const gitCommitFragment = gql`
         parents {
             oid
             abbreviatedOID
-            url
+            canonicalURL
         }
-        url
         canonicalURL
         externalURLs {
             ...ExternalLinkFields
@@ -80,11 +70,11 @@ const diffStatFields = gql`
 
 const fileDiffHunkFields = gql`
     fragment FileDiffHunkFields on FileDiffHunk {
+        oldNoNewlineAt
         oldRange {
             startLine
             lines
         }
-        oldNoNewlineAt
         newRange {
             startLine
             lines
@@ -100,22 +90,25 @@ const fileDiffHunkFields = gql`
     }
 `
 
-export const fileDiffFields = gql`
+const fileDiffFields = gql`
     fragment FileDiffFields on FileDiff {
         oldPath
         oldFile {
             __typename
-            binary
-            byteSize
-        }
-        newFile {
-            __typename
+            canonicalURL
             binary
             byteSize
         }
         newPath
+        newFile {
+            __typename
+            canonicalURL
+            binary
+            byteSize
+        }
         mostRelevantFile {
             __typename
+            canonicalURL
             url
         }
         hunks {
@@ -137,8 +130,10 @@ const HISTORY_QUERY = gql`
     query GitHistory($repo: ID!, $revspec: String!, $first: Int, $afterCursor: String, $filePath: String) {
         node(id: $repo) {
             __typename
+            id
             ... on Repository {
                 commit(rev: $revspec) {
+                    id
                     ancestors(first: $first, path: $filePath, afterCursor: $afterCursor) {
                         ...HistoryResult
                     }
@@ -164,9 +159,12 @@ const COMMIT_QUERY = gql`
     query RepositoryCommit($repo: ID!, $revspec: String!) {
         node(id: $repo) {
             __typename
+            id
             ... on Repository {
+                id
                 commit(rev: $revspec) {
                     __typename # Necessary for error handling to check if commit exists
+                    id
                     ...GitCommitFields
                 }
             }
@@ -176,54 +174,53 @@ const COMMIT_QUERY = gql`
 `
 
 interface FetchRepoCommitsArgs {
-    repoID: string
+    repoID: Scalars['ID']
     revision: string
-    filePath: string | null
+    filePath?: string
     first?: number
     pageInfo?: HistoryResult['pageInfo']
 }
 
-export const fetchRepoCommits = memoize(
-    async ({
-        repoID,
-        revision,
-        filePath,
-        first = HISTORY_COMMITS_PER_PAGE,
-        pageInfo,
-    }: FetchRepoCommitsArgs): Promise<HistoryResult> => {
-        const emptyResult: HistoryResult = { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } }
+export async function fetchRepoCommits({
+    repoID,
+    revision,
+    filePath,
+    first = HISTORY_COMMITS_PER_PAGE,
+    pageInfo,
+}: FetchRepoCommitsArgs): Promise<HistoryResult> {
+    const emptyResult: HistoryResult = { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } }
 
-        const result = await requestGraphQL<GitHistoryResult, GitHistoryVariables>(HISTORY_QUERY, {
-            repo: repoID,
-            revspec: revision,
-            filePath: filePath ?? null,
-            first,
-            afterCursor: pageInfo?.endCursor ?? null,
-        }).toPromise()
-        const data = dataOrThrowErrors(result)
-        if (data.node?.__typename === 'Repository') {
-            return data.node.commit?.ancestors ?? emptyResult
-        }
-        return emptyResult
-    },
-    args => [args.repoID, args.revision, args.filePath, args.first, args.pageInfo?.endCursor].join('-')
-)
+    const data = await query<GitHistoryResult, GitHistoryVariables>(HISTORY_QUERY, {
+        repo: repoID,
+        revspec: revision,
+        filePath: filePath ?? null,
+        first,
+        afterCursor: pageInfo?.endCursor ?? null,
+    })
+    if (data.node?.__typename === 'Repository') {
+        return data.node.commit?.ancestors ?? emptyResult
+    }
+    return emptyResult
+}
 
-export function fetchRepoCommit(repoId: string, revision: string): Observable<GraphQLResult<RepositoryCommitResult>> {
-    return requestGraphQL(COMMIT_QUERY, { repo: repoId, revspec: revision })
+export async function fetchRepoCommit(repoId: string, revision: string): Promise<RepositoryCommitResult> {
+    return await query<RepositoryCommitResult, RepositoryCommitVariables>(COMMIT_QUERY, {
+        repo: repoId,
+        revspec: revision,
+    })
 }
 
 export type RepositoryComparisonDiff = Extract<RepositoryComparisonDiffResult['node'], { __typename?: 'Repository' }>
 
-export function queryRepositoryComparisonFileDiffs(args: {
+export async function queryRepositoryComparisonFileDiffs(args: {
     repo: Scalars['ID']
     base: string | null
     head: string | null
     first: number | null
     after: string | null
     paths: string[] | null
-}): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> {
-    return requestGraphQL<RepositoryComparisonDiffResult, RepositoryComparisonDiffVariables>(
+}): Promise<RepositoryComparisonDiff['comparison']['fileDiffs']> {
+    const data = await query<RepositoryComparisonDiffResult, RepositoryComparisonDiffVariables>(
         gql`
             query RepositoryComparisonDiff(
                 $repo: ID!
@@ -234,7 +231,7 @@ export function queryRepositoryComparisonFileDiffs(args: {
                 $paths: [String!]
             ) {
                 node(id: $repo) {
-                    __typename
+                    id
                     ... on Repository {
                         comparison(base: $base, head: $head) {
                             fileDiffs(first: $first, after: $after, paths: $paths) {
@@ -260,51 +257,49 @@ export function queryRepositoryComparisonFileDiffs(args: {
             ${diffStatFields}
         `,
         args
-    ).pipe(
-        map(result => {
-            const data = dataOrThrowErrors(result)
-
-            const repo = data.node
-            if (repo === null) {
-                throw new Error('Repository not found')
-            }
-            if (repo.__typename !== 'Repository') {
-                throw new Error('Not a repository')
-            }
-            return repo.comparison.fileDiffs
-        })
     )
-}
 
-const clientCache: Map<string, { nodes: GitCommitFields[] }> = new Map()
-
-function getCacheKey(resolvedRevision: ResolvedRevision & Repo, filePath: string | null): string {
-    return [resolvedRevision.repo.id, resolvedRevision.commitID ?? '', filePath].join('/')
-}
-
-export async function fetchCommits(
-    resolvedRevision: (ResolvedRevision & Repo) | ErrorLike,
-    filePath: string | null = null,
-    force: boolean = false
-): Promise<{ nodes: GitCommitFields[] }> {
-    if (!isErrorLike(resolvedRevision)) {
-        const cacheKey = getCacheKey(resolvedRevision, filePath)
-        if (browser && !force) {
-            const fromCache = clientCache.get(cacheKey)
-            if (fromCache) {
-                return fromCache
-            }
-        }
-        const commits = await fetchRepoCommits({
-            repoID: resolvedRevision.repo.id,
-            revision: resolvedRevision.commitID ?? '',
-            filePath,
-        })
-
-        if (browser) {
-            clientCache.set(cacheKey, commits)
-        }
-        return commits
+    const repo = data.node
+    if (repo === null) {
+        throw new Error('Repository not found')
     }
-    return { nodes: [] }
+    if (repo.__typename !== 'Repository') {
+        throw new Error('Not a repository')
+    }
+    return repo.comparison.fileDiffs
+}
+
+export async function fetchDiff(
+    repoID: Scalars['ID'],
+    revspec: string,
+    paths: string[] = []
+): Promise<FileDiffFields[]> {
+    const data = await query<CommitDiffResult, CommitDiffVariables>(
+        gql`
+            query CommitDiff($repoID: ID!, $revspec: String!, $paths: [String!], $first: Int) {
+                node(id: $repoID) {
+                    ... on Repository {
+                        __typename
+                        id
+                        commit(rev: $revspec) {
+                            id
+                            diff {
+                                fileDiffs(paths: $paths, first: $first) {
+                                    nodes {
+                                        ...FileDiffFields
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            ${fileDiffFields}
+        `,
+        { repoID, revspec, paths, first: paths.length }
+    )
+    if (data.node?.__typename !== 'Repository') {
+        return []
+    }
+    return data.node.commit?.diff.fileDiffs.nodes ?? []
 }

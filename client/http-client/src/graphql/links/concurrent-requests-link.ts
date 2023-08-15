@@ -1,14 +1,14 @@
 import {
     ApolloLink,
-    FetchResult,
-    NextLink,
-    Operation,
+    type FetchResult,
+    type NextLink,
+    type Operation,
     Observable,
-    Observer,
-    ObservableSubscription,
+    type Observer,
+    type ObservableSubscription,
 } from '@apollo/client'
 
-import { ApolloContext } from '../types'
+import type { ApolloContext } from '../types'
 
 const DEFAULT_PARALLEL_CONCURRENT_REQUESTS = 3
 

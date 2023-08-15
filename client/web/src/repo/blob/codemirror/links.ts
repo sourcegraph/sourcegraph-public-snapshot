@@ -1,12 +1,19 @@
 import { Facet, RangeSetBuilder } from '@codemirror/state'
-import { Decoration, DecorationSet, EditorView, PluginValue, ViewUpdate, ViewPlugin } from '@codemirror/view'
+import {
+    Decoration,
+    type DecorationSet,
+    type EditorView,
+    type PluginValue,
+    type ViewUpdate,
+    ViewPlugin,
+} from '@codemirror/view'
 import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
 import { SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
 import { getLinksFromString } from '../../linkifiy/get-links'
-import { BlobInfo } from '../CodeMirrorBlob'
+import type { BlobInfo } from '../CodeMirrorBlob'
 
 import { syntaxHighlight } from './highlight'
 

@@ -4,7 +4,7 @@ import { Route, Routes } from 'react-router-dom'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { GetCodyPage } from '../get-cody/GetCodyPage'
 
 import { PostSignUpPage } from './PostSignUpPage'

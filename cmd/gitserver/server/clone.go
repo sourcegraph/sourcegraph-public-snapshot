@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -28,7 +29,7 @@ func (s *Server) maybeStartClone(ctx context.Context, logger log.Logger, repo ap
 		}, false
 	}
 
-	cloneProgress, err := s.cloneRepo(ctx, repo, nil)
+	cloneProgress, err := s.CloneRepo(ctx, repo, CloneOptions{})
 	if err != nil {
 		logger.Debug("error starting repo clone", log.String("repo", string(repo)), log.Error(err))
 		return &protocol.NotFoundPayload{CloneInProgress: false}, false

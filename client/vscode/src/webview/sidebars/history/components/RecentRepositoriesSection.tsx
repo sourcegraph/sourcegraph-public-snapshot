@@ -4,14 +4,14 @@ import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
-import { EventLogResult, fetchRecentSearches } from '@sourcegraph/shared/src/search'
+import { type EventLogResult, fetchRecentSearches } from '@sourcegraph/shared/src/search'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { Icon, H5, useObservable, Button } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../../graphql-operations'
-import { HistorySidebarProps } from '../HistorySidebarView'
+import type { HistorySidebarProps } from '../HistorySidebarView'
 
 import styles from '../../search/SearchSidebarView.module.scss'
 

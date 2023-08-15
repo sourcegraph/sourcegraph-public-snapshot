@@ -389,14 +389,12 @@ message RepoDeleteResponse {}
 
 // RepoUpdateRequest is a request to update a repository.
 message RepoUpdateRequest {
+  // RepoUpdateRequest used to have an unused clone_from_shard field.
+  reserved 3;
   // repo is the name of the repo to update.
   string repo = 1;
   // since is the debounce interval for queries, used only with request-repo-update
   google.protobuf.Duration since = 2;
-  // clone_from_shard is the hostname of the gitserver instance that is the current owner of the
-  // repository. If this is set, then the RepoUpdateRequest is to migrate the repo from
-  // that gitserver instance to the new home of the repo.
-  string clone_from_shard = 3;
 }
 
 // RepoUpdateResponse is the response from the RepoUpdate RPC.

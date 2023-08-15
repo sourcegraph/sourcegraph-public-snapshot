@@ -1,6 +1,6 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
-import { FileDiffFields } from '../../graphql-operations'
+import type { FileDiffFields } from '../../graphql-operations'
 import { WebStory } from '../WebStory'
 
 import { DEMO_HUNKS } from './FileDiffHunks.story'

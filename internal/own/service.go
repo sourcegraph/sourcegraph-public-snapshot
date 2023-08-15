@@ -85,10 +85,6 @@ type service struct {
 	db              database.DB
 }
 
-type ownerKey struct {
-	handle, email string
-}
-
 // codeownersLocations contains the locations where CODEOWNERS file
 // is expected to be found relative to the repository root directory.
 // These are in line with GitHub and GitLab documentation.

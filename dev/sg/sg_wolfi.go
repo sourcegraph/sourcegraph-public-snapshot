@@ -52,6 +52,8 @@ Base images containing locally-built packages can then be built using 'sg wolfi 
 					return err
 				}
 
+				defer wolfi.RemoveBuildDir(buildDir)
+
 				err = c.DoPackageBuild(manifestBaseName, buildDir)
 				if err != nil {
 					return err

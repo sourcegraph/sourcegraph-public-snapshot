@@ -1,6 +1,6 @@
-import { FC, ReactElement } from 'react'
+import type { FC, ReactElement } from 'react'
 
-import { QueryResult } from '@apollo/client'
+import type { QueryResult } from '@apollo/client'
 import { mdiDelete, mdiInformationOutline, mdiPlus, mdiAlertCircle } from '@mdi/js'
 import classNames from 'classnames'
 
@@ -18,7 +18,7 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import { CodeHost, ExternalServiceKind, GetCodeHostsResult } from '../../../../../graphql-operations'
+import { type CodeHost, ExternalServiceKind, type GetCodeHostsResult } from '../../../../../graphql-operations'
 import { CodeHostIcon, getCodeHostKindFromURLParam, getCodeHostName } from '../../helpers'
 
 import styles from './CodeHostsNavigation.module.scss'

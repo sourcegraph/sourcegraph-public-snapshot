@@ -7,7 +7,7 @@ import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SearchPatternType } from '../../graphql-operations'
 
-import { SearchResultsInfoBar, SearchResultsInfoBarProps } from './SearchResultsInfoBar'
+import { SearchResultsInfoBar, type SearchResultsInfoBarProps } from './SearchResultsInfoBar'
 
 const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     platformContext: { settings: NEVER, sourcegraphURL: 'https://sourcegraph.com' },

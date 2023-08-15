@@ -1,5 +1,5 @@
-import { Extension, Prec } from '@codemirror/state'
-import { EditorView, keymap } from '@codemirror/view'
+import { type Extension, Prec } from '@codemirror/state'
+import { type EditorView, keymap } from '@codemirror/view'
 
 /**
  * Focuses the editor and positions the cursor at the end of the document.
