@@ -36,20 +36,22 @@ func (s *rateLimitConfigJob) Routines(_ context.Context, observationCtx *observa
 	if err != nil {
 		return nil, err
 	}
-
-	rlcWorker := makeRateLimitConfigWorker(observationCtx, handler{
+	hdlr := handler{
 		codeHostStore: db.CodeHosts(),
 		ratelimiter:   ratelimit.NewCodeHostRateLimiter(rl),
-	})
+	}
+	handlerFunc := func(ctx context.Context) error {
+		return hdlr.Handle(ctx, observationCtx)
+	}
+	rlcWorker := makeRateLimitConfigWorker(handlerFunc)
+
 	return []goroutine.BackgroundRoutine{rlcWorker}, nil
 }
 
-func makeRateLimitConfigWorker(observationCtx *observation.Context, hdlr handler) goroutine.BackgroundRoutine {
+func makeRateLimitConfigWorker(handlerFunc func(ctx context.Context) error) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
-		goroutine.HandlerFunc(func(ctx context.Context) error {
-			return hdlr.Handle(ctx, observationCtx)
-		}),
+		goroutine.HandlerFunc(handlerFunc),
 		goroutine.WithName("rate_limit_config_worker"),
 		goroutine.WithDescription("copies the rate limit configurations from the database to Redis"),
 		goroutine.WithInterval(30*time.Second),
