@@ -1,0 +1,68 @@
+extend type Mutation {
+    createExhaustiveSearch (
+        query: String!
+    ): ExhaustiveSearch!
+}
+
+enum ExhaustiveSearchState {
+    QUEUED
+    PROCESSING
+    ERRORED
+    FAILED
+    COMPLETED
+}
+
+type ExhaustiveSearch implements Node {
+    id: ID!
+    query: String!
+    state: ExhaustiveSearchState!
+    creator: User
+    createdAt: DateTime!
+    startedAt: DateTime
+    finishedAt: DateTime
+    csvURL: String
+    totalRepos: Int!
+    completedRepos: Int!
+    erroredRepos: Int!
+    inProgressRepos: Int!
+    repositories: ExhaustiveSearchRepoConnection!
+}
+
+type ExhaustiveSearchRepo implements Node {
+    id: ID!
+    state: ExhaustiveSearchState!
+    revisions: [ExhaustiveSearchRevision!]!
+    createdAt: DateTime!
+    startedAt: DateTime
+    finishedAt: DateTime
+    failureMessage: String
+    revisions: ExhaustiveSearchRevisionConnection!
+}
+
+type ExhaustiveSearchRevision implements Node {
+    id: ID!
+    state: ExhaustiveSearchState!
+    revision: String!
+    createdAt: DateTime!
+    startedAt: DateTime
+    finishedAt: DateTime
+    failureMessage: String
+}
+
+type ExhaustiveSearchConnection {
+    nodes: [ExhaustiveSearch!]!
+    totalCount: Int!
+    pageInfo: PageInfo!
+}
+
+type ExhaustiveSearchRepoConnection {
+    nodes: [ExhaustiveSearchRepo!]!
+    totalCount: Int!
+    pageInfo: PageInfo!
+}
+
+type ExhaustiveSearchRevisionConnection {
+    nodes: [ExhaustiveSearchRevision!]!
+    totalCount: Int!
+    pageInfo: PageInfo!
+}
