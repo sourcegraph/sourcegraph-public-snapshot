@@ -216,7 +216,7 @@ func NewInternalClientFactory(subsystem string, middleware ...Middleware) *Facto
 // convenience for existing uses of http.DefaultClient.
 var InternalDoer, _ = InternalClientFactory.Doer()
 
-// InternalClient returns a shared client for external communication. This is
+// InternalClient returns a shared client for internal communication. This is
 // a convenience for existing uses of http.DefaultClient.
 var InternalClient, _ = InternalClientFactory.Client()
 
