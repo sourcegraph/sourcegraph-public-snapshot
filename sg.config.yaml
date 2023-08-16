@@ -1029,7 +1029,7 @@ commandsets:
       - gitserver-1
       - searcher
       - caddy
-      - symbol
+      - symbols
       - docsite
       - syntax-highlighter
       - github-proxy
