@@ -74,4 +74,4 @@ jobs:
         with:
           path: './result/bin/'
           destination: 'universal_ctags/x86_64-linux'
-          glob: 'ctags-*'
+          glob: 'universal-ctags-*'
