@@ -219,16 +219,16 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = React.mem
     )
 
     return (
-        <div className={styles.feedbackButtonsWrapper}>
+        <div className={classNames('d-flex align-items-center', styles.feedbackButtonsWrapper)}>
             {feedbackSubmitted ? (
-                <Button title="Feedback submitted." disabled={true} className="ml-1 p-1">
+                <Button title="Feedback submitted." disabled={true} className="p-1">
                     <Icon aria-label="Feedback submitted" svgPath={mdiCheck} />
                 </Button>
             ) : (
                 <div className="d-flex">
                     <Button
                         title="Thumbs up"
-                        className="ml-1 p-1"
+                        className="p-1"
                         type="button"
                         onClick={() => onFeedbackBtnSubmit('positive')}
                     >
@@ -236,7 +236,7 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = React.mem
                     </Button>
                     <Button
                         title="Thumbs down"
-                        className="ml-1 p-1"
+                        className="p-1"
                         type="button"
                         onClick={() => onFeedbackBtnSubmit('negative')}
                     >
