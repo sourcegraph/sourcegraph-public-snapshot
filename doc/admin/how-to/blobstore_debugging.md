@@ -23,7 +23,7 @@ docker exec -u 0 -it blobstore sh
 or in a Kubernetes deployment:
 
 ```
-kubectl exec -it -u 0 blobstore sh
+kubectl exec -it deployment/blobstore -- sh
 ```
 
 Then, try manually creating a bucket by running a curl request like this:
