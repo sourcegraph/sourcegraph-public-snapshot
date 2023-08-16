@@ -1586,6 +1586,8 @@ const RUBY_PACKAGES: AddExternalServiceOptions = {
                     for details on how to configure an internal Artifactory repository.
                 </li>
             </ol>
+            <Text>⚠️ Ruby package repositories are visible by all users of the Sourcegraph instance.</Text>
+            <Text>⚠️ It is only possible to register one Ruby packages code host per Sourcegraph instance.</Text>
         </div>
     ),
     editorActions: [],
