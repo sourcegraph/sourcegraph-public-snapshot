@@ -77,6 +77,7 @@ func buildPackage(target string) (func(*bk.Pipeline), string) {
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", "bazel"),
 			bk.Key(stepKey),
+			bk.SoftFail(222),
 		)
 	}, stepKey
 }
