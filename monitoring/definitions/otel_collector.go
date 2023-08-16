@@ -96,26 +96,32 @@ func OtelCollector() *monitoring.Dashboard {
 							`,
 						},
 						{
-							Name:        "otelcol_exporter_queue_capacity",
-							Description: "exporter queue capacity",
-							Panel:       monitoring.Panel().LegendFormat("exporter: {{exporter}}"),
-							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "sum by (exporter) (rate(otelcol_exporter_queue_capacity{job=~\"^.*\"}[1m]))",
-							NoAlert:     true,
-							Interpretation: `
-								Shows the the capacity of the retry queue (in batches).
-								`,
+							Name:           "otelcol_exporter_queue_capacity",
+							Description:    "exporter queue capacity",
+							Panel:          monitoring.Panel().LegendFormat("exporter: {{exporter}}"),
+							Owner:          monitoring.ObservableOwnerDevOps,
+							Query:          "sum by (exporter) (rate(otelcol_exporter_queue_capacity{job=~\"^.*\"}[1m]))",
+							NoAlert:        true,
+							Interpretation: `Shows the the capacity of the retry queue (in batches).`,
 						},
 						{
-							Name:        "otelcol_exporter_queue_size",
-							Description: "exporter queue size",
-							Panel:       monitoring.Panel().LegendFormat("exporter: {{exporter}}"),
-							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "sum by (exporter) (rate(otelcol_exporter_queue_size{job=~\"^.*\"}[1m]))",
-							NoAlert:     true,
-							Interpretation: `
-							Shows the current size of retry queue
-								`,
+							Name:           "otelcol_exporter_queue_size",
+							Description:    "exporter queue size",
+							Panel:          monitoring.Panel().LegendFormat("exporter: {{exporter}}"),
+							Owner:          monitoring.ObservableOwnerDevOps,
+							Query:          "sum by (exporter) (rate(otelcol_exporter_queue_size{job=~\"^.*\"}[1m]))",
+							NoAlert:        true,
+							Interpretation: `Shows the current size of retry queue`,
+						},
+						{
+							Name:           "otelcol_exporter_enqueue_failed_spans",
+							Description:    "exporter enqueue failed spans",
+							Panel:          monitoring.Panel().LegendFormat("exporter: {{exporter}}"),
+							Owner:          monitoring.ObservableOwnerDevOps,
+							Query:          "sum by (exporter) (rate(otelcol_exporter_enqueue_failed_spans{job=~\"^.*\"}[1m]))",
+							Warning:        monitoring.Alert().Greater(0).For(5 * time.Minute),
+							NextSteps:      "Check the configuration of the exporter and if the service being exported is up. This may be cause by a queue full of unsettled elements, so you may need to decrease your sending rate or horizontally scale collectors.",
+							Interpretation: `Shows the rate of spans failed to be enqueued by the configured exporter. A number higher than 0 for a long period can indicate a problem with the exporter configuration`,
 						},
 					},
 				},
@@ -126,16 +132,14 @@ func OtelCollector() *monitoring.Dashboard {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "otelcol_processor_dropped_spans",
-							Description: "spans dropped per processor per minute",
-							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("processor: {{processor}}"),
-							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "sum by (processor) (rate(otelcol_processor_dropped_spans[1m]))",
-							Warning:     monitoring.Alert().Greater(0).For(5 * time.Minute),
-
-							Interpretation: `
-								Shows the rate of spans dropped by the configured processor
-							`,
+							Name:           "otelcol_processor_dropped_spans",
+							Description:    "spans dropped per processor per minute",
+							Panel:          monitoring.Panel().Unit(monitoring.Number).LegendFormat("processor: {{processor}}"),
+							Owner:          monitoring.ObservableOwnerDevOps,
+							Query:          "sum by (processor) (rate(otelcol_processor_dropped_spans[1m]))",
+							Warning:        monitoring.Alert().Greater(0).For(5 * time.Minute),
+							NextSteps:      "Check the configuration of the processor",
+							Interpretation: `Shows the rate of spans dropped by the configured processor`,
 						},
 					},
 				},
