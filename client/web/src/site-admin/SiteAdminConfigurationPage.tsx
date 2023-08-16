@@ -431,7 +431,7 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
     }
 
     return (
-        <div className={styles.siteAdminConfigPage}>
+        <div>
             <PageTitle title="Configuration - Admin" />
             <PageHeader path={[{ text: 'Site configuration' }]} headingElement="h2" className="mb-3" />
             <div>{alerts}</div>
