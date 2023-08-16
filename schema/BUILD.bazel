@@ -3,6 +3,7 @@ load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("//dev:defs.bzl", "npm_package")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -49,7 +50,6 @@ go_library(
         "bitbucket_server_util.go",
         "bitbucketcloud_util.go",
         "extension_schema.go",
-        "gen.go",
         "github_util.go",
         "gitlab_util.go",
         "schema.go",
@@ -106,4 +106,28 @@ go_test(
         "@com_github_google_go_cmp//cmp",
         "@com_github_xeipuuv_gojsonschema//:gojsonschema",
     ],
+)
+
+genrule(
+    name = "generate",
+    srcs = glob(
+        ["*.schema.json"],
+        ["json-schema-draft*.json"],
+    ),
+    outs = [
+        "schema.go",
+    ],
+    cmd = """
+    $(location @com_github_sourcegraph_go_jsonschema//cmd/go-jsonschema-compiler:go-jsonschema-compiler) -o $@ -pkg schema $(SRCS)
+    """,
+    tools = [
+        "@com_github_sourcegraph_go_jsonschema//cmd/go-jsonschema-compiler",
+    ],
+)
+
+write_generated_to_source_files(
+    name = "write_generated_schema",
+    src = ":generate",
+    files = ["schema.go"],
+    tags = ["go_generate"],
 )
