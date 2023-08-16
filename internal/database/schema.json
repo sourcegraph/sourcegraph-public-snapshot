@@ -10413,6 +10413,36 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "event_logs_name_is_cody_active_event",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX event_logs_name_is_cody_active_event ON event_logs USING btree (iscodyactiveevent(name))",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "event_logs_name_is_cody_generation_event",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX event_logs_name_is_cody_generation_event ON event_logs USING btree (iscodygenerationevent(name))",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "event_logs_name_is_cody_active_event",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX event_logs_name_is_cody_active_event ON event_logs USING btree (iscodyactiveevent(name))",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "event_logs_name_timestamp",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -10429,36 +10459,6 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX event_logs_source ON event_logs USING btree (source)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "event_logs_name_is_cody_active_event",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX event_logs_name_is_cody_active_event ON event_logs USING btree (iscodyactiveevent(name))",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "event_logs_name_is_cody_explanation_event",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX event_logs_name_is_cody_explanation_event ON event_logs USING btree (iscodyexplanationevent(name))",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "event_logs_name_is_cody_generation_event",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX event_logs_name_is_cody_generation_event ON event_logs USING btree (iscodygenerationevent(name))",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
