@@ -45,7 +45,7 @@ func getOperations(logger log.Logger) *operations {
 	opsOnce.Do(func() {
 		observationCtx := observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
 			Name:       "database-batch",
-			SampleRate: 5,
+			SampleRate: 20,
 		}))
 
 		ops = newOperations(observationCtx)

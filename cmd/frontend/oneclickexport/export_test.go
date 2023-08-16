@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -442,8 +442,8 @@ func TestExport_CodeHostConfigs(t *testing.T) {
 	}
 }
 
-func mockExternalServicesDB() *database.MockDB {
-	externalServices := database.NewMockExternalServiceStore()
+func mockExternalServicesDB() *dbmocks.MockDB {
+	externalServices := dbmocks.NewMockExternalServiceStore()
 	externalServices.ListFunc.SetDefaultReturn([]*types.ExternalService{
 		{
 			Kind:        extsvc.KindGitHub,
@@ -499,7 +499,7 @@ func mockExternalServicesDB() *database.MockDB {
 		},
 	}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	return db
 }
@@ -566,7 +566,7 @@ func TestExport_DB_ExternalServiceRepos(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
-	externalServices := database.NewMockExternalServiceStore()
+	externalServices := dbmocks.NewMockExternalServiceStore()
 	externalServices.ListReposFunc.SetDefaultReturn([]*types.ExternalServiceRepo{
 		{
 			ExternalServiceID: 1,
@@ -588,7 +588,7 @@ func TestExport_DB_ExternalServiceRepos(t *testing.T) {
 		nil,
 	)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 	exporter := &DataExporter{

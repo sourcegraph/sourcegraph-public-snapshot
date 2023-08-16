@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -27,7 +28,7 @@ import (
 // 🚨 SECURITY: This tests that users can't create tokens for users they aren't allowed to do so for.
 func TestMutation_CreateAccessToken(t *testing.T) {
 	newMockAccessTokens := func(t *testing.T, wantCreatorUserID int32, wantScopes []string) database.AccessTokenStore {
-		accessTokens := database.NewMockAccessTokenStore()
+		accessTokens := dbmocks.NewMockAccessTokenStore()
 		accessTokens.CreateFunc.SetDefaultHook(func(_ context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (int64, string, error) {
 			if want := int32(1); subjectUserID != want {
 				t.Errorf("got %v, want %v", subjectUserID, want)
@@ -50,10 +51,10 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 
 	t.Run("authenticated as user", func(t *testing.T) {
 		accessTokens := newMockAccessTokens(t, 1, []string{authz.ScopeUserAll})
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.AccessTokensFunc.SetDefaultReturn(accessTokens)
 		db.UsersFunc.SetDefaultReturn(users)
 
@@ -83,7 +84,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 
 	t.Run("authenticated as user, using invalid scopes", func(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		result, err := newSchemaResolver(db, gitserver.NewClient(db)).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID /* no scopes */, Note: "n"})
 		if err == nil {
 			t.Error("err == nil")
@@ -94,10 +95,10 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 	})
 
 	t.Run("authenticated as user, using site-admin-only scopes", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -116,10 +117,10 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 
 	t.Run("authenticated as site admin, using site-admin-only scopes", func(t *testing.T) {
 		accessTokens := newMockAccessTokens(t, 1, []string{authz.ScopeSiteAdminSudo, authz.ScopeUserAll})
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.AccessTokensFunc.SetDefaultReturn(accessTokens)
 		db.UsersFunc.SetDefaultReturn(users)
 
@@ -151,10 +152,10 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		const differentSiteAdminUID = 234
 
 		accessTokens := newMockAccessTokens(t, differentSiteAdminUID, []string{authz.ScopeUserAll})
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: differentSiteAdminUID, SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.AccessTokensFunc.SetDefaultReturn(accessTokens)
 		db.UsersFunc.SetDefaultReturn(users)
 
@@ -186,10 +187,10 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		const differentSiteAdminUID = 234
 
 		accessTokens := newMockAccessTokens(t, differentSiteAdminUID, []string{authz.ScopeUserAll})
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: differentSiteAdminUID, SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.AccessTokensFunc.SetDefaultReturn(accessTokens)
 		db.UsersFunc.SetDefaultReturn(users)
 
@@ -221,11 +222,11 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 	})
 
 	t.Run("unauthenticated", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, database.ErrNoCurrentUser)
 		users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "username"}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), nil)
@@ -240,11 +241,11 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 
 	t.Run("authenticated as different non-site-admin user", func(t *testing.T) {
 		const differentNonSiteAdminUID = 456
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: differentNonSiteAdminUID}, nil)
 		users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "username"}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: differentNonSiteAdminUID})
@@ -258,10 +259,10 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 	})
 
 	t.Run("disable sudo access token creation on Sourcegraph.com", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		orig := envvar.SourcegraphDotComMode()
@@ -281,7 +282,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 	})
 
 	t.Run("disable create access token for any user on Sourcegraph.com", func(t *testing.T) {
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 
 		conf.Get().AuthAccessTokens = &schema.AuthAccessTokens{Allow: string(conf.AccessTokensAdmin)}
 		defer func() { conf.Get().AuthAccessTokens = nil }()
@@ -306,7 +307,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 // 🚨 SECURITY: This tests that users can't delete tokens they shouldn't be allowed to delete.
 func TestMutation_DeleteAccessToken(t *testing.T) {
 	newMockAccessTokens := func(t *testing.T) database.AccessTokenStore {
-		accessTokens := database.NewMockAccessTokenStore()
+		accessTokens := dbmocks.NewMockAccessTokenStore()
 		accessTokens.DeleteByIDFunc.SetDefaultHook(func(_ context.Context, id int64) error {
 			if want := int64(1); id != want {
 				t.Errorf("got %q, want %q", id, want)
@@ -325,7 +326,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 	token1GQLID := graphql.ID("QWNjZXNzVG9rZW46MQ==")
 
 	t.Run("authenticated as user", func(t *testing.T) {
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
 
 		RunTests(t, []*Test{
@@ -353,13 +354,13 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 	t.Run("authenticated as different user who is a site-admin", func(t *testing.T) {
 		const differentSiteAdminUID = 234
 
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: differentSiteAdminUID, SiteAdmin: true}, nil)
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
 
-		noExternalAccounts := database.NewMockUserExternalAccountsStore()
+		noExternalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 		noExternalAccounts.ListFunc.SetDefaultReturn(nil, nil)
 		db.UserExternalAccountsFunc.SetDefaultReturn(noExternalAccounts)
 
@@ -389,8 +390,8 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 	})
 
 	t.Run("unauthenticated", func(t *testing.T) {
-		users := database.NewMockUserStore()
-		db := database.NewMockDB()
+		users := dbmocks.NewMockUserStore()
+		db := dbmocks.NewMockDB()
 		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
 		db.UsersFunc.SetDefaultReturn(users)
 
@@ -407,10 +408,10 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 	t.Run("authenticated as different non-site-admin user", func(t *testing.T) {
 		const differentNonSiteAdminUID = 456
 
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: differentNonSiteAdminUID}, nil)
 		users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "username"}, nil)
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
 
@@ -427,15 +428,15 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 	t.Run("non-SOAP user cannot delete SOAP access token", func(t *testing.T) {
 		const differentSiteAdminUID = 234
 
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: differentSiteAdminUID, SiteAdmin: true}, nil)
-		extAccounts := database.NewMockUserExternalAccountsStore()
+		extAccounts := dbmocks.NewMockUserExternalAccountsStore()
 		extAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{{
 			AccountSpec: extsvc.AccountSpec{
 				ServiceType: auth.SourcegraphOperatorProviderType,
 			},
 		}}, nil)
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
 		db.UserExternalAccountsFunc.SetDefaultReturn(extAccounts)

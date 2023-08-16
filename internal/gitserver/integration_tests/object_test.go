@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -62,7 +62,7 @@ func TestGetObject(t *testing.T) {
 			},
 		})
 		for label, test := range tests {
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
 			cli := gitserver.NewTestClient(http.DefaultClient, source)
 			runTest(t, label, test, cli)
@@ -78,7 +78,7 @@ func TestGetObject(t *testing.T) {
 			},
 		})
 		for label, test := range tests {
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
 			cli := gitserver.NewTestClient(http.DefaultClient, source)
 			runTest(t, label, test, cli)

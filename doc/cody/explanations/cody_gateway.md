@@ -4,7 +4,7 @@
 
 Sourcegraph Cody Gateway powers the default `"provider": "sourcegraph"` Cody completions and embeddings for Sourcegraph Enterprise customers.
 It supports a variety of upstream LLM providers, such as [Anthropic](https://www.anthropic.com/) and [OpenAI](https://openai.com/), with rate limits, quotas, and model availability tied to your Sourcegraph Enterprise product subscription.
-[Sourcegraph App users](../../app/index.md) with Sourcegraph.com accounts will also be able to use Sourcegraph Cody Gateway.
+[Sourcegraph App users](./../overview/app/index.md) with Sourcegraph.com accounts will also be able to use Sourcegraph Cody Gateway.
 
 Reach out your account manager for more details about Sourcegraph Cody Gateway access available to you and how you can gain access to higher rate limits, quotas, and/or model options.
 
@@ -31,7 +31,7 @@ That's it! Reasonable defaults will automatically be applied, and authentication
 
 For more details about configuring Cody, refer to the following guides:
 
-- [Enabling Cody for Sourcegraph Enterprise](./enabling_cody_enterprise.md)
+- [Enabling Cody for Sourcegraph Enterprise](./../overview/enable-cody-enterprise.md)
 - [Code Graph Context: Embeddings](./code_graph_context.md#embeddings)
 
 Cody Gateway is hosted at `cody-gateway.sourcegraph.com`. To use Cody Gateway, your Sourcegraph instance must be able to connect to the service at this domain.
@@ -53,7 +53,7 @@ The currently supported upstream providers for models are:
 
 For Sourcegraph Enterprise customers, model availability depends on your Sourcegraph Enterprise subscription - reach out your account manager for more details.
 
-Refer to [Cody documentation](../index.md) to learn more about Cody configuration.
+Refer to [Cody documentation](../overview/index.md) to learn more about Cody configuration.
 
 > WARNING: When using OpenAI models for completions, only chat completions will work - code completions are currently unsupported.
 
@@ -62,7 +62,7 @@ Refer to [Cody documentation](../index.md) to learn more about Cody configuratio
 Rate limits, quotas, and model availability is tied to one of:
 
 - your Sourcegraph Enterprise product subscription, for Sourcegraph Enterprise instances
-- your Sourcegraph.com account, for [Sourcegraph App users](../../app/index.md)
+- your Sourcegraph.com account, for [Sourcegraph App users](../overview/app/index.md)
 
 All successful requests to Cody Gateway will count towards your rate limits.
 Unsuccesful requests are not counted as usage.

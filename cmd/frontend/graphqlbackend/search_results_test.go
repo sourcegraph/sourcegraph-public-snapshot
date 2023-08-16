@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -38,7 +39,7 @@ func TestSearchResults(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 
 	getResults := func(t *testing.T, query, version string) []string {
 		r, err := newSchemaResolver(db, gitserver.NewClient(db)).Search(ctx, &SearchArgs{Query: query, Version: version})
@@ -87,7 +88,7 @@ func TestSearchResults(t *testing.T) {
 		settings.MockCurrentUserFinal = &schema.Settings{}
 		defer func() { settings.MockCurrentUserFinal = nil }()
 
-		repos := database.NewMockRepoStore()
+		repos := dbmocks.NewMockRepoStore()
 		repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
 			require.Equal(t, []string{"r", "p"}, opt.IncludePatterns)
 			return []types.MinimalRepo{{ID: 1, Name: "repo"}}, nil
@@ -240,7 +241,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 	var expectedDynamicFilterStrs map[string]int
 	for _, test := range tests {
 		t.Run(test.descr, func(t *testing.T) {
-			actualDynamicFilters := (&SearchResultsResolver{db: database.NewMockDB(), Matches: test.searchResults}).DynamicFilters(context.Background())
+			actualDynamicFilters := (&SearchResultsResolver{db: dbmocks.NewMockDB(), Matches: test.searchResults}).DynamicFilters(context.Background())
 			actualDynamicFilterStrs := make(map[string]int)
 
 			for _, filter := range actualDynamicFilters {
@@ -279,9 +280,9 @@ func TestSearchResultsHydration(t *testing.T) {
 		Fork:         false,
 	}
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(hydratedRepo, nil)
 	repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if opt.OnlyPrivate {
@@ -432,7 +433,7 @@ func TestSearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sr := &SearchResultsResolver{
-				db:          database.NewMockDB(),
+				db:          dbmocks.NewMockDB(),
 				Stats:       tt.fields.searchResultsCommon,
 				Matches:     tt.fields.results,
 				SearchAlert: tt.fields.alert,
@@ -505,7 +506,7 @@ func TestCompareSearchResults(t *testing.T) {
 }
 
 func TestEvaluateAnd(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 
 	tests := []struct {
 		name         string
@@ -542,7 +543,7 @@ func TestEvaluateAnd(t *testing.T) {
 
 			ctx := context.Background()
 
-			repos := database.NewMockRepoStore()
+			repos := dbmocks.NewMockRepoStore()
 			repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
 				if len(opt.IncludePatterns) > 0 || len(opt.ExcludePattern) > 0 {
 					return nil, nil
@@ -652,18 +653,18 @@ func TestSubRepoFiltering(t *testing.T) {
 				authz.DefaultSubRepoPermsChecker = tt.checker()
 			}
 
-			repos := database.NewMockRepoStore()
+			repos := dbmocks.NewMockRepoStore()
 			repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
 			repos.CountFunc.SetDefaultReturn(0, nil)
 
-			gss := database.NewMockGlobalStateStore()
+			gss := dbmocks.NewMockGlobalStateStore()
 			gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
 
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.GlobalStateFunc.SetDefaultReturn(gss)
 			db.ReposFunc.SetDefaultReturn(repos)
 			db.EventLogsFunc.SetDefaultHook(func() database.EventLogStore {
-				return database.NewMockEventLogStore()
+				return dbmocks.NewMockEventLogStore()
 			})
 
 			literalPatternType := "literal"

@@ -440,7 +440,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                     )}
                     <ul className="list-group list-group-flush mt-4">
                         {(connection?.nodes || []).map(node => (
-                            <RepositoryNode key={node.id} node={node} />
+                            <RepositoryNode key={node.id} node={node} refetchAllRepos={refetch} />
                         ))}
                     </ul>
                     <PageSwitcher

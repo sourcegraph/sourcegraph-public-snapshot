@@ -24,7 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -150,7 +150,7 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.label, func(t *testing.T) {
 			repo := MakeGitRepository(t, append(cmds, tc.extraGitCommands...)...)
-			c := NewClient(database.NewMockDB())
+			c := NewClient(dbmocks.NewMockDB())
 			commits, err := c.Commits(ctx, nil, repo, CommitsOptions{})
 			if err != nil {
 				t.Fatalf("err fetching commits: %s", err)
@@ -204,7 +204,7 @@ func TestDiff(t *testing.T) {
 			".foo",
 		} {
 			t.Run("invalid base: "+input, func(t *testing.T) {
-				i, err := NewClient(database.NewMockDB()).Diff(ctx, nil, DiffOptions{Base: input})
+				i, err := NewClient(dbmocks.NewMockDB()).Diff(ctx, nil, DiffOptions{Base: input})
 				if i != nil {
 					t.Errorf("unexpected non-nil iterator: %+v", i)
 				}
@@ -455,7 +455,7 @@ func TestRepository_BlameFile(t *testing.T) {
 		},
 	}
 
-	client := NewClient(database.NewMockDB())
+	client := NewClient(dbmocks.NewMockDB())
 	for label, test := range tests {
 		newestCommitID, err := client.ResolveRevision(ctx, test.repo, string(test.opt.NewestCommit), ResolveRevisionOptions{})
 		if err != nil {
@@ -497,7 +497,7 @@ func runBlameFileTest(ctx context.Context, t *testing.T, repo api.RepoName, path
 	checker authz.SubRepoPermissionChecker, label string, wantHunks []*Hunk,
 ) {
 	t.Helper()
-	hunks, err := NewClient(database.NewMockDB()).BlameFile(ctx, checker, repo, path, opt)
+	hunks, err := NewClient(dbmocks.NewMockDB()).BlameFile(ctx, checker, repo, path, opt)
 	if err != nil {
 		t.Errorf("%s: BlameFile(%s, %+v): %s", label, path, opt, err)
 		return
@@ -542,7 +542,7 @@ func TestRepository_ResolveBranch(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := NewClient(database.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
+		commitID, err := NewClient(dbmocks.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -574,7 +574,7 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := NewClient(database.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
+		commitID, err := NewClient(dbmocks.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
 		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -607,7 +607,7 @@ func TestRepository_ResolveTag(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := NewClient(database.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
+		commitID, err := NewClient(dbmocks.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -639,7 +639,7 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := NewClient(database.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
+		commitID, err := NewClient(dbmocks.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
 		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -654,7 +654,7 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 func TestLsFiles(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
-	client := NewClient(database.NewMockDB())
+	client := NewClient(dbmocks.NewMockDB())
 	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit string) ([]string, error) {
 		return client.LsFiles(ctx, checker, repo, api.CommitID(commit))
 	})
@@ -797,7 +797,7 @@ func TestCleanDirectoriesForLsTree(t *testing.T) {
 func TestListDirectoryChildren(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
-	client := NewClient(database.NewMockDB())
+	client := NewClient(dbmocks.NewMockDB())
 	gitCommands := []string{
 		"mkdir -p dir{1..3}/sub{1..3}",
 		"touch dir1/sub1/file",
@@ -884,7 +884,7 @@ func TestListTags(t *testing.T) {
 		{Name: "t3", CommitID: "afeafc4a918c144329807df307e68899e6b65018", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 	}
 
-	client := NewClient(database.NewMockDB())
+	client := NewClient(dbmocks.NewMockDB())
 	tags, err := client.ListTags(context.Background(), repo)
 	require.Nil(t, err)
 
@@ -945,7 +945,7 @@ func TestMerger_MergeBase(t *testing.T) {
 	defer ResetClientMocks()
 
 	ctx := context.Background()
-	client := NewClient(database.NewMockDB())
+	client := NewClient(dbmocks.NewMockDB())
 
 	// TODO(sqs): implement for hg
 	// TODO(sqs): make a more complex test case
@@ -1032,7 +1032,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	dir := InitGitRepository(t, gitCommands...)
 	repo := api.RepoName(filepath.Base(dir))
 
-	client := NewClient(database.NewMockDB())
+	client := NewClient(dbmocks.NewMockDB())
 
 	commitID := api.CommitID(ComputeCommitHash(dir, true))
 
@@ -1118,7 +1118,7 @@ func TestStat(t *testing.T) {
 
 	dir := InitGitRepository(t, gitCommands...)
 	repo := api.RepoName(filepath.Base(dir))
-	client := NewClient(database.NewMockDB())
+	client := NewClient(dbmocks.NewMockDB())
 
 	commitID := api.CommitID(ComputeCommitHash(dir, true))
 
@@ -1198,7 +1198,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		revisionNotFoundError bool
 	}
 
-	client := NewClient(database.NewMockDB())
+	client := NewClient(dbmocks.NewMockDB())
 	runGetCommitTests := func(checker authz.SubRepoPermissionChecker, tests map[string]testCase) {
 		for label, test := range tests {
 			t.Run(label, func(t *testing.T) {
@@ -1367,7 +1367,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 		},
 	}
 
-	client := NewClient(database.NewMockDB())
+	client := NewClient(dbmocks.NewMockDB())
 	t.Run("basic", func(t *testing.T) {
 		for _, tc := range testCases {
 			t.Run(tc.label, func(t *testing.T) {
@@ -1446,7 +1446,7 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 			want: "2007-01-02T15:04:05Z",
 		},
 	}
-	client := NewClient(database.NewMockDB())
+	client := NewClient(dbmocks.NewMockDB())
 	t.Run("basic", func(t *testing.T) {
 		for _, tc := range testCases {
 			gitCommands := make([]string, len(tc.commitDates))
@@ -1526,7 +1526,7 @@ func TestCommitExists(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-	client := NewClient(database.NewMockDB())
+	client := NewClient(dbmocks.NewMockDB())
 	testCommitExists := func(label string, gitCommands []string, commitID, nonExistentCommitID api.CommitID, checker authz.SubRepoPermissionChecker) {
 		t.Run(label, func(t *testing.T) {
 			repo := MakeGitRepository(t, gitCommands...)
@@ -1603,7 +1603,7 @@ func TestRepository_Commits(t *testing.T) {
 			wantTotal:   2,
 		},
 	}
-	client := NewClient(database.NewMockDB())
+	client := NewClient(dbmocks.NewMockDB())
 	runCommitsTests := func(checker authz.SubRepoPermissionChecker) {
 		for label, test := range tests {
 			t.Run(label, func(t *testing.T) {
@@ -1695,7 +1695,7 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
 			checker := getTestSubRepoPermsChecker(test.noAccessPaths...)
-			commits, err := NewClient(database.NewMockDB()).Commits(ctx, checker, repo, test.opt)
+			commits, err := NewClient(dbmocks.NewMockDB()).Commits(ctx, checker, repo, test.opt)
 			if err != nil {
 				t.Errorf("%s: Commits(): %s", label, err)
 				return
@@ -1787,7 +1787,7 @@ func TestCommits_SubRepoPerms_ReturnNCommits(t *testing.T) {
 		},
 	}
 
-	client := NewClient(database.NewMockDB())
+	client := NewClient(dbmocks.NewMockDB())
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
 			checker := getTestSubRepoPermsChecker(test.noAccessPaths...)
@@ -1884,7 +1884,7 @@ func TestRepository_Commits_options(t *testing.T) {
 			repo := MakeGitRepository(t)
 			before := ""
 			after := time.Date(2022, 11, 11, 12, 10, 0, 4, time.UTC).Format(time.RFC3339)
-			_, err := NewClient(database.NewMockDB()).Commits(ctx, checker, repo, CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after, Before: before})
+			_, err := NewClient(dbmocks.NewMockDB()).Commits(ctx, checker, repo, CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after, Before: before})
 			if err == nil {
 				t.Error("expected error, got nil")
 			}
@@ -2179,7 +2179,7 @@ func TestFilterRefDescriptions(t *testing.T) { // KEEP
 	}
 
 	checker := getTestSubRepoPermsChecker("file3")
-	client := NewClient(database.NewMockDB()).(*clientImplementor)
+	client := NewClient(dbmocks.NewMockDB()).(*clientImplementor)
 	filtered := client.filterRefDescriptions(ctx, repo, refDescriptions, checker)
 	expectedRefDescriptions := map[string][]gitdomain.RefDescription{
 		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
@@ -2197,7 +2197,7 @@ func TestRefDescriptions(t *testing.T) { // KEEP
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-	client := NewClient(database.NewMockDB())
+	client := NewClient(dbmocks.NewMockDB())
 	gitCommands := append(getGitCommandsWithFiles("file1", "file2"), "git checkout -b my-other-branch")
 	gitCommands = append(gitCommands, getGitCommandsWithFiles("file1-b2", "file2-b2")...)
 	gitCommands = append(gitCommands, "git checkout -b my-branch-no-access")
@@ -2245,7 +2245,7 @@ func TestCommitsUniqueToBranch(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-	client := NewClient(database.NewMockDB())
+	client := NewClient(dbmocks.NewMockDB())
 	gitCommands := append([]string{"git checkout -b my-branch"}, getGitCommandsWithFiles("file1", "file2")...)
 	gitCommands = append(gitCommands, getGitCommandsWithFiles("file3", "file-with-no-access")...)
 	repo := MakeGitRepository(t, gitCommands...)
@@ -2289,7 +2289,7 @@ func TestCommitDate(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-	client := NewClient(database.NewMockDB())
+	client := NewClient(dbmocks.NewMockDB())
 	gitCommands := getGitCommandsWithFiles("file1", "file2")
 	repo := MakeGitRepository(t, gitCommands...)
 
@@ -2323,7 +2323,7 @@ func TestCommitDate(t *testing.T) {
 
 func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantCommits []*gitdomain.Commit, t *testing.T) {
 	t.Helper()
-	client := NewClient(database.NewMockDB()).(*clientImplementor)
+	client := NewClient(dbmocks.NewMockDB()).(*clientImplementor)
 	commits, err := client.Commits(ctx, checker, repo, opt)
 	if err != nil {
 		t.Errorf("%s: Commits(): %s", label, err)
@@ -2457,7 +2457,7 @@ func TestArchiveReaderForRepoWithSubRepoPermissions(t *testing.T) {
 		Treeish:   commitID,
 		Pathspecs: []gitdomain.Pathspec{"."},
 	}
-	client := NewClient(database.NewMockDB())
+	client := NewClient(dbmocks.NewMockDB())
 	if _, err := client.ArchiveReader(context.Background(), checker, repo.Name, opts); err == nil {
 		t.Error("Error should not be null because ArchiveReader is invoked for a repo with sub-repo permissions")
 	}
@@ -2492,7 +2492,7 @@ func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
 		Treeish:   commitID,
 		Pathspecs: []gitdomain.Pathspec{"."},
 	}
-	client := NewClient(database.NewMockDB())
+	client := NewClient(dbmocks.NewMockDB())
 	readCloser, err := client.ArchiveReader(context.Background(), checker, repo.Name, opts)
 	if err != nil {
 		t.Error("Error should not be thrown because ArchiveReader is invoked for a repo without sub-repo permissions")
@@ -2565,7 +2565,7 @@ func TestRead(t *testing.T) {
 		},
 	}
 
-	client := NewClient(database.NewMockDB())
+	client := NewClient(dbmocks.NewMockDB())
 	ClientMocks.LocalGitserver = true
 	t.Cleanup(func() {
 		ResetClientMocks()
@@ -2663,7 +2663,7 @@ func TestRead(t *testing.T) {
 func runNewFileReaderTest(ctx context.Context, t *testing.T, repo api.RepoName, commitID api.CommitID, file string,
 	checker authz.SubRepoPermissionChecker, checkFn func(*testing.T, error, []byte)) {
 	t.Helper()
-	rc, err := NewClient(database.NewMockDB()).NewFileReader(ctx, checker, repo, commitID, file)
+	rc, err := NewClient(dbmocks.NewMockDB()).NewFileReader(ctx, checker, repo, commitID, file)
 	if err != nil {
 		checkFn(t, err, nil)
 		return
@@ -2729,7 +2729,7 @@ func TestRepository_Branches_MergedInto(t *testing.T) {
 	repo := MakeGitRepository(t, gitCommands...)
 	wantBranches := gitBranches
 	for branch, mergedInto := range wantBranches {
-		branches, err := NewClient(database.NewMockDB()).ListBranches(context.Background(), repo, BranchesOptions{MergedInto: branch})
+		branches, err := NewClient(dbmocks.NewMockDB()).ListBranches(context.Background(), repo, BranchesOptions{MergedInto: branch})
 		require.Nil(t, err)
 		if diff := cmp.Diff(mergedInto, branches); diff != "" {
 			t.Fatalf("branch mismatch (-want +got):\n%s", diff)
@@ -2760,7 +2760,7 @@ func TestRepository_Branches_ContainsCommit(t *testing.T) {
 	repo := MakeGitRepository(t, gitCommands...)
 	commitToWantBranches := gitWantBranches
 	for commit, wantBranches := range commitToWantBranches {
-		branches, err := NewClient(database.NewMockDB()).ListBranches(context.Background(), repo, BranchesOptions{ContainsCommit: commit})
+		branches, err := NewClient(dbmocks.NewMockDB()).ListBranches(context.Background(), repo, BranchesOptions{ContainsCommit: commit})
 		require.Nil(t, err)
 
 		sort.Sort(gitdomain.Branches(branches))
@@ -2842,7 +2842,7 @@ func testBranches(t *testing.T, gitCommands []string, wantBranches []*gitdomain.
 	t.Helper()
 
 	repo := MakeGitRepository(t, gitCommands...)
-	gotBranches, err := NewClient(database.NewMockDB()).ListBranches(context.Background(), repo, options)
+	gotBranches, err := NewClient(dbmocks.NewMockDB()).ListBranches(context.Background(), repo, options)
 	require.Nil(t, err)
 
 	sort.Sort(gitdomain.Branches(wantBranches))
@@ -3272,7 +3272,7 @@ func Test_CommitLog(t *testing.T) {
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
 			repo := MakeGitRepository(t, test.extraGitCommands...)
-			logResults, err := NewClient(database.NewMockDB()).CommitLog(context.Background(), repo, time.Time{})
+			logResults, err := NewClient(dbmocks.NewMockDB()).CommitLog(context.Background(), repo, time.Time{})
 			if err != nil {
 				require.ErrorContains(t, err, test.wantErr)
 			}

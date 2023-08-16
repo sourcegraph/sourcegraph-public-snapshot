@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, FC } from 'react'
 
 import type { ErrorLike } from '@sourcegraph/common'
 import { Button, Link, H3 } from '@sourcegraph/wildcard'
@@ -45,43 +45,6 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const { icon: AccountIcon } = account
 
-    let accountConnection: JSX.Element | string
-    switch (authProvider.serviceType) {
-        case 'openidconnect':
-        case 'saml':
-        case 'gerrit':
-            accountConnection = account.external?.displayName || 'Not connected'
-        case 'azuredevops':
-            accountConnection = (
-                <>
-                    {account.external?.displayName ? (
-                        <>
-                            {account.external.displayName} (@{account.external?.login})
-                        </>
-                    ) : (
-                        'Not connected'
-                    )}
-                </>
-            )
-            break
-        default:
-            accountConnection = (
-                <>
-                    {account.external?.url ? (
-                        <>
-                            {account.external.displayName} (
-                            <Link to={account.external.url} target="_blank" rel="noopener noreferrer">
-                                @{account.external.login}
-                            </Link>
-                            )
-                        </>
-                    ) : (
-                        'Not connected'
-                    )}
-                </>
-            )
-    }
-
     return (
         <div className="d-flex align-items-start">
             {account.external && (
@@ -111,7 +74,9 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
             </div>
             <div className="flex-1 flex-column">
                 <H3 className="m-0">{authProvider.displayName}</H3>
-                <div className="text-muted">{accountConnection}</div>
+                <div className="text-muted">
+                    <ExternalAccountConnectionDetails account={account} serviceType={authProvider.serviceType} />
+                </div>
             </div>
             <div className="align-self-center">
                 {account.external ? (
@@ -134,4 +99,49 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
             </div>
         </div>
     )
+}
+
+interface ExternalAccountConnectionDetailsProps {
+    account: NormalizedExternalAccount
+    serviceType: AuthProvider['serviceType']
+}
+
+export const ExternalAccountConnectionDetails: FC<ExternalAccountConnectionDetailsProps> = ({
+    account,
+    serviceType,
+}) => {
+    switch (serviceType) {
+        case 'openidconnect':
+        case 'saml':
+        case 'gerrit':
+            return <span>{account.external?.displayName || 'Not connected'}</span>
+        case 'azuredevops':
+            return (
+                <>
+                    {account.external?.displayName ? (
+                        <>
+                            {account.external.displayName} (@{account.external?.login})
+                        </>
+                    ) : (
+                        'Not connected'
+                    )}
+                </>
+            )
+        default:
+            return (
+                <>
+                    {account.external?.url ? (
+                        <>
+                            {account.external.displayName} (
+                            <Link to={account.external.url} target="_blank" rel="noopener noreferrer">
+                                @{account.external.login}
+                            </Link>
+                            )
+                        </>
+                    ) : (
+                        'Not connected'
+                    )}
+                </>
+            )
+    }
 }
