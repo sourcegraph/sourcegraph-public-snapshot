@@ -10613,6 +10613,9 @@ extend type Query {
     codeHosts(first: Int = 50, after: String, search: String): CodeHostConnection!
 }
 
+"""
+A list of code hosts.
+"""
 type CodeHostConnection {
     """
     Only when this flag is true, the connection can be trusted to be complete.
@@ -10620,25 +10623,62 @@ type CodeHostConnection {
     to be complete.
     """
     isMigrationDone: Boolean!
+
+    """
+    A list of code hosts.
+    """
     nodes: [CodeHost!]!
+
+    """
+    Pagination information.
+    """
     pageInfo: PageInfo!
+
+    """
+    The total number of records in this result set.
+    """
     totalCount: Int!
 }
 
+"""
+A specific code host, like github.com.
+"""
 type CodeHost implements Node {
-    id: ID!
-    kind: ExternalServiceKind!
-    url: String!
-    apiRateLimitQuota: Int
     """
-    Defined in seconds.
+    The id of the code host.
+    """
+    id: ID!
+
+    """
+    The type of code host, e.g. GITHUB.
+    """
+    kind: ExternalServiceKind!
+
+    """
+    The url for the code host, e.g. github.com.
+    """
+    url: String!
+
+    """
+    A amount of API requests Sourcegraph can send to the code host.
+    """
+    apiRateLimitQuota: Int
+
+    """
+    How often API rate limits get reset. Defined in seconds.
     """
     apiRateLimitIntervalSeconds: Int
-    gitRateLimitQuota: Int
+
     """
-    Defined in seconds.
+    A amount of git requests Sourcegraph can send to the code host.
+    """
+    gitRateLimitQuota: Int
+
+    """
+    How often git rate limits get reset. Defined in seconds.
     """
     gitRateLimitIntervalSeconds: Int
+
     """
     All external services that refer to this code host.
     """
