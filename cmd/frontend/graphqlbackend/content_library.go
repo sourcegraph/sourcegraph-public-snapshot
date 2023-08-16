@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/sqlf"
@@ -40,6 +41,9 @@ func (o *onboardingTourContentResolver) Current(ctx context.Context) (string, er
 		&id,
 		&val,
 	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", nil
+		}
 		return "", errors.Wrap(err, "Current")
 	}
 
