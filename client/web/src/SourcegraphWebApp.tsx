@@ -89,8 +89,6 @@ const WILDCARD_THEME: WildcardTheme = {
     isBranded: true,
 }
 
-const suspenseCache = new SuspenseCache()
-
 /**
  * The synchronous and static value that creates the `platformContext.settings`
  * observable that sends the API request to the server to get `viewerSettings`.
@@ -279,7 +277,7 @@ export const SourcegraphWebApp: FC<SourcegraphWebAppProps> = props => {
             components={[
                 // `ComponentsComposer` provides children via `React.cloneElement`.
                 /* eslint-disable react/no-children-prop, react/jsx-key */
-                <ApolloProvider client={graphqlClient} children={undefined} suspenseCache={suspenseCache} />,
+                <ApolloProvider client={graphqlClient} children={undefined} />,
                 <WildcardThemeContext.Provider value={WILDCARD_THEME} />,
                 <SettingsProvider settingsCascade={settingsCascade} />,
                 <ErrorBoundary location={null} />,

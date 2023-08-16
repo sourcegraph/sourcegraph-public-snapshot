@@ -439,8 +439,8 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
             {isSetupChecklistEnabled && data && (
                 <Tabs defaultIndex={tabIndex} onChange={setTabIndex} size="medium">
                     <TabList>
-                        <Tab>SMTP</Tab>
-                        <Tab>JSON Editor</Tab>
+                        <Tab>Basic</Tab>
+                        <Tab>JSON</Tab>
                     </TabList>
                     <TabPanels>
                         <TabPanel>

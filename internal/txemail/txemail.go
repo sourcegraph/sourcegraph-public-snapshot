@@ -75,7 +75,6 @@ func CreateSMTPClient(config schema.SiteConfiguration) (*smtp.Client, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "new SMTP client")
 	}
-	defer func() { _ = client.Close() }()
 
 	// NOTE: Some services (e.g. Google SMTP relay) require to echo desired hostname,
 	// our current email dependency "github.com/jordan-wright/email" has no option
@@ -189,6 +188,7 @@ func Send(ctx context.Context, source string, message Message) (err error) {
 	if err != nil {
 		return err
 	}
+	defer func() { _ = client.Close() }()
 
 	err = client.Mail(config.EmailAddress)
 	if err != nil {

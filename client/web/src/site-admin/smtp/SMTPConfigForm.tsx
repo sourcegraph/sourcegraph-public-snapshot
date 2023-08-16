@@ -1,10 +1,25 @@
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { ApolloError } from '@apollo/client'
+import { mdiLink } from '@mdi/js'
 import { applyEdits, modify, parse, ParseError } from 'jsonc-parser'
 
 import { SiteConfiguration, SMTPServerConfig } from '@sourcegraph/shared/src/schema/site.schema'
-import { Button, Checkbox, Form, H3, Input, Label, Link, Alert, Select, Text, Container } from '@sourcegraph/wildcard'
+import {
+    AnchorLink,
+    Button,
+    Checkbox,
+    Form,
+    H3,
+    Input,
+    Label,
+    Link,
+    Alert,
+    Select,
+    Text,
+    Container,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { LoaderButton } from '../../components/LoaderButton'
@@ -166,7 +181,12 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
 
     return (
         <div className={className}>
-            <H3>SMTP Configuration</H3>
+            <H3 id="smtp">
+                SMTP Configuration{' '}
+                <AnchorLink to="#smtp">
+                    <Icon aria-label="link icon" svgPath={mdiLink} />
+                </AnchorLink>
+            </H3>
             <Text className="mt-2">
                 Sourcegraph uses an SMTP server of your choosing to send emails.{' '}
                 <Link to="/help/admin/config/email" target="_blank">

@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"net/smtp"
 	"strconv"
 	"strings"
 	"time"
@@ -27,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/settings"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -127,9 +129,6 @@ func init() {
 		return problems
 	})
 
-	// Warn if email sending is not configured.
-	AlertFuncs = append(AlertFuncs, emailSendingNotConfiguredAlert)
-
 	if !disableSecurity {
 		// Warn about Sourcegraph being out of date.
 		AlertFuncs = append(AlertFuncs, outOfDateAlert)
@@ -145,6 +144,9 @@ func init() {
 	AlertFuncs = append(AlertFuncs, freePlanAlert)
 
 	AlertFuncs = append(AlertFuncs, userCountExceededAlert)
+
+	// handle alerts for SMTP configuration problems
+	AlertFuncs = append(AlertFuncs, smtpConfigAlert(txemail.CreateSMTPClient))
 
 	// Notify admins if critical alerts are firing, if Prometheus is configured.
 	prom, err := srcprometheus.NewClient(srcprometheus.PrometheusURL)
@@ -315,6 +317,60 @@ func userCountExceededAlert(args AlertFuncArgs) []*Alert {
 	return nil
 }
 
+func smtpConfigAlert(createClient func(schema.SiteConfiguration) (*smtp.Client, error)) func(args AlertFuncArgs) []*Alert {
+	return func(args AlertFuncArgs) []*Alert {
+		// We only show this alert to site admins.
+		if !args.IsSiteAdmin || deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsApp() {
+			return nil
+		}
+
+		cfg := conf.SiteConfig()
+		hasSMTP := cfg.EmailSmtp != nil && cfg.EmailSmtp.Host != ""
+
+		alerts := []*Alert{}
+
+		if !hasSMTP || cfg.EmailAddress == "" {
+			alerts = append(alerts, &Alert{
+				GroupValue:                AlertGroupSMTP,
+				TypeValue:                 AlertTypeWarning,
+				MessageValue:              "SMTP is not configured. Email notifications will not be sent. [Configure SMTP](/site-admin/configuration#smtp) or [see the docs](/help/admin/config/email).",
+				IsDismissibleWithKeyValue: "smtp-config-missing",
+			})
+		}
+
+		hasSMTPAuth := hasSMTP && cfg.EmailSmtp.Authentication != "none"
+		if hasSMTPAuth && (cfg.EmailSmtp.Username == "" || cfg.EmailSmtp.Password == "") {
+			alerts = append(alerts, &Alert{
+				GroupValue:                AlertGroupSMTP,
+				TypeValue:                 AlertTypeError,
+				MessageValue:              fmt.Sprintf("SMTP authentication is misconfigured. SMTP Authentication is set to %s, but username or password is missing. [Configure SMTP](/site-admin/configuration#smtp) or [see the docs](/help/admin/config/email).", cfg.EmailSmtp.Authentication),
+				IsDismissibleWithKeyValue: "smtp-config-auth-error",
+			})
+		}
+		// return early, errors above block the smtp client from being created correctly
+		if len(alerts) > 0 {
+			return alerts
+		}
+
+		client, err := createClient(cfg)
+		if err != nil {
+			return []*Alert{{
+				GroupValue:                AlertGroupSMTP,
+				TypeValue:                 AlertTypeError,
+				MessageValue:              "SMTP server cannot be reached, please check your SMTP configuration. [Configure SMTP](/site-admin/configuration#smtp) or [see the docs](/help/admin/config/email).",
+				IsDismissibleWithKeyValue: "smtp-client-error",
+			}}
+		}
+		defer func() {
+			if client.Text != nil {
+				_ = client.Close()
+			}
+		}()
+
+		return nil
+	}
+}
+
 func storageLimitReachedAlert(args AlertFuncArgs) []*Alert {
 	licenseInfo := hooks.GetLicenseInfo()
 	if licenseInfo == nil {
@@ -387,29 +443,6 @@ func isMinorUpdateAvailable(currentVersion, updateVersion string) bool {
 		return true
 	}
 	return cv.Major() != uv.Major() || cv.Minor() != uv.Minor()
-}
-
-func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
-	if !args.IsSiteAdmin || deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsApp() {
-		return nil
-	}
-	if conf.Get().EmailSmtp == nil || conf.Get().EmailSmtp.Host == "" {
-		return []*Alert{{
-			GroupValue:                AlertGroupSMTP,
-			TypeValue:                 AlertTypeWarning,
-			MessageValue:              "Warning: Sourcegraph cannot send emails! [Configure `email.smtp`](/help/admin/config/email) so that features such as Code Monitors, password resets, and invitations work. [documentation](/help/admin/config/email)",
-			IsDismissibleWithKeyValue: "email-sending",
-		}}
-	}
-	if conf.Get().EmailAddress == "" {
-		return []*Alert{{
-			GroupValue:                AlertGroupSMTP,
-			TypeValue:                 AlertTypeWarning,
-			MessageValue:              "Warning: Sourcegraph cannot send emails! [Configure `email.address`](/help/admin/config/email) so that features such as Code Monitors, password resets, and invitations work. [documentation](/help/admin/config/email)",
-			IsDismissibleWithKeyValue: "email-sending",
-		}}
-	}
-	return nil
 }
 
 func outOfDateAlert(args AlertFuncArgs) []*Alert {
