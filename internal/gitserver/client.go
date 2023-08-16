@@ -456,8 +456,8 @@ type Client interface {
 
 type SystemInfo struct {
 	Address    string
-	FreeSpace  int64
-	TotalSpace int64
+	FreeSpace  uint64
+	TotalSpace uint64
 }
 
 func (c *clientImplementor) SystemInfo(ctx context.Context) ([]SystemInfo, error) {
@@ -468,14 +468,17 @@ func (c *clientImplementor) SystemInfo(ctx context.Context) ([]SystemInfo, error
 		if err != nil {
 			return nil, err
 		}
-		dr, err := client.DiskInfo(ctx, &proto.DiskInfoRequest{})
+		resp, err := client.DiskInfo(ctx, &proto.DiskInfoRequest{})
 		if err != nil {
 			return nil, err
 		}
+		dr := protocol.DiskInfoResponse{}
+		dr.FromProto(resp)
+		fmt.Println(dr.FreeSpace)
 		infos = append(infos, SystemInfo{
-			Address:    address.Address(),
-			FreeSpace:  dr.GetFreeSpace(),
-			TotalSpace: dr.GetTotalSpace(),
+			Address: address.Address(),
+			// FreeSpace:  dr.F(),
+			// TotalSpace: dr.GetTotalSpace(),
 		})
 	}
 	return infos, nil

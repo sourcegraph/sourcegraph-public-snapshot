@@ -260,6 +260,25 @@ type ExecRequest struct {
 	NoTimeout      bool     `json:"noTimeout"`
 }
 
+type DiskInfoResponse struct {
+	FreeSpace  uint64 `json:"free_space"`
+	TotalSpace uint64 `json:"total_space"`
+}
+
+func (di *DiskInfoResponse) ToProto() *proto.DiskInfoResponse {
+	return &proto.DiskInfoResponse{
+		FreeSpace:  di.FreeSpace,
+		TotalSpace: di.TotalSpace,
+	}
+}
+
+func (di *DiskInfoResponse) FromProto(p *proto.DiskInfoResponse) {
+	*di = DiskInfoResponse{
+		FreeSpace:  p.FreeSpace,
+		TotalSpace: p.TotalSpace,
+	}
+}
+
 // BatchLogRequest is a request to execute a `git log` command inside a set of
 // git repositories present on the target shard.
 type BatchLogRequest struct {

@@ -666,8 +666,8 @@ func NewGitserverInfoResolver(info []gitserver.SystemInfo) []*gitserverInfoResol
 
 type gitserverInfoResolver struct {
 	address    string
-	freeSpace  int64
-	totalSpace int64
+	freeSpace  uint64
+	totalSpace uint64
 }
 
 func (g *gitserverInfoResolver) Address() string {
