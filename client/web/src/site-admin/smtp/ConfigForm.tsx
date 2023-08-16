@@ -119,6 +119,9 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
             if (name === 'noVerifyTLS') {
                 newValue.noVerifyTLS = !(evt.target as HTMLInputElement).checked
             }
+            if (name === 'port') {
+                newValue.port = Number(value)
+            }
             setForm(newValue)
         },
         [form, setForm]
