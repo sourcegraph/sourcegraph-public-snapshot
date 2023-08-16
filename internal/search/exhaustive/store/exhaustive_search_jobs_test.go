@@ -18,6 +18,10 @@ import (
 )
 
 func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 

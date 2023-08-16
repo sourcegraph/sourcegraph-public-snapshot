@@ -18,6 +18,10 @@ import (
 )
 
 func TestStore_CreateExhaustiveSearchRepoRevisionJob(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
