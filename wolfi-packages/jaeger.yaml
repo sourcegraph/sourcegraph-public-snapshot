@@ -54,3 +54,4 @@ subpackages:
           mkdir -p "${{targets.subpkgdir}}/usr/local/bin/"
           cp "${{targets.destdir}}/usr/local/bin/jaeger-all-in-one" "${{targets.subpkgdir}}/usr/local/bin/"
 
+# Bump package for testing
