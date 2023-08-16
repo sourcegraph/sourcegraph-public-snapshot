@@ -33,6 +33,10 @@ go_test(
         "exhaustive_search_repo_revision_jobs_test.go",
         "store_test.go",
     ],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         ":store",
         "//internal/api",

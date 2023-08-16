@@ -36,10 +36,6 @@ go_test(
         "exhaustive_search_test.go",
     ],
     embed = [":search"],
-    tags = [
-        # Test requires localhost for database
-        "requires-network",
-    ],
     deps = [
         "//lib/errors",
         "@com_github_sourcegraph_log//logtest",
