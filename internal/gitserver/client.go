@@ -451,23 +451,31 @@ type Client interface {
 	Addrs() []string
 
 	// SystemInfo returns information about the gitserver instances.
-	SystemInfo() ([]SystemInfo, error)
+	SystemInfo(ctx context.Context) ([]SystemInfo, error)
 }
 
 type SystemInfo struct {
 	Address    string
-	FreeSpace  uint64
-	TotalSpace uint64
+	FreeSpace  int64
+	TotalSpace int64
 }
 
-func (c *clientImplementor) SystemInfo() ([]SystemInfo, error) {
-	addresses := c.Addrs()
+func (c *clientImplementor) SystemInfo(ctx context.Context) ([]SystemInfo, error) {
+	addresses := c.clientSource.Addresses()
 	infos := make([]SystemInfo, 0, len(addresses))
 	for _, address := range addresses {
+		client, err := address.GRPCClient()
+		if err != nil {
+			return nil, err
+		}
+		dr, err := client.DiskInfo(ctx, &proto.DiskInfoRequest{})
+		if err != nil {
+			return nil, err
+		}
 		infos = append(infos, SystemInfo{
-			Address:    address,
-			FreeSpace:  uint64(1e9), //example value
-			TotalSpace: uint64(3e4),
+			Address:    address.Address(),
+			FreeSpace:  dr.GetFreeSpace(),
+			TotalSpace: dr.GetTotalSpace(),
 		})
 	}
 	return infos, nil

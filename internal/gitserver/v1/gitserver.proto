@@ -32,10 +32,10 @@ message DiskInfoRequest {}
 // DiskInfoResponse contains the results of the DiskInfo RPC request.
 message DiskInfoResponse {
     // free_space is the amount of space avaialable on a gitserver instance.
-    int64 free_space = 1;
+    uint64 free_space = 1;
 
     // total_space is the total amount of space on a gitserver instance.
-    int64 total_space = 2;
+    uint64 total_space = 2;
 }
 
 // BatchLogRequest is a request to execute a `git log` command inside a set of

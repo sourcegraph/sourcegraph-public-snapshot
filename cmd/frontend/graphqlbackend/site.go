@@ -645,7 +645,7 @@ func (r *siteResolver) GitserverInfo(ctx context.Context) ([]*gitserverInfoResol
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-	info, err := r.gitserverClient.SystemInfo()
+	info, err := r.gitserverClient.SystemInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -666,8 +666,8 @@ func NewGitserverInfoResolver(info []gitserver.SystemInfo) []*gitserverInfoResol
 
 type gitserverInfoResolver struct {
 	address    string
-	freeSpace  uint64
-	totalSpace uint64
+	freeSpace  int64
+	totalSpace int64
 }
 
 func (g *gitserverInfoResolver) Address() string {
