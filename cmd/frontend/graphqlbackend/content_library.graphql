@@ -2,7 +2,7 @@ extend type Query {
     """
     Returns onboarding tour content.
     """
-    onboardingTourContent: OnboardingTourContent!
+    onboardingTourContent: OnboardingTour!
 }
 
 extend type Mutation {
@@ -15,9 +15,24 @@ extend type Mutation {
 """
 Onboarding tour content wrapper object.
 """
+type OnboardingTour {
+    """
+    The current version of the onboarding tour content.
+    """
+    current: OnboardingTourContent
+}
+
+"""
+Content for a specific tour versioned by ID
+"""
 type OnboardingTourContent {
     """
-    The current version of the onboarding tour content in a json string.
+    GraphQL ID of the content tour object.
     """
-    current: String!
+    id: ID!
+
+    """
+    JSON value of the onboarding content.
+    """
+    value: String!
 }

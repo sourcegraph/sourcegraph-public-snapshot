@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
 
 	logger "github.com/sourcegraph/log"
@@ -18,20 +19,20 @@ import (
 var _ ContentLibraryResolver = &contentLibraryResolver{}
 
 type ContentLibraryResolver interface {
-	OnboardingTourContent(ctx context.Context) (OnboardingTourContentResolver, error)
+	OnboardingTourContent(ctx context.Context) (OnboardingTourResolver, error)
 	UpdateOnboardingTourContent(ctx context.Context, args UpdateOnboardingTourArgs) (*EmptyResponse, error)
 }
 
-type OnboardingTourContentResolver interface {
-	Current(ctx context.Context) (string, error)
+type OnboardingTourResolver interface {
+	Current(ctx context.Context) (OnboardingTourContentResolver, error)
 }
 
-type onboardingTourContentResolver struct {
+type onboardingTourResolver struct {
 	db     database.DB
 	logger logger.Logger
 }
 
-func (o *onboardingTourContentResolver) Current(ctx context.Context) (string, error) {
+func (o *onboardingTourResolver) Current(ctx context.Context) (OnboardingTourContentResolver, error) {
 	store := basestore.NewWithHandle(o.db.Handle())
 	row := store.QueryRow(ctx, sqlf.Sprintf("select id, raw_json from user_onboarding_tour order by id desc limit 1;"))
 
@@ -43,12 +44,12 @@ func (o *onboardingTourContentResolver) Current(ctx context.Context) (string, er
 		&val,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", nil
+			return nil, nil
 		}
-		return "", errors.Wrap(err, "Current")
+		return nil, errors.Wrap(err, "Current")
 	}
 
-	return val, nil
+	return &onboardingTourContentResolver{value: val, id: id}, nil
 }
 
 type AddContentEntryArgs struct {
@@ -56,10 +57,22 @@ type AddContentEntryArgs struct {
 	Query       string
 }
 
-type SearchQueryContentResolver interface {
+type OnboardingTourContentResolver interface {
 	ID() graphql.ID
-	Description() string
-	QueryString() string
+	Value() string
+}
+
+type onboardingTourContentResolver struct {
+	id    int
+	value string
+}
+
+func (o *onboardingTourContentResolver) ID() graphql.ID {
+	return relay.MarshalID("onboardingtour", o.id)
+}
+
+func (o *onboardingTourContentResolver) Value() string {
+	return o.value
 }
 
 func NewContentLibraryResolver(db database.DB, logger logger.Logger) ContentLibraryResolver {
@@ -71,8 +84,8 @@ type contentLibraryResolver struct {
 	logger logger.Logger
 }
 
-func (c *contentLibraryResolver) OnboardingTourContent(ctx context.Context) (OnboardingTourContentResolver, error) {
-	return &onboardingTourContentResolver{db: c.db, logger: c.logger}, nil
+func (c *contentLibraryResolver) OnboardingTourContent(ctx context.Context) (OnboardingTourResolver, error) {
+	return &onboardingTourResolver{db: c.db, logger: c.logger}, nil
 }
 
 func (c *contentLibraryResolver) UpdateOnboardingTourContent(ctx context.Context, args UpdateOnboardingTourArgs) (*EmptyResponse, error) {
