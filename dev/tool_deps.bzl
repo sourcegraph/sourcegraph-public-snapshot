@@ -59,19 +59,19 @@ def tool_deps():
 
     # universal-ctags #
     http_file(
-        name = "ctags-darwin-x86_64",
-        url = "https://storage.googleapis.com/universal_ctags/x86_64-darwin/bin/ctags-{0}".format(CTAGS_VERSION),
+        name = "universal-ctags-darwin-x86_64",
+        url = "https://storage.googleapis.com/universal_ctags/x86_64-darwin/bin/universal-ctags-{0}".format(CTAGS_VERSION),
         executable = True,
     )
 
     http_file(
-        name = "ctags-darwin-arm64",
-        url = "https://storage.googleapis.com/universal_ctags/aarch64-darwin/bin/ctags-{0}".format(CTAGS_VERSION),
+        name = "universal-ctags-darwin-arm64",
+        url = "https://storage.googleapis.com/universal_ctags/aarch64-darwin/bin/universal-ctags-{0}".format(CTAGS_VERSION),
         executable = True,
     )
 
     http_file(
-        name = "ctags-linux-amd64",
-        url = "https://storage.googleapis.com/universal_ctags/x86_64-linux/bin/ctags-{0}".format(CTAGS_VERSION),
+        name = "universal-ctags-linux-amd64",
+        url = "https://storage.googleapis.com/universal_ctags/x86_64-linux/bin/universal-ctags-{0}".format(CTAGS_VERSION),
         executable = True,
     )

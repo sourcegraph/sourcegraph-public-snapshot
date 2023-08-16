@@ -19,11 +19,11 @@ sh_binary(
 )
 
 sh_binary(
-    name = "ctags",
+    name = "universal-ctags",
     srcs = select({
-        "@bazel_tools//src/conditions:darwin_x86_64": ["@ctags-darwin-amd64//file:downloaded"],
-        "@bazel_tools//src/conditions:darwin_arm64": ["@ctags-darwin-arm64//file:downloaded"],
-        "@bazel_tools//src/conditions:linux_x86_64": ["@ctags-linux-amd64//file:downloaded"],
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@universal-ctags-darwin-amd64//file:downloaded"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@universal-ctags-darwin-arm64//file:downloaded"],
+        "@bazel_tools//src/conditions:linux_x86_64": ["@universal-ctags-linux-amd64//file:downloaded"],
     }),
     visibility = ["//visibility:public"],
 )
