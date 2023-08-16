@@ -8,7 +8,6 @@ import (
 
 func (s *Server) GetDiskInfo() protocol.DiskInfoResponse {
 	usage := du.NewDiskUsage(s.ReposDir)
-	usage.Available()
 	return protocol.DiskInfoResponse{
 		TotalSpace: usage.Size(),
 		FreeSpace:  usage.Free(),
