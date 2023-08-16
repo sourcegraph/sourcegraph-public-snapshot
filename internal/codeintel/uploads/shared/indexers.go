@@ -12,14 +12,8 @@ type AvailableIndexer struct {
 	Indexer CodeIntelIndexer
 }
 
-type JobsOrHints interface {
-	config.IndexJob | config.IndexJobHint
-	GetIndexerName() string
-	GetRoot() string
-}
-
-func PopulateInferredAvailableIndexers[J JobsOrHints](jobsOrHints []J, blocklist map[string]struct{}, inferredAvailableIndexers map[string]AvailableIndexer) map[string]AvailableIndexer {
-	for _, job := range jobsOrHints {
+func PopulateInferredAvailableIndexers(indexJobs []config.IndexJob, blocklist map[string]struct{}, inferredAvailableIndexers map[string]AvailableIndexer) map[string]AvailableIndexer {
+	for _, job := range indexJobs {
 		indexer := job.GetIndexerName()
 		key := GetKeyForLookup(indexer, job.GetRoot())
 		// Only add them to the inferred jobs map if they're not already in the recent uploads
