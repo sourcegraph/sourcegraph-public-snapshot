@@ -12,6 +12,9 @@ extend type Mutation {
     updateOnboardingTourContent(input: String!): EmptyResponse!
 }
 
+"""
+Onboarding tour content wrapper object.
+"""
 type OnboardingTourContent {
     """
     The current version of the onboarding tour content in a json string.
