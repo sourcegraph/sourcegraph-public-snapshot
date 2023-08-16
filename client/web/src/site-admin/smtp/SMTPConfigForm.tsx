@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { FC, useCallback, useMemo, useState } from 'react'
 
 import { ApolloError } from '@apollo/client'
 import { mdiLink } from '@mdi/js'
@@ -62,7 +62,7 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
         if (!config) {
             return [null, null]
         }
-        let errors: ParseError[] = []
+        const errors: ParseError[] = []
         const siteConfig = parse(config, errors, {
             allowTrailingComma: true,
             disallowComments: false,
@@ -89,11 +89,9 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
         return [result, null]
     }, [config])
 
-    const isValid = useMemo(() => {
-        return (
+    const isValid = useMemo(() => (
             form.email && form.host && form.port && (form.authentication === 'none' || (form.username && form.password))
-        )
-    }, [form])
+        ), [form])
 
     const fieldRequired = useCallback(
         (field: string) => {
