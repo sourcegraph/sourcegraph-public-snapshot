@@ -28,9 +28,9 @@ message Event {
   // Parameters of the event.
   EventParameters parameters = 4;
   // Optional user associated with the event.
-  EventUser user = 5;
+  optional EventUser user = 5;
   // Optional marketing campaign tracking parameters.
-  EventMarketingTracking marketingTracking = 6;
+  optional EventMarketingTracking marketingTracking = 6;
 }
 
 message EventParameters {
@@ -42,7 +42,7 @@ message EventParameters {
   // Additional, arbitrarily-shaped metadata (JSON recommended). By default,
   // this metadata should not be assumed to be unsafe for export from an
   // instance, and should only be exported on an allowlist basis.
-  string additionalMetadata = 3;
+  optional string additionalMetadata = 3;
 }
 
 message EventUser {
