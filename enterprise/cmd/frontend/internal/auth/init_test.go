@@ -118,7 +118,7 @@ func TestRequireLicenseOrSuggestSSOAlerts(t *testing.T) {
 				IsSiteAdmin: test.isSiteAdmin,
 				Ctx:         ctx,
 			})
-			// checkks
+			// checks
 			if len(gotAlerts) != len(test.want) {
 				t.Errorf("expected %+v, got %+v", test.want, gotAlerts)
 				return
