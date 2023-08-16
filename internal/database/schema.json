@@ -11830,7 +11830,7 @@
       "Columns": [
         {
           "Name": "cancel",
-          "Index": 14,
+          "Index": 15,
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
@@ -11843,7 +11843,7 @@
         },
         {
           "Name": "created_at",
-          "Index": 15,
+          "Index": 16,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",
@@ -11856,7 +11856,7 @@
         },
         {
           "Name": "execution_logs",
-          "Index": 12,
+          "Index": 13,
           "TypeName": "json[]",
           "IsNullable": true,
           "Default": "",
@@ -11869,7 +11869,7 @@
         },
         {
           "Name": "failure_message",
-          "Index": 5,
+          "Index": 6,
           "TypeName": "text",
           "IsNullable": true,
           "Default": "",
@@ -11882,7 +11882,7 @@
         },
         {
           "Name": "finished_at",
-          "Index": 7,
+          "Index": 8,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -11908,7 +11908,7 @@
         },
         {
           "Name": "last_heartbeat_at",
-          "Index": 11,
+          "Index": 12,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -11921,7 +11921,7 @@
         },
         {
           "Name": "num_failures",
-          "Index": 10,
+          "Index": 11,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "0",
@@ -11934,7 +11934,7 @@
         },
         {
           "Name": "num_resets",
-          "Index": 9,
+          "Index": 10,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "0",
@@ -11947,7 +11947,7 @@
         },
         {
           "Name": "process_after",
-          "Index": 8,
+          "Index": 9,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -11960,10 +11960,23 @@
         },
         {
           "Name": "queued_at",
-          "Index": 17,
+          "Index": 18,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "ref_spec",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -11986,7 +11999,7 @@
         },
         {
           "Name": "search_job_id",
-          "Index": 4,
+          "Index": 5,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "",
@@ -11999,7 +12012,7 @@
         },
         {
           "Name": "started_at",
-          "Index": 6,
+          "Index": 7,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -12025,7 +12038,7 @@
         },
         {
           "Name": "updated_at",
-          "Index": 16,
+          "Index": 17,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",
@@ -12038,7 +12051,7 @@
         },
         {
           "Name": "worker_hostname",
-          "Index": 13,
+          "Index": 14,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "''::text",

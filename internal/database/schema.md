@@ -1599,6 +1599,7 @@ Referenced by:
  id                | integer                  |           | not null | nextval('exhaustive_search_repo_jobs_id_seq'::regclass)
  state             | text                     |           |          | 'queued'::text
  repo_id           | integer                  |           | not null | 
+ ref_spec          | text                     |           | not null | 
  search_job_id     | integer                  |           | not null | 
  failure_message   | text                     |           |          | 
  started_at        | timestamp with time zone |           |          | 

@@ -2528,6 +2528,7 @@ CREATE TABLE exhaustive_search_repo_jobs (
     id integer NOT NULL,
     state text DEFAULT 'queued'::text,
     repo_id integer NOT NULL,
+    ref_spec text NOT NULL,
     search_job_id integer NOT NULL,
     failure_message text,
     started_at timestamp with time zone,
