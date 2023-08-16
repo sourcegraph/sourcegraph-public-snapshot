@@ -72,7 +72,7 @@ done
 # Show package usage message on branches
 if [[ "$IS_MAIN" != "true" ]]; then
   if [[ -n "$BUILDKITE" ]]; then
-    echo -e "To use this package locally, add the following lines to your base image config:
+    echo -e "To use this package locally, add the following to your base image config under \`wolfi-images/\`:
 \`\`\`
 contents:
   keyring:
