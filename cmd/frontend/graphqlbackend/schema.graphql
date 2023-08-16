@@ -7331,12 +7331,31 @@ type Site implements SettingsSubject {
     """
     codyGatewayRateLimitStatus: [CodyGatewayRateLimitStatus!]
 
+    """
+    Returns information pertaining to all gitserver instances associated with this Sourcegraph instance.
+
+    Site-admin only.
+    """
     gitserverInfo: [GitserverInfo!]!
 }
 
+"""
+GitserverInfo contains information about a gitserver instance.
+"""
 type GitserverInfo {
+    """
+    The address of the Git server instance.
+    """
     address: String!
+
+    """
+    The amount of free space available on the Git server, in bytes.
+    """
     freeSpace: BigInt!
+
+    """
+    The total amount of storage space on the Git server, in bytes.
+    """
     totalSpace: BigInt!
 }
 
