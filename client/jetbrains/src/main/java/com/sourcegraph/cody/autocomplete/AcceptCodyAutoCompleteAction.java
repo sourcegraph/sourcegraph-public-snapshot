@@ -130,6 +130,7 @@ public class AcceptCodyAutoCompleteAction extends EditorAction {
       document.replaceString(
           range.getStartOffset(), range.getEndOffset(), completionItem.insertText);
       caret.moveToOffset(range.getStartOffset() + completionItem.insertText.length());
+      editor.getScrollingModel().scrollToCaret(ScrollType.MAKE_VISIBLE);
     }
   }
 
