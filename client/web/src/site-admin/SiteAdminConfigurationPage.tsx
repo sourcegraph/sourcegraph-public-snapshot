@@ -1,6 +1,6 @@
 import { type FC, useState, useEffect, useCallback } from 'react'
 
-import { useApolloClient } from '@apollo/client'
+import { FetchResult, useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import * as jsonc from 'jsonc-parser'
 import { useSearchParams } from 'react-router-dom'
@@ -45,7 +45,7 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import { RELOAD_SITE, SITE_CONFIG_QUERY, UPDATE_SITE_CONFIG } from './backend'
 import { SiteConfigurationChangeList } from './SiteConfigurationChangeList'
-import { SMTPConfigForm } from './smtp/SMTPConfigForm'
+import { SMTPConfigForm } from './smtp/ConfigForm'
 
 import styles from './SiteAdminConfigurationPage.module.scss'
 
@@ -250,10 +250,10 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
     const [isSetupChecklistEnabled] = useFeatureFlag('setup-checklist', false)
 
     useEffect(() => {
-        if (isSetupChecklistEnabled && Number(params.get('tab')) != tabIndex) {
+        if (isSetupChecklistEnabled && Number(params.get('tab')) !== tabIndex) {
             setSearchParams({ tab: tabIndex.toString() })
         }
-    }, [tabIndex, isSetupChecklistEnabled])
+    }, [tabIndex, isSetupChecklistEnabled, params, setSearchParams])
 
     const { data, loading, error } = useQuery<SiteResult, SiteVariables>(SITE_CONFIG_QUERY, {
         // fetchPolicy: 'cache-and-network',
@@ -271,10 +271,10 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
         refetchQueries: [SITE_CONFIG_QUERY_NAME],
     })
 
-    const reloadSite = useCallback(() => {
+    const reloadSite = useCallback((): Promise<FetchResult<ReloadSiteResult>> => {
         eventLogger.log('SiteReloaded')
         setReloadStartedAt(new Date())
-        reloadSiteConfig()
+        return reloadSiteConfig()
     }, [setReloadStartedAt, reloadSiteConfig])
 
     const onSave = useCallback(

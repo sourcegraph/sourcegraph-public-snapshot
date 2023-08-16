@@ -1,7 +1,9 @@
 import { FC, useCallback, useMemo } from 'react'
 
+import { FetchResult } from '@apollo/client'
+
 import { useMutation } from '@sourcegraph/http-client'
-import { Link, Alert, Text, Button } from '@sourcegraph/wildcard'
+import { Link, Alert, Text, Button, Code } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { LoaderButton } from '../../components/LoaderButton'
@@ -24,19 +26,20 @@ export const SendTestEmailForm: FC<SendTestEmailProps> = ({ authenticatedUser, c
                 signal: controller.signal,
             },
         },
-        onError: err => console.error('Apollo error', err),
     })
     const primaryEmail = useMemo(
         () => authenticatedUser?.emails.find(email => email.isPrimary)?.email,
         [authenticatedUser]
     )
-    const onSendTestEmail = useCallback(() => {
-        sendTestEmail({
-            variables: {
-                to: primaryEmail!,
-            },
-        })
-    }, [sendTestEmail, primaryEmail])
+    const onSendTestEmail = useCallback(
+        (): Promise<FetchResult<SendTestEmailToResult>> =>
+            sendTestEmail({
+                variables: {
+                    to: primaryEmail!,
+                },
+            }),
+        [sendTestEmail, primaryEmail]
+    )
 
     const cancel = useCallback(() => {
         controller.abort()
@@ -53,7 +56,7 @@ export const SendTestEmailForm: FC<SendTestEmailProps> = ({ authenticatedUser, c
             )}
             <Text>
                 Verify currently saved configuration by sending an email to your primary email address (
-                <code>{primaryEmail}</code>) configured on{' '}
+                <Code>{primaryEmail}</Code>) configured on{' '}
                 <Link to={`${authenticatedUser.settingsURL}/emails`}>your Sourcegraph account</Link>.
             </Text>
             <div className="w-100 d-flex justify-content-end">

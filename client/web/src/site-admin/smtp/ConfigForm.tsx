@@ -109,22 +109,22 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
     )
 
     const fieldChanged = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLSelectElement>) => {
-            const { name, value } = e.target
+        (evt: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLSelectElement>) => {
+            const { name, value } = evt.target
 
             const newValue = {
                 ...form,
                 [name]: value,
             }
             if (name === 'noVerifyTLS') {
-                newValue.noVerifyTLS = !(e.target as HTMLInputElement).checked
+                newValue.noVerifyTLS = !(evt.target as HTMLInputElement).checked
             }
             setForm(newValue)
         },
         [form, setForm]
     )
 
-    const applyChanges = useCallback(() => {
+    const applyChanges = useCallback((): Promise<void> => {
         const normalizedConfig = { ...form } as FormData
         if (normalizedConfig.authentication === 'none') {
             delete normalizedConfig.username
@@ -162,8 +162,8 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
             )
         )
 
-        saveConfig(newConfig)
-    }, [form, config, parsedConfig])
+        return saveConfig(newConfig)
+    }, [form, config, saveConfig])
 
     const reset = useCallback(() => {
         setForm({
@@ -173,9 +173,9 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
     }, [parsedConfig])
 
     const handleSubmit = useCallback(
-        (e: React.FormEvent<HTMLFormElement>) => {
-            e.preventDefault()
-            applyChanges()
+        (evt: React.FormEvent<HTMLFormElement>): Promise<void> => {
+            evt.preventDefault()
+            return applyChanges()
         },
         [applyChanges]
     )
