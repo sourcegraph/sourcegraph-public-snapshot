@@ -10,6 +10,7 @@ option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 service GitserverService {
   rpc BatchLog(BatchLogRequest) returns (BatchLogResponse) {}
   rpc CreateCommitFromPatchBinary(stream CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
+  rpc DiskInfo() returns (DiskInfoResponse) {}
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
   rpc GetObject(GetObjectRequest) returns (GetObjectResponse) {}
   rpc IsRepoCloneable(IsRepoCloneableRequest) returns (IsRepoCloneableResponse) {}
@@ -23,6 +24,11 @@ service GitserverService {
   rpc RepoUpdate(RepoUpdateRequest) returns (RepoUpdateResponse) {}
   // TODO: Remove this endpoint after 5.2, it is deprecated.
   rpc ReposStats(ReposStatsRequest) returns (ReposStatsResponse) {}
+}
+
+message DiskInfoResponse {
+    int64 free_space = 1;
+    int64 total_space = 2;
 }
 
 // BatchLogRequest is a request to execute a `git log` command inside a set of
