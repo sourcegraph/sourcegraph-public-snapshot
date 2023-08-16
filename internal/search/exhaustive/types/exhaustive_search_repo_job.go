@@ -3,6 +3,8 @@ package types
 import (
 	"strconv"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // ExhaustiveSearchRepoJob is a job that runs the exhaustive search on a repository.
@@ -12,7 +14,7 @@ type ExhaustiveSearchRepoJob struct {
 
 	ID int64
 
-	RepoID      int64
+	RepoID      api.RepoID
 	SearchJobID int64
 
 	CreatedAt time.Time

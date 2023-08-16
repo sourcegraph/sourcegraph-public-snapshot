@@ -45,7 +45,7 @@ func TestStore_CreateExhaustiveSearchRepoRevisionJob(t *testing.T) {
 
 	repoJobID, err := s.CreateExhaustiveSearchRepoJob(
 		context.Background(),
-		types.ExhaustiveSearchRepoJob{SearchJobID: searchJobID, RepoID: int64(repoID)},
+		types.ExhaustiveSearchRepoJob{SearchJobID: searchJobID, RepoID: repoID},
 	)
 	require.NoError(t, err)
 

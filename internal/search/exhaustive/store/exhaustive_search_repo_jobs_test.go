@@ -52,7 +52,7 @@ func TestStore_CreateExhaustiveSearchRepoJob(t *testing.T) {
 			name: "New job",
 			job: types.ExhaustiveSearchRepoJob{
 				SearchJobID: searchJobID,
-				RepoID:      int64(repoID),
+				RepoID:      repoID,
 			},
 			expectedErr: nil,
 		},
@@ -66,7 +66,7 @@ func TestStore_CreateExhaustiveSearchRepoJob(t *testing.T) {
 		{
 			name: "Missing search job ID",
 			job: types.ExhaustiveSearchRepoJob{
-				RepoID: int64(repoID),
+				RepoID: repoID,
 			},
 			expectedErr: errors.New("missing search job ID"),
 		},
