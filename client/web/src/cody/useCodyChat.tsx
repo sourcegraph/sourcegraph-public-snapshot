@@ -220,6 +220,7 @@ export const useCodyChat = ({
         scope,
         setScopeInternal,
         updateTranscriptInHistory,
+        transcriptHistory,
     ])
 
     const deleteHistoryItem = useCallback(

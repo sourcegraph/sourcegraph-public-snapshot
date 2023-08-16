@@ -104,7 +104,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
 
     const gettingStartedComponentProps = useMemo(
         () => ({ ...scopeSelectorProps, transcript, isCodyChatPage }),
-        [scopeSelectorProps, isCodyChatPage]
+        [scopeSelectorProps, isCodyChatPage, transcript]
     )
 
     if (!loaded) {

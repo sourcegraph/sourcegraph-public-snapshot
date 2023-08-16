@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import { Transcript } from '@sourcegraph/cody-shared/dist/chat/transcript'
+import type { Transcript } from '@sourcegraph/cody-shared/dist/chat/transcript'
 import type { CodyClientScope } from '@sourcegraph/cody-shared/dist/chat/useClient'
 import { useLazyQuery } from '@sourcegraph/http-client'
 import { Text } from '@sourcegraph/wildcard'
@@ -95,7 +95,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
                 setScope({ ...scope, repositories: [...scope.repositories, repoName] })
             }
         },
-        [scope, setScope]
+        [scope, setScope, transcript?.id]
     )
 
     const removeRepository = useCallback(
@@ -103,7 +103,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
             eventLogger.log(EventName.CODY_CHAT_SCOPE_REPO_REMOVED, { chatId: transcript?.id })
             setScope({ ...scope, repositories: scope.repositories.filter(repo => repo !== repoName) })
         },
-        [scope, setScope]
+        [scope, setScope, transcript?.id]
     )
 
     const resetScope = useCallback(async (): Promise<void> => {
@@ -114,7 +114,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
 
         const repositories = await fetchRepositoryNames(10)
         return setScope({ ...scope, repositories, includeInferredRepository: true, includeInferredFile: true })
-    }, [scope, setScope, fetchRepositoryNames, isSourcegraphApp])
+    }, [scope, setScope, fetchRepositoryNames, isSourcegraphApp, transcript?.id])
 
     return (
         <>

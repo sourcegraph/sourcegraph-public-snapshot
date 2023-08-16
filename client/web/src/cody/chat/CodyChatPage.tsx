@@ -119,7 +119,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
 
     useEffect(() => {
         eventLogger.log(EventName.CODY_CHAT_PAGE_VIEWED, { chatId: transcript?.id })
-    }, [])
+    }, [transcript?.id])
 
     const transcriptId = transcript?.id
 
