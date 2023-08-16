@@ -653,7 +653,9 @@ func NewGitserverInfoResolver(info []gitserver.SystemInfo) []*gitserverInfoResol
 	resolvers := make([]*gitserverInfoResolver, len(info))
 	for i, info := range info {
 		resolvers[i] = &gitserverInfoResolver{
-			address: info.Address,
+			address:    info.Address,
+			freeSpace:  info.FreeSpace,
+			totalSpace: info.TotalSpace,
 		}
 	}
 	return resolvers
@@ -661,7 +663,9 @@ func NewGitserverInfoResolver(info []gitserver.SystemInfo) []*gitserverInfoResol
 
 type gitserverInfoResolver struct {
 	address string
-	client  gitserver.Client
+	// client  gitserver.Client
+	freeSpace  uint64
+	totalSpace uint64
 }
 
 func (g *gitserverInfoResolver) Address() string {
@@ -669,9 +673,9 @@ func (g *gitserverInfoResolver) Address() string {
 }
 
 func (g *gitserverInfoResolver) FreeSpace() (BigInt, error) {
-	return BigInt(0), nil
+	return BigInt(g.freeSpace), nil
 }
 
 func (g *gitserverInfoResolver) TotalSpace() (BigInt, error) {
-	return BigInt(0), nil
+	return BigInt(g.totalSpace), nil
 }

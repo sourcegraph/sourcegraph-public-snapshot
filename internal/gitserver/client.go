@@ -464,8 +464,10 @@ func (c *clientImplementor) SystemInfo() ([]SystemInfo, error) {
 	addresses := c.Addrs()
 	infos := make([]SystemInfo, 0, len(addresses))
 	for _, address := range addresses {
+		// c.clientSource.AddrForRepo()
 		infos = append(infos, SystemInfo{
-			Address: address,
+			Address:   address,
+			FreeSpace: uint64(1e9), //example value
 		})
 	}
 	return infos, nil
