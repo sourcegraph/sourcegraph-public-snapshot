@@ -95,9 +95,7 @@ func (c *contentLibraryResolver) UpdateOnboardingTourContent(ctx context.Context
 	}
 
 	store := basestore.NewWithHandle(c.db.Handle())
-
-	uid := actor.FromContext(ctx).UID
-	return &EmptyResponse{}, store.Exec(ctx, sqlf.Sprintf("insert into user_onboarding_tour (raw_json, updated_by) VALUES (%s, %s)", args.Input, uid))
+	return &EmptyResponse{}, store.Exec(ctx, sqlf.Sprintf("insert into user_onboarding_tour (raw_json, updated_by) VALUES (%s, %s)", args.Input, actr.UID))
 }
 
 type UpdateOnboardingTourArgs struct {

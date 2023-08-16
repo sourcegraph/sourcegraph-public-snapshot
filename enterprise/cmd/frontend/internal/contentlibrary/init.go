@@ -22,7 +22,7 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	logger := logger.Scoped("contentlibrary", "asdf")
+	logger := logger.Scoped("contentlibrary", "sourcegraph content library")
 	enterpriseServices.ContentLibraryResolver = graphqlbackend.NewContentLibraryResolver(db, logger)
 	return nil
 }
