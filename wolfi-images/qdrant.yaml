@@ -1,0 +1,18 @@
+include: ./sourcegraph-base.yaml
+
+contents:
+  packages:
+    # Included by existing SG base image
+    - tini
+    - mailcap # TODO: is this actually needed
+
+    - qdrant@sourcegraph
+
+paths:
+  - path: /data
+    type: directory
+    uid: 100
+    gid: 101
+    permissions: 0o755
+
+workdir: /
