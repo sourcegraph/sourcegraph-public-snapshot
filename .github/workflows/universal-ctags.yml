@@ -23,8 +23,7 @@ jobs:
         name: Run `nix build`
         run: |
           nix build .#ctags
-          codesign --force -s - ./result/bin/ctags-*
-
+          sudo codesign --force -s - ./result/bin/universal-ctags-*
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
@@ -47,13 +46,13 @@ jobs:
         name: Run `nix build`
         run: |
           nix build .#ctags-aarch64-darwin
-          codesign --force -s - ./result/bin/ctags-*
+          sudo codesign --force -s - ./result/bin/universal-ctags-*
       - id: 'upload-file'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
           path: './result/bin/'
           destination: 'universal_ctags/aarch64-darwin'
-          glob: 'ctags-*'
+          glob: 'universal-ctags-*'
   x86_64-linux:
     name: Build ctags
     runs-on: ubuntu-latest
