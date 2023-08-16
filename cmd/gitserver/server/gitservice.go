@@ -77,7 +77,7 @@ func (s *Server) gitServiceHandler() *gitservice.Handler {
 		Logger: logger,
 
 		Dir: func(d string) string {
-			return string(s.dir(api.RepoName(d)))
+			return string(repoDirFromName(s.ReposDir, api.RepoName(d)))
 		},
 
 		// Limit rate of stdout from git.

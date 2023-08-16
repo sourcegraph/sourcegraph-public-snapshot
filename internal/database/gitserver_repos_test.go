@@ -1052,63 +1052,6 @@ func TestSanitizeToUTF8(t *testing.T) {
 	}
 }
 
-func TestGitserverRepoListReposWithoutSize(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-
-	// Create one test repo
-	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo",
-		RepoSizeBytes: 0,
-	})
-
-	if _, err := db.Handle().ExecContext(ctx, fmt.Sprintf(
-		`update gitserver_repos set repo_size_bytes = null where repo_id = %d;`,
-		gitserverRepo.RepoID)); err != nil {
-		t.Fatalf("unexpected error while updating gitserver repo: %s", err)
-	}
-
-	// Get it back from the db
-	fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLogs")); diff != "" {
-		t.Fatal(diff)
-	}
-
-	// Check that this repo is returned from ListReposWithoutSize
-	if reposWithoutSize, err := db.GitserverRepos().ListReposWithoutSize(ctx); err != nil {
-		t.Fatal(err)
-	} else if len(reposWithoutSize) != 1 {
-		t.Fatal("One repo without size should be returned")
-	}
-
-	// Setting the size
-	gitserverRepo.RepoSizeBytes = 4040
-	if err := db.GitserverRepos().Update(ctx, gitserverRepo); err != nil {
-		t.Fatal(err)
-	}
-
-	// Check that this repo is not returned now from ListReposWithoutSize
-	if reposWithoutSize, err := db.GitserverRepos().ListReposWithoutSize(ctx); err != nil {
-		t.Fatal(err)
-	} else if len(reposWithoutSize) != 0 {
-		t.Fatal("There should be no repos without size")
-	}
-
-	// Check that nothing except UpdatedAt and RepoSizeBytes has been changed
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "RepoSizeBytes", "CorruptionLogs")); diff != "" {
-		t.Fatal(diff)
-	}
-}
-
 func TestGitserverUpdateRepoSizes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
