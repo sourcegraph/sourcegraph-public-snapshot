@@ -43,10 +43,6 @@ Code navigation helps you quickly explore code, dependencies, and symbols within
 
 </div>
 
-<div>
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/code-intel-overview.png" class="lead-screenshot">
-</div>
-
 <div style="display: block; float: clear;"> </div>
 
 <div class="cta-group">
@@ -66,7 +62,7 @@ Sourcegraph automatically uses precise code navigation whenever available, and s
 Precise code navigation requires language-specific indexes to be generated and uploaded to your Sourcegraph instance. We currently have precise code navigation support for the languages below. See the [indexers page](references/indexers.md) for a detailed breakdown of each indexer's status.
 | Language | Indexer | Status |
 |-|-|-|  
-| Go | [lsif-go](https://sourcegraph.com/github.com/sourcegraph/lsif-go) | 🟢 Generally availabl |
+| Go | [lsif-go](https://sourcegraph.com/github.com/sourcegraph/lsif-go) | 🟢 Generally available |
 | TypeScript, JavaScript | [scip-typescript](https://sourcegraph.com/github.com/sourcegraph/scip-typescript) | 🟢 Generally available |
 | C, C++ | [scip-clang](https://sourcegraph.com/github.com/sourcegraph/scip-clang) | 🟡 Partially available |
 | Java, Kotlin, Scala | [scip-java](https://sourcegraph.com/github.com/sourcegraph/scip-java) | 🟢 Generally available |
