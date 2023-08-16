@@ -64,11 +64,11 @@ replace (
 )
 
 require (
-	cloud.google.com/go/bigquery v1.52.0
-	cloud.google.com/go/kms v1.12.1
+	cloud.google.com/go/bigquery v1.53.0
+	cloud.google.com/go/kms v1.15.0
 	cloud.google.com/go/monitoring v1.15.1
 	cloud.google.com/go/profiler v0.3.1
-	cloud.google.com/go/pubsub v1.32.0
+	cloud.google.com/go/pubsub v1.33.0
 	cloud.google.com/go/secretmanager v1.11.1
 	cloud.google.com/go/storage v1.30.1
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.41.0
@@ -241,16 +241,16 @@ require (
 	go.uber.org/automaxprocs v1.5.2
 	go.uber.org/ratelimit v0.2.0
 	go.uber.org/zap v1.24.0
-	golang.org/x/crypto v0.11.0
-	golang.org/x/net v0.12.0
+	golang.org/x/crypto v0.12.0
+	golang.org/x/net v0.14.0
 	golang.org/x/oauth2 v0.10.0
 	golang.org/x/sync v0.3.0
-	golang.org/x/sys v0.10.0
+	golang.org/x/sys v0.11.0
 	golang.org/x/time v0.3.0
 	golang.org/x/tools v0.10.0
 	gonum.org/v1/gonum v0.13.0
 	google.golang.org/api v0.132.0
-	google.golang.org/genproto v0.0.0-20230717213848-3f92550aa753 // indirect
+	google.golang.org/genproto v0.0.0-20230803162519-f966b187b2e5 // indirect
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v2 v2.4.0
@@ -279,7 +279,7 @@ require (
 	go.opentelemetry.io/collector/config/configtelemetry v0.81.0
 	go.opentelemetry.io/collector/config/configtls v0.81.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.39.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20230717213848-3f92550aa753
+	google.golang.org/genproto/googleapis/api v0.0.0-20230726155614-23370e0ffb3e
 )
 
 require (
@@ -355,13 +355,13 @@ require (
 	go.opentelemetry.io/collector/featuregate v1.0.0-rcv0013 // indirect
 	go.opentelemetry.io/collector/processor v0.81.0 // indirect
 	go.uber.org/goleak v1.2.1 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230717213848-3f92550aa753 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230815205213-6bfd019c3878 // indirect
 )
 
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
-	cloud.google.com/go v0.110.4 // indirect
-	cloud.google.com/go/compute v1.22.0 // indirect
+	cloud.google.com/go v0.110.6 // indirect
+	cloud.google.com/go/compute v1.23.0 // indirect
 	cloud.google.com/go/iam v1.1.1 // indirect
 	code.gitea.io/gitea v1.18.0
 	cuelang.org/go v0.4.3
@@ -571,11 +571,11 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1
 	golang.org/x/mod v0.11.0
-	golang.org/x/term v0.10.0 // indirect
-	golang.org/x/text v0.11.0
+	golang.org/x/term v0.11.0 // indirect
+	golang.org/x/text v0.12.0
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/grpc v1.56.2
+	google.golang.org/grpc v1.57.0
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
