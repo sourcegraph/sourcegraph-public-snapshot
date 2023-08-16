@@ -472,13 +472,12 @@ func (c *clientImplementor) SystemInfo(ctx context.Context) ([]SystemInfo, error
 		if err != nil {
 			return nil, err
 		}
-		dr := protocol.DiskInfoResponse{}
-		dr.FromProto(resp)
-		fmt.Println(dr.FreeSpace)
+		rs := protocol.DiskInfoResponse{}
+		rs.FromProto(resp)
 		infos = append(infos, SystemInfo{
-			Address: address.Address(),
-			// FreeSpace:  dr.F(),
-			// TotalSpace: dr.GetTotalSpace(),
+			Address:    address.Address(),
+			FreeSpace:  rs.FreeSpace,
+			TotalSpace: rs.TotalSpace,
 		})
 	}
 	return infos, nil
