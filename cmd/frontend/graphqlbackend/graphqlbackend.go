@@ -600,7 +600,6 @@ func NewSchema(
 		}
 
 		if contentLibraryResolver := optional.ContentLibraryResolver; contentLibraryResolver != nil {
-			fmt.Println("HEREASDF")
 			EnterpriseResolvers.contentLibraryResolver = contentLibraryResolver
 			resolver.ContentLibraryResolver = contentLibraryResolver
 			schemas = append(schemas, contentLibrary)
