@@ -221,8 +221,6 @@ type clientImplementor struct {
 
 	// clientSource is used to get the corresponding gprc client or address for a given repository
 	clientSource ClientSource
-
-	diskSizer DiskSizer
 }
 
 type RawBatchLogResult struct {

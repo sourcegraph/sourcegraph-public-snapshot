@@ -168,12 +168,15 @@ func (*DiskInfoRequest) Descriptor() ([]byte, []int) {
 	return file_gitserver_proto_rawDescGZIP(), []int{0}
 }
 
+// DiskInfoResponse contains the results of the DiskInfo RPC request.
 type DiskInfoResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	FreeSpace  int64 `protobuf:"varint,1,opt,name=free_space,json=freeSpace,proto3" json:"free_space,omitempty"`
+	// free_space is the amount of space avaialable on a gitserver instance.
+	FreeSpace int64 `protobuf:"varint,1,opt,name=free_space,json=freeSpace,proto3" json:"free_space,omitempty"`
+	// total_space is the total amount of space on a gitserver instance.
 	TotalSpace int64 `protobuf:"varint,2,opt,name=total_space,json=totalSpace,proto3" json:"total_space,omitempty"`
 }
 
