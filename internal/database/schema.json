@@ -23281,7 +23281,7 @@
         {
           "Name": "code_bytes_embedded",
           "Index": 7,
-          "TypeName": "integer",
+          "TypeName": "bigint",
           "IsNullable": false,
           "Default": "0",
           "CharacterMaximumLength": 0,
@@ -23385,7 +23385,7 @@
         {
           "Name": "text_bytes_embedded",
           "Index": 12,
-          "TypeName": "integer",
+          "TypeName": "bigint",
           "IsNullable": false,
           "Default": "0",
           "CharacterMaximumLength": 0,

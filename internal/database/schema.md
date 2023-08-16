@@ -3537,12 +3537,12 @@ Foreign-key constraints:
  code_files_embedded  | integer |           | not null | 0
  code_chunks_embedded | integer |           | not null | 0
  code_files_skipped   | jsonb   |           | not null | '{}'::jsonb
- code_bytes_embedded  | integer |           | not null | 0
+ code_bytes_embedded  | bigint  |           | not null | 0
  text_files_total     | integer |           | not null | 0
  text_files_embedded  | integer |           | not null | 0
  text_chunks_embedded | integer |           | not null | 0
  text_files_skipped   | jsonb   |           | not null | '{}'::jsonb
- text_bytes_embedded  | integer |           | not null | 0
+ text_bytes_embedded  | bigint  |           | not null | 0
  code_chunks_excluded | integer |           | not null | 0
  text_chunks_excluded | integer |           | not null | 0
 Indexes:
