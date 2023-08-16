@@ -11,9 +11,8 @@
 
 This document details how a site administrator can supply a Lua script to customize the way [Sourcegraph detects precise code intelligence indexing jobs from repository contents](../explanations/auto_indexing_inference.md).
 
-By default, Sourcegraph will attempt to infer (or hint) index jobs for the following languages:
+By default, Sourcegraph will attempt to infer index jobs for the following languages:
 
-- `C++`
 - [`Go`](../explanations/auto_indexing_inference.md#go)
 - [`Java`/`Scala`/`Kotlin`](../explanations/auto_indexing_inference.md#java)
 - `Python`
