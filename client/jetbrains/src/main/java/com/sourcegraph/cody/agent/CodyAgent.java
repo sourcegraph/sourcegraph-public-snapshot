@@ -80,6 +80,13 @@ public class CodyAgent implements Disposable {
     return getClient(project).server;
   }
 
+  public static CodyAgentCodebase getCodebase(@NotNull Project project) {
+    if (!isConnected(project)) {
+      return null;
+    }
+    return getClient(project).codebase;
+  }
+
   public void initialize() {
     if (!"true".equals(System.getProperty("cody-agent.enabled", "false"))) {
       logger.info("Cody agent is disabled due to system property '-Dcody-agent.enabled=false'");
@@ -98,7 +105,7 @@ public class CodyAgent implements Disposable {
                               .setName("JetBrains")
                               .setVersion(ConfigUtil.getPluginVersion())
                               .setWorkspaceRootPath(ConfigUtil.getWorkspaceRoot(project))
-                              .setConnectionConfiguration(
+                              .setExtensionConfiguration(
                                   ConfigUtil.getAgentConfiguration(this.project)))
                       .get();
               logger.info("connected to Cody agent " + info.name);
@@ -225,6 +232,7 @@ public class CodyAgent implements Disposable {
             .create();
     client.server = launcher.getRemoteProxy();
     client.documents = new CodyAgentDocuments(client.server);
+    client.codebase = new CodyAgentCodebase(client.server);
     this.listeningToJsonRpc = launcher.startListening();
   }
 

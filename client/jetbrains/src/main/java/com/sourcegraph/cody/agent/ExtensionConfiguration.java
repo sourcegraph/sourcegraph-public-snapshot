@@ -2,7 +2,7 @@ package com.sourcegraph.cody.agent;
 
 import java.util.Map;
 
-public class ConnectionConfiguration {
+public class ExtensionConfiguration {
 
   public String serverEndpoint;
   public String accessToken;
@@ -13,59 +13,65 @@ public class ConnectionConfiguration {
   public boolean autocompleteAdvancedEmbeddings;
   public boolean debug;
   public boolean verboseDebug;
+  public String codebase;
 
-  public ConnectionConfiguration setServerEndpoint(String serverEndpoint) {
+  public ExtensionConfiguration setServerEndpoint(String serverEndpoint) {
     this.serverEndpoint = serverEndpoint;
     return this;
   }
 
-  public ConnectionConfiguration setAccessToken(String accessToken) {
+  public ExtensionConfiguration setAccessToken(String accessToken) {
     this.accessToken = accessToken;
     return this;
   }
 
-  public ConnectionConfiguration setCustomHeaders(Map<String, String> customHeaders) {
+  public ExtensionConfiguration setCustomHeaders(Map<String, String> customHeaders) {
     this.customHeaders = customHeaders;
     return this;
   }
 
-  public ConnectionConfiguration setAutocompleteAdvancedProvider(
+  public ExtensionConfiguration setAutocompleteAdvancedProvider(
       String autocompleteAdvancedProvider) {
     this.autocompleteAdvancedProvider = autocompleteAdvancedProvider;
     return this;
   }
 
-  public ConnectionConfiguration setAutocompleteAdvancedServerEndpoint(
+  public ExtensionConfiguration setAutocompleteAdvancedServerEndpoint(
       String autocompleteAdvancedServerEndpoint) {
     this.autocompleteAdvancedServerEndpoint = autocompleteAdvancedServerEndpoint;
     return this;
   }
 
-  public ConnectionConfiguration setAutocompleteAdvancedAccessToken(
+  public ExtensionConfiguration setAutocompleteAdvancedAccessToken(
       String autocompleteAdvancedAccessToken) {
     this.autocompleteAdvancedAccessToken = autocompleteAdvancedAccessToken;
     return this;
   }
 
-  public ConnectionConfiguration setAutocompleteAdvancedEmbeddings(
+  public ExtensionConfiguration setAutocompleteAdvancedEmbeddings(
       boolean autocompleteAdvancedEmbeddings) {
     this.autocompleteAdvancedEmbeddings = autocompleteAdvancedEmbeddings;
     return this;
   }
 
-  public ConnectionConfiguration setDebug(boolean debug) {
+  public ExtensionConfiguration setDebug(boolean debug) {
     this.debug = debug;
     return this;
   }
 
-  public ConnectionConfiguration setVerboseDebug(boolean verboseDebug) {
+  public ExtensionConfiguration setVerboseDebug(boolean verboseDebug) {
     this.verboseDebug = verboseDebug;
+    return this;
+  }
+
+  public ExtensionConfiguration setCodebase(String codebase) {
+    this.codebase = codebase;
     return this;
   }
 
   @Override
   public String toString() {
-    return "ConnectionConfiguration{"
+    return "ExtensionConfiguration{"
         + "serverEndpoint='"
         + serverEndpoint
         + '\''
@@ -91,6 +97,8 @@ public class ConnectionConfiguration {
         + '\''
         + ", verboseDebug="
         + verboseDebug
+        + ", codebase="
+        + codebase
         + '}';
   }
 }
