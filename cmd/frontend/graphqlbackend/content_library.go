@@ -9,6 +9,7 @@ import (
 
 	logger "github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -75,6 +76,11 @@ func (c *contentLibraryResolver) OnboardingTourContent(ctx context.Context) (Onb
 }
 
 func (c *contentLibraryResolver) UpdateOnboardingTourContent(ctx context.Context, args UpdateOnboardingTourArgs) (*EmptyResponse, error) {
+	actr := actor.FromContext(ctx)
+	if err := auth.CheckUserIsSiteAdmin(ctx, c.db, actr.UID); err != nil {
+		return &EmptyResponse{}, err
+	}
+
 	store := basestore.NewWithHandle(c.db.Handle())
 
 	uid := actor.FromContext(ctx).UID
