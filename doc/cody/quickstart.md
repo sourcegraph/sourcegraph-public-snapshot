@@ -14,35 +14,28 @@ If you haven't yet enabled Cody for your Sourcegraph instance or installed the V
 
 Once you have access to Cody, we recommend:
 
-- Trying the `Generate a unit test` recipe
-- Trying the `Summarize recent code changes` recipe
+- Trying the `Generate Unit Tests` command
 - Asking Cody to pull information from documentation
 - Asking Cody to write context-aware code
 
-## Getting started with the Cody extension and recipes
+## Getting started with the Cody extension and commands
 
-The Cody icon should now appear in the activity bar in VS Code. Clicking the icon will open the Cody side panel. The `Chat` tab can be used to ask Cody questions and paste in snippets of code, and the `Recipes` tab can be used to run premade functions over whatever code you currently have highlighted.
+Once you've installed the Cody extension, the Cody icon should appear in the activity bar. Clicking the icon will open Cody's `Chat` panel. This can be used to ask Cody questions and paste in snippets of code.
+
+You can also run `Commands` with Cody, quick actions that apply to any code you currently have highlighted. Once you've highlighted a snippet of code, you can run a command in 3 ways:
+
+1. Type `/` in the chat bar. Cody will then suggest a list of commands.
+2. Right click -> Cody -> Select a command.
+3. Press the command hotkey (`⌥` + `c` / `alt` + `c`)
 
 ## Generate a unit test
 
-As one recipe example, let's generate a unit test:
+Cody offers a number of commands. One command, `Generate Unit Tests`, quickly writes test code for any snippet that you have highlighted. To use this command:
 
 1. Open a code file in VS Code
-2. Open the `Recipes` tab in the Cody sidebar
-3. Highlight a code snippet in your code that you'd like to test
-4. Click the `Generate a unit test` recipe button OR right click -> `Ask Cody` -> `Ask Cody: Generate Unit Test`
+3. Highlight a code snippet that you'd like to test
+3. Press the command hotkey (`⌥` + `c` / `alt` + `c`), then select `Generate Unit Tests`
 5. Cody will provide a unit test as a code snippet in the sidebar
-
-## Get up-to-date on recent changes to your code (Sourcegraph Enterprise users only)
-
-If you're using Cody with Sourcegraph Enterprise, Cody can utilize Sourcegraph's search and the code graph to understand your own codebase and provide context-aware answers. Using this, Cody can tell you about recent changes to your code and quickly provide a summary.
-
-Imagine you've stepped away from a project for the last week. Let's see what's changed in that time:
-
-1. Open the `Recipes` tab in the Cody sidebar
-2. Click the `Summarize recent changes` recipe button
-3. A dropdown will appear. Click `Last week`
-4. Cody will provide a summary of changes to your codebase that occurred in that time period
 
 ## Ask Cody to pull reference documentation
 
@@ -64,7 +57,7 @@ For example, ask Cody:
 
 - "Write an API call to retrieve user permissions data"
 
-## Try other recipes and Cody chat
+## Try other commands and Cody chat
 
 Cody can do many other things, including:
 
