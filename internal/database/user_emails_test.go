@@ -476,6 +476,7 @@ func TestUserEmails_SetVerified_SetsPrimaryIfNoneExist(t *testing.T) {
 	ctx := context.Background()
 
 	const email = "a@example.com"
+	const email2 = "b@example.com"
 	user, err := db.Users().Create(ctx, NewUser{
 		Email:                 email,
 		Username:              "u2",
@@ -504,6 +505,25 @@ func TestUserEmails_SetVerified_SetsPrimaryIfNoneExist(t *testing.T) {
 	if primary, err := isUserEmailPrimary(ctx, db, user.ID, email); err != nil {
 		t.Fatal(err)
 	} else if want := true; primary != want {
+		t.Fatalf("after SetVerified true, got primary %v, want %v", primary, want)
+	}
+
+	if err := db.UserEmails().Add(ctx, user.ID, email2, nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UserEmails().SetVerified(ctx, user.ID, email2, true); err != nil {
+		t.Fatal(err)
+	}
+
+	if verified, err := isUserEmailVerified(ctx, db, user.ID, email2); err != nil {
+		t.Fatal(err)
+	} else if want := true; verified != want {
+		t.Fatalf("after SetVerified true, got verified %v, want %v", verified, want)
+	}
+
+	if primary, err := isUserEmailPrimary(ctx, db, user.ID, email2); err != nil {
+		t.Fatal(err)
+	} else if want := false; primary != want {
 		t.Fatalf("after SetVerified true, got primary %v, want %v", primary, want)
 	}
 }
