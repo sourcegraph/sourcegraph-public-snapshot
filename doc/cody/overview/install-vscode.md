@@ -1,17 +1,74 @@
+<style>
+.limg {
+  list-style: none;
+  margin: 3rem 0 !important;
+  padding: 0 !important;
+}
+.limg li {
+  margin-bottom: 1rem;
+  padding: 0 !important;
+}
+
+.limg li:last {
+  margin-bottom: 0;
+}
+
+.limg a {
+    display: flex;
+    flex-direction: column;
+    transition-property: all;
+   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+     transition-duration: 350ms;
+     border-radius: 0.75rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+
+}
+
+.limg a:hover {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  background: rgb(113 220 232 / 19%);
+}
+
+.limg p {
+  margin: 0rem;
+}
+.limg a img {
+  width: 1rem;
+}
+
+.limg h3 {
+  display:flex;
+  gap: 0.6rem;
+  margin-top: 0;
+  margin-bottom: .25rem
+
+}
+</style>
+
 # Installing Cody in VS Code
 
-## Introduction
+<p class="subtitle">Learn how to install and configure Cody VS Code extension.</p>
 
-In this guide, you will:
+When working with Visual Studio Code, you have the ability to seamlessly integrate and implement suggestions from Cody by Sourcegraph right within your editor. This guide explains how to install Cody in VS Code across macOS, Windows, or Linux platforms.
 
-- Install the VS Code extension
-- Connect the extension to your Sourcegraph Enterprise instance or Sourcegraph.com account
+<ul class="limg">
+  <li>
+    <a class="card text-left" target="_blank" href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai">
+    <h3><img alt="VS Code" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/vscode.svg"/> Cody: VS Code Extension →</h3>
+    <p>Install Cody's free and open source extension for VS Code.</p>
+    </a>
+  </li>
+</ul>
 
-## Requirements
+## Prerequisites
 
-- A Sourcegraph instance with Cody enabled on it OR a Sourcegraph.com account.
+- To use Cody in VS Code, make sure you have it installed. Read more information [here →](https://code.visualstudio.com/Download).
+- A Sourcegraph instance with Cody enabled on it or a Sourcegraph.com account.
 
-If you haven't yet done this, see Step 1 on the following pages:
+Learn more with the following resources:
+If you haven't yet done this, read the following resources:
 
 - [Enabling Cody for Sourcegraph Enterprise][enable-cody-enterprise]
 - [Enabling Cody for Sourcegraph.com][cody-with-sourcegraph]
