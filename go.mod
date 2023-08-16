@@ -199,7 +199,7 @@ require (
 	github.com/sourcegraph/run v0.12.0
 	github.com/sourcegraph/scip v0.3.1-0.20230627154934-45df7f6d33fc
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
-	github.com/sourcegraph/sourcegraph/lib v0.0.0-20230613175844-f031949c72f5
+	github.com/sourcegraph/sourcegraph/lib v0.0.0-20230810200548-f8a32bcbd9e3
 	github.com/stretchr/testify v1.8.4
 	github.com/temoto/robotstxt v1.1.2
 	github.com/throttled/throttled/v2 v2.12.0
@@ -209,7 +209,7 @@ require (
 	github.com/uber/gonduit v0.13.0
 	github.com/uber/jaeger-client-go v2.30.0+incompatible
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
-	github.com/urfave/cli/v2 v2.23.7
+	github.com/urfave/cli/v2 v2.25.7
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/xeonx/timeago v1.0.0-rc4
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9
@@ -241,13 +241,13 @@ require (
 	go.uber.org/automaxprocs v1.5.2
 	go.uber.org/ratelimit v0.2.0
 	go.uber.org/zap v1.24.0
-	golang.org/x/crypto v0.11.0
-	golang.org/x/net v0.12.0
+	golang.org/x/crypto v0.12.0
+	golang.org/x/net v0.14.0
 	golang.org/x/oauth2 v0.10.0
 	golang.org/x/sync v0.3.0
-	golang.org/x/sys v0.10.0
+	golang.org/x/sys v0.11.0
 	golang.org/x/time v0.3.0
-	golang.org/x/tools v0.10.0
+	golang.org/x/tools v0.12.0
 	gonum.org/v1/gonum v0.13.0
 	google.golang.org/api v0.132.0
 	google.golang.org/genproto v0.0.0-20230717213848-3f92550aa753 // indirect
@@ -265,14 +265,18 @@ require (
 )
 
 require (
+	github.com/aws/constructs-go/constructs/v10 v10.2.69
+	github.com/aws/jsii-runtime-go v1.87.0
 	github.com/edsrzf/mmap-go v1.1.0
 	github.com/go-redsync/redsync/v4 v4.8.1
 	github.com/hashicorp/cronexpr v1.1.1
+	github.com/hashicorp/terraform-cdk-go/cdktf v0.17.3
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mroth/weightedrand/v2 v2.0.1
 	github.com/qdrant/go-client v1.3.0
 	github.com/ricochet2200/go-disk-usage/du v0.0.0-20210707232629-ac9918953285
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20230816005624-901f851f170b
 	github.com/tj/assert v0.0.0-20190920132354-ee03d75cd160
 	github.com/vektah/gqlparser/v2 v2.4.5
 	go.opentelemetry.io/collector/config/confighttp v0.81.0
@@ -287,6 +291,7 @@ require (
 	cloud.google.com/go/trace v1.10.1 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.16.1 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.41.0 // indirect
+	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/alexflint/go-arg v1.4.2 // indirect
 	github.com/alexflint/go-scalar v1.0.0 // indirect
@@ -337,6 +342,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/skeema/knownhosts v1.1.1 // indirect
 	github.com/smartystreets/assertions v1.13.0 // indirect
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/projects_iam v0.0.0-20230816064627-ffa668a680d5 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
@@ -355,6 +361,7 @@ require (
 	go.opentelemetry.io/collector/featuregate v1.0.0-rcv0013 // indirect
 	go.opentelemetry.io/collector/processor v0.81.0 // indirect
 	go.uber.org/goleak v1.2.1 // indirect
+	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230717213848-3f92550aa753 // indirect
 )
 
@@ -540,7 +547,7 @@ require (
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/scim2/filter-parser/v2 v2.2.0
 	github.com/snabb/diagio v1.0.0 // indirect
-	github.com/sourcegraph/conc v0.2.0
+	github.com/sourcegraph/conc v0.3.0
 	github.com/sourcegraph/mountinfo v0.0.0-20230106004439-7026e28cef67
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-20230124144931-b2d81b1accb6
 	github.com/sourcegraph/zoekt v0.0.0-20230811181333-956d775e32b3
@@ -570,9 +577,9 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.16.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1
-	golang.org/x/mod v0.11.0
-	golang.org/x/term v0.10.0 // indirect
-	golang.org/x/text v0.11.0
+	golang.org/x/mod v0.12.0
+	golang.org/x/term v0.11.0 // indirect
+	golang.org/x/text v0.12.0
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/grpc v1.56.2
