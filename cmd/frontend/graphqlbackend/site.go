@@ -640,8 +640,11 @@ func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
 }
 
 func (r *siteResolver) GitserverInfo(ctx context.Context) ([]*gitserverInfoResolver, error) {
-	// add site-admin checks to this resolver.
-	// Only site-admins should be able to access this.
+	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
+	// so only admins may view it.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
 	info, err := r.gitserverClient.SystemInfo()
 	if err != nil {
 		return nil, err
@@ -662,8 +665,7 @@ func NewGitserverInfoResolver(info []gitserver.SystemInfo) []*gitserverInfoResol
 }
 
 type gitserverInfoResolver struct {
-	address string
-	// client  gitserver.Client
+	address    string
 	freeSpace  uint64
 	totalSpace uint64
 }

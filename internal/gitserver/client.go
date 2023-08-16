@@ -449,8 +449,10 @@ type Client interface {
 	// onCommit function for each.
 	RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (bool, error)) error
 
+	// Addrs returns a list of gitserver addresses associated with the Sourcegraph instance.
 	Addrs() []string
 
+	// SystemInfo returns information about the gitserver instances.
 	SystemInfo() ([]SystemInfo, error)
 }
 
@@ -464,10 +466,10 @@ func (c *clientImplementor) SystemInfo() ([]SystemInfo, error) {
 	addresses := c.Addrs()
 	infos := make([]SystemInfo, 0, len(addresses))
 	for _, address := range addresses {
-		// c.clientSource.AddrForRepo()
 		infos = append(infos, SystemInfo{
-			Address:   address,
-			FreeSpace: uint64(1e9), //example value
+			Address:    address,
+			FreeSpace:  uint64(1e9), //example value
+			TotalSpace: uint64(3e4),
 		})
 	}
 	return infos, nil
