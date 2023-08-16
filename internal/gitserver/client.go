@@ -451,24 +451,24 @@ type Client interface {
 
 	Addrs() []string
 
-	FreeSpace() (uint64, error)
-	TotalSpace() (uint64, error)
+	SystemInfo() ([]SystemInfo, error)
 }
 
-func (c *clientImplementor) FreeSpace() (uint64, error) {
-	fs, err := c.diskSizer.BytesFreeOnDisk(".")
-	if err != nil {
-		return 0, err
-	}
-	return fs, nil
+type SystemInfo struct {
+	Address    string
+	FreeSpace  uint64
+	TotalSpace uint64
 }
 
-func (c *clientImplementor) TotalSpace() (uint64, error) {
-	space, err := c.diskSizer.DiskSizeBytes(".")
-	if err != nil {
-		return 0, err
+func (c *clientImplementor) SystemInfo() ([]SystemInfo, error) {
+	addresses := c.Addrs()
+	infos := make([]SystemInfo, 0, len(addresses))
+	for _, address := range addresses {
+		infos = append(infos, SystemInfo{
+			Address: address,
+		})
 	}
-	return space, nil
+	return infos, nil
 }
 
 func (c *clientImplementor) Addrs() []string {

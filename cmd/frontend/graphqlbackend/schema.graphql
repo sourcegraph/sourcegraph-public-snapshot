@@ -7331,11 +7331,11 @@ type Site implements SettingsSubject {
     """
     codyGatewayRateLimitStatus: [CodyGatewayRateLimitStatus!]
 
-    gitserverInfo: GitserverInfo!
+    gitserverInfo: [GitserverInfo!]!
 }
 
 type GitserverInfo {
-    addresses: [String!]!
+    address: String!
     freeSpace: BigInt!
     totalSpace: BigInt!
 }

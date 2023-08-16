@@ -639,34 +639,39 @@ func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
 	return nil
 }
 
-func (r *siteResolver) GitserverInfo(ctx context.Context) *gitServerInfoResolver {
+func (r *siteResolver) GitserverInfo(ctx context.Context) ([]*gitserverInfoResolver, error) {
 	// add site-admin checks to this resolver.
 	// Only site-admins should be able to access this.
-	return &gitServerInfoResolver{
-		client: r.gitserverClient,
-	}
-}
-
-type gitServerInfoResolver struct {
-	client gitserver.Client
-}
-
-func (g *gitServerInfoResolver) Addresses() []string {
-	return g.client.Addrs()
-}
-
-func (g *gitServerInfoResolver) FreeSpace() (BigInt, error) {
-	space, err := g.client.FreeSpace()
+	info, err := r.gitserverClient.SystemInfo()
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return BigInt(space), err
+	return NewGitserverInfoResolver(info), nil
 }
 
-func (g *gitServerInfoResolver) TotalSpace() (BigInt, error) {
-	space, err := g.client.TotalSpace()
-	if err != nil {
-		return 0, err
+func NewGitserverInfoResolver(info []gitserver.SystemInfo) []*gitserverInfoResolver {
+	resolvers := make([]*gitserverInfoResolver, len(info))
+	for i, info := range info {
+		resolvers[i] = &gitserverInfoResolver{
+			address: info.Address,
+		}
 	}
-	return BigInt(space), err
+	return resolvers
+}
+
+type gitserverInfoResolver struct {
+	address string
+	client  gitserver.Client
+}
+
+func (g *gitserverInfoResolver) Address() string {
+	return g.address
+}
+
+func (g *gitserverInfoResolver) FreeSpace() (BigInt, error) {
+	return BigInt(0), nil
+}
+
+func (g *gitserverInfoResolver) TotalSpace() (BigInt, error) {
+	return BigInt(0), nil
 }
