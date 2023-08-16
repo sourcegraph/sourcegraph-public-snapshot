@@ -39,6 +39,7 @@ var repoSearchJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("id"),
 	sqlf.Sprintf("state"),
 	sqlf.Sprintf("repo_id"),
+	sqlf.Sprintf("ref_spec"),
 	sqlf.Sprintf("search_job_id"),
 	sqlf.Sprintf("failure_message"),
 	sqlf.Sprintf("started_at"),
@@ -72,10 +73,13 @@ func (s *Store) CreateExhaustiveSearchRepoJob(ctx context.Context, job types.Exh
 	if job.RepoID <= 0 {
 		return 0, MissingRepoIDErr
 	}
+	if job.RefSpec == "" {
+		return 0, MissingRefSpecErr
+	}
 
 	row := s.Store.QueryRow(
 		ctx,
-		sqlf.Sprintf(createExhaustiveSearchRepoJobQueryFmtr, job.RepoID, job.SearchJobID),
+		sqlf.Sprintf(createExhaustiveSearchRepoJobQueryFmtr, job.RepoID, job.SearchJobID, job.RefSpec),
 	)
 
 	var id int64
@@ -91,9 +95,12 @@ var MissingSearchJobIDErr = errors.New("missing search job ID")
 // MissingRepoIDErr is returned when a repo ID is missing.
 var MissingRepoIDErr = errors.New("missing repo ID")
 
+// MissingRefSpecErr is returned when a ref spec is missing.
+var MissingRefSpecErr = errors.New("missing ref spec")
+
 const createExhaustiveSearchRepoJobQueryFmtr = `
-INSERT INTO exhaustive_search_repo_jobs (repo_id, search_job_id)
-VALUES (%s, %s)
+INSERT INTO exhaustive_search_repo_jobs (repo_id, search_job_id, ref_spec)
+VALUES (%s, %s, %s)
 RETURNING id
 `
 
@@ -107,6 +114,7 @@ func scanRepoSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchRepoJob, error
 		&job.ID,
 		&job.State,
 		&job.RepoID,
+		&job.RefSpec,
 		&job.SearchJobID,
 		&dbutil.NullString{S: job.FailureMessage},
 		&dbutil.NullTime{Time: &job.StartedAt},

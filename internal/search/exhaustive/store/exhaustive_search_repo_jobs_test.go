@@ -57,6 +57,7 @@ func TestStore_CreateExhaustiveSearchRepoJob(t *testing.T) {
 			job: types.ExhaustiveSearchRepoJob{
 				SearchJobID: searchJobID,
 				RepoID:      repoID,
+				RefSpec:     "foo@bar",
 			},
 			expectedErr: nil,
 		},
@@ -64,15 +65,25 @@ func TestStore_CreateExhaustiveSearchRepoJob(t *testing.T) {
 			name: "Missing repo ID",
 			job: types.ExhaustiveSearchRepoJob{
 				SearchJobID: searchJobID,
+				RefSpec:     "foo@bar",
 			},
 			expectedErr: errors.New("missing repo ID"),
 		},
 		{
 			name: "Missing search job ID",
 			job: types.ExhaustiveSearchRepoJob{
-				RepoID: repoID,
+				RepoID:  repoID,
+				RefSpec: "foo@bar",
 			},
 			expectedErr: errors.New("missing search job ID"),
+		},
+		{
+			name: "Missing ref spec",
+			job: types.ExhaustiveSearchRepoJob{
+				SearchJobID: searchJobID,
+				RepoID:      repoID,
+			},
+			expectedErr: errors.New("missing ref spec"),
 		},
 	}
 	for _, test := range tests {

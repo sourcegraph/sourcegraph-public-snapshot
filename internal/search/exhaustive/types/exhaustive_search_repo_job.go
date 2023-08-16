@@ -15,6 +15,7 @@ type ExhaustiveSearchRepoJob struct {
 	ID int64
 
 	RepoID      api.RepoID
+	RefSpec     string
 	SearchJobID int64
 
 	CreatedAt time.Time
