@@ -1,17 +1,20 @@
 extend type Query {
+    """
+    Returns onboarding tour content.
+    """
     onboardingTourContent: OnboardingTourContent!
 }
 
 extend type Mutation {
+    """
+    Updates the current onboarding tour content.
+    """
     updateOnboardingTourContent(input: String!): EmptyResponse!
 }
 
 type OnboardingTourContent {
+    """
+    The current version of the onboarding tour content in a json string.
+    """
     current: String!
-}
-
-type SearchQueryLibraryContent {
-    id: ID!
-    description: String!
-    queryString: String!
 }
