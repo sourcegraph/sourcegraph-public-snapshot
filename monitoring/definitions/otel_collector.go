@@ -128,7 +128,7 @@ func OtelCollector() *monitoring.Dashboard {
 							Owner:          monitoring.ObservableOwnerDevOps,
 							Query:          "sum by (exporter) (rate(otelcol_exporter_enqueue_failed_spans{job=~\"^.*\"}[1m]))",
 							Warning:        monitoring.Alert().Greater(0).For(5 * time.Minute),
-							NextSteps:      "Check the configuration of the exporter and if the service being exported is up. This may be cause by a queue full of unsettled elements, so you may need to decrease your sending rate or horizontally scale collectors.",
+							NextSteps:      "Check the configuration of the exporter and if the service being exported is up. This may be caused by a queue full of unsettled elements, so you may need to decrease your sending rate or horizontally scale collectors.",
 							Interpretation: `Shows the rate of spans failed to be enqueued by the configured exporter. A number higher than 0 for a long period can indicate a problem with the exporter configuration`,
 						},
 					},
