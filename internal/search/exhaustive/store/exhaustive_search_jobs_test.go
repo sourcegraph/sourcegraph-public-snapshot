@@ -38,7 +38,7 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		setup       func(*testing.T, *store.Store)
+		setup       func(*store.Store) error
 		job         types.ExhaustiveSearchJob
 		expectedErr error
 	}{
@@ -46,14 +46,14 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 			name: "New job",
 			job: types.ExhaustiveSearchJob{
 				InitiatorID: userID,
-				Query:       "repo:^github\\.com/hashicorp/errwrap$ hello",
+				Query:       "repo:^github\\.com/hashicorp/errwrap$ CreateExhaustiveSearchJob",
 			},
 			expectedErr: nil,
 		},
 		{
 			name: "Missing user ID",
 			job: types.ExhaustiveSearchJob{
-				Query: "repo:^github\\.com/hashicorp/errwrap$ hello",
+				Query: "repo:^github\\.com/hashicorp/errwrap$ CreateExhaustiveSearchJob",
 			},
 			expectedErr: errors.New("missing initiator ID"),
 		},
@@ -66,16 +66,16 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 		},
 		{
 			name: "Search already exists",
-			setup: func(t *testing.T, s *store.Store) {
+			setup: func(s *store.Store) error {
 				_, err := s.CreateExhaustiveSearchJob(context.Background(), types.ExhaustiveSearchJob{
 					InitiatorID: userID,
-					Query:       "repo:^github\\.com/hashicorp/errwrap$ hello",
+					Query:       "repo:^github\\.com/hashicorp/errwrap$ CreateExhaustiveSearchJob_exists",
 				})
-				require.NoError(t, err)
+				return err
 			},
 			job: types.ExhaustiveSearchJob{
 				InitiatorID: userID,
-				Query:       "repo:^github\\.com/hashicorp/errwrap$ hello",
+				Query:       "repo:^github\\.com/hashicorp/errwrap$ CreateExhaustiveSearchJob_exists",
 			},
 			expectedErr: errors.New("ERROR: duplicate key value violates unique constraint \"exhaustive_search_jobs_query_initiator_id_key\" (SQLSTATE 23505)"),
 		},
@@ -83,8 +83,9 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			if test.setup != nil {
-				test.setup(t, s)
+				require.NoError(t, test.setup(s))
 			}
+			defer cleanupSearchJobs(bs)
 
 			jobID, err := s.CreateExhaustiveSearchJob(context.Background(), test.job)
 

@@ -42,13 +42,12 @@ func TestStore_CreateExhaustiveSearchRepoJob(t *testing.T) {
 
 	searchJobID, err := s.CreateExhaustiveSearchJob(
 		context.Background(),
-		types.ExhaustiveSearchJob{InitiatorID: userID, Query: "repo:^github\\.com/hashicorp/errwrap$ hello"},
+		types.ExhaustiveSearchJob{InitiatorID: userID, Query: "repo:^github\\.com/hashicorp/errwrap$ CreateExhaustiveSearchRepoJob"},
 	)
 	require.NoError(t, err)
 
 	tests := []struct {
 		name        string
-		setup       func(*testing.T, *store.Store)
 		job         types.ExhaustiveSearchRepoJob
 		expectedErr error
 	}{
@@ -88,9 +87,7 @@ func TestStore_CreateExhaustiveSearchRepoJob(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if test.setup != nil {
-				test.setup(t, s)
-			}
+			defer cleanupRepoJobs(bs)
 
 			jobID, err := s.CreateExhaustiveSearchRepoJob(context.Background(), test.job)
 

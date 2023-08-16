@@ -45,3 +45,8 @@ func cleanupRepoJobs(store *basestore.Store) error {
 	q := sqlf.Sprintf(`TRUNCATE TABLE exhaustive_search_repo_jobs`)
 	return store.Exec(context.Background(), q)
 }
+
+func cleanupRevJobs(store *basestore.Store) error {
+	q := sqlf.Sprintf(`TRUNCATE TABLE exhaustive_search_repo_revision_jobs`)
+	return store.Exec(context.Background(), q)
+}
