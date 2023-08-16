@@ -240,7 +240,7 @@ const SITE_CONFIG_QUERY_NAME = 'Site'
 export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSourcegraphApp, telemetryService }) => {
     const client = useApolloClient()
     const [params, setSearchParams] = useSearchParams()
-    const [tabIndex, setTabIndex] = useState(Number(params.tab ?? 0))
+    const [tabIndex, setTabIndex] = useState(Number(params.get('tab')) ?? 0)
     const [reloadStartedAt, setReloadStartedAt] = useState<Date>(new Date(0))
     const [enabledCompletions, setEnabledCompletions] = useState(false)
     const isLightTheme = useIsLightTheme()
@@ -250,7 +250,7 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
     const [isSetupChecklistEnabled] = useFeatureFlag('setup-checklist', false)
 
     useEffect(() => {
-        if (isSetupChecklistEnabled) {
+        if (isSetupChecklistEnabled && Number(params.get('tab')) != tabIndex) {
             setSearchParams({ tab: tabIndex.toString() })
         }
     }, [tabIndex, isSetupChecklistEnabled])

@@ -89,9 +89,14 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
         return [result, null]
     }, [config])
 
-    const isValid = useMemo(() => (
-            form.email && form.host && form.port && (form.authentication === 'none' || (form.username && form.password))
-        ), [form])
+    const isValid = useMemo(
+        () =>
+            form.email &&
+            form.host &&
+            form.port &&
+            (form.authentication === 'none' || (form.username && form.password)),
+        [form]
+    )
 
     const fieldRequired = useCallback(
         (field: string) => {
