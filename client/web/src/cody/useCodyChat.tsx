@@ -188,8 +188,7 @@ export const useCodyChat = ({
             return
         }
 
-        const chatIds = transcriptHistory.map(chat => chat.id)
-        eventLogger.log(EventName.CODY_CHAT_HISTORY_CLEARED, { chatIds })
+        eventLogger.log(EventName.CODY_CHAT_HISTORY_CLEARED)
 
         const newTranscript = initializeNewChatInternal()
         if (newTranscript) {
@@ -229,7 +228,7 @@ export const useCodyChat = ({
                 return
             }
 
-            eventLogger.log(EventName.CODY_CHAT_HISTORY_ITEM_DELETED, { chatId: id })
+            eventLogger.log(EventName.CODY_CHAT_HISTORY_ITEM_DELETED, { transcriptId: id })
 
             setTranscriptHistoryState((history: TranscriptJSON[]) => {
                 const updatedHistory = [...history.filter(transcript => transcript.id !== id)]
@@ -291,7 +290,7 @@ export const useCodyChat = ({
                 await updateTranscriptInHistory(transcript)
             }
 
-            eventLogger.log(EventName.CODY_CHAT_SUBMIT, { chatId: transcript?.id })
+            eventLogger.log(EventName.CODY_CHAT_SUBMIT, { transcriptId: transcript?.id })
             return transcript
         },
         [submitMessageInternal, updateTranscriptInHistory]
@@ -304,7 +303,7 @@ export const useCodyChat = ({
                 await updateTranscriptInHistory(transcript)
             }
 
-            eventLogger.log(EventName.CODY_CHAT_EDIT, { chatId: transcript?.id })
+            eventLogger.log(EventName.CODY_CHAT_EDIT, { transcriptId: transcript?.id })
             return transcript
         },
         [editMessageInternal, updateTranscriptInHistory]
@@ -337,7 +336,7 @@ export const useCodyChat = ({
             }
         }
 
-        eventLogger.log(EventName.CODY_CHAT_INITIALIZED, { chatId: newTranscript?.id })
+        eventLogger.log(EventName.CODY_CHAT_INITIALIZED, { transcriptId: newTranscript?.id })
         return newTranscript
     }, [
         initializeNewChatInternal,
@@ -424,7 +423,7 @@ export const useCodyChat = ({
             scope.includeInferredRepository
                 ? EventName.CODY_CHAT_SCOPE_INFERRED_REPO_DISABLED
                 : EventName.CODY_CHAT_SCOPE_INFERRED_REPO_ENABLED,
-            { chatId: transcript?.id }
+            { transcriptId: transcript?.id }
         )
 
         toggleIncludeInferredRepositoryInternal()
@@ -442,7 +441,7 @@ export const useCodyChat = ({
             scope.includeInferredRepository
                 ? EventName.CODY_CHAT_SCOPE_INFERRED_FILE_DISABLED
                 : EventName.CODY_CHAT_SCOPE_INFERRED_FILE_ENABLED,
-            { chatId: transcript?.id }
+            { transcriptId: transcript?.id }
         )
 
         toggleIncludeInferredFileInternal()

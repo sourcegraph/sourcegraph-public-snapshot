@@ -118,7 +118,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     const onCTADismiss = (): void => setIsCTADismissed(true)
 
     useEffect(() => {
-        eventLogger.log(EventName.CODY_CHAT_PAGE_VIEWED, { chatId: transcript?.id })
+        eventLogger.log(EventName.CODY_CHAT_PAGE_VIEWED, { transcriptId: transcript?.id })
     }, [transcript?.id])
 
     const transcriptId = transcript?.id
@@ -288,7 +288,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                         )}
                                         onClick={() =>
                                             eventLogger.log(EventName.CODY_CHAT_DOWNLOAD_VSCODE, {
-                                                chatId: transcript?.id,
+                                                transcriptId: transcript?.id,
                                             })
                                         }
                                     >
@@ -330,7 +330,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                         )}
                                         onClick={() =>
                                             eventLogger.log(EventName.CODY_CHAT_TRY_ON_PUBLIC_CODE, {
-                                                chatId: transcript?.id,
+                                                transcriptId: transcript?.id,
                                             })
                                         }
                                     >

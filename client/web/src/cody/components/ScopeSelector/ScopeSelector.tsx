@@ -91,7 +91,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     const addRepository = useCallback(
         (repoName: string) => {
             if (!scope.repositories.includes(repoName)) {
-                eventLogger.log(EventName.CODY_CHAT_SCOPE_REPO_ADDED, { chatId: transcript?.id })
+                eventLogger.log(EventName.CODY_CHAT_SCOPE_REPO_ADDED, { transcriptId: transcript?.id })
                 setScope({ ...scope, repositories: [...scope.repositories, repoName] })
             }
         },
@@ -100,14 +100,14 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
 
     const removeRepository = useCallback(
         (repoName: string) => {
-            eventLogger.log(EventName.CODY_CHAT_SCOPE_REPO_REMOVED, { chatId: transcript?.id })
+            eventLogger.log(EventName.CODY_CHAT_SCOPE_REPO_REMOVED, { transcriptId: transcript?.id })
             setScope({ ...scope, repositories: scope.repositories.filter(repo => repo !== repoName) })
         },
         [scope, setScope, transcript?.id]
     )
 
     const resetScope = useCallback(async (): Promise<void> => {
-        eventLogger.log(EventName.CODY_CHAT_SCOPE_RESET, { chatId: transcript?.id })
+        eventLogger.log(EventName.CODY_CHAT_SCOPE_RESET, { transcriptId: transcript?.id })
         if (!isSourcegraphApp) {
             return setScope({ ...scope, repositories: [], includeInferredRepository: true, includeInferredFile: true })
         }

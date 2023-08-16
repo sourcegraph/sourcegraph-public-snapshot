@@ -399,7 +399,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                                         props.telemetryService.log(EventName.CODY_SIDEBAR_CHAT_OPENED, {
                                             repo,
                                             path: filePath,
-                                            chatId: transcript?.id,
+                                            transcriptId: transcript?.id,
                                         })
                                         setIsCodySidebarOpen(true)
                                     }}
