@@ -14,55 +14,52 @@ import (
 )
 
 func TestSchemaResolver_CodeHosts(t *testing.T) {
-	t.Run("resolve code hosts", func(t *testing.T) {
-		t.Parallel()
+	first := 1
+	after := "Q29kZUhvc3Q6MQ=="
 
-		first := 1
-		after := "Q29kZUhvc3Q6MQ=="
+	store := dbmocks.NewMockCodeHostStore()
+	store.CountFunc.SetDefaultReturn(3, nil)
 
-		store := dbmocks.NewMockCodeHostStore()
-		store.CountFunc.SetDefaultReturn(3, nil)
+	codeHosts := []*types.CodeHost{
+		{ID: 1, URL: "github.com", Kind: extsvc.KindGitHub, APIRateLimitQuota: pointers.Ptr(int32(1)), APIRateLimitIntervalSeconds: pointers.Ptr(int32(1)), GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)), GitRateLimitQuota: pointers.Ptr(int32(1))},
+		{ID: 2, URL: "gitlab.com", Kind: extsvc.KindGitLab, APIRateLimitQuota: pointers.Ptr(int32(2)), APIRateLimitIntervalSeconds: pointers.Ptr(int32(2)), GitRateLimitIntervalSeconds: pointers.Ptr(int32(2)), GitRateLimitQuota: pointers.Ptr(int32(2))},
+		{ID: 3, URL: "bitbucket.com", Kind: extsvc.KindBitbucketServer, APIRateLimitQuota: pointers.Ptr(int32(3)), APIRateLimitIntervalSeconds: pointers.Ptr(int32(3)), GitRateLimitIntervalSeconds: pointers.Ptr(int32(3)), GitRateLimitQuota: pointers.Ptr(int32(3))},
+	}
+	store.ListFunc.SetDefaultHook(func(ctx context.Context, opts database.ListCodeHostsOpts) ([]*types.CodeHost, int32, error) {
+		assert.Equal(t, first, opts.Limit)
+		assert.Equal(t, int32(1), opts.Cursor)
+		// we are expecting only the second code host to be returned.
+		return codeHosts[1:2], 1, nil
+	})
+	users := dbmocks.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		codeHosts := []*types.CodeHost{
-			{ID: 1, URL: "github.com", Kind: extsvc.KindGitHub, APIRateLimitQuota: pointers.Ptr(int32(1)), APIRateLimitIntervalSeconds: pointers.Ptr(int32(1)), GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)), GitRateLimitQuota: pointers.Ptr(int32(1))},
-			{ID: 2, URL: "gitlab.com", Kind: extsvc.KindGitLab, APIRateLimitQuota: pointers.Ptr(int32(2)), APIRateLimitIntervalSeconds: pointers.Ptr(int32(2)), GitRateLimitIntervalSeconds: pointers.Ptr(int32(2)), GitRateLimitQuota: pointers.Ptr(int32(2))},
-			{ID: 3, URL: "bitbucket.com", Kind: extsvc.KindBitbucketServer, APIRateLimitQuota: pointers.Ptr(int32(3)), APIRateLimitIntervalSeconds: pointers.Ptr(int32(3)), GitRateLimitIntervalSeconds: pointers.Ptr(int32(3)), GitRateLimitQuota: pointers.Ptr(int32(3))},
-		}
-		store.ListFunc.SetDefaultHook(func(ctx context.Context, opts database.ListCodeHostsOpts) ([]*types.CodeHost, int32, error) {
-			assert.Equal(t, first, opts.Limit)
-			assert.Equal(t, int32(1), opts.Cursor)
-			// we are expecting only the second code host to be returned.
-			return codeHosts[1:2], 1, nil
-		})
-		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	eSvcs := []*types.ExternalService{
+		{ID: 1, DisplayName: "GITLAB #1"},
+		{ID: 2, DisplayName: "GITLAB #2"},
+	}
+	externalServices := dbmocks.NewMockExternalServiceStore()
+	externalServices.ListFunc.SetDefaultHook(func(ctx context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+		assert.Equal(t, options.CodeHostID, int32(2))
+		assert.Equal(t, options.Limit, first)
+		assert.Equal(t, options.Offset, 0)
+		return eSvcs, nil
+	})
 
-		eSvcs := []*types.ExternalService{
-			{ID: 1, DisplayName: "GITLAB #1"},
-			{ID: 2, DisplayName: "GITLAB #2"},
-		}
-		externalServices := dbmocks.NewMockExternalServiceStore()
-		externalServices.ListFunc.SetDefaultHook(func(ctx context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-			assert.Equal(t, options.CodeHostID, int32(2))
-			assert.Equal(t, options.Limit, first)
-			assert.Equal(t, options.Offset, 0)
-			return eSvcs, nil
-		})
+	ctx := context.Background()
+	db := dbmocks.NewMockDB()
+	db.CodeHostsFunc.SetDefaultReturn(store)
+	db.UsersFunc.SetDefaultReturn(users)
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
-		ctx := context.Background()
-		db := dbmocks.NewMockDB()
-		db.CodeHostsFunc.SetDefaultReturn(store)
-		db.UsersFunc.SetDefaultReturn(users)
-		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-
-		RunTest(t, &Test{
-			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, db),
-			Variables: map[string]any{
-				"first": first,
-				"after": after,
-			},
-			Query: `query CodeHosts($first: Int $after: String) {
+	RunTest(t, &Test{
+		Context: ctx,
+		Schema:  mustParseGraphQLSchema(t, db),
+		Variables: map[string]any{
+			"first": first,
+			"after": after,
+		},
+		Query: `query CodeHosts($first: Int $after: String) {
 			  codeHosts(first: $first, after: $after) {
 				pageInfo{
 				  endCursor
@@ -86,7 +83,7 @@ func TestSchemaResolver_CodeHosts(t *testing.T) {
 				}
 			  }
 			}`,
-			ExpectedResult: `{
+		ExpectedResult: `{
 			   "codeHosts":{
 				  "nodes":[
 					 {
@@ -118,9 +115,9 @@ func TestSchemaResolver_CodeHosts(t *testing.T) {
 				  "totalCount":3
 			   }
 			}`,
-		})
-
-		mockassert.CalledOnce(t, store.CountFunc)
-		mockassert.CalledOnce(t, store.ListFunc)
 	})
+
+	mockassert.CalledOnce(t, store.CountFunc)
+	mockassert.CalledOnce(t, store.ListFunc)
+	mockassert.CalledOnce(t, externalServices.ListFunc)
 }
