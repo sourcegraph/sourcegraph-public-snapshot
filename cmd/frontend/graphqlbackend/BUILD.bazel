@@ -40,6 +40,7 @@ go_library(
         "batches.go",
         "bigint.go",
         "client_configuration.go",
+        "code_host.go",
         "code_hosts.go",
         "code_monitors.go",
         "codeintel.go",
