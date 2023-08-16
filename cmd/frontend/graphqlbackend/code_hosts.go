@@ -84,8 +84,10 @@ func (r *codeHostConnectionResolver) Nodes(ctx context.Context) ([]*codeHostReso
 }
 
 func (r *codeHostConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	// TODO: Implement me.
-	return 0, nil
+	// Reset pagination cursor to get correct total count
+	opt := r.opts
+	opt.Cursor = 0
+	return r.db.CodeHosts().Count(ctx, opt)
 }
 
 func (r *codeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
@@ -102,7 +104,7 @@ func (r *codeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 
 func (r *codeHostConnectionResolver) compute(ctx context.Context) ([]*types.CodeHost, int32, error) {
 	r.once.Do(func() {
-		r.chs, r.next, r.err = r.db.CodeHosts().ListCodeHosts(ctx, r.opts)
+		r.chs, r.next, r.err = r.db.CodeHosts().List(ctx, r.opts)
 	})
 	return r.chs, r.next, r.err
 }
@@ -127,7 +129,7 @@ func CodeHostByID(ctx context.Context, db database.DB, id graphql.ID) (*codeHost
 }
 
 func CodeHostByIDInt32(ctx context.Context, db database.DB, id int32) (*codeHostResolver, error) {
-	ch, err := db.CodeHosts().GetCodeHostByID(ctx, id)
+	ch, err := db.CodeHosts().GetByID(ctx, id)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil, nil
