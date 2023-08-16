@@ -95,6 +95,14 @@ func OtelCollector() *monitoring.Dashboard {
 								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
 							`,
 						},
+					},
+				},
+			},
+			{
+				Title:  "Queue Length",
+				Hidden: false,
+				Rows: []monitoring.Row{
+					{
 						{
 							Name:           "otelcol_exporter_queue_capacity",
 							Description:    "exporter queue capacity",
