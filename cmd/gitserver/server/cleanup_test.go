@@ -39,6 +39,10 @@ const (
 	testRepoC = "testrepo-C"
 )
 
+var mockCloneRepoFunc cloneRepoFunc = func(_ context.Context, _ database.DB, _ api.RepoName, _ CloneOptions) (_ error) {
+	return nil
+}
+
 func newMockedGitserverDB() database.DB {
 	db := database.NewMockDB()
 	gs := database.NewMockGitserverRepoStore()
@@ -88,10 +92,7 @@ UPDATE gitserver_repos SET repo_size_bytes = 5 where repo_id = 3;
 		10,
 		"test-gitserver",
 		root,
-		func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
-			// Don't actually attempt clones.
-			return "", nil
-		},
+		mockCloneRepoFunc,
 		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 	)
 
@@ -161,9 +162,7 @@ func TestCleanupInactive(t *testing.T) {
 		10,
 		"test-gitserver",
 		root,
-		func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
-			return "", nil
-		},
+		mockCloneRepoFunc,
 		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 	)
 
@@ -201,9 +200,7 @@ func TestCleanupWrongShard(t *testing.T) {
 			10,
 			"does-not-exist",
 			root,
-			func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
-				return "", nil
-			},
+			mockCloneRepoFunc,
 			gitserver.GitserverAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}},
 		)
 
@@ -239,9 +236,7 @@ func TestCleanupWrongShard(t *testing.T) {
 			10,
 			"gitserver-0",
 			root,
-			func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
-				return "", nil
-			},
+			mockCloneRepoFunc,
 			gitserver.GitserverAddresses{Addresses: []string{"gitserver-0.cluster.local:3178", "gitserver-1.cluster.local:3178"}},
 		)
 
@@ -279,9 +274,9 @@ func TestCleanupWrongShard(t *testing.T) {
 			10,
 			"gitserver-0",
 			root,
-			func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
+			func(context.Context, database.DB, api.RepoName, CloneOptions) error {
 				t.Fatal("clone called")
-				return "", nil
+				return nil
 			},
 			gitserver.GitserverAddresses{Addresses: []string{"gitserver-0", "gitserver-1"}},
 		)
@@ -353,9 +348,7 @@ func TestGitGCAuto(t *testing.T) {
 		10,
 		"test-gitserver",
 		root,
-		func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
-			return "", nil
-		},
+		mockCloneRepoFunc,
 		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 	)
 
@@ -478,6 +471,29 @@ func TestCleanupExpired(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Mocking the DB in a tricky way to simulate the clone worker.
+	// mockedDb := database.NewMockDB()
+	// gs := database.NewMockGitserverRepoStore()
+	// mockedDb.GitserverReposFunc.SetDefaultReturn(gs)
+	//
+	// We need to save the repo names which are used to query repo ID from the db so
+	// that we can use them for `server.CloneRepo` calls.
+	// repoCloneQueue := []api.RepoName{}
+	// currentRepoIdx := 0
+	// repos := database.NewMockRepoStore()
+	// repos.GetByNameFunc.SetDefaultHook(func(_ context.Context, name api.RepoName) (*types.Repo, error) {
+	// 	repoCloneQueue = append(repoCloneQueue, name)
+	// 	return &types.Repo{Name: name}, nil
+	// })
+	// mockedDb.ReposFunc.SetDefaultReturn(repos)
+	// repoUpdateJobs := database.NewMockRepoUpdateJobStore()
+	// repoUpdateJobs.CreateFunc.SetDefaultHook(func(ctx context.Context, opts database.CreateRepoUpdateJobOpts) (types.RepoUpdateJob, bool, error) {
+	// We need to return this error as if we just did a sync clone.
+	// _, err := s.CloneRepo(ctx, repoCloneQueue[currentRepoIdx], CloneOptions{Overwrite: opts.OverwriteClone})
+	// currentRepoIdx++
+	// return types.RepoUpdateJob{}, true, err
+	// })
+	// mockedDb.RepoUpdateJobsFunc.SetDefaultReturn(repoUpdateJobs)
 	cleanupRepos(
 		context.Background(),
 		logtest.Scoped(t),
@@ -487,7 +503,10 @@ func TestCleanupExpired(t *testing.T) {
 		10,
 		"test-gitserver",
 		root,
-		s.CloneRepo,
+		func(ctx context.Context, _ database.DB, repoName api.RepoName, opts CloneOptions) (err error) {
+			_, err = s.CloneRepo(ctx, repoName, CloneOptions{Overwrite: opts.Overwrite})
+			return err
+		},
 		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 	)
 
@@ -575,9 +594,7 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 			10,
 			"test-gitserver",
 			root,
-			func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
-				return "", nil
-			},
+			mockCloneRepoFunc,
 			gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 		)
 
@@ -605,9 +622,7 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 			10,
 			"test-gitserver",
 			root,
-			func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
-				return "", nil
-			},
+			mockCloneRepoFunc,
 			gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 		)
 
@@ -758,9 +773,7 @@ func TestCleanupOldLocks(t *testing.T) {
 		10,
 		"test-gitserver",
 		root,
-		func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
-			return "", nil
-		},
+		mockCloneRepoFunc,
 		gitserver.GitserverAddresses{Addresses: []string{"gitserver-0"}},
 	)
 

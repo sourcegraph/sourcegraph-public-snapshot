@@ -61817,6 +61817,531 @@ func (c RepoStoreWithFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// MockRepoUpdateJobStore is a mock implementation of the RepoUpdateJobStore
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/database) used for unit
+// testing.
+type MockRepoUpdateJobStore struct {
+	// CreateFunc is an instance of a mock function object controlling the
+	// behavior of the method Create.
+	CreateFunc *RepoUpdateJobStoreCreateFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *RepoUpdateJobStoreHandleFunc
+	// ListFunc is an instance of a mock function object controlling the
+	// behavior of the method List.
+	ListFunc *RepoUpdateJobStoreListFunc
+	// SaveUpdateJobResultsFunc is an instance of a mock function object
+	// controlling the behavior of the method SaveUpdateJobResults.
+	SaveUpdateJobResultsFunc *RepoUpdateJobStoreSaveUpdateJobResultsFunc
+}
+
+// NewMockRepoUpdateJobStore creates a new mock of the RepoUpdateJobStore
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockRepoUpdateJobStore() *MockRepoUpdateJobStore {
+	return &MockRepoUpdateJobStore{
+		CreateFunc: &RepoUpdateJobStoreCreateFunc{
+			defaultHook: func(context.Context, CreateRepoUpdateJobOpts) (r0 types.RepoUpdateJob, r1 bool, r2 error) {
+				return
+			},
+		},
+		HandleFunc: &RepoUpdateJobStoreHandleFunc{
+			defaultHook: func() (r0 *basestore.Store) {
+				return
+			},
+		},
+		ListFunc: &RepoUpdateJobStoreListFunc{
+			defaultHook: func(context.Context, ListRepoUpdateJobOpts) (r0 []types.RepoUpdateJob, r1 error) {
+				return
+			},
+		},
+		SaveUpdateJobResultsFunc: &RepoUpdateJobStoreSaveUpdateJobResultsFunc{
+			defaultHook: func(context.Context, int, SaveUpdateJobResultsOpts) (r0 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockRepoUpdateJobStore creates a new mock of the
+// RepoUpdateJobStore interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockRepoUpdateJobStore() *MockRepoUpdateJobStore {
+	return &MockRepoUpdateJobStore{
+		CreateFunc: &RepoUpdateJobStoreCreateFunc{
+			defaultHook: func(context.Context, CreateRepoUpdateJobOpts) (types.RepoUpdateJob, bool, error) {
+				panic("unexpected invocation of MockRepoUpdateJobStore.Create")
+			},
+		},
+		HandleFunc: &RepoUpdateJobStoreHandleFunc{
+			defaultHook: func() *basestore.Store {
+				panic("unexpected invocation of MockRepoUpdateJobStore.Handle")
+			},
+		},
+		ListFunc: &RepoUpdateJobStoreListFunc{
+			defaultHook: func(context.Context, ListRepoUpdateJobOpts) ([]types.RepoUpdateJob, error) {
+				panic("unexpected invocation of MockRepoUpdateJobStore.List")
+			},
+		},
+		SaveUpdateJobResultsFunc: &RepoUpdateJobStoreSaveUpdateJobResultsFunc{
+			defaultHook: func(context.Context, int, SaveUpdateJobResultsOpts) error {
+				panic("unexpected invocation of MockRepoUpdateJobStore.SaveUpdateJobResults")
+			},
+		},
+	}
+}
+
+// NewMockRepoUpdateJobStoreFrom creates a new mock of the
+// MockRepoUpdateJobStore interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockRepoUpdateJobStoreFrom(i RepoUpdateJobStore) *MockRepoUpdateJobStore {
+	return &MockRepoUpdateJobStore{
+		CreateFunc: &RepoUpdateJobStoreCreateFunc{
+			defaultHook: i.Create,
+		},
+		HandleFunc: &RepoUpdateJobStoreHandleFunc{
+			defaultHook: i.Handle,
+		},
+		ListFunc: &RepoUpdateJobStoreListFunc{
+			defaultHook: i.List,
+		},
+		SaveUpdateJobResultsFunc: &RepoUpdateJobStoreSaveUpdateJobResultsFunc{
+			defaultHook: i.SaveUpdateJobResults,
+		},
+	}
+}
+
+// RepoUpdateJobStoreCreateFunc describes the behavior when the Create
+// method of the parent MockRepoUpdateJobStore instance is invoked.
+type RepoUpdateJobStoreCreateFunc struct {
+	defaultHook func(context.Context, CreateRepoUpdateJobOpts) (types.RepoUpdateJob, bool, error)
+	hooks       []func(context.Context, CreateRepoUpdateJobOpts) (types.RepoUpdateJob, bool, error)
+	history     []RepoUpdateJobStoreCreateFuncCall
+	mutex       sync.Mutex
+}
+
+// Create delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockRepoUpdateJobStore) Create(v0 context.Context, v1 CreateRepoUpdateJobOpts) (types.RepoUpdateJob, bool, error) {
+	r0, r1, r2 := m.CreateFunc.nextHook()(v0, v1)
+	m.CreateFunc.appendCall(RepoUpdateJobStoreCreateFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the Create method of the
+// parent MockRepoUpdateJobStore instance is invoked and the hook queue is
+// empty.
+func (f *RepoUpdateJobStoreCreateFunc) SetDefaultHook(hook func(context.Context, CreateRepoUpdateJobOpts) (types.RepoUpdateJob, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Create method of the parent MockRepoUpdateJobStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *RepoUpdateJobStoreCreateFunc) PushHook(hook func(context.Context, CreateRepoUpdateJobOpts) (types.RepoUpdateJob, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoUpdateJobStoreCreateFunc) SetDefaultReturn(r0 types.RepoUpdateJob, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, CreateRepoUpdateJobOpts) (types.RepoUpdateJob, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoUpdateJobStoreCreateFunc) PushReturn(r0 types.RepoUpdateJob, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, CreateRepoUpdateJobOpts) (types.RepoUpdateJob, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *RepoUpdateJobStoreCreateFunc) nextHook() func(context.Context, CreateRepoUpdateJobOpts) (types.RepoUpdateJob, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoUpdateJobStoreCreateFunc) appendCall(r0 RepoUpdateJobStoreCreateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RepoUpdateJobStoreCreateFuncCall objects
+// describing the invocations of this function.
+func (f *RepoUpdateJobStoreCreateFunc) History() []RepoUpdateJobStoreCreateFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoUpdateJobStoreCreateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoUpdateJobStoreCreateFuncCall is an object that describes an
+// invocation of method Create on an instance of MockRepoUpdateJobStore.
+type RepoUpdateJobStoreCreateFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 CreateRepoUpdateJobOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 types.RepoUpdateJob
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoUpdateJobStoreCreateFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoUpdateJobStoreCreateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// RepoUpdateJobStoreHandleFunc describes the behavior when the Handle
+// method of the parent MockRepoUpdateJobStore instance is invoked.
+type RepoUpdateJobStoreHandleFunc struct {
+	defaultHook func() *basestore.Store
+	hooks       []func() *basestore.Store
+	history     []RepoUpdateJobStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockRepoUpdateJobStore) Handle() *basestore.Store {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(RepoUpdateJobStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockRepoUpdateJobStore instance is invoked and the hook queue is
+// empty.
+func (f *RepoUpdateJobStoreHandleFunc) SetDefaultHook(hook func() *basestore.Store) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockRepoUpdateJobStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *RepoUpdateJobStoreHandleFunc) PushHook(hook func() *basestore.Store) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoUpdateJobStoreHandleFunc) SetDefaultReturn(r0 *basestore.Store) {
+	f.SetDefaultHook(func() *basestore.Store {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoUpdateJobStoreHandleFunc) PushReturn(r0 *basestore.Store) {
+	f.PushHook(func() *basestore.Store {
+		return r0
+	})
+}
+
+func (f *RepoUpdateJobStoreHandleFunc) nextHook() func() *basestore.Store {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoUpdateJobStoreHandleFunc) appendCall(r0 RepoUpdateJobStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RepoUpdateJobStoreHandleFuncCall objects
+// describing the invocations of this function.
+func (f *RepoUpdateJobStoreHandleFunc) History() []RepoUpdateJobStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoUpdateJobStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoUpdateJobStoreHandleFuncCall is an object that describes an
+// invocation of method Handle on an instance of MockRepoUpdateJobStore.
+type RepoUpdateJobStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *basestore.Store
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoUpdateJobStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoUpdateJobStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// RepoUpdateJobStoreListFunc describes the behavior when the List method of
+// the parent MockRepoUpdateJobStore instance is invoked.
+type RepoUpdateJobStoreListFunc struct {
+	defaultHook func(context.Context, ListRepoUpdateJobOpts) ([]types.RepoUpdateJob, error)
+	hooks       []func(context.Context, ListRepoUpdateJobOpts) ([]types.RepoUpdateJob, error)
+	history     []RepoUpdateJobStoreListFuncCall
+	mutex       sync.Mutex
+}
+
+// List delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockRepoUpdateJobStore) List(v0 context.Context, v1 ListRepoUpdateJobOpts) ([]types.RepoUpdateJob, error) {
+	r0, r1 := m.ListFunc.nextHook()(v0, v1)
+	m.ListFunc.appendCall(RepoUpdateJobStoreListFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the List method of the
+// parent MockRepoUpdateJobStore instance is invoked and the hook queue is
+// empty.
+func (f *RepoUpdateJobStoreListFunc) SetDefaultHook(hook func(context.Context, ListRepoUpdateJobOpts) ([]types.RepoUpdateJob, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// List method of the parent MockRepoUpdateJobStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *RepoUpdateJobStoreListFunc) PushHook(hook func(context.Context, ListRepoUpdateJobOpts) ([]types.RepoUpdateJob, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoUpdateJobStoreListFunc) SetDefaultReturn(r0 []types.RepoUpdateJob, r1 error) {
+	f.SetDefaultHook(func(context.Context, ListRepoUpdateJobOpts) ([]types.RepoUpdateJob, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoUpdateJobStoreListFunc) PushReturn(r0 []types.RepoUpdateJob, r1 error) {
+	f.PushHook(func(context.Context, ListRepoUpdateJobOpts) ([]types.RepoUpdateJob, error) {
+		return r0, r1
+	})
+}
+
+func (f *RepoUpdateJobStoreListFunc) nextHook() func(context.Context, ListRepoUpdateJobOpts) ([]types.RepoUpdateJob, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoUpdateJobStoreListFunc) appendCall(r0 RepoUpdateJobStoreListFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RepoUpdateJobStoreListFuncCall objects
+// describing the invocations of this function.
+func (f *RepoUpdateJobStoreListFunc) History() []RepoUpdateJobStoreListFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoUpdateJobStoreListFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoUpdateJobStoreListFuncCall is an object that describes an invocation
+// of method List on an instance of MockRepoUpdateJobStore.
+type RepoUpdateJobStoreListFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListRepoUpdateJobOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []types.RepoUpdateJob
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoUpdateJobStoreListFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoUpdateJobStoreListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// RepoUpdateJobStoreSaveUpdateJobResultsFunc describes the behavior when
+// the SaveUpdateJobResults method of the parent MockRepoUpdateJobStore
+// instance is invoked.
+type RepoUpdateJobStoreSaveUpdateJobResultsFunc struct {
+	defaultHook func(context.Context, int, SaveUpdateJobResultsOpts) error
+	hooks       []func(context.Context, int, SaveUpdateJobResultsOpts) error
+	history     []RepoUpdateJobStoreSaveUpdateJobResultsFuncCall
+	mutex       sync.Mutex
+}
+
+// SaveUpdateJobResults delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockRepoUpdateJobStore) SaveUpdateJobResults(v0 context.Context, v1 int, v2 SaveUpdateJobResultsOpts) error {
+	r0 := m.SaveUpdateJobResultsFunc.nextHook()(v0, v1, v2)
+	m.SaveUpdateJobResultsFunc.appendCall(RepoUpdateJobStoreSaveUpdateJobResultsFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SaveUpdateJobResults
+// method of the parent MockRepoUpdateJobStore instance is invoked and the
+// hook queue is empty.
+func (f *RepoUpdateJobStoreSaveUpdateJobResultsFunc) SetDefaultHook(hook func(context.Context, int, SaveUpdateJobResultsOpts) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SaveUpdateJobResults method of the parent MockRepoUpdateJobStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *RepoUpdateJobStoreSaveUpdateJobResultsFunc) PushHook(hook func(context.Context, int, SaveUpdateJobResultsOpts) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoUpdateJobStoreSaveUpdateJobResultsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int, SaveUpdateJobResultsOpts) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoUpdateJobStoreSaveUpdateJobResultsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int, SaveUpdateJobResultsOpts) error {
+		return r0
+	})
+}
+
+func (f *RepoUpdateJobStoreSaveUpdateJobResultsFunc) nextHook() func(context.Context, int, SaveUpdateJobResultsOpts) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoUpdateJobStoreSaveUpdateJobResultsFunc) appendCall(r0 RepoUpdateJobStoreSaveUpdateJobResultsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// RepoUpdateJobStoreSaveUpdateJobResultsFuncCall objects describing the
+// invocations of this function.
+func (f *RepoUpdateJobStoreSaveUpdateJobResultsFunc) History() []RepoUpdateJobStoreSaveUpdateJobResultsFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoUpdateJobStoreSaveUpdateJobResultsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoUpdateJobStoreSaveUpdateJobResultsFuncCall is an object that
+// describes an invocation of method SaveUpdateJobResults on an instance of
+// MockRepoUpdateJobStore.
+type RepoUpdateJobStoreSaveUpdateJobResultsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 SaveUpdateJobResultsOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoUpdateJobStoreSaveUpdateJobResultsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoUpdateJobStoreSaveUpdateJobResultsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // MockRolePermissionStore is a mock implementation of the
 // RolePermissionStore interface (from the package
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit

@@ -188,7 +188,7 @@ var (
 
 const reposStatsName = "repos-stats.json"
 
-type cloneRepoFunc func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error)
+type cloneRepoFunc func(ctx context.Context, db database.DB, repo api.RepoName, opts CloneOptions) (err error)
 
 // cleanupRepos walks the repos directory and performs maintenance tasks:
 //
@@ -393,9 +393,9 @@ func cleanupRepos(
 		}
 
 		// name is the relative path to ReposDir, but without the .git suffix.
-		repo := repoNameFromDir(reposDir, dir)
+		repoName := repoNameFromDir(reposDir, dir)
 		recloneLogger := logger.With(
-			log.String("repo", string(repo)),
+			log.String("repo", string(repoName)),
 			log.Time("cloned", recloneTime),
 			log.String("reason", reason),
 		)
@@ -411,7 +411,7 @@ func cleanupRepos(
 
 		cmdCtx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 		defer cancel()
-		if _, err := cloneRepo(cmdCtx, repo, CloneOptions{Block: true, Overwrite: true}); err != nil {
+		if err := cloneRepo(cmdCtx, db, repoName, CloneOptions{Block: true, Overwrite: true}); err != nil {
 			return true, err
 		}
 		reposRecloned.Inc()

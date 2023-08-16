@@ -38,21 +38,26 @@ func TestRepoUpdateJobs_Create(t *testing.T) {
 	require.NoError(t, err)
 
 	// Queued job should be successfully created.
-	createdJob, ok, err := store.Create(ctx, CreateRepoUpdateJobOpts{RepoName: "repo1", Priority: types.HighPriorityRepoUpdate})
+	createdJob, ok, err := store.Create(ctx, CreateRepoUpdateJobOpts{RepoName: "repo1", Priority: types.HighPriorityRepoUpdate, OverwriteClone: true})
 	require.NoError(t, err)
 	assert.True(t, ok)
 	assert.Equal(t, 1, createdJob.ID)
 	assert.Equal(t, types.HighPriorityRepoUpdate, createdJob.Priority)
 	assert.Equal(t, "queued", createdJob.State)
+	assert.True(t, createdJob.OverwriteClone)
 
-	wantJob := createdJob
+	listAndAssert := func(wantJob types.RepoUpdateJob, listOpts ListRepoUpdateJobOpts) {
+		repoUpdateJobs, err = store.List(ctx, listOpts)
+		require.NoError(t, err)
+		assert.Len(t, repoUpdateJobs, 1)
+		gotJob := repoUpdateJobs[0]
+		assert.Equal(t, wantJob.RepoID, gotJob.RepoID)
+		assert.Equal(t, wantJob.Priority, gotJob.Priority)
+		assert.Equal(t, wantJob.OverwriteClone, gotJob.OverwriteClone)
+	}
+
 	// Created job should be listed.
-	repoUpdateJobs, err = store.List(ctx, ListRepoUpdateJobOpts{ID: createdJob.ID})
-	require.NoError(t, err)
-	assert.Len(t, repoUpdateJobs, 1)
-	gotJob := repoUpdateJobs[0]
-	assert.Equal(t, wantJob.RepoID, gotJob.RepoID)
-	assert.Equal(t, wantJob.Priority, gotJob.Priority)
+	listAndAssert(createdJob, ListRepoUpdateJobOpts{ID: createdJob.ID, States: []string{createdJob.State, "errored", "failed"}})
 
 	// Second queued job for the same Repo ID should not be created.
 	_, ok, err = store.Create(ctx, CreateRepoUpdateJobOpts{RepoName: "repo1", Priority: types.HighPriorityRepoUpdate})
@@ -60,21 +65,21 @@ func TestRepoUpdateJobs_Create(t *testing.T) {
 	assert.False(t, ok)
 
 	// Second queued job for a different repo should be created successfully.
-	_, ok, err = store.Create(ctx, CreateRepoUpdateJobOpts{RepoName: "repo2", Priority: types.HighPriorityRepoUpdate})
+	createdJob, ok, err = store.Create(ctx, CreateRepoUpdateJobOpts{RepoName: "repo2", Priority: types.LowPriorityRepoUpdate, OverwriteClone: true})
 	require.NoError(t, err)
 	assert.True(t, ok)
+	assert.Equal(t, 3, createdJob.ID)
+	assert.Equal(t, types.LowPriorityRepoUpdate, createdJob.Priority)
+	assert.Equal(t, "queued", createdJob.State)
+	assert.True(t, createdJob.OverwriteClone)
 
-	// Both jobs should be listed now.
+	// Created job should be listed.
+	listAndAssert(createdJob, ListRepoUpdateJobOpts{ID: createdJob.ID, States: []string{createdJob.State}})
+
+	// Both job should be listed if we don't specify the ID.
 	repoUpdateJobs, err = store.List(ctx, ListRepoUpdateJobOpts{})
 	require.NoError(t, err)
 	assert.Len(t, repoUpdateJobs, 2)
-	for _, gotJob := range repoUpdateJobs {
-		if gotJob.ID == 1 {
-			assert.Equal(t, int32(1), gotJob.RepoID)
-		} else {
-			assert.Equal(t, int32(2), gotJob.RepoID)
-		}
-	}
 }
 
 func TestRepoUpdateJobs_List(t *testing.T) {

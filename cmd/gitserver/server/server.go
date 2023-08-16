@@ -4,7 +4,6 @@ package server
 import (
 	"bufio"
 	"bytes"
-	"container/list"
 	"context"
 	"crypto/sha256"
 	"encoding/gob"
@@ -80,34 +79,6 @@ func init() {
 	traceLogs, _ = strconv.ParseBool(env.Get("SRC_GITSERVER_TRACE", "false", "Toggles trace logging to stderr"))
 }
 
-// cloneJob abstracts away a repo and necessary metadata to clone it. In the future it may be
-// possible to simplify this, but to do that, doClone will need to do a lot less than it does at the
-// moment.
-type cloneJob struct {
-	repo   api.RepoName
-	dir    common.GitDir
-	syncer VCSSyncer
-
-	// TODO: cloneJobConsumer should acquire a new lock. We are trying to keep the changes simple
-	// for the time being. When we start using the new approach of using long lived goroutines for
-	// cloning we will refactor doClone to acquire a new lock.
-	lock *RepositoryLock
-
-	remoteURL *vcs.URL
-	options   CloneOptions
-}
-
-// cloneTask is a thin wrapper around a cloneJob to associate the doneFunc with each job.
-type cloneTask struct {
-	*cloneJob
-	done func() time.Duration
-}
-
-// NewCloneQueue initializes a new cloneQueue.
-func NewCloneQueue(obctx *observation.Context, jobs *list.List) *common.Queue[*cloneJob] {
-	return common.NewQueue[*cloneJob](obctx, "clone-queue", jobs)
-}
-
 // Server is a gitserver server.
 type Server struct {
 	// Logger should be used for all logging and logger creation.
@@ -139,10 +110,6 @@ type Server struct {
 
 	// shared db handle
 	DB database.DB
-
-	// CloneQueue is a threadsafe queue used by DoBackgroundClones to process incoming clone
-	// requests asynchronously.
-	CloneQueue *common.Queue[*cloneJob]
 
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
@@ -438,110 +405,6 @@ func (s *Server) NewRepoStateSyncer(ctx context.Context, interval time.Duration,
 
 func addrForRepo(ctx context.Context, logger log.Logger, repoName api.RepoName, gitServerAddrs gitserver.GitserverAddresses) string {
 	return gitServerAddrs.AddrForRepo(ctx, logger, filepath.Base(os.Args[0]), repoName)
-}
-
-// NewClonePipeline creates a new pipeline that clones repos asynchronously. It
-// creates a producer-consumer pipeline that handles clone requests asychronously.
-func (s *Server) NewClonePipeline(logger log.Logger, cloneQueue *common.Queue[*cloneJob]) goroutine.BackgroundRoutine {
-	return &clonePipelineRoutine{
-		tasks:  make(chan *cloneTask),
-		logger: logger,
-		s:      s,
-		queue:  cloneQueue,
-	}
-}
-
-type clonePipelineRoutine struct {
-	logger log.Logger
-
-	tasks chan *cloneTask
-	// TODO: Get rid of this dependency.
-	s      *Server
-	queue  *common.Queue[*cloneJob]
-	cancel context.CancelFunc
-}
-
-func (p *clonePipelineRoutine) Start() {
-	ctx, cancel := context.WithCancel(context.Background())
-	p.cancel = cancel
-	// Start a go routine for each the producer and the consumer.
-	go p.cloneJobConsumer(ctx, p.tasks)
-	go p.cloneJobProducer(ctx, p.tasks)
-}
-
-func (p *clonePipelineRoutine) Stop() {
-	if p.cancel != nil {
-		p.cancel()
-	}
-}
-
-func (p *clonePipelineRoutine) cloneJobProducer(ctx context.Context, tasks chan<- *cloneTask) {
-	defer close(tasks)
-
-	for {
-		// Acquire the cond mutex lock and wait for a signal if the queue is empty.
-		p.queue.Mutex.Lock()
-		if p.queue.Empty() {
-			// TODO: This should only wait if ctx is not canceled.
-			p.queue.Cond.Wait()
-		}
-
-		// The queue is not empty and we have a job to process! But don't forget to unlock the cond
-		// mutex here as we don't need to hold the lock beyond this point for now.
-		p.queue.Mutex.Unlock()
-
-		// Keep popping from the queue until the queue is empty again, in which case we start all
-		// over again from the top.
-		for {
-			job, doneFunc := p.queue.Pop()
-			if job == nil {
-				break
-			}
-
-			select {
-			case tasks <- &cloneTask{
-				cloneJob: *job,
-				done:     doneFunc,
-			}:
-			case <-ctx.Done():
-				p.logger.Error("cloneJobProducer", log.Error(ctx.Err()))
-				return
-			}
-		}
-	}
-}
-
-func (p *clonePipelineRoutine) cloneJobConsumer(ctx context.Context, tasks <-chan *cloneTask) {
-	logger := p.s.Logger.Scoped("cloneJobConsumer", "process clone jobs")
-
-	for task := range tasks {
-		logger := logger.With(log.String("job.repo", string(task.repo)))
-
-		select {
-		case <-ctx.Done():
-			logger.Error("context done", log.Error(ctx.Err()))
-			return
-		default:
-		}
-
-		ctx, cancel, err := p.s.acquireCloneLimiter(ctx)
-		if err != nil {
-			logger.Error("acquireCloneLimiter", log.Error(err))
-			continue
-		}
-
-		go func(task *cloneTask) {
-			defer cancel()
-
-			err := p.s.doClone(ctx, task.repo, task.dir, task.syncer, task.lock, task.remoteURL, task.options)
-			if err != nil {
-				logger.Error("failed to clone repo", log.Error(err))
-			}
-			// Use a different context in case we failed because the original context failed.
-			p.s.setLastErrorNonFatal(p.s.ctx, task.repo, err)
-			_ = task.done()
-		}(task)
-	}
 }
 
 var (
@@ -941,10 +804,10 @@ func (s *Server) handleRepoClone(w http.ResponseWriter, r *http.Request) {
 	}
 	var resp protocol.RepoCloneResponse
 	req.Repo = protocol.NormalizeRepo(req.Repo)
-
-	_, err := s.CloneRepo(context.Background(), req.Repo, CloneOptions{Block: false})
+	repoName := req.Repo
+	err := ScheduleRepoClone(context.Background(), s.DB, repoName, CloneOptions{})
 	if err != nil {
-		logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
+		logger.Warn("error scheduling a repo clone", log.String("repo", string(req.Repo)), log.Error(err))
 		resp.Error = err.Error()
 	}
 
@@ -1160,35 +1023,36 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 		args.Limit = math.MaxInt32
 	}
 
-	dir := s.dir(args.Repo)
+	repoName := args.Repo
+	dir := s.dir(repoName)
 	if !repoCloned(dir) {
 		if conf.Get().DisableAutoGitUpdates {
 			s.Logger.Debug("not cloning on demand as DisableAutoGitUpdates is set")
 			return false, &gitdomain.RepoNotExistError{
-				Repo: args.Repo,
+				Repo: repoName,
 			}
 		}
 
 		cloneProgress, cloneInProgress := s.locker.Status(dir)
 		if cloneInProgress {
 			return false, &gitdomain.RepoNotExistError{
-				Repo:            args.Repo,
+				Repo:            repoName,
 				CloneInProgress: true,
 				CloneProgress:   cloneProgress,
 			}
 		}
 
-		cloneProgress, err := s.CloneRepo(ctx, args.Repo, CloneOptions{})
+		err = ScheduleRepoClone(ctx, s.DB, repoName, CloneOptions{})
 		if err != nil {
-			s.Logger.Debug("error starting repo clone", log.String("repo", string(args.Repo)), log.Error(err))
+			s.Logger.Debug("error starting repo clone", log.String("repo", string(repoName)), log.Error(err))
 			return false, &gitdomain.RepoNotExistError{
-				Repo:            args.Repo,
+				Repo:            repoName,
 				CloneInProgress: false,
 			}
 		}
 
 		return false, &gitdomain.RepoNotExistError{
-			Repo:            args.Repo,
+			Repo:            repoName,
 			CloneInProgress: true,
 			CloneProgress:   cloneProgress,
 		}
@@ -1197,9 +1061,9 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 	for _, rev := range args.Revisions {
 		// TODO add result to trace
 		if rev.RevSpec != "" {
-			_ = s.ensureRevision(ctx, args.Repo, rev.RevSpec, dir)
+			_ = s.ensureRevision(ctx, repoName, rev.RevSpec, dir)
 		} else if rev.RefGlob != "" {
-			_ = s.ensureRevision(ctx, args.Repo, rev.RefGlob, dir)
+			_ = s.ensureRevision(ctx, repoName, rev.RefGlob, dir)
 		}
 	}
 
@@ -1235,7 +1099,7 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 
 	searcher := &search.CommitSearcher{
 		Logger:               s.Logger,
-		RepoName:             args.Repo,
+		RepoName:             repoName,
 		RepoDir:              dir.Path(),
 		Revisions:            args.Revisions,
 		Query:                mt,
@@ -2029,32 +1893,16 @@ func (s *Server) CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOpt
 		return "", nil
 	}
 
-	if opts.Block {
-		ctx, cancel, err := s.acquireCloneLimiter(ctx)
-		if err != nil {
-			return "", err
-		}
-		defer cancel()
-
-		// We are blocking, so use the passed in context.
-		err = s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
-		err = errors.Wrapf(err, "failed to clone %s", repo)
+	ctx, cancel2, err := s.acquireCloneLimiter(ctx)
+	if err != nil {
 		return "", err
 	}
+	defer cancel2()
 
-	// We push the cloneJob to a queue and let the producer-consumer pipeline take over from this
-	// point. See definitions of cloneJobProducer and cloneJobConsumer to understand how these jobs
-	// are processed.
-	s.CloneQueue.Push(&cloneJob{
-		repo:      repo,
-		dir:       dir,
-		syncer:    syncer,
-		lock:      lock,
-		remoteURL: remoteURL,
-		options:   opts,
-	})
-
-	return "", nil
+	// We are blocking, so use the passed in context.
+	err = s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
+	err = errors.Wrapf(err, "failed to clone %s", repo)
+	return "", err
 }
 
 func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitDir, syncer VCSSyncer, lock *RepositoryLock, remoteURL *vcs.URL, opts CloneOptions) (err error) {

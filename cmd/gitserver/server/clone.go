@@ -4,14 +4,15 @@ import (
 	"context"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
-func (s *Server) maybeStartClone(ctx context.Context, logger log.Logger, repo api.RepoName) (notFound *protocol.NotFoundPayload, cloned bool) {
-	dir := s.dir(repo)
+func (s *Server) maybeStartClone(ctx context.Context, logger log.Logger, repoName api.RepoName) (notFound *protocol.NotFoundPayload, cloned bool) {
+	dir := s.dir(repoName)
 	if repoCloned(dir) {
 		return nil, true
 	}
@@ -29,9 +30,9 @@ func (s *Server) maybeStartClone(ctx context.Context, logger log.Logger, repo ap
 		}, false
 	}
 
-	cloneProgress, err := s.CloneRepo(ctx, repo, CloneOptions{})
+	err := ScheduleRepoClone(ctx, s.DB, repoName, CloneOptions{})
 	if err != nil {
-		logger.Debug("error starting repo clone", log.String("repo", string(repo)), log.Error(err))
+		logger.Debug("error scheduling a repo clone", log.String("repo", string(repoName)), log.Error(err))
 		return &protocol.NotFoundPayload{CloneInProgress: false}, false
 	}
 
@@ -39,4 +40,12 @@ func (s *Server) maybeStartClone(ctx context.Context, logger log.Logger, repo ap
 		CloneInProgress: true,
 		CloneProgress:   cloneProgress,
 	}, false
+}
+
+func ScheduleRepoClone(ctx context.Context, db database.DB, repoName api.RepoName, opts CloneOptions) error {
+	_, _, err := db.RepoUpdateJobs().Create(ctx, database.CreateRepoUpdateJobOpts{RepoName: repoName, OverwriteClone: opts.Overwrite})
+	if err != nil {
+		return err
+	}
+	return nil
 }

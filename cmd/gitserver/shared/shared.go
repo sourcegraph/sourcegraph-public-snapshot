@@ -113,7 +113,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// Setup our server megastruct.
 	recordingCommandFactory := wrexec.NewRecordingCommandFactory(nil, 0)
-	cloneQueue := server.NewCloneQueue(observationCtx, list.New())
 	hostname := config.ExternalAddress
 	gitserver := server.Server{
 		Logger:         logger,
@@ -135,7 +134,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		},
 		Hostname:                hostname,
 		DB:                      db,
-		CloneQueue:              cloneQueue,
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(config.BatchLogGlobalConcurrencyLimit)),
 		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
 		RecordingCommandFactory: recordingCommandFactory,
@@ -181,7 +179,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		httpserver.NewFromAddr(config.ListenAddress, &http.Server{
 			Handler: handler,
 		}),
-		gitserver.NewClonePipeline(logger, cloneQueue),
 		newRateLimitSyncer(ctx, db, config.RateLimitSyncerLimitPerSecond),
 		gitserver.NewRepoStateSyncer(ctx, config.SyncRepoStateInterval, config.SyncRepoStateBatchSize, config.SyncRepoStateUpdatePerSecond),
 		worker.MakeRepoUpdateWorker(ctx, observationCtx, db, &gitserver, hostname),
@@ -203,7 +200,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 				},
 				db,
 				recordingCommandFactory,
-				gitserver.CloneRepo,
+				server.ScheduleRepoClone,
 				logger,
 			),
 		)

@@ -61,6 +61,7 @@
     - RepoPathStore
     - RepoStatisticsStore
     - RepoStore
+    - RepoUpdateJobStore
     - RolePermissionStore
     - RoleStore
     - SavedSearchStore

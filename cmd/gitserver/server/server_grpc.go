@@ -12,7 +12,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -339,14 +338,10 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 }
 
 func (gs *GRPCServer) RepoClone(ctx context.Context, in *proto.RepoCloneRequest) (*proto.RepoCloneResponse, error) {
-
-	repo := protocol.NormalizeRepo(api.RepoName(in.GetRepo()))
-
-	if _, err := gs.Server.CloneRepo(ctx, repo, CloneOptions{Block: false}); err != nil {
-
+	repoName := protocol.NormalizeRepo(api.RepoName(in.GetRepo()))
+	if err := ScheduleRepoClone(ctx, gs.Server.DB, repoName, CloneOptions{}); err != nil {
 		return &proto.RepoCloneResponse{Error: err.Error()}, nil
 	}
-
 	return &proto.RepoCloneResponse{Error: ""}, nil
 }
 
