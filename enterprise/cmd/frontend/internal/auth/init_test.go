@@ -15,7 +15,7 @@ import (
 )
 
 func TestRequireLicenseOrSuggestSSOAlerts(t *testing.T) {
-	tests := []struct {
+	type testCase struct {
 		name               string
 		hasSSOFeature      bool
 		builtInEnabled     bool
@@ -23,7 +23,8 @@ func TestRequireLicenseOrSuggestSSOAlerts(t *testing.T) {
 		featureFlagEnabled bool
 		isSiteAdmin        bool
 		want               []*graphqlbackend.Alert
-	}{
+	}
+	tests := []testCase{
 		{
 			name:               "do not show anything for non-admin",
 			hasSSOFeature:      true,
@@ -71,54 +72,66 @@ func TestRequireLicenseOrSuggestSSOAlerts(t *testing.T) {
 			want:               nil,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			// setup
-			providers := make([]schema.AuthProviders, 0)
-			if test.githubSSOEnabled {
-				providers = append(providers, schema.AuthProviders{
-					Github: &schema.GitHubAuthProvider{
-						Url:          "https://github.com",
-						ClientSecret: "some-secret",
-						ClientID:     "some-id",
-						AllowOrgs:    []string{"myorg"},
-					},
-				})
-			}
-			if test.builtInEnabled {
-				providers = append(providers, schema.AuthProviders{
-					Builtin: &schema.BuiltinAuthProvider{
-						Type:        "builtin",
-						AllowSignup: true,
-					},
-				})
-			}
-			conf.Mock(&conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					AuthProviders: providers,
+
+	var setup = func(test testCase, t *testing.T) graphqlbackend.AlertFuncArgs {
+		// mock the auth providers configuration
+		providers := make([]schema.AuthProviders, 0)
+		if test.githubSSOEnabled {
+			providers = append(providers, schema.AuthProviders{
+				Github: &schema.GitHubAuthProvider{
+					Url:          "https://github.com",
+					ClientSecret: "some-secret",
+					ClientID:     "some-id",
+					AllowOrgs:    []string{"myorg"},
 				},
 			})
-			oldMock := licensing.MockCheckFeature
-			licensing.MockCheckFeature = func(feature licensing.Feature) error {
-				if test.hasSSOFeature {
-					return nil
-				}
-				return licensing.NewFeatureNotActivatedError("test")
-			}
-			t.Cleanup(func() {
-				conf.Mock(nil)
-				licensing.MockCheckFeature = oldMock
+		}
+		if test.builtInEnabled {
+			providers = append(providers, schema.AuthProviders{
+				Builtin: &schema.BuiltinAuthProvider{
+					Type:        "builtin",
+					AllowSignup: true,
+				},
 			})
-			ctx := actor.WithActor(context.Background(), actor.FromMockUser(1))
-			if test.featureFlagEnabled {
-				ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"setup-checklist": true}, nil, nil))
+		}
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				AuthProviders: providers,
+			},
+		})
+
+		// mock the featureSSO availability
+		licensing.MockCheckFeature = func(feature licensing.Feature) error {
+			if test.hasSSOFeature {
+				return nil
 			}
-			// run
-			gotAlerts := requireLicenseOrSuggestSSOAlerts(graphqlbackend.AlertFuncArgs{
-				IsSiteAdmin: test.isSiteAdmin,
-				Ctx:         ctx,
-			})
-			// checks
+			return licensing.NewFeatureNotActivatedError("test")
+		}
+
+		// cleanup mocks
+		t.Cleanup(func() {
+			conf.Mock(nil)
+			licensing.MockCheckFeature = nil
+		})
+
+		// mock the feature flag availability
+		ctx := actor.WithActor(context.Background(), actor.FromMockUser(1))
+		if test.featureFlagEnabled {
+			ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"setup-checklist": true}, nil, nil))
+		}
+
+		return graphqlbackend.AlertFuncArgs{
+			IsSiteAdmin: test.isSiteAdmin,
+			Ctx:         ctx,
+		}
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			args := setup(test, t)
+
+			gotAlerts := requireLicenseOrSuggestSSOAlerts(args)
+
 			if len(gotAlerts) != len(test.want) {
 				t.Errorf("expected %+v, got %+v", test.want, gotAlerts)
 				return

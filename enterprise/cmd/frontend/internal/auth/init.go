@@ -4,7 +4,6 @@ package auth
 import (
 	"fmt"
 	"net/http"
-	"sort"
 	"strings"
 
 	"github.com/sourcegraph/log"
@@ -25,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/saml"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/sourcegraphoperator"
 	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -70,8 +70,7 @@ func requireLicenseOrSuggestSSOAlerts(args graphqlbackend.AlertFuncArgs) []*grap
 		return nil
 	}
 
-	collected := make(map[string]struct{})
-	var names []string
+	names := collections.NewSet[string]()
 	for _, p := range conf.Get().AuthProviders {
 		// Only built-in authentication provider is allowed by default.
 		if p.Builtin != nil {
@@ -98,18 +97,17 @@ func requireLicenseOrSuggestSSOAlerts(args graphqlbackend.AlertFuncArgs) []*grap
 			name = "Other"
 		}
 
-		if _, ok := collected[name]; !ok {
-			collected[name] = struct{}{}
-			names = append(names, name)
+		if !names.Has(name) {
+			names.Add(name)
 		}
 	}
 
 	if len(names) > 0 && !licensing.IsFeatureEnabledLenient(licensing.FeatureSSO) {
-		sort.Strings(names)
+		sortedNames := names.Sorted(collections.NaturalCompare[string])
 		return []*graphqlbackend.Alert{{
 			GroupValue:   graphqlbackend.AlertGroupLicense,
 			TypeValue:    graphqlbackend.AlertTypeError,
-			MessageValue: fmt.Sprintf("A Sourcegraph license is required to enable following authentication providers: %s. [**Get a license.**](/site-admin/license)", strings.Join(names, ", ")),
+			MessageValue: fmt.Sprintf("A Sourcegraph license is required to enable following authentication providers: %s. [**Get a license.**](/site-admin/license)", strings.Join(sortedNames, ", ")),
 		}}
 	}
 
