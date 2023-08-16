@@ -1030,7 +1030,7 @@ commandsets:
       - searcher
       - caddy
       - symbols
-#      - docsite
+      - docsite
       - syntax-highlighter
       - github-proxy
       - zoekt-index-0
