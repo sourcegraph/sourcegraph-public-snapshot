@@ -233,7 +233,6 @@ commands:
       - cmd/repo-updater
 
   symbols:
-    precmd: export CTAGS_COMMAND=$(bazel cquery //dev/tools:universal-ctags --output=files | grep bazel-out)
     cmd: .bin/symbols
     install: |
       if [ -n "$DELVE" ]; then
@@ -244,6 +243,7 @@ commands:
       go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
     checkBinary: .bin/symbols
     env:
+      CTAGS_COMMAND: dev/universal-ctags-dev
       SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
       CTAGS_PROCESSES: 2
       USE_ROCKSKIP: "false"
@@ -401,7 +401,6 @@ commands:
       fi
 
   zoekt-indexserver-template: &zoekt_indexserver_template
-    precmd: export CTAGS_COMMAND=$(bazel cquery //dev/tools:universal-ctags --output=files | grep bazel-out)
     cmd: |
       env PATH="${PWD}/.bin:$PATH" .bin/zoekt-sourcegraph-indexserver \
         -sourcegraph_url 'http://localhost:3090' \
@@ -418,6 +417,7 @@ commands:
       go install github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver
     checkBinary: .bin/zoekt-sourcegraph-indexserver
     env: &zoektenv
+      CTAGS_COMMAND: dev/universal-ctags-dev
       SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
       GRPC_ENABLED: true
 
@@ -915,10 +915,9 @@ bazelCommands:
       ENTERPRISE: 1
   symbols:
     target: //enterprise/cmd/symbols
-    precmd: |
-      export CTAGS_COMMAND=$(bazel cquery //dev/tools:ctags --output=files | grep bazel-out)
     checkBinary: .bin/symbols
     env:
+      CTAGS_COMMAND: dev/universal-ctags-dev
       SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
       CTAGS_PROCESSES: 2
       USE_ROCKSKIP: "false"
