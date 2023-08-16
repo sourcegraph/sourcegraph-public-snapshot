@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.api.GraphQlClient;
+import com.sourcegraph.cody.PluginUtil;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
 import java.io.IOException;
@@ -18,7 +19,7 @@ public class GraphQlLogger {
 
   public static void logInstallEvent(
       @NotNull Project project, @NotNull Consumer<Boolean> callback) {
-    if (ConfigUtil.getAnonymousUserId() != null) {
+    if (ConfigUtil.getAnonymousUserId() != null && project.isDisposed()) {
       var event = createEvent(project, "CodyInstalled", new JsonObject());
       logEvent(project, event, (responseStatusCode) -> callback.accept(responseStatusCode == 200));
     }
@@ -37,6 +38,7 @@ public class GraphQlLogger {
     JsonObject eventParameters = new JsonObject();
     eventParameters.addProperty("latency", latencyMs);
     eventParameters.addProperty("displayDuration", displayDurationMs);
+    eventParameters.addProperty("isAnyKnownPluginEnabled", PluginUtil.isAnyKnownPluginEnabled());
     logEvent(project, createEvent(project, eventName, eventParameters), null);
   }
 

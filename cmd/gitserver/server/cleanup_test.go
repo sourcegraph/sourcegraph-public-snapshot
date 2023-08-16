@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -40,8 +41,8 @@ const (
 )
 
 func newMockedGitserverDB() database.DB {
-	db := database.NewMockDB()
-	gs := database.NewMockGitserverRepoStore()
+	db := dbmocks.NewMockDB()
+	gs := dbmocks.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gs)
 	return db
 }
@@ -547,7 +548,7 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 		return repoExists, repoNotExists
 	}
 
-	mockGitServerRepos := database.NewMockGitserverRepoStore()
+	mockGitServerRepos := dbmocks.NewMockGitserverRepoStore()
 	mockGitServerRepos.GetByNameFunc.SetDefaultHook(func(_ context.Context, name api.RepoName) (*types.GitserverRepo, error) {
 		if strings.Contains(string(name), "repo-exists") {
 			return &types.GitserverRepo{}, nil
@@ -555,10 +556,10 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 			return nil, &database.ErrGitserverRepoNotFound{}
 		}
 	})
-	mockRepos := database.NewMockRepoStore()
+	mockRepos := dbmocks.NewMockRepoStore()
 	mockRepos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
 
-	mockDB := database.NewMockDB()
+	mockDB := dbmocks.NewMockDB()
 	mockDB.GitserverReposFunc.SetDefaultReturn(mockGitServerRepos)
 	mockDB.ReposFunc.SetDefaultReturn(mockRepos)
 
@@ -879,8 +880,8 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 	mkFiles(t, root,
 		"github.com/foo/baz/.git/HEAD",
 	)
-	db := database.NewMockDB()
-	gr := database.NewMockGitserverRepoStore()
+	db := dbmocks.NewMockDB()
+	gr := dbmocks.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
 	logger := logtest.Scoped(t)
 
@@ -1123,8 +1124,8 @@ func TestFreeUpSpace(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		db := database.NewMockDB()
-		gr := database.NewMockGitserverRepoStore()
+		db := dbmocks.NewMockDB()
+		gr := dbmocks.NewMockGitserverRepoStore()
 		db.GitserverReposFunc.SetDefaultReturn(gr)
 		// Run.
 		if err := freeUpSpace(context.Background(), logger, db, "test-gitserver", rd, &fakeDiskSizer{}, 10, 1000); err != nil {

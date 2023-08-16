@@ -38,8 +38,8 @@ public interface CodyAgentServer {
   @JsonNotification("exit")
   void exit();
 
-  @JsonNotification("connectionConfiguration/didChange")
-  void configurationDidChange(ConnectionConfiguration document);
+  @JsonNotification("extensionConfiguration/didChange")
+  void configurationDidChange(ExtensionConfiguration document);
 
   @JsonNotification("textDocument/didFocus")
   void textDocumentDidFocus(TextDocument document);
@@ -52,4 +52,7 @@ public interface CodyAgentServer {
 
   @JsonNotification("textDocument/didClose")
   void textDocumentDidClose(TextDocument document);
+
+  @JsonNotification("debug/message")
+  void debugMessage(DebugMessage message);
 }

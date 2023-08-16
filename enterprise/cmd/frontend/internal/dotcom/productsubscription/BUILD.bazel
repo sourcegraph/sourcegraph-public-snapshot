@@ -89,6 +89,7 @@ go_test(
         "//internal/authz",
         "//internal/conf",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/errcode",
         "//internal/featureflag",

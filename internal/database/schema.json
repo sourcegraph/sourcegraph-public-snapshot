@@ -139,18 +139,6 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.invalidate_session_for_userid_on_password_change()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        IF OLD.passwd != NEW.passwd THEN\n            NEW.invalidated_sessions_at = now() + (1 * interval '1 second');\n            RETURN NEW;\n        END IF;\n    RETURN NEW;\n    END;\n$function$\n"
     },
     {
-      "Name": "iscodyactiveevent",
-      "Definition": "CREATE OR REPLACE FUNCTION public.iscodyactiveevent(name text)\n RETURNS boolean\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$\nBEGIN\n  RETURN\n    (name LIKE '%%cody%%' OR name LIKE '%%Cody%%')\n    AND name NOT IN (\n        '%completion:started%',\n        '%completion:suggested%',\n        '%cta%',\n        '%Cta%',\n        'CodyVSCodeExtension:CodySavedLogin:executed',\n        'web:codyChat:tryOnPublicCode',\n        'web:codyEditorWidget:viewed',\n        'web:codyChat:pageViewed',\n        'CodyConfigurationPageViewed',\n        'ClickedOnTryCodySearchCTA',\n        'TryCodyWebOnboardingDisplayed',\n        'AboutGetCodyPopover',\n        'TryCodyWeb',\n        'CodySurveyToastViewed',\n        'SiteAdminCodyPageViewed',\n        'CodyUninstalled',\n        'SpeakToACodyEngineerCTA'\n    );\nEND;\n$function$\n"
-    },
-    {
-      "Name": "iscodyexplanationevent",
-      "Definition": "CREATE OR REPLACE FUNCTION public.iscodyexplanationevent(name text)\n RETURNS boolean\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$\nBEGIN\n  RETURN name = ANY(ARRAY[\n    'CodyVSCodeExtension:recipe:explain-code-high-level:executed',\n    'CodyVSCodeExtension:recipe:explain-code-detailed:executed',\n    'CodyVSCodeExtension:recipe:find-code-smells:executed',\n    'CodyVSCodeExtension:recipe:git-history:executed',\n    'CodyVSCodeExtension:recipe:rate-code:executed'\n  ]);\nEND;\n$function$\n"
-    },
-    {
-      "Name": "iscodygenerationevent",
-      "Definition": "CREATE OR REPLACE FUNCTION public.iscodygenerationevent(name text)\n RETURNS boolean\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$\nBEGIN\n  RETURN name = ANY(ARRAY[\n    'CodyVSCodeExtension:recipe:rewrite-to-functional:executed',\n    'CodyVSCodeExtension:recipe:improve-variable-names:executed',\n    'CodyVSCodeExtension:recipe:replace:executed',\n    'CodyVSCodeExtension:recipe:generate-docstring:executed',\n    'CodyVSCodeExtension:recipe:generate-unit-test:executed',\n    'CodyVSCodeExtension:recipe:rewrite-functional:executed',\n    'CodyVSCodeExtension:recipe:code-refactor:executed',\n    'CodyVSCodeExtension:recipe:fixup:executed',\n\t'CodyVSCodeExtension:recipe:translate-to-language:executed'\n  ]);\nEND;\n$function$\n"
-    },
-    {
       "Name": "merge_audit_log_transitions",
       "Definition": "CREATE OR REPLACE FUNCTION public.merge_audit_log_transitions(internal hstore, arrayhstore hstore[])\n RETURNS hstore\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$\n    DECLARE\n        trans hstore;\n    BEGIN\n      FOREACH trans IN ARRAY arrayhstore\n      LOOP\n          internal := internal || hstore(trans-\u003e'column', trans-\u003e'new');\n      END LOOP;\n\n      RETURN internal;\n    END;\n$function$\n"
     },
@@ -10604,36 +10592,6 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX event_logs_anonymous_user_id ON event_logs USING btree (anonymous_user_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "event_logs_name_is_cody_active_event",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX event_logs_name_is_cody_active_event ON event_logs USING btree (iscodyactiveevent(name))",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "event_logs_name_is_cody_explanation_event",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX event_logs_name_is_cody_explanation_event ON event_logs USING btree (iscodyexplanationevent(name))",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "event_logs_name_is_cody_generation_event",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX event_logs_name_is_cody_generation_event ON event_logs USING btree (iscodygenerationevent(name))",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },

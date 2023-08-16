@@ -47,7 +47,6 @@ cEoKFPr8HjXXUVCa3Q84tf9nGb4iUFslRSbS6RCP6Nm+JsfbCTtzyglYuPRKITGm
 jSzka5UER3Dj1lSLMk9DkU+jrBxUsFeeiQOYhzQBaZxguvwYRIYHpg==
 -----END RSA PRIVATE KEY-----`
 
-
 func TestGitHubAppAuthenticator_Authenticate(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		appID := 1234

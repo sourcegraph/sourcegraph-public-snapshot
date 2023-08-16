@@ -38,7 +38,7 @@ func TestEmbedRepo(t *testing.T) {
 	}
 	revision := api.CommitID("deadbeef")
 	embeddingsClient := NewMockEmbeddingsClient()
-	inserter := db.NewNoopInserter()
+	inserter := db.NewNoopDB()
 	contextService := NewMockContextService()
 	contextService.SplitIntoEmbeddableChunksFunc.SetDefaultHook(defaultSplitter)
 	splitOptions := codeintelContext.SplitOptions{ChunkTokensThreshold: 8}
@@ -385,7 +385,7 @@ func TestEmbedRepo_ExcludeChunkOnError(t *testing.T) {
 	repoIDName := types.RepoIDName{Name: repoName}
 	embeddingsClient := NewMockEmbeddingsClient()
 	contextService := NewMockContextService()
-	inserter := db.NewNoopInserter()
+	inserter := db.NewNoopDB()
 	contextService.SplitIntoEmbeddableChunksFunc.SetDefaultHook(defaultSplitter)
 	splitOptions := codeintelContext.SplitOptions{ChunkTokensThreshold: 8}
 	mockFiles := map[string][]byte{

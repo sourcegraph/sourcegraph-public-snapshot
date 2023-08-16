@@ -13,11 +13,12 @@ import org.jetbrains.annotations.Nullable;
 
 /** Provides controller functionality for application settings. */
 public class SettingsConfigurable implements Configurable {
-  private final Project project;
-  private SettingsComponent mySettingsComponent;
+  private final @NotNull Project project;
+  private final @NotNull SettingsComponent mySettingsComponent;
 
   public SettingsConfigurable(@NotNull Project project) {
     this.project = project;
+    mySettingsComponent = new SettingsComponent(project);
   }
 
   @Nls(capitalization = Nls.Capitalization.Title)
@@ -34,7 +35,6 @@ public class SettingsConfigurable implements Configurable {
   @Nullable
   @Override
   public JComponent createComponent() {
-    mySettingsComponent = new SettingsComponent(project);
     Disposer.register(project, mySettingsComponent);
     return mySettingsComponent.getPanel();
   }
@@ -57,8 +57,10 @@ public class SettingsConfigurable implements Configurable {
         || mySettingsComponent.isUrlNotificationDismissed()
             != ConfigUtil.isUrlNotificationDismissed()
         || mySettingsComponent.isCodyEnabled() != ConfigUtil.isCodyEnabled()
-        || mySettingsComponent.isCodyAutoCompleteEnabled()
-            != ConfigUtil.isCodyAutoCompleteEnabled();
+        || mySettingsComponent.isCodyAutoCompleteEnabled() != ConfigUtil.isCodyAutoCompleteEnabled()
+        || mySettingsComponent.isCodyDebugEnabled() != ConfigUtil.isCodyDebugEnabled()
+        || mySettingsComponent.isCodyVerboseDebugEnabled()
+            != ConfigUtil.isCodyVerboseDebugEnabled();
   }
 
   @Override
@@ -72,6 +74,8 @@ public class SettingsConfigurable implements Configurable {
 
     boolean oldCodyEnabled = ConfigUtil.isCodyEnabled();
     boolean oldCodyAutoCompleteEnabled = ConfigUtil.isCodyAutoCompleteEnabled();
+    boolean oldCodyDebugEnabled = ConfigUtil.isCodyDebugEnabled();
+    boolean oldCodyVerboseDebugEnabled = ConfigUtil.isCodyVerboseDebugEnabled();
     String oldUrl = ConfigUtil.getSourcegraphUrl(project);
     String newDotComAccessToken = mySettingsComponent.getDotComAccessToken();
     String newEnterpriseAccessToken = mySettingsComponent.getEnterpriseAccessToken();
@@ -90,12 +94,16 @@ public class SettingsConfigurable implements Configurable {
             oldCodyEnabled,
             oldCodyAutoCompleteEnabled,
             oldUrl,
+            oldCodyDebugEnabled,
+            oldCodyVerboseDebugEnabled,
             newUrl,
             mySettingsComponent.isDotComAccessTokenChanged(),
             mySettingsComponent.isEnterpriseAccessTokenChanged(),
             mySettingsComponent.getCustomRequestHeaders(),
             mySettingsComponent.isCodyEnabled(),
-            mySettingsComponent.isCodyAutoCompleteEnabled());
+            mySettingsComponent.isCodyAutoCompleteEnabled(),
+            mySettingsComponent.isCodyDebugEnabled(),
+            mySettingsComponent.isCodyVerboseDebugEnabled());
 
     publisher.beforeAction(context);
 
@@ -144,6 +152,8 @@ public class SettingsConfigurable implements Configurable {
     aSettings.isUrlNotificationDismissed = mySettingsComponent.isUrlNotificationDismissed();
     aSettings.setCodyEnabled(mySettingsComponent.isCodyEnabled());
     aSettings.isCodyAutoCompleteEnabled = mySettingsComponent.isCodyAutoCompleteEnabled();
+    aSettings.isCodyDebugEnabled = mySettingsComponent.isCodyDebugEnabled();
+    aSettings.isCodyVerboseDebugEnabled = mySettingsComponent.isCodyVerboseDebugEnabled();
 
     publisher.afterAction(context);
   }
@@ -162,11 +172,13 @@ public class SettingsConfigurable implements Configurable {
     mySettingsComponent.setUrlNotificationDismissedEnabled(ConfigUtil.isUrlNotificationDismissed());
     mySettingsComponent.setCodyEnabled(ConfigUtil.isCodyEnabled());
     mySettingsComponent.setCodyAutoCompleteEnabled(ConfigUtil.isCodyAutoCompleteEnabled());
+    mySettingsComponent.setIsCodyDebugEnabled(ConfigUtil.isCodyDebugEnabled());
+    mySettingsComponent.setIsCodyVerboseDebugEnabled(ConfigUtil.isCodyVerboseDebugEnabled());
     mySettingsComponent.getPanel().requestFocusInWindow();
   }
 
   @Override
   public void disposeUIResources() {
-    mySettingsComponent = null;
+    mySettingsComponent.dispose();
   }
 }
