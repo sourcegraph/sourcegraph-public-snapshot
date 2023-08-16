@@ -11,7 +11,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/contentLibrary"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/contentlibrary"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
