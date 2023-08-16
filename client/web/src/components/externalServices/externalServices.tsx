@@ -1606,7 +1606,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     gerrit: GERRIT,
     azuredevops: AZUREDEVOPS,
     phabricator: PHABRICATOR_SERVICE,
-    ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
+    ...(window.context?.experimentalFeatures?.perforce !== 'disabled' ? { perforce: PERFORCE } : {}),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
 }
 
