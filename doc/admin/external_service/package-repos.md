@@ -50,4 +50,6 @@ Filters can also have one of two behaviours:
 
 Having no configured _allow_ filters implicitly allows everything. _Block_ filters have priority over _allow_ filters (a blocked package or version will not be synced even if it is explicitly allowed).
 
+Filters can be created/managed in the `/site-admin/packages` page by clicking on "Manage package filters", or individual filters can be added based on existing package repositories by clicking on the meatball menu next to a package repository entry on same page.
+
 Package repository filter updates may require a few minutes to propagate through the system. The blocked status of a package repository will be updated in the UI and the relevant external service may add or remove repositories after syncing (visible in the site-admin page for the external service).
