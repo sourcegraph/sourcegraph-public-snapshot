@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.api.GraphQlClient;
+import com.sourcegraph.cody.PluginUtil;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
 import java.io.IOException;
@@ -37,6 +38,7 @@ public class GraphQlLogger {
     JsonObject eventParameters = new JsonObject();
     eventParameters.addProperty("latency", latencyMs);
     eventParameters.addProperty("displayDuration", displayDurationMs);
+    eventParameters.addProperty("isAnyKnownPluginEnabled", PluginUtil.isAnyKnownPluginEnabled());
     logEvent(project, createEvent(project, eventName, eventParameters), null);
   }
 
