@@ -62,7 +62,7 @@ func TestRequireLicenseOrSuggestSSOAlerts(t *testing.T) {
 			}},
 		},
 		{
-			name:               "do not show alert if no SSO providers configured and license has SSO feature and and feature flag is disabled",
+			name:               "do not show alert if no SSO providers configured and license has SSO feature and feature flag is disabled",
 			hasSSOFeature:      true,
 			builtInEnabled:     true,
 			githubSSOEnabled:   true,
