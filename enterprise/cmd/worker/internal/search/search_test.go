@@ -16,23 +16,23 @@ func TestBackendFake(t *testing.T) {
 	assert := require.New(t)
 
 	ctx := context.Background()
-	searcher, err := BackendFake().NewSearch(ctx, "1@rev1 1@rev2 2@rev3")
+	searcher, err := NewSearcherFake().NewSearch(ctx, "1@rev1 1@rev2 2@rev3")
 	assert.NoError(err)
 
-	// Test RepositoryRefSpecs
-	refSpecs, err := searcher.RepositoryRefSpecs(ctx)
+	// Test RepositoryRevSpecs
+	refSpecs, err := searcher.RepositoryRevSpecs(ctx)
 	assert.NoError(err)
-	assert.Equal("RepositoryRefSpec{1@spec} RepositoryRefSpec{2@spec}", joinStringer(refSpecs))
+	assert.Equal("RepositoryRevSpec{1@spec} RepositoryRevSpec{2@spec}", joinStringer(refSpecs))
 
-	// Test ResolveRepositoryRefSpec
+	// Test ResolveRepositoryRevSpec
 	{
-		// RepositoryRefSpec{1@spec}
-		repoRevs, err := searcher.ResolveRepositoryRefSpec(ctx, refSpecs[0])
+		// RepositoryRevSpec{1@spec}
+		repoRevs, err := searcher.ResolveRepositoryRevSpec(ctx, refSpecs[0])
 		assert.NoError(err)
 		assert.Equal("RepositoryRevision{1@rev1} RepositoryRevision{1@rev2}", joinStringer(repoRevs))
 
-		// RepositoryRefSpec{2@spec}
-		repoRevs, err = searcher.ResolveRepositoryRefSpec(ctx, refSpecs[1])
+		// RepositoryRevSpec{2@spec}
+		repoRevs, err = searcher.ResolveRepositoryRevSpec(ctx, refSpecs[1])
 		assert.NoError(err)
 		assert.Equal("RepositoryRevision{2@rev3}", joinStringer(repoRevs))
 	}
@@ -40,14 +40,14 @@ func TestBackendFake(t *testing.T) {
 	// Test Search
 	var csv csvBuffer
 	for _, refSpec := range refSpecs {
-		repoRevs, err := searcher.ResolveRepositoryRefSpec(ctx, refSpec)
+		repoRevs, err := searcher.ResolveRepositoryRevSpec(ctx, refSpec)
 		assert.NoError(err)
 		for _, repoRev := range repoRevs {
 			err := searcher.Search(ctx, repoRev, &csv)
 			assert.NoError(err)
 		}
 	}
-	assert.Equal(`repo,refspec,revision
+	assert.Equal(`repo,revspec,revision
 1,spec,rev1
 1,spec,rev2
 2,spec,rev3
