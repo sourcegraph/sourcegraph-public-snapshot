@@ -34,6 +34,10 @@ const SiteAdminConfigurationPage = lazyComponent(
     'SiteAdminConfigurationPage'
 )
 const SiteAdminSettingsPage = lazyComponent(() => import('./SiteAdminSettingsPage'), 'SiteAdminSettingsPage')
+const SiteAdminOnboardingTourPage = lazyComponent(
+    () => import('./SiteAdminOnboardingTourPage'),
+    'SiteAdminOnboardingTourPage'
+)
 const SiteAdminExternalServicesArea = lazyComponent(
     () => import('./SiteAdminExternalServicesArea'),
     'SiteAdminExternalServicesArea'
@@ -137,6 +141,10 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/global-settings',
         render: props => <SiteAdminSettingsPage {...props} />,
+    },
+    {
+        path: '/onboarding-tour',
+        render: props => <SiteAdminOnboardingTourPage {...props} />,
     },
     {
         path: '/github-apps/*',
