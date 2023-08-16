@@ -4685,6 +4685,23 @@ CREATE SEQUENCE user_external_accounts_id_seq
 
 ALTER SEQUENCE user_external_accounts_id_seq OWNED BY user_external_accounts.id;
 
+CREATE TABLE user_onboarding_tour (
+    id integer NOT NULL,
+    raw_json text NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_by integer
+);
+
+CREATE SEQUENCE user_onboarding_tour_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE user_onboarding_tour_id_seq OWNED BY user_onboarding_tour.id;
+
 CREATE TABLE user_pending_permissions (
     id bigint NOT NULL,
     bind_id text NOT NULL,
@@ -5138,6 +5155,8 @@ ALTER TABLE ONLY temporary_settings ALTER COLUMN id SET DEFAULT nextval('tempora
 ALTER TABLE ONLY user_credentials ALTER COLUMN id SET DEFAULT nextval('user_credentials_id_seq'::regclass);
 
 ALTER TABLE ONLY user_external_accounts ALTER COLUMN id SET DEFAULT nextval('user_external_accounts_id_seq'::regclass);
+
+ALTER TABLE ONLY user_onboarding_tour ALTER COLUMN id SET DEFAULT nextval('user_onboarding_tour_id_seq'::regclass);
 
 ALTER TABLE ONLY user_pending_permissions ALTER COLUMN id SET DEFAULT nextval('user_pending_permissions_id_seq'::regclass);
 
@@ -5660,6 +5679,9 @@ ALTER TABLE ONLY user_emails
 
 ALTER TABLE ONLY user_external_accounts
     ADD CONSTRAINT user_external_accounts_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY user_onboarding_tour
+    ADD CONSTRAINT user_onboarding_tour_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY user_pending_permissions
     ADD CONSTRAINT user_pending_permissions_service_perm_object_unique UNIQUE (service_type, service_id, permission, object_type, bind_id);
@@ -6821,6 +6843,9 @@ ALTER TABLE ONLY user_emails
 
 ALTER TABLE ONLY user_external_accounts
     ADD CONSTRAINT user_external_accounts_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
+
+ALTER TABLE ONLY user_onboarding_tour
+    ADD CONSTRAINT user_onboarding_tour_users_fk FOREIGN KEY (updated_by) REFERENCES users(id);
 
 ALTER TABLE ONLY user_public_repos
     ADD CONSTRAINT user_public_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;

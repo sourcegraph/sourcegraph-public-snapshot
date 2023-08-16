@@ -1240,6 +1240,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "user_onboarding_tour_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "user_pending_permissions_id_seq",
       "TypeName": "bigint",
       "StartValue": 1,
@@ -26425,6 +26434,86 @@
           "Definition": "CREATE TRIGGER trig_delete_user_repo_permissions_on_external_account_soft_dele AFTER UPDATE ON user_external_accounts FOR EACH ROW EXECUTE FUNCTION delete_user_repo_permissions_on_external_account_soft_delete()"
         }
       ]
+    },
+    {
+      "Name": "user_onboarding_tour",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "created_at",
+          "Index": 3,
+          "TypeName": "timestamp without time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('user_onboarding_tour_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "raw_json",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_by",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "user_onboarding_tour_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX user_onboarding_tour_pkey ON user_onboarding_tour USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "user_onboarding_tour_users_fk",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (updated_by) REFERENCES users(id)"
+        }
+      ],
+      "Triggers": []
     },
     {
       "Name": "user_pending_permissions",

@@ -4074,6 +4074,21 @@ Triggers:
 
 ```
 
+# Table "public.user_onboarding_tour"
+```
+   Column   |            Type             | Collation | Nullable |                     Default                      
+------------+-----------------------------+-----------+----------+--------------------------------------------------
+ id         | integer                     |           | not null | nextval('user_onboarding_tour_id_seq'::regclass)
+ raw_json   | text                        |           | not null | 
+ created_at | timestamp without time zone |           | not null | now()
+ updated_by | integer                     |           |          | 
+Indexes:
+    "user_onboarding_tour_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "user_onboarding_tour_users_fk" FOREIGN KEY (updated_by) REFERENCES users(id)
+
+```
+
 # Table "public.user_pending_permissions"
 ```
      Column      |           Type           | Collation | Nullable |                       Default                        
@@ -4266,6 +4281,7 @@ Referenced by:
     TABLE "user_credentials" CONSTRAINT "user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "user_onboarding_tour" CONSTRAINT "user_onboarding_tour_users_fk" FOREIGN KEY (updated_by) REFERENCES users(id)
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "user_repo_permissions" CONSTRAINT "user_repo_permissions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "user_roles" CONSTRAINT "user_roles_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
