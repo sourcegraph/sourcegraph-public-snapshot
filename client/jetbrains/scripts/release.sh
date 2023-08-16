@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -eux
 
 [ -z "$PUBLISH_TOKEN" ] && echo "You must set a \$PUBLISH_TOKEN before running this script. You can generate a token in the JetBrains marketplace." && exit 1
 
