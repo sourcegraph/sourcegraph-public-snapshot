@@ -3,10 +3,10 @@
 set -eu
 EXIT_CODE=0
 
-bazelrc="--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc"
+bazelrc=(--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
 
 echo "--- :bazel: Running bazel configure"
-bazel $bazelrc configure
+bazel "${bazelrc[@]}" configure
 
 echo "--- Checking if BUILD.bazel files were updated"
 git diff --exit-code || EXIT_CODE=$? # do not fail on non-zero exit
@@ -30,7 +30,7 @@ END
 fi
 
 echo "--- :bazel: Running bazel run //:gazelle-update-repos"
-bazel $bazelrc run //:gazelle-update-repos
+bazel "${bazelrc[@]}" run //:gazelle-update-repos
 
 echo "--- Checking if deps.bzl was updated"
 git diff --exit-code || EXIT_CODE=$? # do not fail on non-zero exit
@@ -54,7 +54,7 @@ END
 fi
 
 echo "--- :bazel::go: Running gofmt"
-unformatted=$(bazel $bazelrc run @go_sdk//:bin/gofmt -- -l .)
+unformatted=$(bazel "${bazelrc[@]}" run @go_sdk//:bin/gofmt -- -l .)
 
 if [[ ${unformatted} != "" ]]; then
   mkdir -p ./annotations
