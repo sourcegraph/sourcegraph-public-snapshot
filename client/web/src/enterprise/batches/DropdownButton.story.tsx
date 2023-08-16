@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -6,7 +6,7 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { WebStory } from '../../components/WebStory'
 
 import { BATCH_CHANGES_SITE_CONFIGURATION } from './backend'
-import { Action, DropdownButton } from './DropdownButton'
+import { type Action, DropdownButton } from './DropdownButton'
 import { rolloutWindowConfigMockResult, noRolloutWindowMockResult } from './mocks'
 
 // eslint-disable-next-line @typescript-eslint/require-await

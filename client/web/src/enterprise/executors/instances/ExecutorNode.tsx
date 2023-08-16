@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from 'react'
+import React, { type FunctionComponent } from 'react'
 
 import { mdiCheckboxBlankCircle } from '@mdi/js'
 import classNames from 'classnames'
@@ -7,7 +7,7 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Badge, H4, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../components/Collapsible'
-import { ExecutorFields } from '../../../graphql-operations'
+import type { ExecutorFields } from '../../../graphql-operations'
 
 import { ExecutorCompatibilityAlert } from './ExecutorCompatibilityAlert'
 

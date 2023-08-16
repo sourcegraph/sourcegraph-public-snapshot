@@ -33,7 +33,7 @@ public abstract class SimpleRecipeAction extends BaseRecipeAction {
 
   public void executeRecipeWithPromptProvider(
       @NotNull UpdatableChat updatableChat, @NotNull Project project) {
-    GraphQlLogger.logCodyEvents(project, this.getActionComponentName(), "clicked");
+    GraphQlLogger.logCodyEvent(project, this.getActionComponentName(), "clicked");
     RecipeRunner recipeRunner = new RecipeRunner(project, updatableChat);
     ActionUtil.runIfCodeSelected(
         updatableChat,

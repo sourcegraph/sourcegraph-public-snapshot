@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.autocomplete;
 
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.editor.Editor;
@@ -18,7 +17,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.cody.agent.CodyAgent;
-import com.sourcegraph.cody.agent.CodyAgentServer;
+import com.sourcegraph.cody.agent.CodyAgentClient;
 import com.sourcegraph.cody.agent.protocol.Position;
 import com.sourcegraph.cody.agent.protocol.Range;
 import com.sourcegraph.cody.agent.protocol.TextDocument;
@@ -77,12 +76,14 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
   private static class CodySelectionListener implements SelectionListener {
     @Override
     public void selectionChanged(@NotNull SelectionEvent e) {
-      if (CodyAutoCompleteManager.getInstance().isEnabledForEditor(e.getEditor())
+      if (!ConfigUtil.isCodyEnabled()) {
+        return;
+      }
+      informAgentAboutEditorChange(e.getEditor());
+      CodyAutoCompleteManager suggestions = CodyAutoCompleteManager.getInstance();
+      if (suggestions.isEnabledForEditor(e.getEditor())
           && CodyEditorFactoryListener.isSelectedEditor(e.getEditor())) {
-        informAgentAboutEditorChange(e.getEditor());
-        ApplicationManager.getApplication()
-            .getService(CodyAutoCompleteManager.class)
-            .clearAutoCompleteSuggestions(e.getEditor());
+        suggestions.clearAutoCompleteSuggestions(e.getEditor());
       }
     }
   }
@@ -176,8 +177,8 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
     if (editor.getProject() == null) {
       return;
     }
-    CodyAgentServer server = CodyAgent.getServer(editor.getProject());
-    if (server == null) {
+    CodyAgentClient client = CodyAgent.getClient(editor.getProject());
+    if (client.server == null) {
       return;
     }
     VirtualFile file = FileDocumentManager.getInstance().getFile(editor.getDocument());
@@ -189,6 +190,11 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
             .setFilePath(file.getPath())
             .setContent(editor.getDocument().getText())
             .setSelection(getSelection(editor));
-    server.textDocumentDidChange(document);
+    client.server.textDocumentDidChange(document);
+
+    if (client.codebase == null) {
+      return;
+    }
+    client.codebase.handlePotentialCodebaseChange(editor.getProject(), file);
   }
 }

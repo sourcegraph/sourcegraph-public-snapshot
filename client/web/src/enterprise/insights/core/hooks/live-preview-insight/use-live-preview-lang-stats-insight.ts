@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { escapeRegExp, partition, sum } from 'lodash'
-import { defer, Observable } from 'rxjs'
+import { defer, type Observable } from 'rxjs'
 import { map, retry } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
@@ -11,13 +11,13 @@ import { createLinkUrl } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../../../backend/graphql'
 import {
-    LangStatsInsightContentResult,
-    LangStatsInsightContentVariables,
+    type LangStatsInsightContentResult,
+    type LangStatsInsightContentVariables,
     SearchPatternType,
 } from '../../../../../graphql-operations'
-import { CategoricalChartContent } from '../../backend/code-insights-backend-types'
+import type { CategoricalChartContent } from '../../backend/code-insights-backend-types'
 
-import { LivePreviewStatus, State } from './types'
+import { LivePreviewStatus, type State } from './types'
 
 interface LangStatsDatum {
     name: string

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { UseShowMorePaginationResult } from '../../components/FilteredConnection/hooks/useShowMorePagination'
+import type { UseShowMorePaginationResult } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionError,
     ConnectionLoading,

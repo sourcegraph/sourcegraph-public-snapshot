@@ -1,14 +1,14 @@
-import { EditorState } from '@codemirror/state'
+import type { EditorState } from '@codemirror/state'
 import { mdiFilterOutline, mdiSourceRepository, mdiStar, mdiFileOutline } from '@mdi/js'
-import { byLengthAsc, extendedMatch, Fzf, FzfOptions, FzfResultItem } from 'fzf'
+import { byLengthAsc, extendedMatch, Fzf, type FzfOptions, type FzfResultItem } from 'fzf'
 
 // This module implements suggestions for the experimental search input
 // eslint-disable-next-line no-restricted-imports
 import {
-    Group,
-    Option,
-    Source,
-    SuggestionResult,
+    type Group,
+    type Option,
+    type Source,
+    type SuggestionResult,
     filterRenderer,
     filterValueRenderer,
     combineResults,
@@ -17,21 +17,26 @@ import {
 } from '@sourcegraph/branded/src/search-ui/experimental'
 import { getQueryInformation } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
 import { gql } from '@sourcegraph/http-client'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { SearchContextProps } from '@sourcegraph/shared/src/search'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { getRelevantTokens } from '@sourcegraph/shared/src/search/query/analyze'
 import { regexInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
-import { FILTERS, FilterType, isNegatableFilter, ResolvedFilter } from '@sourcegraph/shared/src/search/query/filters'
-import { Node, Parameter } from '@sourcegraph/shared/src/search/query/parser'
+import {
+    FILTERS,
+    FilterType,
+    isNegatableFilter,
+    type ResolvedFilter,
+} from '@sourcegraph/shared/src/search/query/filters'
+import type { Node, Parameter } from '@sourcegraph/shared/src/search/query/parser'
 import { predicateCompletion } from '@sourcegraph/shared/src/search/query/predicates'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { selectorHasFields } from '@sourcegraph/shared/src/search/query/selectFilter'
-import { CharacterRange, Filter, KeywordKind, Token } from '@sourcegraph/shared/src/search/query/token'
+import { type CharacterRange, type Filter, KeywordKind, type Token } from '@sourcegraph/shared/src/search/query/token'
 import { isFilterOfType, resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/utils'
 import { getSymbolIconSVGPath } from '@sourcegraph/shared/src/symbols/symbolIcons'
 
-import { AuthenticatedUser } from '../../auth'
-import {
+import type { AuthenticatedUser } from '../../auth'
+import type {
     SuggestionsRepoResult,
     SuggestionsRepoVariables,
     SuggestionsFileResult,

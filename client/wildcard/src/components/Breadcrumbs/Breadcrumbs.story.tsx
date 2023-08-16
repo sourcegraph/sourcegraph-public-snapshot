@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 import { ResizableBox } from 'react-resizable'
 
 import { BrandedStory } from '../../stories'

@@ -4,10 +4,10 @@ import { Navigate } from 'react-router-dom'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { EnterprisePageRoutes } from '../../routes.constants'
 import { createNotebook } from '../backend'

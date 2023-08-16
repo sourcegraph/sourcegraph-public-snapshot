@@ -19,7 +19,7 @@ import classNames from 'classnames'
 import { pluralize } from '@sourcegraph/common'
 import { H3, H4, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { ChangesetApplyPreviewFields, ChangesetSpecOperation } from '../../../../graphql-operations'
+import { type ChangesetApplyPreviewFields, ChangesetSpecOperation } from '../../../../graphql-operations'
 
 export interface PreviewActionsProps {
     node: ChangesetApplyPreviewFields

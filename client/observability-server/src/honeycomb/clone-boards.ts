@@ -1,5 +1,5 @@
 import { omit } from 'lodash'
-import fetch, { RequestInit } from 'node-fetch'
+import fetch, { type RequestInit } from 'node-fetch'
 import signale from 'signale'
 
 interface QueryAnnotation {

@@ -1,4 +1,4 @@
-import { FC, useMemo } from 'react'
+import { type FC, useMemo } from 'react'
 
 import classNames from 'classnames'
 
@@ -10,7 +10,7 @@ import {
 } from '@sourcegraph/shared/src/components/icons'
 import { Icon, Text } from '@sourcegraph/wildcard'
 
-import { StatusAndRepoStatsResult } from '../../graphql-operations'
+import type { StatusAndRepoStatsResult } from '../../graphql-operations'
 import { STATUS_AND_REPO_STATS } from '../../site-admin/backend'
 
 import styles from './ProgressBar.module.scss'

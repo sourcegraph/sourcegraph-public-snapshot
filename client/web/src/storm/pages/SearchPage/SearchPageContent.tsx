@@ -1,10 +1,10 @@
-import { FC, useEffect, useState } from 'react'
+import { type FC, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/QueryExamples'
-import { QueryState } from '@sourcegraph/shared/src/search'
+import type { QueryState } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'

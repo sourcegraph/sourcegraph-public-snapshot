@@ -4,9 +4,31 @@
 
 ### Added
 
+- New settings to enable debugging with the agent [#55821](https://github.com/sourcegraph/sourcegraph/pull/55821)
+
 ### Changed
 
-- Store application level access tokens in a safe way [#55251](https://github.com/sourcegraph/sourcegraph/pull/55251)
+- Improved settings UI [#55876](https://github.com/sourcegraph/sourcegraph/pull/55876)
+
+### Deprecated
+
+### Removed
+
+- Support for 2022.0, 2022.1 is now required [#55831](https://github.com/sourcegraph/sourcegraph/pull/55831)
+
+### Fixed
+
+- Suppress duplicate telemetry when using agent [cody#689](https://github.com/sourcegraph/cody/pull/689)
+- Fixed bug causing the agent to not work [#55867](https://github.com/sourcegraph/sourcegraph/pull/55867)
+- Fixed `NullPointerException` bug [#55869](https://github.com/sourcegraph/sourcegraph/pull/55869)
+
+### Security
+
+## [3.0.9]
+
+### Added
+
+### Changed
 
 ### Deprecated
 
@@ -14,12 +36,20 @@
 
 ### Fixed
 
+### Security
+
+## [3.0.9]
+
+### Changed
+
+- Store application level access tokens in a safe way [#55251](https://github.com/sourcegraph/sourcegraph/pull/55251)
+- Autocomplete is now powered by the agent when enabled (off by default) [#55638](https://github.com/sourcegraph/sourcegraph/pull/55638), [#55826](https://github.com/sourcegraph/sourcegraph/pull/55826)
+
+### Fixed
+
 - Removed jumping text effect from the chat when generating response [#55357](https://github.com/sourcegraph/sourcegraph/pull/55357)
 - Chat message doesn't jump after finished response generation [#55390](https://github.com/sourcegraph/sourcegraph/pull/55390)
-
 - Removed jumping text effect from the chat when generating response [#55357](https://github.com/sourcegraph/sourcegraph/pull/55357)
-
-### Security
 
 ## [3.0.8]
 

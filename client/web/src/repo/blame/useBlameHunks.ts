@@ -13,7 +13,7 @@ import { useObservable } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
-import {
+import type {
     ExternalServiceKind,
     FirstCommitDateResult,
     FirstCommitDateVariables,

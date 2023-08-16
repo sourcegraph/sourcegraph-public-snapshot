@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -69,7 +70,7 @@ func TestHandle_UnsupportedCodeHost(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	externalServices := database.NewMockExternalServiceStore()
+	externalServices := dbmocks.NewMockExternalServiceStore()
 	externalServices.GetByIDFunc.SetDefaultReturn(
 		&types.ExternalService{
 			ID:          1,
@@ -80,7 +81,7 @@ func TestHandle_UnsupportedCodeHost(t *testing.T) {
 		nil,
 	)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 	handler := &bitbucketProjectPermissionsHandler{db: db}

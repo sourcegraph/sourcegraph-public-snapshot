@@ -1,4 +1,4 @@
-import { GroupByField } from '../../../../../../../graphql-operations'
+import type { GroupByField } from '../../../../../../../graphql-operations'
 
 export enum InsightType {
     Detect = 'Detect',

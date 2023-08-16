@@ -1,8 +1,8 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import { WebStory } from '../../../components/WebStory'
-import { SourcegraphContext } from '../../../jscontext'
+import type { SourcegraphContext } from '../../../jscontext'
 
 import { CodyMarketingPage } from './CodyMarketingPage'
 

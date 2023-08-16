@@ -1,10 +1,10 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { Container, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../components/WebStory'
 
-import { ValueLegendItem, ValueLegendList, ValueLegendListProps } from './ValueLegendList'
+import { ValueLegendItem, ValueLegendList, type ValueLegendListProps } from './ValueLegendList'
 
 const decorator: DecoratorFn = Story => <Story />
 

@@ -1,7 +1,7 @@
 import * as path from 'path'
 
 import execa from 'execa'
-import vscode, { TextEditor } from 'vscode'
+import vscode, { type TextEditor } from 'vscode'
 
 import { gql } from '@sourcegraph/http-client'
 

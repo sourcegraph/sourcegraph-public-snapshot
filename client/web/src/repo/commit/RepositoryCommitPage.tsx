@@ -1,33 +1,33 @@
 import React, { useMemo, useCallback, useEffect } from 'react'
 
-import { ApolloError } from '@apollo/client'
+import type { ApolloError } from '@apollo/client'
 import classNames from 'classnames'
 import { useParams } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { FileDiffNode, FileDiffNodeProps } from '../../components/diff/FileDiffNode'
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
+import { FileDiffNode, type FileDiffNodeProps } from '../../components/diff/FileDiffNode'
+import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import {
-    ExternalLinkFields,
-    GitCommitFields,
-    RepositoryCommitResult,
-    RepositoryCommitVariables,
-    RepositoryFields,
-    FileDiffFields,
-    RepositoryChangelistResult,
-    RepositoryChangelistVariables,
+    type ExternalLinkFields,
+    type GitCommitFields,
+    type RepositoryCommitResult,
+    type RepositoryCommitVariables,
+    type RepositoryFields,
+    type FileDiffFields,
+    type RepositoryChangelistResult,
+    type RepositoryChangelistVariables,
     RepositoryType,
 } from '../../graphql-operations'
 import { GitCommitNode } from '../commits/GitCommitNode'
-import { queryRepositoryComparisonFileDiffs, RepositoryComparisonDiff } from '../compare/RepositoryCompareDiffPage'
+import { queryRepositoryComparisonFileDiffs, type RepositoryComparisonDiff } from '../compare/RepositoryCompareDiffPage'
 
 import { CHANGELIST_QUERY, COMMIT_QUERY } from './backend'
 

@@ -3,14 +3,14 @@ import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import { gql, useQuery } from '@apollo/client'
 import { useNavigate, useLocation } from 'react-router-dom'
 
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import {
-    GetSearchAggregationResult,
-    GetSearchAggregationVariables,
+    type GetSearchAggregationResult,
+    type GetSearchAggregationVariables,
     SearchAggregationMode,
     NotAvailableReasonType,
-    SearchPatternType,
+    type SearchPatternType,
 } from '../../../../graphql-operations'
 
 import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './constants'

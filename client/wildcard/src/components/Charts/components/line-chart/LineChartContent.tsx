@@ -1,17 +1,17 @@
-import { CSSProperties, ReactElement, SVGProps, useContext, useEffect, useMemo, useState } from 'react'
+import { type CSSProperties, type ReactElement, type SVGProps, useContext, useEffect, useMemo, useState } from 'react'
 
 import { Group } from '@visx/group'
 import { voronoi } from '@visx/voronoi'
-import { ScaleLinear, ScaleTime } from 'd3-scale'
+import type { ScaleLinear, ScaleTime } from 'd3-scale'
 
 import { SVGRootContext } from '../../core'
-import { Series } from '../../types'
+import type { Series } from '../../types'
 
 import { LineDataSeries, StackedArea, Tooltip, TooltipContent } from './components'
 import { getClosesVoronoiPoint, isNextTargetWithinCurrent } from './event-helpers'
 import { useKeyboardNavigation } from './keyboard-navigation'
-import { Point } from './types'
-import { generatePointsField, SeriesWithData } from './utils'
+import type { Point } from './types'
+import { generatePointsField, type SeriesWithData } from './utils'
 
 import styles from './LineChartContent.module.scss'
 

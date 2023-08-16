@@ -1,20 +1,20 @@
-import { FC, useEffect, useCallback, useState } from 'react'
+import { type FC, useEffect, useCallback, useState } from 'react'
 
-import { FetchResult } from '@apollo/client'
+import type { FetchResult } from '@apollo/client'
 import { useNavigate } from 'react-router-dom'
 
 import { logger, renderMarkdown } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Container, H3, H4, Markdown, PageHeader } from '@sourcegraph/wildcard'
 
-import { AddExternalServiceInput, AddExternalServiceResult } from '../../graphql-operations'
+import type { AddExternalServiceInput, AddExternalServiceResult } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
 import { PageTitle } from '../PageTitle'
 
 import { useAddExternalService } from './backend'
 import { ExternalServiceCard } from './ExternalServiceCard'
 import { ExternalServiceForm } from './ExternalServiceForm'
-import { AddExternalServiceOptions } from './externalServices'
+import type { AddExternalServiceOptions } from './externalServices'
 
 interface Props extends TelemetryProps {
     externalService: AddExternalServiceOptions

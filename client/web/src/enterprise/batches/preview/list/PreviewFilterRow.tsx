@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useContext, useEffect, useRef } from 'react'
+import React, { type FC, useCallback, useContext, useEffect, useRef } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
 

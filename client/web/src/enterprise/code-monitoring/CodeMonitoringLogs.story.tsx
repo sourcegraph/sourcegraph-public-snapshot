@@ -1,5 +1,5 @@
-import { MockedResponse } from '@apollo/client/testing'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { parseISO } from 'date-fns'
 
 import { getDocumentNode } from '@sourcegraph/http-client'

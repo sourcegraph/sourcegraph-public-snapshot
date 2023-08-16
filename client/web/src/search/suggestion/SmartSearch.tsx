@@ -1,10 +1,14 @@
-import { MouseEvent, useCallback } from 'react'
+import { type MouseEvent, useCallback } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiArrowRight } from '@mdi/js'
 
 import { smartSearchIconSvgPath, SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { pluralize, formatSearchParameters } from '@sourcegraph/common'
-import { AggregateStreamingSearchResults, AlertKind, SmartSearchAlertKind } from '@sourcegraph/shared/src/search/stream'
+import type {
+    AggregateStreamingSearchResults,
+    AlertKind,
+    SmartSearchAlertKind,
+} from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import {
     Icon,

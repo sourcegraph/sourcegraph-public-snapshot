@@ -10,7 +10,7 @@ import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { Alert, Button, Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
-import { FetchOwnersAndHistoryResult, FetchOwnersAndHistoryVariables } from '../../../graphql-operations'
+import type { FetchOwnersAndHistoryResult, FetchOwnersAndHistoryVariables } from '../../../graphql-operations'
 import { formatPersonName } from '../../../person/PersonLink'
 import { GitCommitNode } from '../../commits/GitCommitNode'
 

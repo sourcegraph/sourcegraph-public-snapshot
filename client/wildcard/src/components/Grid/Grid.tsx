@@ -1,4 +1,4 @@
-import React, { CSSProperties } from 'react'
+import React, { type CSSProperties } from 'react'
 
 export interface GridProps {
     className?: string

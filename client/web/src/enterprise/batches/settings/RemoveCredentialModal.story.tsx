@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'

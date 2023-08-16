@@ -7,13 +7,13 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import {
     Badge,
-    BADGE_VARIANTS,
+    type BADGE_VARIANTS,
     Button,
     Icon,
     Link,
     Popover,
     PopoverContent,
-    PopoverOpenEvent,
+    type PopoverOpenEvent,
     PopoverTrigger,
     Position,
     Text,
@@ -21,10 +21,10 @@ import {
 } from '@sourcegraph/wildcard'
 
 import {
-    CodeHostState,
+    type CodeHostState,
     CodeHostStatus,
-    PermissionsSyncJob,
-    PermissionsSyncJobReason,
+    type PermissionsSyncJob,
+    type PermissionsSyncJobReason,
     PermissionsSyncJobReasonGroup,
     PermissionsSyncJobState,
 } from '../../graphql-operations'

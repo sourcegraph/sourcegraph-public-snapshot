@@ -6,6 +6,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.cody.agent.CodyAgent;
+import com.sourcegraph.cody.agent.CodyAgentClient;
 import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.agent.protocol.TextDocument;
 import com.sourcegraph.config.ConfigUtil;
@@ -21,12 +22,17 @@ public class CodyFileEditorListener implements FileEditorManagerListener {
     if (document == null) {
       return;
     }
-    CodyAgentServer server = CodyAgent.getServer(source.getProject());
-    if (server == null) {
+    CodyAgentClient client = CodyAgent.getClient(source.getProject());
+    if (client.server == null) {
       return;
     }
-    server.textDocumentDidOpen(
+    client.server.textDocumentDidOpen(
         new TextDocument().setFilePath(file.getPath()).setContent(document.getText()));
+
+    if (client.codebase == null) {
+      return;
+    }
+    client.codebase.handlePotentialCodebaseChange(source.getProject(), file);
   }
 
   @Override

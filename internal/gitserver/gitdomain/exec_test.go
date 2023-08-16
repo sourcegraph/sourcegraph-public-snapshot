@@ -10,7 +10,7 @@ import (
 )
 
 func TestIsAllowedGitCmd(t *testing.T) {
-	allowed := [][]string{
+	isAllowed := [][]string{
 		// Required for code monitors
 		{"rev-parse", "HEAD"},
 		{"rev-parse", "83838383"},
@@ -27,12 +27,25 @@ func TestIsAllowedGitCmd(t *testing.T) {
 		{"push", "--force", "git@github.com:repo/name", "f22cfd066432e382c24f1eaa867444671e23a136:refs/heads/a-branch"},
 		{"update-ref", "--"},
 	}
+	notAllowed := [][]string{
+		{"commit", "-F", "/etc/passwd"},
+		{"commit", "--file=/absolute/path"},
+		{"commit", "-F", "relative/passwd"},
+		{"commit", "--file=relative/path"},
+	}
 
 	logger := logtest.Scoped(t)
-	for _, args := range allowed {
+	for _, args := range isAllowed {
 		t.Run("", func(t *testing.T) {
 			if !IsAllowedGitCmd(logger, args, "/fake/path") {
 				t.Fatalf("expected args to be allowed: %q", args)
+			}
+		})
+	}
+	for _, args := range notAllowed {
+		t.Run("", func(t *testing.T) {
+			if IsAllowedGitCmd(logger, args, "/fake/path") {
+				t.Fatalf("expected args to NOT be allowed: %q", args)
 			}
 		})
 	}

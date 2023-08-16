@@ -1,10 +1,10 @@
 import { last, take } from 'lodash'
 import { BehaviorSubject } from 'rxjs'
 
-import { FileSpec, RawRepoSpec, RepoSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import type { FileSpec, RawRepoSpec, RepoSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { commitIDFromPermalink } from '../../util/dom'
-import { FileInfo } from '../shared/codeHost'
+import type { FileInfo } from '../shared/codeHost'
 
 export enum GitLabPageKind {
     File,

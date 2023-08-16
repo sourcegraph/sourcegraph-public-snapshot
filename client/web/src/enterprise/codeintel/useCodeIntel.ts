@@ -1,20 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 
-import { QueryResult } from '@apollo/client'
+import type { QueryResult } from '@apollo/client'
 
 import { dataOrThrowErrors, useLazyQuery, useQuery } from '@sourcegraph/http-client'
 
-import { Location, buildPreciseLocation } from '../../codeintel/location'
+import { type Location, buildPreciseLocation } from '../../codeintel/location'
 import {
     LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY,
     LOAD_ADDITIONAL_PROTOTYPES_QUERY,
     LOAD_ADDITIONAL_REFERENCES_QUERY,
     USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
 } from '../../codeintel/ReferencesPanelQueries'
-import { CodeIntelData, UseCodeIntelParameters, UseCodeIntelResult } from '../../codeintel/useCodeIntel'
-import { ConnectionQueryArguments } from '../../components/FilteredConnection'
+import type { CodeIntelData, UseCodeIntelParameters, UseCodeIntelResult } from '../../codeintel/useCodeIntel'
+import type { ConnectionQueryArguments } from '../../components/FilteredConnection'
 import { asGraphQLResult } from '../../components/FilteredConnection/utils'
-import {
+import type {
     UsePreciseCodeIntelForPositionVariables,
     UsePreciseCodeIntelForPositionResult,
     LoadAdditionalReferencesResult,

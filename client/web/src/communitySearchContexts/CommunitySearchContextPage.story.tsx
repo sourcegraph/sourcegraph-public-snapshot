@@ -1,23 +1,23 @@
 import { action } from '@storybook/addon-actions'
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
-import { EMPTY, NEVER, Observable, of } from 'rxjs'
+import { EMPTY, NEVER, type Observable, of } from 'rxjs'
 
 import { subtypeOf } from '@sourcegraph/common'
-import { ActionItemComponentProps } from '@sourcegraph/shared/src/actions/ActionItem'
-import { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { ActionItemComponentProps } from '@sourcegraph/shared/src/actions/ActionItem'
+import type { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
 import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 import { SearchPatternType } from '../graphql-operations'
 
 import { cncf } from './cncf'
-import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
+import { CommunitySearchContextPage, type CommunitySearchContextPageProps } from './CommunitySearchContextPage'
 import { temporal } from './Temporal'
 
 const config: Meta = {

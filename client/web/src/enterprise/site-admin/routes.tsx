@@ -4,14 +4,14 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackBadge } from '@sourcegraph/wildcard'
 
 import { otherSiteAdminRoutes, UsersManagement } from '../../site-admin/routes'
-import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
-import { BatchSpecsPageProps } from '../batches/BatchSpecsPage'
+import type { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
+import type { BatchSpecsPageProps } from '../batches/BatchSpecsPage'
 import { CodeIntelConfigurationPolicyPage } from '../codeintel/configuration/pages/CodeIntelConfigurationPolicyPage'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 import { OwnAnalyticsPage } from '../own/admin-ui/OwnAnalyticsPage'
-import { SiteAdminRolesPageProps } from '../rbac/SiteAdminRolesPage'
+import type { SiteAdminRolesPageProps } from '../rbac/SiteAdminRolesPage'
 
-import { RoleAssignmentModalProps } from './UserManagement/components/RoleAssignmentModal'
+import type { RoleAssignmentModalProps } from './UserManagement/components/RoleAssignmentModal'
 
 const SiteAdminProductSubscriptionPage = lazyComponent(
     () => import('./productSubscription/SiteAdminProductSubscriptionPage'),

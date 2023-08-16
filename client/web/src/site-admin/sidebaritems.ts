@@ -8,7 +8,7 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { isPackagesEnabled } from './flags'
-import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
+import type { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 export const analyticsGroup: SiteAdminSideBarGroup = {
     condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
