@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS exhaustive_search_repo_jobs
     id                SERIAL PRIMARY KEY,
     state             text                     DEFAULT 'queued'::text,
     repo_id           integer                                NOT NULL REFERENCES repo (id) ON DELETE CASCADE,
+    ref_spec          text                                   NOT NULL,
     search_job_id     integer                                NOT NULL REFERENCES exhaustive_search_jobs (id) ON DELETE CASCADE,
     failure_message   text,
     started_at        timestamp with time zone,
