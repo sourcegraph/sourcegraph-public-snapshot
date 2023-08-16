@@ -30,6 +30,12 @@ import com.sourcegraph.telemetry.GraphQlLogger;
 import difflib.Delta;
 import difflib.DiffUtils;
 import difflib.Patch;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -266,11 +272,23 @@ public class CodyAutoCompleteManager {
     // Insert one inlay hint per delta in the first line.
     for (Delta<String> delta : patch.getDeltas()) {
       String text = String.join("", delta.getRevised().getLines());
-      inlayModel.addInlineElement(
-          range.getStartOffset() + delta.getOriginal().getPosition(),
-          true,
-          new CodyAutoCompleteSingleLineRenderer(
-              text, item, editor, AutoCompleteRendererType.INLINE));
+      int deltaOffset = range.getStartOffset() + delta.getOriginal().getPosition();
+      int deltaLine = editor.getDocument().getLineNumber(deltaOffset);
+      int deltaLineEnd = editor.getDocument().getLineEndOffset(deltaLine);
+      if (deltaLineEnd == deltaOffset) {
+        logger.warn("BOOM!");
+        inlayModel.addAfterLineEndElement(
+            deltaOffset,
+            true,
+            new CodyAutoCompleteSingleLineRenderer(
+                text, item, editor, AutoCompleteRendererType.AFTER_LINE_END));
+      } else {
+        inlayModel.addInlineElement(
+            deltaOffset,
+            true,
+            new CodyAutoCompleteSingleLineRenderer(
+                text, item, editor, AutoCompleteRendererType.INLINE));
+      }
     }
 
     // Insert remaining lines of multiline completions as a single block element under the
