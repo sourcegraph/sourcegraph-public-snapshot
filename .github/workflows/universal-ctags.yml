@@ -18,7 +18,9 @@ jobs:
         name: '🔓 Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v1'
         with:
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+          workload_identity_provider: ${{ secrets.GCP_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
       - id: nix-build
         name: Run `nix build`
         run: |

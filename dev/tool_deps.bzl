@@ -46,7 +46,7 @@ def tool_deps():
     http_archive(
         name = "src-cli-darwin-amd64",
         build_file_content = SRC_CLI_BUILDFILE.format("darwin-amd64"),
-        sha256 = "f14414e3ff4759cd1fbed0107138214f87d9a69cdb55ed1c4522704069420d9b",
+        sha256 = "aasdfasdf",
         url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_darwin_amd64.tar.gz".format(SRC_CLI_VERSION),
     )
 
@@ -66,12 +66,14 @@ def tool_deps():
 
     http_file(
         name = "universal-ctags-darwin-arm64",
+        sha256 = "51b3b7ea296455e00fc5a7aafea49bb89551e81770b3728c97a04a5614fde8c5",
         url = "https://storage.googleapis.com/universal_ctags/aarch64-darwin/bin/universal-ctags-{0}".format(CTAGS_VERSION),
         executable = True,
     )
 
     http_file(
         name = "universal-ctags-linux-amd64",
+        sha256 = "1d349d15736a30c9cc18c1fd9efbfc6081fb59125d799b84cef6b34c735fa28a",
         url = "https://storage.googleapis.com/universal_ctags/x86_64-linux/bin/universal-ctags-{0}".format(CTAGS_VERSION),
         executable = True,
     )
