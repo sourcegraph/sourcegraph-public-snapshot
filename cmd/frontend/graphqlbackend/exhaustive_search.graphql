@@ -1,27 +1,17 @@
 extend type Mutation {
-    createExhaustiveSearch (
-        query: String!
-    ): ExhaustiveSearch!
+    createExhaustiveSearch(query: String!): ExhaustiveSearch!
 
-    cancelExhaustiveSearch (
-        id: ID!
-    ): EmptyResponse
+    cancelExhaustiveSearch(id: ID!): EmptyResponse
 
-    deleteExhaustiveSearch (
-        id: ID!
-    ): EmptyResponse!
+    deleteExhaustiveSearch(id: ID!): EmptyResponse!
 }
 
 extend type Query {
-    validateExhaustiveSearchQuery (
-        query: String!
-    ): ExhaustiveSearchQueryValidation
+    validateExhaustiveSearchQuery(query: String!): ExhaustiveSearchQueryValidation
 
-    exhaustiveSearch (
-        id: ID!
-    ): ExhaustiveSearch
+    exhaustiveSearch(id: ID!): ExhaustiveSearch
 
-    exhaustiveSearches (
+    exhaustiveSearches(
         first: Int = 50
         after: String
         query: String
@@ -53,10 +43,7 @@ type ExhaustiveSearch implements Node {
     finishedAt: DateTime
     csvURL: String
     repoStats: ExhaustiveSearchStats!
-    repositories(
-        first: Int = 50
-        after: String
-    ): ExhaustiveSearchRepoConnection!
+    repositories(first: Int = 50, after: String): ExhaustiveSearchRepoConnection!
 }
 
 type ExhaustiveSearchStats {
@@ -74,10 +61,7 @@ type ExhaustiveSearchRepo implements Node {
     startedAt: DateTime
     finishedAt: DateTime
     failureMessage: String
-    revisions(
-        first: Int = 50
-        after: String
-    ): ExhaustiveSearchRepoRevisionConnection!
+    revisions(first: Int = 50, after: String): ExhaustiveSearchRepoRevisionConnection!
 }
 
 type ExhaustiveSearchRepoRevision implements Node {
