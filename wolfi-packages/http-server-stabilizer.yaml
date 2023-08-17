@@ -28,7 +28,7 @@ pipeline:
   - uses: fetch
     with:
       uri: https://github.com/sourcegraph/http-server-stabilizer/archive/refs/tags/v${{package.version}}.tar.gz
-    expected-sha256: 4d0d2e4e36d20441abc898fd87031c0b4e40ce25057b6023c929bb0ffa0de4f7
+      expected-sha256: 4d0d2e4e36d20441abc898fd87031c0b4e40ce25057b6023c929bb0ffa0de4f7
   - uses: go/build
     with:
       packages: ./...
