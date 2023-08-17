@@ -54,7 +54,6 @@ func (sc *ServiceConnections) ToProto() *proto.ServiceConnections {
 		Searchers:            sc.Searchers,
 		Symbols:              sc.Symbols,
 		Embeddings:           sc.Embeddings,
-		Qdrant:               sc.Qdrant,
 		Zoekts:               sc.Zoekts,
 		ZoektListTtl:         durationpb.New(sc.ZoektListTTL),
 	}
@@ -69,7 +68,6 @@ func (sc *ServiceConnections) FromProto(in *proto.ServiceConnections) {
 		Searchers:            in.GetSearchers(),
 		Symbols:              in.GetSymbols(),
 		Embeddings:           in.GetEmbeddings(),
-		Qdrant:               in.GetQdrant(),
 		Zoekts:               in.GetZoekts(),
 		ZoektListTTL:         in.GetZoektListTtl().AsDuration(),
 	}
