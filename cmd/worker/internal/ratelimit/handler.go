@@ -65,7 +65,7 @@ func (h *hdlr) Handle(ctx context.Context) error {
 }
 
 func (h *hdlr) processCodeHost(ctx context.Context, codeHost types.CodeHost, fallbackGitQuota int32) error {
-	configs, err := h.getRateLimitConfigsOrDefaults(ctx, codeHost, fallbackGitQuota)
+	configs, err := h.getRateLimitConfigsOrDefaults(codeHost, fallbackGitQuota)
 	if err != nil {
 		return err
 	}
@@ -81,24 +81,25 @@ func (h *hdlr) processCodeHost(ctx context.Context, codeHost types.CodeHost, fal
 	return errors.CombineErrors(err, err2)
 }
 
-func (h *hdlr) getRateLimitConfigsOrDefaults(ctx context.Context, codeHost types.CodeHost, fallbackGitQuota int32) (codeHostRateLimitConfigs, error) {
+func (h *hdlr) getRateLimitConfigsOrDefaults(codeHost types.CodeHost, fallbackGitQuota int32) (codeHostRateLimitConfigs, error) {
 	var configs codeHostRateLimitConfigs
 
 	// Determine the values of the 4 rate limit configurations by using their set value from the database or their default value if they are not set.
-	defaultAPILimit := true
+	isDefaultAPILimit := true
 	if codeHost.APIRateLimitQuota != nil {
 		configs.ApiQuota = *codeHost.APIRateLimitQuota
-		defaultAPILimit = false
+		isDefaultAPILimit = false
 	} else {
-		defaultRateLimitAsInt := int32(extsvc.GetDefaultRateLimit(codeHost.Kind))
+		defaultAPILimit := extsvc.GetDefaultRateLimit(codeHost.Kind)
+		defaultRateLimitAsInt := int32(defaultAPILimit)
 		// Basically only happens if the rate limit is set to rate.Inf
-		if extsvc.GetDefaultRateLimit(codeHost.Kind) > rate.Limit(math.MaxInt32) {
+		if defaultAPILimit > rate.Limit(math.MaxInt32) {
 			defaultRateLimitAsInt = math.MaxInt32
 		}
 		configs.ApiQuota = defaultRateLimitAsInt
 	}
 
-	if !defaultAPILimit && codeHost.APIRateLimitIntervalSeconds != nil {
+	if !isDefaultAPILimit && codeHost.APIRateLimitIntervalSeconds != nil {
 		configs.ApiReplenishmentInterval = *codeHost.APIRateLimitIntervalSeconds
 	} else {
 		configs.ApiReplenishmentInterval = defaultAPIReplenishmentInterval
