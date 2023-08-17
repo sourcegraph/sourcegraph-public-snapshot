@@ -86,9 +86,9 @@ $package_usage_list
 fi
 
 if [[ "$error" == "true" ]]; then
-  if [[ "$IS_MAIN" != "true" ]]; then
+  if [[ "$IS_MAIN" == "true" ]]; then
     exit 222 # Soft fail on main branch to avoid breaking the build if a pipeline is re-run
   else
-    exit 200 # Hard fail on branches to avoid merging duplicate pacakges
+    exit 200 # Hard fail on branches to avoid merging duplicate packages
   fi
 fi
