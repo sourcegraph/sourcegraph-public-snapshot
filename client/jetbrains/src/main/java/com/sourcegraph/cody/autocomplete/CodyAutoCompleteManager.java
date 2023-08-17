@@ -104,13 +104,18 @@ public class CodyAutoCompleteManager {
    * @param editor The editor instance to provide autocomplete for.
    * @param offset The character offset in the editor to trigger auto-complete at.
    */
-  public void triggerAutoComplete(@NotNull Editor editor, int offset) {
+  public void triggerAutoComplete(
+      @NotNull Editor editor, int offset, InlineCompletionTriggerKind triggerKind) {
     if (!isEnabledForEditor(editor)) {
+      if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)) {
+        logger.warn("triggered autocomplete with invalid editor " + editor);
+      }
       return;
     }
 
     final Project project = editor.getProject();
     if (project == null) {
+      logger.warn("triggered autocomplete with null project");
       return;
     }
     currentAutocompleteTelemetry = AutocompleteTelemetry.createAndMarkTriggered();
@@ -137,7 +142,8 @@ public class CodyAutoCompleteManager {
         textDocument.getAutoCompleteContext(offset);
     // If the context has a valid completion trigger, cancel any running job
     // and asynchronously trigger the auto-complete
-    if (autoCompleteDocumentContext.isCompletionTriggerValid()) { // TODO: skip this condition
+    if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)
+        || autoCompleteDocumentContext.isCompletionTriggerValid()) { // TODO: skip this condition
       Callable<CompletableFuture<Void>> callable =
           () ->
               triggerAutoCompleteAsync(
@@ -147,7 +153,8 @@ public class CodyAutoCompleteManager {
                   token,
                   provider,
                   textDocument,
-                  autoCompleteDocumentContext);
+                  autoCompleteDocumentContext,
+                  triggerKind);
       // debouncing the autocomplete trigger
       cancelCurrentJob();
       this.currentJob.set(
@@ -163,7 +170,8 @@ public class CodyAutoCompleteManager {
       @NotNull CancellationToken token,
       @NotNull CodyAutoCompleteItemProvider provider,
       @NotNull TextDocument textDocument,
-      @NotNull AutoCompleteDocumentContext autoCompleteDocumentContext) {
+      @NotNull AutoCompleteDocumentContext autoCompleteDocumentContext,
+      InlineCompletionTriggerKind triggerKind) {
     CodyAgentServer server = CodyAgent.getServer(project);
     boolean isAgentAutocomplete = server != null;
     Position position = textDocument.positionAt(offset);
@@ -188,9 +196,9 @@ public class CodyAutoCompleteManager {
     return asyncCompletions.thenAccept(
         result -> {
           if (Thread.interrupted()) {
-            return;
-          }
-          if (result.items.isEmpty()) {
+            if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)) {
+              logger.warn("canceled autocomplete due to thread interruption");
+            }
             return;
           }
           InlayModel inlayModel = editor.getInlayModel();
@@ -205,6 +213,12 @@ public class CodyAutoCompleteManager {
                       .filter(resultItem -> !resultItem.insertText.isEmpty())
                       .findFirst();
           if (maybeItem.isEmpty()) {
+            if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)) {
+              logger.warn("explicit autocomplete returned empty suggestions");
+              // NOTE(olafur): it would be nice to give the user a visual hint when this happens.
+              // We don't do anything now because it's unclear what would be the most idiomatic
+              // IntelliJ API to use.
+            }
             return;
           }
           final InlineAutoCompleteItem item = maybeItem.get();
@@ -223,14 +237,15 @@ public class CodyAutoCompleteManager {
                       // accept the Cody autocomplete with TAB because it accepts the built-in
                       // completion.
                       if (LookupManager.getInstance(project).getActiveLookup() != null) {
-                        if (UserLevelConfig.isVerboseLoggingEnabled()) {
+                        if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)
+                            || UserLevelConfig.isVerboseLoggingEnabled()) {
                           logger.warn("Skipping autocomplete because lookup is active: " + item);
                         }
                         return;
                       }
 
                       if (isAgentAutocomplete) {
-                        displayAgentAutocomplete(editor, offset, item, inlayModel);
+                        displayAgentAutocomplete(editor, offset, item, inlayModel, triggerKind);
                       } else {
                         displayAutocomplete(
                             editor, offset, autoCompleteDocumentContext, item, inlayModel);
@@ -250,7 +265,11 @@ public class CodyAutoCompleteManager {
    * we can use `insertText` directly and the `range` encloses the entire line.
    */
   private void displayAgentAutocomplete(
-      @NotNull Editor editor, int offset, InlineAutoCompleteItem item, InlayModel inlayModel) {
+      @NotNull Editor editor,
+      int offset,
+      InlineAutoCompleteItem item,
+      InlayModel inlayModel,
+      InlineCompletionTriggerKind triggerKind) {
     TextRange range = EditorUtils.getTextRange(editor.getDocument(), item.range);
     String originalText = editor.getDocument().getText(range);
     String insertTextFirstLine = item.insertText.lines().findFirst().orElse("");
@@ -263,7 +282,8 @@ public class CodyAutoCompleteManager {
     // need to make to the document.
     Patch<String> patch = CodyAutoCompleteManager.diff(originalText, insertTextFirstLine);
     if (!patch.getDeltas().stream().allMatch(delta -> delta.getType() == Delta.TYPE.INSERT)) {
-      if (UserLevelConfig.isVerboseLoggingEnabled()) {
+      if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)
+          || UserLevelConfig.isVerboseLoggingEnabled()) {
         logger.warn("Skipping autocomplete with non-insert deltas: " + patch);
       }
       // Skip completions that need to delete or change characters in the existing document. We only
@@ -376,7 +396,8 @@ public class CodyAutoCompleteManager {
   }
 
   public static boolean isEditorInstanceSupported(@NotNull Editor editor) {
-    return !editor.isViewer()
+    return editor.getProject() != null
+        && !editor.isViewer()
         && !editor.isOneLineMode()
         && !(editor instanceof EditorWindow)
         && !(editor instanceof ImaginaryEditor)

@@ -174,6 +174,13 @@ When fixing a flaky test, make sure to re-run the test in a loop to assess wheth
 
 Other kinds of flakes include [flaky steps](ci/index.md#flaky-steps) and [flaky infrastructure](ci/index.md#laky-infrastructure)
 
+#### Analytics about flakes 
+
+Our pipeline exports test results to Buildkite Test Analytics. Rather than doing it at the individual test level, we record them at the test suite level (Bazel test targets). Therefore, any kind of test suite running with Bazel is recorded. 
+You can find the statistics for all targets in the [`sourcegraph-bazel`](https://buildkite.com/organizations/sourcegraph/analytics/suites/sourcegraph-bazel?branch=main) dashboard. 
+
+These numbers are extremely useful to prioritize work toward making a test suite more stable: you can instantly see if a test suite is failing often and costs time to every engineer, or if that's a rare occurence.
+
 ## Ownership
 
 - [DevX Team](https://handbook.sourcegraph.com/engineering/enablement/dev-experience) owns build and test infrastructure (also see [build pipeline support](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#build-pipeline-support)).
