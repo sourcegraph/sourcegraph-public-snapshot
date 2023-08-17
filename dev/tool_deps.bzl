@@ -46,7 +46,7 @@ def tool_deps():
     http_archive(
         name = "src-cli-darwin-amd64",
         build_file_content = SRC_CLI_BUILDFILE.format("darwin-amd64"),
-        sha256 = "aasdfasdf",
+        sha256 = "f14414e3ff4759cd1fbed0107138214f87d9a69cdb55ed1c4522704069420d9b",
         url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_darwin_amd64.tar.gz".format(SRC_CLI_VERSION),
     )
 
