@@ -84,6 +84,7 @@ go_library(
         "//lib/output",
         "//schema",
         "@com_github_fsnotify_fsnotify//:fsnotify",
+        "@com_github_go_logr_stdr//:stdr",
         "@com_github_gorilla_context//:context",
         "@com_github_gorilla_mux//:mux",
         "@com_github_graph_gophers_graphql_go//:graphql-go",

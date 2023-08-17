@@ -130,6 +130,7 @@ func TestContextResolver(t *testing.T) {
 		db,
 		mockEmbeddingsClient,
 		mockSearchClient,
+		nil,
 	)
 
 	resolver := NewResolver(

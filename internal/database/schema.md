@@ -1379,9 +1379,6 @@ Referenced by:
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
-    "event_logs_name_is_cody_active_event" btree (iscodyactiveevent(name))
-    "event_logs_name_is_cody_explanation_event" btree (iscodyexplanationevent(name))
-    "event_logs_name_is_cody_generation_event" btree (iscodygenerationevent(name))
     "event_logs_name_timestamp" btree (name, "timestamp" DESC)
     "event_logs_source" btree (source)
     "event_logs_timestamp" btree ("timestamp")
@@ -3540,12 +3537,12 @@ Foreign-key constraints:
  code_files_embedded  | integer |           | not null | 0
  code_chunks_embedded | integer |           | not null | 0
  code_files_skipped   | jsonb   |           | not null | '{}'::jsonb
- code_bytes_embedded  | integer |           | not null | 0
+ code_bytes_embedded  | bigint  |           | not null | 0
  text_files_total     | integer |           | not null | 0
  text_files_embedded  | integer |           | not null | 0
  text_chunks_embedded | integer |           | not null | 0
  text_files_skipped   | jsonb   |           | not null | '{}'::jsonb
- text_bytes_embedded  | integer |           | not null | 0
+ text_bytes_embedded  | bigint  |           | not null | 0
  code_chunks_excluded | integer |           | not null | 0
  text_chunks_excluded | integer |           | not null | 0
 Indexes:
@@ -4077,6 +4074,21 @@ Triggers:
 
 ```
 
+# Table "public.user_onboarding_tour"
+```
+   Column   |            Type             | Collation | Nullable |                     Default                      
+------------+-----------------------------+-----------+----------+--------------------------------------------------
+ id         | integer                     |           | not null | nextval('user_onboarding_tour_id_seq'::regclass)
+ raw_json   | text                        |           | not null | 
+ created_at | timestamp without time zone |           | not null | now()
+ updated_by | integer                     |           |          | 
+Indexes:
+    "user_onboarding_tour_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "user_onboarding_tour_users_fk" FOREIGN KEY (updated_by) REFERENCES users(id)
+
+```
+
 # Table "public.user_pending_permissions"
 ```
      Column      |           Type           | Collation | Nullable |                       Default                        
@@ -4269,6 +4281,7 @@ Referenced by:
     TABLE "user_credentials" CONSTRAINT "user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "user_onboarding_tour" CONSTRAINT "user_onboarding_tour_users_fk" FOREIGN KEY (updated_by) REFERENCES users(id)
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "user_repo_permissions" CONSTRAINT "user_repo_permissions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "user_roles" CONSTRAINT "user_roles_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE

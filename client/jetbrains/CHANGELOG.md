@@ -4,13 +4,23 @@
 
 ### Added
 
+- New settings to enable debugging with the agent [#55821](https://github.com/sourcegraph/sourcegraph/pull/55821)
+
 ### Changed
+
+- Improved settings UI [#55876](https://github.com/sourcegraph/sourcegraph/pull/55876)
 
 ### Deprecated
 
 ### Removed
 
+- Support for 2022.0, 2022.1 is now required [#55831](https://github.com/sourcegraph/sourcegraph/pull/55831)
+
 ### Fixed
+
+- Suppress duplicate telemetry when using agent [cody#689](https://github.com/sourcegraph/cody/pull/689)
+- Fixed bug causing the agent to not work [#55867](https://github.com/sourcegraph/sourcegraph/pull/55867)
+- Fixed `NullPointerException` bug [#55869](https://github.com/sourcegraph/sourcegraph/pull/55869)
 
 ### Security
 

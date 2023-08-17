@@ -59,9 +59,6 @@ interface CodyChatPageProps {
     context: Pick<SourcegraphContext, 'authProviders'>
 }
 
-const onDownloadVSCodeClick = (): void => eventLogger.log(EventName.CODY_CHAT_DOWNLOAD_VSCODE)
-const onTryOnPublicCodeClick = (): void => eventLogger.log(EventName.CODY_CHAT_TRY_ON_PUBLIC_CODE)
-
 const transcriptIdFromUrl = (pathname: string): string | undefined => {
     const serializedID = pathname.split('/').pop()
     if (!serializedID) {
@@ -121,8 +118,8 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     const onCTADismiss = (): void => setIsCTADismissed(true)
 
     useEffect(() => {
-        eventLogger.log(EventName.CODY_CHAT_PAGE_VIEWED)
-    }, [])
+        eventLogger.log(EventName.CODY_CHAT_PAGE_VIEWED, { chatId: transcript?.id })
+    }, [transcript?.id])
 
     const transcriptId = transcript?.id
 
@@ -289,7 +286,11 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                             'd-inline-flex align-items-center text-merged',
                                             styles.ctaLink
                                         )}
-                                        onClick={onDownloadVSCodeClick}
+                                        onClick={() =>
+                                            eventLogger.log(EventName.CODY_CHAT_DOWNLOAD_VSCODE, {
+                                                chatId: transcript?.id,
+                                            })
+                                        }
                                     >
                                         Download the VS Code Extension
                                         <Icon svgPath={mdiChevronRight} aria-hidden={true} />
@@ -327,7 +328,11 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                             'd-inline-flex align-items-center text-merged',
                                             styles.ctaLink
                                         )}
-                                        onClick={onTryOnPublicCodeClick}
+                                        onClick={() =>
+                                            eventLogger.log(EventName.CODY_CHAT_TRY_ON_PUBLIC_CODE, {
+                                                chatId: transcript?.id,
+                                            })
+                                        }
                                     >
                                         Try on a file, or repository
                                         <Icon svgPath={mdiChevronRight} aria-hidden={true} />

@@ -16,7 +16,6 @@ import (
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	config "github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
 // MockStore is a mock implementation of the Store interface (from the
@@ -2601,9 +2600,6 @@ func (c StoreWithTransactionFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing) used
 // for unit testing.
 type MockInferenceService struct {
-	// InferIndexJobHintsFunc is an instance of a mock function object
-	// controlling the behavior of the method InferIndexJobHints.
-	InferIndexJobHintsFunc *InferenceServiceInferIndexJobHintsFunc
 	// InferIndexJobsFunc is an instance of a mock function object
 	// controlling the behavior of the method InferIndexJobs.
 	InferIndexJobsFunc *InferenceServiceInferIndexJobsFunc
@@ -2614,11 +2610,6 @@ type MockInferenceService struct {
 // overwritten.
 func NewMockInferenceService() *MockInferenceService {
 	return &MockInferenceService{
-		InferIndexJobHintsFunc: &InferenceServiceInferIndexJobHintsFunc{
-			defaultHook: func(context.Context, api.RepoName, string, string) (r0 []config.IndexJobHint, r1 error) {
-				return
-			},
-		},
 		InferIndexJobsFunc: &InferenceServiceInferIndexJobsFunc{
 			defaultHook: func(context.Context, api.RepoName, string, string) (r0 *shared.InferenceResult, r1 error) {
 				return
@@ -2631,11 +2622,6 @@ func NewMockInferenceService() *MockInferenceService {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockInferenceService() *MockInferenceService {
 	return &MockInferenceService{
-		InferIndexJobHintsFunc: &InferenceServiceInferIndexJobHintsFunc{
-			defaultHook: func(context.Context, api.RepoName, string, string) ([]config.IndexJobHint, error) {
-				panic("unexpected invocation of MockInferenceService.InferIndexJobHints")
-			},
-		},
 		InferIndexJobsFunc: &InferenceServiceInferIndexJobsFunc{
 			defaultHook: func(context.Context, api.RepoName, string, string) (*shared.InferenceResult, error) {
 				panic("unexpected invocation of MockInferenceService.InferIndexJobs")
@@ -2649,130 +2635,10 @@ func NewStrictMockInferenceService() *MockInferenceService {
 // implementation, unless overwritten.
 func NewMockInferenceServiceFrom(i InferenceService) *MockInferenceService {
 	return &MockInferenceService{
-		InferIndexJobHintsFunc: &InferenceServiceInferIndexJobHintsFunc{
-			defaultHook: i.InferIndexJobHints,
-		},
 		InferIndexJobsFunc: &InferenceServiceInferIndexJobsFunc{
 			defaultHook: i.InferIndexJobs,
 		},
 	}
-}
-
-// InferenceServiceInferIndexJobHintsFunc describes the behavior when the
-// InferIndexJobHints method of the parent MockInferenceService instance is
-// invoked.
-type InferenceServiceInferIndexJobHintsFunc struct {
-	defaultHook func(context.Context, api.RepoName, string, string) ([]config.IndexJobHint, error)
-	hooks       []func(context.Context, api.RepoName, string, string) ([]config.IndexJobHint, error)
-	history     []InferenceServiceInferIndexJobHintsFuncCall
-	mutex       sync.Mutex
-}
-
-// InferIndexJobHints delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockInferenceService) InferIndexJobHints(v0 context.Context, v1 api.RepoName, v2 string, v3 string) ([]config.IndexJobHint, error) {
-	r0, r1 := m.InferIndexJobHintsFunc.nextHook()(v0, v1, v2, v3)
-	m.InferIndexJobHintsFunc.appendCall(InferenceServiceInferIndexJobHintsFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the InferIndexJobHints
-// method of the parent MockInferenceService instance is invoked and the
-// hook queue is empty.
-func (f *InferenceServiceInferIndexJobHintsFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, string) ([]config.IndexJobHint, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// InferIndexJobHints method of the parent MockInferenceService instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *InferenceServiceInferIndexJobHintsFunc) PushHook(hook func(context.Context, api.RepoName, string, string) ([]config.IndexJobHint, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *InferenceServiceInferIndexJobHintsFunc) SetDefaultReturn(r0 []config.IndexJobHint, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, string, string) ([]config.IndexJobHint, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *InferenceServiceInferIndexJobHintsFunc) PushReturn(r0 []config.IndexJobHint, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, string, string) ([]config.IndexJobHint, error) {
-		return r0, r1
-	})
-}
-
-func (f *InferenceServiceInferIndexJobHintsFunc) nextHook() func(context.Context, api.RepoName, string, string) ([]config.IndexJobHint, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *InferenceServiceInferIndexJobHintsFunc) appendCall(r0 InferenceServiceInferIndexJobHintsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of InferenceServiceInferIndexJobHintsFuncCall
-// objects describing the invocations of this function.
-func (f *InferenceServiceInferIndexJobHintsFunc) History() []InferenceServiceInferIndexJobHintsFuncCall {
-	f.mutex.Lock()
-	history := make([]InferenceServiceInferIndexJobHintsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// InferenceServiceInferIndexJobHintsFuncCall is an object that describes an
-// invocation of method InferIndexJobHints on an instance of
-// MockInferenceService.
-type InferenceServiceInferIndexJobHintsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []config.IndexJobHint
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c InferenceServiceInferIndexJobHintsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c InferenceServiceInferIndexJobHintsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // InferenceServiceInferIndexJobsFunc describes the behavior when the

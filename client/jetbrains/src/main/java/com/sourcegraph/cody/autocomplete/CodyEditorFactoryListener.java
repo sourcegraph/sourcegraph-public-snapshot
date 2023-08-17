@@ -17,7 +17,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.cody.agent.CodyAgent;
-import com.sourcegraph.cody.agent.CodyAgentServer;
+import com.sourcegraph.cody.agent.CodyAgentClient;
 import com.sourcegraph.cody.agent.protocol.Position;
 import com.sourcegraph.cody.agent.protocol.Range;
 import com.sourcegraph.cody.agent.protocol.TextDocument;
@@ -177,8 +177,8 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
     if (editor.getProject() == null) {
       return;
     }
-    CodyAgentServer server = CodyAgent.getServer(editor.getProject());
-    if (server == null) {
+    CodyAgentClient client = CodyAgent.getClient(editor.getProject());
+    if (client.server == null) {
       return;
     }
     VirtualFile file = FileDocumentManager.getInstance().getFile(editor.getDocument());
@@ -190,6 +190,11 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
             .setFilePath(file.getPath())
             .setContent(editor.getDocument().getText())
             .setSelection(getSelection(editor));
-    server.textDocumentDidChange(document);
+    client.server.textDocumentDidChange(document);
+
+    if (client.codebase == null) {
+      return;
+    }
+    client.codebase.handlePotentialCodebaseChange(editor.getProject(), file);
   }
 }

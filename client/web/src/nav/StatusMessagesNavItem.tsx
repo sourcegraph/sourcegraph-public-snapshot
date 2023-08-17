@@ -42,11 +42,13 @@ type EntryType = 'progress' | 'warning' | 'success' | 'error' | 'indexing' | 'in
 
 interface StatusMessageEntryProps {
     title: string
-    message: string
-    linkTo: string
-    linkText: string
+    message: React.ReactNode
+    link?: {
+        to: string
+        text: string
+        onClick: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void
+    }
     entryType: EntryType
-    linkOnClick: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void
     messageHint?: string
 }
 
@@ -142,7 +144,7 @@ const getBorderClassname = (entryType: EntryType): string => {
 }
 
 const StatusMessagesNavItemEntry: React.FunctionComponent<React.PropsWithChildren<StatusMessageEntryProps>> = props => (
-    <div key={props.message} className={styles.entry}>
+    <div className={styles.entry}>
         <H4 className="d-flex align-items-center mb-0">
             {entryIcon(props.entryType)}
             {props.title ? props.title : 'Your repositories'}
@@ -161,12 +163,146 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<React.PropsWithChildre
                     <br />
                 </>
             )}
-            <Link className="text-primary" to={props.linkTo} onClick={props.linkOnClick}>
-                {props.linkText}
-            </Link>
+            {props.link && (
+                <Link className="text-primary" to={props.link.to} onClick={props.link.onClick}>
+                    {props.link.text}
+                </Link>
+            )}
         </div>
     </div>
 )
+
+const StatusMessageList: React.FC<{
+    data?: StatusAndRepoCountResult
+    onPopoverToggle: () => void
+    isSourcegraphApp?: boolean
+}> = ({ data, onPopoverToggle, isSourcegraphApp }) => {
+    if (!data) {
+        return null
+    }
+
+    // no status messages
+    if (data.statusMessages.length === 0) {
+        return (
+            <StatusMessagesNavItemEntry
+                key="up-to-date"
+                title="Repositories up to date"
+                message="Repositories synced from code host and available for search."
+                link={{
+                    to: '/site-admin/repositories',
+                    text: 'View repositories',
+                    onClick: onPopoverToggle,
+                }}
+                entryType="success"
+            />
+        )
+    }
+
+    return (
+        <>
+            {data.statusMessages.map(status => {
+                if (status.__typename === 'GitUpdatesDisabled') {
+                    return (
+                        <StatusMessagesNavItemEntry
+                            key={status.message}
+                            message={status.message}
+                            title="Code syncing disabled"
+                            messageHint="Remove disableGitAutoUpdates or set it to false in the site configuration"
+                            link={{
+                                to: '/site-admin/configuration',
+                                text: 'View site configuration',
+                                onClick: onPopoverToggle,
+                            }}
+                            entryType="warning"
+                        />
+                    )
+                }
+                if (status.__typename === 'NoRepositoriesDetected') {
+                    return (
+                        <StatusMessagesNavItemEntry
+                            key="no-repositories"
+                            title="No repositories"
+                            message="Connect a code host to connect repositories to Sourcegraph."
+                            link={{
+                                to: isSourcegraphApp ? '/user/app-settings/local-repositories' : '/setup',
+                                text: 'Setup code hosts',
+                                onClick: onPopoverToggle,
+                            }}
+                            entryType="info"
+                        />
+                    )
+                }
+                if (status.__typename === 'CloningProgress') {
+                    return (
+                        <StatusMessagesNavItemEntry
+                            key={status.message}
+                            message={status.message}
+                            title="Cloning repositories"
+                            messageHint="Not all repositories available for search yet."
+                            link={{
+                                to: '/site-admin/repositories',
+                                text: 'View repositories',
+                                onClick: onPopoverToggle,
+                            }}
+                            entryType="progress"
+                        />
+                    )
+                }
+                if (status.__typename === 'IndexingProgress') {
+                    return (
+                        <StatusMessagesNavItemEntry
+                            key="indexing-progress"
+                            message={`Indexing repositories. ${status.indexed} out of ${
+                                status.indexed + status.notIndexed
+                            } indexed.`}
+                            title="Indexing repositories"
+                            messageHint="Indexing repositories speeds up search."
+                            link={{
+                                to: '/site-admin/repositories',
+                                text: 'View repositories',
+                                onClick: onPopoverToggle,
+                            }}
+                            entryType="indexing"
+                        />
+                    )
+                }
+                if (status.__typename === 'ExternalServiceSyncError') {
+                    return (
+                        <StatusMessagesNavItemEntry
+                            key={status.externalService.id}
+                            title="Code host connection"
+                            message={`Failed to connect to "${status.externalService.displayName}".`}
+                            messageHint="Repositories synced to Sourcegraph may not be up to date."
+                            link={{
+                                to: `/site-admin/external-services/${status.externalService.id}`,
+                                text: 'View code host configuration',
+                                onClick: onPopoverToggle,
+                            }}
+                            entryType="error"
+                        />
+                    )
+                }
+                if (status.__typename === 'SyncError') {
+                    return (
+                        <StatusMessagesNavItemEntry
+                            key={status.message}
+                            message={status.message}
+                            title="Syncing repositories from code hosts"
+                            messageHint="Repository contents may not be up to date."
+                            link={{
+                                to: '/site-admin/repositories?status=failed-fetch',
+                                text: 'View affected repositories',
+                                onClick: onPopoverToggle,
+                            }}
+                            entryType="warning"
+                        />
+                    )
+                }
+                return null
+            })}
+        </>
+    )
+}
 
 const STATUS_MESSAGES_POLL_INTERVAL = 10000
 
@@ -230,120 +366,6 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
         )
     }, [data, isOpen])
 
-    const messages: JSX.Element | null = useMemo(() => {
-        if (!data) {
-            return null
-        }
-
-        // no status messages
-        if (data.statusMessages.length === 0) {
-            return (
-                <StatusMessagesNavItemEntry
-                    key="up-to-date"
-                    title="Repositories up to date"
-                    message="Repositories synced from code host and available for search."
-                    linkTo="/site-admin/repositories"
-                    linkText="View repositories"
-                    linkOnClick={toggleIsOpen}
-                    entryType="success"
-                />
-            )
-        }
-
-        return (
-            <>
-                {data.statusMessages.map(status => {
-                    if (status.__typename === 'GitUpdatesDisabled') {
-                        return (
-                            <StatusMessagesNavItemEntry
-                                key={status.message}
-                                message={status.message}
-                                title="Code syncing disabled"
-                                messageHint="Remove disableGitAutoUpdates or set it to false in the site configuration"
-                                linkTo="/site-admin/configuration"
-                                linkText="View site configuration"
-                                linkOnClick={toggleIsOpen}
-                                entryType="warning"
-                            />
-                        )
-                    }
-                    if (status.__typename === 'NoRepositoriesDetected') {
-                        return (
-                            <StatusMessagesNavItemEntry
-                                key="no-repositories"
-                                title="No repositories"
-                                message="Connect a code host to connect repositories to Sourcegraph."
-                                linkTo={props.isSourcegraphApp ? '/user/app-settings/local-repositories' : '/setup'}
-                                linkText="Setup code hosts"
-                                linkOnClick={toggleIsOpen}
-                                entryType="info"
-                            />
-                        )
-                    }
-                    if (status.__typename === 'CloningProgress') {
-                        return (
-                            <StatusMessagesNavItemEntry
-                                key={status.message}
-                                message={status.message}
-                                title="Cloning repositories"
-                                messageHint="Not all repositories available for search yet."
-                                linkTo="/site-admin/repositories"
-                                linkText="View repositories"
-                                linkOnClick={toggleIsOpen}
-                                entryType="progress"
-                            />
-                        )
-                    }
-                    if (status.__typename === 'IndexingProgress') {
-                        return (
-                            <StatusMessagesNavItemEntry
-                                key="indexing-progress"
-                                message={`Indexing repositories. ${status.indexed} out of ${
-                                    status.indexed + status.notIndexed
-                                } indexed.`}
-                                title="Indexing repositories"
-                                messageHint="Indexing repositories speeds up search."
-                                linkTo="/site-admin/repositories"
-                                linkText="View repositories"
-                                linkOnClick={toggleIsOpen}
-                                entryType="indexing"
-                            />
-                        )
-                    }
-                    if (status.__typename === 'ExternalServiceSyncError') {
-                        return (
-                            <StatusMessagesNavItemEntry
-                                key={status.externalService.id}
-                                title="Code host connection"
-                                message={`Failed to connect to "${status.externalService.displayName}".`}
-                                messageHint="Repositories synced to Sourcegraph may not be up to date."
-                                linkTo={`/site-admin/external-services/${status.externalService.id}`}
-                                linkText="View code host configuration"
-                                linkOnClick={toggleIsOpen}
-                                entryType="error"
-                            />
-                        )
-                    }
-                    if (status.__typename === 'SyncError') {
-                        return (
-                            <StatusMessagesNavItemEntry
-                                key={status.message}
-                                message={status.message}
-                                title="Syncing repositories from code hosts"
-                                messageHint="Repository contents may not be up to date."
-                                linkTo="/site-admin/repositories?status=failed-fetch"
-                                linkText="View affected repositories"
-                                linkOnClick={toggleIsOpen}
-                                entryType="warning"
-                            />
-                        )
-                    }
-                    return null
-                })}
-            </>
-        )
-    }, [data, props.isSourcegraphApp])
-
     return (
         <Popover isOpen={isOpen} onOpenChange={event => setIsOpen(event.isOpen)}>
             <PopoverTrigger
@@ -371,7 +393,11 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                     {error && (
                         <ErrorAlert className={styles.entry} prefix="Failed to load status messages" error={error} />
                     )}
-                    {messages}
+                    <StatusMessageList
+                        data={data}
+                        isSourcegraphApp={props.isSourcegraphApp}
+                        onPopoverToggle={toggleIsOpen}
+                    />
                 </div>
             </PopoverContent>
 

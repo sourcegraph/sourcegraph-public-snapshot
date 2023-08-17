@@ -91,7 +91,10 @@ func (z *zoektGRPCClient) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			return convertError(err)
 		}
 
-		sender.Send(zoekt.SearchResultFromProto(msg))
+		var repoURLS map[string]string      // We don't use repoURLs in Sourcegraph
+		var lineFragments map[string]string // We don't use lineFragments in Sourcegraph
+
+		sender.Send(zoekt.SearchResultFromProto(msg, repoURLS, lineFragments))
 	}
 }
 
@@ -110,7 +113,10 @@ func (z *zoektGRPCClient) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 		return nil, convertError(err)
 	}
 
-	return zoekt.SearchResultFromProto(resp), nil
+	var repoURLS map[string]string      // We don't use repoURLs in Sourcegraph
+	var lineFragments map[string]string // We don't use lineFragments in Sourcegraph
+
+	return zoekt.SearchResultFromProto(resp, repoURLS, lineFragments), nil
 }
 
 // List lists repositories. The query `q` can only contain
