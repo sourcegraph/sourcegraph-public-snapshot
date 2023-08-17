@@ -391,6 +391,10 @@ func (s *gitHubAppsStore) list(ctx context.Context, where *sqlf.Query) ([]*ghtyp
 	return s.decrypt(ctx, apps...)
 }
 
+func baseURLWhere(baseURL string) *sqlf.Query {
+	return sqlf.Sprintf(`trim(trailing '/' from base_url) = %s`, strings.TrimRight(baseURL, "/"))
+}
+
 // GetByID retrieves a GitHub App from the database by ID.
 func (s *gitHubAppsStore) GetByID(ctx context.Context, id int) (*ghtypes.GitHubApp, error) {
 	return s.get(ctx, sqlf.Sprintf(`id = %s`, id))
@@ -398,17 +402,17 @@ func (s *gitHubAppsStore) GetByID(ctx context.Context, id int) (*ghtypes.GitHubA
 
 // GetByAppID retrieves a GitHub App from the database by appID and base url
 func (s *gitHubAppsStore) GetByAppID(ctx context.Context, appID int, baseURL string) (*ghtypes.GitHubApp, error) {
-	return s.get(ctx, sqlf.Sprintf(`app_id = %s AND base_url = %s`, appID, baseURL))
+	return s.get(ctx, sqlf.Sprintf(`app_id = %s AND %s`, appID, baseURLWhere(baseURL)))
 }
 
 // GetBySlug retrieves a GitHub App from the database by slug and base url
 func (s *gitHubAppsStore) GetBySlug(ctx context.Context, slug string, baseURL string) (*ghtypes.GitHubApp, error) {
-	return s.get(ctx, sqlf.Sprintf(`slug = %s AND base_url = %s`, slug, baseURL))
+	return s.get(ctx, sqlf.Sprintf(`slug = %s AND %s`, slug, baseURLWhere(baseURL)))
 }
 
 // GetByDomain retrieves a GitHub App from the database by domain and base url
 func (s *gitHubAppsStore) GetByDomain(ctx context.Context, domain itypes.GitHubAppDomain, baseURL string) (*ghtypes.GitHubApp, error) {
-	return s.get(ctx, sqlf.Sprintf(`domain = %s AND base_url = %s`, domain, baseURL))
+	return s.get(ctx, sqlf.Sprintf(`domain = %s AND %s`, domain, baseURLWhere(baseURL)))
 }
 
 // List lists all GitHub Apps in the store
