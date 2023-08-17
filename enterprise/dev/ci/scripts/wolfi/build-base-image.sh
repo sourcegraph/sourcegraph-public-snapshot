@@ -111,3 +111,13 @@ if [[ "$IS_MAIN" == "true" ]]; then
   docker tag "$image_name" "sourcegraph/wolfi-${name}-base:latest"
   docker push "sourcegraph/wolfi-${name}-base:latest"
 fi
+
+# Show image usage message on branches
+if [[ "$IS_MAIN" != "true" ]]; then
+  if [[ -n "$BUILDKITE" ]]; then
+    echo -e "To run the ${name} image locally, use:
+\`\`\`
+docker run -it --entrypoint /bin/sh us.gcr.io/sourcegraph-dev/wolfi-${name}-base:${tag}
+  \`\`\`" | ../../../enterprise/dev/ci/scripts/annotate.sh -s "custom-repo" -m -t "info"
+  fi
+fi
