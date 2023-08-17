@@ -48,11 +48,20 @@ func NewExplodedSymbol(symbol string) (*ExplodedSymbol, error) {
 		namespace = scip.DescriptorOnlyFormatter.FormatSymbol(namespaceDescriptors)
 	}
 
+	packageManager := ""
+	packageName := ""
+	packageVersion := ""
+	if parsedSymbol.Package != nil {
+		packageManager = parsedSymbol.Package.Manager
+		packageName = parsedSymbol.Package.Name
+		packageVersion = parsedSymbol.Package.Version
+	}
+
 	return &ExplodedSymbol{
 		Scheme:                parsedSymbol.Scheme,
-		PackageManager:        parsedSymbol.Package.Manager,
-		PackageName:           parsedSymbol.Package.Name,
-		PackageVersion:        parsedSymbol.Package.Version,
+		PackageManager:        packageManager,
+		PackageName:           packageName,
+		PackageVersion:        packageVersion,
 		DescriptorNamespace:   namespace,
 		DescriptorSuffix:      scip.DescriptorOnlyFormatter.FormatSymbol(nonNamespaceDescriptors),
 		FuzzyDescriptorSuffix: ReducedDescriptorOnlyFormatter.FormatSymbol(nonNamespaceDescriptors),
