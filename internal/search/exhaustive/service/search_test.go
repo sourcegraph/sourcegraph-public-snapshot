@@ -1,4 +1,4 @@
-package search
+package service_test
 
 import (
 	"bytes"
@@ -10,13 +10,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 )
 
 func TestBackendFake(t *testing.T) {
 	assert := require.New(t)
 
 	ctx := context.Background()
-	searcher, err := NewSearcherFake().NewSearch(ctx, "1@rev1 1@rev2 2@rev3")
+	searcher, err := service.NewSearcherFake().NewSearch(ctx, "1@rev1 1@rev2 2@rev3")
 	assert.NoError(err)
 
 	// Test RepositoryRevSpecs
