@@ -121,7 +121,8 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	var bigqueryDataset *bigquery.Output
 	if vars.Environment.Resources.BigQuery != nil {
 		bigqueryDataset, err = bigquery.New(stack, "default", bigquery.Config{
-			Spec: *vars.Environment.Resources.BigQuery,
+			DefaultProject: vars.Project,
+			Spec:           *vars.Environment.Resources.BigQuery,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render BigQuery dataset")

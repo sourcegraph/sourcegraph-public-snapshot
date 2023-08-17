@@ -17,7 +17,7 @@ type Output struct {
 }
 
 type Config struct {
-	Project project.Project
+	DefaultProject project.Project
 
 	Spec spec.EnvironmentResourceBigQuerySpec
 }
