@@ -472,7 +472,7 @@ func (c *clientImplementor) SystemInfo(ctx context.Context) ([]SystemInfo, error
 		if err != nil {
 			return nil, err
 		}
-		rs := protocol.DiskInfoResponse{}
+		rs := &protocol.DiskInfoResponse{}
 		rs.FromProto(resp)
 		infos = append(infos, SystemInfo{
 			Address:    address.Address(),
