@@ -756,6 +756,7 @@ func TestUsers_Delete(t *testing.T) {
 
 	for name, hard := range map[string]bool{"soft": false, "hard": true} {
 		t.Run(name, func(t *testing.T) {
+			hard := hard // fix for loop closure
 			if testing.Short() {
 				t.Skip()
 			}
