@@ -127,6 +127,11 @@
             <override-text place="MainMenu" text="Accept Autocomplete Suggestion"/>
         </action>
 
+        <action id="cody.disposeInlays" class="com.sourcegraph.cody.autocomplete.DisposeInlaysAction">
+            <keyboard-shortcut first-keystroke="ESCAPE" keymap="$default"/>
+            <override-text place="MainMenu" text="Hide Completions"/>
+        </action>
+
         <action id="cody.resetCurrentConversation" icon="AllIcons.Actions.Refresh"
                 text="Reset the Current Conversation with Cody"
                 class="com.sourcegraph.cody.chat.ResetCurrentConversationAction">
