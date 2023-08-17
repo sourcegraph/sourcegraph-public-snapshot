@@ -50,7 +50,7 @@ const StackName = "project"
 
 func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	stack := stacks.New(StackName,
-		google.WithProjectID(vars.ProjectID))
+		google.StackWithProjectID(vars.ProjectID))
 
 	output := &Output{
 		Project: project.NewProject(stack, jsii.String("project"), &project.ProjectConfig{

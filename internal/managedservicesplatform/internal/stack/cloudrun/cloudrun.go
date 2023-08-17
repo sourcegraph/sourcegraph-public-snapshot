@@ -40,7 +40,7 @@ var (
 // including networking and dependencies like Redis.
 func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	stack := stacks.New(StackName,
-		google.WithProject(vars.Project))
+		google.StackWithProject(vars.Project))
 
 	tag, err := vars.Environment.Deploy.ResolveTag()
 	if err != nil {
