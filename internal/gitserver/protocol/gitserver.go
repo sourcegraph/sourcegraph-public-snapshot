@@ -274,8 +274,8 @@ func (di *DiskInfoResponse) ToProto() *proto.DiskInfoResponse {
 
 func (di *DiskInfoResponse) FromProto(p *proto.DiskInfoResponse) {
 	*di = DiskInfoResponse{
-		FreeSpace:  p.FreeSpace,
-		TotalSpace: p.TotalSpace,
+		FreeSpace:  p.GetFreeSpace(),
+		TotalSpace: p.GetTotalSpace(),
 	}
 }
 
