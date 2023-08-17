@@ -53,8 +53,8 @@ fi
 tag=${2-latest}
 
 echo "Setting up build dir..."
-cp "wolfi-images/${name}.yaml" "$builddir"
-cd "$builddir"
+cp -r "wolfi-images/" "$builddir"
+cd "$builddir/wolfi-images"
 
 # Export date for apko (defaults to 0 for reproducibility)
 SOURCE_DATE_EPOCH="$(date +%s)"
@@ -80,6 +80,9 @@ if [[ "$IS_MAIN" != "true" ]]; then
     echo "Replacing '$element@sourcegraph' with '$element@branch' in '${name}.yaml'"
     sed -i "s/$element@sourcegraph/$element@branch/g" "${name}.yaml"
   done
+
+  echo "Updated image config:"
+  cat "${name}.yaml"
 fi
 
 # Build base image with apko
