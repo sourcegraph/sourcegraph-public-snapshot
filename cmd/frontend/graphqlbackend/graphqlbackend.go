@@ -421,6 +421,10 @@ func NewSchemaWithCompletionsResolver(db database.DB, completionsResolver Comple
 	return NewSchema(db, gitserver.NewClient(db), []OptionalResolver{{CompletionsResolver: completionsResolver}})
 }
 
+func NewSchemaWithExhaustiveSearchesResolver(db database.DB, exhaustiveSearchesResolver ExhaustiveSearchesResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient(db), []OptionalResolver{{ExhaustiveSearchesResolver: exhaustiveSearchesResolver}})
+}
+
 func NewSchema(
 	db database.DB,
 	gitserverClient gitserver.Client,
@@ -604,6 +608,12 @@ func NewSchema(
 			resolver.ContentLibraryResolver = contentLibraryResolver
 			schemas = append(schemas, contentLibrary)
 		}
+
+		if exhaustiveSearchesResolver := optional.ExhaustiveSearchesResolver; exhaustiveSearchesResolver != nil {
+			EnterpriseResolvers.exhaustiveSearchesResolver = exhaustiveSearchesResolver
+			resolver.ExhaustiveSearchesResolver = exhaustiveSearchesResolver
+			schemas = append(schemas, exhaustiveSearchSchema)
+		}
 	}
 
 	logger := log.Scoped("GraphQL", "general GraphQL logging")
@@ -652,6 +662,7 @@ type OptionalResolver struct {
 	CodyContextResolver
 	DotcomRootResolver
 	EmbeddingsResolver
+	ExhaustiveSearchesResolver
 	GitHubAppsResolver
 	GuardrailsResolver
 	InsightsAggregationResolver
@@ -764,6 +775,7 @@ var EnterpriseResolvers = struct {
 	contextResolver             CodyContextResolver
 	dotcomResolver              DotcomRootResolver
 	embeddingsResolver          EmbeddingsResolver
+	exhaustiveSearchesResolver  ExhaustiveSearchesResolver
 	gitHubAppsResolver          GitHubAppsResolver
 	guardrailsResolver          GuardrailsResolver
 	insightsAggregationResolver InsightsAggregationResolver

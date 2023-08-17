@@ -1,8 +1,4 @@
 extend type Mutation {
-    validateExhaustiveSearchQuery (
-        query: String!
-    ): ExhaustiveSearchQueryValidation
-
     createExhaustiveSearch (
         query: String!
     ): ExhaustiveSearch!
@@ -17,6 +13,10 @@ extend type Mutation {
 }
 
 extend type Query {
+    validateExhaustiveSearchQuery (
+        query: String!
+    ): ExhaustiveSearchQueryValidation
+
     exhaustiveSearch (
         id: ID!
     ): ExhaustiveSearch
@@ -74,10 +74,13 @@ type ExhaustiveSearchRepo implements Node {
     startedAt: DateTime
     finishedAt: DateTime
     failureMessage: String
-    revisions: ExhaustiveSearchRevisionConnection!
+    revisions(
+        first: Int = 50
+        after: String
+    ): ExhaustiveSearchRepoRevisionConnection!
 }
 
-type ExhaustiveSearchRevision implements Node {
+type ExhaustiveSearchRepoRevision implements Node {
     id: ID!
     state: ExhaustiveSearchState!
     revision: String!
@@ -99,8 +102,8 @@ type ExhaustiveSearchRepoConnection {
     pageInfo: PageInfo!
 }
 
-type ExhaustiveSearchRevisionConnection {
-    nodes: [ExhaustiveSearchRevision!]!
+type ExhaustiveSearchRepoRevisionConnection {
+    nodes: [ExhaustiveSearchRepoRevision!]!
     totalCount: Int!
     pageInfo: PageInfo!
 }

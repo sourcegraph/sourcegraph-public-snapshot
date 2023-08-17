@@ -50,7 +50,7 @@ func (e *exhaustiveSearchRepoResolver) FailureMessage() *string {
 	panic("implement me")
 }
 
-func (e *exhaustiveSearchRepoResolver) Revisions(ctx context.Context) (graphqlbackend.ExhaustiveSearchRepoRevisionConnectionResolver, error) {
+func (e *exhaustiveSearchRepoResolver) Revisions(ctx context.Context, args *graphqlbackend.ExhaustiveSearchRepoRevisionsArgs) (graphqlbackend.ExhaustiveSearchRepoRevisionConnectionResolver, error) {
 	//TODO implement me
 	panic("implement me")
 }

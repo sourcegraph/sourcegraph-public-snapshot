@@ -371,3 +371,18 @@ func (r *NodeResolver) ToGitHubApp() (GitHubAppResolver, bool) {
 	n, ok := r.Node.(GitHubAppResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToExhaustiveSearch() (ExhaustiveSearchResolver, bool) {
+	n, ok := r.Node.(ExhaustiveSearchResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToExhaustiveSearchRepo() (ExhaustiveSearchRepoResolver, bool) {
+	n, ok := r.Node.(ExhaustiveSearchRepoResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToExhaustiveSearchRepoRevision() (ExhaustiveSearchRepoRevisionResolver, bool) {
+	n, ok := r.Node.(ExhaustiveSearchRepoRevisionResolver)
+	return n, ok
+}

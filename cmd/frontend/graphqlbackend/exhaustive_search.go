@@ -11,12 +11,12 @@ import (
 
 type ExhaustiveSearchesResolver interface {
 	// Mutations
-	ValidateExhaustiveSearchQuery(ctx context.Context, args *ValidateExhaustiveSearchQueryArgs) (ValidateExhaustiveSearchQueryResolver, error)
 	CreateExhaustiveSearch(ctx context.Context, args *CreateExhaustiveSearchArgs) (ExhaustiveSearchResolver, error)
 	CancelExhaustiveSearch(ctx context.Context, args *CancelExhaustiveSearchArgs) (*EmptyResponse, error)
 	DeleteExhaustiveSearch(ctx context.Context, args *DeleteExhaustiveSearchArgs) (*EmptyResponse, error)
 
 	// Queries
+	ValidateExhaustiveSearchQuery(ctx context.Context, args *ValidateExhaustiveSearchQueryArgs) (ValidateExhaustiveSearchQueryResolver, error)
 	ExhaustiveSearch(ctx context.Context, args *ExhaustiveSearchArgs) (ExhaustiveSearchResolver, error)
 	ExhaustiveSearches(ctx context.Context, args *ExhaustiveSearchesArgs) (ExhaustiveSearchesConnectionResolver, error)
 }
@@ -39,20 +39,25 @@ type ExhaustiveSearchResolver interface {
 	ID() graphql.ID
 	Query() string
 	State(ctx context.Context) string
-	Creator(context.Context) (*UserResolver, error)
+	Creator(ctx context.Context) (*UserResolver, error)
 	CreatedAt() gqlutil.DateTime
 	StartedAt(ctx context.Context) (*gqlutil.DateTime, error)
 	FinishedAt(ctx context.Context) (*gqlutil.DateTime, error)
 	CsvURL(ctx context.Context) (*string, error)
-	RepoStats(ctx context.Context) (*ExhaustiveSearchStatsResolver, error)
-	Repositories(ctx context.Context, args *graphqlutil.ConnectionArgs) (ExhaustiveSearchRepoConnectionResolver, error)
+	RepoStats(ctx context.Context) (ExhaustiveSearchStatsResolver, error)
+	Repositories(ctx context.Context, args *ExhaustiveSearchRepositoriesArgs) (ExhaustiveSearchRepoConnectionResolver, error)
 }
 
 type ExhaustiveSearchStatsResolver interface {
-	Total(ctx context.Context) (int32, error)
-	Completed(ctx context.Context) (int32, error)
-	Errored(ctx context.Context) (int32, error)
-	InProgress(ctx context.Context) (int32, error)
+	Total() int32
+	Completed() int32
+	Errored() int32
+	InProgress() int32
+}
+
+type ExhaustiveSearchRepositoriesArgs struct {
+	First int32
+	After *string
 }
 
 type ExhaustiveSearchRepoConnectionResolver interface {
@@ -69,7 +74,12 @@ type ExhaustiveSearchRepoResolver interface {
 	StartedAt(ctx context.Context) (*gqlutil.DateTime, error)
 	FinishedAt(ctx context.Context) (*gqlutil.DateTime, error)
 	FailureMessage() *string
-	Revisions(ctx context.Context) (ExhaustiveSearchRepoRevisionConnectionResolver, error)
+	Revisions(ctx context.Context, args *ExhaustiveSearchRepoRevisionsArgs) (ExhaustiveSearchRepoRevisionConnectionResolver, error)
+}
+
+type ExhaustiveSearchRepoRevisionsArgs struct {
+	First int32
+	After *string
 }
 
 type ExhaustiveSearchRepoRevisionConnectionResolver interface {

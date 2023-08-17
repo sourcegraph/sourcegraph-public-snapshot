@@ -114,3 +114,8 @@ var guardrailsSchema string
 //
 //go:embed content_library.graphql
 var contentLibrary string
+
+// exhaustiveSearchSchema is the Sourcegraph Exhaustive Search raw graphql schema.
+//
+//go:embed exhaustive_search.graphql
+var exhaustiveSearchSchema string
