@@ -106,6 +106,7 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 			bk.Agent("queue", "bazel"),
 			bk.Env("DOCKER_BAZEL", "true"),
 			bk.Key(stepKey),
+			bk.SoftFail(222),
 		}
 		// If packages have changed, wait for repo to be re-indexed as base images may depend on new packages
 		if dependOnPackages {
