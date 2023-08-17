@@ -86,7 +86,7 @@ if [[ "$IS_MAIN" != "true" ]]; then
   echo -e "\nUpdated image config:"
   echo "------------"
   cat "${name}.yaml"
-  echo "------------"
+  echo -e "------------\n"
 fi
 
 # Build base image with apko
