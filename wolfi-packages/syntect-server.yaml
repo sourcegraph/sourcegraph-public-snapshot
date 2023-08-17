@@ -3,7 +3,7 @@
 package:
   name: syntect-server
   version: 4.3
-  epoch: 1
+  epoch: 0
   description: "HTTP server stabilizer for unruly servers"
   target-architecture:
     - x86_64
