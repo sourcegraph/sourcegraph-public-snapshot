@@ -295,7 +295,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			wantChangeset: bt.ChangesetAssertions{
 				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 			},
-			wantErr: errors.New("pushing commit: creating commit from patch for repository \"\": \n```\n$ \narchived\n```"),
+			wantErr: errors.New("creating commit from patch for repository \"\": \n```\n$ \narchived\n```"),
 		},
 		"general push error": {
 			hasCurrentSpec: true,
