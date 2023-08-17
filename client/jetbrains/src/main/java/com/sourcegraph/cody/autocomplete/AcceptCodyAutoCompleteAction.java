@@ -75,7 +75,6 @@ public class AcceptCodyAutoCompleteAction extends EditorAction {
       WriteAction.run(() -> applyInsertText(editor, caret, completionItem));
     }
 
-
     @NotNull
     private static Optional<Caret> getCaret(@NotNull Editor editor) {
       List<Caret> allCarets = editor.getCaretModel().getAllCarets();
