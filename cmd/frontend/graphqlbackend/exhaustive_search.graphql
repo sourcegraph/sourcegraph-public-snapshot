@@ -51,7 +51,6 @@ type ExhaustiveSearchStats {
 type ExhaustiveSearchRepo implements Node {
     id: ID!
     state: ExhaustiveSearchState!
-    revisions: [ExhaustiveSearchRevision!]!
     createdAt: DateTime!
     startedAt: DateTime
     finishedAt: DateTime
