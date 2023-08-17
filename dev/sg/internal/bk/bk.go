@@ -165,9 +165,6 @@ func (c *Client) ListArtifactsByBuildNumber(ctx context.Context, pipeline string
 func (c *Client) ListArtifactsByJob(ctx context.Context, pipeline string, buildNumber string, jobID string) ([]buildkite.Artifact, error) {
 	artifacts, _, err := c.bk.Artifacts.ListByJob(BuildkiteOrg, pipeline, buildNumber, jobID, nil)
 	if err != nil {
-		return nil, err
-	}
-	if err != nil {
 		if strings.Contains(err.Error(), "404 Not Found") {
 			return nil, errors.New("no artifacts because no build or job found")
 		}
