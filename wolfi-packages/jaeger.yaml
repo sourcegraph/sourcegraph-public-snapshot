@@ -29,7 +29,7 @@ pipeline:
   - uses: fetch
     with:
       uri: https://github.com/jaegertracing/jaeger/releases/download/v${{package.version}}/jaeger-${{package.version}}-linux-amd64.tar.gz
-      expected-sha256: c139b7ec4b9e5b7ace2e3966e6187e1cb3292325192685793ab038c2c9c5d2e1
+      expected-sha256: 494af13f1f0530af3efe736ba4b36cd188b6381dae852d854be3dca4a6a0ed3a
       extract: true
       strip-components: 0
 
