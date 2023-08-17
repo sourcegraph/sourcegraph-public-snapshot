@@ -22,6 +22,7 @@ import com.intellij.ui.ColorUtil;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.util.IconUtil;
+import com.intellij.util.concurrency.annotations.RequiresEdt;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
@@ -84,7 +85,6 @@ public class CodyToolWindowContent implements UpdatableChat {
   private final JButton stopGeneratingButton =
       new JButton("Stop generating", IconUtil.desaturate(AllIcons.Actions.Suspend));
   private @NotNull volatile CancellationToken cancellationToken = new CancellationToken();
-  private final JPanel stopGeneratingButtonPanel;
   private @NotNull Transcript transcript = new Transcript();
   private boolean isChatVisible = false;
 
@@ -161,7 +161,7 @@ public class CodyToolWindowContent implements UpdatableChat {
     promptPanel.add(autoGrowingTextArea.getScrollPane(), BorderLayout.CENTER);
     promptPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
 
-    stopGeneratingButtonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 5));
+    JPanel stopGeneratingButtonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 5));
     stopGeneratingButtonPanel.setPreferredSize(
         new Dimension(Short.MAX_VALUE, stopGeneratingButton.getPreferredSize().height + 10));
     stopGeneratingButton.addActionListener(
@@ -207,7 +207,7 @@ public class CodyToolWindowContent implements UpdatableChat {
     addWelcomeMessage();
   }
 
-  public static CodyToolWindowContent getInstance(@NotNull Project project) {
+  public static @NotNull CodyToolWindowContent getInstance(@NotNull Project project) {
     return project.getService(CodyToolWindowContent.class);
   }
 
@@ -243,6 +243,7 @@ public class CodyToolWindowContent implements UpdatableChat {
             });
   }
 
+  @RequiresEdt
   private void updateVisibilityOfContentPanels() {
     if (LocalAppManager.isPlatformSupported()
         && ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.LOCAL_APP) {
@@ -262,8 +263,8 @@ public class CodyToolWindowContent implements UpdatableChat {
     }
   }
 
-  @NotNull
-  private JPanel createAppNotInstalledPanel() {
+  @RequiresEdt
+  private @NotNull JPanel createAppNotInstalledPanel() {
     JEditorPane jEditorPane = HtmlViewer.createHtmlViewer(UIUtil.getPanelBackground());
     jEditorPane.setText(
         "<html><body><h2>Get Started</h2>"
@@ -280,8 +281,8 @@ public class CodyToolWindowContent implements UpdatableChat {
     return new CodyOnboardingPanel(project, jEditorPane, downloadCodyAppButton);
   }
 
-  @NotNull
-  private JPanel createAppNotRunningPanel() {
+  @RequiresEdt
+  private @NotNull JPanel createAppNotRunningPanel() {
 
     JEditorPane jEditorPane = HtmlViewer.createHtmlViewer(UIUtil.getPanelBackground());
     jEditorPane.setText(
@@ -473,6 +474,7 @@ public class CodyToolWindowContent implements UpdatableChat {
   }
 
   @Override
+  @RequiresEdt
   public void refreshPanelsVisibility() {
     this.updateVisibilityOfContentPanels();
   }
@@ -526,7 +528,7 @@ public class CodyToolWindowContent implements UpdatableChat {
   @Override
   public void displayUsedContext(@NotNull List<ContextMessage> contextMessages) {
     // Use context
-    if (contextMessages.size() == 0) {
+    if (contextMessages.isEmpty()) {
       InstanceType instanceType = ConfigUtil.getInstanceType(project);
 
       String report = "I found no context for your request.";
