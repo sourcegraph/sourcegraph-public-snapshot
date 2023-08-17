@@ -407,7 +407,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	preciseResponse := []*types.PreciseContext{}
 	for _, pd := range preciseDataList {
 		for _, l := range pd.Location {
-			key := fmt.Sprintf("%s@%s:%s", l.Dump.RepositoryName, l.Dump.Commit, filepath.Join(l.Dump.Root, l.Path))
+			key := fmt.Sprintf("%s@%s:%s", l.Dump.RepositoryName, l.Dump.Commit, l.Path)
 			fmt.Printf("FETCHING %q at %q\n", l.SymbolName, key)
 			documentAndText, ok := cache[key]
 			if !ok {
