@@ -387,7 +387,7 @@ func (r *P4ExecRequest) FromProto(p *proto.P4ExecRequest) {
 		P4Port:   p.GetP4Port(),
 		P4User:   p.GetP4User(),
 		P4Passwd: p.GetP4Passwd(),
-		Args:     p.GetArgs(),
+		Args:     byteSlicesToStrings(p.GetArgs()),
 	}
 }
 
@@ -928,6 +928,14 @@ func stringsToByteSlices(in []string) [][]byte {
 	res := make([][]byte, len(in))
 	for i, s := range in {
 		res[i] = []byte(s)
+	}
+	return res
+}
+
+func byteSlicesToStrings(in [][]byte) []string {
+	res := make([]string, len(in))
+	for i, s := range in {
+		res[i] = string(s)
 	}
 	return res
 }

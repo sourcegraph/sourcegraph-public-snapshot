@@ -220,7 +220,7 @@ func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest
 }
 
 func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService_P4ExecServer) error {
-	arguments := req.GetArgs()
+	arguments := byteSlicesToStrings(req.GetArgs())
 
 	if len(arguments) < 1 {
 		return status.Error(codes.InvalidArgument, "args must be greater than or equal to 1")
