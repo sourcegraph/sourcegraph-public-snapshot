@@ -1,0 +1,56 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "resolvers",
+    srcs = [
+        "exhaustive_search.go",
+        "exhaustive_search_repo.go",
+        "exhaustive_search_repo_connection.go",
+        "exhaustive_search_repo_revision.go",
+        "exhaustive_search_repo_revision_connection.go",
+        "exhaustive_search_stats.go",
+        "exhaustive_searches_connection.go",
+        "resolvers.go",
+        "validate_exhaustive_search_query.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/search/resolvers",
+    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/graphqlbackend/graphqlutil",
+        "//internal/database",
+        "//internal/gqlutil",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "resolvers_test",
+    srcs = [
+        "exhaustive_search_repo_connection_test.go",
+        "exhaustive_search_repo_revision_connection_test.go",
+        "exhaustive_search_repo_revision_test.go",
+        "exhaustive_search_repo_test.go",
+        "exhaustive_search_test.go",
+        "exhaustive_searches_connection_test.go",
+        "resolvers_test.go",
+        "validate_exhaustive_search_query_test.go",
+    ],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        ":resolvers",
+        "//cmd/frontend/graphqlbackend",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_graph_gophers_graphql_go//errors",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)
