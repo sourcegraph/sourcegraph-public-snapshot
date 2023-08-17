@@ -2196,15 +2196,10 @@ type GitserverInstance implements Node {
     """
     id: ID!
 
-    # """
-    # The unique identifier for a gitserver instance.
-    # """
-    # shardID: String!
-
     """
     The address of the Git server instance.
     """
-    address: String!
+    shard: String!
 
     """
     The amount of free space available on the Git server, in bytes.

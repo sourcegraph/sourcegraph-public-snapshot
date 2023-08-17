@@ -19,7 +19,7 @@ func UnmarshalGitserverID(id graphql.ID) (gitserverID int32, err error) {
 }
 
 func (r *schemaResolver) gitserverByID(ctx context.Context, id graphql.ID) (*gitserverResolver, error) {
-	// 🚨 SECURITY: Only site admins can query role permissions or all permissions.
+	// 🚨 SECURITY: Only site admins can query gitserver information.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
@@ -28,6 +28,11 @@ func (r *schemaResolver) gitserverByID(ctx context.Context, id graphql.ID) (*git
 }
 
 func (r *schemaResolver) Gitservers(ctx context.Context) ([]*gitserverResolver, error) {
+	// 🚨 SECURITY: Only site admins can query gitserver information.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	infos, err := r.gitserverClient.SystemInfo(ctx)
 	if err != nil {
 		return nil, err
@@ -50,18 +55,32 @@ type gitserverResolver struct {
 	totalDiskSpaceBytes uint64
 }
 
+// ID returns a unique GraphQL ID for the gitserver instance.
+//
+// It marshals the gitserver address into an opaque unique string ID.
+// This allows the gitserver instance to be uniquely identified in the
+// GraphQL schema.
 func (g *gitserverResolver) ID() graphql.ID {
 	return marshalGitserverID(g.address)
 }
 
-func (g *gitserverResolver) Address() string {
+// Shard returns the address of the gitserver instance.
+func (g *gitserverResolver) Shard() string {
 	return g.address
 }
 
+// FreeDiskSpaceBytes returns the available free disk space on the gitserver.
+//
+// The free disk space is returned as a GraphQL BigInt type, representing the
+// number of free bytes available.
 func (g *gitserverResolver) FreeDiskSpaceBytes() BigInt {
 	return BigInt(g.freeDiskSpaceBytes)
 }
 
+// TotalDiskSpaceBytes returns the total disk space on the gitserver.
+//
+// The total space is returned as a GraphQL BigInt type, representing the
+// total number of bytes.
 func (g *gitserverResolver) TotalDiskSpaceBytes() BigInt {
 	return BigInt(g.totalDiskSpaceBytes)
 }
