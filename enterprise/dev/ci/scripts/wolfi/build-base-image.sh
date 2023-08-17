@@ -6,12 +6,15 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
 
 MAIN_BRANCH="main"
 BRANCH="${BUILDKITE_BRANCH:-'default-branch'}"
+BRANCH_PATH=$(echo "$BRANCH" | sed 's/[^a-zA-Z0-9_-]/-/g')
 IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
 
 tmpdir=$(mktemp -d -t wolfi-bin.XXXXXXXX)
+builddir=$(mktemp -d -t wolfi-build.XXXXXXXX)
 function cleanup() {
-  echo "Removing $tmpdir"
+  echo "Removing $tmpdir and $builddir"
   rm -rf "$tmpdir"
+  rm -rf "$builddir"
 }
 trap cleanup EXIT
 
@@ -49,17 +52,42 @@ fi
 
 tag=${2-latest}
 
-cd "wolfi-images/"
+echo "Setting up build dir..."
+cp "wolfi-images/${name}.yaml" "$builddir"
+cd "$builddir"
 
 # Export date for apko (defaults to 0 for reproducibility)
 SOURCE_DATE_EPOCH="$(date +%s)"
 export SOURCE_DATE_EPOCH
 
+# On branches, if we modify a package then we'd like that modified version to be included in any base images built.
+# This is a bit hacky, but we do this by modifying the base image configs and passing the branch-specific repo to apko.
+add_custom_repo_cmd=""
+if [[ "$IS_MAIN" != "true" ]]; then
+  add_custom_repo_cmd=("--repository-append" "@branch https://packages.sgdev.org/branches/$BRANCH_PATH" "--keyring-append" "https://packages.sgdev.org/sourcegraph-melange-dev.rsa.pub")
+  echo "Adding custom repo command: ${add_custom_repo_cmd[*]}"
+
+  # Read the branch-specific package repo and extract the names of packages that have been modified
+  modified_packages=()
+  while IFS= read -r line; do
+    modified_packages+=("$line")
+  done < <(gsutil ls gs://package-repository/branches/"$BRANCH_PATH"/x86_64/\*.apk | sed -E 's/.*\/x86_64\/([a-zA-Z0-9-]+)-[0-9]+\..*/\1/')
+
+  echo "List of modified packages to include in branch image: ${modified_packages[*]}"
+
+  # In the base image configs, find and replace the packages which have been modified
+  for element in "${modified_packages[@]}"; do
+    echo "Replacing '$element@sourcegraph' with '$element@branch' in '${name}.yaml'"
+    sed -i "s/$element@sourcegraph/$element@branch/g" "${name}.yaml"
+  done
+fi
+
 # Build base image with apko
 echo " * Building base image '$name' with apko..."
 image_name="sourcegraph-wolfi/${name}-base"
 tarball="sourcegraph-wolfi-${name}-base.tar"
-apko build --debug "${name}.yaml" \
+apko build --debug "${add_custom_repo_cmd[@]}" \
+  "${name}.yaml" \
   "$image_name:latest" \
   "$tarball" ||
   (echo "*** Build failed ***" && exit 1)
