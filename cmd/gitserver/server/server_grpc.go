@@ -21,6 +21,7 @@ import (
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -339,7 +340,7 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 
 func (gs *GRPCServer) RepoClone(ctx context.Context, in *proto.RepoCloneRequest) (*proto.RepoCloneResponse, error) {
 	repoName := protocol.NormalizeRepo(api.RepoName(in.GetRepo()))
-	if err := ScheduleRepoClone(ctx, gs.Server.DB, repoName, CloneOptions{}); err != nil {
+	if err := ScheduleRepoClone(ctx, gs.Server.DB, repoName, CloneOptions{Priority: types.HighPriorityRepoUpdate}); err != nil {
 		return &proto.RepoCloneResponse{Error: err.Error()}, nil
 	}
 	return &proto.RepoCloneResponse{Error: ""}, nil

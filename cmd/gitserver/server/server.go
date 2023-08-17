@@ -744,20 +744,38 @@ func (s *Server) repoUpdate(_ *protocol.RepoUpdateRequest) protocol.RepoUpdateRe
 	return protocol.RepoUpdateResponse{}
 }
 
-func (s *Server) HandleRepoUpdateRequest(ctx context.Context, req *protocol.RepoUpdateRequest, logger log.Logger) (protocol.RepoUpdateResponse, error) {
+// RepoUpdatePayload is used instead of a `protocol.RepoUpdateRequest` to be
+// passed to `HandleRepoUpdateRequest` function because we need to have more
+// parameters than `protocol.RepoUpdateRequest` has, and we don't need to change
+// an API (which will anyway be removed in the end) to do that, we can just
+// create a new type.
+type RepoUpdatePayload struct {
+	// Repo identifies URL for repo.
+	Repo api.RepoName
+	// Since is a debounce interval.
+	Since time.Duration
+	// Clone is true when we need to clone a repo and not fetch it. Used when we
+	// need to reclone an already cloned repo.
+	Clone bool
+}
+
+func (s *Server) HandleRepoUpdateRequest(ctx context.Context, payload RepoUpdatePayload, logger log.Logger) (protocol.RepoUpdateResponse, error) {
 	var resp protocol.RepoUpdateResponse
 	var err error
-	req.Repo = protocol.NormalizeRepo(req.Repo)
-	dir := s.dir(req.Repo)
-	if !repoCloned(dir) && !s.skipCloneForTests {
-		_, err := s.CloneRepo(ctx, req.Repo, CloneOptions{Block: true})
+	payload.Repo = protocol.NormalizeRepo(payload.Repo)
+	dir := s.dir(payload.Repo)
+
+	// If it is explicitly stated that we need to clone, or if we implicitly
+	// understand it (the repo isn't cloned), then we clone. Otherwise we fetch.
+	if payload.Clone || (!repoCloned(dir) && !s.skipCloneForTests) {
+		_, err := s.CloneRepo(ctx, payload.Repo, CloneOptions{Block: true})
 		if err != nil {
-			logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
+			logger.Warn("error cloning repo", log.String("repo", string(payload.Repo)), log.Error(err))
 			resp.Error = err.Error()
 		}
 	} else {
 		var statusErr error
-		updateErr := s.doRepoUpdate(ctx, req.Repo, "")
+		updateErr := s.doRepoUpdate(ctx, payload.Repo, "")
 
 		// attempts to acquire these values are not contingent on the success of
 		// the update.
@@ -772,7 +790,7 @@ func (s *Server) HandleRepoUpdateRequest(ctx context.Context, req *protocol.Repo
 			resp.LastChanged = &lastChanged
 		}
 		if statusErr != nil {
-			logger.Error("failed to get status of repo", log.String("repo", string(req.Repo)), log.Error(statusErr))
+			logger.Error("failed to get status of repo", log.String("repo", string(payload.Repo)), log.Error(statusErr))
 			// report this error in-band, but still produce a valid response with the
 			// other information.
 			resp.Error = statusErr.Error()
@@ -785,7 +803,7 @@ func (s *Server) HandleRepoUpdateRequest(ctx context.Context, req *protocol.Repo
 			resp.Error = updateErr.Error()
 			err = updateErr
 		} else {
-			s.Perforce.EnqueueChangelistMappingJob(perforce.NewChangelistMappingJob(req.Repo, dir))
+			s.Perforce.EnqueueChangelistMappingJob(perforce.NewChangelistMappingJob(payload.Repo, dir))
 		}
 	}
 
@@ -805,7 +823,7 @@ func (s *Server) handleRepoClone(w http.ResponseWriter, r *http.Request) {
 	var resp protocol.RepoCloneResponse
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 	repoName := req.Repo
-	err := ScheduleRepoClone(context.Background(), s.DB, repoName, CloneOptions{})
+	err := ScheduleRepoClone(context.Background(), s.DB, repoName, CloneOptions{Priority: types.HighPriorityRepoUpdate})
 	if err != nil {
 		logger.Warn("error scheduling a repo clone", log.String("repo", string(req.Repo)), log.Error(err))
 		resp.Error = err.Error()
@@ -1042,7 +1060,7 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 			}
 		}
 
-		err = ScheduleRepoClone(ctx, s.DB, repoName, CloneOptions{})
+		err = ScheduleRepoClone(ctx, s.DB, repoName, CloneOptions{Priority: types.HighPriorityRepoUpdate})
 		if err != nil {
 			s.Logger.Debug("error starting repo clone", log.String("repo", string(repoName)), log.Error(err))
 			return false, &gitdomain.RepoNotExistError{
@@ -1814,7 +1832,7 @@ func setGitAttributes(dir common.GitDir) error {
 // HEAD, zeroing it out, etc.)
 var testRepoCorrupter func(ctx context.Context, tmpDir common.GitDir)
 
-// cloneOptions specify optional behaviour for the cloneRepo function.
+// CloneOptions specify optional behaviour for the cloneRepo function.
 type CloneOptions struct {
 	// Block will wait for the clone to finish before returning. If the clone
 	// fails, the error will be returned. The passed in context is
@@ -1824,6 +1842,10 @@ type CloneOptions struct {
 
 	// Overwrite will overwrite the existing clone.
 	Overwrite bool
+
+	// Priority of this clone. High priority is used for on-demand clones which
+	// should be scheduled sooner than any regularly scheduled clones/updates.
+	Priority types.RepoUpdateJobPriority
 }
 
 // CloneRepo performs a clone operation for the given repository. It is

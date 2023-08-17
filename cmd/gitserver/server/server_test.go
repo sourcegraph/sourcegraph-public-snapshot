@@ -986,17 +986,10 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 
 	rr := httptest.NewRecorder()
 
-	updateReq := protocol.RepoUpdateRequest{
+	updatePayload := RepoUpdatePayload{
 		Repo: repoName,
 	}
-	body, err := json.Marshal(updateReq)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// This will perform an initial clone
-	req := newRequest("GET", "/repo-update", bytes.NewReader(body))
-	_, _ = s.HandleRepoUpdateRequest(ctx, &updateReq, logger)
+	_, _ = s.HandleRepoUpdateRequest(ctx, updatePayload, logger)
 
 	size := dirSize(s.dir(repoName).Path("."))
 	want := &types.GitserverRepo{
@@ -1033,11 +1026,11 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 	deleteReq := protocol.RepoDeleteRequest{
 		Repo: dbRepo.Name,
 	}
-	body, err = json.Marshal(deleteReq)
+	body, err := json.Marshal(deleteReq)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req = newRequest("GET", "/delete", bytes.NewReader(body))
+	req := newRequest("GET", "/delete", bytes.NewReader(body))
 	s.handleRepoDelete(rr, req)
 
 	size = dirSize(s.dir(repoName).Path("."))
@@ -1097,7 +1090,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	// We need the side effects here
 	_ = s.Handler()
 
-	updateReq := protocol.RepoUpdateRequest{
+	updatePayload := RepoUpdatePayload{
 		Repo: repoName,
 	}
 
@@ -1106,7 +1099,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	s.GetRemoteURLFunc = func(ctx context.Context, name api.RepoName) (string, error) {
 		return "https://invalid.example.com/", nil
 	}
-	_, _ = s.HandleRepoUpdateRequest(ctx, &updateReq, logger)
+	_, _ = s.HandleRepoUpdateRequest(ctx, updatePayload, logger)
 
 	size := dirSize(s.dir(repoName).Path("."))
 	want := &types.GitserverRepo{
@@ -1135,7 +1128,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	// This will perform an initial clone
 	s.GetRemoteURLFunc = oldRemoveURLFunc
-	_, _ = s.HandleRepoUpdateRequest(ctx, &updateReq, logger)
+	_, _ = s.HandleRepoUpdateRequest(ctx, updatePayload, logger)
 
 	size = dirSize(s.dir(repoName).Path("."))
 	want = &types.GitserverRepo{
@@ -1162,7 +1155,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	t.Cleanup(func() { doBackgroundRepoUpdateMock = nil })
 
 	// This will trigger an update since the repo is already cloned
-	_, _ = s.HandleRepoUpdateRequest(ctx, &updateReq, logger)
+	_, _ = s.HandleRepoUpdateRequest(ctx, updatePayload, logger)
 
 	want = &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
@@ -1185,7 +1178,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	doBackgroundRepoUpdateMock = nil
 
 	// This will trigger an update since the repo is already cloned
-	_, _ = s.HandleRepoUpdateRequest(ctx, &updateReq, logger)
+	_, _ = s.HandleRepoUpdateRequest(ctx, updatePayload, logger)
 
 	want = &types.GitserverRepo{
 		RepoID:        dbRepo.ID,

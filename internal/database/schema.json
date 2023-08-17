@@ -24233,6 +24233,19 @@
           "Comment": ""
         },
         {
+          "Name": "clone",
+          "Index": 16,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "execution_logs",
           "Index": 11,
           "TypeName": "json[]",
@@ -24286,7 +24299,7 @@
         },
         {
           "Name": "last_changed",
-          "Index": 18,
+          "Index": 19,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -24299,7 +24312,7 @@
         },
         {
           "Name": "last_fetched",
-          "Index": 17,
+          "Index": 18,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -24351,7 +24364,7 @@
         },
         {
           "Name": "overwrite_clone",
-          "Index": 16,
+          "Index": 17,
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
@@ -24442,7 +24455,7 @@
         },
         {
           "Name": "update_interval_seconds",
-          "Index": 19,
+          "Index": 20,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -28910,7 +28923,7 @@
     },
     {
       "Name": "repo_update_jobs_with_repo_name",
-      "Definition": " SELECT j.id,\n    j.state,\n    j.failure_message,\n    j.queued_at,\n    j.started_at,\n    j.finished_at,\n    j.process_after,\n    j.num_resets,\n    j.num_failures,\n    j.last_heartbeat_at,\n    j.execution_logs,\n    j.worker_hostname,\n    j.cancel,\n    j.repo_id,\n    j.priority,\n    j.overwrite_clone,\n    j.last_fetched,\n    j.last_changed,\n    j.update_interval_seconds,\n    r.name AS repository_name,\n    g.pool_repo_id\n   FROM ((repo_update_jobs j\n     JOIN gitserver_repos g ON ((g.repo_id = j.repo_id)))\n     JOIN repo r ON ((r.id = COALESCE(g.pool_repo_id, j.repo_id))))\n  WHERE (r.deleted_at IS NULL);"
+      "Definition": " SELECT j.id,\n    j.state,\n    j.failure_message,\n    j.queued_at,\n    j.started_at,\n    j.finished_at,\n    j.process_after,\n    j.num_resets,\n    j.num_failures,\n    j.last_heartbeat_at,\n    j.execution_logs,\n    j.worker_hostname,\n    j.cancel,\n    j.repo_id,\n    j.priority,\n    j.clone,\n    j.overwrite_clone,\n    j.last_fetched,\n    j.last_changed,\n    j.update_interval_seconds,\n    r.name AS repository_name,\n    g.pool_repo_id\n   FROM ((repo_update_jobs j\n     JOIN gitserver_repos g ON ((g.repo_id = j.repo_id)))\n     JOIN repo r ON ((r.id = COALESCE(g.pool_repo_id, j.repo_id))))\n  WHERE (r.deleted_at IS NULL);"
     },
     {
       "Name": "site_config",

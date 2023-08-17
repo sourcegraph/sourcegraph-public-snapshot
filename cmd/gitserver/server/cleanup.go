@@ -411,7 +411,7 @@ func cleanupRepos(
 
 		cmdCtx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 		defer cancel()
-		if err := cloneRepo(cmdCtx, db, repoName, CloneOptions{Block: true, Overwrite: true}); err != nil {
+		if err := cloneRepo(cmdCtx, db, repoName, CloneOptions{Block: true, Priority: types.HighPriorityRepoUpdate, Overwrite: true}); err != nil {
 			return true, err
 		}
 		reposRecloned.Inc()

@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -74,7 +73,7 @@ type repoCloneHandler struct {
 
 func (h *repoCloneHandler) Handle(ctx context.Context, logger log.Logger, record types.RepoUpdateJob) error {
 	repoName := record.RepositoryName
-	resp, err := h.gitserver.HandleRepoUpdateRequest(ctx, &protocol.RepoUpdateRequest{Repo: repoName}, logger)
+	resp, err := h.gitserver.HandleRepoUpdateRequest(ctx, server.RepoUpdatePayload{Repo: repoName, Clone: record.Clone}, logger)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return errcode.MakeNonRetryable(err)

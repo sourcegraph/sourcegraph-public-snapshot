@@ -52,12 +52,13 @@ type CreateRepoUpdateJobOpts struct {
 	RepoName       api.RepoName
 	Priority       types.RepoUpdateJobPriority
 	ProcessAfter   time.Time
+	Clone          bool
 	OverwriteClone bool
 }
 
 const createRepoUpdateJobQueryFmtstr = `
-INSERT INTO repo_update_jobs(repo_id, priority, process_after, overwrite_clone)
-SELECT r.id, %s, %s, %s
+INSERT INTO repo_update_jobs(repo_id, priority, process_after, clone, overwrite_clone)
+SELECT r.id, %s, %s, %s, %s
 FROM repo r
 WHERE r.name = %s
 ON CONFLICT DO NOTHING
@@ -73,6 +74,7 @@ func createRepoUpdateJobQuery(opts CreateRepoUpdateJobOpts) *sqlf.Query {
 		createRepoUpdateJobQueryFmtstr,
 		opts.Priority,
 		dbutil.NullTimeColumn(opts.ProcessAfter),
+		opts.Clone,
 		opts.OverwriteClone,
 		opts.RepoName,
 		sqlf.Join(RepoUpdateJobColumns, ", "))
@@ -182,6 +184,7 @@ var RepoUpdateJobColumns = []*sqlf.Query{
 	// `repo_update_jobs_with_repo_name` view.
 	sqlf.Sprintf("repo_update_jobs.repo_id"),
 	sqlf.Sprintf("repo_update_jobs.priority"),
+	sqlf.Sprintf("repo_update_jobs.clone"),
 	sqlf.Sprintf("repo_update_jobs.overwrite_clone"),
 	sqlf.Sprintf("repo_update_jobs.last_fetched"),
 	sqlf.Sprintf("repo_update_jobs.last_changed"),
@@ -215,6 +218,7 @@ func ScanRepoUpdateJob(s dbutil.Scanner) (job types.RepoUpdateJob, _ error) {
 		&job.Cancel,
 		&job.RepoID,
 		&job.Priority,
+		&job.Clone,
 		&job.OverwriteClone,
 		&dbutil.NullTime{Time: &job.LastFetched},
 		&dbutil.NullTime{Time: &job.LastChanged},
@@ -244,6 +248,7 @@ func ScanFullRepoUpdateJob(s dbutil.Scanner) (job types.RepoUpdateJob, _ error) 
 		&job.Cancel,
 		&job.RepoID,
 		&job.Priority,
+		&job.Clone,
 		&job.OverwriteClone,
 		&dbutil.NullTime{Time: &job.LastFetched},
 		&dbutil.NullTime{Time: &job.LastChanged},

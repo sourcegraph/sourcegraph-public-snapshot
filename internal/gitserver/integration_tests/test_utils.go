@@ -15,8 +15,6 @@ import (
 
 	sglog "github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -116,7 +114,7 @@ func MakeGitRepository(t testing.TB, cmds ...string) api.RepoName {
 	// Since gitserver client doesn't make an RPC for repo update request and uses
 	// worker framework, for the sake of simplicity, the server is called directly
 	// as if it has just dequeued the update job.
-	_, err := gitserverServer.HandleRepoUpdateRequest(context.Background(), &protocol.RepoUpdateRequest{Repo: repo}, logtest.Scoped(t))
+	_, err := gitserverServer.HandleRepoUpdateRequest(context.Background(), server.RepoUpdatePayload{Repo: repo}, logtest.Scoped(t))
 	if err != nil {
 		t.Fatal(err)
 	}

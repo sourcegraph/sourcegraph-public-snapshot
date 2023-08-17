@@ -3706,6 +3706,7 @@ Indexes:
  cancel                  | boolean                  |           | not null | false
  repo_id                 | integer                  |           | not null | 
  priority                | integer                  |           | not null | 0
+ clone                   | boolean                  |           | not null | false
  overwrite_clone         | boolean                  |           | not null | false
  last_fetched            | timestamp with time zone |           |          | 
  last_changed            | timestamp with time zone |           |          | 
@@ -4902,6 +4903,7 @@ Foreign-key constraints:
     j.cancel,
     j.repo_id,
     j.priority,
+    j.clone,
     j.overwrite_clone,
     j.last_fetched,
     j.last_changed,

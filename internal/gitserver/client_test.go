@@ -550,7 +550,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 			ctx := context.Background()
 
 			if test.remote != "" {
-				if _, err := s.HandleRepoUpdateRequest(ctx, &protocol.RepoUpdateRequest{Repo: name}, logger); err != nil {
+				if _, err := s.HandleRepoUpdateRequest(ctx, server.RepoUpdatePayload{Repo: name}, logger); err != nil {
 					// if _, err := cli.RequestRepoUpdate(ctx, 0, 0); err != nil {
 					t.Fatal(err)
 				}
@@ -1120,7 +1120,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {
-			_, err := s.HandleRepoUpdateRequest(ctx, &protocol.RepoUpdateRequest{Repo: api.RepoName(remote)}, logger)
+			_, err := s.HandleRepoUpdateRequest(ctx, server.RepoUpdatePayload{Repo: api.RepoName(remote)}, logger)
 			require.NoError(t, err)
 
 			got, err := cli.ResolveRevisions(ctx, api.RepoName(remote), test.input)

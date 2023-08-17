@@ -2151,6 +2151,7 @@ type RepoUpdateJob struct {
 	UpdateIntervalSeconds int
 	PoolRepoID            *int32
 	Priority              RepoUpdateJobPriority
+	Clone                 bool
 	OverwriteClone        bool
 }
 
