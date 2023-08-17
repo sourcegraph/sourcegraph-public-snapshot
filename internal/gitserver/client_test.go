@@ -1491,6 +1491,7 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 type mockClient struct {
 	mockBatchLog                    func(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error)
 	mockCreateCommitFromPatchBinary func(ctx context.Context, opts ...grpc.CallOption) (proto.GitserverService_CreateCommitFromPatchBinaryClient, error)
+	mockDiskInfo                    func(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error)
 	mockExec                        func(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error)
 	mockGetObject                   func(ctx context.Context, in *proto.GetObjectRequest, opts ...grpc.CallOption) (*proto.GetObjectResponse, error)
 	mockIsRepoCloneable             func(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error)
@@ -1508,6 +1509,11 @@ type mockClient struct {
 // BatchLog implements v1.GitserverServiceClient.
 func (mc *mockClient) BatchLog(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error) {
 	return mc.mockBatchLog(ctx, in, opts...)
+}
+
+// DiskInfo implements v1.GitserverServiceClient.
+func (mc *mockClient) DiskInfo(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error) {
+	return mc.mockDiskInfo(ctx, in, opts...)
 }
 
 // GetObject implements v1.GitserverServiceClient.

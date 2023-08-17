@@ -2178,6 +2178,43 @@ type Query {
         """
         before: String
     ): PermissionConnection!
+
+    """
+    Returns information pertaining to all gitserver instances associated with this Sourcegraph instance.
+
+    Site-admin only.
+    """
+    gitservers: [GitserverInstance!]!
+}
+"""
+GitserverInfo contains information about a gitserver instance.
+"""
+type GitserverInstance implements Node {
+    """
+    The unique identifier of the gitserver instance.
+    This is equivalent to the ShardID.
+    """
+    id: ID!
+
+    # """
+    # The unique identifier for a gitserver instance.
+    # """
+    # shardID: String!
+
+    """
+    The address of the Git server instance.
+    """
+    address: String!
+
+    """
+    The amount of free space available on the Git server, in bytes.
+    """
+    freeDiskSpaceBytes: BigInt!
+
+    """
+    The total amount of storage space on the Git server, in bytes.
+    """
+    totalDiskSpaceBytes: BigInt!
 }
 
 """
@@ -7330,33 +7367,6 @@ type Site implements SettingsSubject {
     Site-admin only.
     """
     codyGatewayRateLimitStatus: [CodyGatewayRateLimitStatus!]
-
-    """
-    Returns information pertaining to all gitserver instances associated with this Sourcegraph instance.
-
-    Site-admin only.
-    """
-    gitserverInfo: [GitserverInfo!]!
-}
-
-"""
-GitserverInfo contains information about a gitserver instance.
-"""
-type GitserverInfo {
-    """
-    The address of the Git server instance.
-    """
-    address: String!
-
-    """
-    The amount of free space available on the Git server, in bytes.
-    """
-    freeSpace: BigInt!
-
-    """
-    The total amount of storage space on the Git server, in bytes.
-    """
-    totalSpace: BigInt!
 }
 
 """

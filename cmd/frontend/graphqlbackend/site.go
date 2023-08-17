@@ -31,7 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -57,7 +56,7 @@ func (r *schemaResolver) siteByGQLID(_ context.Context, id graphql.ID) (Node, er
 	if siteGQLID != singletonSiteGQLID {
 		return nil, errors.Errorf("site not found: %q", siteGQLID)
 	}
-	return NewSiteResolver(r.logger, r.db, r.gitserverClient), nil
+	return NewSiteResolver(r.logger, r.db), nil
 }
 
 func marshalSiteGQLID(siteID string) graphql.ID { return relay.MarshalID("Site", siteID) }
@@ -72,23 +71,21 @@ func unmarshalSiteGQLID(id graphql.ID) (siteID string, err error) {
 }
 
 func (r *schemaResolver) Site() *siteResolver {
-	return NewSiteResolver(r.logger, r.db, r.gitserverClient)
+	return NewSiteResolver(r.logger, r.db)
 }
 
-func NewSiteResolver(logger log.Logger, db database.DB, gitserverClient gitserver.Client) *siteResolver {
+func NewSiteResolver(logger log.Logger, db database.DB) *siteResolver {
 	return &siteResolver{
-		logger:          logger,
-		db:              db,
-		gqlID:           singletonSiteGQLID,
-		gitserverClient: gitserverClient,
+		logger: logger,
+		db:     db,
+		gqlID:  singletonSiteGQLID,
 	}
 }
 
 type siteResolver struct {
-	logger          log.Logger
-	db              database.DB
-	gqlID           string // == singletonSiteGQLID, not the site ID
-	gitserverClient gitserver.Client
+	logger log.Logger
+	db     database.DB
+	gqlID  string // == singletonSiteGQLID, not the site ID
 }
 
 func (r *siteResolver) ID() graphql.ID { return marshalSiteGQLID(r.gqlID) }
@@ -637,47 +634,4 @@ func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
 		return &max
 	}
 	return nil
-}
-
-func (r *siteResolver) GitserverInfo(ctx context.Context) ([]*gitserverInfoResolver, error) {
-	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
-	// so only admins may view it.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-	info, err := r.gitserverClient.SystemInfo(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return NewGitserverInfoResolver(info), nil
-}
-
-func NewGitserverInfoResolver(info []gitserver.SystemInfo) []*gitserverInfoResolver {
-	resolvers := make([]*gitserverInfoResolver, len(info))
-	for i, info := range info {
-		resolvers[i] = &gitserverInfoResolver{
-			address:    info.Address,
-			freeSpace:  info.FreeSpace,
-			totalSpace: info.TotalSpace,
-		}
-	}
-	return resolvers
-}
-
-type gitserverInfoResolver struct {
-	address    string
-	freeSpace  uint64
-	totalSpace uint64
-}
-
-func (g *gitserverInfoResolver) Address() string {
-	return g.address
-}
-
-func (g *gitserverInfoResolver) FreeSpace() (BigInt, error) {
-	return BigInt(g.freeSpace), nil
-}
-
-func (g *gitserverInfoResolver) TotalSpace() (BigInt, error) {
-	return BigInt(g.totalSpace), nil
 }

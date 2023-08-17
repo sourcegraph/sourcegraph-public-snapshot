@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -40,7 +39,7 @@ func resolverForSubject(ctx context.Context, logger log.Logger, db database.DB, 
 	case subject.Default:
 		return &settingsSubjectResolver{defaultSettings: newDefaultSettingsResolver(db)}, nil
 	case subject.Site:
-		return &settingsSubjectResolver{site: NewSiteResolver(logger, db, gitserver.NewClient(db))}, nil
+		return &settingsSubjectResolver{site: NewSiteResolver(logger, db)}, nil
 	case subject.Org != nil:
 		org, err := OrgByIDInt32(ctx, db, *subject.Org)
 		if err != nil {
