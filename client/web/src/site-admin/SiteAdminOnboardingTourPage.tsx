@@ -1,6 +1,6 @@
-import { type FC, type PropsWithChildren, useState, useEffect } from 'react'
+import { type FC, type PropsWithChildren, useState } from 'react'
 
-import {
+import type {
     OnboardingTourConfigMutationResult,
     OnboardingTourConfigMutationVariables,
     OnboardingTourConfigResult,
@@ -56,13 +56,7 @@ export const SiteAdminOnboardingTourPage: FC<PropsWithChildren<Props>> = () => {
     const existingConfiguration = data?.onboardingTourContent.current?.value
     const initialLoad = loading && !previousData
     const dirty = !loading && value !== null && existingConfiguration !== value
-    const config = loading
-        ? value ?? ''
-        : value !== null
-        ? value
-        : existingConfiguration
-        ? existingConfiguration
-        : DEFAULT_VALUE
+    const config = loading ? value ?? '' : value !== null ? value : existingConfiguration || DEFAULT_VALUE
 
     const discard = (): void => {
         if (dirty && window.confirm('Discard onboarding tour edits?')) {
@@ -70,18 +64,18 @@ export const SiteAdminOnboardingTourPage: FC<PropsWithChildren<Props>> = () => {
         }
     }
 
-    // Placeholder values
     const [updateOnboardinTourConfig, { loading: saving, error: mutationError }] = useMutation<
         OnboardingTourConfigMutationResult,
         OnboardingTourConfigMutationVariables
     >(ONBOARDING_TOUR_MUTATION, { refetchQueries: ['OnboardingTourConfig'] })
 
-    async function save() {
+    function save(): void {
         if (value !== null) {
-            updateOnboardinTourConfig({ variables: { json: value } })
+            // Conflicts with @typescript-eslint/no-floating-promises
+            // eslint-disable-next-line no-void
+            void updateOnboardinTourConfig({ variables: { json: value } })
         }
     }
-    // End placeholder values
 
     return (
         <>
