@@ -9,6 +9,7 @@ import (
 	searchshared "github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type ProgressAggregator struct {
@@ -89,7 +90,7 @@ func (p *ProgressAggregator) Final() api.Progress {
 	// We only send RepositoriesCount at the end because the number is
 	// confusing to users to see while searching.
 	if c := len(p.Stats.Repos); c > 0 {
-		s.RepositoriesCount = intPtr(c)
+		s.RepositoriesCount = pointers.Ptr(c)
 	}
 
 	event := api.BuildProgressEvent(s, p.RepoNamer)
@@ -106,8 +107,4 @@ func getRepos(stats streaming.Stats, status searchshared.RepoStatus) []sgapi.Rep
 	// give deterministic messages between updates.
 	slices.Sort(repos)
 	return repos
-}
-
-func intPtr(i int) *int {
-	return &i
 }

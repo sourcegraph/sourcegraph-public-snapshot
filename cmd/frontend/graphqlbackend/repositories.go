@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type repositoryArgs struct {
@@ -205,22 +206,20 @@ func (s *repositoriesConnectionStore) UnmarshalCursor(cursor string, orderBy dat
 	return &csv, err
 }
 
-func i32ptr(v int32) *int32 { return &v }
-
 func (s *repositoriesConnectionStore) ComputeTotal(ctx context.Context) (countptr *int32, err error) {
 	// 🚨 SECURITY: Only site admins can list all repos, because a total repository
 	// count does not respect repository permissions.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, s.db); err != nil {
-		return i32ptr(int32(0)), nil
+		return pointers.Ptr(int32(0)), nil
 	}
 
 	// Counting repositories is slow on Sourcegraph.com. Don't wait very long for an exact count.
 	if envvar.SourcegraphDotComMode() {
-		return i32ptr(int32(0)), nil
+		return pointers.Ptr(int32(0)), nil
 	}
 
 	count, err := s.db.Repos().Count(ctx, s.opt)
-	return i32ptr(int32(count)), err
+	return pointers.Ptr(int32(count)), err
 }
 
 func (s *repositoriesConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*RepositoryResolver, error) {
@@ -372,7 +371,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 	}
 
 	count, err := r.db.Repos().Count(ctx, r.opt)
-	return i32ptr(int32(count)), err
+	return pointers.Ptr(int32(count)), err
 }
 
 func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
