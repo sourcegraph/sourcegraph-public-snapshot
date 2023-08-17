@@ -378,7 +378,7 @@ func (r *P4ExecRequest) ToProto() *proto.P4ExecRequest {
 		P4Port:   r.P4Port,
 		P4User:   r.P4User,
 		P4Passwd: r.P4Passwd,
-		Args:     r.Args,
+		Args:     stringsToByteSlices(r.Args),
 	}
 }
 
@@ -922,4 +922,12 @@ func ParsePerforceChangelistState(state string) (PerforceChangelistState, error)
 	default:
 		return "", errors.Newf("invalid Perforce changelist state: %s", state)
 	}
+}
+
+func stringsToByteSlices(in []string) [][]byte {
+	res := make([][]byte, len(in))
+	for i, s := range in {
+		res[i] = []byte(s)
+	}
+	return res
 }
