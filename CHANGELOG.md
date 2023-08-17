@@ -17,6 +17,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Adds an option to stream code completion results. [#55967](https://github.com/sourcegraph/sourcegraph/pull/55967)
+
 ### Changed
 
 - OpenTelemetry Collector has been upgraded to v0.81, and OpenTelemetry packages have been upgraded to v1.16. [#54969](https://github.com/sourcegraph/sourcegraph/pull/54969), [#54999](https://github.com/sourcegraph/sourcegraph/pull/54999)
