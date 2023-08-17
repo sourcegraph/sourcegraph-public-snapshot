@@ -15,6 +15,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Changed
 
+- Changed to attoto/clipboard library from x11 clipboard libary
+
 ### Fixed
 
 ### Removed

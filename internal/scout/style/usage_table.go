@@ -7,11 +7,11 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.design/x/clipboard"
 )
 
 var usageTableStyle = lipgloss.NewStyle().
@@ -149,7 +149,7 @@ func (m usageTableModel) copyRowToClipboard(row table.Row) {
 		containerInfo += fmt.Sprintf("%s: %s\n", header, row[i])
 	}
 
-	clipboard.Write(clipboard.FmtText, []byte(containerInfo))
+	clipboard.WriteAll(containerInfo)
 }
 
 func UsageTable(columns []table.Column, rows []table.Row) {
