@@ -18,11 +18,13 @@ export const ConfigPanel: FC<Props> = ({ className, id, title, children, default
     // TODO: do not open by default if config is OK
     const [open, setOpen] = useState(defaultOpen ?? true)
 
+    const toggleOpen = (): void => setOpen(prev => !prev)
+
     return (
         <Container className={className}>
             <Collapse isOpen={open} onOpenChange={noop}>
                 <CollapseHeader as="h3" id={id}>
-                    <span onClick={() => setOpen(!open)}>
+                    <span role="button" tabIndex={0} onClick={toggleOpen} onKeyDown={toggleOpen}>
                         {open ? (
                             <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                         ) : (
@@ -30,7 +32,7 @@ export const ConfigPanel: FC<Props> = ({ className, id, title, children, default
                         )}{' '}
                         {title}
                     </span>{' '}
-                    <HashLink smooth to={`#${id}`}>
+                    <HashLink smooth={true} to={`#${id}`}>
                         <Icon aria-label="link icon" svgPath={mdiLink} />
                     </HashLink>
                 </CollapseHeader>

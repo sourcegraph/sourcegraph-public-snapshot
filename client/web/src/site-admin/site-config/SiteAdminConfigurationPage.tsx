@@ -266,7 +266,7 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
         if (isSetupChecklistEnabled && newTab !== tab) {
             navigate(`/site-admin/configuration/${newTab}`)
         }
-    }, [tabIndex, isSetupChecklistEnabled, navigate])
+    }, [tab, tabIndex, isSetupChecklistEnabled, navigate])
 
     const { data, loading, error } = useQuery<SiteResult, SiteVariables>(SITE_CONFIG_QUERY, {
         // fetchPolicy: 'cache-and-network',
