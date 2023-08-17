@@ -7792,6 +7792,68 @@ Generated query for warning alert: `max((sum by (exporter) (rate(otelcol_exporte
 
 <br />
 
+## otel-collector: otelcol_exporter_enqueue_failed_spans
+
+<p class="subtitle">exporter enqueue failed spans</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> otel-collector: 0+ exporter enqueue failed spans for 5m0s
+
+**Next steps**
+
+- Check the configuration of the exporter and if the service being exported is up. This may be caused by a queue full of unsettled elements, so you may need to decrease your sending rate or horizontally scale collectors.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#otel-collector-otelcol-exporter-enqueue-failed-spans).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_otel-collector_otelcol_exporter_enqueue_failed_spans"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum by (exporter) (rate(otelcol_exporter_enqueue_failed_spans{job=~"^.*"}[1m]))) > 0)`
+
+</details>
+
+<br />
+
+## otel-collector: otelcol_processor_dropped_spans
+
+<p class="subtitle">spans dropped per processor per minute</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> otel-collector: 0+ spans dropped per processor per minute for 5m0s
+
+**Next steps**
+
+- Check the configuration of the processor
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#otel-collector-otelcol-processor-dropped-spans).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_otel-collector_otelcol_processor_dropped_spans"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum by (processor) (rate(otelcol_processor_dropped_spans[1m]))) > 0)`
+
+</details>
+
+<br />
+
 ## otel-collector: container_cpu_usage
 
 <p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>

@@ -6,7 +6,7 @@ import java.nio.file.Paths
 import java.util.zip.ZipFile
 
 fun properties(key: String) = project.findProperty(key).toString()
-val isAgentEnabled = findProperty("enableAgent") == "true"
+val isAgentEnabled = findProperty("enableAgent") != "false"
 
 plugins {
     id("java")

@@ -3,17 +3,20 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"net/smtp"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -113,34 +116,27 @@ func TestDetermineOutOfDateAlert(t *testing.T) {
 
 func TestObservabilityActiveAlertsAlert(t *testing.T) {
 	f := false
-	type args struct {
-		args AlertFuncArgs
-	}
 	tests := []struct {
 		name string
-		args args
+		args AlertFuncArgs
 		want []*Alert
 	}{
 		{
 			name: "do not show anything for non-admin",
-			args: args{
-				args: AlertFuncArgs{
-					IsSiteAdmin: false,
-					ViewerFinalSettings: &schema.Settings{
-						AlertsHideObservabilitySiteAlerts: &f,
-					},
+			args: AlertFuncArgs{
+				IsSiteAdmin: false,
+				ViewerFinalSettings: &schema.Settings{
+					AlertsHideObservabilitySiteAlerts: &f,
 				},
 			},
 			want: nil,
 		},
 		{
 			name: "prometheus unreachable for admin",
-			args: args{
-				args: AlertFuncArgs{
-					IsSiteAdmin: true,
-					ViewerFinalSettings: &schema.Settings{
-						AlertsHideObservabilitySiteAlerts: &f,
-					},
+			args: AlertFuncArgs{
+				IsSiteAdmin: true,
+				ViewerFinalSettings: &schema.Settings{
+					AlertsHideObservabilitySiteAlerts: &f,
 				},
 			},
 			want: []*Alert{{
@@ -153,10 +149,8 @@ func TestObservabilityActiveAlertsAlert(t *testing.T) {
 			// blocked by https://github.com/sourcegraph/sourcegraph/issues/12190
 			// see observabilityActiveAlertsAlert docstrings
 			name: "alerts disabled by default for admin",
-			args: args{
-				args: AlertFuncArgs{
-					IsSiteAdmin: true,
-				},
+			args: AlertFuncArgs{
+				IsSiteAdmin: true,
 			},
 			want: nil,
 		},
@@ -171,7 +165,7 @@ func TestObservabilityActiveAlertsAlert(t *testing.T) {
 				return
 			}
 			fn := observabilityActiveAlertsAlert(prom)
-			gotAlerts := fn(tt.args.args)
+			gotAlerts := fn(tt.args)
 			if len(gotAlerts) != len(tt.want) {
 				t.Errorf("expected %+v, got %+v", tt.want, gotAlerts)
 				return
@@ -188,9 +182,6 @@ func TestObservabilityActiveAlertsAlert(t *testing.T) {
 }
 
 func TestFreePlanAlert(t *testing.T) {
-	type args struct {
-		args AlertFuncArgs
-	}
 	plan := func(p licensing.Plan) string {
 		return "plan:" + string(p)
 	}
@@ -199,40 +190,34 @@ func TestFreePlanAlert(t *testing.T) {
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"setup-checklist": true}, nil, nil))
 	tests := []struct {
 		name    string
-		args    args
+		args    AlertFuncArgs
 		license *license.Info
 		want    []*Alert
 	}{
 		{
 			name:    "do not show anything for non-admin",
 			license: &license.Info{Tags: []string{plan(licensing.PlanFree0)}},
-			args: args{
-				args: AlertFuncArgs{
-					IsSiteAdmin: false,
-					Ctx:         ctx,
-				},
+			args: AlertFuncArgs{
+				IsSiteAdmin: false,
+				Ctx:         ctx,
 			},
 			want: nil,
 		},
 		{
 			name:    "do not show alert if license is not on free plan",
 			license: &license.Info{Tags: []string{plan(licensing.PlanEnterprise0)}},
-			args: args{
-				args: AlertFuncArgs{
-					IsSiteAdmin: true,
-					Ctx:         ctx,
-				},
+			args: AlertFuncArgs{
+				IsSiteAdmin: true,
+				Ctx:         ctx,
 			},
 			want: nil,
 		},
 		{
 			name:    "show alert if license is on free plan 0",
 			license: &license.Info{Tags: []string{plan(licensing.PlanFree0)}},
-			args: args{
-				args: AlertFuncArgs{
-					IsSiteAdmin: true,
-					Ctx:         ctx,
-				},
+			args: AlertFuncArgs{
+				IsSiteAdmin: true,
+				Ctx:         ctx,
 			},
 			want: []*Alert{{
 				GroupValue:                AlertGroupLicense,
@@ -244,11 +229,9 @@ func TestFreePlanAlert(t *testing.T) {
 		{
 			name:    "show alert if license is on free plan 1",
 			license: &license.Info{Tags: []string{plan(licensing.PlanFree1)}},
-			args: args{
-				args: AlertFuncArgs{
-					IsSiteAdmin: true,
-					Ctx:         ctx,
-				},
+			args: AlertFuncArgs{
+				IsSiteAdmin: true,
+				Ctx:         ctx,
 			},
 			want: []*Alert{{
 				GroupValue:                AlertGroupLicense,
@@ -264,7 +247,7 @@ func TestFreePlanAlert(t *testing.T) {
 				return test.license, "test-signature", nil
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
-			gotAlerts := freePlanAlert(test.args.args)
+			gotAlerts := freePlanAlert(test.args)
 			if len(gotAlerts) != len(test.want) {
 				t.Errorf("expected %+v, got %+v", test.want, gotAlerts)
 				return
@@ -280,10 +263,6 @@ func TestFreePlanAlert(t *testing.T) {
 }
 
 func TestUserCountExceededAlert(t *testing.T) {
-	type args struct {
-		args AlertFuncArgs
-	}
-
 	ctx := actor.WithActor(context.Background(), actor.FromMockUser(1))
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"setup-checklist": true}, nil, nil))
 
@@ -294,43 +273,37 @@ func TestUserCountExceededAlert(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		args    args
+		args    AlertFuncArgs
 		license *license.Info
 		want    []*Alert
 	}{
 		{
 			name:    "do not show anything for non-admin",
 			license: &license.Info{Tags: []string{}},
-			args: args{
-				args: AlertFuncArgs{
-					IsSiteAdmin: false,
-					Ctx:         ctx,
-					DB:          db,
-				},
+			args: AlertFuncArgs{
+				IsSiteAdmin: false,
+				Ctx:         ctx,
+				DB:          db,
 			},
 			want: nil,
 		},
 		{
 			name:    "do not show alert if true up license",
 			license: &license.Info{Tags: []string{licensing.TrueUpUserCountTag}, UserCount: 1},
-			args: args{
-				args: AlertFuncArgs{
-					IsSiteAdmin: true,
-					Ctx:         ctx,
-					DB:          db,
-				},
+			args: AlertFuncArgs{
+				IsSiteAdmin: true,
+				Ctx:         ctx,
+				DB:          db,
 			},
 			want: nil,
 		},
 		{
 			name:    "show alert if exceeded user count",
 			license: &license.Info{Tags: []string{}, UserCount: 1},
-			args: args{
-				args: AlertFuncArgs{
-					IsSiteAdmin: true,
-					Ctx:         ctx,
-					DB:          db,
-				},
+			args: AlertFuncArgs{
+				IsSiteAdmin: true,
+				Ctx:         ctx,
+				DB:          db,
 			},
 			want: []*Alert{{
 				GroupValue:                AlertGroupLicense,
@@ -346,8 +319,189 @@ func TestUserCountExceededAlert(t *testing.T) {
 				return test.license, "test-signature", nil
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
-			gotAlerts := userCountExceededAlert(test.args.args)
+			gotAlerts := userCountExceededAlert(test.args)
 			if len(gotAlerts) != len(test.want) {
+				t.Errorf("expected %+v, got %+v", test.want, gotAlerts)
+				return
+			}
+			for i, got := range gotAlerts {
+				want := test.want[i]
+				if diff := cmp.Diff(*want, *got); diff != "" {
+					t.Fatalf("diff mismatch (-want +got):\n%s", diff)
+				}
+			}
+		})
+	}
+}
+
+func TestSMTPConfigAlert(t *testing.T) {
+	type args struct {
+		args AlertFuncArgs
+	}
+
+	var smtpClientError error = nil
+
+	mockCreateSMTPClient := func(config schema.SiteConfiguration) (*smtp.Client, error) {
+		return &smtp.Client{}, smtpClientError
+	}
+
+	ctx := actor.WithActor(context.Background(), actor.FromMockUser(1))
+	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"setup-checklist": true}, nil, nil))
+
+	tests := []struct {
+		name            string
+		args            args
+		config          *schema.SiteConfiguration
+		smtpClientError error
+		want            []*Alert
+	}{
+		{
+			name: "do not show anything for non-admin",
+			args: args{
+				args: AlertFuncArgs{
+					IsSiteAdmin: false,
+					Ctx:         ctx,
+				},
+			},
+			config:          nil,
+			smtpClientError: nil,
+			want:            nil,
+		},
+		{
+			name: "do not show alert if smtp is configured correctly",
+			args: args{
+				args: AlertFuncArgs{
+					IsSiteAdmin: true,
+					Ctx:         ctx,
+				},
+			},
+			config: &schema.SiteConfiguration{
+				EmailSmtp: &schema.SMTPServerConfig{
+					Host:           "smtp.example.com",
+					Port:           567,
+					Authentication: "PLAIN",
+					Username:       "username",
+					Password:       "password",
+				},
+				EmailAddress: "sourcegraph-unit-test@sourcegraph.acme.com",
+			},
+			smtpClientError: nil,
+			want:            nil,
+		},
+		{
+			name: "show alert if smtp config is missing",
+			args: args{
+				args: AlertFuncArgs{
+					IsSiteAdmin: true,
+					Ctx:         ctx,
+				},
+			},
+			config: &schema.SiteConfiguration{
+				EmailAddress: "sourcegraph-unit-test@sourcegraph.acme.com",
+			},
+			smtpClientError: nil,
+			want: []*Alert{{
+				GroupValue:                AlertGroupSMTP,
+				TypeValue:                 AlertTypeWarning,
+				MessageValue:              "SMTP is not configured. Email notifications will not be sent. [Configure SMTP](/site-admin/configuration#smtp) or [see the docs](/help/admin/config/email).",
+				IsDismissibleWithKeyValue: "smtp-config-missing",
+			}},
+		},
+		{
+			name: "show alert if smtp auth config is missing",
+			args: args{
+				args: AlertFuncArgs{
+					IsSiteAdmin: true,
+					Ctx:         ctx,
+				},
+			},
+			config: &schema.SiteConfiguration{
+				EmailSmtp: &schema.SMTPServerConfig{
+					Host:           "smtp.example.com",
+					Port:           567,
+					Authentication: "PLAIN",
+				},
+				EmailAddress: "sourcegraph-unit-test@sourcegraph.acme.com",
+			},
+			smtpClientError: nil,
+			want: []*Alert{{
+				GroupValue:                AlertGroupSMTP,
+				TypeValue:                 AlertTypeError,
+				MessageValue:              "SMTP authentication is misconfigured. SMTP Authentication is set to PLAIN, but username or password is missing. [Configure SMTP](/site-admin/configuration#smtp) or [see the docs](/help/admin/config/email).",
+				IsDismissibleWithKeyValue: "smtp-config-auth-error",
+			}},
+		},
+		{
+			name: "shows 2 alerts if email address is not configured and smtp auth config is missing",
+			args: args{
+				args: AlertFuncArgs{
+					IsSiteAdmin: true,
+					Ctx:         ctx,
+				},
+			},
+			config: &schema.SiteConfiguration{
+				EmailSmtp: &schema.SMTPServerConfig{
+					Host:           "smtp.example.com",
+					Port:           567,
+					Authentication: "PLAIN",
+				},
+			},
+			smtpClientError: nil,
+			want: []*Alert{
+				{
+					GroupValue:                AlertGroupSMTP,
+					TypeValue:                 AlertTypeWarning,
+					MessageValue:              "SMTP is not configured. Email notifications will not be sent. [Configure SMTP](/site-admin/configuration#smtp) or [see the docs](/help/admin/config/email).",
+					IsDismissibleWithKeyValue: "smtp-config-missing",
+				}, {
+					GroupValue:                AlertGroupSMTP,
+					TypeValue:                 AlertTypeError,
+					MessageValue:              "SMTP authentication is misconfigured. SMTP Authentication is set to PLAIN, but username or password is missing. [Configure SMTP](/site-admin/configuration#smtp) or [see the docs](/help/admin/config/email).",
+					IsDismissibleWithKeyValue: "smtp-config-auth-error",
+				}},
+		},
+		{
+			name: "show alert if smtp client cannot reach smtp server",
+			args: args{
+				args: AlertFuncArgs{
+					IsSiteAdmin: true,
+					Ctx:         ctx,
+				},
+			},
+			config: &schema.SiteConfiguration{
+				EmailSmtp: &schema.SMTPServerConfig{
+					Host:           "smtp.example.com",
+					Port:           567,
+					Authentication: "PLAIN",
+					Username:       "username",
+					Password:       "password",
+				},
+				EmailAddress: "sourcegraph-unit-test@sourcegraph.acme.com",
+			},
+			smtpClientError: errors.Newf("test smtp client cannot reach smtp server"),
+			want: []*Alert{{
+				GroupValue:                AlertGroupSMTP,
+				TypeValue:                 AlertTypeError,
+				MessageValue:              "SMTP server cannot be reached, please check your SMTP configuration. [Configure SMTP](/site-admin/configuration#smtp) or [see the docs](/help/admin/config/email).",
+				IsDismissibleWithKeyValue: "smtp-client-error",
+			}},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			smtpClientError = test.smtpClientError
+			if test.config != nil {
+				conf.Mock(&conf.Unified{SiteConfiguration: *test.config})
+			}
+
+			defer func() {
+				smtpClientError = nil
+				conf.Mock(nil)
+			}()
+
+			gotAlerts := smtpConfigAlert(mockCreateSMTPClient)(test.args.args)
+			if len(gotAlerts) != len(test.want) {
+				t.Errorf("got %s", gotAlerts[0].Message())
 				t.Errorf("expected %+v, got %+v", test.want, gotAlerts)
 				return
 			}

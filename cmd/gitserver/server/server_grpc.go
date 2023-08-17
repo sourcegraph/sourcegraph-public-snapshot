@@ -358,7 +358,7 @@ func (gs *GRPCServer) RepoCloneProgress(_ context.Context, req *proto.RepoCloneP
 	}
 	for _, repo := range repositories {
 		repoName := api.RepoName(repo)
-		result := gs.Server.repoCloneProgress(repoName)
+		result := repoCloneProgress(gs.Server.ReposDir, gs.Server.Locker, repoName)
 		resp.Results[repoName] = result
 	}
 	return resp.ToProto(), nil
@@ -367,7 +367,7 @@ func (gs *GRPCServer) RepoCloneProgress(_ context.Context, req *proto.RepoCloneP
 func (gs *GRPCServer) RepoDelete(ctx context.Context, req *proto.RepoDeleteRequest) (*proto.RepoDeleteResponse, error) {
 	repo := req.GetRepo()
 
-	if err := gs.Server.deleteRepo(ctx, api.UndeletedRepoName(api.RepoName(repo))); err != nil {
+	if err := deleteRepo(ctx, gs.Server.Logger, gs.Server.DB, gs.Server.Hostname, gs.Server.ReposDir, api.UndeletedRepoName(api.RepoName(repo))); err != nil {
 		gs.Server.Logger.Error("failed to delete repository", log.String("repo", repo), log.Error(err))
 		return &proto.RepoDeleteResponse{}, status.Errorf(codes.Internal, "failed to delete repository %s: %s", repo, err)
 	}
@@ -384,7 +384,7 @@ func (gs *GRPCServer) RepoUpdate(_ context.Context, req *proto.RepoUpdateRequest
 }
 
 func (gs *GRPCServer) ReposStats(_ context.Context, _ *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {
-	b, err := gs.Server.readReposStatsFile(filepath.Join(gs.Server.ReposDir, reposStatsName))
+	b, err := readReposStatsFile(filepath.Join(gs.Server.ReposDir, reposStatsName))
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to read %s: %s", reposStatsName, err.Error())
 	}
@@ -399,7 +399,7 @@ func (gs *GRPCServer) ReposStats(_ context.Context, _ *proto.ReposStatsRequest) 
 
 func (gs *GRPCServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoCloneableRequest) (*proto.IsRepoCloneableResponse, error) {
 	repo := api.RepoName(req.GetRepo())
-	resp, err := gs.Server.IsRepoCloneable(ctx, repo)
+	resp, err := gs.Server.isRepoCloneable(ctx, repo)
 	if err != nil {
 		return nil, err
 	}

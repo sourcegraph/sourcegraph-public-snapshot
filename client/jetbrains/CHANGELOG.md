@@ -4,13 +4,28 @@
 
 ### Added
 
+- New settings to enable debugging with the agent [#55821](https://github.com/sourcegraph/sourcegraph/pull/55821)
+- Added ability to hide completion suggestions with ESC key [#55955](https://github.com/sourcegraph/sourcegraph/pull/55955)
+- New alt-backslash shortcut to exlicitly trigger autocomplete [#55926](https://github.com/sourcegraph/sourcegraph/pull/55926)
+
 ### Changed
+
+- Improved settings UI [#55876](https://github.com/sourcegraph/sourcegraph/pull/55876)
 
 ### Deprecated
 
 ### Removed
 
+- Support for 2022.0, 2022.1 is now required [#55831](https://github.com/sourcegraph/sourcegraph/pull/55831)
+
 ### Fixed
+
+- Use inferred codebase for autocomplete [#55900](https://github.com/sourcegraph/sourcegraph/pull/55900)
+- Make sure caret is visible after accepting multiline completion [#55924](https://github.com/sourcegraph/sourcegraph/pull/55924)
+- Suppress duplicate telemetry when using agent [cody#689](https://github.com/sourcegraph/cody/pull/689)
+- Fixed bug causing the agent to not work [#55867](https://github.com/sourcegraph/sourcegraph/pull/55867)
+- Fixed `NullPointerException` bug [#55869](https://github.com/sourcegraph/sourcegraph/pull/55869)
+- Update telemetry to include whether other completion plugins are installed [#55932](https://github.com/sourcegraph/sourcegraph/pull/55932)
 
 ### Security
 

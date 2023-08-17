@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useCallback } from 'react'
 
 import classNames from 'classnames'
 
+import type { Transcript } from '@sourcegraph/cody-shared/dist/chat/transcript'
 import type { CodyClientScope } from '@sourcegraph/cody-shared/dist/chat/useClient'
 import { useLazyQuery } from '@sourcegraph/http-client'
 import { Text } from '@sourcegraph/wildcard'
@@ -22,6 +23,7 @@ export interface ScopeSelectorProps {
     toggleIncludeInferredFile: () => void
     fetchRepositoryNames: (count: number) => Promise<string[]>
     isSourcegraphApp?: boolean
+    transcript: Transcript | null
     className?: string
     renderHint?: (repos: IRepo[]) => React.ReactNode
 }
@@ -33,6 +35,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     toggleIncludeInferredFile,
     fetchRepositoryNames,
     isSourcegraphApp,
+    transcript,
     className,
     renderHint,
 }) {
@@ -88,30 +91,30 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     const addRepository = useCallback(
         (repoName: string) => {
             if (!scope.repositories.includes(repoName)) {
-                eventLogger.log(EventName.CODY_CHAT_SCOPE_REPO_ADDED)
+                eventLogger.log(EventName.CODY_CHAT_SCOPE_REPO_ADDED, { chatId: transcript?.id })
                 setScope({ ...scope, repositories: [...scope.repositories, repoName] })
             }
         },
-        [scope, setScope]
+        [scope, setScope, transcript?.id]
     )
 
     const removeRepository = useCallback(
         (repoName: string) => {
-            eventLogger.log(EventName.CODY_CHAT_SCOPE_REPO_REMOVED)
+            eventLogger.log(EventName.CODY_CHAT_SCOPE_REPO_REMOVED, { chatId: transcript?.id })
             setScope({ ...scope, repositories: scope.repositories.filter(repo => repo !== repoName) })
         },
-        [scope, setScope]
+        [scope, setScope, transcript?.id]
     )
 
     const resetScope = useCallback(async (): Promise<void> => {
-        eventLogger.log(EventName.CODY_CHAT_SCOPE_RESET)
+        eventLogger.log(EventName.CODY_CHAT_SCOPE_RESET, { chatId: transcript?.id })
         if (!isSourcegraphApp) {
             return setScope({ ...scope, repositories: [], includeInferredRepository: true, includeInferredFile: true })
         }
 
         const repositories = await fetchRepositoryNames(10)
         return setScope({ ...scope, repositories, includeInferredRepository: true, includeInferredFile: true })
-    }, [scope, setScope, fetchRepositoryNames, isSourcegraphApp])
+    }, [scope, setScope, fetchRepositoryNames, isSourcegraphApp, transcript?.id])
 
     return (
         <>

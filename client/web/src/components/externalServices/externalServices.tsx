@@ -1586,6 +1586,8 @@ const RUBY_PACKAGES: AddExternalServiceOptions = {
                     for details on how to configure an internal Artifactory repository.
                 </li>
             </ol>
+            <Text>⚠️ Ruby package repositories are visible by all users of the Sourcegraph instance.</Text>
+            <Text>⚠️ It is only possible to register one Ruby packages code host per Sourcegraph instance.</Text>
         </div>
     ),
     editorActions: [],
@@ -1604,7 +1606,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     gerrit: GERRIT,
     azuredevops: AZUREDEVOPS,
     phabricator: PHABRICATOR_SERVICE,
-    ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
+    ...(window.context?.experimentalFeatures?.perforce !== 'disabled' ? { perforce: PERFORCE } : {}),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
 }
 
