@@ -822,7 +822,7 @@ func TestTrailingSlashesInBaseURL(t *testing.T) {
 		Logo:         "logo.png",
 	}
 
-	_, err := store.Create(ctx, app)
+	id, err := store.Create(ctx, app)
 	require.NoError(t, err)
 
 	fetched, err := store.GetByAppID(ctx, 1234, "https://github.com")
@@ -834,6 +834,15 @@ func TestTrailingSlashesInBaseURL(t *testing.T) {
 	require.Equal(t, app.AppID, fetched.AppID)
 
 	fetched, err = store.GetByAppID(ctx, 1234, "https://github.com////")
+	require.NoError(t, err)
+	require.Equal(t, app.AppID, fetched.AppID)
+
+	// works the other way around as well
+	app.BaseURL = "https://github.com///"
+	_, err = store.Update(ctx, id, app)
+	require.NoError(t, err)
+
+	fetched, err = store.GetByAppID(ctx, 1234, "https://github.com")
 	require.NoError(t, err)
 	require.Equal(t, app.AppID, fetched.AppID)
 }
