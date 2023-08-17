@@ -1,8 +1,16 @@
 import { type FC, type PropsWithChildren, useState, useEffect } from 'react'
 
+import {
+    OnboardingTourConfigMutationResult,
+    OnboardingTourConfigMutationVariables,
+    OnboardingTourConfigResult,
+    OnboardingTourConfigVariables,
+} from 'src/graphql-operations'
+
+import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { PageHeader, Text, Container, BeforeUnloadPrompt, LoadingSpinner } from '@sourcegraph/wildcard'
+import { PageHeader, Text, Container, BeforeUnloadPrompt, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
 
 import onboardingSchemaJSON from '../../../../schema/onboardingtour.schema.json'
 import { PageTitle } from '../components/PageTitle'
@@ -11,69 +19,68 @@ import { MonacoSettingsEditor } from '../settings/MonacoSettingsEditor'
 
 interface Props extends TelemetryProps {}
 
-function useLoadOnboardingConfig(): { data: string; loading: boolean; error?: Error } {
-    const data = JSON.stringify(
-        {
-            tasks: [
-                {
-                    title: 'Code search use cases',
-                    steps: [
-                        {
-                            id: 'SymbolsSearch',
-                            label: 'Search multiple repos',
-                            action: {
-                                type: 'link',
-                                value: {
-                                    C: '/search?q=context:global+repo:torvalds/.*+lang:c+-file:.*/testing+magic&patternType=literal',
-                                },
-                            },
-                            info: 'some info',
-                        },
-                        {
-                            id: 'InstallOrSignUp',
-                            label: 'Get free trial',
-                            action: {
-                                type: 'new-tab-link',
-                                value: 'https://about.sourcegraph.com',
-                            },
-                            // This is done to mimic user creating an account, and signed in there is a different tour
-                            completeAfterEvents: ['non-existing-event'],
-                        },
-                    ],
-                },
-            ],
-        },
-        undefined,
-        4
-    )
+const ONBOARDING_TOUR_QUERY = gql`
+    query OnboardingTourConfig {
+        onboardingTourContent {
+            current {
+                id
+                value
+            }
+        }
+    }
+`
 
-    const [loading, setLoading] = useState(true)
+const ONBOARDING_TOUR_MUTATION = gql`
+    mutation OnboardingTourConfigMutation($json: String!) {
+        updateOnboardingTourContent(input: $json) {
+            alwaysNil
+        }
+    }
+`
 
-    useEffect(() => {
-        const timer = window.setTimeout(() => {
-            setLoading(false)
-        }, 2000)
-        return () => window.clearTimeout(timer)
-    }, [])
-
-    return { data, loading }
-}
+const DEFAULT_VALUE = JSON.stringify(
+    {
+        tasks: [],
+    },
+    null,
+    4
+)
 
 export const SiteAdminOnboardingTourPage: FC<PropsWithChildren<Props>> = () => {
     const isLightTheme = useIsLightTheme()
     const [value, setValue] = useState<string | null>(null)
-    const { data, loading, error } = useLoadOnboardingConfig()
-    const dirty = !loading && value !== null && data !== value
-    const config = loading ? '' : value === null ? data : value
+    const { data, loading, error, previousData } = useQuery<OnboardingTourConfigResult, OnboardingTourConfigVariables>(
+        ONBOARDING_TOUR_QUERY,
+        {}
+    )
+    const existingConfiguration = data?.onboardingTourContent.current?.value
+    const initialLoad = loading && !previousData
+    const dirty = !loading && value !== null && existingConfiguration !== value
+    const config = loading
+        ? value ?? ''
+        : value !== null
+        ? value
+        : existingConfiguration
+        ? existingConfiguration
+        : DEFAULT_VALUE
 
     const discard = (): void => {
-        // TODO: Prompt user whether they really want to discard
-        setValue(null)
+        if (dirty && window.confirm('Discard onboarding tour edits?')) {
+            setValue(null)
+        }
     }
 
     // Placeholder values
-    const saving = false
-    const save = (): void => {}
+    const [updateOnboardinTourConfig, { loading: saving, error: mutationError }] = useMutation<
+        OnboardingTourConfigMutationResult,
+        OnboardingTourConfigMutationVariables
+    >(ONBOARDING_TOUR_MUTATION, { refetchQueries: ['OnboardingTourConfig'] })
+
+    async function save() {
+        if (value !== null) {
+            updateOnboardinTourConfig({ variables: { json: value } })
+        }
+    }
     // End placeholder values
 
     return (
@@ -86,9 +93,10 @@ export const SiteAdminOnboardingTourPage: FC<PropsWithChildren<Props>> = () => {
             </PageHeader>
             <Text>Configure the onboarding tour steps</Text>
             <Container>
-                {loading && <LoadingSpinner title="Loading onboarding configuration" />}
-                {!loading && error && 'Error'}
-                {!loading && (
+                {initialLoad && <LoadingSpinner title="Loading onboarding configuration" />}
+                {error && <Alert>{error.message}</Alert>}
+                {mutationError && <Alert>{mutationError.message}</Alert>}
+                {!initialLoad && (
                     <>
                         <BeforeUnloadPrompt when={saving || dirty} message="Discard settings changes?" />
                         <MonacoSettingsEditor
