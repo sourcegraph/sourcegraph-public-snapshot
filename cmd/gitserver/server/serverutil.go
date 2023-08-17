@@ -22,9 +22,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (s *Server) dir(name api.RepoName) common.GitDir {
+func repoDirFromName(reposDir string, name api.RepoName) common.GitDir {
 	p := string(protocol.NormalizeRepo(name))
-	return common.GitDir(filepath.Join(s.ReposDir, filepath.FromSlash(p), ".git"))
+	return common.GitDir(filepath.Join(reposDir, filepath.FromSlash(p), ".git"))
 }
 
 func repoNameFromDir(reposDir string, dir common.GitDir) api.RepoName {
