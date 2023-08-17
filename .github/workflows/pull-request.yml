@@ -13,7 +13,7 @@ jobs:
           base-branch-regex: '[a-z\d-_.\\/]+'
           head-branch-regex: '[a-z\d-_.\\/]+'
           body-template: |
-            Merging into '%basebranch%'
+            ## Preview 🤩
             [Preview Link](https://docs.sourcegraph.com/@%headbranch%)
           body-update-action: "suffix"
           body-uppercase-base-match: false
