@@ -1,7 +1,7 @@
 extend type Mutation {
     validateExhaustiveSearchQuery (
         query: String!
-    ): [String!]
+    ): ExhaustiveSearchQueryValidation
 
     createExhaustiveSearch (
         query: String!
@@ -9,15 +9,30 @@ extend type Mutation {
 
     cancelExhaustiveSearch (
         id: ID!
-    ): ExhaustiveSearch!
-
-    retryExhaustiveSearch (
-        id: ID!
-    ): ExhaustiveSearch!
+    ): EmptyResponse
 
     deleteExhaustiveSearch (
         id: ID!
     ): EmptyResponse!
+}
+
+extend type Query {
+    exhaustiveSearch (
+        id: ID!
+    ): ExhaustiveSearch
+
+    exhaustiveSearches (
+        first: Int = 50
+        after: String
+        query: String
+        states: [ExhaustiveSearchState!]
+    ): ExhaustiveSearchConnection!
+}
+
+type ExhaustiveSearchQueryValidation {
+    query: String!
+    valid: Boolean!
+    errors: [String!]
 }
 
 enum ExhaustiveSearchState {
@@ -38,7 +53,10 @@ type ExhaustiveSearch implements Node {
     finishedAt: DateTime
     csvURL: String
     repoStats: ExhaustiveSearchStats!
-    repositories: ExhaustiveSearchRepoConnection!
+    repositories(
+        first: Int = 50
+        after: String
+    ): ExhaustiveSearchRepoConnection!
 }
 
 type ExhaustiveSearchStats {
@@ -51,6 +69,7 @@ type ExhaustiveSearchStats {
 type ExhaustiveSearchRepo implements Node {
     id: ID!
     state: ExhaustiveSearchState!
+    repository: Repository!
     createdAt: DateTime!
     startedAt: DateTime
     finishedAt: DateTime
