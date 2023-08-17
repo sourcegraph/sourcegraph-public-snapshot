@@ -14,6 +14,9 @@ var (
 	bucketReplenishmentConfigKeySuffix = "config:bucket_replenishment_interval_seconds"
 )
 
+// RateLimiter is a Redis-backed rate limiter that utilizes lua scripts to manage rate limit token fetching and token bucket resetting.
+// NOTE: This limiter needs to be backed by a syncer that will dump its configurations into Redis.
+// See cmd/worker/internal/ratelimit/job.go for an example.
 type RateLimiter interface {
 	// GetTokensFromBucket gets tokens from the specified rate limit token bucket.
 	// bucketName: the name of the bucket where the tokens are, e.g. github.com:api_tokens
@@ -35,7 +38,6 @@ type rateLimiter struct {
 }
 
 func NewRateLimiter() (RateLimiter, error) {
-	// If no pool is provided, get the use the Redis Store pool.
 	pool, ok := Store.Pool()
 	if !ok {
 		return nil, errors.New("unable to set default Redis pool")

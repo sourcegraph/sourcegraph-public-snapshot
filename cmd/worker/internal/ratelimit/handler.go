@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.org/x/time/rate"
 )
@@ -19,19 +20,31 @@ var (
 	defaultGitReplenishmentInterval = int32(1)
 )
 
-type handler struct {
-	codeHostStore database.CodeHostStore
-	ratelimiter   ratelimit.CodeHostRateLimiter
+type hdlr struct {
+	codeHostStore  database.CodeHostStore
+	ratelimiter    ratelimit.CodeHostRateLimiter
+	observationCtx *observation.Context
 }
 
-func (h *handler) Handle(ctx context.Context, observationCtx *observation.Context) error {
-	codeHosts, _, err := h.codeHostStore.List(ctx, database.ListCodeHostsOpts{
-		NoPagination: true,
-	})
+type handler interface {
+	Handle(ctx context.Context) error
+}
+
+func newHandler(observationCtx *observation.Context, codeHostStore database.CodeHostStore, ratelimiter ratelimit.CodeHostRateLimiter) handler {
+	return &hdlr{
+		observationCtx: observationCtx,
+		codeHostStore:  codeHostStore,
+		ratelimiter:    ratelimiter,
+	}
+}
+
+func (h *hdlr) Handle(ctx context.Context) error {
+	codeHosts, _, err := h.codeHostStore.List(ctx, database.ListCodeHostsOpts{})
 	if err != nil {
 		return err
 	}
 
+	// TODO: @varsanojidan This is only needed before the OOB migration, once the OOB migration is done, we can remove this
 	var fallbackGitQuota int32
 	siteCfg := conf.Get()
 	if siteCfg.GitMaxCodehostRequestsPerSecond != nil {
@@ -40,39 +53,42 @@ func (h *handler) Handle(ctx context.Context, observationCtx *observation.Contex
 		fallbackGitQuota = math.MaxInt32
 	}
 
+	var errs error
 	for _, codeHost := range codeHosts {
-		err = h.processCodeHost(ctx, codeHost.URL, fallbackGitQuota)
+		err = h.processCodeHost(ctx, *codeHost, fallbackGitQuota)
 		if err != nil {
-			observationCtx.Logger.Error("error setting rate limit configuration", log.String("url", codeHost.URL), log.Error(err))
+			h.observationCtx.Logger.Error("error setting rate limit configuration", log.String("url", codeHost.URL), log.Error(err))
+			errs = errors.Append(errs, err)
 		}
 	}
-	return err
+	return errs
 }
 
-func (h *handler) processCodeHost(ctx context.Context, codeHostURL string, fallbackGitQuota int32) error {
-	configs, err := h.getRateLimitConfigsOrDefaults(ctx, codeHostURL, fallbackGitQuota)
+func (h *hdlr) processCodeHost(ctx context.Context, codeHost types.CodeHost, fallbackGitQuota int32) error {
+	configs, err := h.getRateLimitConfigsOrDefaults(ctx, codeHost, fallbackGitQuota)
 	if err != nil {
 		return err
 	}
+
+	// We try setting both the API and git rate limits here even if we get an error when setting the API rate limits
+	// in oder to try to avoid any outages as much as possible.
+
 	// Set API token values
-	err = h.ratelimiter.SetCodeHostAPIRateLimitConfig(ctx, codeHostURL, configs.ApiQuota, configs.ApiReplenishmentInterval)
+	err = h.ratelimiter.SetCodeHostAPIRateLimitConfig(ctx, codeHost.URL, configs.ApiQuota, configs.ApiReplenishmentInterval)
 	// Set Git token values
-	err2 := h.ratelimiter.SetCodeHostGitRateLimitConfig(ctx, codeHostURL, configs.GitQuota, configs.GitReplenishmentInterval)
+	err2 := h.ratelimiter.SetCodeHostGitRateLimitConfig(ctx, codeHost.URL, configs.GitQuota, configs.GitReplenishmentInterval)
 
 	return errors.CombineErrors(err, err2)
 }
 
-func (h *handler) getRateLimitConfigsOrDefaults(ctx context.Context, codeHostURL string, fallbackGitQuota int32) (CodeHostRateLimitConfigs, error) {
-	var configs CodeHostRateLimitConfigs
-	// Retrieve the actual rate limit values from the source of truth (database).
-	codeHost, err := h.codeHostStore.GetByURL(ctx, codeHostURL)
-	if err != nil {
-		return CodeHostRateLimitConfigs{}, errors.Wrapf(err, "rate limit config worker unable to get code host by URL: %s", codeHostURL)
-	}
+func (h *hdlr) getRateLimitConfigsOrDefaults(ctx context.Context, codeHost types.CodeHost, fallbackGitQuota int32) (codeHostRateLimitConfigs, error) {
+	var configs codeHostRateLimitConfigs
 
 	// Determine the values of the 4 rate limit configurations by using their set value from the database or their default value if they are not set.
+	defaultAPILimit := true
 	if codeHost.APIRateLimitQuota != nil {
 		configs.ApiQuota = *codeHost.APIRateLimitQuota
+		defaultAPILimit = false
 	} else {
 		defaultRateLimitAsInt := int32(extsvc.GetDefaultRateLimit(codeHost.Kind))
 		// Basically only happens if the rate limit is set to rate.Inf
@@ -82,19 +98,21 @@ func (h *handler) getRateLimitConfigsOrDefaults(ctx context.Context, codeHostURL
 		configs.ApiQuota = defaultRateLimitAsInt
 	}
 
-	if codeHost.APIRateLimitIntervalSeconds != nil {
+	if !defaultAPILimit && codeHost.APIRateLimitIntervalSeconds != nil {
 		configs.ApiReplenishmentInterval = *codeHost.APIRateLimitIntervalSeconds
 	} else {
 		configs.ApiReplenishmentInterval = defaultAPIReplenishmentInterval
 	}
 
+	defaultGitLimit := true
 	if codeHost.GitRateLimitQuota != nil {
 		configs.GitQuota = *codeHost.GitRateLimitQuota
+		defaultGitLimit = false
 	} else {
 		configs.GitQuota = fallbackGitQuota
 	}
 
-	if codeHost.GitRateLimitIntervalSeconds != nil {
+	if !defaultGitLimit && codeHost.GitRateLimitIntervalSeconds != nil {
 		configs.GitReplenishmentInterval = *codeHost.GitRateLimitIntervalSeconds
 	} else {
 		configs.GitReplenishmentInterval = defaultGitReplenishmentInterval
@@ -102,6 +120,6 @@ func (h *handler) getRateLimitConfigsOrDefaults(ctx context.Context, codeHostURL
 	return configs, nil
 }
 
-type CodeHostRateLimitConfigs struct {
+type codeHostRateLimitConfigs struct {
 	ApiQuota, ApiReplenishmentInterval, GitQuota, GitReplenishmentInterval int32
 }

@@ -86,11 +86,12 @@ func TestHandler_Handle(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create the handler to start the test
-	h := handler{
-		codeHostStore: db.CodeHosts(),
-		ratelimiter:   ratelimit.NewCodeHostRateLimiter(rateLimiter),
+	h := hdlr{
+		codeHostStore:  db.CodeHosts(),
+		ratelimiter:    ratelimit.NewCodeHostRateLimiter(rateLimiter),
+		observationCtx: obsCtx,
 	}
-	err = h.Handle(ctx, obsCtx)
+	err = h.Handle(ctx)
 	assert.NoError(t, err)
 	apiCapKey := fmt.Sprintf("%s:%s:%s:config:bucket_capacity", prefix, url, "api_tokens")
 	apiReplenishmentKey := fmt.Sprintf("%s:%s:%s:config:bucket_replenishment_interval_seconds", prefix, url, "api_tokens")
@@ -113,7 +114,7 @@ func TestHandler_Handle(t *testing.T) {
 	codeHost.GitRateLimitIntervalSeconds = nil
 	err = db.CodeHosts().Update(ctx, codeHost)
 	assert.NoError(t, err)
-	err = h.Handle(ctx, obsCtx)
+	err = h.Handle(ctx)
 	assert.NoError(t, err)
 
 	// Check updated values are in Redis

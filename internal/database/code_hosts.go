@@ -12,7 +12,7 @@ import (
 )
 
 type ListCodeHostsOpts struct {
-	LimitOffset
+	*LimitOffset
 
 	// Only list code hosts with the given ID. This makes if effectively a getByID.
 	ID int32
@@ -26,8 +26,6 @@ type ListCodeHostsOpts struct {
 	IncludeDeleted bool
 	// Search is an optional string to search through kind and URL.
 	Search string
-	// NoPagination will return all code hosts matching the options with no need for pagination.
-	NoPagination bool
 }
 
 // CodeHostStore provides access to the code_hosts table.
@@ -109,7 +107,7 @@ func (errCodeHostNotFound) NotFound() bool {
 }
 
 func (s *codeHostStore) GetByID(ctx context.Context, id int32) (*types.CodeHost, error) {
-	chs, _, err := s.List(ctx, ListCodeHostsOpts{LimitOffset: LimitOffset{Limit: 1}, ID: id})
+	chs, _, err := s.List(ctx, ListCodeHostsOpts{LimitOffset: &LimitOffset{Limit: 1}, ID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +121,7 @@ func (s *codeHostStore) GetByURL(ctx context.Context, url string) (*types.CodeHo
 	// We would normally parse the URL here to verify its valid, but some code hosts have connections that
 	// have multiple URLs and in the code host table, they are represented by a code_hosts.url of:
 	// python/gomodules/etc...
-	chs, _, err := s.List(ctx, ListCodeHostsOpts{LimitOffset: LimitOffset{Limit: 1}, URL: url})
+	chs, _, err := s.List(ctx, ListCodeHostsOpts{LimitOffset: &LimitOffset{Limit: 1}, URL: url})
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +179,7 @@ func (s *codeHostStore) List(ctx context.Context, opts ListCodeHostsOpts) (chs [
 	}
 
 	// Set the next value if we were able to fetch Limit + 1
-	if opts.Limit > 0 && len(chs) == opts.Limit+1 {
+	if opts.LimitOffset != nil && opts.Limit > 0 && len(chs) == opts.Limit+1 {
 		next = chs[len(chs)-1].ID
 		chs = chs[:len(chs)-1]
 	}
@@ -216,13 +214,9 @@ func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("TRUE"))
 	}
 
-	if opts.NoPagination {
-		return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Join(codeHostColumnExpressions, ","), sqlf.Join(conds, "AND"), sqlf.Sprintf(""))
-	}
-
 	// We fetch an extra one so that we have the `next` value
 	newLimitOffset := opts.LimitOffset
-	if newLimitOffset.Limit > 0 {
+	if newLimitOffset != nil && newLimitOffset.Limit > 0 {
 		newLimitOffset.Limit += 1
 	}
 	return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Join(codeHostColumnExpressions, ","), sqlf.Join(conds, "AND"), newLimitOffset.SQL())
