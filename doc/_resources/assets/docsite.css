@@ -121,6 +121,11 @@ body.theme-dark #index {
   --link-color: rgb(161, 161, 161);
 }
 
+
+.test {
+    color:red;
+}
+
 /* Nav links */
 nav.links ul {
     padding: 0;
