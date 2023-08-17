@@ -68,11 +68,12 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wre
 var sgMaintenanceScript string
 
 const (
+	day = 24 * time.Hour
 	// repoTTL is how often we should re-clone a repository.
-	repoTTL = time.Hour * 24 * 45 // 45d
+	repoTTL = 45 * day
 	// repoTTLGC is how often we should re-clone a repository once it is
 	// reporting git gc issues.
-	repoTTLGC = time.Hour * 24 * 2 // 2d
+	repoTTLGC = 2 * day
 	// gitConfigMaybeCorrupt is a key we add to git config to signal that a repo may be
 	// corrupt on disk.
 	gitConfigMaybeCorrupt = "sourcegraph.maybeCorruptRepo"

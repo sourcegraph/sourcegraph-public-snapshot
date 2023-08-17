@@ -64,7 +64,7 @@ func TestSyncWorkerPlumbing(t *testing.T) {
 	// finalising the row which means that when running tests in verbose mode we'll
 	// see "sql: transaction has already been committed or rolled back". These
 	// errors can be ignored.
-	go janitor.Stop()
+	defer janitor.Stop()
 	defer resetter.Stop()
 	defer worker.Stop()
 
