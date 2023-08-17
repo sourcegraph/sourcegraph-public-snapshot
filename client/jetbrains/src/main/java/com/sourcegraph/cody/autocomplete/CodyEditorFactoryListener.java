@@ -22,6 +22,7 @@ import com.sourcegraph.cody.agent.protocol.Position;
 import com.sourcegraph.cody.agent.protocol.Range;
 import com.sourcegraph.cody.agent.protocol.TextDocument;
 import com.sourcegraph.cody.vscode.InlineAutoCompleteTriggerKind;
+import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind;
 import com.sourcegraph.config.ConfigUtil;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -68,7 +69,10 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
       if (suggestions.isEnabledForEditor(e.getEditor())
           && CodyEditorFactoryListener.isSelectedEditor(e.getEditor())) {
         suggestions.clearAutoCompleteSuggestions(e.getEditor());
-        suggestions.triggerAutoComplete(e.getEditor(), e.getEditor().getCaretModel().getOffset());
+        suggestions.triggerAutoComplete(
+            e.getEditor(),
+            e.getEditor().getCaretModel().getOffset(),
+            InlineCompletionTriggerKind.AUTOMATIC);
       }
     }
   }
@@ -110,7 +114,8 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
               event.getOldLength() != event.getNewLength()
                   ? InlineAutoCompleteTriggerKind.Invoke
                   : InlineAutoCompleteTriggerKind.Automatic;
-          completions.triggerAutoComplete(this.editor, changeOffset);
+          completions.triggerAutoComplete(
+              this.editor, changeOffset, InlineCompletionTriggerKind.AUTOMATIC);
         }
       }
     }
