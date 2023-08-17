@@ -10853,9 +10853,6 @@ type MockGitserverClient struct {
 	// RemoveFunc is an instance of a mock function object controlling the
 	// behavior of the method Remove.
 	RemoveFunc *GitserverClientRemoveFunc
-	// RemoveFromFunc is an instance of a mock function object controlling
-	// the behavior of the method RemoveFrom.
-	RemoveFromFunc *GitserverClientRemoveFromFunc
 	// RepoCloneProgressFunc is an instance of a mock function object
 	// controlling the behavior of the method RepoCloneProgress.
 	RepoCloneProgressFunc *GitserverClientRepoCloneProgressFunc
@@ -11094,11 +11091,6 @@ func NewMockGitserverClient() *MockGitserverClient {
 		},
 		RemoveFunc: &GitserverClientRemoveFunc{
 			defaultHook: func(context.Context, api.RepoName) (r0 error) {
-				return
-			},
-		},
-		RemoveFromFunc: &GitserverClientRemoveFromFunc{
-			defaultHook: func(context.Context, api.RepoName, string) (r0 error) {
 				return
 			},
 		},
@@ -11364,11 +11356,6 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.Remove")
 			},
 		},
-		RemoveFromFunc: &GitserverClientRemoveFromFunc{
-			defaultHook: func(context.Context, api.RepoName, string) error {
-				panic("unexpected invocation of MockGitserverClient.RemoveFrom")
-			},
-		},
 		RepoCloneProgressFunc: &GitserverClientRepoCloneProgressFunc{
 			defaultHook: func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
 				panic("unexpected invocation of MockGitserverClient.RepoCloneProgress")
@@ -11549,9 +11536,6 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		},
 		RemoveFunc: &GitserverClientRemoveFunc{
 			defaultHook: i.Remove,
-		},
-		RemoveFromFunc: &GitserverClientRemoveFromFunc{
-			defaultHook: i.RemoveFrom,
 		},
 		RepoCloneProgressFunc: &GitserverClientRepoCloneProgressFunc{
 			defaultHook: i.RepoCloneProgress,
@@ -16286,114 +16270,6 @@ func (c GitserverClientRemoveFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverClientRemoveFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// GitserverClientRemoveFromFunc describes the behavior when the RemoveFrom
-// method of the parent MockGitserverClient instance is invoked.
-type GitserverClientRemoveFromFunc struct {
-	defaultHook func(context.Context, api.RepoName, string) error
-	hooks       []func(context.Context, api.RepoName, string) error
-	history     []GitserverClientRemoveFromFuncCall
-	mutex       sync.Mutex
-}
-
-// RemoveFrom delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockGitserverClient) RemoveFrom(v0 context.Context, v1 api.RepoName, v2 string) error {
-	r0 := m.RemoveFromFunc.nextHook()(v0, v1, v2)
-	m.RemoveFromFunc.appendCall(GitserverClientRemoveFromFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the RemoveFrom method of
-// the parent MockGitserverClient instance is invoked and the hook queue is
-// empty.
-func (f *GitserverClientRemoveFromFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RemoveFrom method of the parent MockGitserverClient instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitserverClientRemoveFromFunc) PushHook(hook func(context.Context, api.RepoName, string) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientRemoveFromFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, string) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientRemoveFromFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, api.RepoName, string) error {
-		return r0
-	})
-}
-
-func (f *GitserverClientRemoveFromFunc) nextHook() func(context.Context, api.RepoName, string) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientRemoveFromFunc) appendCall(r0 GitserverClientRemoveFromFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientRemoveFromFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientRemoveFromFunc) History() []GitserverClientRemoveFromFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientRemoveFromFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientRemoveFromFuncCall is an object that describes an
-// invocation of method RemoveFrom on an instance of MockGitserverClient.
-type GitserverClientRemoveFromFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientRemoveFromFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientRemoveFromFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

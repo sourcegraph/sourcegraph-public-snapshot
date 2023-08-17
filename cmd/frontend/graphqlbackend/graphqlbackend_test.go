@@ -249,21 +249,3 @@ func TestResolverTo(t *testing.T) {
 		}
 	})
 }
-
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) {
-	return f(r)
-}
-
-// copied from the github client, just the fields we need
-type githubRepository struct {
-	FullName string `json:"full_name"`
-	Private  bool   `json:"private"`
-}
-
-type gitlabRepository struct {
-	Visibility        string `json:"visibility"`
-	ID                int    `json:"id"`
-	PathWithNamespace string `json:"path_with_namespace"`
-}

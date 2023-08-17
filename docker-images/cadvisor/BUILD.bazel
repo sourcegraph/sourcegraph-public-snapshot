@@ -28,7 +28,7 @@ oci_image(
 oci_tarball(
     name = "image_tarball",
     image = ":image",
-    repo_tags = ["cadvdisor:candidate"],
+    repo_tags = ["cadvisor:candidate"],
 )
 
 container_structure_test(

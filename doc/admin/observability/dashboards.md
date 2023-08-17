@@ -30164,6 +30164,94 @@ Query: `sum by (exporter) (rate(otelcol_exporter_send_failed_spans[1m]))`
 
 <br />
 
+### OpenTelemetry Collector: Queue Length
+
+#### otel-collector: otelcol_exporter_queue_capacity
+
+<p class="subtitle">Exporter queue capacity</p>
+
+Shows the the capacity of the retry queue (in batches).
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100200` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (exporter) (rate(otelcol_exporter_queue_capacity{job=~"^.*"}[1m]))`
+
+</details>
+
+<br />
+
+#### otel-collector: otelcol_exporter_queue_size
+
+<p class="subtitle">Exporter queue size</p>
+
+Shows the current size of retry queue
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100201` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (exporter) (rate(otelcol_exporter_queue_size{job=~"^.*"}[1m]))`
+
+</details>
+
+<br />
+
+#### otel-collector: otelcol_exporter_enqueue_failed_spans
+
+<p class="subtitle">Exporter enqueue failed spans</p>
+
+Shows the rate of spans failed to be enqueued by the configured exporter. A number higher than 0 for a long period can indicate a problem with the exporter configuration
+
+Refer to the [alerts reference](./alerts.md#otel-collector-otelcol-exporter-enqueue-failed-spans) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100202` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (exporter) (rate(otelcol_exporter_enqueue_failed_spans{job=~"^.*"}[1m]))`
+
+</details>
+
+<br />
+
+### OpenTelemetry Collector: Processors
+
+#### otel-collector: otelcol_processor_dropped_spans
+
+<p class="subtitle">Spans dropped per processor per minute</p>
+
+Shows the rate of spans dropped by the configured processor
+
+Refer to the [alerts reference](./alerts.md#otel-collector-otelcol-processor-dropped-spans) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100300` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (processor) (rate(otelcol_processor_dropped_spans[1m]))`
+
+</details>
+
+<br />
+
 ### OpenTelemetry Collector: Collector resource usage
 
 #### otel-collector: otel_cpu_usage
@@ -30174,7 +30262,7 @@ Shows CPU usage as reported by the OpenTelemetry collector.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100200` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100400` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -30195,7 +30283,7 @@ Shows the allocated memory Resident Set Size (RSS) as reported by the OpenTeleme
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100201` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100401` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -30222,7 +30310,7 @@ For more information on configuring processors for the OpenTelemetry collector s
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100202` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100402` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -30253,7 +30341,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100500` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -30272,7 +30360,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^otel-collector.*"}
 
 Refer to the [alerts reference](./alerts.md#otel-collector-container-cpu-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100301` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100501` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -30291,7 +30379,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^otel-collector.*"}
 
 Refer to the [alerts reference](./alerts.md#otel-collector-container-memory-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100302` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100502` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -30313,7 +30401,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100303` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100503` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -30334,7 +30422,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^otel-collector.*"}[1
 
 Refer to the [alerts reference](./alerts.md#otel-collector-pods-available-percentage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100400` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100600` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 

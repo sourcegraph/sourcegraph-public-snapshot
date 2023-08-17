@@ -414,11 +414,6 @@ func TestClient_Remove(t *testing.T) {
 		if err != nil {
 			t.Fatalf("expected URL %q, but got err %q", expected, err)
 		}
-
-		err = cli.RemoveFrom(context.Background(), repo, "172.16.8.1:8080")
-		if err != nil {
-			t.Fatalf("expected URL %q, but got err %q", expected, err)
-		}
 	}
 
 	t.Run("GRPC", func(t *testing.T) {
@@ -533,6 +528,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 					return server.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 				},
 				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
+				Locker:                  server.NewRepositoryLocker(),
 			}
 
 			grpcServer := defaults.NewServer(logtest.Scoped(t))
@@ -1100,6 +1096,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		DB:                      db,
 		Perforce:                perforce.NewService(ctx, observation.TestContextTB(t), logger, db, list.New()),
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
+		Locker:                  server.NewRepositoryLocker(),
 	}
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
