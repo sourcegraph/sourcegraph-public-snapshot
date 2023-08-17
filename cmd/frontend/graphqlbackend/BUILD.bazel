@@ -86,6 +86,7 @@ go_library(
         "git_tree_entry.go",
         "git_tree_submodule.go",
         "githubapps.go",
+        "gitserver.go",
         "graphqlbackend.go",
         "guardrails.go",
         "highlight.go",
