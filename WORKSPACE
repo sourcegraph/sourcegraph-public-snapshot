@@ -101,6 +101,8 @@ http_archive(
 # hermetic_cc_toolchain setup ================================
 HERMETIC_CC_TOOLCHAIN_VERSION = "v2.0.0"
 
+# Please note that we only use zig-cc for local development purpose, at it eases the path to cross-compile
+# so we can produce container images locally on Mac laptops.
 http_archive(
     name = "hermetic_cc_toolchain",
     patches = [
@@ -309,13 +311,14 @@ rust_register_toolchains(
     ],
 )
 
+# Needed for locally cross-compiling rust binaries to linux/amd64 on a Mac laptop, when seeking to
+# create container images in local for testing purposes.
 rust_repository_set(
     name = "macos_arm_64",
     edition = "2021",
     exec_triple = "aarch64-apple-darwin",
     extra_target_triples = ["x86_64-unknown-linux-gnu"],
     versions = [rust_version],
-    # extra_rustc_flags = {"aarch64-apple-darwin": ["--cfg=rustix_use_libc"]},
 )
 
 load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
