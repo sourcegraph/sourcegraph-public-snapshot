@@ -4,7 +4,6 @@ contents:
   packages:
     # Included by existing SG base image
     - tini
-    - mailcap # TODO: is this actually needed
 
     - qdrant@sourcegraph
 
