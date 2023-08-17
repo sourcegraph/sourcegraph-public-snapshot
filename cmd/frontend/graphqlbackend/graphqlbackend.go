@@ -762,6 +762,9 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 		CodeHostKind: func(ctx context.Context, id graphql.ID) (Node, error) {
 			return CodeHostByID(ctx, r.db, id)
 		},
+		gitserverIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.gitserverByID(ctx, id)
+		},
 	}
 	return r
 }
