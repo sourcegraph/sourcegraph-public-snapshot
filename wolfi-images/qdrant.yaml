@@ -15,4 +15,4 @@ paths:
     permissions: 0o755
 
 entrypoint:
-  command: /usr/local/bin/qdrant --config-path /etc/qdrant/config.yaml
+  command: /sbin/tini -- /usr/local/bin/qdrant --config-path /etc/qdrant/config.yaml
