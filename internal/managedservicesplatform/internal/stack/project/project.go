@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/provider/google"
 	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack"
+	"github.com/sourcegraph/sourcegraph/internal/pointer"
 )
 
 var gcpServices = []string{
@@ -53,16 +54,16 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 		google.StackWithProjectID(vars.ProjectID))
 
 	output := &Output{
-		Project: project.NewProject(stack, jsii.String("project"), &project.ProjectConfig{
-			Name:              jsii.String(vars.Name),
-			ProjectId:         jsii.String(vars.ProjectID),
+		Project: project.NewProject(stack, pointer.Value("project"), &project.ProjectConfig{
+			Name:              pointer.Value(vars.Name),
+			ProjectId:         pointer.Value(vars.ProjectID),
 			AutoCreateNetwork: false,
-			BillingAccount:    jsii.String(vars.BillingAccountID),
-			FolderId:          jsii.String(vars.ParentFolderID),
+			BillingAccount:    pointer.Value(vars.BillingAccountID),
+			FolderId:          pointer.Value(vars.ParentFolderID),
 			Labels: func(input map[string]string) *map[string]*string {
 				labels := make(map[string]*string)
 				for k, v := range input {
-					labels[sanitizeName(k)] = jsii.String(v)
+					labels[sanitizeName(k)] = pointer.Value(v)
 				}
 				return &labels
 			}(vars.Labels),
@@ -70,9 +71,9 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	}
 
 	for i, service := range gcpServices {
-		projectservice.NewProjectService(stack, jsii.String(fmt.Sprintf("project_service_%d", i)), &projectservice.ProjectServiceConfig{
+		projectservice.NewProjectService(stack, pointer.Value(fmt.Sprintf("project_service_%d", i)), &projectservice.ProjectServiceConfig{
 			Project:                  output.Project.ProjectId(),
-			Service:                  jsii.String(service),
+			Service:                  pointer.Value(service),
 			DisableDependentServices: jsii.Bool(false),
 			// prevent accidental deletion of services
 			DisableOnDestroy: jsii.Bool(false),

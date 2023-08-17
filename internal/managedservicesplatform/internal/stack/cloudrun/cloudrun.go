@@ -2,15 +2,20 @@ package cloudrun
 
 import (
 	"fmt"
-	"strconv"
+	"strings"
 
-	"github.com/aws/jsii-runtime-go"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2service"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 
 	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/provider/google"
+	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/resource/bigquery"
+	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/resource/random"
+	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/resource/redis"
+	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/resource/serviceaccount"
 	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/internal/pointer"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Output struct{}
@@ -25,15 +30,56 @@ type Variables struct {
 
 const StackName = "cloudrun"
 
+// Hardcoded variables.
 var (
-	serviceAccountRoles = []string{
-		"roles/secretmanager.secretAccessor",
-		"roles/compute.networkUser",
-		"roles/cloudtrace.agent",
-		"roles/monitoring.metricWriter",
-	}
+	// region is currently
 	region = "us-central1"
+	// serviceAccountRoles are granted to the service account for the Cloud Run service.
+	serviceAccountRoles = []serviceaccount.Role{
+		// Allow env vars to source from secrets
+		{ID: "role_secret_accessor", Role: "roles/secretmanager.secretAccessor"},
+		// Allow service to access private networks
+		{ID: "role_compute_networkuser", Role: "roles/compute.networkUser"},
+		// Allow service to emit observability
+		{ID: "role_cloudtrace_agent", Role: "roles/cloudtrace.agent"},
+		{ID: "role_monitoring_metricwriter", Role: "roles/monitoring.metricWriter"},
+	}
+	// servicePort is provided to the container as $PORT in Cloud Run:
+	// https://cloud.google.com/run/docs/configuring/services/containers#configure-port
+	servicePort = 9992
+	// healthCheckEndpoint is the default healthcheck endpoint for all services.
+	healthCheckEndpoint = "/-/healthz"
 )
+
+// Default values.
+var (
+	// defaultMaxInstances is the default Scaling.MaxCount
+	defaultMaxInstances = 5
+)
+
+// makeServiceEnvVarPrefix returns the env var prefix for service-specific
+// env vars that will be set on the Cloud Run service, i.e.
+//
+// - ${local.env_var_prefix}_BIGQUERY_PROJECT_ID
+// - ${local.env_var_prefix}_BIGQUERY_DATASET
+// - ${local.env_var_prefix}_BIGQUERY_TABLE
+// - ${local.env_var_prefix}_DIAGNOSTICS_SECRET
+//
+// The prefix is an all-uppercase underscore-delimited version of the service ID,
+// for example:
+//
+//	cody-gateway
+//
+// The prefix for various env vars will be:
+//
+//	CODY_GATEWAY_
+//
+// Note that some variables like GOOGLE_PROJECT_ID and REDIS_ENDPOINT do not
+// get prefixed, and custom env vars configured on an environment are not prefixed
+// either.
+func makeServiceEnvVarPrefix(serviceID string) string {
+	return strings.ToUpper(strings.ReplaceAll(serviceID, "-", "_")) + "_"
+}
 
 // NewStack instantiates the MSP cloudrun stack, which is currently a pretty
 // monolithic stack that encompasses all the core components of an MSP service,
@@ -47,15 +93,51 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 		return nil, err
 	}
 
-	_ = cloudrunv2service.NewCloudRunV2Service(stack, jsii.String("default"),
+	// Set up service account for the Cloud Run instance
+	serviceAccount, err := serviceaccount.New(stack, "default", serviceaccount.Config{
+		AccountID:   vars.Service.ID,
+		DisplayName: fmt.Sprintf("%s Service Account", vars.Service.Name),
+		Roles:       serviceAccountRoles,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to render Cloud Run service account")
+	}
+
+	// TODO
+	var diagnosticsSecret *random.Output
+
+	// TODO
+	var redisInstance *redis.Output
+	if vars.Environment.Resources.Redis != nil {
+		redisInstance, err = redis.New(stack, "default", redis.Config{
+			Spec: *vars.Environment.Resources.Redis,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to render Redis instance")
+		}
+	}
+
+	// TODO
+	var bigqueryDataset *bigquery.Output
+	if vars.Environment.Resources.BigQuery != nil {
+		bigqueryDataset, err = bigquery.New(stack, "default", bigquery.Config{
+			Spec: *vars.Environment.Resources.BigQuery,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to render BigQuery dataset")
+		}
+	}
+
+	// Set up the core Cloud Run service
+	_ = cloudrunv2service.NewCloudRunV2Service(stack, pointer.Value("default"),
 		&cloudrunv2service.CloudRunV2ServiceConfig{
-			Name:     jsii.String(vars.Service.ID),
-			Location: jsii.String(region),
+			Name:     pointer.Value(vars.Service.ID),
+			Location: pointer.Value(region),
 			//  Disallows direct traffic from public internet, we have a LB set up for that.
-			Ingress: jsii.String("INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"),
+			Ingress: pointer.Value("INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"),
 
 			Template: &cloudrunv2service.CloudRunV2ServiceTemplate{
-				ServiceAccount: nil, // TODO
+				ServiceAccount: pointer.Value(serviceAccount.Email),
 
 				// So set a high limit that matches our default Cloudflare zone's
 				// timeout:
@@ -74,37 +156,48 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 				//   }
 				//
 				// The service should implement tighter timeouts on its own if desired.
-				Timeout: jsii.String("300s"),
+				Timeout: pointer.Value("300s"),
 
-				MaxInstanceRequestConcurrency: jsii.Number(vars.Environment.Instances.Scaling.MaxRequestConcurrency),
+				MaxInstanceRequestConcurrency: pointer.Float64(vars.Environment.Instances.Scaling.MaxRequestConcurrency),
 				Scaling: &cloudrunv2service.CloudRunV2ServiceTemplateScaling{
-					MinInstanceCount: jsii.Number(vars.Environment.Instances.Scaling.MinCount),
-					MaxInstanceCount: jsii.Number(vars.Environment.Instances.Scaling.MaxCount),
+					MinInstanceCount: pointer.Float64(vars.Environment.Instances.Scaling.MinCount),
+					MaxInstanceCount: pointer.Float64(
+						pointer.IfNil(vars.Environment.Instances.Scaling.MaxCount, defaultMaxInstances)),
 				},
 
 				Containers: []*cloudrunv2service.CloudRunV2ServiceTemplateContainers{{
-					Name:  jsii.String(vars.Service.ID),
-					Image: jsii.String(fmt.Sprintf("%s:%s", vars.Image, tag)),
+					Name:  pointer.Value(vars.Service.ID),
+					Image: pointer.Value(fmt.Sprintf("%s:%s", vars.Image, tag)),
 
 					Resources: &cloudrunv2service.CloudRunV2ServiceTemplateContainersResources{
-						Limits: &map[string]*string{
-							"cpu":    jsii.String(strconv.Itoa(vars.Environment.Instances.Resources.CPU)),
-							"memory": jsii.String(vars.Environment.Instances.Resources.Memory),
-						},
+						Limits: makeContainerResourceLimits(vars.Environment.Instances.Resources),
 					},
 
 					Ports: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersPorts{{
-						// TODO: Should this be configurable?
-						ContainerPort: jsii.Number(9992),
+						// ContainerPort is provided to the container as $PORT in Cloud Run
+						ContainerPort: pointer.Float64(servicePort),
 					}},
 
-					// Env: &cloudrunv2service.CloudRunV2ServiceTemplateContainersEnv{
-					// 	// TODO
-					// },
+					Env: makeContainerEnvVars(
+						vars.Project,
+						makeServiceEnvVarPrefix(vars.Service.ID),
+						diagnosticsSecret.Value,
+						vars.Environment.Env,
+						vars.Environment.SecretEnv,
+						// Additional optional components
+						redisInstance,
+						bigqueryDataset,
+					),
 
-					// StartupProbe: &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbe{
-					// 	// TODO
-					// },
+					StartupProbe: &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbe{
+						HttpGet: &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGet{
+							Path: pointer.Value(healthCheckEndpoint),
+							HttpHeaders: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGetHttpHeaders{{
+								Name:  pointer.Value("Bearer"),
+								Value: pointer.Value(fmt.Sprintf("Authorization %s", diagnosticsSecret.Value)), // TODO
+							}},
+						},
+					},
 
 					// LivenessProbe: &cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbe{
 					// 	// TODO

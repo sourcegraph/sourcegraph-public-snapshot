@@ -1,10 +1,10 @@
 package tfcbackend
 
 import (
-	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
 	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack"
+	"github.com/sourcegraph/sourcegraph/internal/pointer"
 )
 
 type Config struct {
@@ -17,8 +17,8 @@ func WithBackend(config Config) stack.NewStackOption {
 	return func(s stack.Stack) {
 		workspace := config.Workspace(s.Name)
 		_ = cdktf.NewCloudBackend(s.Stack, &cdktf.CloudBackendConfig{
-			Hostname:     jsii.String("app.terraform.io"),
-			Organization: jsii.String("sourcegraph"),
+			Hostname:     pointer.Value("app.terraform.io"),
+			Organization: pointer.Value("sourcegraph"),
 			Workspaces:   cdktf.NewNamedCloudWorkspace(&workspace),
 		})
 	}

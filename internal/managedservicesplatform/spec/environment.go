@@ -13,13 +13,22 @@ type EnvironmentSpec struct {
 }
 
 type EnvironmentDeploySpec struct {
-	Type   string                       `json:"type"` // TODO typed string
+	Type   EnvironmentDeployType        `json:"type"`
 	Manual *EnvironmentDeployManualSpec `json:"manual"`
 }
 
+type EnvironmentDeployType string
+
+const (
+	EnvironmentDeployTypeManual = "manual"
+)
+
+// ResolveTag uses the deploy spec to resolve an appropriate tag for the environment.
+//
+// TODO
 func (d EnvironmentDeploySpec) ResolveTag() (string, error) {
 	switch d.Type {
-	case "manual":
+	case EnvironmentDeployTypeManual:
 		if d.Manual == nil {
 			return "insiders", nil
 		}
@@ -57,13 +66,23 @@ type EnvironmentInstancesResourcesSpec struct {
 }
 
 type EnvironmentInstancesScalingSpec struct {
+	// MaxRequestConcurrency is the maximum number of concurrent requests that
+	// each instance is allowed to serve. Before this concurrency is reached,
+	// Cloud Run will begin scaling up additional instances, up to MaxCount.
 	MaxRequestConcurrency int `json:"max_request_concurrency"`
-	MinCount              int `json:"min_count"`
-	MaxCount              int `json:"max_count"`
+	// MinCount is the minimum number of instances that will be running at all
+	// times. Set this to >0 to avoid service warm-up delays.
+	MinCount int `json:"min_count"`
+	// MaxCount is the maximum number of instances that Cloud Run is allowed to
+	// scale up to.
+	//
+	// If not provided, the default is 5.
+	MaxCount *int `json:"max_count"`
 }
 
 type EnvironmentHealthcheckSpec struct {
-	// In seconds
+	// LivenessProbeInterval configures the interval, in seconds, at which to
+	// probe the deployed service.
 	LivenessProbeInterval int `json:"liveness_probe_interval"`
 }
 
@@ -73,8 +92,8 @@ type EnvironmentResourcesSpec struct {
 }
 
 type EnvironmentResourceRedisSpec struct {
-	Tier   string `json:"tier"`
-	Memory string `json:"memory"`
+	Tier     string `json:"tier"`
+	MemoryGB int    `json:"memoryGB"`
 }
 
 type EnvironmentResourceBigQuerySpec struct {

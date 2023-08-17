@@ -1,8 +1,9 @@
 package stack
 
 import (
-	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
+
+	"github.com/sourcegraph/sourcegraph/internal/pointer"
 )
 
 // Stack encapsulates a CDKTF stack and the name the stack was originally
@@ -36,7 +37,7 @@ type NewStackOption func(s Stack)
 func NewSet(renderDir string, opts ...NewStackOption) *Set {
 	return &Set{
 		app: cdktf.NewApp(&cdktf.AppConfig{
-			Outdir: jsii.String(renderDir),
+			Outdir: pointer.Value(renderDir),
 		}),
 		opts:   opts,
 		stacks: []Stack{},
