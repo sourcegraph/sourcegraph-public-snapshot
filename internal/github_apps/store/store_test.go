@@ -801,3 +801,39 @@ func TestSyncInstallations(t *testing.T) {
 		})
 	}
 }
+
+func TestTrailingSlashesInBaseURL(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
+	ctx := context.Background()
+
+	app := &ghtypes.GitHubApp{
+		AppID:        1234,
+		Name:         "Test App 1",
+		Domain:       "repos",
+		Slug:         "test-app-1",
+		BaseURL:      "https://github.com",
+		ClientID:     "abc123",
+		ClientSecret: "secret",
+		PrivateKey:   "private-key",
+		Logo:         "logo.png",
+	}
+
+	_, err := store.Create(ctx, app)
+	require.NoError(t, err)
+
+	fetched, err := store.GetByAppID(ctx, 1234, "https://github.com")
+	require.NoError(t, err)
+	require.Equal(t, app.AppID, fetched.AppID)
+
+	fetched, err = store.GetByAppID(ctx, 1234, "https://github.com/")
+	require.NoError(t, err)
+	require.Equal(t, app.AppID, fetched.AppID)
+
+	fetched, err = store.GetByAppID(ctx, 1234, "https://github.com////")
+	require.NoError(t, err)
+	require.Equal(t, app.AppID, fetched.AppID)
+}
