@@ -3,6 +3,7 @@
 set -euf -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
+SCRIPT_DIR=$(pwd)
 
 MAIN_BRANCH="main"
 BRANCH="${BUILDKITE_BRANCH:-'default-branch'}"
@@ -118,6 +119,6 @@ if [[ "$IS_MAIN" != "true" ]]; then
     echo -e "To run the ${name} image locally, use:
 \`\`\`
 docker run -it --entrypoint /bin/sh us.gcr.io/sourcegraph-dev/wolfi-${name}-base:${tag}
-  \`\`\`" | ../../../enterprise/dev/ci/scripts/annotate.sh -s "custom-repo" -m -t "info"
+  \`\`\`" | "$SCRIPT_DIR/../../../../../enterprise/dev/ci/scripts/annotate.sh" -s "custom-repo" -m -t "info"
   fi
 fi
