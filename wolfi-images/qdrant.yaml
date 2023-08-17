@@ -14,4 +14,5 @@ paths:
     gid: 101
     permissions: 0o755
 
-workdir: /
+entrypoint:
+  command: /usr/local/bin/qdrant --config-path /etc/qdrant/config.yaml
