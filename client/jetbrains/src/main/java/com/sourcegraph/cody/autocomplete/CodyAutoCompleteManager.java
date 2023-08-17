@@ -76,6 +76,14 @@ public class CodyAutoCompleteManager {
     cancelCurrentJob();
 
     // Clear any existing inline elements
+    disposeInlays(editor);
+  }
+
+  @RequiresEdt
+  public void disposeInlays(@NotNull Editor editor) {
+    if (editor.isDisposed()) {
+      return;
+    }
     InlayModelUtils.getAllInlaysForEditor(editor).stream()
         .filter(inlay -> inlay.getRenderer() instanceof CodyAutoCompleteElementRenderer)
         .forEach(Disposer::dispose);
