@@ -32,6 +32,8 @@ futures = { version = "^0.3.27", features = ["std"], default-features = false }
 futures-util = { version = "^0.3.27", features = ["std"], default-features = false }
 futures-task = { version = "^0.3.27", features = ["std"], default-features = false }
 
+rustix = { version = "0.38.8", features = ["std", "use-libc"] }
+
 [workspace]
 members = [
     "crates/sg-syntax",

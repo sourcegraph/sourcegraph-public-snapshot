@@ -70,8 +70,8 @@ http_archive(
 
 http_archive(
     name = "rules_rust",
-    sha256 = "dc8d79fe9a5beb79d93e482eb807266a0e066e97a7b8c48d43ecf91f32a3a8f3",
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.19.0/rules_rust-v0.19.0.tar.gz"],
+    sha256 = "9d04e658878d23f4b00163a72da3db03ddb451273eb347df7d7c50838d698f49",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.26.0/rules_rust-v0.26.0.tar.gz"],
 )
 
 # Container rules
@@ -290,17 +290,28 @@ load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 protobuf_deps()
 
 # rust toolchain setup
-load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains", "rust_repository_set")
 
 rules_rust_dependencies()
+
+rust_version = "1.68.0"
 
 rust_register_toolchains(
     edition = "2021",
     # Keep in sync with docker-images/syntax-highlighter/Dockerfile
     # and docker-images/syntax-highlighter/rust-toolchain.toml
     versions = [
-        "1.68.0",
+        rust_version,
     ],
+)
+
+rust_repository_set(
+    name = "macos_arm_64",
+    edition = "2021",
+    exec_triple = "aarch64-apple-darwin",
+    extra_target_triples = ["x86_64-unknown-linux-gnu"],
+    versions = [rust_version],
+    # extra_rustc_flags = {"aarch64-apple-darwin": ["--cfg=rustix_use_libc"]},
 )
 
 load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
