@@ -104,7 +104,7 @@ HERMETIC_CC_TOOLCHAIN_VERSION = "v2.0.0"
 http_archive(
     name = "hermetic_cc_toolchain",
     patches = [
-        "//:001-zig-cc-ubsan.patch",
+        "//third_party/hermetic_cc:disable_ubsan.patch",
     ],
     patch_args = ["-p1"],
     sha256 = "57f03a6c29793e8add7bd64186fc8066d23b5ffd06fe9cc6b0b8c499914d3a65",
