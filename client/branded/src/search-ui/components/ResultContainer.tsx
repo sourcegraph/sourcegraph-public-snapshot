@@ -2,8 +2,8 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
-import { ForwardReferenceExoticComponent } from '@sourcegraph/wildcard'
+import type { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import type { ForwardReferenceExoticComponent } from '@sourcegraph/wildcard'
 
 import { formatRepositoryStarCount } from '../util/stars'
 

@@ -1,6 +1,6 @@
 // VS Code Docs https://code.visualstudio.com/api/references/vscode-api#Memento
 // A memento represents a storage utility. It can store and retrieve values.
-import { Memento } from 'vscode'
+import type { Memento } from 'vscode'
 
 export class LocalStorageService {
     constructor(private storage: Memento) {}

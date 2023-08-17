@@ -4,7 +4,7 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { InputTooltip } from '../../../../components/InputTooltip'
-import { HiddenExternalChangesetFields } from '../../../../graphql-operations'
+import type { HiddenExternalChangesetFields } from '../../../../graphql-operations'
 
 import { ChangesetStatusCell } from './ChangesetStatusCell'
 import { HiddenExternalChangesetInfoCell } from './HiddenExternalChangesetInfoCell'

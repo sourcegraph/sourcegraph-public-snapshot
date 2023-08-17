@@ -3,14 +3,20 @@
 set -eu -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
-# TODO: This must be replaced with a proper K8s managed secret
-key_path=$(realpath ./wolfi-packages/temporary-keys/)
 
 # TODO: Manage these variables properly
 GCP_PROJECT="sourcegraph-ci"
 GCS_BUCKET="package-repository"
 TARGET_ARCH="x86_64"
-branch="main"
+MAIN_BRANCH="main"
+BRANCH="${BUILDKITE_BRANCH:-'default-branch'}"
+IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
+
+# shellcheck disable=SC2001
+BRANCH_PATH=$(echo "$BRANCH" | sed 's/[^a-zA-Z0-9_-]/-/g')
+if [[ "$IS_MAIN" != "true" ]]; then
+  BRANCH_PATH="branches/$BRANCH_PATH"
+fi
 
 tmpdir=$(mktemp -d -t melange-bin.XXXXXXXX)
 function cleanup() {
@@ -37,7 +43,7 @@ apkindex_build_dir=$(mktemp -d -t apkindex-build.XXXXXXXX)
 pushd "$apkindex_build_dir"
 
 # Fetch all APKINDEX fragments from bucket
-gsutil -u "$GCP_PROJECT" -m cp "gs://$GCS_BUCKET/packages/$branch/$TARGET_ARCH/*.APKINDEX.fragment" ./
+gsutil -u "$GCP_PROJECT" -m cp "gs://$GCS_BUCKET/$BRANCH_PATH/$TARGET_ARCH/*.APKINDEX.fragment" ./
 
 # Concat all fragments into a single APKINDEX and tar.gz it
 touch placeholder.APKINDEX.fragment
@@ -45,9 +51,14 @@ cat ./*.APKINDEX.fragment >APKINDEX
 touch DESCRIPTION
 tar zcf APKINDEX.tar.gz APKINDEX DESCRIPTION
 
-# Sign index
-melange sign-index --signing-key "$key_path/melange.rsa" APKINDEX.tar.gz
+# Sign index, using separate keys from GCS for staging and prod repos
+if [[ "$IS_MAIN" == "true" ]]; then
+  key_path="/keys/sourcegraph-melange-prod.rsa"
+else
+  key_path="/keys/sourcegraph-melange-dev.rsa"
+fi
+melange sign-index --signing-key "$key_path" APKINDEX.tar.gz
 
 # Upload signed APKINDEX archive
 # Use no-cache to avoid index/packages getting out of sync
-gsutil -u "$GCP_PROJECT" -h "Cache-Control:no-cache" cp APKINDEX.tar.gz "gs://$GCS_BUCKET/packages/$branch/$TARGET_ARCH/"
+gsutil -u "$GCP_PROJECT" -h "Cache-Control:no-cache" cp APKINDEX.tar.gz "gs://$GCS_BUCKET/$BRANCH_PATH/$TARGET_ARCH/"

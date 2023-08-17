@@ -81,7 +81,7 @@
                             >
                             <td
                                 ><Timestamp date={new Date(commit.author.date)} strict />:
-                                <a href={commit.url}>{commit.subject}</a></td
+                                <a href={commit.canonicalURL}>{commit.subject}</a></td
                             >
                             <td>{contributor.count}&nbsp;commits</td>
                         </tr>

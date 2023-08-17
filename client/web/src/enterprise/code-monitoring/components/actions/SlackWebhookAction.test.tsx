@@ -1,4 +1,4 @@
-import { MockedResponse } from '@apollo/client/testing'
+import type { MockedResponse } from '@apollo/client/testing'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
@@ -6,9 +6,9 @@ import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shar
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { SendTestSlackWebhookResult, SendTestSlackWebhookVariables } from '../../../../graphql-operations'
+import type { SendTestSlackWebhookResult, SendTestSlackWebhookVariables } from '../../../../graphql-operations'
 import { mockAuthenticatedUser } from '../../testing/util'
-import { ActionProps, MonitorAction } from '../FormActionArea'
+import type { ActionProps, MonitorAction } from '../FormActionArea'
 
 import { SEND_TEST_SLACK_WEBHOOK, SlackWebhookAction } from './SlackWebhookAction'
 

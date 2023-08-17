@@ -56,7 +56,7 @@ go_test(
         "//internal/codeintel/autoindexing/shared",
         "//internal/codeintel/dependencies",
         "//internal/codeintel/uploads/shared",
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/gitserver",
         "//internal/observation",
         "//internal/repoupdater/protocol",

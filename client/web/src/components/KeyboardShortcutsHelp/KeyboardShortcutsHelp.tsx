@@ -5,7 +5,7 @@ import { omit } from 'lodash'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { isMacPlatform } from '@sourcegraph/common'
-import { Keybinding, KeyboardShortcut, shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
+import { type Keybinding, type KeyboardShortcut, shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import {
     KEYBOARD_SHORTCUTS,
     EXPERIMENTAL_BLOB_PAGE_SHORTCUTS,

@@ -1,6 +1,6 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
-import { Location, Navigate, Params, useLocation, useParams } from 'react-router-dom'
+import { type Location, Navigate, type Params, useLocation, useParams } from 'react-router-dom'
 
 interface RedirectRouteProps {
     getRedirectURL: (data: { location: Location; params: Params }) => string

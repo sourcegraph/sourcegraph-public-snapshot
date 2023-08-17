@@ -1,5 +1,12 @@
 import { Facet, RangeSetBuilder } from '@codemirror/state'
-import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import {
+    Decoration,
+    type DecorationSet,
+    type EditorView,
+    type PluginValue,
+    ViewPlugin,
+    type ViewUpdate,
+} from '@codemirror/view'
 
 import { logger } from '@sourcegraph/common'
 import { Occurrence, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'

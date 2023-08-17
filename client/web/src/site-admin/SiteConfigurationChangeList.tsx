@@ -1,4 +1,4 @@
-import { FC, useState } from 'react'
+import { type FC, useState } from 'react'
 
 import { mdiChevronUp, mdiChevronDown, mdiFileDocumentOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -21,7 +21,7 @@ import {
 import { DiffStatStack } from '../components/diff/DiffStat'
 import { usePageSwitcherPagination } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { ConnectionLoading, ConnectionError } from '../components/FilteredConnection/ui'
-import {
+import type {
     SiteConfigurationChangeNode,
     SiteConfigurationHistoryResult,
     SiteConfigurationHistoryVariables,

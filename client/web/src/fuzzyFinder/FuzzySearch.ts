@@ -1,7 +1,7 @@
-import { FuzzyTabKey } from '../components/fuzzyFinder/FuzzyTabs'
-import { HighlightedLinkProps } from '../components/fuzzyFinder/HighlightedLink'
+import type { FuzzyTabKey } from '../components/fuzzyFinder/FuzzyTabs'
+import type { HighlightedLinkProps } from '../components/fuzzyFinder/HighlightedLink'
 
-import { SearchValueRankingCache } from './SearchValueRankingCache'
+import type { SearchValueRankingCache } from './SearchValueRankingCache'
 
 export interface FuzzySearchParameters {
     query: string

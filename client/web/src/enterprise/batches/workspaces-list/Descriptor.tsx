@@ -1,4 +1,4 @@
-import { ReactElement } from 'react'
+import type { ReactElement } from 'react'
 
 import { mdiSourceBranch } from '@mdi/js'
 import classNames from 'classnames'

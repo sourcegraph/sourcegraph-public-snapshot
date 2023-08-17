@@ -3,6 +3,9 @@ package conftypes
 import (
 	"reflect"
 	"time"
+
+	proto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // ServiceConnections represents configuration about how the deployment
@@ -44,11 +47,57 @@ type ServiceConnections struct {
 	ZoektListTTL time.Duration `json:"zoektListTTL"`
 }
 
+func (sc *ServiceConnections) ToProto() *proto.ServiceConnections {
+	return &proto.ServiceConnections{
+		GitServers:           sc.GitServers,
+		PostgresDsn:          sc.PostgresDSN,
+		CodeIntelPostgresDsn: sc.CodeIntelPostgresDSN,
+		CodeInsightsDsn:      sc.CodeInsightsDSN,
+		Searchers:            sc.Searchers,
+		Symbols:              sc.Symbols,
+		Embeddings:           sc.Embeddings,
+		Qdrant:               sc.Qdrant,
+		Zoekts:               sc.Zoekts,
+		ZoektListTtl:         durationpb.New(sc.ZoektListTTL),
+	}
+}
+
+func (sc *ServiceConnections) FromProto(in *proto.ServiceConnections) {
+	*sc = ServiceConnections{
+		GitServers:           in.GetGitServers(),
+		PostgresDSN:          in.GetPostgresDsn(),
+		CodeIntelPostgresDSN: in.GetCodeIntelPostgresDsn(),
+		CodeInsightsDSN:      in.GetCodeInsightsDsn(),
+		Searchers:            in.GetSearchers(),
+		Symbols:              in.GetSymbols(),
+		Embeddings:           in.GetEmbeddings(),
+		Qdrant:               in.GetQdrant(),
+		Zoekts:               in.GetZoekts(),
+		ZoektListTTL:         in.GetZoektListTtl().AsDuration(),
+	}
+}
+
 // RawUnified is the unparsed variant of conf.Unified.
 type RawUnified struct {
 	ID                 int32
 	Site               string
 	ServiceConnections ServiceConnections
+}
+
+func (r *RawUnified) ToProto() *proto.RawUnified {
+	return &proto.RawUnified{
+		Id:                 r.ID,
+		Site:               r.Site,
+		ServiceConnections: r.ServiceConnections.ToProto(),
+	}
+}
+
+func (r *RawUnified) FromProto(in *proto.RawUnified) {
+	*r = RawUnified{
+		ID:   in.GetId(),
+		Site: in.GetSite(),
+	}
+	r.ServiceConnections.FromProto(in.GetServiceConnections())
 }
 
 // Equal tells if the two configurations are equal or not.

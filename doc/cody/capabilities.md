@@ -65,7 +65,7 @@ Cody provides real-time code auto-completion as you type, based on the context a
 
 By default, a fully configured Sourcegraph instance picks a default LLM to generate code autocomplete. Custom models can be used for Cody autocomplete via the `completionModel` option inside the `completions` site config.
 
-We also recommend reading the [Enabling Cody on Sourcegraph Enterprise](explanations/enabling_cody_enterprise.md) guide before you configure the autocomplete feature.
+We also recommend reading the [Enabling Cody on Sourcegraph Enterprise](overview/enable-cody-enterprise.md) guide before you configure the autocomplete feature.
 
 > NOTE: Self-hosted customers need to update to a minimum of version 5.0.4 to use autocomplete.
 

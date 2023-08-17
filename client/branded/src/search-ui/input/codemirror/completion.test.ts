@@ -1,10 +1,10 @@
-import { Completion } from '@codemirror/autocomplete'
+import type { Completion } from '@codemirror/autocomplete'
 
 import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import { POPULAR_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'
-import { ScanResult, scanSearchQuery, ScanSuccess } from '@sourcegraph/shared/src/search/query/scanner'
-import { Token } from '@sourcegraph/shared/src/search/query/token'
-import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { type ScanResult, scanSearchQuery, type ScanSuccess } from '@sourcegraph/shared/src/search/query/scanner'
+import type { Token } from '@sourcegraph/shared/src/search/query/token'
+import type { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { createDefaultSuggestionSources, FILTER_SHORTHAND_SUGGESTIONS, suggestionTypeFromTokens } from './completion'
 

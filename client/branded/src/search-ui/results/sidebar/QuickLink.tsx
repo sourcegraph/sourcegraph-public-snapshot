@@ -2,8 +2,8 @@ import React from 'react'
 
 import { mdiLink } from '@mdi/js'
 
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { isSettingsValid, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './SearchFilterSection.module.scss'

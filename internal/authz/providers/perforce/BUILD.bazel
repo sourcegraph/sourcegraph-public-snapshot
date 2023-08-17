@@ -45,7 +45,7 @@ go_test(
         "//internal/authz",
         "//internal/authz/subrepoperms",
         "//internal/conf",
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/encryption/testing",
         "//internal/extsvc",
         "//internal/extsvc/perforce",

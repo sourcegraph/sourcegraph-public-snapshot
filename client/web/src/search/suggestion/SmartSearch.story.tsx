@@ -1,6 +1,6 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 
-import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import type { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 import { H2 } from '@sourcegraph/wildcard'
 

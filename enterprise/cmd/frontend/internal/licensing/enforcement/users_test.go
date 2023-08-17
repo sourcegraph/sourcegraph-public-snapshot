@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/cloud"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
@@ -107,10 +107,10 @@ func TestEnforcement_PreCreateUser(t *testing.T) {
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
-			users := database.NewStrictMockUserStore()
+			users := dbmocks.NewStrictMockUserStore()
 			users.CountFunc.SetDefaultReturn(test.activeUserCount, nil)
 
-			db := database.NewStrictMockDB()
+			db := dbmocks.NewStrictMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
 			if test.mockSetup != nil {
@@ -253,13 +253,13 @@ func TestEnforcement_PreSetUserIsSiteAdmin(t *testing.T) {
 	}
 }
 
-func mockDBAndStores(t *testing.T) (*database.MockDB, *database.MockUserStore) {
+func mockDBAndStores(t *testing.T) (*dbmocks.MockDB, *dbmocks.MockUserStore) {
 	t.Helper()
 
-	usersStore := database.NewMockUserStore()
+	usersStore := dbmocks.NewMockUserStore()
 	usersStore.SetIsSiteAdminFunc.SetDefaultReturn(nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(usersStore)
 
 	return db, usersStore

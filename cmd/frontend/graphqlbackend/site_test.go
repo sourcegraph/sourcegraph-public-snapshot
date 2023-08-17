@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -21,9 +22,9 @@ import (
 func TestSiteConfiguration(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		t.Run("ReturnSafeConfigsOnly is false", func(t *testing.T) {
-			users := database.NewMockUserStore()
+			users := dbmocks.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -37,9 +38,9 @@ func TestSiteConfiguration(t *testing.T) {
 		})
 
 		t.Run("ReturnSafeConfigsOnly is true", func(t *testing.T) {
-			users := database.NewMockUserStore()
+			users := dbmocks.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -74,7 +75,7 @@ func TestSiteConfiguration(t *testing.T) {
 	})
 
 	t.Run("authenticated as admin", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{
 			ID:        1,
 			SiteAdmin: true,
@@ -86,10 +87,10 @@ func TestSiteConfiguration(t *testing.T) {
 			Contents:         `{"batchChanges.rolloutWindows": [{"rate":"unlimited"}]}`,
 			RedactedContents: `{"batchChanges.rolloutWindows": [{"rate":"unlimited"}]}`,
 		}
-		conf := database.NewMockConfStore()
+		conf := dbmocks.NewMockConfStore()
 		conf.SiteGetLatestFunc.SetDefaultReturn(siteConfig, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.ConfFunc.SetDefaultReturn(conf)
 

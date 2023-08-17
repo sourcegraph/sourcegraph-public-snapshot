@@ -1,6 +1,6 @@
-import { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, Story, DecoratorFn } from '@storybook/react'
 
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import type { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 
 import { WebStory } from '../../../components/WebStory'
 import { BatchSpecSource } from '../../../graphql-operations'

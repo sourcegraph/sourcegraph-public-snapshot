@@ -2,7 +2,7 @@ import type { TextDocument, Position as APIPosition, Range as APIRange } from 's
 
 import { Position, Range } from '@sourcegraph/extension-api-classes'
 
-import { TextDocument as PlainTextDocument } from '../../../codeintel/legacy-extensions/api'
+import type { TextDocument as PlainTextDocument } from '../../../codeintel/legacy-extensions/api'
 
 import { PrefixSumComputer } from './utils/prefixSumComputer'
 import { getWordAtText } from './utils/wordHelpers'

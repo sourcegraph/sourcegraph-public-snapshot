@@ -9,10 +9,10 @@ import { gql, useQuery } from '@sourcegraph/http-client'
 import { useSettings } from '@sourcegraph/shared/src/settings/settings'
 import { Link, Markdown } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
-import { GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables } from '../graphql-operations'
+import type { GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables } from '../graphql-operations'
 import { FreeUsersExceededAlert } from '../site/FreeUsersExceededAlert'
 import { LicenseExpirationAlert } from '../site/LicenseExpirationAlert'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
@@ -75,10 +75,12 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                             className={styles.alert}
                         />
                     )}
-                    {siteFlagsValue.alerts.map((alert, index) => (
-                        <GlobalAlert key={index} alert={alert} className={styles.alert} />
-                    ))}
-                    {siteFlagsValue.productSubscription.license &&
+                    {!isSetupChecklistEnabled &&
+                        siteFlagsValue.alerts.map((alert, index) => (
+                            <GlobalAlert key={index} alert={alert} className={styles.alert} />
+                        ))}
+                    {!isSetupChecklistEnabled &&
+                        siteFlagsValue.productSubscription.license &&
                         (() => {
                             const expiresAt = parseISO(siteFlagsValue.productSubscription.license.expiresAt)
                             return (

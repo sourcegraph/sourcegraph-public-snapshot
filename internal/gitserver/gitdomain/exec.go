@@ -2,6 +2,7 @@ package gitdomain
 
 import (
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -102,7 +103,6 @@ func isAllowedDiffArg(arg string) bool {
 			return true
 		}
 	}
-
 	// make sure that arg is not a local file
 	_, err := os.Stat(arg)
 
@@ -128,8 +128,35 @@ func isAllowedGitArg(allowedArgs []string, arg string) bool {
 	return false
 }
 
+// isAllowedDiffPathArg checks if the diff path arg is allowed.
+func isAllowedDiffPathArg(arg string, repoDir string) bool {
+	// allows diff command path that requires (dot) as path
+	// example: diff --find-renames ... --no-prefix commit -- .
+	if arg == "." {
+		return true
+	}
+
+	arg = filepath.Clean(arg)
+	if !filepath.IsAbs(arg) {
+		arg = filepath.Join(repoDir, arg)
+	}
+
+	filePath, err := filepath.Abs(arg)
+	if err != nil {
+		return false
+	}
+
+	// Check if absolute path is a sub path of the repo dir
+	repoRoot, err := filepath.Abs(repoDir)
+	if err != nil {
+		return false
+	}
+
+	return strings.HasPrefix(filePath, repoRoot)
+}
+
 // IsAllowedGitCmd checks if the cmd and arguments are allowed.
-func IsAllowedGitCmd(logger log.Logger, args []string) bool {
+func IsAllowedGitCmd(logger log.Logger, args []string, dir string) bool {
 	if len(args) == 0 || len(gitCmdAllowlist) == 0 {
 		return false
 	}
@@ -196,11 +223,17 @@ func IsAllowedGitCmd(logger log.Logger, args []string) bool {
 				return false
 			}
 		}
-		// Special-case for `git diff` to check if argument before `--` is not a file
+		// diff argument may contains file path and isAllowedDiffArg and isAllowedDiffPathArg
+		// helps verifying the file existence in disk
 		if cmd == "diff" {
 			dashIndex := slices.Index(args[1:], "--")
 			if (dashIndex < 0 || i < dashIndex) && !isAllowedDiffArg(arg) {
-				logger.Warn("IsAllowedGitCmd.isAllowedGitArgcmd", log.String("cmd", cmd), log.String("arg", arg))
+				// verifies arguments before --
+				logger.Warn("IsAllowedGitCmd.isAllowedDiffArg", log.String("cmd", cmd), log.String("arg", arg))
+				return false
+			} else if (i > dashIndex && dashIndex >= 0) && !isAllowedDiffPathArg(arg, dir) {
+				// verifies arguments after --
+				logger.Warn("IsAllowedGitCmd.isAllowedDiffPathArg", log.String("cmd", cmd), log.String("arg", arg))
 				return false
 			}
 		}

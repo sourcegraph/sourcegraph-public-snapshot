@@ -1,23 +1,28 @@
-import { FC, useCallback, useMemo, useRef } from 'react'
+import { type FC, useCallback, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SearchContextInputProps, QueryState, SubmitSearchProps, EditorHint } from '@sourcegraph/shared/src/search'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import {
+    type SearchContextInputProps,
+    type QueryState,
+    type SubmitSearchProps,
+    EditorHint,
+} from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
+import type { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import type { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { IEditor, LazyQueryInput, LazyQueryInputProps } from './LazyQueryInput'
+import { type IEditor, LazyQueryInput, type LazyQueryInputProps } from './LazyQueryInput'
 import { SearchButton } from './SearchButton'
 import { SearchContextDropdown } from './SearchContextDropdown'
 import { SearchHelpDropdownButton } from './SearchHelpDropdownButton'
 import { SearchHistoryDropdown } from './SearchHistoryDropdown'
-import { Toggles, TogglesProps } from './toggles'
+import { Toggles, type TogglesProps } from './toggles'
 
 import styles from './SearchBox.module.scss'
 

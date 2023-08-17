@@ -20,7 +20,7 @@ import {
     Icon,
     Popover,
     PopoverContent,
-    PopoverOpenEvent,
+    type PopoverOpenEvent,
     PopoverTrigger,
     Checkbox,
     Tooltip,

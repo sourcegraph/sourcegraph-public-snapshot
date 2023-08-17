@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -51,7 +52,7 @@ func TestSearchContexts(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sc := database.NewMockSearchContextsStore()
+			sc := dbmocks.NewMockSearchContextsStore()
 			sc.CountSearchContextsFunc.SetDefaultReturn(0, nil)
 			sc.ListSearchContextsFunc.SetDefaultHook(func(ctx context.Context, pageOpts database.ListSearchContextsPageOptions, opts database.ListSearchContextsOptions) ([]*types.SearchContext, error) {
 				if diff := cmp.Diff(tt.wantOpts, opts); diff != "" {
@@ -60,7 +61,7 @@ func TestSearchContexts(t *testing.T) {
 				return []*types.SearchContext{}, nil
 			})
 
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.SearchContextsFunc.SetDefaultReturn(sc)
 
 			_, err := (&Resolver{db: db}).SearchContexts(ctx, tt.args)
@@ -93,16 +94,16 @@ func TestSearchContextsStarDefaultPermissions(t *testing.T) {
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(orig) // reset
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{Username: username}, nil)
 
 	searchContextSpec := "test"
 	graphqlSearchContextID := marshalSearchContextID(searchContextSpec)
 
-	sc := database.NewMockSearchContextsStore()
+	sc := dbmocks.NewMockSearchContextsStore()
 	sc.GetSearchContextFunc.SetDefaultReturn(&types.SearchContext{ID: 0, Name: searchContextSpec}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.SearchContextsFunc.SetDefaultReturn(sc)
 

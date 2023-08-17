@@ -1,5 +1,5 @@
 import { GitRefType } from '$lib/graphql-operations'
-import { queryGitReferences } from '$lib/loader/repo'
+import { queryGitReferences } from '$lib/repo/api/refs'
 
 import type { PageLoad } from './$types'
 
@@ -11,7 +11,7 @@ export const load: PageLoad = async ({ parent }) => {
                 repo: resolvedRevision.repo.id,
                 type: GitRefType.GIT_BRANCH,
                 first: 20,
-            }).toPromise(),
+            }),
         },
     }
 }

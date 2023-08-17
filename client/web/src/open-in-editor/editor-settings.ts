@@ -1,4 +1,4 @@
-import { EditorId } from './editors'
+import type { EditorId } from './editors'
 
 const jetBrainsApis = ['protocolHandler', 'builtInServer']
 

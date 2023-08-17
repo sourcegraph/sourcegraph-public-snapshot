@@ -7,7 +7,7 @@ import React, { useMemo } from 'react'
 import isAbsoluteUrl from 'is-absolute-url'
 
 import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
-import { AnchorLink, Link, RouterLink } from '@sourcegraph/wildcard'
+import { AnchorLink, type Link, RouterLink } from '@sourcegraph/wildcard'
 
 /**
  * A link that opens in the browser if the URL is absolute, otherwise uses the router.

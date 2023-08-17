@@ -3,16 +3,16 @@ import React, { useCallback } from 'react'
 import { mdiSourceBranch, mdiFileDocument } from '@mdi/js'
 import { useNavigate, useLocation } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge, Container, Icon, Tab, TabPanel, TabPanels } from '@sourcegraph/wildcard'
 
 import { resetFilteredConnectionURLQuery } from '../../../components/FilteredConnection'
-import { BatchSpecFields } from '../../../graphql-operations'
+import type { BatchSpecFields } from '../../../graphql-operations'
 import { BatchChangeTabList, BatchChangeTabs } from '../BatchChangeTabs'
 import { BatchSpec, BatchSpecDownloadButton } from '../BatchSpec'
 
-import { PreviewPageAuthenticatedUser } from './BatchChangePreviewPage'
-import {
+import type { PreviewPageAuthenticatedUser } from './BatchChangePreviewPage'
+import type {
     queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs,
     queryChangesetApplyPreview as _queryChangesetApplyPreview,
 } from './list/backend'

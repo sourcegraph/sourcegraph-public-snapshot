@@ -9,10 +9,10 @@ import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import {
-    FetchCodeMonitorResult,
-    MonitorEditInput,
-    MonitorEditTriggerInput,
-    MonitorEditActionInput,
+    type FetchCodeMonitorResult,
+    type MonitorEditInput,
+    type MonitorEditTriggerInput,
+    type MonitorEditActionInput,
     MonitorEmailPriority,
 } from '../../graphql-operations'
 

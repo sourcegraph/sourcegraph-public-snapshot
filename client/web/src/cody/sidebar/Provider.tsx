@@ -2,7 +2,7 @@ import React, { useContext, useState, useCallback, useMemo } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 
-import { useCodyChat, CodyChatStore, codyChatStoreMock } from '../useCodyChat'
+import { useCodyChat, type CodyChatStore, codyChatStoreMock } from '../useCodyChat'
 
 import { useSidebarSize } from './useSidebarSize'
 

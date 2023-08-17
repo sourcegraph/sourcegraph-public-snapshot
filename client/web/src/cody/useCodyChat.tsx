@@ -1,12 +1,16 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 
-import { Transcript, TranscriptJSON, TranscriptJSONScope } from '@sourcegraph/cody-shared/dist/chat/transcript'
+import {
+    Transcript,
+    type TranscriptJSON,
+    type TranscriptJSONScope,
+} from '@sourcegraph/cody-shared/dist/chat/transcript'
 import {
     useClient,
-    CodyClient,
-    CodyClientScope,
-    CodyClientConfig,
-    CodyClientEvent,
+    type CodyClient,
+    type CodyClientScope,
+    type CodyClientConfig,
+    type CodyClientEvent,
 } from '@sourcegraph/cody-shared/dist/chat/useClient'
 import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
 import { useLocalStorage } from '@sourcegraph/wildcard'
@@ -184,7 +188,8 @@ export const useCodyChat = ({
             return
         }
 
-        eventLogger.log(EventName.CODY_CHAT_HISTORY_CLEARED)
+        const chatIds = transcriptHistory.map(chat => chat.id)
+        eventLogger.log(EventName.CODY_CHAT_HISTORY_CLEARED, { chatIds })
 
         const newTranscript = initializeNewChatInternal()
         if (newTranscript) {
@@ -215,6 +220,7 @@ export const useCodyChat = ({
         scope,
         setScopeInternal,
         updateTranscriptInHistory,
+        transcriptHistory,
     ])
 
     const deleteHistoryItem = useCallback(
@@ -223,7 +229,7 @@ export const useCodyChat = ({
                 return
             }
 
-            eventLogger.log(EventName.CODY_CHAT_HISTORY_ITEM_DELETED)
+            eventLogger.log(EventName.CODY_CHAT_HISTORY_ITEM_DELETED, { chatId: id })
 
             setTranscriptHistoryState((history: TranscriptJSON[]) => {
                 const updatedHistory = [...history.filter(transcript => transcript.id !== id)]
@@ -279,26 +285,26 @@ export const useCodyChat = ({
 
     const submitMessage = useCallback<typeof submitMessageInternal>(
         async (humanInputText, scope): Promise<Transcript | null> => {
-            eventLogger.log(EventName.CODY_CHAT_SUBMIT)
             const transcript = await submitMessageInternal(humanInputText, scope)
 
             if (transcript) {
                 await updateTranscriptInHistory(transcript)
             }
 
+            eventLogger.log(EventName.CODY_CHAT_SUBMIT, { chatId: transcript?.id })
             return transcript
         },
         [submitMessageInternal, updateTranscriptInHistory]
     )
     const editMessage = useCallback<typeof editMessageInternal>(
         async (humanInputText, messageId?, scope?): Promise<Transcript | null> => {
-            eventLogger.log(EventName.CODY_CHAT_EDIT)
             const transcript = await editMessageInternal(humanInputText, messageId, scope)
 
             if (transcript) {
                 await updateTranscriptInHistory(transcript)
             }
 
+            eventLogger.log(EventName.CODY_CHAT_EDIT, { chatId: transcript?.id })
             return transcript
         },
         [editMessageInternal, updateTranscriptInHistory]
@@ -310,7 +316,6 @@ export const useCodyChat = ({
             return null
         }
 
-        eventLogger.log(EventName.CODY_CHAT_INITIALIZED)
         const newTranscript = initializeNewChatInternal()
 
         if (newTranscript) {
@@ -332,6 +337,7 @@ export const useCodyChat = ({
             }
         }
 
+        eventLogger.log(EventName.CODY_CHAT_INITIALIZED, { chatId: newTranscript?.id })
         return newTranscript
     }, [
         initializeNewChatInternal,
@@ -417,7 +423,8 @@ export const useCodyChat = ({
         eventLogger.log(
             scope.includeInferredRepository
                 ? EventName.CODY_CHAT_SCOPE_INFERRED_REPO_DISABLED
-                : EventName.CODY_CHAT_SCOPE_INFERRED_REPO_ENABLED
+                : EventName.CODY_CHAT_SCOPE_INFERRED_REPO_ENABLED,
+            { chatId: transcript?.id }
         )
 
         toggleIncludeInferredRepositoryInternal()
@@ -434,7 +441,8 @@ export const useCodyChat = ({
         eventLogger.log(
             scope.includeInferredRepository
                 ? EventName.CODY_CHAT_SCOPE_INFERRED_FILE_DISABLED
-                : EventName.CODY_CHAT_SCOPE_INFERRED_FILE_ENABLED
+                : EventName.CODY_CHAT_SCOPE_INFERRED_FILE_ENABLED,
+            { chatId: transcript?.id }
         )
 
         toggleIncludeInferredFileInternal()

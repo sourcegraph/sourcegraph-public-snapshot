@@ -5,11 +5,11 @@ import { mdiContentDuplicate, mdiArrowUp, mdiArrowDown, mdiDelete, mdiPlusCircle
 import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
 import { Icon } from '@sourcegraph/wildcard'
 
-import { BlockProps } from '../..'
+import type { BlockProps } from '../..'
 import { useIsBlockInputFocused } from '../useIsBlockInputFocused'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
-import { BlockMenuAction } from './NotebookBlockMenu'
+import type { BlockMenuAction } from './NotebookBlockMenu'
 
 export const useCommonBlockMenuActions = ({
     id,

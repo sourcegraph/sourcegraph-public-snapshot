@@ -1,10 +1,10 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../backend/graphql'
-import { RepositoriesByNamesResult, RepositoriesByNamesVariables } from '../../graphql-operations'
+import type { RepositoriesByNamesResult, RepositoriesByNamesVariables } from '../../graphql-operations'
 
 export function fetchRepositoriesByNames(
     names: string[]

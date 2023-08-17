@@ -1,5 +1,5 @@
 import { createPoint } from '../../../models/geometry/point'
-import { createRectangleFromPoints, Rectangle } from '../../../models/geometry/rectangle'
+import { createRectangleFromPoints, type Rectangle } from '../../../models/geometry/rectangle'
 
 /**
  * Extends constraint rectangle by target rectangle position.

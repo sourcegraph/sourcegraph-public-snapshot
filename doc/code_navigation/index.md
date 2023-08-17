@@ -62,57 +62,17 @@ Code navigation is made up of multiple features that build on top of each other:
 - [Precise code navigation](explanations/precise_code_navigation.md) powers our code graph by using compile-time information to provide users with an extremely precise and accurate cross-repository[^1] experience. This means you'll get an accurate view of all symbols and where they are used across your code base.
 
 Precise code navigation requires language-specific indexers to be generated and uploaded to your instance. We currently have precise code navigation support for the languages below. See the [indexers page](references/indexers.md) for a detailed breakdown of each indexer's status.
-<table>
-   <thead>
-      <tr>
-        <th>Language</th>
-        <th>Indexer</th>
-        <th>Status</th>
-      </tr>
-   </thead>
-   <tbody>
-      <tr>
-        <td>Go</td>
-        <td><a href="https://sourcegraph.com/github.com/sourcegraph/lsif-go">lsif-go</a></td>
-        <td>🟢 Generally available</td>
-      </tr>
-      <tr>
-        <td>TypeScript, JavaScript</td>
-        <td><a href="https://sourcegraph.com/github.com/sourcegraph/scip-typescript">scip-typescript</a></td>
-        <td>🟢 Generally available</td>
-      </tr>
-      <tr>
-        <td>C, C++</td>
-        <td><a href="https://sourcegraph.com/github.com/sourcegraph/scip-clang">scip-clang</a></td>
-        <td>🟡 Partially available</td>
-      </tr>
-      <tr>
-         <td>Java, Kotlin, Scala</td>
-        <td><a href="https://sourcegraph.com/github.com/sourcegraph/scip-java">scip-java</a></td>
-        <td>🟢 Generally available</td>
-      </tr>
-      <tr>
-        <td>Rust</td>
-        <td><a href="https://sourcegraph.com/github.com/rust-lang/rust-analyzer">rust-analyzer</a></td>
-        <td>🟢 Generally available</td>
-      </tr>
-     <tr>
-        <td>Python</td>
-        <td><a href="https://sourcegraph.com/github.com/sourcegraph/scip-python">scip-python</a></td>
-        <td>🟢 Generally available</td>
-      </tr>
-     <tr>
-        <td>Ruby</td>
-        <td><a href="https://sourcegraph.com/github.com/sourcegraph/scip-ruby">scip-ruby</a></td>
-        <td>🟢 Generally available</td>
-      </tr>
-      <tr>
-        <td>C#, Visual Basic</td>
-        <td><a href="https://github.com/sourcegraph/scip-dotnet">scip-dotnet</a></td>
-        <td>🟡 Partially available</td>
-      </tr>
-   </tbody>
-</table>
+
+| Language | Indexer | Status |
+|-|-|-|  
+| Go | [lsif-go](https://sourcegraph.com/github.com/sourcegraph/lsif-go) | 🟢 Generally available |
+| TypeScript, JavaScript | [scip-typescript](https://sourcegraph.com/github.com/sourcegraph/scip-typescript) | 🟢 Generally available |  
+| C, C++ | [scip-clang](https://sourcegraph.com/github.com/sourcegraph/scip-clang) | 🟡 Partially available |
+| Java, Kotlin, Scala | [scip-java](https://sourcegraph.com/github.com/sourcegraph/scip-java) | 🟢 Generally available |
+| Rust | [rust-analyzer](https://sourcegraph.com/github.com/rust-lang/rust-analyzer) | 🟢 Generally available |
+| Python | [scip-python](https://sourcegraph.com/github.com/sourcegraph/scip-python) | 🟢 Generally available |
+| Ruby | [scip-ruby](https://sourcegraph.com/github.com/sourcegraph/scip-ruby) | 🟢 Generally available |  
+| C#, Visual Basic | [scip-dotnet](https://github.com/sourcegraph/scip-dotnet) | 🟡 Partially available |
 
 - [Auto-indexing](explanations/auto_indexing.md) uses [Sourcegraph executors](../admin/executors/index.md) to create indexes for the code in your Sourcegraph instance, giving you up-to-date, cross-repository code navigation.
 - <span class="badge badge-beta">Beta</span> [Dependency navigation](explanations/features.md#dependency-navigation) allows you to navigate and search through the dependencies of your code, leveraging precise code navigation and auto-indexing.

@@ -3,18 +3,25 @@ import React from 'react'
 import { snippet } from '@codemirror/autocomplete'
 import {
     EditorSelection,
-    EditorState,
-    Extension,
+    type EditorState,
+    type Extension,
     Facet,
     Prec,
     StateEffect,
     StateField,
-    Transaction,
+    type Transaction,
 } from '@codemirror/state'
-import { Command as CodeMirrorCommand, EditorView, KeyBinding, keymap, ViewPlugin, ViewUpdate } from '@codemirror/view'
-import { createRoot, Root } from 'react-dom/client'
+import {
+    type Command as CodeMirrorCommand,
+    EditorView,
+    type KeyBinding,
+    keymap,
+    ViewPlugin,
+    type ViewUpdate,
+} from '@codemirror/view'
+import { createRoot, type Root } from 'react-dom/client'
 
-import { compatNavigate, HistoryOrNavigate } from '@sourcegraph/common'
+import { compatNavigate, type HistoryOrNavigate } from '@sourcegraph/common'
 
 import { getSelectedMode, modeChanged, modesFacet, setModeEffect } from './modes'
 import { Suggestions } from './Suggestions'

@@ -1,150 +1,131 @@
 import { dirname } from 'path'
 
-import { memoize } from 'lodash'
-import type { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
-
-import { createAggregateError, memoizeObservable } from '$lib/common'
-import type { TreeEntriesResult, GitCommitFieldsWithTree, TreeFields, TreeEntryFields } from '$lib/graphql-operations'
-import { gql } from '$lib/http-client'
-import { fetchBlobPlaintext } from '$lib/loader/blob'
-import { makeRepoURI, type AbsoluteRepoFile } from '$lib/shared'
+import { query, gql } from '$lib/graphql'
+import type { TreeEntriesResult, GitCommitFieldsWithTree, TreeEntriesVariables, Scalars } from '$lib/graphql-operations'
 import type { TreeProvider } from '$lib/TreeView'
-import { requestGraphQL } from '$lib/web'
-
-export const fetchTreeEntries = memoizeObservable(
-    (args: AbsoluteRepoFile & { first?: number }): Observable<GitCommitFieldsWithTree> =>
-        requestGraphQL<TreeEntriesResult>(
-            gql`
-                query TreeEntries(
-                    $repoName: String!
-                    $revision: String!
-                    $commitID: String!
-                    $filePath: String!
-                    $first: Int
-                ) {
-                    repository(name: $repoName) {
-                        id
-                        commit(rev: $commitID, inputRevspec: $revision) {
-                            ...GitCommitFieldsWithTree
-                        }
-                    }
-                }
-
-                fragment GitCommitFieldsWithTree on GitCommit {
-                    oid
-                    abbreviatedOID
-                    url
-                    author {
-                        ...UserFields
-                    }
-                    committer {
-                        ...UserFields
-                    }
-                    subject
-
-                    tree(path: $filePath) {
-                        ...TreeFields
-                    }
-                }
-                fragment TreeFields on GitTree {
-                    ...TreeEntryFields
-                    entries(first: $first, recursiveSingleChild: false) {
-                        ...TreeEntryFields
-                    }
-                }
-                fragment TreeEntryFields on TreeEntry {
-                    name
-                    path
-                    isDirectory
-                    url
-                    submodule {
-                        url
-                        commit
-                    }
-                    isSingleChild
-                    ...GitTreeEntry
-                }
-                fragment GitTreeEntry on GitTree {
-                    isRoot
-                }
-
-                fragment UserFields on Signature {
-                    person {
-                        name
-                        displayName
-                        avatarURL
-                    }
-                    date
-                }
-            `,
-            args
-            //mightContainPrivateInfo: true,
-        ).pipe(
-            map(({ data, errors }) => {
-                if (errors || !data?.repository?.commit?.tree) {
-                    throw createAggregateError(errors)
-                }
-                return data.repository.commit
-            })
-        ),
-    ({ first, ...args }) => `${makeRepoURI(args)}:first-${String(first)}`
-)
 
 const MAX_FILE_TREE_ENTRIES = 1000
+
+const treeEntriesQuery = gql`
+    query TreeEntries($repoID: ID!, $commitID: String!, $filePath: String!, $first: Int) {
+        node(id: $repoID) {
+            __typename
+            id
+            ... on Repository {
+                commit(rev: $commitID) {
+                    ...GitCommitFieldsWithTree
+                }
+            }
+        }
+    }
+
+    fragment GitCommitFieldsWithTree on GitCommit {
+        id
+        oid
+        abbreviatedOID
+        author {
+            ...UserFields
+        }
+        committer {
+            ...UserFields
+        }
+        subject
+
+        tree(path: $filePath) {
+            canonicalURL
+            isRoot
+            name
+            path
+            isDirectory
+            submodule {
+                commit
+            }
+            isSingleChild
+            entries(first: $first, recursiveSingleChild: false) {
+                canonicalURL
+                name
+                path
+                isDirectory
+                submodule {
+                    commit
+                }
+                isSingleChild
+            }
+        }
+    }
+
+    fragment UserFields on Signature {
+        person {
+            name
+            displayName
+            avatarURL
+        }
+        date
+    }
+`
+
+export async function fetchTreeEntries(args: TreeEntriesVariables): Promise<GitCommitFieldsWithTree> {
+    const data = await query<TreeEntriesResult, TreeEntriesVariables>(
+        treeEntriesQuery,
+        {
+            ...args,
+            first: args.first ?? MAX_FILE_TREE_ENTRIES,
+        }
+        //mightContainPrivateInfo: true,
+    )
+    if (data.node?.__typename !== 'Repository' || !data.node.commit) {
+        throw new Error('Unable to fetch repository information')
+    }
+    return data.node.commit
+}
+
 export const NODE_LIMIT: unique symbol = Symbol()
+
+type TreeRoot = NonNullable<GitCommitFieldsWithTree['tree']>
+export type TreeEntryFields = NonNullable<GitCommitFieldsWithTree['tree']>['entries'][number]
 type ExpandableFileTreeNodeValues = TreeEntryFields
 export type FileTreeNodeValue = ExpandableFileTreeNodeValues | typeof NODE_LIMIT
 
-export const fetchSidebarFileTree = memoize(
-    async ({
-        repoName,
+export async function fetchSidebarFileTree({
+    repoID,
+    commitID,
+    filePath,
+}: {
+    repoID: Scalars['ID']
+    commitID: string
+    filePath: string
+}): Promise<{ root: TreeRoot; values: FileTreeNodeValue[] }> {
+    const result = await fetchTreeEntries({
+        repoID,
         commitID,
-        revision,
         filePath,
-    }: {
-        repoName: string
-        commitID: string
-        revision: string
-        filePath: string
-    }): Promise<{ root: TreeFields; values: FileTreeNodeValue[] }> => {
-        const result = await fetchTreeEntries({
-            repoName,
-            commitID,
-            revision,
-            filePath,
-            first: MAX_FILE_TREE_ENTRIES,
-        }).toPromise()
-        if (!result.tree) {
-            throw new Error('Unable to fetch directory contents')
-        }
-        const root = result.tree
-        let values: FileTreeNodeValue[] = root.entries
-        if (values.length >= MAX_FILE_TREE_ENTRIES) {
-            values = [...values, NODE_LIMIT]
-        }
-
-        return { root, values }
-    },
-    args => `${makeRepoURI(args)}:first-${String(MAX_FILE_TREE_ENTRIES)}`
-)
+        first: MAX_FILE_TREE_ENTRIES,
+    })
+    if (!result.tree) {
+        throw new Error('Unable to fetch directory contents')
+    }
+    const root = result.tree
+    let values: FileTreeNodeValue[] = root.entries
+    if (values.length >= MAX_FILE_TREE_ENTRIES) {
+        values = [...values, NODE_LIMIT]
+    }
+    return { root, values }
+}
 
 export interface FileTreeLoader {
     (args: {
-        repoName: string
+        repoID: Scalars['ID']
         commitID: string
-        revision: string
         filePath: string
         parent?: FileTreeProvider
     }): Promise<FileTreeProvider>
 }
 
 interface FileTreeProviderArgs {
-    root: TreeFields
+    root: NonNullable<GitCommitFieldsWithTree['tree']>
     values: FileTreeNodeValue[]
-    repoName: string
+    repoID: Scalars['ID']
     commitID: string
-    revision: string
     loader: FileTreeLoader
     parent?: TreeProvider<FileTreeNodeValue>
 }
@@ -156,8 +137,8 @@ export class FileTreeProvider implements TreeProvider<FileTreeNodeValue> {
         return this.args.root
     }
 
-    getRepoName(): string {
-        return this.args.repoName
+    getRepoID(): Scalars['ID'] {
+        return this.args.repoID
     }
 
     getEntries(): FileTreeNodeValue[] {
@@ -176,9 +157,8 @@ export class FileTreeProvider implements TreeProvider<FileTreeNodeValue> {
         }
 
         return this.args.loader({
-            repoName: this.args.repoName,
+            repoID: this.args.repoID,
             commitID: this.args.commitID,
-            revision: this.args.revision,
             filePath: entry.path,
             parent: this,
         })
@@ -187,9 +167,8 @@ export class FileTreeProvider implements TreeProvider<FileTreeNodeValue> {
     async fetchParent(): Promise<FileTreeProvider> {
         const parentPath = dirname(this.args.root.path)
         return this.args.loader({
-            repoName: this.args.repoName,
+            repoID: this.args.repoID,
             commitID: this.args.commitID,
-            revision: this.args.revision,
             filePath: parentPath,
         })
     }

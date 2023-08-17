@@ -1,4 +1,4 @@
-import { GitCommitFields, RepositoryType } from '../graphql-operations'
+import { type GitCommitFields, RepositoryType } from '../graphql-operations'
 
 export const isPerforceChangelistMappingEnabled = (): boolean =>
     window.context.experimentalFeatures.perforceChangelistMapping === 'enabled'

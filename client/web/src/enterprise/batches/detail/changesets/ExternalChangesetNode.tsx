@@ -10,9 +10,9 @@ import { Button, Alert, Icon, H4, Text, ErrorMessage, ErrorAlert } from '@source
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { InputTooltip } from '../../../../components/InputTooltip'
-import { ChangesetSpecType, ExternalChangesetFields } from '../../../../graphql-operations'
+import { ChangesetSpecType, type ExternalChangesetFields } from '../../../../graphql-operations'
 import {
-    queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
+    type queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     reenqueueChangeset,
 } from '../backend'
 

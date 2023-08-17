@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { SymbolKind as SymbolKindEnum } from '../graphql-operations'
+import type { SymbolKind as SymbolKindEnum } from '../graphql-operations'
 
 import { SymbolIcon } from './SymbolIcon'
 import { SymbolTag } from './SymbolTag'

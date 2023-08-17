@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // Message describes an email message to be sent, aliased in this package for convenience.
@@ -68,6 +69,60 @@ func render(fromAddress, fromName string, message Message) (*email.Email, error)
 	return &m, nil
 }
 
+func CreateSMTPClient(config schema.SiteConfiguration) (*smtp.Client, error) {
+	// Set up client
+	client, err := smtp.Dial(net.JoinHostPort(config.EmailSmtp.Host, strconv.Itoa(config.EmailSmtp.Port)))
+	if err != nil {
+		return nil, errors.Wrap(err, "new SMTP client")
+	}
+
+	// NOTE: Some services (e.g. Google SMTP relay) require to echo desired hostname,
+	// our current email dependency "github.com/jordan-wright/email" has no option
+	// for it and always echoes "localhost" which makes it unusable.
+	heloHostname := config.EmailSmtp.Domain
+	if heloHostname == "" {
+		heloHostname = "localhost" // CI:LOCALHOST_OK
+	}
+	err = client.Hello(heloHostname)
+	if err != nil {
+		return nil, errors.Wrap(err, "send HELO")
+	}
+
+	// Use TLS if available
+	if ok, _ := client.Extension("STARTTLS"); ok {
+		err = client.StartTLS(
+			&tls.Config{
+				InsecureSkipVerify: config.EmailSmtp.NoVerifyTLS,
+				ServerName:         config.EmailSmtp.Host,
+			},
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, "send STARTTLS")
+		}
+	}
+
+	var smtpAuth smtp.Auth
+	switch config.EmailSmtp.Authentication {
+	case "none": // nothing to do
+	case "PLAIN":
+		smtpAuth = smtp.PlainAuth("", config.EmailSmtp.Username, config.EmailSmtp.Password, config.EmailSmtp.Host)
+	case "CRAM-MD5":
+		smtpAuth = smtp.CRAMMD5Auth(config.EmailSmtp.Username, config.EmailSmtp.Password)
+	default:
+		return nil, errors.Errorf("invalid SMTP authentication type %q", config.EmailSmtp.Authentication)
+	}
+
+	if smtpAuth != nil {
+		if ok, _ := client.Extension("AUTH"); ok {
+			if err = client.Auth(smtpAuth); err != nil {
+				return nil, errors.Wrap(err, "auth")
+			}
+		}
+	}
+
+	return client, nil
+}
+
 // Send sends a transactional email if SMTP is configured. All services within the frontend
 // should use this directly to send emails.  Source is used to categorize metrics, and
 // should indicate the product feature that is sending this email.
@@ -94,7 +149,6 @@ func Send(ctx context.Context, source string, message Message) (err error) {
 	if config.EmailSmtp == nil {
 		return errors.New("no SMTP server configured (in email.smtp)")
 	}
-
 	// Previous errors are configuration errors, do not track as error. Subsequent errors
 	// are delivery errors.
 	defer func() {
@@ -129,56 +183,12 @@ func Send(ctx context.Context, source string, message Message) (err error) {
 		return errors.Wrap(err, "get bytes")
 	}
 
-	// Set up client
-	client, err := smtp.Dial(net.JoinHostPort(config.EmailSmtp.Host, strconv.Itoa(config.EmailSmtp.Port)))
+	// Create SMTP client
+	client, err := CreateSMTPClient(config.SiteConfiguration)
 	if err != nil {
-		return errors.Wrap(err, "new SMTP client")
+		return err
 	}
 	defer func() { _ = client.Close() }()
-
-	// NOTE: Some services (e.g. Google SMTP relay) require to echo desired hostname,
-	// our current email dependency "github.com/jordan-wright/email" has no option
-	// for it and always echoes "localhost" which makes it unusable.
-	heloHostname := config.EmailSmtp.Domain
-	if heloHostname == "" {
-		heloHostname = "localhost" // CI:LOCALHOST_OK
-	}
-	err = client.Hello(heloHostname)
-	if err != nil {
-		return errors.Wrap(err, "send HELO")
-	}
-
-	// Use TLS if available
-	if ok, _ := client.Extension("STARTTLS"); ok {
-		err = client.StartTLS(
-			&tls.Config{
-				InsecureSkipVerify: config.EmailSmtp.NoVerifyTLS,
-				ServerName:         config.EmailSmtp.Host,
-			},
-		)
-		if err != nil {
-			return errors.Wrap(err, "send STARTTLS")
-		}
-	}
-
-	var smtpAuth smtp.Auth
-	switch config.EmailSmtp.Authentication {
-	case "none": // nothing to do
-	case "PLAIN":
-		smtpAuth = smtp.PlainAuth("", config.EmailSmtp.Username, config.EmailSmtp.Password, config.EmailSmtp.Host)
-	case "CRAM-MD5":
-		smtpAuth = smtp.CRAMMD5Auth(config.EmailSmtp.Username, config.EmailSmtp.Password)
-	default:
-		return errors.Errorf("invalid SMTP authentication type %q", config.EmailSmtp.Authentication)
-	}
-
-	if smtpAuth != nil {
-		if ok, _ := client.Extension("AUTH"); ok {
-			if err = client.Auth(smtpAuth); err != nil {
-				return errors.Wrap(err, "auth")
-			}
-		}
-	}
 
 	err = client.Mail(config.EmailAddress)
 	if err != nil {

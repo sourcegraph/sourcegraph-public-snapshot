@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, writeFileSync, createReadStream } from 'fs'
 import * as path from 'path'
 import * as readline from 'readline'
 
-import Octokit from '@octokit/rest'
+import type Octokit from '@octokit/rest'
 import chalk from 'chalk'
 import execa from 'execa'
 import { mkdir, readFile, writeFile } from 'mz/fs'
@@ -10,9 +10,9 @@ import fetch from 'node-fetch'
 import * as semver from 'semver'
 import { SemVer } from 'semver'
 
-import { ReleaseConfig } from './config'
+import type { ReleaseConfig } from './config'
 import { getPreviousVersionExecutor, getPreviousVersionSrcCli } from './git'
-import { cloneRepo, EditFunc, getAuthenticatedGitHubClient, listIssues } from './github'
+import { cloneRepo, type EditFunc, getAuthenticatedGitHubClient, listIssues } from './github'
 import * as update from './update'
 
 const SOURCEGRAPH_RELEASE_INSTANCE_URL = 'https://sourcegraph.sourcegraph.com'
@@ -293,11 +293,9 @@ export const updateUpgradeGuides = (previous: string, next: string): EditFunc =>
 export const updateMigratorBazelOuts =
     (version: string): EditFunc =>
     (directory: string): void => {
-        const newEntries = [
-            `schema-descriptions/v${version}-internal_database_schema.codeinsights.json`,
-            `schema-descriptions/v${version}-internal_database_schema.codeintel.json`,
-            `schema-descriptions/v${version}-internal_database_schema.json`,
-        ]
+        const newEntries = `        "schema-descriptions/v${version}-internal_database_schema.codeinsights.json",
+        "schema-descriptions/v${version}-internal_database_schema.codeintel.json",
+        "schema-descriptions/v${version}-internal_database_schema.json",`
         const filePath = `${directory}/cmd/migrator/BUILD.bazel`
 
         let inGenrule = false
@@ -322,7 +320,7 @@ export const updateMigratorBazelOuts =
             if (inGenrule && inOuts && line.includes('],')) {
                 inOuts = false
                 inGenrule = false
-                line = `        "${newEntries.join(',\n')}",\n    ` + line
+                line = `${newEntries}\n${line}`
             }
 
             result.push(line)
