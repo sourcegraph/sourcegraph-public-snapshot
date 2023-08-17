@@ -56,23 +56,20 @@ func (h *handler) Handle(ctx context.Context) error {
 }
 
 func (h *handler) processCodeHost(ctx context.Context, codeHost types.CodeHost, fallbackGitQuota int32) error {
-	configs, err := h.getRateLimitConfigsOrDefaults(codeHost, fallbackGitQuota)
-	if err != nil {
-		return err
-	}
+	configs := h.getRateLimitConfigsOrDefaults(codeHost, fallbackGitQuota)
 
 	// We try setting both the API and git rate limits here even if we get an error when setting the API rate limits
 	// in oder to try to avoid any outages as much as possible.
 
 	// Set API token values
-	err = h.rateLimiter.SetCodeHostAPIRateLimitConfig(ctx, codeHost.URL, configs.ApiQuota, configs.ApiReplenishmentInterval)
+	err := h.rateLimiter.SetCodeHostAPIRateLimitConfig(ctx, codeHost.URL, configs.ApiQuota, configs.ApiReplenishmentInterval)
 	// Set Git token values
 	err2 := h.rateLimiter.SetCodeHostGitRateLimitConfig(ctx, codeHost.URL, configs.GitQuota, configs.GitReplenishmentInterval)
 
 	return errors.CombineErrors(err, err2)
 }
 
-func (h *handler) getRateLimitConfigsOrDefaults(codeHost types.CodeHost, fallbackGitQuota int32) (codeHostRateLimitConfigs, error) {
+func (h *handler) getRateLimitConfigsOrDefaults(codeHost types.CodeHost, fallbackGitQuota int32) codeHostRateLimitConfigs {
 	var configs codeHostRateLimitConfigs
 
 	// Determine the values of the 4 rate limit configurations by using their set value from the database or their default value if they are not set.
@@ -109,7 +106,7 @@ func (h *handler) getRateLimitConfigsOrDefaults(codeHost types.CodeHost, fallbac
 	} else {
 		configs.GitReplenishmentInterval = defaultGitReplenishmentInterval
 	}
-	return configs, nil
+	return configs
 }
 
 type codeHostRateLimitConfigs struct {
