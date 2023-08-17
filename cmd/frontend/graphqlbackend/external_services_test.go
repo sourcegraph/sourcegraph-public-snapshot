@@ -1335,7 +1335,7 @@ func TestExternalServiceNamespaces(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		expectedErr := fmt.Sprintf("External Service type does not support discovery of repositories and namespaces.")
+		expectedErr := "External Service type does not support discovery of repositories and namespaces."
 		mockExternalServiceNamespaces(t, []*types.ExternalServiceNamespace{&namespace}, errors.New(expectedErr))
 
 		RunTest(t, &Test{
@@ -1691,7 +1691,7 @@ func TestExternalServiceRepositories(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		expectedError := fmt.Sprintf("External Service type does not support discovery of repositories and namespaces.")
+		expectedError := "External Service type does not support discovery of repositories and namespaces."
 		mockExternalServiceRepos(t, nil, errors.New(expectedError))
 
 		RunTest(t, &Test{

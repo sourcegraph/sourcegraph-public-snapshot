@@ -20,6 +20,7 @@ write_source_files(
         "//internal/rbac:write_generated",
         "//internal/rbac/types:write_generated",
         "//client/web/src/rbac:write_generated",
+        "//schema:write_generated_schema",
         "//lib/batches/schema:write_generated_code",
         "//lib/codeintel/lsif/protocol:write_symbol_kind",
         "//lib/codeintel/lsif/protocol:write_symbol_tag",

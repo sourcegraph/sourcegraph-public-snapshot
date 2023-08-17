@@ -1,15 +1,14 @@
-import * as React from 'react'
-import type { FC } from 'react'
+import { type FC, useState, useEffect, useCallback } from 'react'
 
-import { type ApolloClient, useApolloClient } from '@apollo/client'
+import { FetchResult, useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import * as jsonc from 'jsonc-parser'
-import { Subject, Subscription } from 'rxjs'
-import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
+import { useSearchParams } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
-import type { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
-import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useQuery, useMutation } from '@sourcegraph/http-client'
+import { type SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Button,
@@ -21,21 +20,36 @@ import {
     PageHeader,
     Container,
     ErrorAlert,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
 } from '@sourcegraph/wildcard'
 
 import siteSchemaJSON from '../../../../schema/site.schema.json'
+import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
-import type { SiteResult } from '../graphql-operations'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
+import {
+    type ReloadSiteResult,
+    type ReloadSiteVariables,
+    type SiteResult,
+    type SiteVariables,
+    type UpdateSiteConfigurationResult,
+    type UpdateSiteConfigurationVariables,
+} from '../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
-import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
+import { RELOAD_SITE, SITE_CONFIG_QUERY, UPDATE_SITE_CONFIG } from './backend'
 import { SiteConfigurationChangeList } from './SiteConfigurationChangeList'
+import { SMTPConfigForm } from './smtp/ConfigForm'
 
 import styles from './SiteAdminConfigurationPage.module.scss'
 
-const defaultModificationOptions: jsonc.ModificationOptions = {
+export const defaultModificationOptions: jsonc.ModificationOptions = {
     formattingOptions: {
         eol: '\n',
         insertSpaces: true,
@@ -213,321 +227,307 @@ const quickConfigureActions: {
 ]
 
 interface Props extends TelemetryProps {
-    isLightTheme: boolean
-    client: ApolloClient<{}>
     isSourcegraphApp: boolean
-}
-
-interface State {
-    site?: SiteResult['site']
-    loading: boolean
-    error?: Error
-
-    saving?: boolean
-    restartToApply: boolean
-    reloadStartedAt?: number
-    enabledCompletions?: boolean
+    authenticatedUser: AuthenticatedUser
 }
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
-
-export const SiteAdminConfigurationPage: FC<TelemetryProps & { isSourcegraphApp: boolean }> = props => {
-    const client = useApolloClient()
-    return <SiteAdminConfigurationContent {...props} isLightTheme={useIsLightTheme()} client={client} />
-}
+const SITE_CONFIG_QUERY_NAME = 'Site'
 
 /**
  * A page displaying the site configuration.
  */
-class SiteAdminConfigurationContent extends React.Component<Props, State> {
-    public state: State = {
-        loading: true,
-        restartToApply: window.context.needServerRestart,
-    }
+export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSourcegraphApp, telemetryService }) => {
+    const client = useApolloClient()
+    const [params, setSearchParams] = useSearchParams()
+    const [tabIndex, setTabIndex] = useState(Number(params.get('tab')) ?? 0)
+    const [reloadStartedAt, setReloadStartedAt] = useState<Date>(new Date(0))
+    const [enabledCompletions, setEnabledCompletions] = useState(false)
+    const isLightTheme = useIsLightTheme()
 
-    private remoteRefreshes = new Subject<void>()
-    private siteReloads = new Subject<void>()
-    private subscriptions = new Subscription()
+    useEffect(() => eventLogger.logViewEvent('SiteAdminConfiguration'))
 
-    public componentDidMount(): void {
-        eventLogger.logViewEvent('SiteAdminConfiguration')
+    const [isSetupChecklistEnabled] = useFeatureFlag('setup-checklist', false)
 
-        this.subscriptions.add(
-            this.remoteRefreshes.pipe(mergeMap(() => fetchSite())).subscribe(
-                site => {
-                    this.setState({
-                        site,
-                        error: undefined,
-                        loading: false,
-                    })
+    useEffect(() => {
+        if (isSetupChecklistEnabled && Number(params.get('tab')) !== tabIndex) {
+            setSearchParams({ tab: tabIndex.toString() })
+        }
+    }, [tabIndex, isSetupChecklistEnabled, params, setSearchParams])
+
+    const { data, loading, error } = useQuery<SiteResult, SiteVariables>(SITE_CONFIG_QUERY, {
+        // fetchPolicy: 'cache-and-network',
+    })
+
+    const [reloadSiteConfig, { loading: reloadLoading, error: reloadError }] = useMutation<
+        ReloadSiteResult,
+        ReloadSiteVariables
+    >(RELOAD_SITE)
+
+    const [updateSiteConfig, { loading: updateLoading, error: updateError }] = useMutation<
+        UpdateSiteConfigurationResult,
+        UpdateSiteConfigurationVariables
+    >(UPDATE_SITE_CONFIG, {
+        refetchQueries: [SITE_CONFIG_QUERY_NAME],
+    })
+
+    const reloadSite = useCallback((): Promise<FetchResult<ReloadSiteResult>> => {
+        eventLogger.log('SiteReloaded')
+        setReloadStartedAt(new Date())
+        return reloadSiteConfig()
+    }, [setReloadStartedAt, reloadSiteConfig])
+
+    const onSave = useCallback(
+        async (newContents: string): Promise<void> => {
+            eventLogger.log('SiteConfigurationSaved')
+
+            const lastConfiguration = data?.site?.configuration
+            const lastConfigurationID = lastConfiguration?.id || 0
+
+            const result = await updateSiteConfig({
+                variables: {
+                    lastID: lastConfigurationID,
+                    input: newContents,
                 },
-                error => this.setState({ error, loading: false })
+            })
+
+            const restartToApply = result.data?.updateSiteConfiguration
+
+            const oldContents = lastConfiguration?.effectiveContents || ''
+            const oldConfiguration = jsonc.parse(oldContents) as SiteConfiguration
+            const newConfiguration = jsonc.parse(newContents) as SiteConfiguration
+
+            // Flipping these feature flags require a reload for the
+            // UI to be rendered correctly in the navbar and the sidebar.
+            const keys: (keyof SiteConfiguration)[] = ['batchChanges.enabled', 'codeIntelAutoIndexing.enabled']
+
+            if (!keys.every(key => !!oldConfiguration?.[key] === !!newConfiguration?.[key])) {
+                window.location.reload()
+            }
+
+            setEnabledCompletions(!oldConfiguration?.completions?.enabled && !!newConfiguration?.completions?.enabled)
+
+            if (restartToApply) {
+                window.context.needServerRestart = restartToApply
+            } else {
+                // Refresh site flags so that global site alerts
+                // reflect the latest configuration.
+                try {
+                    await refreshSiteFlags(client)
+                } catch (error) {
+                    logger.error(error)
+                }
+            }
+        },
+        [client, data, setEnabledCompletions, updateSiteConfig]
+    )
+
+    let effectiveError: Error | undefined = error || reloadError
+    if (updateError) {
+        effectiveError =
+            effectiveError ||
+            new Error(
+                String(updateError) +
+                    '\nError occured while attempting to save site configuration. Please backup changes before reloading the page.'
             )
-        )
-        this.remoteRefreshes.next()
-
-        this.subscriptions.add(
-            this.siteReloads
-                .pipe(
-                    tap(() => this.setState({ reloadStartedAt: Date.now(), error: undefined })),
-                    mergeMap(reloadSite),
-                    delay(2000),
-                    mergeMap(() =>
-                        // wait for server to restart
-                        fetchSite().pipe(
-                            retryWhen(errors =>
-                                errors.pipe(
-                                    tap(() => this.forceUpdate()),
-                                    delay(500)
-                                )
-                            ),
-                            timeout(10000)
-                        )
-                    ),
-                    tap(() => this.remoteRefreshes.next())
-                )
-                .subscribe(
-                    () => {
-                        this.setState({ reloadStartedAt: undefined })
-                        window.location.reload() // brute force way to reload view state
-                    },
-                    error => this.setState({ reloadStartedAt: undefined, error })
-                )
-        )
     }
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+    const alerts: JSX.Element[] = []
+    if (effectiveError) {
+        alerts.push(<ErrorAlert key="error" className={styles.alert} error={effectiveError} />)
     }
-
-    public render(): JSX.Element | null {
-        const alerts: JSX.Element[] = []
-        if (this.state.error) {
-            alerts.push(<ErrorAlert key="error" className={styles.alert} error={this.state.error} />)
-        }
-        if (this.state.reloadStartedAt) {
-            alerts.push(
-                <Alert key="error" className={styles.alert} variant="primary">
+    if (reloadLoading) {
+        alerts.push(
+            <Alert key="error" className={styles.alert} variant="primary">
+                <Text>
+                    <LoadingSpinner /> Waiting for site to reload...
+                </Text>
+                {Date.now() - reloadStartedAt.valueOf() > EXPECTED_RELOAD_WAIT && (
                     <Text>
-                        <LoadingSpinner /> Waiting for site to reload...
+                        <small>It's taking longer than expected. Check the server logs for error messages.</small>
                     </Text>
-                    {Date.now() - this.state.reloadStartedAt > EXPECTED_RELOAD_WAIT && (
-                        <Text>
-                            <small>It's taking longer than expected. Check the server logs for error messages.</small>
-                        </Text>
-                    )}
-                </Alert>
-            )
-        }
-        if (this.state.restartToApply) {
-            alerts.push(
-                <Alert key="remote-dirty" className={classNames(styles.alert, styles.alertFlex)} variant="warning">
-                    Server restart is required for the configuration to take effect.
-                    {(this.state.site === undefined || this.state.site?.canReloadSite) && (
-                        <Button onClick={this.reloadSite} variant="primary" size="sm">
-                            Restart server
-                        </Button>
-                    )}
-                </Alert>
-            )
-        }
-        if (
-            this.state.site?.configuration?.validationMessages &&
-            this.state.site.configuration.validationMessages.length > 0
-        ) {
-            alerts.push(
-                <Alert key="validation-messages" className={styles.alert} variant="danger">
-                    <Text>The server reported issues in the last-saved config:</Text>
-                    <ul>
-                        {this.state.site.configuration.validationMessages.map((message, index) => (
-                            <li key={index} className={styles.alertItem}>
-                                {message}
-                            </li>
-                        ))}
-                    </ul>
-                </Alert>
-            )
-        }
+                )}
+            </Alert>
+        )
+    }
+    if (window.context.needServerRestart) {
+        alerts.push(
+            <Alert key="remote-dirty" className={classNames(styles.alert, styles.alertFlex)} variant="warning">
+                Server restart is required for the configuration to take effect.
+                {(!data?.site || data.site?.canReloadSite) && (
+                    <Button onClick={reloadSite} variant="primary" size="sm">
+                        Restart server
+                    </Button>
+                )}
+            </Alert>
+        )
+    }
+    if (data?.site?.configuration?.validationMessages && data?.site.configuration.validationMessages.length > 0) {
+        alerts.push(
+            <Alert key="validation-messages" className={styles.alert} variant="danger">
+                <Text>The server reported issues in the last-saved config:</Text>
+                <ul>
+                    {data?.site.configuration.validationMessages.map((message, index) => (
+                        <li key={index} className={styles.alertItem}>
+                            {message}
+                        </li>
+                    ))}
+                </ul>
+            </Alert>
+        )
+    }
 
-        // Avoid user confusion with values.yaml properties mixed in with site config properties.
-        const contents = this.state.site?.configuration?.effectiveContents
-        const legacyKubernetesConfigProps = [
-            'alertmanagerConfig',
-            'alertmanagerURL',
-            'authProxyIP',
-            'authProxyPassword',
-            'deploymentOverrides',
-            'gitoliteIP',
-            'gitserverCount',
-            'gitserverDiskSize',
-            'gitserverSSH',
-            'httpNodePort',
-            'httpsNodePort',
-            'indexedSearchDiskSize',
-            'langGo',
-            'langJava',
-            'langJavaScript',
-            'langPHP',
-            'langPython',
-            'langSwift',
-            'langTypeScript',
-            'nodeSSDPath',
-            'phabricatorIP',
-            'prometheus',
-            'pyPIIP',
-            'rbac',
-            'storageClass',
-            'useAlertManager',
-        ].filter(property => contents?.includes(`"${property}"`))
-        if (legacyKubernetesConfigProps.length > 0) {
-            alerts.push(
-                <Alert key="legacy-cluster-props-present" className={styles.alert} variant="info">
-                    The configuration contains properties that are valid only in the
-                    <Code>values.yaml</Code> config file used for Kubernetes cluster deployments of Sourcegraph:{' '}
-                    <Code>{legacyKubernetesConfigProps.join(' ')}</Code>. You can disregard the validation warnings for
-                    these properties reported by the configuration editor.
-                </Alert>
-            )
-        }
+    // Avoid user confusion with values.yaml properties mixed in with site config properties.
+    const contents = data?.site?.configuration?.effectiveContents
+    const legacyKubernetesConfigProps = [
+        'alertmanagerConfig',
+        'alertmanagerURL',
+        'authProxyIP',
+        'authProxyPassword',
+        'deploymentOverrides',
+        'gitoliteIP',
+        'gitserverCount',
+        'gitserverDiskSize',
+        'gitserverSSH',
+        'httpNodePort',
+        'httpsNodePort',
+        'indexedSearchDiskSize',
+        'langGo',
+        'langJava',
+        'langJavaScript',
+        'langPHP',
+        'langPython',
+        'langSwift',
+        'langTypeScript',
+        'nodeSSDPath',
+        'phabricatorIP',
+        'prometheus',
+        'pyPIIP',
+        'rbac',
+        'storageClass',
+        'useAlertManager',
+    ].filter(property => contents?.includes(`"${property}"`))
+    if (legacyKubernetesConfigProps.length > 0) {
+        alerts.push(
+            <Alert key="legacy-cluster-props-present" className={styles.alert} variant="info">
+                The configuration contains properties that are valid only in the
+                <Code>values.yaml</Code> config file used for Kubernetes cluster deployments of Sourcegraph:{' '}
+                <Code>{legacyKubernetesConfigProps.join(' ')}</Code>. You can disregard the validation warnings for
+                these properties reported by the configuration editor.
+            </Alert>
+        )
+    }
 
-        if (this.state.enabledCompletions) {
-            alerts.push(
-                <Alert key="cody-beta-notice" className={styles.alert} variant="info">
-                    By turning on completions for "Cody beta," you have read the{' '}
-                    <Link to="/help/cody">Cody Documentation</Link> and agree to the{' '}
-                    <Link to="https://about.sourcegraph.com/terms/cody-notice">Cody Notice and Usage Policy</Link>. In
-                    particular, some code snippets will be sent to a third-party language model provider when you use
-                    Cody questions.
-                </Alert>
-            )
-        }
+    if (enabledCompletions) {
+        alerts.push(
+            <Alert key="cody-beta-notice" className={styles.alert} variant="info">
+                By turning on completions for "Cody beta," you have read the{' '}
+                <Link to="/help/cody">Cody Documentation</Link> and agree to the{' '}
+                <Link to="https://about.sourcegraph.com/terms/cody-notice">Cody Notice and Usage Policy</Link>. In
+                particular, some code snippets will be sent to a third-party language model provider when you use Cody
+                questions.
+            </Alert>
+        )
+    }
 
-        const isReloading = typeof this.state.reloadStartedAt === 'number'
-
-        return (
-            <div>
-                <PageTitle title="Configuration - Admin" />
-                <PageHeader
-                    path={[{ text: 'Site configuration' }]}
-                    headingElement="h2"
-                    description={
-                        <>
-                            View and edit the Sourcegraph site configuration. See{' '}
-                            <Link target="_blank" to="/help/admin/config/site_config">
-                                documentation
-                            </Link>{' '}
-                            for more information.
-                        </>
-                    }
-                    className="mb-3"
-                />
-                <Container className="mb-3">
-                    <div>{alerts}</div>
-                    {this.state.loading && <LoadingSpinner />}
-                    {this.state.site?.configuration && (
-                        <div>
-                            <DynamicallyImportedMonacoSettingsEditor
-                                value={contents || ''}
-                                jsonSchema={siteSchemaJSON}
-                                canEdit={true}
-                                saving={this.state.saving}
-                                loading={isReloading || this.state.saving}
-                                height={600}
-                                isLightTheme={this.props.isLightTheme}
-                                onSave={this.onSave}
-                                actions={this.props.isSourcegraphApp ? [] : quickConfigureActions}
-                                telemetryService={this.props.telemetryService}
-                                explanation={
-                                    <Text className="form-text text-muted">
-                                        <small>
-                                            Use Ctrl+Space for completion, and hover over JSON properties for
-                                            documentation. For more information, see the{' '}
-                                            <Link to="/help/admin/config/site_config">documentation</Link>.
-                                        </small>
+    return (
+        <div>
+            <PageTitle title="Configuration - Admin" />
+            <PageHeader path={[{ text: 'Site configuration' }]} headingElement="h2" className="mb-3" />
+            <div>{alerts}</div>
+            {loading && <LoadingSpinner />}
+            {isSetupChecklistEnabled && data && (
+                <Tabs defaultIndex={tabIndex} onChange={setTabIndex} size="medium">
+                    <TabList>
+                        <Tab>Basic</Tab>
+                        <Tab>JSON</Tab>
+                    </TabList>
+                    <TabPanels>
+                        <TabPanel>
+                            <Container className="mt-3">
+                                <SMTPConfigForm
+                                    authenticatedUser={authenticatedUser}
+                                    config={data?.site?.configuration?.effectiveContents}
+                                    saveConfig={onSave}
+                                    loading={loading || updateLoading}
+                                    error={updateError}
+                                />
+                            </Container>
+                        </TabPanel>
+                        <TabPanel>
+                            {data?.site?.configuration && (
+                                <Container className="mt-3">
+                                    <Text className="mb-3">
+                                        View and edit the Sourcegraph site configuration. See{' '}
+                                        <Link target="_blank" to="/help/admin/config/site_config">
+                                            documentation
+                                        </Link>{' '}
+                                        for more information.
                                     </Text>
-                                }
-                            />
-                        </div>
-                    )}
+                                    <DynamicallyImportedMonacoSettingsEditor
+                                        value={contents || ''}
+                                        jsonSchema={siteSchemaJSON}
+                                        canEdit={true}
+                                        saving={updateLoading}
+                                        loading={loading || reloadLoading || updateLoading}
+                                        height={600}
+                                        isLightTheme={isLightTheme}
+                                        onSave={onSave}
+                                        actions={
+                                            isSourcegraphApp || isSetupChecklistEnabled ? [] : quickConfigureActions
+                                        }
+                                        telemetryService={telemetryService}
+                                        explanation={
+                                            <Text className="form-text text-muted">
+                                                <small>
+                                                    Use Ctrl+Space for completion, and hover over JSON properties for
+                                                    documentation. For more information, see the{' '}
+                                                    <Link to="/help/admin/config/site_config">documentation</Link>.
+                                                </small>
+                                            </Text>
+                                        }
+                                    />
+                                </Container>
+                            )}
+                        </TabPanel>
+                    </TabPanels>
+                </Tabs>
+            )}
+            {!isSetupChecklistEnabled && data?.site?.configuration && (
+                <Container className="mt-3">
+                    <Text className="mb-3">
+                        View and edit the Sourcegraph site configuration. See{' '}
+                        <Link target="_blank" to="/help/admin/config/site_config">
+                            documentation
+                        </Link>{' '}
+                        for more information.
+                    </Text>
+                    <DynamicallyImportedMonacoSettingsEditor
+                        value={contents || ''}
+                        jsonSchema={siteSchemaJSON}
+                        canEdit={true}
+                        saving={updateLoading}
+                        loading={loading || reloadLoading || updateLoading}
+                        height={600}
+                        isLightTheme={isLightTheme}
+                        onSave={onSave}
+                        actions={isSourcegraphApp || isSetupChecklistEnabled ? [] : quickConfigureActions}
+                        telemetryService={telemetryService}
+                        explanation={
+                            <Text className="form-text text-muted">
+                                <small>
+                                    Use Ctrl+Space for completion, and hover over JSON properties for documentation. For
+                                    more information, see the{' '}
+                                    <Link to="/help/admin/config/site_config">documentation</Link>.
+                                </small>
+                            </Text>
+                        }
+                    />
                 </Container>
+            )}
+            <div className="mt-3">
                 <SiteConfigurationChangeList />
             </div>
-        )
-    }
-
-    private onSave = async (newContents: string): Promise<string> => {
-        eventLogger.log('SiteConfigurationSaved')
-
-        this.setState({ saving: true, error: undefined })
-
-        const lastConfiguration = this.state.site?.configuration
-        const lastConfigurationID = lastConfiguration?.id || 0
-
-        let restartToApply = false
-        try {
-            restartToApply = await updateSiteConfiguration(lastConfigurationID, newContents).toPromise<boolean>()
-        } catch (error) {
-            logger.error(error)
-            this.setState({
-                saving: false,
-                error: new Error(
-                    String(error) +
-                        '\nError occured while attempting to save site configuration. Please backup changes before reloading the page.'
-                ),
-            })
-            throw error
-        }
-
-        const oldContents = lastConfiguration?.effectiveContents || ''
-        const oldConfiguration = jsonc.parse(oldContents) as SiteConfiguration
-        const newConfiguration = jsonc.parse(newContents) as SiteConfiguration
-
-        // Flipping these feature flags require a reload for the
-        // UI to be rendered correctly in the navbar and the sidebar.
-        const keys: (keyof SiteConfiguration)[] = ['batchChanges.enabled', 'codeIntelAutoIndexing.enabled']
-
-        if (!keys.every(key => Boolean(oldConfiguration?.[key]) === Boolean(newConfiguration?.[key]))) {
-            window.location.reload()
-        }
-
-        this.setState({
-            enabledCompletions:
-                !oldConfiguration?.completions?.enabled && Boolean(newConfiguration?.completions?.enabled),
-        })
-
-        if (restartToApply) {
-            window.context.needServerRestart = restartToApply
-        } else {
-            // Refresh site flags so that global site alerts
-            // reflect the latest configuration.
-            try {
-                await refreshSiteFlags(this.props.client)
-            } catch (error) {
-                logger.error(error)
-            }
-        }
-        this.setState({ restartToApply })
-
-        try {
-            const site = await fetchSite().toPromise()
-
-            this.setState({
-                site,
-                error: undefined,
-                loading: false,
-            })
-
-            this.setState({ saving: false })
-
-            return site.configuration.effectiveContents
-        } catch (error) {
-            this.setState({ error, loading: false })
-            throw error
-        }
-    }
-
-    private reloadSite = (): void => {
-        eventLogger.log('SiteReloaded')
-        this.siteReloads.next()
-    }
+        </div>
+    )
 }

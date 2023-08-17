@@ -4,7 +4,6 @@ package auth
 import (
 	"fmt"
 	"net/http"
-	"sort"
 	"strings"
 
 	"github.com/sourcegraph/log"
@@ -25,8 +24,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/saml"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/sourcegraphoperator"
 	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 )
 
@@ -60,60 +61,66 @@ func Init(logger log.Logger, db database.DB) {
 	app.RegisterSSOSignOutHandler(ssoSignOutHandler)
 
 	// Warn about usage of auth providers that are not enabled by the license.
-	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
-		// Only site admins can act on this alert, so only show it to site admins.
-		if !args.IsSiteAdmin {
-			return nil
+	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, requireLicenseOrSuggestSSOAlerts)
+}
+
+func requireLicenseOrSuggestSSOAlerts(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
+	// Only site admins can act on this alert, so only show it to site admins.
+	if !args.IsSiteAdmin {
+		return nil
+	}
+
+	names := collections.NewSet[string]()
+	for _, p := range conf.Get().AuthProviders {
+		// Only built-in authentication provider is allowed by default.
+		if p.Builtin != nil {
+			continue
 		}
 
-		if licensing.IsFeatureEnabledLenient(licensing.FeatureSSO) {
-			return nil
+		var name string
+		switch {
+		case p.Github != nil:
+			name = "GitHub OAuth"
+		case p.Gitlab != nil:
+			name = "GitLab OAuth"
+		case p.Bitbucketcloud != nil:
+			name = "Bitbucket Cloud OAuth"
+		case p.AzureDevOps != nil:
+			name = "Azure DevOps"
+		case p.HttpHeader != nil:
+			name = "HTTP header"
+		case p.Openidconnect != nil:
+			name = "OpenID Connect"
+		case p.Saml != nil:
+			name = "SAML"
+		default:
+			name = "Other"
 		}
 
-		collected := make(map[string]struct{})
-		var names []string
-		for _, p := range conf.Get().AuthProviders {
-			// Only built-in authentication provider is allowed by default.
-			if p.Builtin != nil {
-				continue
-			}
-
-			var name string
-			switch {
-			case p.Github != nil:
-				name = "GitHub OAuth"
-			case p.Gitlab != nil:
-				name = "GitLab OAuth"
-			case p.Bitbucketcloud != nil:
-				name = "Bitbucket Cloud OAuth"
-			case p.AzureDevOps != nil:
-				name = "Azure DevOps"
-			case p.HttpHeader != nil:
-				name = "HTTP header"
-			case p.Openidconnect != nil:
-				name = "OpenID Connect"
-			case p.Saml != nil:
-				name = "SAML"
-			default:
-				name = "Other"
-			}
-
-			if _, ok := collected[name]; !ok {
-				collected[name] = struct{}{}
-				names = append(names, name)
-			}
+		if !names.Has(name) {
+			names.Add(name)
 		}
-		if len(names) == 0 {
-			return nil
-		}
+	}
 
-		sort.Strings(names)
+	if len(names) > 0 && !licensing.IsFeatureEnabledLenient(licensing.FeatureSSO) {
+		sortedNames := names.Sorted(collections.NaturalCompare[string])
 		return []*graphqlbackend.Alert{{
 			GroupValue:   graphqlbackend.AlertGroupLicense,
 			TypeValue:    graphqlbackend.AlertTypeError,
-			MessageValue: fmt.Sprintf("A Sourcegraph license is required to enable following authentication providers: %s. [**Get a license.**](/site-admin/license)", strings.Join(names, ", ")),
+			MessageValue: fmt.Sprintf("A Sourcegraph license is required to enable following authentication providers: %s. [**Get a license.**](/site-admin/license)", strings.Join(sortedNames, ", ")),
 		}}
-	})
+	}
+
+	if len(names) == 0 && licensing.IsFeatureEnabledLenient(licensing.FeatureSSO) && featureflag.FromContext(args.Ctx).GetBoolOr("setup-checklist", false) {
+		return []*graphqlbackend.Alert{{
+			GroupValue:                graphqlbackend.AlertGroupAuthentication,
+			TypeValue:                 graphqlbackend.AlertTypeWarning,
+			MessageValue:              "We recommend that enterprise instances use SSO or SAML to authenticate users. [Set up authentication now](/site-admin/configuration)",
+			IsDismissibleWithKeyValue: "configure-sso-providers",
+		}}
+	}
+
+	return nil
 }
 
 func ssoSignOutHandler(w http.ResponseWriter, r *http.Request) {
