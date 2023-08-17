@@ -83,8 +83,10 @@ if [[ "$IS_MAIN" != "true" ]]; then
     sed -i "s/$element@sourcegraph/$element@branch/g" "${name}.yaml"
   done
 
-  echo "Updated image config:"
+  echo -e "\nUpdated image config:"
+  echo "------------"
   cat "${name}.yaml"
+  echo "------------"
 fi
 
 # Build base image with apko
@@ -117,7 +119,7 @@ fi
 # Show image usage message on branches
 if [[ "$IS_MAIN" != "true" ]]; then
   if [[ -n "$BUILDKITE" ]]; then
-    echo -e "Run the \`${name}\` image locally using:
+    echo -e "Run the \`${name}\` base image locally using:
 \`\`\`
 docker pull us.gcr.io/sourcegraph-dev/wolfi-${name}-base:${tag}
   \`\`\`" | "$REPO_DIR/enterprise/dev/ci/scripts/annotate.sh" -m -t "info"
