@@ -58,3 +58,9 @@ type User struct {
 type EmptyResponse struct {
 	AlwaysNil string
 }
+
+type GitserverInstance struct {
+	Shard               string
+	FreeDiskSpaceBytes  string
+	TotalDiskSpaceBytes string
+}

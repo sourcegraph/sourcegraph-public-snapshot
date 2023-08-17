@@ -7,13 +7,14 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const gitserverIDKind = "Gitserver"
 
 func marshalGitserverID(id string) graphql.ID { return relay.MarshalID(gitserverIDKind, id) }
 
-func UnmarshalGitserverID(id graphql.ID) (gitserverID int32, err error) {
+func unmarshalGitserverID(id graphql.ID) (gitserverID string, err error) {
 	err = relay.UnmarshalSpec(id, &gitserverID)
 	return
 }
@@ -24,7 +25,28 @@ func (r *schemaResolver) gitserverByID(ctx context.Context, id graphql.ID) (*git
 		return nil, err
 	}
 
-	return &gitserverResolver{}, nil
+	address, err := unmarshalGitserverID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	infos, err := r.gitserverClient.SystemInfo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Naive implemention that just returns the first gitserver matching the address
+	for _, info := range infos {
+		if info.Address == address {
+			return &gitserverResolver{
+				address:             address,
+				freeDiskSpaceBytes:  info.FreeSpace,
+				totalDiskSpaceBytes: info.TotalSpace,
+			}, nil
+		}
+	}
+
+	return nil, errors.New("gitserver instance not found")
 }
 
 func (r *schemaResolver) Gitservers(ctx context.Context) ([]*gitserverResolver, error) {
