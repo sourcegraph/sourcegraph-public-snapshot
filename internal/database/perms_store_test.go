@@ -552,7 +552,7 @@ func checkUserRepoPermissions(t *testing.T, s *permsStore, where *sqlf.Query, ex
 
 func setupPermsRelatedEntities(t *testing.T, s *permsStore, permissions []authz.Permission) {
 	t.Helper()
-	if permissions == nil || len(permissions) == 0 {
+	if len(permissions) == 0 {
 		t.Fatal("no permissions to setup related entities for")
 	}
 
