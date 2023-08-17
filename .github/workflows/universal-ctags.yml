@@ -5,6 +5,9 @@ on:
     paths:
     - 'dev/nix/ctags.nix'
   workflow_dispatch:
+permissions:
+  contents: 'read'
+  id-token: 'write'
 
 jobs:
   x86_64-darwin:
