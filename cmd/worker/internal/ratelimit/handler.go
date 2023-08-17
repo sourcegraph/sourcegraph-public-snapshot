@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -20,25 +21,15 @@ var (
 	defaultGitReplenishmentInterval = int32(1)
 )
 
-type hdlr struct {
+var _ goroutine.Handler = &handler{}
+
+type handler struct {
 	codeHostStore  database.CodeHostStore
-	ratelimiter    ratelimit.CodeHostRateLimiter
+	rateLimiter    ratelimit.CodeHostRateLimiter
 	observationCtx *observation.Context
 }
 
-type handler interface {
-	Handle(ctx context.Context) error
-}
-
-func newHandler(observationCtx *observation.Context, codeHostStore database.CodeHostStore, ratelimiter ratelimit.CodeHostRateLimiter) handler {
-	return &hdlr{
-		observationCtx: observationCtx,
-		codeHostStore:  codeHostStore,
-		ratelimiter:    ratelimiter,
-	}
-}
-
-func (h *hdlr) Handle(ctx context.Context) error {
+func (h *handler) Handle(ctx context.Context) error {
 	codeHosts, _, err := h.codeHostStore.List(ctx, database.ListCodeHostsOpts{})
 	if err != nil {
 		return err
@@ -64,7 +55,7 @@ func (h *hdlr) Handle(ctx context.Context) error {
 	return errs
 }
 
-func (h *hdlr) processCodeHost(ctx context.Context, codeHost types.CodeHost, fallbackGitQuota int32) error {
+func (h *handler) processCodeHost(ctx context.Context, codeHost types.CodeHost, fallbackGitQuota int32) error {
 	configs, err := h.getRateLimitConfigsOrDefaults(codeHost, fallbackGitQuota)
 	if err != nil {
 		return err
@@ -74,14 +65,14 @@ func (h *hdlr) processCodeHost(ctx context.Context, codeHost types.CodeHost, fal
 	// in oder to try to avoid any outages as much as possible.
 
 	// Set API token values
-	err = h.ratelimiter.SetCodeHostAPIRateLimitConfig(ctx, codeHost.URL, configs.ApiQuota, configs.ApiReplenishmentInterval)
+	err = h.rateLimiter.SetCodeHostAPIRateLimitConfig(ctx, codeHost.URL, configs.ApiQuota, configs.ApiReplenishmentInterval)
 	// Set Git token values
-	err2 := h.ratelimiter.SetCodeHostGitRateLimitConfig(ctx, codeHost.URL, configs.GitQuota, configs.GitReplenishmentInterval)
+	err2 := h.rateLimiter.SetCodeHostGitRateLimitConfig(ctx, codeHost.URL, configs.GitQuota, configs.GitReplenishmentInterval)
 
 	return errors.CombineErrors(err, err2)
 }
 
-func (h *hdlr) getRateLimitConfigsOrDefaults(codeHost types.CodeHost, fallbackGitQuota int32) (codeHostRateLimitConfigs, error) {
+func (h *handler) getRateLimitConfigsOrDefaults(codeHost types.CodeHost, fallbackGitQuota int32) (codeHostRateLimitConfigs, error) {
 	var configs codeHostRateLimitConfigs
 
 	// Determine the values of the 4 rate limit configurations by using their set value from the database or their default value if they are not set.

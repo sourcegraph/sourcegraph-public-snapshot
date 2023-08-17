@@ -86,9 +86,9 @@ func TestHandler_Handle(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create the handler to start the test
-	h := hdlr{
+	h := handler{
 		codeHostStore:  db.CodeHosts(),
-		ratelimiter:    ratelimit.NewCodeHostRateLimiter(rateLimiter),
+		rateLimiter:    ratelimit.NewCodeHostRateLimiter(rateLimiter),
 		observationCtx: obsCtx,
 	}
 	err = h.Handle(ctx)
