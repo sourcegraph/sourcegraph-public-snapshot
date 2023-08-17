@@ -53,7 +53,7 @@ for apk in "${apks[@]}"; do
   if gsutil -q -u "$GCP_PROJECT" stat "${dest_path_main}${apk}"; then
     echo -e "The production package repository already contains the package '$package_name' version '$package_version' at '${dest_path_main}${apk}'.\n\n
 Resolve this issue by incrementing the 'epoch' field in the package's YAML file." |
-      ../../../enterprise/dev/ci/scripts/annotate.sh -s "package-version-exists" -t "error"
+      ../../../enterprise/dev/ci/scripts/annotate.sh -t "error"
 
     # Soft fail at the end - we still want to allow the package to be uploaded for cases like a Buildkite pipeline being rerun
     error="true"
@@ -81,7 +81,7 @@ contents:
     - '@branch https://packages.sgdev.org/${BRANCH_PATH}'
   packages:
 $package_usage_list
-  \`\`\`" | ../../../enterprise/dev/ci/scripts/annotate.sh -s "custom-repo" -m -t "info"
+  \`\`\`" | ../../../enterprise/dev/ci/scripts/annotate.sh -m -t "info"
   fi
 fi
 
