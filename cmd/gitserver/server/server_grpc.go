@@ -70,7 +70,7 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 	internalReq := protocol.ExecRequest{
 		Repo:           api.RepoName(req.GetRepo()),
 		EnsureRevision: req.GetEnsureRevision(),
-		Args:           req.GetArgs(),
+		Args:           byteSlicesToStrings(req.GetArgs()),
 		Stdin:          req.GetStdin(),
 		NoTimeout:      req.GetNoTimeout(),
 	}
@@ -82,7 +82,7 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 	})
 
 	// Log which actor is accessing the repo.
-	args := req.GetArgs()
+	args := byteSlicesToStrings(req.GetArgs())
 	cmd := ""
 	if len(args) > 0 {
 		cmd = args[0]
@@ -404,4 +404,12 @@ func (gs *GRPCServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoClon
 		return nil, err
 	}
 	return resp.ToProto(), nil
+}
+
+func byteSlicesToStrings(in [][]byte) []string {
+	res := make([]string, len(in))
+	for i, b := range in {
+		res[i] = string(b)
+	}
+	return res
 }
