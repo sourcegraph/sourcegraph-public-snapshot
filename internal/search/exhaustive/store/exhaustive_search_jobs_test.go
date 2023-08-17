@@ -82,10 +82,13 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Cleanup(func() {
+				cleanupSearchJobs(bs)
+			})
+
 			if test.setup != nil {
 				require.NoError(t, test.setup(s))
 			}
-			defer cleanupSearchJobs(bs)
 
 			jobID, err := s.CreateExhaustiveSearchJob(context.Background(), test.job)
 

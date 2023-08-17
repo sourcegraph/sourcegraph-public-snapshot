@@ -56,7 +56,7 @@ func TestStore_CreateExhaustiveSearchRepoJob(t *testing.T) {
 			job: types.ExhaustiveSearchRepoJob{
 				SearchJobID: searchJobID,
 				RepoID:      repoID,
-				RefSpec:     "foo@bar",
+				RefSpec:     "bar:baz",
 			},
 			expectedErr: nil,
 		},
@@ -64,7 +64,7 @@ func TestStore_CreateExhaustiveSearchRepoJob(t *testing.T) {
 			name: "Missing repo ID",
 			job: types.ExhaustiveSearchRepoJob{
 				SearchJobID: searchJobID,
-				RefSpec:     "foo@bar",
+				RefSpec:     "bar:baz",
 			},
 			expectedErr: errors.New("missing repo ID"),
 		},
@@ -72,7 +72,7 @@ func TestStore_CreateExhaustiveSearchRepoJob(t *testing.T) {
 			name: "Missing search job ID",
 			job: types.ExhaustiveSearchRepoJob{
 				RepoID:  repoID,
-				RefSpec: "foo@bar",
+				RefSpec: "bar:baz",
 			},
 			expectedErr: errors.New("missing search job ID"),
 		},
@@ -87,7 +87,9 @@ func TestStore_CreateExhaustiveSearchRepoJob(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			defer cleanupRepoJobs(bs)
+			t.Cleanup(func() {
+				cleanupRepoJobs(bs)
+			})
 
 			jobID, err := s.CreateExhaustiveSearchRepoJob(context.Background(), test.job)
 
