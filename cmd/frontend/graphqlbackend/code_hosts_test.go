@@ -130,30 +130,30 @@ func TestSchemaResolver_CodeHosts(t *testing.T) {
 				Context:   ctx,
 				Schema:    mustParseGraphQLSchema(t, db),
 				Variables: variables,
-				Query: `query CodeHosts($first: Int $after: String){
-			  codeHosts(first:$first, after:$after) {
-				pageInfo{
-				  endCursor
-				  hasNextPage
-				}
-				totalCount
-				nodes{
-				  id
-				  kind
-				  url
-				  apiRateLimitQuota
-				  apiRateLimitIntervalSeconds
-				  gitRateLimitQuota
-				  gitRateLimitIntervalSeconds
-				  externalServices(first:1){
-					nodes{
-					  id
-					  displayName
+				Query: `query CodeHosts($first: Int, $after: String) {
+					codeHosts(first: $first, after: $after) {
+						pageInfo {
+							endCursor
+							hasNextPage
+						}
+						totalCount
+						nodes {
+							id
+							kind
+							url
+							apiRateLimitQuota
+							apiRateLimitIntervalSeconds
+							gitRateLimitQuota
+							gitRateLimitIntervalSeconds
+							externalServices(first: 1) {
+								nodes {
+									id
+									displayName
+								}
+							}
+						}
 					}
-                  }
-				}
-			  }
-			}`,
+				}`,
 				ExpectedResult: `{
 			   "codeHosts":{
 				  "nodes":[
@@ -227,14 +227,14 @@ func TestCodeHostByID(t *testing.T) {
 		Schema:    mustParseGraphQLSchema(t, db),
 		Variables: variables,
 		Query: `query CodeHostByID() {
-		  node(id:"Q29kZUhvc3Q6Mg=="){
-			id
-			__typename
-			... on CodeHost {
-				kind
-				url
+			node(id: "Q29kZUhvc3Q6Mg==") {
+				id
+				__typename
+				... on CodeHost {
+					kind
+					url
+				}
 			}
-		  }
 		}`,
 		ExpectedResult: `{
 			"node": {
