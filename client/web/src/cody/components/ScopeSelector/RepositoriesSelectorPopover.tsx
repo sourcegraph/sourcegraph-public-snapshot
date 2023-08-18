@@ -15,6 +15,7 @@ import {
 import classNames from 'classnames'
 
 import { useLazyQuery } from '@sourcegraph/http-client'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import {
     Icon,
@@ -73,6 +74,7 @@ export const RepositoriesSelectorPopover: React.FC<{
     // Whether to encourage the popover to overlap its trigger if necessary, rather than
     // collapsing or flipping position.
     encourageOverlap?: boolean
+    authenticatedUser: AuthenticatedUser | null
 }> = React.memo(function RepositoriesSelectorPopoverContent({
     inferredRepository,
     inferredFilePath,
@@ -85,6 +87,7 @@ export const RepositoriesSelectorPopover: React.FC<{
     toggleIncludeInferredRepository,
     toggleIncludeInferredFile,
     encourageOverlap = false,
+    authenticatedUser,
 }) {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
     const [searchText, setSearchText] = useState('')
@@ -113,12 +116,12 @@ export const RepositoriesSelectorPopover: React.FC<{
         if (searchTextDebounced) {
             /* eslint-disable no-console */
             searchRepositories({
-                variables: { query: searchTextDebounced, includeJobs: !!window.context.currentUser?.siteAdmin },
+                variables: { query: searchTextDebounced, includeJobs: !!authenticatedUser?.siteAdmin },
                 pollInterval: 5000,
             }).catch(console.error)
             /* eslint-enable no-console */
         }
-    }, [searchTextDebounced, searchRepositories])
+    }, [searchTextDebounced, searchRepositories, authenticatedUser?.siteAdmin])
 
     const [isCalloutDismissed = true, setIsCalloutDismissed] = useTemporarySetting(
         'cody.contextCallout.dismissed',
@@ -254,7 +257,10 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                             {getFileName(inferredFilePath)}
                                                         </span>
                                                     </div>
-                                                    <EmbeddingExistsIcon repo={inferredRepository} />
+                                                    <EmbeddingExistsIcon
+                                                        repo={inferredRepository}
+                                                        authenticatedUser={authenticatedUser}
+                                                    />
                                                 </button>
                                             )}
                                             <button
@@ -284,7 +290,10 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                         {getRepoName(inferredRepository.name)}
                                                     </span>
                                                 </div>
-                                                <EmbeddingExistsIcon repo={inferredRepository} />
+                                                <EmbeddingExistsIcon
+                                                    repo={inferredRepository}
+                                                    authenticatedUser={authenticatedUser}
+                                                />
                                             </button>
                                         </div>
                                     )}
@@ -309,6 +318,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                     key={repository.id}
                                                     repository={repository}
                                                     removeRepository={removeRepository}
+                                                    authenticatedUser={authenticatedUser}
                                                 />
                                             ))}
                                         </div>
@@ -343,6 +353,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                 searchText={searchText}
                                                 addRepository={addRepository}
                                                 removeRepository={removeRepository}
+                                                authenticatedUser={authenticatedUser}
                                             />
                                         ))
                                     ) : !loadingSearchResults ? (
@@ -398,7 +409,8 @@ export const RepositoriesSelectorPopover: React.FC<{
 const AdditionalRepositoriesListItem: React.FC<{
     repository: IRepo
     removeRepository: (repoName: string) => void
-}> = React.memo(function RepositoryListItemContent({ repository, removeRepository }) {
+    authenticatedUser: AuthenticatedUser | null
+}> = React.memo(function RepositoryListItemContent({ repository, removeRepository, authenticatedUser }) {
     const onClick = useCallback(() => {
         removeRepository(repository.name)
     }, [repository, removeRepository])
@@ -421,7 +433,7 @@ const AdditionalRepositoriesListItem: React.FC<{
                 <ExternalRepositoryIcon externalRepo={repository.externalRepository} className={styles.repoIcon} />
                 <span className="text-truncate">{getRepoName(repository.name)}</span>
             </div>
-            <EmbeddingExistsIcon repo={repository} />
+            <EmbeddingExistsIcon repo={repository} authenticatedUser={authenticatedUser} />
         </button>
     )
 })
@@ -432,12 +444,14 @@ const SearchResultsListItem: React.FC<{
     searchText: string
     addRepository: (repoName: string) => void
     removeRepository: (repoName: string) => void
+    authenticatedUser: AuthenticatedUser | null
 }> = React.memo(function RepositoryListItemContent({
     additionalRepositories,
     repository,
     searchText,
     addRepository,
     removeRepository,
+    authenticatedUser,
 }) {
     const selected = useMemo(
         () => !!additionalRepositories.find(({ name }) => name === repository.name),
@@ -474,7 +488,7 @@ const SearchResultsListItem: React.FC<{
                 <ExternalRepositoryIcon externalRepo={repository.externalRepository} className={styles.repoIcon} />
                 {getTintedText(getRepoName(repository.name), searchText)}
             </div>
-            <EmbeddingExistsIcon repo={repository} />
+            <EmbeddingExistsIcon repo={repository} authenticatedUser={authenticatedUser} />
         </button>
     )
 })
@@ -594,12 +608,13 @@ export const isRepoIndexed = (repo: IRepo): boolean => getEmbeddingStatus(repo).
 
 const EmbeddingExistsIcon: React.FC<{
     repo: IRepo
-}> = React.memo(function EmbeddingExistsIconContent({ repo }) {
+    authenticatedUser: AuthenticatedUser | null
+}> = React.memo(function EmbeddingExistsIconContent({ repo, authenticatedUser }) {
     const { tooltip, icon, className } = getEmbeddingStatus(repo)
 
     return (
         <Tooltip content={tooltip}>
-            {window.context.currentUser?.siteAdmin ? (
+            {authenticatedUser?.siteAdmin ? (
                 <Link to="/site-admin/embeddings" className="text-body" onClick={event => event.stopPropagation()}>
                     <Icon aria-hidden={true} className={classNames(styles.icon, className)} svgPath={icon} />
                 </Link>

@@ -22,6 +22,7 @@ import {
     type FeedbackButtonsProps,
 } from '@sourcegraph/cody-ui/dist/Chat'
 import type { FileLinkProps } from '@sourcegraph/cody-ui/dist/chat/ContextFiles'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -44,9 +45,15 @@ interface IChatUIProps {
     codyChatStore: CodyChatStore
     isSourcegraphApp?: boolean
     isCodyChatPage?: boolean
+    authenticatedUser: AuthenticatedUser | null
 }
 
-export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp, isCodyChatPage }): JSX.Element => {
+export const ChatUI: React.FC<IChatUIProps> = ({
+    codyChatStore,
+    isSourcegraphApp,
+    isCodyChatPage,
+    authenticatedUser,
+}): JSX.Element => {
     const {
         submitMessage,
         editMessage,
@@ -91,6 +98,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
             isSourcegraphApp,
             logTranscriptEvent,
             className: 'mt-2',
+            authenticatedUser,
         }),
         [
             scope,
@@ -100,6 +108,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
             fetchRepositoryNames,
             isSourcegraphApp,
             logTranscriptEvent,
+            authenticatedUser,
         ]
     )
 
