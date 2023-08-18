@@ -50,7 +50,7 @@
                           "const": "video"
                         },
                         "value": {
-                          "$ref": "#/$defs/actionValue"
+                          "$ref": "#/$defs/ActionValue"
                         }
                       },
                       "required": ["type", "value"]
@@ -66,7 +66,7 @@
                           "const": "button-primary"
                         },
                         "value": {
-                          "$ref": "#/$defs/actionValue"
+                          "$ref": "#/$defs/ActionValue"
                         }
                       },
                       "required": ["type", "value"]
@@ -109,22 +109,21 @@
   "required": ["tasks"],
   "additionalProperties": false,
   "$defs": {
-    "actionValue": {
+    "ActionValue": {
       "oneOf": [
         {
           "type": "string"
         },
-        { "$ref": "#/$defs/languageRecord" }
-      ]
-    },
-    "languageRecord": {
-      "type": "object",
-      "patternProperties": {
-        "^.*$": {
-          "type": "string"
+        {
+          "type": "object",
+          "patternProperties": {
+            "^.*$": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
         }
-      },
-      "additionalProperties": false
+      ]
     }
   }
 }
