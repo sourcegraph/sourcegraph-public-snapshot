@@ -182,6 +182,9 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
     if (editor.getProject() == null) {
       return;
     }
+    if (!CodyAgent.isConnected(editor.getProject())) {
+      return;
+    }
     CodyAgentClient client = CodyAgent.getClient(editor.getProject());
     if (client.server == null) {
       return;
