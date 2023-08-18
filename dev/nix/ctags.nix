@@ -62,8 +62,12 @@ unNixifyDylibs { inherit pkgs; } (stdenv.mkDerivation rec {
     patchShebangs misc/*
   '';
 
+  # we create two symbolic links
+  # 1. ctags-$version: Used bazel in dev/tool_deps.bzl. With the version it allows us to pin the ctags version bazel uses
+  # 2. ctags: gets referenced by shell.nix and there is no version to ensure we always point to the latest.
   postFixup = ''
     ln -s $out/bin/ctags $out/bin/universal-ctags-$version
+    ln -s $out/bin/ctags $out/bin/universal-ctags
   '';
 
   doCheck = true;

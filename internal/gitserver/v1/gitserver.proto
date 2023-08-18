@@ -27,26 +27,32 @@ service GitserverService {
 // BatchLogRequest is a request to execute a `git log` command inside a set of
 // git repositories present on the target shard.
 message BatchLogRequest {
-  // repo_commits is the list of repositories and commits to run the git log command on.
+  // repo_commits is the list of repositories and commits to run the git log
+  // command on.
   repeated RepoCommit repo_commits = 1;
-  // format is the entire `--format=<format>` argument to git log. This value is expected to be non-empty.
+  // format is the entire `--format=<format>` argument to git log. This value is
+  // expected to be non-empty.
   string format = 2;
 }
 
 // BatchLogResponse contains the results of the BatchLog request.
 message BatchLogResponse {
-  // results is the list of results for each repository and commit pair from the input of a BatchLog request.
+  // results is the list of results for each repository and commit pair from the
+  // input of a BatchLog request.
   repeated BatchLogResult results = 1;
 }
 
-// BatchLogResult is the result that associates a repository and commit pair from the input of a BatchLog
-// request with the result of the associated git log command.
+// BatchLogResult is the result that associates a repository and commit pair
+// from the input of a BatchLog request with the result of the associated git
+// log command.
 message BatchLogResult {
-  // repo_commit is the repository and commit pair from the input of a BatchLog request.
+  // repo_commit is the repository and commit pair from the input of a BatchLog
+  // request.
   RepoCommit repo_commit = 1;
   // command_output is the output of the git log command.
   string command_output = 2;
-  // command_error is an optional error message if the git log command encountered an error.
+  // command_error is an optional error message if the git log command
+  // encountered an error.
   optional string command_error = 3;
 }
 
@@ -85,8 +91,8 @@ message PushConfig {
   string passphrase = 3;
 }
 
-// CreateCommitFromPatchBinaryRequest is the request information needed for creating
-// the simulated staging area git object for a repo.
+// CreateCommitFromPatchBinaryRequest is the request information needed for
+// creating the simulated staging area git object for a repo.
 message CreateCommitFromPatchBinaryRequest {
   // repo is the name of the repo to be updated
   string repo = 1;
@@ -96,7 +102,8 @@ message CreateCommitFromPatchBinaryRequest {
   bytes patch = 3;
   // target_ref is the ref that will be created for this patch
   string target_ref = 4;
-  // unique_ref is a boolean that indicates whether a unique number will be appended to the end (ie TargetRef-{#}). The generated ref will be returned.
+  // unique_ref is a boolean that indicates whether a unique number will be
+  // appended to the end (ie TargetRef-{#}). The generated ref will be returned.
   bool unique_ref = 5;
   // commit_info is the information to be used for the commit
   PatchCommitInfo commit_info = 6;
@@ -119,8 +126,8 @@ message CreateCommitFromPatchError {
   string combined_output = 4;
 }
 
-// CreateCommitFromPatchBinaryResponse is the response type returned after creating
-// a commit from a patch
+// CreateCommitFromPatchBinaryResponse is the response type returned after
+// creating a commit from a patch
 message CreateCommitFromPatchBinaryResponse {
   // rev is the tag that the staging object can be found at
   string rev = 1;
@@ -132,7 +139,7 @@ message CreateCommitFromPatchBinaryResponse {
 message ExecRequest {
   string repo = 1;
   string ensure_revision = 2;
-  repeated string args = 3;
+  repeated bytes args = 3;
   bytes stdin = 4;
   bool no_timeout = 5;
 }
@@ -162,8 +169,8 @@ message SearchRequest {
   // limit is a limit on the number of search results returned. Additional
   // results will be ignored.
   int64 limit = 3;
-  // include_diff specifies whether the full diff should be included on the result messages.
-  // This can be expensive, so is disabled by default.
+  // include_diff specifies whether the full diff should be included on the
+  // result messages. This can be expensive, so is disabled by default.
   bool include_diff = 4;
   // include_modified specifies whether to include the list of modified files
   // in the search results. This can be expensive, so is disabled by default.
@@ -184,26 +191,28 @@ message RevisionSpecifier {
   string exclude_ref_glob = 3;
 }
 
-// AuthorMatchesNode is a predicate that matches if the author's name or email address
-// matches the regex pattern.
+// AuthorMatchesNode is a predicate that matches if the author's name or email
+// address matches the regex pattern.
 message AuthorMatchesNode {
   string expr = 1;
   bool ignore_case = 2;
 }
 
-// CommitterMatchesNode is a predicate that matches if the author's name or email address
-// matches the regex pattern.
+// CommitterMatchesNode is a predicate that matches if the author's name or
+// email address matches the regex pattern.
 message CommitterMatchesNode {
   string expr = 1;
   bool ignore_case = 2;
 }
 
-// CommitBeforeNode is a predicate that matches if the commit is before the given date
+// CommitBeforeNode is a predicate that matches if the commit is before the
+// given date
 message CommitBeforeNode {
   google.protobuf.Timestamp timestamp = 1;
 }
 
-// CommitAfterNode is a predicate that matches if the commit is after the given date
+// CommitAfterNode is a predicate that matches if the commit is after the given
+// date
 message CommitAfterNode {
   google.protobuf.Timestamp timestamp = 1;
 }
@@ -222,8 +231,8 @@ message DiffMatchesNode {
   bool ignore_case = 2;
 }
 
-// DiffModifiesFileNode is a predicate that matches if the commit modifies any files
-// that match the given regex pattern.
+// DiffModifiesFileNode is a predicate that matches if the commit modifies any
+// files that match the given regex pattern.
 message DiffModifiesFileNode {
   string expr = 1;
   bool ignore_case = 2;
@@ -319,11 +328,13 @@ message ArchiveRequest {
   string treeish = 2;
   // format is the format of the resulting archive (usually "tar" or "zip")
   string format = 3;
-  // pathspecs is the list of pathspecs to include in the archive. If empty, all pathspecs are included.
+  // pathspecs is the list of pathspecs to include in the archive. If empty, all
+  // pathspecs are included.
   repeated string pathspecs = 4;
 }
 
-// ArchiveResponse is the response from the Archive RPC that returns a chunk of the archive.
+// ArchiveResponse is the response from the Archive RPC that returns a chunk of
+// the archive.
 message ArchiveResponse {
   bytes data = 1;
 }
@@ -355,8 +366,8 @@ message RepoCloneResponse {
   string error = 1;
 }
 
-// RepoCloneProgressRequest is a request for information about the clone progress of multiple
-// repositories on gitserver.
+// RepoCloneProgressRequest is a request for information about the clone
+// progress of multiple repositories on gitserver.
 message RepoCloneProgressRequest {
   repeated string repos = 1;
 }
@@ -371,8 +382,8 @@ message RepoCloneProgress {
   bool cloned = 3;
 }
 
-// RepoCloneProgressResponse is the response to a repository clone progress request
-// for multiple repositories at the same time.
+// RepoCloneProgressResponse is the response to a repository clone progress
+// request for multiple repositories at the same time.
 message RepoCloneProgressResponse {
   // results is a map from repository name to clone progress information
   map<string, RepoCloneProgress> results = 1;
@@ -393,7 +404,8 @@ message RepoUpdateRequest {
   reserved 3;
   // repo is the name of the repo to update.
   string repo = 1;
-  // since is the debounce interval for queries, used only with request-repo-update
+  // since is the debounce interval for queries, used only with
+  // request-repo-update
   google.protobuf.Duration since = 2;
 }
 
@@ -424,7 +436,7 @@ message P4ExecRequest {
   string p4port = 1;
   string p4user = 2;
   string p4passwd = 3;
-  repeated string args = 4;
+  repeated bytes args = 4;
 }
 
 message P4ExecResponse {
