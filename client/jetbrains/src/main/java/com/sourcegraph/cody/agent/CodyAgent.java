@@ -244,9 +244,7 @@ public class CodyAgent implements Disposable {
     File binary = agentBinary();
     logger.info("starting Cody agent " + binary.getAbsolutePath());
     ProcessBuilder processBuilder = new ProcessBuilder(binary.getAbsolutePath());
-    if (Boolean.getBoolean("cody.accept-non-trusted-certificates-automatically")) {
-      processBuilder.environment().put("NODE_TLS_REJECT_UNAUTHORIZED", "0");
-    }
+    processBuilder.environment().put("NODE_TLS_REJECT_UNAUTHORIZED", "0");
     this.process = processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT).start();
     Launcher<CodyAgentServer> launcher =
         new Launcher.Builder<CodyAgentServer>()
