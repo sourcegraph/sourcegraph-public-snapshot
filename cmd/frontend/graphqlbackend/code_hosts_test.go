@@ -2,8 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"strconv"
 	"testing"
 
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
@@ -18,7 +18,7 @@ import (
 func TestSchemaResolver_CodeHosts(t *testing.T) {
 	t.Parallel()
 
-	codeHosts := []*types.CodeHost{
+	testCodeHosts := []*types.CodeHost{
 		{
 			ID:                          1,
 			URL:                         "github.com",
@@ -79,17 +79,17 @@ func TestSchemaResolver_CodeHosts(t *testing.T) {
 		t.Run(fmt.Sprintf("first=%d after=%d", tc.first, tc.after), func(t *testing.T) {
 			store := dbmocks.NewMockCodeHostStore()
 			store.CountFunc.SetDefaultReturn(4, nil)
-			codeHost := codeHosts[tc.after]
+			testCodeHost := testCodeHosts[tc.after]
 
 			store.ListFunc.SetDefaultHook(func(ctx context.Context, opts database.ListCodeHostsOpts) ([]*types.CodeHost, int32, error) {
 				assert.Equal(t, tc.first, opts.Limit)
 				assert.Equal(t, tc.after, opts.Cursor)
 				next := tc.after + int32(tc.first)
-				if int(next) >= len(codeHosts) {
+				if int(next) >= len(testCodeHosts) {
 					next = 0
 				}
 
-				return codeHosts[tc.after : tc.after+int32(tc.first)], next, nil
+				return testCodeHosts[tc.after : tc.after+int32(tc.first)], next, nil
 			})
 			users := dbmocks.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
@@ -100,7 +100,7 @@ func TestSchemaResolver_CodeHosts(t *testing.T) {
 			}
 			externalServices := dbmocks.NewMockExternalServiceStore()
 			externalServices.ListFunc.SetDefaultHook(func(ctx context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				assert.Equal(t, options.CodeHostID, codeHost.ID)
+				assert.Equal(t, options.CodeHostID, testCodeHost.ID)
 				assert.Equal(t, options.Limit, tc.first)
 				assert.Equal(t, options.Offset, 0)
 				return eSvcs, nil
@@ -119,12 +119,48 @@ func TestSchemaResolver_CodeHosts(t *testing.T) {
 			if tc.after != 0 {
 				variables["after"] = gqlAfterID
 			}
-			wantEndCursor := "null"
-			hasNext := "false"
-			if int(tc.after+1) < len(codeHosts) {
-				wantEndCursor = `"` + string(MarshalCodeHostID(tc.after+1)) + `"`
-				hasNext = "true"
+			var wantEndCursor *string
+			hasNext := false
+			if int(tc.after+1) < len(testCodeHosts) {
+				wantEndCursorValue := string(MarshalCodeHostID(tc.after + 1))
+				wantEndCursor = &wantEndCursorValue
+				hasNext = true
 			}
+
+			wantResult := codeHostsResult{
+				CodeHosts: codeHosts{
+					Nodes: []codeHostNode{
+						{
+							ID:                          string(MarshalCodeHostID(testCodeHost.ID)),
+							Kind:                        testCodeHost.Kind,
+							URL:                         testCodeHost.URL,
+							ApiRateLimitQuota:           testCodeHost.APIRateLimitQuota,
+							ApiRateLimitIntervalSeconds: testCodeHost.APIRateLimitIntervalSeconds,
+							GitRateLimitQuota:           testCodeHost.GitRateLimitQuota,
+							GitRateLimitIntervalSeconds: testCodeHost.GitRateLimitIntervalSeconds,
+							ExternalServices: extSvcs{
+								Nodes: []extSvcsNode{
+									{
+										ID:          "RXh0ZXJuYWxTZXJ2aWNlOjE=",
+										DisplayName: "GITLAB #1",
+									},
+									{
+										ID:          "RXh0ZXJuYWxTZXJ2aWNlOjI=",
+										DisplayName: "GITLAB #2",
+									},
+								},
+							},
+						},
+					},
+					TotalCount: 4,
+					PageInfo: pageInfo{
+						HasNextPage: hasNext,
+						EndCursor:   wantEndCursor,
+					},
+				},
+			}
+			wantResultResponse, err := json.Marshal(wantResult)
+			assert.NoError(t, err)
 
 			RunTest(t, &Test{
 				Context:   ctx,
@@ -154,38 +190,7 @@ func TestSchemaResolver_CodeHosts(t *testing.T) {
 						}
 					}
 				}`,
-				ExpectedResult: `{
-			   "codeHosts":{
-				  "nodes":[
-					 {
-						"apiRateLimitIntervalSeconds":` + rateLimitValueOrNull(codeHost.APIRateLimitIntervalSeconds) + `,
-						"apiRateLimitQuota":` + rateLimitValueOrNull(codeHost.APIRateLimitQuota) + `,
-						"externalServices":{
-						   "nodes":[
-							  {
-								 "displayName":"GITLAB #1",
-								 "id":"RXh0ZXJuYWxTZXJ2aWNlOjE="
-							  },
-							  {
-								 "displayName":"GITLAB #2",
-								 "id":"RXh0ZXJuYWxTZXJ2aWNlOjI="
-							  }
-						   ]
-						},
-						"gitRateLimitIntervalSeconds":` + rateLimitValueOrNull(codeHost.GitRateLimitIntervalSeconds) + `,
-						"gitRateLimitQuota":` + rateLimitValueOrNull(codeHost.GitRateLimitIntervalSeconds) + `,
-						"id":"` + string(MarshalCodeHostID(codeHost.ID)) + `",
-						"kind":"` + codeHost.Kind + `",
-						"url":"` + codeHost.URL + `"
-					 }
-				  ],
-				  "pageInfo":{
-					 "endCursor":` + wantEndCursor + `,
-					 "hasNextPage":` + hasNext + `
-				  },
-				  "totalCount":4
-			   }
-			}`,
+				ExpectedResult: string(wantResultResponse),
 			})
 
 			mockassert.CalledOnce(t, store.CountFunc)
@@ -249,9 +254,37 @@ func TestCodeHostByID(t *testing.T) {
 	mockassert.CalledOnce(t, store.GetByIDFunc)
 }
 
-func rateLimitValueOrNull(value *int32) string {
-	if value == nil {
-		return "null"
-	}
-	return strconv.Itoa(int(*value))
+type codeHostsResult struct {
+	CodeHosts codeHosts `json:"codeHosts"`
+}
+
+type codeHosts struct {
+	Nodes      []codeHostNode `json:"nodes"`
+	TotalCount int            `json:"totalCount"`
+	PageInfo   pageInfo       `json:"pageInfo"`
+}
+
+type codeHostNode struct {
+	ID                          string  `json:"id"`
+	Kind                        string  `json:"kind"`
+	URL                         string  `json:"url"`
+	ApiRateLimitIntervalSeconds *int32  `json:"apiRateLimitIntervalSeconds"`
+	ApiRateLimitQuota           *int32  `json:"apiRateLimitQuota"`
+	GitRateLimitIntervalSeconds *int32  `json:"gitRateLimitIntervalSeconds"`
+	GitRateLimitQuota           *int32  `json:"gitRateLimitQuota"`
+	ExternalServices            extSvcs `json:"externalServices"`
+}
+
+type extSvcs struct {
+	Nodes []extSvcsNode `json:"nodes"`
+}
+
+type extSvcsNode struct {
+	DisplayName string `json:"displayName"`
+	ID          string `json:"id"`
+}
+
+type pageInfo struct {
+	HasNextPage bool    `json:"hasNextPage"`
+	EndCursor   *string `json:"endCursor"`
 }
