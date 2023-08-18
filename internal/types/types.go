@@ -2153,6 +2153,7 @@ type RepoUpdateJob struct {
 	Priority              RepoUpdateJobPriority
 	Clone                 bool
 	OverwriteClone        bool
+	FetchRevision         string
 }
 
 func (r RepoUpdateJob) RecordID() int {

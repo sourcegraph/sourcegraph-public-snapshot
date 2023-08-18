@@ -1149,10 +1149,10 @@ func TestHandleRepoUpdate(t *testing.T) {
 	}
 
 	// Now we'll call again and with an update that fails
-	doBackgroundRepoUpdateMock = func(name api.RepoName) error {
+	doScheduledRepoUpdateMock = func(name api.RepoName) error {
 		return errors.New("fail")
 	}
-	t.Cleanup(func() { doBackgroundRepoUpdateMock = nil })
+	t.Cleanup(func() { doScheduledRepoUpdateMock = nil })
 
 	// This will trigger an update since the repo is already cloned
 	_, _ = s.HandleRepoUpdateRequest(ctx, updatePayload, logger)
@@ -1175,7 +1175,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	}
 
 	// Now we'll call again and with an update that succeeds
-	doBackgroundRepoUpdateMock = nil
+	doScheduledRepoUpdateMock = nil
 
 	// This will trigger an update since the repo is already cloned
 	_, _ = s.HandleRepoUpdateRequest(ctx, updatePayload, logger)

@@ -135,9 +135,6 @@ type Server struct {
 	// per gitserver instance
 	rpsLimiter *ratelimit.InstrumentedLimiter
 
-	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
-	repoUpdateLocks   map[api.RepoName]*locks
-
 	// GlobalBatchLogSemaphore is a semaphore shared between all requests to ensure that a
 	// maximum number of Git subprocesses are active for all /batch-log requests combined.
 	GlobalBatchLogSemaphore *semaphore.Weighted
@@ -160,11 +157,6 @@ type Server struct {
 	// property. It exists only to aid in fast lookups instead of having to iterate through the list
 	// each time.
 	DeduplicatedForksSet *types.RepoURISet
-}
-
-type locks struct {
-	once *sync.Once  // consolidates multiple waiting updates
-	mu   *sync.Mutex // prevents updates running in parallel
 }
 
 // shortGitCommandTimeout returns the timeout for git commands that should not
@@ -244,7 +236,6 @@ func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
 func (s *Server) Handler() http.Handler {
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	s.locker = &RepositoryLocker{}
-	s.repoUpdateLocks = make(map[api.RepoName]*locks)
 
 	// GitMaxConcurrentClones controls the maximum number of clones that
 	// can happen at once on a single gitserver.
@@ -757,6 +748,8 @@ type RepoUpdatePayload struct {
 	// Clone is true when we need to clone a repo and not fetch it. Used when we
 	// need to reclone an already cloned repo.
 	Clone bool
+	// FetchRevision is a revision used in a fetch command during repo update.
+	FetchRevision string
 }
 
 func (s *Server) HandleRepoUpdateRequest(ctx context.Context, payload RepoUpdatePayload, logger log.Logger) (protocol.RepoUpdateResponse, error) {
@@ -775,7 +768,7 @@ func (s *Server) HandleRepoUpdateRequest(ctx context.Context, payload RepoUpdate
 		}
 	} else {
 		var statusErr error
-		updateErr := s.doRepoUpdate(ctx, payload.Repo, "")
+		updateErr := s.doRepoUpdate(ctx, payload.Repo, payload.FetchRevision)
 
 		// attempts to acquire these values are not contingent on the success of
 		// the update.
@@ -1471,7 +1464,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 
 	dir := s.dir(repoName)
 	if s.ensureRevision(ctx, repoName, req.EnsureRevision, dir) {
-		ensureRevisionStatus = "fetched"
+		ensureRevisionStatus = "fetch scheduled"
 	}
 
 	// Special-case `git rev-parse HEAD` requests. These are invoked by search queries for every repo in scope.
@@ -2283,75 +2276,33 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 	tr, ctx := trace.New(ctx, "doRepoUpdate", repo.Attr())
 	defer tr.EndWithErr(&err)
 
-	s.repoUpdateLocksMu.Lock()
-	l, ok := s.repoUpdateLocks[repo]
-	if !ok {
-		l = &locks{
-			once: new(sync.Once),
-			mu:   new(sync.Mutex),
+	err = s.doScheduledRepoUpdate(ctx, repo, revspec)
+	if err != nil {
+		// We don't want to spam our logs when the rate limiter has been set to block all
+		// updates
+		if !errors.Is(err, ratelimit.ErrBlockAll) {
+			s.Logger.Error("performing background repo update", log.Error(err))
 		}
-		s.repoUpdateLocks[repo] = l
+
+		// The repo update might have failed due to the repo being corrupt
+		var gitErr *common.GitCommandError
+		if errors.As(err, &gitErr) {
+			s.logIfCorrupt(ctx, repo, s.dir(repo), gitErr.Output)
+		}
 	}
-	once := l.once
-	mu := l.mu
-	s.repoUpdateLocksMu.Unlock()
-
-	// doBackgroundRepoUpdate can block longer than our context deadline. done will
-	// close when its done. We can return when either done is closed or our
-	// deadline has passed.
-	done := make(chan struct{})
-	err = errors.New("another operation is already in progress")
-	go func() {
-		defer close(done)
-		once.Do(func() {
-			mu.Lock() // Prevent multiple updates in parallel. It works fine, but it wastes resources.
-			defer mu.Unlock()
-
-			s.repoUpdateLocksMu.Lock()
-			l.once = new(sync.Once) // Make new requests wait for next update.
-			s.repoUpdateLocksMu.Unlock()
-
-			err = s.doBackgroundRepoUpdate(repo, revspec)
-			if err != nil {
-				// We don't want to spam our logs when the rate limiter has been set to block all
-				// updates
-				if !errors.Is(err, ratelimit.ErrBlockAll) {
-					s.Logger.Error("performing background repo update", log.Error(err))
-				}
-
-				// The repo update might have failed due to the repo being corrupt
-				var gitErr *common.GitCommandError
-				if errors.As(err, &gitErr) {
-					s.logIfCorrupt(ctx, repo, s.dir(repo), gitErr.Output)
-				}
-			}
-			s.setLastErrorNonFatal(s.ctx, repo, err)
-		})
-	}()
-
-	select {
-	case <-done:
-		return errors.Wrapf(err, "repo %s:", repo)
-	case <-ctx.Done():
-		return ctx.Err()
-	}
+	s.setLastErrorNonFatal(s.ctx, repo, err)
+	return err
 }
 
-var doBackgroundRepoUpdateMock func(api.RepoName) error
+var doScheduledRepoUpdateMock func(api.RepoName) error
 
-func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error {
+// doScheduledRepoUpdate performs a repo update. All repo updates are background
+func (s *Server) doScheduledRepoUpdate(ctx context.Context, repo api.RepoName, revspec string) error {
 	logger := s.Logger.Scoped("backgroundRepoUpdate", "").With(log.String("repo", string(repo)))
 
-	if doBackgroundRepoUpdateMock != nil {
-		return doBackgroundRepoUpdateMock(repo)
+	if doScheduledRepoUpdateMock != nil {
+		return doScheduledRepoUpdateMock(repo)
 	}
-	// background context.
-	ctx, cancel1 := s.serverContext()
-	defer cancel1()
-
-	// ensure the background update doesn't hang forever
-	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
-	defer cancel2()
 
 	// This background process should use our internal actor
 	ctx = actor.WithInternalActor(ctx)
@@ -2678,11 +2629,11 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 	if err := cmd.Run(); err == nil {
 		return false
 	}
-	// Revision not found, update before returning.
-	err := s.doRepoUpdate(ctx, repo, rev)
+	// Revision not found, schedule an update before returning.
+	err := ScheduleRepoUpdate(ctx, s.DB, repo, rev)
 	if err != nil {
-		s.Logger.Warn("failed to perform background repo update", log.Error(err), log.String("repo", string(repo)), log.String("rev", rev))
-		// TODO: Shouldn't we return false here?
+		s.Logger.Warn("failed to schedule repo update", log.Error(err), log.String("repo", string(repo)), log.String("rev", rev))
+		return false
 	}
 	return true
 }

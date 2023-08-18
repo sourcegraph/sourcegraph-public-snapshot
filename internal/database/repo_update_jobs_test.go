@@ -38,13 +38,13 @@ func TestRepoUpdateJobs_Create(t *testing.T) {
 	require.NoError(t, err)
 
 	// Queued job should be successfully created.
-	createdJob, ok, err := store.Create(ctx, CreateRepoUpdateJobOpts{RepoName: "repo1", Priority: types.HighPriorityRepoUpdate, OverwriteClone: true})
+	createdJob, ok, err := store.Create(ctx, CreateRepoUpdateJobOpts{RepoName: "repo1", Priority: types.HighPriorityRepoUpdate, FetchRevision: "HEAD"})
 	require.NoError(t, err)
 	assert.True(t, ok)
 	assert.Equal(t, 1, createdJob.ID)
 	assert.Equal(t, types.HighPriorityRepoUpdate, createdJob.Priority)
 	assert.Equal(t, "queued", createdJob.State)
-	assert.True(t, createdJob.OverwriteClone)
+	assert.Equal(t, "HEAD", createdJob.FetchRevision)
 
 	listAndAssert := func(wantJob types.RepoUpdateJob, listOpts ListRepoUpdateJobOpts) {
 		repoUpdateJobs, err = store.List(ctx, listOpts)
