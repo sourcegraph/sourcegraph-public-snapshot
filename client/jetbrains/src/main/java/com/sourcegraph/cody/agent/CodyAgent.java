@@ -23,6 +23,7 @@ import java.io.PrintWriter;
 import java.nio.file.*;
 import java.util.Objects;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.jetbrains.annotations.NotNull;
@@ -45,7 +46,8 @@ public class CodyAgent implements Disposable {
   private final @NotNull Project project;
   private final CodyAgentClient client = new CodyAgentClient();
   private String agentNotRunningExplanation = "";
-  private final CompletableFuture<CodyAgentServer> initialized = new CompletableFuture<>();
+  private @NotNull CompletableFuture<CodyAgentServer> initialized = new CompletableFuture<>();
+  private AtomicBoolean firstConnection = new AtomicBoolean(true);
   private Future<Void> listeningToJsonRpc;
   private Process process;
 
@@ -81,11 +83,7 @@ public class CodyAgent implements Disposable {
 
   public static <T> CompletableFuture<T> withServer(
       @NotNull Project project, Function<CodyAgentServer, CompletableFuture<T>> callback) {
-    CodyAgentServer server = CodyAgent.getServer(project);
-    if (server == null) {
-      return CompletableFuture.failedFuture(CodyAgentException.NOT_INITIALIZED);
-    }
-    return callback.apply(server);
+    return CodyAgent.getInitializedServer(project).thenCompose(callback);
   }
 
   @Nullable
@@ -109,6 +107,12 @@ public class CodyAgent implements Disposable {
       return;
     }
     try {
+      boolean isFirstConnection = this.firstConnection.getAndSet(false);
+      if (!isFirstConnection) {
+        // Restart `initialized` future so that new callers can subscribe to the next instance of
+        // the Cody agent server.
+        this.initialized = new CompletableFuture<>();
+      }
       startListeningToAgent();
       executorService.submit(
           () -> {
