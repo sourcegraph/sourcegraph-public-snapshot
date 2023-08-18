@@ -811,8 +811,8 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 	Repo graphql.ID
 },
 ) (*EmptyResponse, error) {
-	var repoID api.RepoID
-	if err := relay.UnmarshalSpec(args.Repo, &repoID); err != nil {
+	repoID, err := UnmarshalRepositoryID(args.Repo)
+	if err != nil {
 		return nil, err
 	}
 

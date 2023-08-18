@@ -132,6 +132,12 @@
             <override-text place="MainMenu" text="Hide Completions"/>
         </action>
 
+        <action id="cody.triggerAutocomplete"
+                class="com.sourcegraph.cody.autocomplete.TriggerAutocompleteAction">
+            <keyboard-shortcut first-keystroke="alt BACK_SLASH" keymap="$default"/>
+            <override-text place="MainMenu" text="Autocomplete"/>
+        </action>
+
         <action id="cody.resetCurrentConversation" icon="AllIcons.Actions.Refresh"
                 text="Reset the Current Conversation with Cody"
                 class="com.sourcegraph.cody.chat.ResetCurrentConversationAction">

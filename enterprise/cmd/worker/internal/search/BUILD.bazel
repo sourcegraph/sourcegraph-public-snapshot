@@ -3,21 +3,43 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "search",
-    srcs = ["search.go"],
+    srcs = [
+        "exhaustive_search.go",
+        "exhaustive_search_repo.go",
+        "exhaustive_search_repo_revision.go",
+        "job.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/search",
     visibility = ["//enterprise/cmd/worker:__subpackages__"],
     deps = [
-        "//internal/api",
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/db",
+        "//internal/actor",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//internal/search/exhaustive/store",
+        "//internal/search/exhaustive/types",
+        "//internal/workerutil",
+        "//internal/workerutil/dbworker",
+        "//internal/workerutil/dbworker/store",
         "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
 go_test(
     name = "search_test",
-    srcs = ["search_test.go"],
+    srcs = [
+        "exhaustive_search_repo_revision_test.go",
+        "exhaustive_search_repo_test.go",
+        "exhaustive_search_test.go",
+    ],
     embed = [":search"],
     deps = [
+        "//lib/errors",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
-        "@org_golang_x_exp//slices",
     ],
 )

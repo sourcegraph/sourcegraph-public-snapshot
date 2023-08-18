@@ -300,9 +300,6 @@ type Client interface {
 	// Remove removes the repository clone from gitserver.
 	Remove(context.Context, api.RepoName) error
 
-	// RemoveFrom removes the repository clone from the given gitserver.
-	RemoveFrom(ctx context.Context, repo api.RepoName, from string) error
-
 	RepoCloneProgress(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
 
 	// ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
@@ -1518,9 +1515,10 @@ func (c *clientImplementor) doReposStats(ctx context.Context, addr string) (*pro
 func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) error {
 	// In case the repo has already been deleted from the database we need to pass
 	// the old name in order to land on the correct gitserver instance
-	repo = api.UndeletedRepoName(repo)
+	undeletedName := api.UndeletedRepoName(repo)
+
 	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(ctx, repo)
+		client, err := c.ClientForRepo(ctx, undeletedName)
 		if err != nil {
 			return err
 		}
@@ -1528,13 +1526,13 @@ func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) error
 			Repo: string(repo),
 		})
 		return err
-	} else {
-		addr := c.AddrForRepo(ctx, repo)
-		return c.RemoveFrom(ctx, repo, addr)
 	}
+
+	addr := c.AddrForRepo(ctx, undeletedName)
+	return c.removeFrom(ctx, undeletedName, addr)
 }
 
-func (c *clientImplementor) RemoveFrom(ctx context.Context, repo api.RepoName, from string) error {
+func (c *clientImplementor) removeFrom(ctx context.Context, repo api.RepoName, from string) error {
 	b, err := json.Marshal(&protocol.RepoDeleteRequest{
 		Repo: repo,
 	})

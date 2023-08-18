@@ -1,0 +1,22 @@
+name: "Update Pull Request"
+on:
+  pull_request:
+    types: [opened, reopened]
+    paths: ['doc/**']
+
+jobs:
+  update_pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: tzkhan/pr-update-action@v2
+        with:
+          base-branch-regex: '[a-z\d-_.\\/]+'
+          head-branch-regex: '[a-z\d-_.\\/]+'
+          body-template: |
+            ## Preview 🤩
+            [Preview Link](https://docs.sourcegraph.com/@%headbranch%)
+          body-update-action: "suffix"
+          body-uppercase-base-match: false
+          body-uppercase-head-match: false
+          lowercase-branch: true
+          repo-token: "${{ secrets.GH_PROJECTS_ACTION_TOKEN }}"
