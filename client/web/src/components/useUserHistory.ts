@@ -3,6 +3,7 @@ import { useEffect, useMemo } from 'react'
 import type * as H from 'history'
 import { useLocation } from 'react-router-dom'
 
+import { Scalars } from '../graphql-operations'
 import { parseBrowserRepoURL } from '../util/url'
 
 export interface UserHistoryEntry {
@@ -26,17 +27,36 @@ const MAX_LOCAL_STORAGE_COUNT = 100
  * suggestions.
  */
 export class UserHistory {
+    private userID: Scalars['ID'] = 'anonymous'
     private repos: Map<string, Map<string, number>> = new Map()
     private storage = window.localStorage
-    constructor() {
+    constructor(userID: Scalars['ID'] = 'anonymous') {
+        this.userID = userID
+        this.migrateOldEntries()
         for (const entry of this.loadEntries()) {
             this.onEntry(entry)
         }
     }
+    private storageKey(userID: Scalars['ID']): string {
+        return `${LOCAL_STORAGE_KEY}:${userID}`
+    }
+    // User history entries were previously stored in a single array in local storage
+    // under the generic key `user-history`, which is not differentiated by user. The
+    // first time we reinitialize UserHistory and this method runs, we take any old
+    // entries and write them to the new user-differentiated key, and then delete the old
+    // key. When the method runs again in the future, it will thus be a no-op.
+    private migrateOldEntries(): void {
+        const oldJSON = this.storage.getItem(LOCAL_STORAGE_KEY)
+        if (!oldJSON) {
+            return
+        }
+        this.storage.setItem(this.storageKey(this.userID), oldJSON)
+        this.storage.removeItem(LOCAL_STORAGE_KEY)
+    }
     private saveEntries(entries: UserHistoryEntry[]): void {
         entries.sort((a, b) => b.lastAccessed - a.lastAccessed)
         const truncated = entries.slice(0, MAX_LOCAL_STORAGE_COUNT)
-        this.storage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(truncated))
+        this.storage.setItem(this.storageKey(this.userID), JSON.stringify(truncated))
         for (let index = MAX_LOCAL_STORAGE_COUNT; index < entries.length; index++) {
             // Synchronize persisted entries with in-memory entries so that
             // reloading the page doesn't change which entries are available.
@@ -44,7 +64,7 @@ export class UserHistory {
         }
     }
     private loadEntries(): UserHistoryEntry[] {
-        return JSON.parse(this.storage.getItem(LOCAL_STORAGE_KEY) ?? '[]')
+        return JSON.parse(this.storage.getItem(this.storageKey(this.userID)) ?? '[]')
     }
     private deleteEntry(entry: UserHistoryEntry): void {
         if (!entry.filePath) {
@@ -106,9 +126,9 @@ export class UserHistory {
     }
 }
 
-export function useUserHistory(isRepositoryRelatedPage: boolean): UserHistory {
+export function useUserHistory(userID: Scalars['ID'] | undefined, isRepositoryRelatedPage: boolean): UserHistory {
     const location = useLocation()
-    const userHistory = useMemo(() => new UserHistory(), [])
+    const userHistory = useMemo(() => new UserHistory(userID), [userID])
     useEffect(() => {
         if (isRepositoryRelatedPage) {
             userHistory.onLocation(location)
