@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
-func TestValidateExhaustiveSearchQueryResolver(t *testing.T) {
+func TestValidateSearchJobQueryResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -24,7 +24,7 @@ func TestValidateExhaustiveSearchQueryResolver(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	resolver := resolvers.New(logger, db)
-	s, err := graphqlbackend.NewSchemaWithExhaustiveSearchesResolver(db, resolver)
+	s, err := graphqlbackend.NewSchemaWithSearchJobsResolver(db, resolver)
 	require.NoError(t, err)
 
 	variables := map[string]any{
@@ -32,7 +32,7 @@ func TestValidateExhaustiveSearchQueryResolver(t *testing.T) {
 	}
 
 	query := `query($query: String!) {
-	validateExhaustiveSearchQuery(query: $query) {
+	validateSearchJobQuery(query: $query) {
 		query
 		valid
 		errors

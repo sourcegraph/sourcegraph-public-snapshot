@@ -20,7 +20,7 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	enterpriseServices.ExhaustiveSearchesResolver = resolvers.New(observationCtx.Logger, db)
+	enterpriseServices.SearchJobsResolver = resolvers.New(observationCtx.Logger, db)
 
 	return nil
 }

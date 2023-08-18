@@ -372,17 +372,17 @@ func (r *NodeResolver) ToGitHubApp() (GitHubAppResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToExhaustiveSearch() (ExhaustiveSearchResolver, bool) {
-	n, ok := r.Node.(ExhaustiveSearchResolver)
+func (r *NodeResolver) ToSearchJob() (SearchJobResolver, bool) {
+	n, ok := r.Node.(SearchJobResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToExhaustiveSearchRepo() (ExhaustiveSearchRepoResolver, bool) {
-	n, ok := r.Node.(ExhaustiveSearchRepoResolver)
+func (r *NodeResolver) ToSearchJobRepo() (SearchJobRepoResolver, bool) {
+	n, ok := r.Node.(SearchJobRepoResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToExhaustiveSearchRepoRevision() (ExhaustiveSearchRepoRevisionResolver, bool) {
-	n, ok := r.Node.(ExhaustiveSearchRepoRevisionResolver)
+func (r *NodeResolver) ToSearchJobRepoRevision() (SearchJobRepoRevisionResolver, bool) {
+	n, ok := r.Node.(SearchJobRepoRevisionResolver)
 	return n, ok
 }

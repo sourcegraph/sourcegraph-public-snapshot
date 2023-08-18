@@ -4,15 +4,15 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "resolvers",
     srcs = [
-        "exhaustive_search.go",
-        "exhaustive_search_repo.go",
-        "exhaustive_search_repo_connection.go",
-        "exhaustive_search_repo_revision.go",
-        "exhaustive_search_repo_revision_connection.go",
-        "exhaustive_search_stats.go",
-        "exhaustive_searches_connection.go",
         "resolver.go",
-        "validate_exhaustive_search_query.go",
+        "search_job.go",
+        "search_job_repo.go",
+        "search_job_repo_connection.go",
+        "search_job_repo_revision.go",
+        "search_job_repo_revision_connection.go",
+        "search_job_stats.go",
+        "search_jobs_connection.go",
+        "validate_search_job_query.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/search/resolvers",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
@@ -30,12 +30,12 @@ go_library(
 go_test(
     name = "resolvers_test",
     srcs = [
-        "exhaustive_search_repo_revision_test.go",
-        "exhaustive_search_repo_test.go",
-        "exhaustive_search_test.go",
         "resolver_test.go",
         "resolvers_test.go",
-        "validate_exhaustive_search_query_test.go",
+        "search_job_repo_revision_test.go",
+        "search_job_repo_test.go",
+        "search_job_test.go",
+        "validate_search_job_query_test.go",
     ],
     tags = [
         # Test requires localhost database

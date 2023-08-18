@@ -421,8 +421,8 @@ func NewSchemaWithCompletionsResolver(db database.DB, completionsResolver Comple
 	return NewSchema(db, gitserver.NewClient(db), []OptionalResolver{{CompletionsResolver: completionsResolver}})
 }
 
-func NewSchemaWithExhaustiveSearchesResolver(db database.DB, exhaustiveSearchesResolver ExhaustiveSearchesResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), []OptionalResolver{{ExhaustiveSearchesResolver: exhaustiveSearchesResolver}})
+func NewSchemaWithSearchJobsResolver(db database.DB, searchJobsResolver SearchJobsResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient(db), []OptionalResolver{{SearchJobsResolver: searchJobsResolver}})
 }
 
 func NewSchema(
@@ -609,12 +609,12 @@ func NewSchema(
 			schemas = append(schemas, contentLibrary)
 		}
 
-		if exhaustiveSearchesResolver := optional.ExhaustiveSearchesResolver; exhaustiveSearchesResolver != nil {
-			EnterpriseResolvers.exhaustiveSearchesResolver = exhaustiveSearchesResolver
-			resolver.ExhaustiveSearchesResolver = exhaustiveSearchesResolver
-			schemas = append(schemas, exhaustiveSearchSchema)
+		if searchJobsResolver := optional.SearchJobsResolver; searchJobsResolver != nil {
+			EnterpriseResolvers.searchJobsResolver = searchJobsResolver
+			resolver.SearchJobsResolver = searchJobsResolver
+			schemas = append(schemas, searchJobSchema)
 			// Register NodeByID handlers.
-			for kind, res := range exhaustiveSearchesResolver.NodeResolvers() {
+			for kind, res := range searchJobsResolver.NodeResolvers() {
 				resolver.nodeByIDFns[kind] = res
 			}
 		}
@@ -666,7 +666,7 @@ type OptionalResolver struct {
 	CodyContextResolver
 	DotcomRootResolver
 	EmbeddingsResolver
-	ExhaustiveSearchesResolver
+	SearchJobsResolver
 	GitHubAppsResolver
 	GuardrailsResolver
 	InsightsAggregationResolver
@@ -779,7 +779,7 @@ var EnterpriseResolvers = struct {
 	contextResolver             CodyContextResolver
 	dotcomResolver              DotcomRootResolver
 	embeddingsResolver          EmbeddingsResolver
-	exhaustiveSearchesResolver  ExhaustiveSearchesResolver
+	searchJobsResolver          SearchJobsResolver
 	gitHubAppsResolver          GitHubAppsResolver
 	guardrailsResolver          GuardrailsResolver
 	insightsAggregationResolver InsightsAggregationResolver

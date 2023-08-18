@@ -1,60 +1,60 @@
 extend type Mutation {
     """
-    Experimental: Create a new exhaustive search. The query will be validated before the search is created.
+    Experimental: Create a new search job. The query will be validated before the search is created.
     """
-    createExhaustiveSearch(
+    createSearchJob(
         """
         The query to run. This must be a valid search query.
         """
         query: String!
-    ): ExhaustiveSearch!
+    ): SearchJob!
 
     """
-    Experimental: Cancel an exhaustive search. This will cancel all of the search's repositories and revisions.
+    Experimental: Cancel a search job. This will cancel all of the search's repositories and revisions.
     """
-    cancelExhaustiveSearch(
+    cancelSearchJob(
         """
-        The ID of the exhaustive search to cancel.
+        The ID of the search job to cancel.
         """
         id: ID!
     ): EmptyResponse
 
     """
-    Experimental: Delete an exhaustive search. This will delete all of the search's repositories and revisions.
+    Experimental: Delete a search job. This will delete all of the search's repositories and revisions.
     """
-    deleteExhaustiveSearch(
+    deleteSearchJob(
         """
-        The ID of the exhaustive search to delete.
+        The ID of the search job to delete.
         """
         id: ID!
     ): EmptyResponse!
 
     """
-    Experimental: Retry an exhaustive search. This will retry all of the search's repositories and revisions.
+    Experimental: Retry a search job. This will retry all of the search's repositories and revisions.
     """
-    retryExhaustiveSearch(
+    retrySearchJob(
         """
-        The ID of the exhaustive search to retry.
+        The ID of the search job to retry.
         """
         id: ID!
-    ): ExhaustiveSearch!
+    ): SearchJob!
 }
 
 extend type Query {
     """
-    Experimental: Validate an exhaustive search query. This will return a list of errors if the query is invalid.
+    Experimental: Validate a search job query. This will return a list of errors if the query is invalid.
     """
-    validateExhaustiveSearchQuery(
+    validateSearchJobQuery(
         """
         The query to validate.
         """
         query: String!
-    ): ExhaustiveSearchQueryValidation
+    ): SearchJobQueryValidation
 
     """
-    Experimental: Get a list of exhaustive searches.
+    Experimental: Get a list of search jobs.
     """
-    exhaustiveSearches(
+    searchJobs(
         """
         The number of results to return. Defaults to 50.
         """
@@ -70,22 +70,22 @@ extend type Query {
         """
         The states to filter the results by.
         """
-        states: [ExhaustiveSearchState!]
+        states: [SearchJobState!]
         """
         The order by which to sort the results.
         """
-        orderBy: ExhaustiveSearchesOrderBy = CREATED_DATE
+        orderBy: SearchJobesOrderBy = CREATED_DATE
         """
         The determines the order of the returned searches. Defaults to ascending.
         """
         descending: Boolean = false
-    ): ExhaustiveSearchConnection!
+    ): SearchJobConnection!
 }
 
 """
-An exhaustive search is a search that can run against every repository and revision in Sourcegraph.
+An search job is a search that can run against every repository and revision in Sourcegraph.
 """
-type ExhaustiveSearchQueryValidation {
+type SearchJobQueryValidation {
     """
     The query that was validated.
     """
@@ -101,55 +101,55 @@ type ExhaustiveSearchQueryValidation {
 }
 
 """
-The state of an exhaustive search.
+The state of a search job.
 """
-enum ExhaustiveSearchState {
+enum SearchJobState {
     """
-    The exhaustive search has been created and is waiting to be processed.
+    The search job has been created and is waiting to be processed.
     """
     QUEUED
     """
-    The exhaustive search is being processed.
+    The search job is being processed.
     """
     PROCESSING
     """
-    The exhaustive search had an error.
+    The search job had an error.
     """
     ERRORED
     """
-    The exhaustive search has failed.
+    The search job has failed.
     """
     FAILED
     """
-    The exhaustive search has completed.
+    The search job has completed.
     """
     COMPLETED
 }
 
 """
-The order by which exhaustive searches are sorted.
+The order by which search jobs are sorted.
 """
-enum ExhaustiveSearchesOrderBy {
+enum SearchJobesOrderBy {
     """
-    Sort exhaustive searches by their query.
+    Sort search jobs by their query.
     """
     QUERY
     """
-    Sort exhaustive searches by their created date.
+    Sort search jobs by their created date.
     """
     CREATED_DATE
     """
-    Sort exhaustive searches by their started date.
+    Sort search jobs by their started date.
     """
     STATE
 }
 
 """
-An exhaustive search.
+A search job.
 """
-type ExhaustiveSearch implements Node {
+type SearchJob implements Node {
     """
-    The ID of the exhaustive search.
+    The ID of the search job.
     """
     id: ID!
     """
@@ -157,33 +157,33 @@ type ExhaustiveSearch implements Node {
     """
     query: String!
     """
-    The state of the exhaustive search.
+    The state of the search job.
     """
-    state: ExhaustiveSearchState!
+    state: SearchJobState!
     """
-    The user who created the exhaustive search.
+    The user who created the search job.
     """
     creator: User
     """
-    The date and time the exhaustive search was created.
+    The date and time the search job was created.
     """
     createdAt: DateTime!
     """
-    The date and time the exhaustive search was started.
+    The date and time the search job was started.
     """
     startedAt: DateTime
     """
-    The date and time the exhaustive search was finished.
+    The date and time the search job was finished.
     """
     finishedAt: DateTime
     """
-    The url to download the CSV of the exhaustive search results.
+    The url to download the CSV of the search job results.
     """
     csvURL: String
     """
-    The repository stats for the exhaustive search.
+    The repository stats for the search job.
     """
-    repoStats: ExhaustiveSearchStats!
+    repoStats: SearchJobStats!
     """
     The repositories being searched.
     """
@@ -196,13 +196,13 @@ type ExhaustiveSearch implements Node {
         The cursor to start at.
         """
         after: String
-    ): ExhaustiveSearchRepoConnection!
+    ): SearchJobRepoConnection!
 }
 
 """
-The repository stats for an exhaustive search.
+The repository stats for a search job.
 """
-type ExhaustiveSearchStats {
+type SearchJobStats {
     """
     The total number of items.
     """
@@ -222,17 +222,17 @@ type ExhaustiveSearchStats {
 }
 
 """
-A repository being searched by an exhaustive search.
+A repository being searched by a search job.
 """
-type ExhaustiveSearchRepo implements Node {
+type SearchJobRepo implements Node {
     """
-    The ID of the exhaustive search repository.
+    The ID of the search job repository.
     """
     id: ID!
     """
     The state of the repository search.
     """
-    state: ExhaustiveSearchState!
+    state: SearchJobState!
     """
     The repository being searched.
     """
@@ -265,21 +265,21 @@ type ExhaustiveSearchRepo implements Node {
         The cursor to start at.
         """
         after: String
-    ): ExhaustiveSearchRepoRevisionConnection!
+    ): SearchJobRepoRevisionConnection!
 }
 
 """
-A revision being searched by an exhaustive search.
+A revision being searched by a search job.
 """
-type ExhaustiveSearchRepoRevision implements Node {
+type SearchJobRepoRevision implements Node {
     """
-    The ID of the exhaustive search repository revision.
+    The ID of the search job repository revision.
     """
     id: ID!
     """
     The state of the repository revision search.
     """
-    state: ExhaustiveSearchState!
+    state: SearchJobState!
     """
     The repository revision being searched.
     """
@@ -303,13 +303,13 @@ type ExhaustiveSearchRepoRevision implements Node {
 }
 
 """
-A connection that returns exhaustive searches.
+A connection that returns search jobs.
 """
-type ExhaustiveSearchConnection {
+type SearchJobConnection {
     """
     The list of searches.
     """
-    nodes: [ExhaustiveSearch!]!
+    nodes: [SearchJob!]!
     """
     The total count of searches.
     """
@@ -321,13 +321,13 @@ type ExhaustiveSearchConnection {
 }
 
 """
-A connection that returns exhaustive search repositories.
+A connection that returns search job repositories.
 """
-type ExhaustiveSearchRepoConnection {
+type SearchJobRepoConnection {
     """
     The list of repositories.
     """
-    nodes: [ExhaustiveSearchRepo!]!
+    nodes: [SearchJobRepo!]!
     """
     The total count of repositories.
     """
@@ -339,13 +339,13 @@ type ExhaustiveSearchRepoConnection {
 }
 
 """
-A connection that returns exhaustive search repository revisions.
+A connection that returns search job repository revisions.
 """
-type ExhaustiveSearchRepoRevisionConnection {
+type SearchJobRepoRevisionConnection {
     """
     The list of repository revisions.
     """
-    nodes: [ExhaustiveSearchRepoRevision!]!
+    nodes: [SearchJobRepoRevision!]!
     """
     The total count of repository revisions.
     """

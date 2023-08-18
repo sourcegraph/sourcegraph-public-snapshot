@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
-func TestExhaustiveSearchRepoRevisionResolver(t *testing.T) {
+func TestSearchJobRepoRevisionResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -24,16 +24,16 @@ func TestExhaustiveSearchRepoRevisionResolver(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	resolver := resolvers.New(logger, db)
-	s, err := graphqlbackend.NewSchemaWithExhaustiveSearchesResolver(db, resolver)
+	s, err := graphqlbackend.NewSchemaWithSearchJobsResolver(db, resolver)
 	require.NoError(t, err)
 
 	variables := map[string]any{
-		"revisionSearchID": string(resolvers.MarshalExhaustiveSearchRepoRevisionID(int64(123))),
+		"revisionSearchID": string(resolvers.MarshalSearchJobRepoRevisionID(int64(123))),
 	}
 
 	query := `query($revisionSearchID: ID!) {
 	node(id: $revisionSearchID) {
-		... on ExhaustiveSearchRepoRevision {
+		... on SearchJobRepoRevision {
 			id
 			state
 			revision

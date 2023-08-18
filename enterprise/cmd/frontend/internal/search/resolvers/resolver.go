@@ -10,71 +10,71 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-// Resolver is the GraphQL resolver of all things related to batch changes.
+// Resolver is the GraphQL resolver of all things related to search jobs.
 type Resolver struct {
 	logger log.Logger
 	db     database.DB
 }
 
 // New returns a new Resolver whose store uses the given database
-func New(logger log.Logger, db database.DB) graphqlbackend.ExhaustiveSearchesResolver {
+func New(logger log.Logger, db database.DB) graphqlbackend.SearchJobsResolver {
 	return &Resolver{logger: logger, db: db}
 }
 
-var _ graphqlbackend.ExhaustiveSearchesResolver = &Resolver{}
+var _ graphqlbackend.SearchJobsResolver = &Resolver{}
 
-func (r *Resolver) CreateExhaustiveSearch(ctx context.Context, args *graphqlbackend.CreateExhaustiveSearchArgs) (graphqlbackend.ExhaustiveSearchResolver, error) {
+func (r *Resolver) CreateSearchJob(ctx context.Context, args *graphqlbackend.CreateSearchJobArgs) (graphqlbackend.SearchJobResolver, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (r *Resolver) CancelExhaustiveSearch(ctx context.Context, args *graphqlbackend.CancelExhaustiveSearchArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *Resolver) CancelSearchJob(ctx context.Context, args *graphqlbackend.CancelSearchJobArgs) (*graphqlbackend.EmptyResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (r *Resolver) DeleteExhaustiveSearch(ctx context.Context, args *graphqlbackend.DeleteExhaustiveSearchArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *Resolver) DeleteSearchJob(ctx context.Context, args *graphqlbackend.DeleteSearchJobArgs) (*graphqlbackend.EmptyResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (r *Resolver) RetryExhaustiveSearch(ctx context.Context, args *graphqlbackend.RetryExhaustiveSearchArgs) (graphqlbackend.ExhaustiveSearchResolver, error) {
+func (r *Resolver) RetrySearchJob(ctx context.Context, args *graphqlbackend.RetrySearchJobArgs) (graphqlbackend.SearchJobResolver, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (r *Resolver) ValidateExhaustiveSearchQuery(ctx context.Context, args *graphqlbackend.ValidateExhaustiveSearchQueryArgs) (graphqlbackend.ValidateExhaustiveSearchQueryResolver, error) {
+func (r *Resolver) ValidateSearchJobQuery(ctx context.Context, args *graphqlbackend.ValidateSearchJobQueryArgs) (graphqlbackend.ValidateSearchJobQueryResolver, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (r *Resolver) ExhaustiveSearches(ctx context.Context, args *graphqlbackend.ExhaustiveSearchesArgs) (graphqlbackend.ExhaustiveSearchesConnectionResolver, error) {
+func (r *Resolver) SearchJobs(ctx context.Context, args *graphqlbackend.SearchJobsArgs) (graphqlbackend.SearchJobsConnectionResolver, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 	return map[string]graphqlbackend.NodeByIDFunc{
-		exhaustiveSearchIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.exhaustiveSearchByID(ctx, id)
+		searchJobIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.searchJobByID(ctx, id)
 		},
-		exhaustiveSearchRepoIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.exhaustiveSearchRepoByID(ctx, id)
+		searchJobRepoIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.searchJobRepoByID(ctx, id)
 		},
-		exhaustiveSearchRepoRevisionIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.exhaustiveSearchRepoRevisionByID(ctx, id)
+		searchJobRepoRevisionIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.searchJobRepoRevisionByID(ctx, id)
 		},
 	}
 }
 
-func (r *Resolver) exhaustiveSearchByID(ctx context.Context, id graphql.ID) (graphqlbackend.ExhaustiveSearchResolver, error) {
-	return &exhaustiveSearchResolver{}, nil
+func (r *Resolver) searchJobByID(ctx context.Context, id graphql.ID) (graphqlbackend.SearchJobResolver, error) {
+	return &searchJobResolver{}, nil
 }
 
-func (r *Resolver) exhaustiveSearchRepoByID(ctx context.Context, id graphql.ID) (graphqlbackend.ExhaustiveSearchRepoResolver, error) {
-	return &exhaustiveSearchRepoResolver{}, nil
+func (r *Resolver) searchJobRepoByID(ctx context.Context, id graphql.ID) (graphqlbackend.SearchJobRepoResolver, error) {
+	return &searchJobRepoResolver{}, nil
 }
 
-func (r *Resolver) exhaustiveSearchRepoRevisionByID(ctx context.Context, id graphql.ID) (graphqlbackend.ExhaustiveSearchRepoRevisionResolver, error) {
-	return &exhaustiveSearchRepoRevisionResolver{}, nil
+func (r *Resolver) searchJobRepoRevisionByID(ctx context.Context, id graphql.ID) (graphqlbackend.SearchJobRepoRevisionResolver, error) {
+	return &searchJobRepoRevisionResolver{}, nil
 }

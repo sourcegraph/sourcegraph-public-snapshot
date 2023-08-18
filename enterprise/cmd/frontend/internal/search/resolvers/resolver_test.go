@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
-func TestExhaustiveSearchesResolver_CreateExhaustiveSearch(t *testing.T) {
+func TestSearchJobsResolver_CreateSearchJob(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -24,7 +24,7 @@ func TestExhaustiveSearchesResolver_CreateExhaustiveSearch(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	resolver := resolvers.New(logger, db)
-	s, err := graphqlbackend.NewSchemaWithExhaustiveSearchesResolver(db, resolver)
+	s, err := graphqlbackend.NewSchemaWithSearchJobsResolver(db, resolver)
 	require.NoError(t, err)
 
 	variables := map[string]any{
@@ -32,7 +32,7 @@ func TestExhaustiveSearchesResolver_CreateExhaustiveSearch(t *testing.T) {
 	}
 
 	query := `mutation($query: String!) {
-	createExhaustiveSearch(query: $query) {
+	createSearchJob(query: $query) {
 		id
 	}
 }`
@@ -43,7 +43,7 @@ func TestExhaustiveSearchesResolver_CreateExhaustiveSearch(t *testing.T) {
 	assert.Equal(t, errors[0].Message, "panic occurred: implement me")
 }
 
-func TestExhaustiveSearchesResolver_CancelExhaustiveSearch(t *testing.T) {
+func TestSearchJobsResolver_CancelSearchJob(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -53,15 +53,15 @@ func TestExhaustiveSearchesResolver_CancelExhaustiveSearch(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	resolver := resolvers.New(logger, db)
-	s, err := graphqlbackend.NewSchemaWithExhaustiveSearchesResolver(db, resolver)
+	s, err := graphqlbackend.NewSchemaWithSearchJobsResolver(db, resolver)
 	require.NoError(t, err)
 
 	variables := map[string]any{
-		"exhaustiveSearch": string(resolvers.MarshalExhaustiveSearchID(int64(123))),
+		"searchJob": string(resolvers.MarshalSearchJobID(int64(123))),
 	}
 
-	query := `mutation($exhaustiveSearch: ID!) {
-	cancelExhaustiveSearch(id: $exhaustiveSearch) { alwaysNil }
+	query := `mutation($searchJob: ID!) {
+	cancelSearchJob(id: $searchJob) { alwaysNil }
 }`
 
 	var actual string
@@ -70,7 +70,7 @@ func TestExhaustiveSearchesResolver_CancelExhaustiveSearch(t *testing.T) {
 	assert.Equal(t, errors[0].Message, "panic occurred: implement me")
 }
 
-func TestExhaustiveSearchesResolver_DeleteExhaustiveSearch(t *testing.T) {
+func TestSearchJobsResolver_DeleteSearchJob(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -80,15 +80,15 @@ func TestExhaustiveSearchesResolver_DeleteExhaustiveSearch(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	resolver := resolvers.New(logger, db)
-	s, err := graphqlbackend.NewSchemaWithExhaustiveSearchesResolver(db, resolver)
+	s, err := graphqlbackend.NewSchemaWithSearchJobsResolver(db, resolver)
 	require.NoError(t, err)
 
 	variables := map[string]any{
-		"exhaustiveSearch": string(resolvers.MarshalExhaustiveSearchID(int64(123))),
+		"searchJob": string(resolvers.MarshalSearchJobID(int64(123))),
 	}
 
-	query := `mutation($exhaustiveSearch: ID!) {
-	deleteExhaustiveSearch(id: $exhaustiveSearch) { alwaysNil }
+	query := `mutation($searchJob: ID!) {
+	deleteSearchJob(id: $searchJob) { alwaysNil }
 }`
 
 	var actual string
@@ -97,7 +97,7 @@ func TestExhaustiveSearchesResolver_DeleteExhaustiveSearch(t *testing.T) {
 	assert.Equal(t, errors[0].Message, "panic occurred: implement me")
 }
 
-func TestExhaustiveSearchesResolver_RetryExhaustiveSearch(t *testing.T) {
+func TestSearchJobsResolver_RetrySearchJob(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -107,15 +107,15 @@ func TestExhaustiveSearchesResolver_RetryExhaustiveSearch(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	resolver := resolvers.New(logger, db)
-	s, err := graphqlbackend.NewSchemaWithExhaustiveSearchesResolver(db, resolver)
+	s, err := graphqlbackend.NewSchemaWithSearchJobsResolver(db, resolver)
 	require.NoError(t, err)
 
 	variables := map[string]any{
-		"exhaustiveSearch": string(resolvers.MarshalExhaustiveSearchID(int64(123))),
+		"searchJob": string(resolvers.MarshalSearchJobID(int64(123))),
 	}
 
-	query := `mutation($exhaustiveSearch: ID!) {
-	retryExhaustiveSearch(id: $exhaustiveSearch) {
+	query := `mutation($searchJob: ID!) {
+	retrySearchJob(id: $searchJob) {
 		id
 	}
 }`
@@ -126,7 +126,7 @@ func TestExhaustiveSearchesResolver_RetryExhaustiveSearch(t *testing.T) {
 	assert.Equal(t, errors[0].Message, "panic occurred: implement me")
 }
 
-func TestExhaustiveSearchesResolver_ValidateExhaustiveSearchQuery(t *testing.T) {
+func TestSearchJobsResolver_ValidateSearchJobQuery(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -136,7 +136,7 @@ func TestExhaustiveSearchesResolver_ValidateExhaustiveSearchQuery(t *testing.T) 
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	resolver := resolvers.New(logger, db)
-	s, err := graphqlbackend.NewSchemaWithExhaustiveSearchesResolver(db, resolver)
+	s, err := graphqlbackend.NewSchemaWithSearchJobsResolver(db, resolver)
 	require.NoError(t, err)
 
 	variables := map[string]any{
@@ -144,7 +144,7 @@ func TestExhaustiveSearchesResolver_ValidateExhaustiveSearchQuery(t *testing.T) 
 	}
 
 	query := `query($query: String!) {
-	validateExhaustiveSearchQuery(query: $query) {
+	validateSearchJobQuery(query: $query) {
 		query
 		valid
 		errors
@@ -157,7 +157,7 @@ func TestExhaustiveSearchesResolver_ValidateExhaustiveSearchQuery(t *testing.T) 
 	assert.Equal(t, errors[0].Message, "panic occurred: implement me")
 }
 
-func TestExhaustiveSearchesResolver_ExhaustiveSearches(t *testing.T) {
+func TestSearchJobsResolver_SearchJobs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -167,13 +167,13 @@ func TestExhaustiveSearchesResolver_ExhaustiveSearches(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	resolver := resolvers.New(logger, db)
-	s, err := graphqlbackend.NewSchemaWithExhaustiveSearchesResolver(db, resolver)
+	s, err := graphqlbackend.NewSchemaWithSearchJobsResolver(db, resolver)
 	require.NoError(t, err)
 
 	variables := map[string]any{}
 
 	query := `query {
-	exhaustiveSearches(first: 1) {
+	searchJobs(first: 1) {
 		totalCount
 		pageInfo {
 			hasNextPage

@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
-func TestExhaustiveSearchRepoResolver(t *testing.T) {
+func TestSearchJobResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -24,26 +24,38 @@ func TestExhaustiveSearchRepoResolver(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	resolver := resolvers.New(logger, db)
-	s, err := graphqlbackend.NewSchemaWithExhaustiveSearchesResolver(db, resolver)
+	s, err := graphqlbackend.NewSchemaWithSearchJobsResolver(db, resolver)
 	require.NoError(t, err)
 
 	variables := map[string]any{
-		"repoSearchID": string(resolvers.MarshalExhaustiveSearchRepoID(int64(123))),
+		"searchJob": string(resolvers.MarshalSearchJobID(int64(123))),
 	}
 
-	query := `query($repoSearchID: ID!) {
-	node(id: $repoSearchID) {
-		... on ExhaustiveSearchRepo {
+	query := `query($searchJob: ID!) {
+	node(id: $searchJob) {
+		... on SearchJob {
 			id
+			query
 			state
-			repository {
-				id
+			creator {
+				username
 			}
 			createdAt
 			startedAt
 			finishedAt
-			failureMessage
-			revisions(first: 1) {
+			csvURL
+			repoStats {
+				total
+				completed
+				failed
+				inProgress
+			}
+			repositories(first: 1) {
+				totalCount
+				pageInfo {
+					hasNextPage
+					endCursor
+				}
 				nodes {
 					id
 				}
@@ -54,6 +66,6 @@ func TestExhaustiveSearchRepoResolver(t *testing.T) {
 
 	var actual string
 	errors := exec(ctx, t, s, query, variables, &actual)
-	require.Equal(t, 8, len(errors))
+	require.Equal(t, 10, len(errors))
 	assert.Equal(t, errors[0].Message, "panic occurred: implement me")
 }
