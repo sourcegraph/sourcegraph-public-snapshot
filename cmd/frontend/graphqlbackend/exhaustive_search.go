@@ -117,10 +117,12 @@ type ExhaustiveSearchArgs struct {
 }
 
 type ExhaustiveSearchesArgs struct {
-	First  int32
-	After  *string
-	Query  *string
-	States *[]string
+	First      int32
+	After      *string
+	Query      *string
+	States     *[]string
+	OrderBy    string
+	Descending bool
 }
 
 type ExhaustiveSearchesConnectionResolver interface {

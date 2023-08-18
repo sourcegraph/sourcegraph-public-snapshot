@@ -8,6 +8,7 @@ extend type Mutation {
         """
         query: String!
     ): ExhaustiveSearch!
+
     """
     Experimental: Cancel an exhaustive search. This will cancel all of the search's repositories and revisions.
     """
@@ -17,6 +18,7 @@ extend type Mutation {
         """
         id: ID!
     ): EmptyResponse
+
     """
     Experimental: Delete an exhaustive search. This will delete all of the search's repositories and revisions.
     """
@@ -48,6 +50,7 @@ extend type Query {
         """
         query: String!
     ): ExhaustiveSearchQueryValidation
+
     """
     Experimental: Get a list of exhaustive searches.
     """
@@ -68,6 +71,14 @@ extend type Query {
         The states to filter the results by.
         """
         states: [ExhaustiveSearchState!]
+        """
+        The order by which to sort the results.
+        """
+        orderBy: ExhaustiveSearchesOrderBy = CREATED_DATE
+        """
+        The determines the order of the returned searches. Defaults to ascending.
+        """
+        descending: Boolean = false
     ): ExhaustiveSearchConnection!
 }
 
@@ -104,6 +115,24 @@ enum ExhaustiveSearchState {
     The exhaustive search has completed.
     """
     COMPLETED
+}
+
+"""
+The order by which exhaustive searches are sorted.
+"""
+enum ExhaustiveSearchesOrderBy {
+    """
+    Sort exhaustive searches by their query.
+    """
+    QUERY
+    """
+    Sort exhaustive searches by their created date.
+    """
+    CREATED_DATE
+    """
+    Sort exhaustive searches by their started date.
+    """
+    STATE
 }
 
 """
