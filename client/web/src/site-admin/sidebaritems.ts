@@ -82,6 +82,7 @@ export const configurationGroup: SiteAdminSideBarGroup = {
         {
             label: 'End user onboarding',
             to: '/site-admin/end-user-onboarding',
+            condition: ({ endUserOnboardingEnabled }) => endUserOnboardingEnabled,
         },
         {
             label: 'Feature flags',

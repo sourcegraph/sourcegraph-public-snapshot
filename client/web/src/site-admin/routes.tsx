@@ -145,6 +145,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/end-user-onboarding',
         render: props => <SiteAdminOnboardingTourPage {...props} />,
+        condition: ({ endUserOnboardingEnabled }) => endUserOnboardingEnabled,
     },
     {
         path: '/github-apps/*',
