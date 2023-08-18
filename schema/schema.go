@@ -1436,6 +1436,13 @@ type JVMPackagesConnection struct {
 	Maven Maven `json:"maven"`
 }
 
+// LinkStep description: Link step
+type LinkStep struct {
+	Type    any `json:"type"`
+	Value   any `json:"value"`
+	Variant any `json:"variant,omitempty"`
+}
+
 // LocalGitExternalService description: Configuration for integration local Git repositories.
 type LocalGitExternalService struct {
 	Repos []*LocalGitRepoPattern `json:"repos,omitempty"`
@@ -1674,6 +1681,32 @@ type OnRepository struct {
 	Branches []string `json:"branches,omitempty"`
 	// Repository description: The name of the repository (as it is known to Sourcegraph).
 	Repository string `json:"repository"`
+}
+type OnboardingStep struct {
+	Action              any      `json:"action"`
+	CompleteAfterEvents []string `json:"completeAfterEvents,omitempty"`
+	// Id description: Unique step ID
+	Id   string `json:"id"`
+	Info string `json:"info,omitempty"`
+	// Label description: Label of the step shown to the user
+	Label string `json:"label"`
+	// Tooltip description: More information about this step
+	Tooltip string `json:"tooltip,omitempty"`
+}
+
+// OnboardingTask description: An onboarding task
+type OnboardingTask struct {
+	// DataAttributes description: Additional attributes to add to the task HTML element as data-* attributes
+	DataAttributes map[string]any `json:"dataAttributes,omitempty"`
+	// Steps description: Steps that need to be completed by the user
+	Steps []*OnboardingStep `json:"steps"`
+	// Title description: Title of this task
+	Title string `json:"title,omitempty"`
+}
+
+// OnboardingTourConfiguration description: Configuration for a onboarding tour.
+type OnboardingTourConfiguration struct {
+	Tasks []*OnboardingTask `json:"tasks"`
 }
 
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
@@ -1935,6 +1968,12 @@ type Responders struct {
 	Name     string `json:"name,omitempty"`
 	Type     string `json:"type,omitempty"`
 	Username string `json:"username,omitempty"`
+}
+
+// RestartStep description: Restart step
+type RestartStep struct {
+	Type  any    `json:"type"`
+	Value string `json:"value"`
 }
 
 // RubyPackagesConnection description: Configuration for a connection to Ruby packages
@@ -2938,6 +2977,12 @@ type UpdateIntervalRule struct {
 }
 type UsernameIdentity struct {
 	Type string `json:"type"`
+}
+
+// VideoStep description: Video step
+type VideoStep struct {
+	Type  any `json:"type"`
+	Value any `json:"value"`
 }
 
 // WebhookLogging description: Configuration for logging incoming webhooks.

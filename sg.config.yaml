@@ -239,7 +239,6 @@ commands:
         export GCFLAGS='-N -l'
       fi
 
-      ./cmd/symbols/build-ctags.sh &&
       go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
     checkBinary: .bin/symbols
     env:
@@ -927,7 +926,6 @@ bazelCommands:
     env:
       ENTERPRISE: 1
   symbols:
-    # TODO build ctags thing
     target: //enterprise/cmd/symbols
     checkBinary: .bin/symbols
     env:
