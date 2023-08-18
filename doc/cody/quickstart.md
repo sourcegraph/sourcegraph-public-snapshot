@@ -1,6 +1,10 @@
-# Quickstart for Cody in VS Code
+# Cody Quickstart
 
-This guide provides recommendations for first things to try once you have Cody up and running.
+<p class="subtitle">In this quickstart guide, you'll learn how to use Cody once you have it installed the extension in your VS Code editor.</p>
+
+## Prerequisites
+
+
 
 If you haven't yet enabled Cody for your Sourcegraph instance or installed the VS Code extension, go here first:
 
