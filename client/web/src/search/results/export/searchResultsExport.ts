@@ -1,21 +1,21 @@
 import { of } from 'rxjs'
 
 import {
-    ContentMatch,
+    type ContentMatch,
     getFileMatchUrl,
     getRepositoryUrl,
-    SearchMatch,
-    PathMatch,
-    RepositoryMatch,
-    CommitMatch,
+    type SearchMatch,
+    type PathMatch,
+    type RepositoryMatch,
+    type CommitMatch,
     getCommitMatchUrl,
-    SymbolMatch,
-    PersonMatch,
-    TeamMatch,
+    type SymbolMatch,
+    type PersonMatch,
+    type TeamMatch,
     getOwnerMatchUrl,
-    StreamSearchOptions,
+    type StreamSearchOptions,
     aggregateStreamingSearch,
-    AggregateStreamingSearchResults,
+    type AggregateStreamingSearchResults,
 } from '@sourcegraph/shared/src/search/stream'
 
 import { eventLogger } from '../../../tracking/eventLogger'

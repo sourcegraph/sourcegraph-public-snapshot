@@ -250,10 +250,13 @@ func NewTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (name string, 
 }
 
 const (
-	testQuery       = "repo:github\\.com/sourcegraph/sourcegraph func type:diff patternType:literal"
+	//nolint:unused // used in tests
+	testQuery = "repo:github\\.com/sourcegraph/sourcegraph func type:diff patternType:literal"
+	//nolint:unused // used in tests
 	testDescription = "test description"
 )
 
+//nolint:unused // used in tests
 func newTestStore(t *testing.T) (context.Context, DB, *codeMonitorStore) {
 	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
@@ -262,6 +265,7 @@ func newTestStore(t *testing.T) (context.Context, DB, *codeMonitorStore) {
 	return ctx, db, CodeMonitorsWithClock(db, func() time.Time { return now })
 }
 
+//nolint:unused // used in tests
 func newTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (name string, id int32, userContext context.Context) {
 	t.Helper()
 
@@ -272,6 +276,7 @@ func newTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (name string, 
 	return name, id, ctx
 }
 
+//nolint:unused // used in tests
 func insertTestUser(ctx context.Context, t *testing.T, db dbutil.DB, name string, isAdmin bool) (userID int32) {
 	t.Helper()
 

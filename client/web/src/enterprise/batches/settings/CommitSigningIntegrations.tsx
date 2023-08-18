@@ -5,7 +5,7 @@ import { useLocation } from 'react-router-dom'
 import { Container, H3, Link, ProductStatusBadge, Text } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
-import { UseShowMorePaginationResult } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
+import type { UseShowMorePaginationResult } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -16,7 +16,7 @@ import {
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
 import { GitHubAppFailureAlert } from '../../../components/gitHubApps/GitHubAppFailureAlert'
-import {
+import type {
     BatchChangesCodeHostFields,
     GlobalBatchChangesCodeHostsResult,
     Scalars,

@@ -5,7 +5,7 @@ load("//dev:oci_defs.bzl", "image_repository")
 load("//cmd/server:macro.bzl", "container_dependencies", "dependencies_tars")
 
 DEPS = [
-    "//enterprise/cmd/executor",
+    "//cmd/executor",
 ]
 
 container_dependencies(DEPS)

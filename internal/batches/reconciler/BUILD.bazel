@@ -58,6 +58,7 @@ go_test(
         "//internal/batches/webhooks",
         "//internal/conf",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/encryption/testing",
         "//internal/errcode",

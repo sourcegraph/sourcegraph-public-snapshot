@@ -1,13 +1,13 @@
 import React from 'react'
 
-import { DecoratorFn, Meta } from '@storybook/react'
+import type { DecoratorFn, Meta } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Text } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../WebStory'
 
-import { SelfHostedCta, SelfHostedCtaProps } from './SelfHostedCta'
+import { SelfHostedCta, type SelfHostedCtaProps } from './SelfHostedCta'
 
 const decorator: DecoratorFn = story => <WebStory>{() => <div className="container mt-3">{story()}</div>}</WebStory>
 

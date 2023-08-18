@@ -64,10 +64,6 @@ func (*testConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (
 	return &cursor, nil
 }
 
-func newInt(n int) *int {
-	return &n
-}
-
 func newInt32(n int) *int32 {
 	num := int32(n)
 
@@ -138,7 +134,10 @@ func TestConnectionTotalCount(t *testing.T) {
 		t.Fatalf("wrong total count. want=%d, have=%d", testTotalCount, count)
 	}
 
-	resolver.TotalCount(ctx)
+	_, err = resolver.TotalCount(ctx)
+	if err != nil {
+		t.Fatalf("expected nil error when calling TotalCount, got %v", err)
+	}
 	if store.ComputeTotalCalled != 1 {
 		t.Fatalf("wrong compute total called count. want=%d, have=%d", 1, store.ComputeTotalCalled)
 	}
@@ -161,7 +160,10 @@ func testResolverNodesResponse(t *testing.T, resolver *ConnectionResolver[*testC
 		t.Fatal(diff)
 	}
 
-	resolver.Nodes(ctx)
+	_, err = resolver.Nodes(ctx)
+	if err != nil {
+		t.Fatalf("expected nil error when calling resolver.Nodes, got %v", err)
+	}
 	if store.ComputeNodesCalled != 1 {
 		t.Fatalf("wrong compute nodes called count. want=%d, have=%d", 1, store.ComputeNodesCalled)
 	}
@@ -278,7 +280,10 @@ func testResolverPageInfoResponse(t *testing.T, resolver *ConnectionResolver[*te
 		t.Fatalf("hasPreviousPage should be %v, but is %v", expectedResponse.hasPreviousPage, pageInfo.HasPreviousPage())
 	}
 
-	resolver.PageInfo(ctx)
+	_, err = resolver.PageInfo(ctx)
+	if err != nil {
+		t.Fatalf("expected nil error when calling resolver.PageInfo, got %v", err)
+	}
 	if diff := cmp.Diff(1, store.ComputeNodesCalled); diff != "" {
 		t.Fatal(diff)
 	}

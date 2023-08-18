@@ -1,10 +1,10 @@
-import { MockedResponse } from '@apollo/client/testing'
-import { Meta, Story } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import type { Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
 import { WebStory } from '../../../components/WebStory'
-import {
+import type {
     GetInstanceOwnStatsResult,
     GetInstanceOwnStatsVariables,
     GetOwnSignalConfigurationsResult,

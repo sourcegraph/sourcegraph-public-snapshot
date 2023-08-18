@@ -4,20 +4,20 @@ import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiThumbUp, mdiThumbDown, mdi
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { CaseSensitivityProps, SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { CaseSensitivityProps, SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
-import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon, Alert, useSessionStorage, Link, Text } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_SOURCEGRAPH_COM } from '../../batches/utils'
 import { eventLogger } from '../../tracking/eventLogger'
 import { DOTCOM_URL } from '../../tracking/util'
 
 import {
-    CreateAction,
+    type CreateAction,
     getBatchChangeCreateAction,
     getCodeMonitoringCreateAction,
     getInsightsCreateAction,

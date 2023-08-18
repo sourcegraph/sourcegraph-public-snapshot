@@ -1,11 +1,11 @@
-import { MockedResponse } from '@apollo/client/testing'
-import { Meta, Story } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import type { Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../components/WebStory'
-import { FetchOwnershipResult } from '../../../graphql-operations'
+import type { FetchOwnershipResult } from '../../../graphql-operations'
 
 import { FileOwnershipPanel } from './FileOwnershipPanel'
 import { FETCH_OWNERS } from './grapqlQueries'
@@ -17,8 +17,11 @@ const response: FetchOwnershipResult = {
     node: {
         __typename: 'Repository',
         commit: {
+            __typename: 'GitCommit',
             blob: {
+                __typename: 'GitBlob',
                 ownership: {
+                    __typename: 'OwnershipConnection',
                     totalOwners: 4,
                     nodes: [
                         {
@@ -149,6 +152,7 @@ const response: FetchOwnershipResult = {
                 },
             },
         },
+        changelist: null,
     },
 }
 

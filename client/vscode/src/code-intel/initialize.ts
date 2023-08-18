@@ -1,10 +1,10 @@
-import * as Comlink from 'comlink'
+import type * as Comlink from 'comlink'
 import vscode from 'vscode'
 
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
-import { SearchSidebarAPI } from '../contract'
-import { SourcegraphFileSystemProvider } from '../file-system/SourcegraphFileSystemProvider'
+import type { SearchSidebarAPI } from '../contract'
+import type { SourcegraphFileSystemProvider } from '../file-system/SourcegraphFileSystemProvider'
 
 import { toSourcegraphLanguage } from './languages'
 import { SourcegraphDefinitionProvider } from './SourcegraphDefinitionProvider'

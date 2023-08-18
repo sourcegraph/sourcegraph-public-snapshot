@@ -17,7 +17,7 @@ func (svc) Name() string { return "gitserver" }
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 	c := shared.LoadConfig()
 	endpoints := []debugserver.Endpoint{
-		shared.GRPCWebUIDebugEndpoint(),
+		shared.GRPCWebUIDebugEndpoint(c.ListenAddress),
 	}
 	return c, endpoints
 }

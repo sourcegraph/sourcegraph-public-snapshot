@@ -1,25 +1,25 @@
 import { subDays, subHours, subMinutes } from 'date-fns'
-import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockedResponse } from 'wildcard-mock-link'
+import { MATCH_ANY_PARAMETERS, type MockedResponses, type WildcardMockedResponse } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
 import {
     BatchSpecWorkspaceResolutionState,
-    WorkspaceResolutionStatusResult,
-    BatchSpecImportingChangesetsResult,
-    PreviewBatchSpecImportingChangesetFields,
-    BatchSpecWorkspacesPreviewResult,
-    EditBatchChangeFields,
-    PreviewVisibleBatchSpecWorkspaceFields,
+    type WorkspaceResolutionStatusResult,
+    type BatchSpecImportingChangesetsResult,
+    type PreviewBatchSpecImportingChangesetFields,
+    type BatchSpecWorkspacesPreviewResult,
+    type EditBatchChangeFields,
+    type PreviewVisibleBatchSpecWorkspaceFields,
     BatchSpecState,
     BatchChangeState,
     BatchSpecWorkspaceState,
-    HiddenBatchSpecWorkspaceFields,
+    type HiddenBatchSpecWorkspaceFields,
     ChangesetSpecType,
-    VisibleBatchSpecWorkspaceFields,
-    BatchSpecWorkspaceStepFields,
-    BatchSpecExecutionFields,
-    BatchSpecWorkspacesResult,
+    type VisibleBatchSpecWorkspaceFields,
+    type BatchSpecWorkspaceStepFields,
+    type BatchSpecExecutionFields,
+    type BatchSpecWorkspacesResult,
     BatchSpecSource,
     ExecutorCompatibility,
 } from '../../../graphql-operations'

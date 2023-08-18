@@ -2,25 +2,30 @@ import React, { useEffect, useMemo, useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import { CodyClientScope } from '@sourcegraph/cody-shared/dist/chat/useClient'
+import type { Transcript } from '@sourcegraph/cody-shared/dist/chat/transcript'
+import type { CodyClientScope } from '@sourcegraph/cody-shared/dist/chat/useClient'
 import { useLazyQuery } from '@sourcegraph/http-client'
+import { Text } from '@sourcegraph/wildcard'
 
-import { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
+import type { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { EventName } from '../../../util/constants'
 
 import { ReposStatusQuery } from './backend'
-import { RepositoriesSelectorPopover, getFileName, IRepo } from './RepositoriesSelectorPopover'
+import { RepositoriesSelectorPopover, getFileName, type IRepo } from './RepositoriesSelectorPopover'
 
 import styles from './ScopeSelector.module.scss'
 
-interface ScopeSelectorProps {
+export interface ScopeSelectorProps {
     scope: CodyClientScope
     setScope: (scope: CodyClientScope) => void
     toggleIncludeInferredRepository: () => void
     toggleIncludeInferredFile: () => void
     fetchRepositoryNames: (count: number) => Promise<string[]>
-    isSourcegraphApp: boolean
+    isSourcegraphApp?: boolean
+    transcript: Transcript | null
+    className?: string
+    renderHint?: (repos: IRepo[]) => React.ReactNode
 }
 
 export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function ScopeSelectorComponent({
@@ -30,6 +35,9 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     toggleIncludeInferredFile,
     fetchRepositoryNames,
     isSourcegraphApp,
+    transcript,
+    className,
+    renderHint,
 }) {
     const [loadReposStatus, { data: newReposStatusData, previousData: previousReposStatusData }] = useLazyQuery<
         ReposStatusResult,
@@ -83,53 +91,55 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     const addRepository = useCallback(
         (repoName: string) => {
             if (!scope.repositories.includes(repoName)) {
-                eventLogger.log(EventName.CODY_CHAT_SCOPE_REPO_ADDED)
+                eventLogger.log(EventName.CODY_CHAT_SCOPE_REPO_ADDED, { chatId: transcript?.id })
                 setScope({ ...scope, repositories: [...scope.repositories, repoName] })
             }
         },
-        [scope, setScope]
+        [scope, setScope, transcript?.id]
     )
 
     const removeRepository = useCallback(
         (repoName: string) => {
-            eventLogger.log(EventName.CODY_CHAT_SCOPE_REPO_REMOVED)
+            eventLogger.log(EventName.CODY_CHAT_SCOPE_REPO_REMOVED, { chatId: transcript?.id })
             setScope({ ...scope, repositories: scope.repositories.filter(repo => repo !== repoName) })
         },
-        [scope, setScope]
+        [scope, setScope, transcript?.id]
     )
 
     const resetScope = useCallback(async (): Promise<void> => {
-        eventLogger.log(EventName.CODY_CHAT_SCOPE_RESET)
+        eventLogger.log(EventName.CODY_CHAT_SCOPE_RESET, { chatId: transcript?.id })
         if (!isSourcegraphApp) {
             return setScope({ ...scope, repositories: [], includeInferredRepository: true, includeInferredFile: true })
         }
 
         const repositories = await fetchRepositoryNames(10)
         return setScope({ ...scope, repositories, includeInferredRepository: true, includeInferredFile: true })
-    }, [scope, setScope, fetchRepositoryNames, isSourcegraphApp])
+    }, [scope, setScope, fetchRepositoryNames, isSourcegraphApp, transcript?.id])
 
     return (
-        <div className={styles.wrapper}>
-            <div className="d-flex text-truncate">
-                <RepositoriesSelectorPopover
-                    includeInferredRepository={scope.includeInferredRepository}
-                    includeInferredFile={scope.includeInferredFile}
-                    inferredRepository={inferredRepository}
-                    inferredFilePath={activeEditor?.filePath || null}
-                    additionalRepositories={additionalRepositories}
-                    addRepository={addRepository}
-                    resetScope={!isSourcegraphApp ? resetScope : null}
-                    removeRepository={removeRepository}
-                    toggleIncludeInferredRepository={toggleIncludeInferredRepository}
-                    toggleIncludeInferredFile={toggleIncludeInferredFile}
-                />
-                {scope.includeInferredFile && activeEditor?.filePath && (
-                    <div className={classNames('d-flex align-items-center', styles.filepathText)}>
-                        <div className={styles.separator} />
-                        {getFileName(activeEditor.filePath)}
-                    </div>
-                )}
+        <>
+            <div className={classNames(styles.wrapper, className)}>
+                <div className="d-flex text-truncate w-100">
+                    <RepositoriesSelectorPopover
+                        includeInferredRepository={scope.includeInferredRepository}
+                        includeInferredFile={scope.includeInferredFile}
+                        inferredRepository={inferredRepository}
+                        inferredFilePath={activeEditor?.filePath || null}
+                        additionalRepositories={additionalRepositories}
+                        addRepository={addRepository}
+                        resetScope={!isSourcegraphApp ? resetScope : null}
+                        removeRepository={removeRepository}
+                        toggleIncludeInferredRepository={toggleIncludeInferredRepository}
+                        toggleIncludeInferredFile={toggleIncludeInferredFile}
+                    />
+                    {scope.includeInferredFile && activeEditor?.filePath && (
+                        <Text size="small" className="ml-2 mb-0 align-self-center">
+                            {getFileName(activeEditor.filePath)}
+                        </Text>
+                    )}
+                </div>
             </div>
-        </div>
+            {renderHint?.(additionalRepositories)}
+        </>
     )
 })

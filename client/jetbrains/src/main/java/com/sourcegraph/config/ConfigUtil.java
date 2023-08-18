@@ -5,7 +5,7 @@ import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
-import com.sourcegraph.cody.agent.ConnectionConfiguration;
+import com.sourcegraph.cody.agent.ExtensionConfiguration;
 import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.find.Search;
 import java.util.HashMap;
@@ -21,11 +21,18 @@ public class ConfigUtil {
   public static final String DOTCOM_URL = "https://sourcegraph.com/";
 
   @NotNull
-  public static ConnectionConfiguration getAgentConfiguration(@NotNull Project project) {
-    return new ConnectionConfiguration()
+  public static ExtensionConfiguration getAgentConfiguration(@NotNull Project project) {
+    return new ExtensionConfiguration()
         .setServerEndpoint(getSourcegraphUrl(project))
         .setAccessToken(getProjectAccessToken(project))
-        .setCustomHeaders(getCustomRequestHeadersAsMap(project));
+        .setCustomHeaders(getCustomRequestHeadersAsMap(project))
+        .setAutocompleteAdvancedProvider(
+            UserLevelConfig.getAutoCompleteProviderType().vscodeSettingString())
+        .setAutocompleteAdvancedServerEndpoint(UserLevelConfig.getAutoCompleteServerEndpoint())
+        .setAutocompleteAdvancedAccessToken(UserLevelConfig.getAutoCompleteAccessToken())
+        .setAutocompleteAdvancedEmbeddings(UserLevelConfig.getAutocompleteAdvancedEmbeddings())
+        .setDebug(isCodyDebugEnabled())
+        .setVerboseDebug(isCodyVerboseDebugEnabled());
   }
 
   @NotNull
@@ -218,9 +225,16 @@ public class ConfigUtil {
     return getApplicationLevelConfig().isCodyEnabled;
   }
 
+  public static boolean isCodyDebugEnabled() {
+    return getApplicationLevelConfig().isCodyDebugEnabled();
+  }
+
+  public static boolean isCodyVerboseDebugEnabled() {
+    return getApplicationLevelConfig().isCodyVerboseDebugEnabled();
+  }
+
   public static boolean isCodyAutoCompleteEnabled() {
-    return getApplicationLevelConfig().isCodyEnabled
-        && getApplicationLevelConfig().isCodyAutoCompleteEnabled();
+    return getApplicationLevelConfig().isCodyAutoCompleteEnabled();
   }
 
   public static boolean isAccessTokenNotificationDismissed() {

@@ -1,18 +1,18 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
+import type * as H from 'history'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
-import { ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { isHTTPAuthError } from '@sourcegraph/http-client'
-import { ActionNavItemsClassProps, ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
-import { ContributionScope } from '@sourcegraph/shared/src/api/extension/api/context/context'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { type ActionNavItemsClassProps, ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
+import type { ContributionScope } from '@sourcegraph/shared/src/api/extension/api/context/context'
+import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { DiffOrBlobInfo, FileInfoWithContent } from '../code-hosts/shared/codeHost'
+import type { DiffOrBlobInfo, FileInfoWithContent } from '../code-hosts/shared/codeHost'
 import { SignInButton } from '../code-hosts/shared/SignInButton'
 import { defaultRevisionToCommitID } from '../code-hosts/shared/util/fileInfo'
 

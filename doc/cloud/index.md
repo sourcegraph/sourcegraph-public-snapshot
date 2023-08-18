@@ -70,7 +70,7 @@ All Sourcegraph features are avilable on Sourcegraph Cloud instances out-of-the-
 Sourcegraph Cloud provides all customer instances a `customer.sourcegraphcloud.com` domain. This domain is fully managed by Sourcegraph, including DNS and HTTPS.
 However, to provide better branding and a more seamless experience for your users, you may bring your own company domain, for example `sourcegraph.company.io`.
 
-In order to use your own domain, you need to perform an one-time setup by adding DNS records at your authoritative DNS. These DNS records are neccessary to ensure that your users can access your Sourcegraph instance via the custom domain, and also to ensure we can provide managed TLS certificates for your instance. See a [list of DNS records to be created by your organization](#list-of-dns-records-to-be-created-by-your-organization) below as an example. Additionally, your custom domain's [CAA records](https://blog.cloudflare.com/caa-of-the-wild/) should permit our upstream certificate authorities to issue certificates for your domain, follow the [instructions](#verify-caa-records) below to verify your CAA records.
+In order to use your own domain, you need to perform an one-time setup by adding DNS records at your authoritative DNS. These DNS records are neccessary to ensure that your users can access your Sourcegraph instance via the custom domain, and also to ensure we can provide managed TLS certificates for your instance. See a [list of DNS records to be created by your organization](#dns-records-to-be-created-by-your-organization) below as an example. Additionally, your custom domain's [CAA records](https://blog.cloudflare.com/caa-of-the-wild/) should permit our upstream certificate authorities to issue certificates for your domain, follow the [instructions](#verify-caa-records) below to verify your CAA records.
 
 Please reach out to your Sourcegraph account team to request a custom domain to be configured for your Sourcegraph Cloud instance.
 
@@ -192,7 +192,7 @@ To learn more about how the Sourcegraph team operates managed SMTP internally, r
 </p>
 </aside>
 
-Cody is an AI coding assistant that lives in your editor that can find, explain, and write code. Cody uses a combination of Large Language Models (LLMs), Sourcegraph search, and Sourcegraph code intelligence to provide answers that eliminate toil and keep human programmers in flow. You can think of Cody as your programmer buddy who has read through all the code in open source, all the questions on StackOverflow, and all your organization's private code, and is always there to answer questions you might have or suggest ways of doing something based on prior knowledge. Learn more from [Cody documentation](../cody/index.md) about how Cody can help you.
+Cody is an AI coding assistant that lives in your editor that can find, explain, and write code. Cody uses a combination of Large Language Models (LLMs), Sourcegraph search, and Sourcegraph code intelligence to provide answers that eliminate toil and keep human programmers in flow. You can think of Cody as your programmer buddy who has read through all the code in open source, all the questions on StackOverflow, and all your organization's private code, and is always there to answer questions you might have or suggest ways of doing something based on prior knowledge. Learn more from [Cody documentation](../cody/overview/index.md) about how Cody can help you.
 
 On Cloud, Cody can be enabled by contacting your Sourcegraph account team. Once Cody has been enabled by us, you can follow the instruction below to try it out.
 
@@ -224,10 +224,6 @@ A few things you can ask Cody:
 - "What are popular go libraries for building CLIs?"
 - Open your workspace, and ask "Do we have a React date picker component in this repository?"
 - Right click on a function, and ask Cody to explain it
-- Try any of the Cody recipes!
-
-<img width="510" alt="image" src="https://user-images.githubusercontent.com/25070988/227511383-aa60f074-817d-4875-af41-54558dfe1951.png">
-
 
 ## Requirements
 

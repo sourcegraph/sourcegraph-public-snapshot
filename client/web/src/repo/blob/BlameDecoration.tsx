@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo } from 'react'
 import classNames from 'classnames'
 import { truncate } from 'lodash'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
-import { NavigateFunction } from 'react-router-dom'
+import type { NavigateFunction } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'
 
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
@@ -14,7 +14,7 @@ import {
     Link,
     Popover,
     PopoverContent,
-    PopoverOpenEvent,
+    type PopoverOpenEvent,
     PopoverTrigger,
     Position,
     useObservable,
@@ -22,7 +22,7 @@ import {
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { replaceRevisionInURL } from '../../util/url'
-import { BlameHunk, BlameHunkData } from '../blame/useBlameHunks'
+import type { BlameHunk, BlameHunkData } from '../blame/useBlameHunks'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 
 import { useBlameRecencyColor } from './BlameRecency'

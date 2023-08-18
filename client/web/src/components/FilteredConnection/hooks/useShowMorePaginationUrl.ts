@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 
 import { useNavigate, useLocation } from 'react-router-dom'
 
-import { getUrlQuery, GetUrlQueryParameters } from '../utils'
+import { getUrlQuery, type GetUrlQueryParameters } from '../utils'
 
 interface UseShowMorePaginationURLParameters extends Pick<GetUrlQueryParameters, 'first' | 'visibleResultCount'> {
     enabled?: boolean

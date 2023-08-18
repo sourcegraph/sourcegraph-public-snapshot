@@ -1,10 +1,10 @@
 /* eslint-disable jsdoc/check-param-names */
-import { Observable, of } from 'rxjs'
+import { type Observable, of } from 'rxjs'
 
 import * as sourcegraph from './api'
 import * as indicators from './indicators'
-import { LanguageSpec } from './language-specs/language-spec'
-import { Logger, NoopLogger } from './logging'
+import type { LanguageSpec } from './language-specs/language-spec'
+import { type Logger, NoopLogger } from './logging'
 import { createProviders as createLSIFProviders } from './lsif/providers'
 import { createProviders as createSearchProviders } from './search/providers'
 import { TelemetryEmitter } from './telemetry'

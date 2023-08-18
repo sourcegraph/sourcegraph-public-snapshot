@@ -3,7 +3,7 @@ import { describe, before, test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
-import { Driver } from '@sourcegraph/shared/src/testing/driver'
+import type { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
 import { createAndInitializeDriver } from './util/init'

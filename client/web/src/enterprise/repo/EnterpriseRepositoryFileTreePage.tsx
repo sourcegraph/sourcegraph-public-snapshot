@@ -1,6 +1,6 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
-import { RepositoryFileTreePageProps, RepositoryFileTreePage } from '../../repo/RepositoryFileTreePage'
+import { type RepositoryFileTreePageProps, RepositoryFileTreePage } from '../../repo/RepositoryFileTreePage'
 import { useCodeIntel } from '../codeintel/useCodeIntel'
 
 export const EnterpriseRepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => (

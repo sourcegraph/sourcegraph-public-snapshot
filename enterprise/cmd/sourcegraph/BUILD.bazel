@@ -7,12 +7,12 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/blobstore/shared",
+        "//cmd/executor/singlebinary",
         "//cmd/github-proxy/shared",
         "//cmd/precise-code-intel-worker/shared",
         "//cmd/repo-updater/shared",
         "//cmd/searcher/shared",
         "//enterprise/cmd/embeddings/shared",
-        "//enterprise/cmd/executor/singlebinary",
         "//enterprise/cmd/frontend/shared",
         "//enterprise/cmd/gitserver/shared",
         "//enterprise/cmd/sourcegraph/enterprisecmd",

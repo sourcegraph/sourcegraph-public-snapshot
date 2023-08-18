@@ -1,11 +1,11 @@
 import vscode from 'vscode'
 
-import { EventSource } from '@sourcegraph/shared/src/graphql-operations'
+import type { EventSource } from '@sourcegraph/shared/src/graphql-operations'
 
 import { version } from '../../package.json'
 import { logEvent } from '../backend/eventLogger'
 
-import { ANONYMOUS_USER_ID_KEY, LocalStorageService } from './LocalStorageService'
+import { ANONYMOUS_USER_ID_KEY, type LocalStorageService } from './LocalStorageService'
 
 // This function allows us to watch for uninstall event while still having access to the VS Code API
 export function watchUninstall(eventSourceType: EventSource, localStorageService: LocalStorageService): void {

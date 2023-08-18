@@ -1,13 +1,13 @@
 import { addHours } from 'date-fns'
 
 import {
-    ExternalChangesetFields,
-    HiddenExternalChangesetFields,
+    type ExternalChangesetFields,
+    type HiddenExternalChangesetFields,
     ChangesetCheckState,
     ChangesetReviewState,
     ChangesetSpecType,
     ChangesetState,
-    BatchChangeChangesetsResult,
+    type BatchChangeChangesetsResult,
 } from '../../../../graphql-operations'
 import { MOCK_BATCH_CHANGE } from '../BatchChangeDetailsPage.mock'
 

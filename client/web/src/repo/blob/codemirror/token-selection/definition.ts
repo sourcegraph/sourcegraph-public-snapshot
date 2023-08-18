@@ -1,12 +1,12 @@
-import { Extension, StateEffect, StateField } from '@codemirror/state'
-import { EditorView } from '@codemirror/view'
+import { type Extension, StateEffect, StateField } from '@codemirror/state'
+import type { EditorView } from '@codemirror/view'
 import { createPath } from 'react-router-dom'
 
-import { TextDocumentPositionParameters } from '@sourcegraph/client-api'
-import { Location } from '@sourcegraph/extension-api-types'
+import type { TextDocumentPositionParameters } from '@sourcegraph/client-api'
+import type { Location } from '@sourcegraph/extension-api-types'
 import { getOrCreateCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
-import { Occurrence, Position, Range } from '@sourcegraph/shared/src/codeintel/scip'
-import { BlobViewState, parseRepoURI, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
+import { type Occurrence, Position, Range } from '@sourcegraph/shared/src/codeintel/scip'
+import { type BlobViewState, parseRepoURI, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
 import { blobPropsFacet } from '..'
 import { syntaxHighlight } from '../highlight'

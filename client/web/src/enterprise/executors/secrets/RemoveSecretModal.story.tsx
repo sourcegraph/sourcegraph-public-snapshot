@@ -1,11 +1,11 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays, subHours } from 'date-fns'
 import { noop } from 'lodash'
 
 import { ExecutorSecretScope } from '@sourcegraph/shared/src/graphql-operations'
 
 import { WebStory } from '../../../components/WebStory'
-import { ExecutorSecretFields } from '../../../graphql-operations'
+import type { ExecutorSecretFields } from '../../../graphql-operations'
 
 import { RemoveSecretModal } from './RemoveSecretModal'
 

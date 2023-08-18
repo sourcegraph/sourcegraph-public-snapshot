@@ -1,17 +1,17 @@
 import * as React from 'react'
 
 // type only
-import * as _monaco from 'monaco-editor'
+import type * as _monaco from 'monaco-editor'
 import { Subscription } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
 
-import { SaveToolbarProps, SaveToolbar, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
+import { type SaveToolbarProps, SaveToolbar, type SaveToolbarPropsGenerator } from '../components/SaveToolbar'
 
-import { EditorAction, EditorActionsGroup } from './EditorActionsGroup'
-import * as _monacoSettingsEditorModule from './MonacoSettingsEditor'
+import { type EditorAction, EditorActionsGroup } from './EditorActionsGroup'
+import type * as _monacoSettingsEditorModule from './MonacoSettingsEditor'
 
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription

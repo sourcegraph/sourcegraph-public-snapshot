@@ -16,8 +16,6 @@ go_library(
         "//internal/debugserver",
         "//internal/encryption/keyring",
         "//internal/env",
-        "//internal/extsvc/github/auth",
-        "//internal/github_apps/auth",
         "//internal/observation",
         "//internal/service",
         "@com_github_sourcegraph_log//:log",

@@ -65,6 +65,7 @@ go_test(
         "//internal/api",
         "//internal/database",
         "//internal/database/basestore",
+        "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/insights/background/queryrunner",
         "//internal/insights/background/retention",

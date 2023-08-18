@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react'
 
-import * as H from 'history'
+import type * as H from 'history'
 import { useLocation } from 'react-router-dom'
 
 import { parseBrowserRepoURL } from '../util/url'

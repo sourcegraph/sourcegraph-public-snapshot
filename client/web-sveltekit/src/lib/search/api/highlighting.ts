@@ -1,15 +1,10 @@
-import { memoize } from 'lodash'
-
-import { createAggregateError } from '$lib/common'
+import { gql, query } from '$lib/graphql'
 import {
     HighlightResponseFormat,
     type HighlightLineRange,
     type HighlightedFileResult,
     type HighlightedFileVariables,
 } from '$lib/graphql-operations'
-import { getDocumentNode, gql } from '$lib/http-client'
-import { makeRepoURI } from '$lib/shared'
-import { getWebGraphQLClient } from '$lib/web'
 
 const HIGHLIGHTED_FILE_QUERY = gql`
     query HighlightedFile(
@@ -21,8 +16,11 @@ const HIGHLIGHTED_FILE_QUERY = gql`
         $format: HighlightResponseFormat!
     ) {
         repository(name: $repoName) {
+            id
             commit(rev: $commitID) {
-                file(path: $filePath) {
+                id
+                blob(path: $filePath) {
+                    canonicalURL
                     isDirectory
                     highlight(disableTimeout: $disableTimeout, format: $format) {
                         aborted
@@ -44,37 +42,28 @@ interface Result {
  * Fetches the specified highlighted file line ranges (`FetchFileParameters.ranges`) and returns
  * them as a list of ranges, each describing a list of lines in the form of HTML table '<tr>...</tr>'.
  */
-export const fetchFileRangeMatches = memoize(
-    async (args: {
-        result: Result
-        format?: HighlightResponseFormat
-        ranges: HighlightLineRange[]
-    }): Promise<string[][]> => {
-        const client = await getWebGraphQLClient()
-        const result = await client.query<HighlightedFileResult, HighlightedFileVariables>({
-            query: getDocumentNode(HIGHLIGHTED_FILE_QUERY),
-            variables: {
-                repoName: args.result.repository,
-                commitID: args.result.commit ?? '',
-                filePath: args.result.path,
-                ranges: args.ranges,
-                format: args.format ?? HighlightResponseFormat.HTML_HIGHLIGHT,
-                disableTimeout: true,
-            },
-        })
+export const fetchFileRangeMatches = async (args: {
+    result: Result
+    format?: HighlightResponseFormat
+    ranges: HighlightLineRange[]
+}): Promise<string[][]> => {
+    const data = await query<HighlightedFileResult, HighlightedFileVariables>(HIGHLIGHTED_FILE_QUERY, {
+        repoName: args.result.repository,
+        commitID: args.result.commit ?? '',
+        filePath: args.result.path,
+        ranges: args.ranges,
+        format: args.format ?? HighlightResponseFormat.HTML_HIGHLIGHT,
+        disableTimeout: true,
+    })
 
-        if (!result.data?.repository?.commit?.file?.highlight) {
-            throw createAggregateError(result.errors)
-        }
+    if (!data?.repository?.commit?.blob?.highlight) {
+        throw new Error('Unable to highlight file range')
+    }
 
-        const file = result.data.repository.commit.file
-        if (file.isDirectory) {
-            return []
-        }
+    const file = data.repository.commit.blob
+    if (file?.isDirectory) {
+        return []
+    }
 
-        return file.highlight.lineRanges
-    },
-    ({ result: { repository, commit, path }, format, ranges }) =>
-        makeRepoURI({ repoName: repository, commitID: commit, filePath: path }) +
-        `?ranges=${ranges.map(range => `${range.startLine}:${range.endLine}`).join(',')}&format=${format}`
-)
+    return file?.highlight.lineRanges ?? []
+}

@@ -34,7 +34,7 @@ import {
     SummaryContainer,
 } from '../../components/FilteredConnection/ui'
 import { PageTitle } from '../../components/PageTitle'
-import {
+import type {
     RepositoryContributorNodeFields,
     RepositoryContributorsResult,
     RepositoryContributorsVariables,
@@ -43,7 +43,7 @@ import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
 
-import { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
+import type { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
 
 import styles from './RepositoryStatsContributorsPage.module.scss'
 

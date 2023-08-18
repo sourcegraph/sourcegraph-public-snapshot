@@ -1,6 +1,6 @@
-import { Primitive } from 'utility-types'
+import type { Primitive } from 'utility-types'
 
-import { Expression, TemplateExpression } from '@sourcegraph/template-parser'
+import type { Expression, TemplateExpression } from '@sourcegraph/template-parser'
 
 /**
  * A key path that refers to a location in a JSON document.

@@ -1,6 +1,6 @@
-import { ChangeEvent, FocusEventHandler, useEffect, useRef, useState } from 'react'
+import { type ChangeEvent, type FocusEventHandler, useEffect, useRef, useState } from 'react'
 
-import { FormAPI } from './useForm'
+import type { FormAPI } from './useForm'
 
 export interface UseCheckboxAPI<FieldValue> {
     input: {

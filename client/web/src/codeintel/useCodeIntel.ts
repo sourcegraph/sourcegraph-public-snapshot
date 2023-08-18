@@ -1,11 +1,11 @@
-import { ErrorLike } from '@sourcegraph/common'
-import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
+import type { ErrorLike } from '@sourcegraph/common'
+import type { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 
-import { ConnectionQueryArguments } from '../components/FilteredConnection'
-import { UsePreciseCodeIntelForPositionVariables } from '../graphql-operations'
+import type { ConnectionQueryArguments } from '../components/FilteredConnection'
+import type { UsePreciseCodeIntelForPositionVariables } from '../graphql-operations'
 
-import { Location } from './location'
-import { SettingsGetter } from './settings'
+import type { Location } from './location'
+import type { SettingsGetter } from './settings'
 
 export interface CodeIntelData {
     references: {

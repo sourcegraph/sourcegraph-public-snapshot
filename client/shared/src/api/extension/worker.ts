@@ -1,7 +1,7 @@
 // eslint-disable-next-line import/extensions
 import { Subscription } from 'rxjs'
 
-import { EndpointPair, ClosableEndpointPair } from '../../platform/context'
+import type { EndpointPair, ClosableEndpointPair } from '../../platform/context'
 
 /* eslint-disable import/extensions, @typescript-eslint/ban-ts-comment */
 // @ts-ignore

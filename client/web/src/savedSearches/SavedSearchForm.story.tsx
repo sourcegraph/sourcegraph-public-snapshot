@@ -1,8 +1,8 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../components/WebStory'
 
-import { SavedSearchForm, SavedSearchFormProps } from './SavedSearchForm'
+import { SavedSearchForm, type SavedSearchFormProps } from './SavedSearchForm'
 
 const config: Meta = {
     title: 'web/savedSearches/SavedSearchForm',

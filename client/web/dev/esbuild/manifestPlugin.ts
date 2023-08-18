@@ -1,11 +1,11 @@
 import fs from 'fs'
 import path from 'path'
 
-import * as esbuild from 'esbuild'
+import type * as esbuild from 'esbuild'
 
 import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 
-import { WebpackManifest, WEBPACK_MANIFEST_PATH } from '../utils'
+import { type WebpackManifest, WEBPACK_MANIFEST_PATH } from '../utils'
 
 export const assetPathPrefix = '/.assets'
 

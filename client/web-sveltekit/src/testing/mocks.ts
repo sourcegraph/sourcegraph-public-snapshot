@@ -3,6 +3,7 @@ import signale from 'signale'
 import { writable, type Readable, type Writable } from 'svelte/store'
 import { vi } from 'vitest'
 
+import type { SettingsCascade } from '$lib/shared'
 import { KEY, type SourcegraphContext } from '$lib/stores'
 import type { FeatureFlagName } from '$lib/web'
 
@@ -33,7 +34,21 @@ export function useRealTimers() {
     vi.useRealTimers()
 }
 
-// Stores all mocked context values
+/**
+ * Mocks arbitrary Svelte context values
+ */
+export function mockSvelteContext<T>(key: any, value: T) {
+    mockedContexts.set(key, value)
+}
+
+/**
+ * Unmock SvelteContext
+ */
+export function unmockSvelteContext(key: any) {
+    mockedContexts.delete(key)
+}
+
+// Stores all mocke context values
 export let mockedContexts = new Map<any, any>()
 
 type SourcegraphContextKey = keyof SourcegraphContext
@@ -94,5 +109,25 @@ export function mockFeatureFlags(evaluatedFeatureFlags: Partial<Record<FeatureFl
  * Unmock all feature flags.
  */
 export function unmockFeatureFlags() {
-    mockedSourcgraphContext.featureFlags = unmocked
+    mockedSourcgraphContext.featureFlags = writable([])
+}
+
+/**
+ * Sets the user's settings to the provided value. If the function is called multiple times without
+ * calling `unmockUserSettings` in between then subsequent calls will update the underlying settings
+ * store, updating all subscribers.
+ */
+export function mockUserSettings(settings: Partial<SettingsCascade['final']>) {
+    if (mockedSourcgraphContext.settings === unmocked) {
+        mockedSourcgraphContext.settings = writable(settings)
+    } else {
+        mockedSourcgraphContext.settings.set(settings)
+    }
+}
+
+/**
+ * Unmock all user settings.
+ */
+export function unmockUserSettings() {
+    mockedSourcgraphContext.settings = writable({})
 }

@@ -106,6 +106,7 @@ The default run type.
   - Tests
   - BackCompat Tests
   - **Security Scanning**: Sonarcloud Scan
+  - **Dependency packages**: Build and sign repository index
 
 - Pipeline for `WolfiBaseImages` changes:
   - Perform bazel prechecks
@@ -119,18 +120,6 @@ The default run type.
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
   - **Security Scanning**: Sonarcloud Scan
-
-### Wolfi Exp Branch
-
-The run type for branches matching `wolfi/`.
-You can create a build of this run type for your changes using:
-
-```sh
-sg ci build wolfi
-```
-
-Base pipeline (more steps might be included based on branch changes):
-
 
 ### Manually Triggered External Build
 
@@ -153,7 +142,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
+- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
 
 ### Release branch nightly healthcheck build
 
@@ -215,7 +204,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Publish executor image, Publish executor binary, Publish docker registry mirror image, Push final images
+- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Publish executor image, Publish executor binary, Publish docker registry mirror image, Push final images
 
 ### Release branch
 
@@ -233,7 +222,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
+- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
 
 ### Browser extension release build
 
@@ -274,7 +263,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Publish executor image, Publish executor binary, Push final images
+- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Publish executor image, Publish executor binary, Push final images
 
 ### Main dry run
 
@@ -297,7 +286,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
+- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
 
 ### Patch image
 
@@ -350,7 +339,7 @@ sg ci build docker-images-candidates-notest
 Base pipeline (more steps might be included based on branch changes):
 
 - **Image builds**: Build Docker images
-- **Publish images**: Push final images, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine
+- **Publish images**: Push final images, dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine
 
 ### Backend integration tests
 
@@ -373,7 +362,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
+- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
 
 ### Bazel command
 

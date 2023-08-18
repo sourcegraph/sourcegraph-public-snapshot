@@ -1,4 +1,4 @@
-import { Falsey } from 'utility-types'
+import type { Falsey } from 'utility-types'
 
 /**
  * Returns true if `val` is not `null` or `undefined`

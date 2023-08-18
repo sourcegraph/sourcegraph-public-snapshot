@@ -10,7 +10,7 @@ go_library(
         "handler.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/updatecheck",
-    visibility = ["//cmd/frontend:__subpackages__"],
+    visibility = ["//:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
         "//cmd/frontend/globals",

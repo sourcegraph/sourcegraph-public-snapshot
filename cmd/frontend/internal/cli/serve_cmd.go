@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-logr/stdr"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/tmpfriend"
 	sglog "github.com/sourcegraph/log"
@@ -99,6 +100,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 	db := database.NewDB(logger, sqlDB)
+
+	// Used by opentelemetry logging
+	stdr.SetVerbosity(10)
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
 		if !deploy.IsApp() {
@@ -265,7 +269,7 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 	}
 
 	// Create the external HTTP handler.
-	externalHandler := newExternalHTTPHandler(
+	externalHandler, err := newExternalHTTPHandler(
 		db,
 		schema,
 		rateLimiter,
@@ -294,6 +298,9 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppSetupHandler,
 	)
+	if err != nil {
+		return nil, errors.Errorf("create external HTTP handler: %v", err)
+	}
 	httpServer := &http.Server{
 		Handler:      externalHandler,
 		ReadTimeout:  75 * time.Second,

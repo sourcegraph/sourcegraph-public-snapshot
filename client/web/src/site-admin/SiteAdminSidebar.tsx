@@ -5,9 +5,9 @@ import classNames from 'classnames'
 
 import { Link, Icon, Button } from '@sourcegraph/wildcard'
 
-import { BatchChangesProps } from '../batches'
+import type { BatchChangesProps } from '../batches'
 import { SidebarGroup, SidebarCollapseItems, SidebarNavItem } from '../components/Sidebar'
-import { NavGroupDescriptor } from '../util/contributions'
+import type { NavGroupDescriptor } from '../util/contributions'
 
 import styles from './SiteAdminSidebar.module.scss'
 
@@ -15,6 +15,7 @@ export interface SiteAdminSideBarGroupContext extends BatchChangesProps {
     isSourcegraphDotCom: boolean
     isSourcegraphApp: boolean
     codeInsightsEnabled: boolean
+    endUserOnboardingEnabled: boolean
 }
 
 export interface SiteAdminSideBarGroup extends NavGroupDescriptor<SiteAdminSideBarGroupContext> {}
