@@ -1,1 +1,71 @@
 package resolvers_test
+
+import (
+	"context"
+	"testing"
+
+	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/search/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+)
+
+func TestExhaustiveSearchResolver(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	resolver := resolvers.New(logger, db)
+	s, err := graphqlbackend.NewSchemaWithExhaustiveSearchesResolver(db, resolver)
+	require.NoError(t, err)
+
+	variables := map[string]any{
+		"exhaustiveSearch": string(resolvers.MarshalExhaustiveSearchID(int64(123))),
+	}
+
+	query := `query($exhaustiveSearch: ID!) {
+	node(id: $exhaustiveSearch) {
+		... on ExhaustiveSearch {
+			id
+			query
+			state
+			creator {
+				username
+			}
+			createdAt
+			startedAt
+			finishedAt
+			csvURL
+			repoStats {
+				total
+				completed
+				errored
+				inProgress
+			}
+			repositories(first: 10) {
+				totalCount
+				pageInfo {
+					hasNextPage
+					endCursor
+				}
+				nodes {
+					id
+				}
+			}
+		}
+	}
+}`
+
+	var actual string
+	errors := exec(ctx, t, s, query, variables, &actual)
+	require.Len(t, errors, 10)
+	assert.Equal(t, errors[0].Message, "panic occurred: implement me")
+}
