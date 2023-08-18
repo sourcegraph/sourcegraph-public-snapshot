@@ -335,7 +335,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 			t.Cleanup(closeFunc)
 
 			stream, err := client.P4Exec(context.Background(), &proto.P4ExecRequest{
-				Args: []string{"users"},
+				Args: [][]byte{[]byte("users")},
 			})
 			if err != nil {
 				t.Fatalf("failed to call P4Exec: %v", err)
@@ -383,7 +383,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 			t.Cleanup(closeFunc)
 
 			stream, err := client.P4Exec(context.Background(), &proto.P4ExecRequest{
-				Args: []string{"bad_command"},
+				Args: [][]byte{[]byte("bad_command")},
 			})
 			if err != nil {
 				t.Fatalf("failed to call P4Exec: %v", err)
@@ -409,7 +409,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 			t.Cleanup(closeFunc)
 
 			stream, err := client.P4Exec(ctx, &proto.P4ExecRequest{
-				Args: []string{"users"},
+				Args: [][]byte{[]byte("users")},
 			})
 			if err != nil {
 				t.Fatalf("failed to call P4Exec: %v", err)

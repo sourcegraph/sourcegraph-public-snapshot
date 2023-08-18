@@ -616,7 +616,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 		req := &proto.ExecRequest{
 			Repo:           string(repoName),
 			EnsureRevision: c.EnsureRevision(),
-			Args:           c.args[1:],
+			Args:           stringsToByteSlices(c.args[1:]),
 			Stdin:          c.stdin,
 			NoTimeout:      c.noTimeout,
 		}
@@ -1808,4 +1808,12 @@ func readResponseBody(body io.Reader) string {
 type clientAndError struct {
 	client proto.GitserverServiceClient
 	err    error
+}
+
+func stringsToByteSlices(in []string) [][]byte {
+	res := make([][]byte, len(in))
+	for i, s := range in {
+		res[i] = []byte(s)
+	}
+	return res
 }
