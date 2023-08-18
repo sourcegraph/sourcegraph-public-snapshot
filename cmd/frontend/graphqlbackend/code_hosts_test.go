@@ -238,10 +238,10 @@ func TestCodeHostByID(t *testing.T) {
 		}`,
 		ExpectedResult: `{
 			"node": {
-			  "id": "Q29kZUhvc3Q6Mg==",
-			  "__typename": "CodeHost",
-			  "kind": "GITHUB",
-			  "url": "github.com"
+				"id": "Q29kZUhvc3Q6Mg==",
+				"__typename": "CodeHost",
+				"kind": "GITHUB",
+				"url": "github.com"
 			}
 		}`,
 	})
