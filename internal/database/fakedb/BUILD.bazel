@@ -13,6 +13,7 @@ go_library(
     deps = [
         "//internal/actor",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/types",
         "//lib/errors",
     ],

@@ -27,6 +27,9 @@ var (
 //
 // Note: It aggregates Progress as well, and expects that the
 // MaxPendingPriority it receives are monotonically decreasing.
+//
+// Note: it ignores the top-level fields RepoURLs and LineFragments since we
+// do not read those values in Sourcegraph.
 type collectSender struct {
 	aggregate *zoekt.SearchResult
 	overflow  []*zoekt.SearchResult
@@ -42,23 +45,13 @@ func newCollectSender(opts *zoekt.SearchOptions) *collectSender {
 
 func (c *collectSender) Send(r *zoekt.SearchResult) {
 	if c.aggregate == nil {
-		c.aggregate = &zoekt.SearchResult{
-			RepoURLs:      map[string]string{},
-			LineFragments: map[string]string{},
-		}
+		c.aggregate = &zoekt.SearchResult{}
 	}
 
 	c.aggregate.Stats.Add(r.Stats)
 
 	if len(r.Files) > 0 {
 		c.aggregate.Files = append(c.aggregate.Files, r.Files...)
-
-		for k, v := range r.RepoURLs {
-			c.aggregate.RepoURLs[k] = v
-		}
-		for k, v := range r.LineFragments {
-			c.aggregate.LineFragments[k] = v
-		}
 	}
 
 	c.sizeBytes += r.SizeBytes()

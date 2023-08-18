@@ -107,6 +107,8 @@ func TestAuthzQueryConds(t *testing.T) {
 		require.Contains(t, got.Query(sqlf.PostgresBindVar), ExternalServiceUnrestrictedCondition.Query(sqlf.PostgresBindVar))
 	})
 
+	u, err := db.Users().Create(context.Background(), NewUser{Username: "testuser"})
+	require.NoError(t, err)
 	tests := []struct {
 		name                string
 		setup               func(t *testing.T) (context.Context, DB)
@@ -138,37 +140,28 @@ func TestAuthzQueryConds(t *testing.T) {
 		{
 			name: "authenticated user is a site admin",
 			setup: func(_ *testing.T) (context.Context, DB) {
-				users := NewMockUserStoreFrom(db.Users())
-				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-				mockDB := NewMockDBFrom(db)
-				mockDB.UsersFunc.SetDefaultReturn(users)
-				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
+				require.NoError(t, db.Users().SetIsSiteAdmin(context.Background(), u.ID, true))
+				return actor.WithActor(context.Background(), &actor.Actor{UID: u.ID}), db
 			},
 			wantQuery: authzQuery(true, int32(1)),
 		},
 		{
 			name: "authenticated user is a site admin and AuthzEnforceForSiteAdmins is set",
 			setup: func(t *testing.T) (context.Context, DB) {
-				users := NewMockUserStoreFrom(db.Users())
-				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-				mockDB := NewMockDBFrom(db)
-				mockDB.UsersFunc.SetDefaultReturn(users)
+				require.NoError(t, db.Users().SetIsSiteAdmin(context.Background(), u.ID, true))
 				conf.Get().AuthzEnforceForSiteAdmins = true
 				t.Cleanup(func() {
 					conf.Get().AuthzEnforceForSiteAdmins = false
 				})
-				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
+				return actor.WithActor(context.Background(), &actor.Actor{UID: u.ID}), db
 			},
 			wantQuery: authzQuery(false, int32(1)),
 		},
 		{
 			name: "authenticated user is not a site admin",
 			setup: func(_ *testing.T) (context.Context, DB) {
-				users := NewMockUserStoreFrom(db.Users())
-				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-				mockDB := NewMockDBFrom(db)
-				mockDB.UsersFunc.SetDefaultReturn(users)
-				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), mockDB
+				require.NoError(t, db.Users().SetIsSiteAdmin(context.Background(), u.ID, false))
+				return actor.WithActor(context.Background(), &actor.Actor{UID: 1}), db
 			},
 			wantQuery: authzQuery(false, int32(1)),
 		},

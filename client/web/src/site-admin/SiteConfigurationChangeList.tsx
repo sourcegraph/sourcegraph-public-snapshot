@@ -5,18 +5,7 @@ import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import {
-    Button,
-    Link,
-    Code,
-    Container,
-    Collapse,
-    CollapseHeader,
-    CollapsePanel,
-    H3,
-    Icon,
-    PageSwitcher,
-} from '@sourcegraph/wildcard'
+import { Button, Link, Code, Collapse, CollapseHeader, CollapsePanel, Icon, PageSwitcher } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../components/diff/DiffStat'
 import { usePageSwitcherPagination } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
@@ -46,24 +35,21 @@ export const SiteConfigurationChangeList: FC = () => {
         <>
             {!!connection?.nodes?.length && (
                 <div>
-                    <Container className="mb-3">
-                        <H3>Change history</H3>
-                        {loading && <ConnectionLoading />}
-                        {error && <ConnectionError errors={[error.message]} />}
-                        <div className="mt-4">
-                            {connection?.nodes
-                                .filter(node => node.diff)
-                                .map(node => (
-                                    <SiteConfigurationHistoryItem key={node.id} node={node} />
-                                ))}
-                        </div>
-                        <PageSwitcher
-                            {...paginationProps}
-                            className="mt-4"
-                            totalCount={connection?.totalCount || 0}
-                            totalLabel="changes"
-                        />
-                    </Container>
+                    {loading && <ConnectionLoading />}
+                    {error && <ConnectionError errors={[error.message]} />}
+                    <div className="mt-4">
+                        {connection?.nodes
+                            .filter(node => node.diff)
+                            .map(node => (
+                                <SiteConfigurationHistoryItem key={node.id} node={node} />
+                            ))}
+                    </div>
+                    <PageSwitcher
+                        {...paginationProps}
+                        className="mt-4"
+                        totalCount={connection?.totalCount || 0}
+                        totalLabel="changes"
+                    />
                 </div>
             )}
         </>

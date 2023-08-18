@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -40,8 +41,8 @@ const (
 )
 
 func newMockedGitserverDB() database.DB {
-	db := database.NewMockDB()
-	gs := database.NewMockGitserverRepoStore()
+	db := dbmocks.NewMockDB()
+	gs := dbmocks.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gs)
 	return db
 }
@@ -414,6 +415,7 @@ func TestCleanupExpired(t *testing.T) {
 		Hostname:                "test-gitserver",
 		DB:                      database.NewDB(logger, dbtest.NewDB(logger, t)),
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
+		Locker:                  NewRepositoryLocker(),
 	}
 	s.Handler() // Handler as a side-effect sets up Server
 
@@ -547,7 +549,7 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 		return repoExists, repoNotExists
 	}
 
-	mockGitServerRepos := database.NewMockGitserverRepoStore()
+	mockGitServerRepos := dbmocks.NewMockGitserverRepoStore()
 	mockGitServerRepos.GetByNameFunc.SetDefaultHook(func(_ context.Context, name api.RepoName) (*types.GitserverRepo, error) {
 		if strings.Contains(string(name), "repo-exists") {
 			return &types.GitserverRepo{}, nil
@@ -555,10 +557,10 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 			return nil, &database.ErrGitserverRepoNotFound{}
 		}
 	})
-	mockRepos := database.NewMockRepoStore()
+	mockRepos := dbmocks.NewMockRepoStore()
 	mockRepos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
 
-	mockDB := database.NewMockDB()
+	mockDB := dbmocks.NewMockDB()
 	mockDB.GitserverReposFunc.SetDefaultReturn(mockGitServerRepos)
 	mockDB.ReposFunc.SetDefaultReturn(mockRepos)
 
@@ -879,8 +881,8 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 	mkFiles(t, root,
 		"github.com/foo/baz/.git/HEAD",
 	)
-	db := database.NewMockDB()
-	gr := database.NewMockGitserverRepoStore()
+	db := dbmocks.NewMockDB()
+	gr := dbmocks.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
 	logger := logtest.Scoped(t)
 
@@ -1123,8 +1125,8 @@ func TestFreeUpSpace(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		db := database.NewMockDB()
-		gr := database.NewMockGitserverRepoStore()
+		db := dbmocks.NewMockDB()
+		gr := dbmocks.NewMockGitserverRepoStore()
 		db.GitserverReposFunc.SetDefaultReturn(gr)
 		// Run.
 		if err := freeUpSpace(context.Background(), logger, db, "test-gitserver", rd, &fakeDiskSizer{}, 10, 1000); err != nil {
@@ -1480,54 +1482,6 @@ func TestPruneIfNeeded(t *testing.T) {
 	limit := -1 // always run prune
 	if err := pruneIfNeeded(wrexec.NewNoOpRecordingCommandFactory(), reposDir, gitDir, limit); err != nil {
 		t.Fatal(err)
-	}
-}
-
-func TestCleanup_setRepoSizes(t *testing.T) {
-	logger := logtest.Scoped(t)
-	if testing.Short() {
-		t.Skip()
-	}
-
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-
-	s := &Server{Logger: logger, ObservationCtx: observation.TestContextTB(t), DB: db}
-	s.Handler() // Handler as a side-effect sets up Server
-
-	// inserting info about repos to DB. Repo with ID = 1 already has its size
-	if _, err := db.ExecContext(context.Background(), `
-insert into repo(id, name, fork)
-values (1, 'ghe.sgdev.org/sourcegraph/gorilla-websocket', false),
-       (2, 'ghe.sgdev.org/sourcegraph/gorilla-mux', false),
-       (3, 'ghe.sgdev.org/sourcegraph/gorilla-sessions', false);
-update gitserver_repos set shard_id = 1;
-update gitserver_repos set repo_size_bytes = 228 where repo_id = 1;
-`); err != nil {
-		t.Fatalf("unexpected error while inserting test data: %s", err)
-	}
-
-	sizes := map[api.RepoName]int64{
-		"ghe.sgdev.org/sourcegraph/gorilla-websocket": 512,
-		"ghe.sgdev.org/sourcegraph/gorilla-mux":       1024,
-		"ghe.sgdev.org/sourcegraph/gorilla-sessions":  2048,
-	}
-
-	err := setRepoSizes(context.Background(), logger, db, "test-gitserver", sizes)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	for repoName, wantSize := range sizes {
-		repo, err := s.DB.GitserverRepos().GetByName(context.Background(), repoName)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if repo.RepoSizeBytes != wantSize {
-			t.Fatalf("repo %s has size %d, want %d", repoName, repo.RepoSizeBytes, wantSize)
-		}
-		if repo.ShardID != "1" {
-			t.Fatal("shard_id has been corrupted")
-		}
 	}
 }
 

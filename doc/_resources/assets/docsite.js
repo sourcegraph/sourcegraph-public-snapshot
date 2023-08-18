@@ -38,8 +38,15 @@ const pagePath = location.pathname
 const quote = str => JSON.stringify(str.replace(/[^a-zA-Z0-9._\/-]/g, ''))
 document.addEventListener('DOMContentLoaded', () => {
   const style = document.createElement('style')
+  let currentElement = null;
   for (const link of document.querySelectorAll('body > #sidebar .nav-section.tree a')) {
     const current = link.pathname === pagePath
+
+    // Store the current element, so we can scroll it into view later
+    if (current && !currentElement) {
+      currentElement = link;
+    }
+
     const expand = current || pagePath.startsWith(link.pathname + '/')
     const subsection = link.pathname.split('/').length >= 3
 
@@ -48,6 +55,11 @@ document.addEventListener('DOMContentLoaded', () => {
     item.classList.toggle('expand', expand)
     item.classList.toggle('active-subsection', subsection && expand)
     item.classList.toggle('collapse', !expand)
+  }
+
+  // Scroll matching sidebar item into view
+  if (currentElement) {
+    currentElement.scrollIntoView({ block: 'center' })
   }
 })
 
