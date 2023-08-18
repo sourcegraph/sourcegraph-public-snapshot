@@ -1202,48 +1202,10 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 		args.Limit = math.MaxInt32
 	}
 
-	dir := repoDirFromName(s.ReposDir, args.Repo)
-	if !repoCloned(dir) {
-		if conf.Get().DisableAutoGitUpdates {
-			s.Logger.Debug("not cloning on demand as DisableAutoGitUpdates is set")
-			return false, &gitdomain.RepoNotExistError{
-				Repo: args.Repo,
-			}
-		}
-
-		cloneProgress, cloneInProgress := s.Locker.Status(dir)
-		if cloneInProgress {
-			return false, &gitdomain.RepoNotExistError{
-				Repo:            args.Repo,
-				CloneInProgress: true,
-				CloneProgress:   cloneProgress,
-			}
-		}
-
-		cloneProgress, err := s.CloneRepo(ctx, args.Repo, CloneOptions{})
-		if err != nil {
-			s.Logger.Debug("error starting repo clone", log.String("repo", string(args.Repo)), log.Error(err))
-			return false, &gitdomain.RepoNotExistError{
-				Repo:            args.Repo,
-				CloneInProgress: false,
-			}
-		}
-
-		return false, &gitdomain.RepoNotExistError{
-			Repo:            args.Repo,
-			CloneInProgress: true,
-			CloneProgress:   cloneProgress,
-		}
-	}
-
-	for _, rev := range args.Revisions {
-		// TODO add result to trace
-		if rev.RevSpec != "" {
-			_ = s.ensureRevision(ctx, args.Repo, rev.RevSpec, dir)
-		} else if rev.RefGlob != "" {
-			_ = s.ensureRevision(ctx, args.Repo, rev.RefGlob, dir)
-		}
-	}
+	// We used to have a check for an uncloned repo and an `ensureRevision` call here which were obsolete, because a
+	// search for an unknown revision of the repo (of an uncloned repo) won't make it to gitserver and
+	// fail with an ErrNoResolvedRepos and a related search alert before calling the
+	// gitserver.
 
 	mt, err := search.ToMatchTree(args.Query)
 	if err != nil {
@@ -1278,7 +1240,7 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 	searcher := &search.CommitSearcher{
 		Logger:               s.Logger,
 		RepoName:             args.Repo,
-		RepoDir:              dir.Path(),
+		RepoDir:              repoDirFromName(s.ReposDir, args.Repo).Path(),
 		Revisions:            args.Revisions,
 		Query:                mt,
 		IncludeDiff:          args.IncludeDiff,
