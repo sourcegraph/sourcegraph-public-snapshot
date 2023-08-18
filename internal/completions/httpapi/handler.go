@@ -30,7 +30,7 @@ func newCompletionsHandler(
 	traceFamily string,
 	getModel func(types.CodyCompletionRequestParameters, *conftypes.CompletionsConfig) string,
 ) http.Handler {
-	responseHandler := newSwitchingResponseHandler(logger, types.CompletionsFeatureChat)
+	responseHandler := newSwitchingResponseHandler(logger, feature)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
