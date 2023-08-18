@@ -613,6 +613,10 @@ func NewSchema(
 			EnterpriseResolvers.exhaustiveSearchesResolver = exhaustiveSearchesResolver
 			resolver.ExhaustiveSearchesResolver = exhaustiveSearchesResolver
 			schemas = append(schemas, exhaustiveSearchSchema)
+			// Register NodeByID handlers.
+			for kind, res := range exhaustiveSearchesResolver.NodeResolvers() {
+				resolver.nodeByIDFns[kind] = res
+			}
 		}
 	}
 

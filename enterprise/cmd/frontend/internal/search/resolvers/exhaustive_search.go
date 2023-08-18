@@ -4,10 +4,17 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
+
+const exhaustiveSearchIDKind = "ExhaustiveSearch"
+
+func MarshalExhaustiveSearchID(id int64) graphql.ID {
+	return relay.MarshalID(exhaustiveSearchIDKind, id)
+}
 
 var _ graphqlbackend.ExhaustiveSearchResolver = &exhaustiveSearchResolver{}
 

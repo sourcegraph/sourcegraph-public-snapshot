@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -50,4 +51,16 @@ func (r *Resolver) ExhaustiveSearch(ctx context.Context, args *graphqlbackend.Ex
 func (r *Resolver) ExhaustiveSearches(ctx context.Context, args *graphqlbackend.ExhaustiveSearchesArgs) (graphqlbackend.ExhaustiveSearchesConnectionResolver, error) {
 	//TODO implement me
 	panic("implement me")
+}
+
+func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
+	return map[string]graphqlbackend.NodeByIDFunc{
+		exhaustiveSearchIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.exhaustiveSearchByID(ctx, id)
+		},
+	}
+}
+
+func (r *Resolver) exhaustiveSearchByID(ctx context.Context, id graphql.ID) (graphqlbackend.ExhaustiveSearchResolver, error) {
+	return &exhaustiveSearchResolver{}, nil
 }
