@@ -163,11 +163,7 @@ function run_server_image() {
   local server_port
   server_port="$4"
 
-  must_be_CI
   must_not_be_running "$url"
-  # This causes flakes on the container tests, because it catches other docker jobs
-  # TODO move this to a agent
-  # ensure_clean_slate
 
   local container_name
   container_name=$(generate_unique_container_name "server-integration")
