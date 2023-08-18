@@ -5,13 +5,17 @@ import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Couple;
+import com.intellij.util.UriUtil;
 import com.sourcegraph.cody.agent.ConnectionConfiguration;
 import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.find.Search;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -74,7 +78,15 @@ public class ConfigUtil {
       return LocalAppManager.getLocalAppUrl();
     } else {
       String enterpriseUrl = getEnterpriseUrl(project);
-      return !enterpriseUrl.isEmpty() ? enterpriseUrl : DOTCOM_URL;
+
+      if (!enterpriseUrl.isEmpty()) {
+        // Check if text field contains protocol value, if not add http://
+        Couple<String> couple = UriUtil.splitScheme(enterpriseUrl);
+        if (!couple.second.isEmpty() && !couple.first.startsWith("http")) {
+          return "https://" + enterpriseUrl;
+        }
+      }
+      return DOTCOM_URL;
     }
   }
 

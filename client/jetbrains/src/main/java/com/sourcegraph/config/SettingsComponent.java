@@ -135,17 +135,6 @@ public class SettingsComponent implements Disposable {
     // Create URL field for the enterprise section
     JBLabel urlLabel = new JBLabel("Sourcegraph URL:");
     urlTextField = new JBTextField();
-    urlTextField.addFocusListener(new FocusAdapter() {
-      @Override
-      public void focusLost(FocusEvent e) {
-        super.focusLost(e);
-        // Check if text field contains protocol value, if not add http://
-        Couple<String> couple = UriUtil.splitScheme(urlTextField.getText());
-        if (!couple.second.isEmpty() && !couple.first.startsWith("http")) {
-          urlTextField.setText("http://" + urlTextField.getText());
-        }
-      }
-    });
 
     //noinspection DialogTitleCapitalization
     urlTextField.getEmptyText().setText("https://sourcegraph.example.com");
