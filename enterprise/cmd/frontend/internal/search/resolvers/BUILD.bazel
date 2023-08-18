@@ -33,6 +33,7 @@ go_test(
         "exhaustive_search_repo_revision_connection_test.go",
         "exhaustive_search_repo_revision_test.go",
         "exhaustive_search_repo_test.go",
+        "exhaustive_search_stats_test.go",
         "exhaustive_search_test.go",
         "exhaustive_searches_connection_test.go",
         "resolvers_test.go",
