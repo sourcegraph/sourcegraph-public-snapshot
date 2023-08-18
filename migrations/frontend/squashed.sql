@@ -2434,6 +2434,97 @@ CREATE SEQUENCE executor_secrets_id_seq
 
 ALTER SEQUENCE executor_secrets_id_seq OWNED BY executor_secrets.id;
 
+CREATE TABLE exhaustive_search_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    initiator_id integer NOT NULL,
+    query text NOT NULL,
+    failure_message text,
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    queued_at timestamp with time zone DEFAULT now()
+);
+
+CREATE SEQUENCE exhaustive_search_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE exhaustive_search_jobs_id_seq OWNED BY exhaustive_search_jobs.id;
+
+CREATE TABLE exhaustive_search_repo_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    repo_id integer NOT NULL,
+    ref_spec text NOT NULL,
+    search_job_id integer NOT NULL,
+    failure_message text,
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    queued_at timestamp with time zone DEFAULT now()
+);
+
+CREATE SEQUENCE exhaustive_search_repo_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE exhaustive_search_repo_jobs_id_seq OWNED BY exhaustive_search_repo_jobs.id;
+
+CREATE TABLE exhaustive_search_repo_revision_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    search_repo_job_id integer NOT NULL,
+    revision text NOT NULL,
+    failure_message text,
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    queued_at timestamp with time zone DEFAULT now()
+);
+
+CREATE SEQUENCE exhaustive_search_repo_revision_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE exhaustive_search_repo_revision_jobs_id_seq OWNED BY exhaustive_search_repo_revision_jobs.id;
+
 CREATE TABLE explicit_permissions_bitbucket_projects_jobs (
     id integer NOT NULL,
     state text DEFAULT 'queued'::text,
@@ -5042,6 +5133,12 @@ ALTER TABLE ONLY executor_secret_access_logs ALTER COLUMN id SET DEFAULT nextval
 
 ALTER TABLE ONLY executor_secrets ALTER COLUMN id SET DEFAULT nextval('executor_secrets_id_seq'::regclass);
 
+ALTER TABLE ONLY exhaustive_search_jobs ALTER COLUMN id SET DEFAULT nextval('exhaustive_search_jobs_id_seq'::regclass);
+
+ALTER TABLE ONLY exhaustive_search_repo_jobs ALTER COLUMN id SET DEFAULT nextval('exhaustive_search_repo_jobs_id_seq'::regclass);
+
+ALTER TABLE ONLY exhaustive_search_repo_revision_jobs ALTER COLUMN id SET DEFAULT nextval('exhaustive_search_repo_revision_jobs_id_seq'::regclass);
+
 ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs ALTER COLUMN id SET DEFAULT nextval('explicit_permissions_bitbucket_projects_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY external_services ALTER COLUMN id SET DEFAULT nextval('external_services_id_seq'::regclass);
@@ -5394,6 +5491,18 @@ ALTER TABLE ONLY executor_secret_access_logs
 
 ALTER TABLE ONLY executor_secrets
     ADD CONSTRAINT executor_secrets_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY exhaustive_search_jobs
+    ADD CONSTRAINT exhaustive_search_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY exhaustive_search_jobs
+    ADD CONSTRAINT exhaustive_search_jobs_query_initiator_id_key UNIQUE (query, initiator_id);
+
+ALTER TABLE ONLY exhaustive_search_repo_jobs
+    ADD CONSTRAINT exhaustive_search_repo_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY exhaustive_search_repo_revision_jobs
+    ADD CONSTRAINT exhaustive_search_repo_revision_jobs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs
     ADD CONSTRAINT explicit_permissions_bitbucket_projects_jobs_pkey PRIMARY KEY (id);
@@ -6540,6 +6649,18 @@ ALTER TABLE ONLY executor_secrets
 
 ALTER TABLE ONLY executor_secrets
     ADD CONSTRAINT executor_secrets_namespace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY exhaustive_search_jobs
+    ADD CONSTRAINT exhaustive_search_jobs_initiator_id_fkey FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY exhaustive_search_repo_jobs
+    ADD CONSTRAINT exhaustive_search_repo_jobs_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY exhaustive_search_repo_jobs
+    ADD CONSTRAINT exhaustive_search_repo_jobs_search_job_id_fkey FOREIGN KEY (search_job_id) REFERENCES exhaustive_search_jobs(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY exhaustive_search_repo_revision_jobs
+    ADD CONSTRAINT exhaustive_search_repo_revision_jobs_search_repo_job_id_fkey FOREIGN KEY (search_repo_job_id) REFERENCES exhaustive_search_repo_jobs(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY external_service_repos
     ADD CONSTRAINT external_service_repos_external_service_id_fkey FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE;

@@ -194,3 +194,9 @@ def oci_deps():
         digest = "sha256:42ff3ba38633022bfb2d7982e2ad671670b160fdaa04b453368f2098aaf9bf86",
         image = "index.docker.io/sourcegraph/wolfi-blobstore-base",
     )
+
+    oci_pull(
+        name = "wolfi_qdrant_base",
+        digest = "sha256:7f81b52aa6accda3ccfd8d8ec79892de03b8935c7fb0e786a445de0bf1824a93",
+        image = "index.docker.io/sourcegraph/wolfi-qdrant-base",
+    )

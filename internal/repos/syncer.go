@@ -79,7 +79,7 @@ func (s *Syncer) Routines(ctx context.Context, store Store, opts RunOptions) []g
 		s.initialUnmodifiedDiffFromStore(ctx, store)
 	}
 
-	worker, resetter := NewSyncWorker(ctx, observation.ContextWithLogger(s.ObsvCtx.Logger.Scoped("syncWorker", ""), s.ObsvCtx),
+	worker, resetter, syncerJanitor := NewSyncWorker(ctx, observation.ContextWithLogger(s.ObsvCtx.Logger.Scoped("syncWorker", ""), s.ObsvCtx),
 		store.Handle(),
 		&syncHandler{
 			syncer:          s,
@@ -110,7 +110,7 @@ func (s *Syncer) Routines(ctx context.Context, store Store, opts RunOptions) []g
 		goroutine.WithIntervalFunc(opts.EnqueueInterval),
 	)
 
-	return []goroutine.BackgroundRoutine{worker, resetter, scheduler}
+	return []goroutine.BackgroundRoutine{worker, resetter, syncerJanitor, scheduler}
 }
 
 type syncHandler struct {
