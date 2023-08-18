@@ -50,7 +50,7 @@ func TestExhaustiveSearchResolver(t *testing.T) {
 				errored
 				inProgress
 			}
-			repositories(first: 10) {
+			repositories(first: 1) {
 				totalCount
 				pageInfo {
 					hasNextPage
@@ -66,6 +66,6 @@ func TestExhaustiveSearchResolver(t *testing.T) {
 
 	var actual string
 	errors := exec(ctx, t, s, query, variables, &actual)
-	require.Len(t, errors, 10)
+	require.Equal(t, 10, len(errors))
 	assert.Equal(t, errors[0].Message, "panic occurred: implement me")
 }

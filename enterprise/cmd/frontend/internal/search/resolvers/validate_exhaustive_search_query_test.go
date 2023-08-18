@@ -41,6 +41,6 @@ func TestValidateExhaustiveSearchQueryResolver(t *testing.T) {
 
 	var actual string
 	errors := exec(ctx, t, s, query, variables, &actual)
-	require.Len(t, errors, 1)
-	assert.Contains(t, errors[0].Message, "panic occurred: implement me")
+	require.Equal(t, 1, len(errors))
+	assert.Equal(t, errors[0].Message, "panic occurred: implement me")
 }
