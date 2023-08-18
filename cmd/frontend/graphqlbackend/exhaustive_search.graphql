@@ -1,51 +1,168 @@
 extend type Mutation {
-    createExhaustiveSearch(query: String!): ExhaustiveSearch!
-
-    cancelExhaustiveSearch(id: ID!): EmptyResponse
-
-    deleteExhaustiveSearch(id: ID!): EmptyResponse!
+    """
+    Experimental: Create a new exhaustive search. The query will be validated before the search is created.
+    """
+    createExhaustiveSearch(
+        """
+        The query to run. This must be a valid search query.
+        """
+        query: String!
+    ): ExhaustiveSearch!
+    """
+    Experimental: Cancel an exhaustive search. This will cancel all of the search's repositories and revisions.
+    """
+    cancelExhaustiveSearch(
+        """
+        The ID of the exhaustive search to cancel.
+        """
+        id: ID!
+    ): EmptyResponse
+    """
+    Experimental: Delete an exhaustive search. This will delete all of the search's repositories and revisions.
+    """
+    deleteExhaustiveSearch(
+        """
+        The ID of the exhaustive search to delete.
+        """
+        id: ID!
+    ): EmptyResponse!
 }
 
 extend type Query {
-    validateExhaustiveSearchQuery(query: String!): ExhaustiveSearchQueryValidation
-
-    exhaustiveSearch(id: ID!): ExhaustiveSearch
-
+    """
+    Experimental: Validate an exhaustive search query. This will return a list of errors if the query is invalid.
+    """
+    validateExhaustiveSearchQuery(
+        """
+        The query to validate.
+        """
+        query: String!
+    ): ExhaustiveSearchQueryValidation
+    """
+    Experimental: Get an exhaustive search by ID.
+    """
+    exhaustiveSearch(
+        """
+        The ID of the exhaustive search to get.
+        """
+        id: ID!
+    ): ExhaustiveSearch
+    """
+    Experimental: Get a list of exhaustive searches.
+    """
     exhaustiveSearches(
+        """
+        The number of results to return. Defaults to 50.
+        """
         first: Int = 50
+        """
+        The cursor to start at.
+        """
         after: String
+        """
+        The query to filter the results by.
+        """
         query: String
+        """
+        The states to filter the results by.
+        """
         states: [ExhaustiveSearchState!]
     ): ExhaustiveSearchConnection!
 }
 
+"""
+An exhaustive search is a search that can run against every repository and revision in Sourcegraph.
+"""
 type ExhaustiveSearchQueryValidation {
     query: String!
     valid: Boolean!
     errors: [String!]
 }
 
+"""
+The state of an exhaustive search.
+"""
 enum ExhaustiveSearchState {
+    """
+    The exhaustive search has been created and is waiting to be processed.
+    """
     QUEUED
+    """
+    The exhaustive search is being processed.
+    """
     PROCESSING
+    """
+    The exhaustive search had an error.
+    """
     ERRORED
+    """
+    The exhaustive search has failed.
+    """
     FAILED
+    """
+    The exhaustive search has completed.
+    """
     COMPLETED
 }
 
+"""
+An exhaustive search.
+"""
 type ExhaustiveSearch implements Node {
+    """
+    The ID of the exhaustive search.
+    """
     id: ID!
+    """
+    The query to run.
+    """
     query: String!
+    """
+    The state of the exhaustive search.
+    """
     state: ExhaustiveSearchState!
+    """
+    The user who created the exhaustive search.
+    """
     creator: User
+    """
+    The date and time the exhaustive search was created.
+    """
     createdAt: DateTime!
+    """
+    The date and time the exhaustive search was started.
+    """
     startedAt: DateTime
+    """
+    The date and time the exhaustive search was finished.
+    """
     finishedAt: DateTime
+    """
+    The url to download the CSV of the exhaustive search results.
+    """
     csvURL: String
+    """
+    The repository stats for the exhaustive search.
+    """
     repoStats: ExhaustiveSearchStats!
-    repositories(first: Int = 50, after: String): ExhaustiveSearchRepoConnection!
+    """
+    The repositories being searched.
+    """
+    repositories(
+        """
+        The number of results to return. Defaults to 50.
+        """
+        first: Int = 50,
+        """
+        The cursor to start at.
+        """
+        after: String
+    ): ExhaustiveSearchRepoConnection!
 }
 
+"""
+The repository stats for an exhaustive search.
+"""
 type ExhaustiveSearchStats {
     total: Int!
     completed: Int!
@@ -53,41 +170,137 @@ type ExhaustiveSearchStats {
     inProgress: Int!
 }
 
+"""
+A repository being searched by an exhaustive search.
+"""
 type ExhaustiveSearchRepo implements Node {
+    """
+    The ID of the exhaustive search repository.
+    """
     id: ID!
+    """
+    The state of the repository search.
+    """
     state: ExhaustiveSearchState!
+    """
+    The repository being searched.
+    """
     repository: Repository!
+    """
+    The date and time the repository search was created.
+    """
     createdAt: DateTime!
+    """
+    The date and time the repository search was started.
+    """
     startedAt: DateTime
+    """
+    The date and time the repository search was finished.
+    """
     finishedAt: DateTime
+    """
+    The failure message for the repository search.
+    """
     failureMessage: String
-    revisions(first: Int = 50, after: String): ExhaustiveSearchRepoRevisionConnection!
+    """
+    The revisions being searched.
+    """
+    revisions(
+        """
+        The number of results to return. Defaults to 50.
+        """
+        first: Int = 50,
+        """
+        The cursor to start at.
+        """
+        after: String
+    ): ExhaustiveSearchRepoRevisionConnection!
 }
 
+"""
+A revision being searched by an exhaustive search.
+"""
 type ExhaustiveSearchRepoRevision implements Node {
+    """
+    The ID of the exhaustive search repository revision.
+    """
     id: ID!
+    """
+    The state of the repository revision search.
+    """
     state: ExhaustiveSearchState!
+    """
+    The repository revision being searched.
+    """
     revision: String!
+    """
+    The date and time the repository revision search was created.
+    """
     createdAt: DateTime!
+    """
+    The date and time the repository revision search was started.
+    """
     startedAt: DateTime
+    """
+    The date and time the repository revision search was finished.
+    """
     finishedAt: DateTime
+    """
+    The failure message for the repository revision search.
+    """
     failureMessage: String
 }
 
+"""
+A connection that returns exhaustive searches.
+"""
 type ExhaustiveSearchConnection {
+    """
+    The list of searches.
+    """
     nodes: [ExhaustiveSearch!]!
+    """
+    The total count of searches.
+    """
     totalCount: Int!
+    """
+    Information to aid in pagination.
+    """
     pageInfo: PageInfo!
 }
 
+"""
+A connection that returns exhaustive search repositories.
+"""
 type ExhaustiveSearchRepoConnection {
+    """
+    The list of repositories.
+    """
     nodes: [ExhaustiveSearchRepo!]!
+    """
+    The total count of repositories.
+    """
     totalCount: Int!
+    """
+    Information to aid in pagination.
+    """
     pageInfo: PageInfo!
 }
 
+"""
+A connection that returns exhaustive search repository revisions.
+"""
 type ExhaustiveSearchRepoRevisionConnection {
+    """
+    The list of repository revisions.
+    """
     nodes: [ExhaustiveSearchRepoRevision!]!
+    """
+    The total count of repository revisions.
+    """
     totalCount: Int!
+    """
+    Information to aid in pagination.
+    """
     pageInfo: PageInfo!
 }
