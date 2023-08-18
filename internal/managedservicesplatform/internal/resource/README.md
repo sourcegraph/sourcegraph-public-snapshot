@@ -18,19 +18,3 @@ func New(scope constructs.Construct, id string, config Config) (*Output, error) 
   // ...
 }
 ```
-
-Alternatively, resource packages can choose to only export `stack.NewStackOption` constructors, for example:
-
-```go
-import (
-  "github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack"
-)
-
-type Config struct {}
-
-func WithXYZ(config Config) stack.NewStackOption {
-  return func(s stack.Stack) {
-    // ...
-  }
-}
-```

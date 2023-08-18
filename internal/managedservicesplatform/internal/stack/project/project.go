@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectservice"
 
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/provider/google"
 	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack"
+	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack/options/googleprovider"
 	"github.com/sourcegraph/sourcegraph/internal/pointer"
 )
 
@@ -51,7 +51,7 @@ const StackName = "project"
 
 func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	stack := stacks.New(StackName,
-		google.StackWithProjectID(vars.ProjectID))
+		googleprovider.WithProjectID(vars.ProjectID))
 
 	output := &Output{
 		Project: project.NewProject(stack, pointer.Value("project"), &project.ProjectConfig{

@@ -11,9 +11,9 @@ type Config struct {
 	Workspace func(stackName string) string `validate:"required"`
 }
 
-// WithBackend configures the stack to use Terraform Cloud as remote state backend.
+// With configures the stack to use Terraform Cloud as remote state backend.
 // Any top-level CDKTF stack should use this as remote state backend.
-func WithBackend(config Config) stack.NewStackOption {
+func With(config Config) stack.NewStackOption {
 	return func(s stack.Stack) {
 		workspace := config.Workspace(s.Name)
 		_ = cdktf.NewCloudBackend(s.Stack, &cdktf.CloudBackendConfig{

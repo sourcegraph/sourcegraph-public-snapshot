@@ -5,8 +5,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/resource/aspect"
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/resource/tfcbackend"
+	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack/options/terraformversion"
+	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack/options/tfcbackend"
 	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/terraform"
 
 	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack"
@@ -40,9 +40,9 @@ func (r *Renderer) RenderEnvironment(
 		projectID = fmt.Sprintf("%s-%s", svc.ID, env.Name)
 		stacks    = stack.NewSet(r.OutputDir,
 			// Enforce Terraform versions on all stacks
-			aspect.WithTerraformVersion(terraform.Version),
+			terraformversion.With(terraform.Version),
 			// Use a Terraform Cloud backend on all stacks
-			tfcbackend.WithBackend(tfcbackend.Config{
+			tfcbackend.With(tfcbackend.Config{
 				Workspace: func(stackName string) string {
 					return fmt.Sprintf("msp-%s-%s", projectID, stackName)
 				},

@@ -1,4 +1,4 @@
-package aspect
+package terraformversion
 
 import (
 	"fmt"
@@ -8,20 +8,18 @@ import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
 	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack"
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/terraform"
 	"github.com/sourcegraph/sourcegraph/internal/pointer"
 )
 
-// WithTerraformVersion applies an aspect enforcing the given Terraform
-// version on a new stack.
+// With applies an aspect enforcing the given Terraform version on a new stack.
 //
 // CDKTF does not provide a native way to configure terraform version,
 // so we use an aspect to enforce it.
 // Learn more: https://developer.hashicorp.com/terraform/cdktf/concepts/aspects
-func WithTerraformVersion(v string) stack.NewStackOption {
+func With(terraformVersion string) stack.NewStackOption {
 	return func(s stack.Stack) {
 		cdktf.Aspects_Of(s.Stack).Add(&enforceTerraformVersion{
-			TerraformVersion: terraform.Version,
+			TerraformVersion: terraformVersion,
 		})
 	}
 }
