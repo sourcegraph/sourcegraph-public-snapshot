@@ -29,7 +29,7 @@ public class ConfigUtil {
         .setAutocompleteAdvancedProvider("unstable-codegen")
         .setAutocompleteAdvancedServerEndpoint("$CUSTOMER_ENDPOINT")
         .setAutocompleteAdvancedAccessToken(UserLevelConfig.getAutoCompleteAccessToken())
-        .setAutocompleteAdvancedEmbeddings(true)
+        .setAutocompleteAdvancedEmbeddings(true)g
         .setDebug(isCodyDebugEnabled())
         .setVerboseDebug(isCodyVerboseDebugEnabled());
   }
@@ -150,6 +150,25 @@ public class ConfigUtil {
     // User level or default
     String userLevelDefaultBranchName = UserLevelConfig.getDefaultBranchName();
     return userLevelDefaultBranchName != null ? userLevelDefaultBranchName : "main";
+  }
+
+  @NotNull
+  public static String getCodyCodebase(@NotNull Project project) {
+    // Project level
+    String projectLevelCodyCodebase = getProjectLevelConfig(project).getCodyCodebase();
+    if (projectLevelCodyCodebase != null && !projectLevelCodyCodebase.isEmpty()) {
+      return projectLevelCodyCodebase;
+    }
+
+    // Application level
+    String applicationLevelCodyCodebase = getApplicationLevelConfig().getCodyCodebase();
+    if (applicationLevelCodyCodebase != null && !applicationLevelCodyCodebase.isEmpty()) {
+      return applicationLevelCodyCodebase;
+    }
+
+    // User level or default
+    String userLevelCodyCodebase = UserLevelConfig.getCodyCodebase();
+    return userLevelCodyCodebase != null ? userLevelCodyCodebase : "";
   }
 
   @NotNull
