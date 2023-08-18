@@ -1945,6 +1945,13 @@ func TestRepository_Commits_options_path(t *testing.T) {
 			},
 			wantCommits: wantGitCommits,
 		},
+		"git cmd non utf8": {
+			opt: CommitsOptions{
+				Range:  "master",
+				Author: "a\xc0rn",
+			},
+			wantCommits: nil,
+		},
 	}
 
 	runCommitsTest := func(checker authz.SubRepoPermissionChecker) {
