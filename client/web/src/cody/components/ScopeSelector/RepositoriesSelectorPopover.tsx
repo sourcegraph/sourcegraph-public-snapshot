@@ -14,7 +14,7 @@ import {
 } from '@mdi/js'
 import classNames from 'classnames'
 
-import { useLazyQuery } from '@sourcegraph/http-client'
+import { useLazyQuery, useQuery } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import {
@@ -34,10 +34,16 @@ import {
     Overlapping,
 } from '@sourcegraph/wildcard'
 
-import type { ReposSelectorSearchResult, ReposSelectorSearchVariables } from '../../../graphql-operations'
+import { useUserHistory } from '../../../components/useUserHistory'
+import type {
+    RecentReposSelectorResult,
+    RecentReposSelectorVariables,
+    ReposSelectorSearchResult,
+    ReposSelectorSearchVariables,
+} from '../../../graphql-operations'
 import { ExternalRepositoryIcon } from '../../../site-admin/components/ExternalRepositoryIcon'
 
-import { ReposSelectorSearchQuery } from './backend'
+import { RecentReposSelectorQuery, ReposSelectorSearchQuery } from './backend'
 import { Callout } from './Callout'
 
 import styles from './ScopeSelector.module.scss'
@@ -97,6 +103,35 @@ export const RepositoriesSelectorPopover: React.FC<{
         ReposSelectorSearchResult,
         ReposSelectorSearchVariables
     >(ReposSelectorSearchQuery, {})
+
+    // TODO: Refactor out into custom hook?
+    const userHistory = useUserHistory(authenticatedUser?.id, false)
+    const recentRepoNames = useMemo(() => userHistory.visitedRepos().slice(0, 10) || [], [userHistory])
+    // TODO: Implement fallback if no recent repos found
+    const suggestedRepoNames = useMemo(() => recentRepoNames, [recentRepoNames])
+    const { data: suggestedReposData, loading: loadingSuggestedRepos } = useQuery<
+        RecentReposSelectorResult,
+        RecentReposSelectorVariables
+    >(RecentReposSelectorQuery, {
+        variables: {
+            name0: suggestedRepoNames[0] || '',
+            name1: suggestedRepoNames[1] || '',
+            name2: suggestedRepoNames[2] || '',
+            name3: suggestedRepoNames[3] || '',
+            name4: suggestedRepoNames[4] || '',
+            name5: suggestedRepoNames[5] || '',
+            name6: suggestedRepoNames[6] || '',
+            name7: suggestedRepoNames[7] || '',
+            name8: suggestedRepoNames[8] || '',
+            name9: suggestedRepoNames[9] || '',
+            includeJobs: !!authenticatedUser?.siteAdmin,
+        },
+        fetchPolicy: 'cache-first',
+    })
+
+    // TODO: Remove me
+    // eslint-disable-next-line no-console
+    console.log({ suggestedRepoNames, suggestedReposData, loadingSuggestedRepos })
 
     const searchResults = useMemo(() => searchResultsData?.repositories.nodes || [], [searchResultsData])
 
