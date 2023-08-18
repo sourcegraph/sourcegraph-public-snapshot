@@ -2479,7 +2479,7 @@
           "format": "uri"
         },
         "fileFilters": {
-          "description": "Filters that will decode which files om a repository get embedded.",
+          "description": "Filters that will decode which files on a repository get embedded.",
           "type": "object",
           "properties": {
             "excludedFilePathPatterns": {
