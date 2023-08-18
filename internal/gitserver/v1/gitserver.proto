@@ -21,6 +21,7 @@ service GitserverService {
   rpc RepoCloneProgress(RepoCloneProgressRequest) returns (RepoCloneProgressResponse) {}
   rpc RepoDelete(RepoDeleteRequest) returns (RepoDeleteResponse) {}
   rpc RepoUpdate(RepoUpdateRequest) returns (RepoUpdateResponse) {}
+  // TODO: Remove this endpoint after 5.2, it is deprecated.
   rpc ReposStats(ReposStatsRequest) returns (ReposStatsResponse) {}
 }
 
