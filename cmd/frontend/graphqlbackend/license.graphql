@@ -1,6 +1,25 @@
+type LicenseInfo {
+    plan: String!
+    expiresAt: DateTime!
+    userCount: Int!
+    userCountRestricted: Boolean!
+    features: [LicenseFeature!]!
+}
+
+type LicenseFeature {
+    name: String!
+    enabled: Boolean!
+}
+
 extend type Query {
     """
     Checks whether the given feature is enabled on Sourcegraph.
     """
     enterpriseLicenseHasFeature(feature: String!): Boolean!
+
+    """
+    Parse license key and returns features alongside its availability.
+    If licenseKey is omitted, uses current instance license.
+    """
+    licenseInfo(licenseKey: String): LicenseInfo!
 }
