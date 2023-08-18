@@ -66,6 +66,7 @@ func registerOSSMigrators(runner *oobmigration.Runner, noDelay bool, deps migrat
 	return RegisterAll(runner, noDelay, []TaggedMigrator{
 		batches.NewExternalServiceWebhookMigratorWithDB(deps.store, deps.keyring.ExternalServiceKey, 50),
 		batches.NewUserRoleAssignmentMigrator(deps.store, 250),
+		codehosts.NewMigratorWithDB(deps.store, deps.keyring.ExternalServiceKey),
 	})
 }
 
@@ -168,7 +169,6 @@ func registerEnterpriseMigrators(runner *oobmigration.Runner, noDelay bool, deps
 		lsifMigrations.NewReferencesLocationsCountMigrator(deps.codeIntelStore, 1000, 0),
 		lsifMigrations.NewDocumentColumnSplitMigrator(deps.codeIntelStore, 100, 0),
 		lsifMigrations.NewSCIPMigrator(deps.store, deps.codeIntelStore),
-		codehosts.NewMigratorWithDB(deps.store, deps.keyring.ExternalServiceKey),
 	}
 	if deps.insightsStore != nil {
 		migrators = append(migrators,

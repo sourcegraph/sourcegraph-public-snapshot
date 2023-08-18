@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -20,11 +21,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-// Empty limits for all types.
-var testExtSvcs = []struct {
+type testExtSvc struct {
 	kind string
 	cfg  any
-}{
+}
+
+// Empty limits for all types.
+var testExtSvcs = []testExtSvc{
 	{kind: "AWSCODECOMMIT", cfg: schema.AWSCodeCommitConnection{
 		Region:      "us-east-1",
 		AccessKeyID: "ABCDEF",
@@ -76,514 +79,8 @@ var testExtSvcs = []struct {
 	{kind: "LOCALGIT", cfg: schema.LocalGitExternalService{}},
 }
 
-func TestCodeHostsMigrator_EmptyConfigs(t *testing.T) {
-	logger := logtest.Scoped(t)
-	if testing.Short() {
-		t.Skip()
-	}
-	ctx := context.Background()
-
-	createExternalServices := func(t *testing.T, ctx context.Context, store *basestore.Store) (created int) {
-		t.Helper()
-
-		// Create a trivial external service of each kind
-		for i, svc := range testExtSvcs {
-			buf, err := json.MarshalIndent(svc.cfg, "", "  ")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if err := store.Exec(ctx, sqlf.Sprintf(`
-				INSERT INTO external_services (kind, display_name, config, created_at)
-				VALUES (%s, %s, %s, NOW())
-			`,
-				svc.kind,
-				svc.kind+strconv.Itoa(i),
-				string(buf),
-			)); err != nil {
-				t.Fatal(err)
-			}
-			created++
-		}
-
-		// We'll also add another external service that is deleted, to make sure that
-		// one is also getting an entry.
-		if err := store.Exec(
-			ctx,
-			sqlf.Sprintf(`
-				INSERT INTO external_services (kind, display_name, config, deleted_at)
-				VALUES (%s, %s, %s, NOW())
-			`,
-				"GITHUB",
-				"deleted",
-				`{"url":"https://ghe.sgdev.org"}`,
-			),
-		); err != nil {
-			t.Fatal(err)
-		}
-		created++
-
-		return created
-	}
-
-	clearCodeHosts := func(t *testing.T, ctx context.Context, store *basestore.Store) {
-		t.Helper()
-
-		if err := store.Exec(
-			ctx,
-			sqlf.Sprintf("UPDATE external_services SET code_host_id = NULL"),
-		); err != nil {
-			t.Fatal(err)
-		}
-		if err := store.Exec(
-			ctx,
-			sqlf.Sprintf("DELETE FROM code_hosts WHERE 1=1"),
-		); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	t.Run("Progress", func(t *testing.T) {
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
-		store := basestore.NewWithHandle(db.Handle())
-		key := et.TestKey{}
-		m := NewMigratorWithDB(store, key)
-
-		// With no data in the db, this migration should be done.
-		progress, err := m.Progress(ctx, false)
-		assert.Nil(t, err)
-		assert.EqualValues(t, 1., progress)
-
-		// Now insert data.
-		created := createExternalServices(t, ctx, store)
-		t.Cleanup(func() {
-			clearCodeHosts(t, ctx, store)
-		})
-
-		// Assume no progress now since none of the new records are migrated yet.
-		progress, err = m.Progress(ctx, false)
-		assert.Nil(t, err)
-		assert.EqualValues(t, 0., progress)
-
-		// For each service, run up.
-		for i := 0; i < created; i++ {
-			if err := m.Up(ctx); err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		// Now we expect all services to be migrated.
-		progress, err = m.Progress(ctx, true)
-		assert.Nil(t, err)
-		assert.EqualValues(t, 1., progress)
-
-		// Now we'll clear the code hosts and expect progress to drop again.
-		clearCodeHosts(t, ctx, store)
-		progress, err = m.Progress(ctx, true)
-		assert.Nil(t, err)
-		assert.EqualValues(t, 0., progress)
-	})
-
-	t.Run("Up", func(t *testing.T) {
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
-		store := basestore.NewWithHandle(db.Handle())
-
-		key := et.TestKey{}
-		m := NewMigratorWithDB(store, key)
-
-		// To start with, there should be nothing to do, no external services exist.
-		// Make sure no external services returns a nil error.
-		assert.Nil(t, m.Up(ctx))
-
-		// Now we'll create our external services.
-		created := createExternalServices(t, ctx, store)
-		t.Cleanup(func() {
-			clearCodeHosts(t, ctx, store)
-		})
-
-		// Now, we need to run Up up to created times, so every individual code
-		// host URL has been considered.
-		for i := 0; i < created; i++ {
-			assert.Nil(t, m.Up(ctx))
-		}
-
-		// Check that we're actually done.
-		progress, err := m.Progress(ctx, true)
-		assert.Nil(t, err)
-		assert.EqualValues(t, 1., progress)
-
-		// Now check that we have all code_hosts in the DB that we would expect
-		// to be there, one of each kind, and one for the deleted host:
-		// For all of those, we expect that there will be no values stored
-		// for either API or git requests.
-		verifyCodeHostsExist(t, store, []codeHost{
-			{
-				Kind: "AWSCODECOMMIT",
-				URL:  "us-east-1:ABCDEF",
-			},
-			{
-				Kind: "AZUREDEVOPS",
-				URL:  "https://dev.azure.com/",
-			},
-			{
-				Kind: "BITBUCKETCLOUD",
-				URL:  "https://bitbucket.org/",
-			},
-			{
-				Kind: "BITBUCKETSERVER",
-				URL:  "https://bitbucket.sgdev.org/",
-			},
-			{
-				Kind: "GERRIT",
-				URL:  "https://gerrit.sgdev.org/",
-			},
-			// Our deleted code host.
-			{
-				Kind: "GITHUB",
-				URL:  "https://ghe.sgdev.org/",
-			},
-			{
-				Kind: "GITHUB",
-				URL:  "https://github.com/",
-			},
-			{
-				Kind: "GITLAB",
-				URL:  "https://gitlab.com/",
-			},
-			{
-				Kind: "GITOLITE",
-				URL:  "ssh://git@github.com/",
-			},
-			{
-				Kind: "GOMODULES",
-				URL:  "GOMODULES",
-			},
-			{
-				Kind: "JVMPACKAGES",
-				URL:  "JVMPACKAGES",
-			},
-			{
-				Kind: "LOCALGIT",
-				URL:  "LOCALGIT",
-			},
-			{
-				Kind: "NPMPACKAGES",
-				URL:  "NPMPACKAGES",
-			},
-			{
-				Kind: "OTHER",
-				URL:  "https://user:pass@sgdev.org/repo.git/",
-			},
-			{
-				Kind: "PAGURE",
-				URL:  "https://pagure.sgdev.org/",
-			},
-			{
-				Kind: "PERFORCE",
-				URL:  "ssl:111.222.333.444:1666",
-			},
-			{
-				Kind: "PHABRICATOR",
-				URL:  "https://phabricator.sgdev.org/",
-			},
-			{
-				Kind: "PYTHONPACKAGES",
-				URL:  "PYTHONPACKAGES",
-			},
-			{
-				Kind: "RUBYPACKAGES",
-				URL:  "RUBYPACKAGES",
-			},
-			{
-				Kind: "RUSTPACKAGES",
-				URL:  "RUSTPACKAGES",
-			},
-		})
-	})
-
-	// Down doesn't do anything, so no need to test it for this migrator.
-	// TODO: Actually, we should run clearCodeHosts in down otherwise the progress
-	// doesn't drop back to 0? Or is `non_destructive` supposed to handle that?
-}
-
-// Test that with a site config containing gitMaxCodehostRequestsPerSecond the
-// git limits will be written correctly.
-func TestCodeHostsMigrator_GitConfig(t *testing.T) {
-	logger := logtest.Scoped(t)
-	if testing.Short() {
-		t.Skip()
-	}
-	ctx := context.Background()
-
-	createExternalServices := func(t *testing.T, ctx context.Context, store *basestore.Store) (created int) {
-		t.Helper()
-
-		// Create a trivial external service of each kind
-		for i, svc := range testExtSvcs {
-			buf, err := json.MarshalIndent(svc.cfg, "", "  ")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if err := store.Exec(ctx, sqlf.Sprintf(`
-				INSERT INTO external_services (kind, display_name, config, created_at)
-				VALUES (%s, %s, %s, NOW())
-			`,
-				svc.kind,
-				svc.kind+strconv.Itoa(i),
-				string(buf),
-			)); err != nil {
-				t.Fatal(err)
-			}
-			created++
-		}
-
-		// We'll also add another external service that is deleted, to make sure that
-		// one is also getting an entry.
-		if err := store.Exec(
-			ctx,
-			sqlf.Sprintf(`
-				INSERT INTO external_services (kind, display_name, config, deleted_at)
-				VALUES (%s, %s, %s, NOW())
-			`,
-				"GITHUB",
-				"deleted",
-				`{"url":"https://ghe.sgdev.org"}`,
-			),
-		); err != nil {
-			t.Fatal(err)
-		}
-		created++
-
-		return created
-	}
-
-	clearCodeHosts := func(t *testing.T, ctx context.Context, store *basestore.Store) {
-		t.Helper()
-
-		if err := store.Exec(
-			ctx,
-			sqlf.Sprintf("UPDATE external_services SET code_host_id = NULL"),
-		); err != nil {
-			t.Fatal(err)
-		}
-		if err := store.Exec(
-			ctx,
-			sqlf.Sprintf("DELETE FROM code_hosts WHERE 1=1"),
-		); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := basestore.NewWithHandle(db.Handle())
-
-	// Create a site config entry with the gitMaxCodehostRequestsPerSecond field set.
-	if err := store.Exec(ctx, sqlf.Sprintf("INSERT INTO critical_and_site_config (type, contents) VALUES ('site', %s)", `{"gitMaxCodehostRequestsPerSecond": 10}`)); err != nil {
-		t.Fatal(err)
-	}
-
-	t.Run("Progress", func(t *testing.T) {
-		key := et.TestKey{}
-		m := NewMigratorWithDB(store, key)
-
-		// With no data in the db, this migration should be done.
-		progress, err := m.Progress(ctx, false)
-		assert.Nil(t, err)
-		assert.EqualValues(t, 1., progress)
-
-		// Now insert data.
-		created := createExternalServices(t, ctx, store)
-		t.Cleanup(func() {
-			clearCodeHosts(t, ctx, store)
-		})
-
-		// Assume no progress now since none of the new records are migrated yet.
-		progress, err = m.Progress(ctx, false)
-		assert.Nil(t, err)
-		assert.EqualValues(t, 0., progress)
-
-		// For each service, run up.
-		for i := 0; i < created; i++ {
-			if err := m.Up(ctx); err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		// Now we expect all services to be migrated.
-		progress, err = m.Progress(ctx, true)
-		assert.Nil(t, err)
-		assert.EqualValues(t, 1., progress)
-
-		// Now we'll clear the code hosts and expect progress to drop again.
-		clearCodeHosts(t, ctx, store)
-		progress, err = m.Progress(ctx, true)
-		assert.Nil(t, err)
-		assert.EqualValues(t, 0., progress)
-	})
-
-	t.Run("Up", func(t *testing.T) {
-		key := et.TestKey{}
-		m := NewMigratorWithDB(store, key)
-
-		// To start with, there should be nothing to do, no external services exist.
-		// Make sure no external services returns a nil error.
-		assert.Nil(t, m.Up(ctx))
-
-		// Now we'll create our external services.
-		created := createExternalServices(t, ctx, store)
-		t.Cleanup(func() {
-			clearCodeHosts(t, ctx, store)
-		})
-
-		// Now, we need to run Up up to created times, so every individual code
-		// host URL has been considered.
-		for i := 0; i < created; i++ {
-			assert.Nil(t, m.Up(ctx))
-		}
-
-		// Check that we're actually done.
-		progress, err := m.Progress(ctx, true)
-		assert.Nil(t, err)
-		assert.EqualValues(t, 1., progress)
-
-		// Now check that we have all code_hosts in the DB that we would expect
-		// to be there, one of each kind, and one for the deleted host:
-		// For all of those, we expect that there will be no values stored
-		// for either API or git requests.
-		verifyCodeHostsExist(t, store, []codeHost{
-			{
-				Kind:                        "AWSCODECOMMIT",
-				URL:                         "us-east-1:ABCDEF",
-				GitRateLimitQuota:           pointers.Ptr(int32(10)),
-				GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			},
-			{
-				Kind:                        "AZUREDEVOPS",
-				URL:                         "https://dev.azure.com/",
-				GitRateLimitQuota:           pointers.Ptr(int32(10)),
-				GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			},
-			{
-				Kind:                        "BITBUCKETCLOUD",
-				URL:                         "https://bitbucket.org/",
-				GitRateLimitQuota:           pointers.Ptr(int32(10)),
-				GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			},
-			{
-				Kind:                        "BITBUCKETSERVER",
-				URL:                         "https://bitbucket.sgdev.org/",
-				GitRateLimitQuota:           pointers.Ptr(int32(10)),
-				GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			},
-			{
-				Kind:                        "GERRIT",
-				URL:                         "https://gerrit.sgdev.org/",
-				GitRateLimitQuota:           pointers.Ptr(int32(10)),
-				GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			},
-			// Our deleted code host.
-			{
-				Kind:                        "GITHUB",
-				URL:                         "https://ghe.sgdev.org/",
-				GitRateLimitQuota:           pointers.Ptr(int32(10)),
-				GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			},
-			{
-				Kind:                        "GITHUB",
-				URL:                         "https://github.com/",
-				GitRateLimitQuota:           pointers.Ptr(int32(10)),
-				GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			},
-			{
-				Kind:                        "GITLAB",
-				URL:                         "https://gitlab.com/",
-				GitRateLimitQuota:           pointers.Ptr(int32(10)),
-				GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			},
-			{
-				Kind:                        "GITOLITE",
-				URL:                         "ssh://git@github.com/",
-				GitRateLimitQuota:           pointers.Ptr(int32(10)),
-				GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			},
-			{
-				Kind:                        "GOMODULES",
-				URL:                         "GOMODULES",
-				GitRateLimitQuota:           pointers.Ptr(int32(10)),
-				GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			},
-			{
-				Kind:                        "JVMPACKAGES",
-				URL:                         "JVMPACKAGES",
-				GitRateLimitQuota:           pointers.Ptr(int32(10)),
-				GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			},
-			{
-				Kind:                        "LOCALGIT",
-				URL:                         "LOCALGIT",
-				GitRateLimitQuota:           pointers.Ptr(int32(10)),
-				GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			},
-			{
-				Kind:                        "NPMPACKAGES",
-				URL:                         "NPMPACKAGES",
-				GitRateLimitQuota:           pointers.Ptr(int32(10)),
-				GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			},
-			{
-				Kind:                        "OTHER",
-				URL:                         "https://user:pass@sgdev.org/repo.git/",
-				GitRateLimitQuota:           pointers.Ptr(int32(10)),
-				GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			},
-			{
-				Kind:                        "PAGURE",
-				URL:                         "https://pagure.sgdev.org/",
-				GitRateLimitQuota:           pointers.Ptr(int32(10)),
-				GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			},
-			{
-				Kind:                        "PERFORCE",
-				URL:                         "ssl:111.222.333.444:1666",
-				GitRateLimitQuota:           pointers.Ptr(int32(10)),
-				GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			},
-			{
-				Kind:                        "PHABRICATOR",
-				URL:                         "https://phabricator.sgdev.org/",
-				GitRateLimitQuota:           pointers.Ptr(int32(10)),
-				GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			},
-			{
-				Kind:                        "PYTHONPACKAGES",
-				URL:                         "PYTHONPACKAGES",
-				GitRateLimitQuota:           pointers.Ptr(int32(10)),
-				GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			},
-			{
-				Kind:                        "RUBYPACKAGES",
-				URL:                         "RUBYPACKAGES",
-				GitRateLimitQuota:           pointers.Ptr(int32(10)),
-				GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			},
-			{
-				Kind:                        "RUSTPACKAGES",
-				URL:                         "RUSTPACKAGES",
-				GitRateLimitQuota:           pointers.Ptr(int32(10)),
-				GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			},
-		})
-	})
-
-	// Down doesn't do anything, so no need to test it for this migrator.
-}
-
 // Set with limits for all types that support it.
-var testExtSvcsWithLimits = []struct {
-	kind string
-	cfg  any
-}{
+var testExtSvcsWithLimits = []testExtSvc{
 	{kind: "AWSCODECOMMIT", cfg: schema.AWSCodeCommitConnection{
 		Region:      "us-east-1",
 		AccessKeyID: "ABCDEF",
@@ -705,264 +202,588 @@ var testExtSvcsWithLimits = []struct {
 	}},
 }
 
-// Test that rate limits are extracted and written correctly.
-func TestCodeHostsMigrator_RateLimits(t *testing.T) {
+func TestCodeHostsMigrator(t *testing.T) {
 	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
+
 	ctx := context.Background()
-
-	createExternalServices := func(t *testing.T, ctx context.Context, store *basestore.Store) (created int) {
-		t.Helper()
-
-		// Create a trivial external service of each kind
-		for i, svc := range testExtSvcsWithLimits {
-			buf, err := json.MarshalIndent(svc.cfg, "", "  ")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if err := store.Exec(ctx, sqlf.Sprintf(`
-				INSERT INTO external_services (kind, display_name, config, created_at)
-				VALUES (%s, %s, %s, NOW())
-			`,
-				svc.kind,
-				svc.kind+strconv.Itoa(i),
-				string(buf),
-			)); err != nil {
-				t.Fatal(err)
-			}
-			created++
-		}
-
-		// We'll also add another external service that is deleted, to make sure that
-		// one is also getting an entry.
-		if err := store.Exec(
-			ctx,
-			sqlf.Sprintf(`
-				INSERT INTO external_services (kind, display_name, config, deleted_at)
-				VALUES (%s, %s, %s, NOW())
-			`,
-				"GITHUB",
-				"deleted",
-				`{"url":"https://ghe.sgdev.org", "rateLimit": {"enabled": true, "requestsPerHour": 1000}}`,
-			),
-		); err != nil {
-			t.Fatal(err)
-		}
-		created++
-
-		return created
-	}
-
-	clearCodeHosts := func(t *testing.T, ctx context.Context, store *basestore.Store) {
-		t.Helper()
-
-		if err := store.Exec(
-			ctx,
-			sqlf.Sprintf("UPDATE external_services SET code_host_id = NULL"),
-		); err != nil {
-			t.Fatal(err)
-		}
-		if err := store.Exec(
-			ctx,
-			sqlf.Sprintf("DELETE FROM code_hosts WHERE 1=1"),
-		); err != nil {
-			t.Fatal(err)
-		}
-	}
-
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := basestore.NewWithHandle(db.Handle())
+	key := et.TestKey{}
+	m := NewMigratorWithDB(store, key)
 
-	t.Run("Progress", func(t *testing.T) {
-		key := et.TestKey{}
-		m := NewMigratorWithDB(store, key)
+	t.Run("EmptyConfigs", func(t *testing.T) {
+		t.Run("Progress", func(t *testing.T) {
+			ensureCleanDB(t, ctx, store)
 
-		// With no data in the db, this migration should be done.
-		progress, err := m.Progress(ctx, false)
-		assert.Nil(t, err)
-		assert.EqualValues(t, 1., progress)
+			// With no data in the db, this migration should be done.
+			progress, err := m.Progress(ctx, false)
+			assert.Nil(t, err)
+			assert.EqualValues(t, 1., progress)
 
-		// Now insert data.
-		created := createExternalServices(t, ctx, store)
-		t.Cleanup(func() {
+			// Now insert data.
+			created := createExternalServices(t, ctx, store, testExtSvcs, false)
+
+			// Assume no progress now since none of the new records are migrated yet.
+			progress, err = m.Progress(ctx, false)
+			assert.Nil(t, err)
+			assert.EqualValues(t, 0., progress)
+
+			// For each service, run up.
+			for i := 0; i < created; i++ {
+				if err := m.Up(ctx); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			// Now we expect all services to be migrated.
+			progress, err = m.Progress(ctx, false)
+			assert.Nil(t, err)
+			assert.EqualValues(t, 1., progress)
+
+			// Now we'll clear the code hosts and expect progress to drop again.
 			clearCodeHosts(t, ctx, store)
+			progress, err = m.Progress(ctx, false)
+			assert.Nil(t, err)
+			assert.EqualValues(t, 0., progress)
 		})
 
-		// Assume no progress now since none of the new records are migrated yet.
-		progress, err = m.Progress(ctx, false)
-		assert.Nil(t, err)
-		assert.EqualValues(t, 0., progress)
+		t.Run("Up", func(t *testing.T) {
+			ensureCleanDB(t, ctx, store)
 
-		// For each service, run up.
-		for i := 0; i < created; i++ {
-			if err := m.Up(ctx); err != nil {
+			// To start with, there should be nothing to do, no external services exist.
+			// Make sure no external services returns a nil error.
+			assert.Nil(t, m.Up(ctx))
+
+			// Now we'll create our external services.
+			created := createExternalServices(t, ctx, store, testExtSvcs, false)
+
+			// Now, we need to run Up up to created times, so every individual code
+			// host URL has been considered.
+			for i := 0; i < created; i++ {
+				assert.Nil(t, m.Up(ctx))
+			}
+
+			// Check that we're actually done.
+			progress, err := m.Progress(ctx, false)
+			assert.Nil(t, err)
+			assert.EqualValues(t, 1., progress)
+
+			// Now check that we have all code_hosts in the DB that we would expect
+			// to be there, one of each kind, and one for the deleted host:
+			// For all of those, we expect that there will be no values stored
+			// for either API or git requests.
+			verifyCodeHostsExist(t, store, []codeHost{
+				{
+					Kind: "AWSCODECOMMIT",
+					URL:  "us-east-1:ABCDEF",
+				},
+				{
+					Kind: "AZUREDEVOPS",
+					URL:  "https://dev.azure.com/",
+				},
+				{
+					Kind: "BITBUCKETCLOUD",
+					URL:  "https://bitbucket.org/",
+				},
+				{
+					Kind: "BITBUCKETSERVER",
+					URL:  "https://bitbucket.sgdev.org/",
+				},
+				{
+					Kind: "GERRIT",
+					URL:  "https://gerrit.sgdev.org/",
+				},
+				// Our deleted code host.
+				{
+					Kind: "GITHUB",
+					URL:  "https://ghe.sgdev.org/",
+				},
+				{
+					Kind: "GITHUB",
+					URL:  "https://github.com/",
+				},
+				{
+					Kind: "GITLAB",
+					URL:  "https://gitlab.com/",
+				},
+				{
+					Kind: "GITOLITE",
+					URL:  "ssh://git@github.com/",
+				},
+				{
+					Kind: "GOMODULES",
+					URL:  "GOMODULES",
+				},
+				{
+					Kind: "JVMPACKAGES",
+					URL:  "JVMPACKAGES",
+				},
+				{
+					Kind: "LOCALGIT",
+					URL:  "LOCALGIT",
+				},
+				{
+					Kind: "NPMPACKAGES",
+					URL:  "NPMPACKAGES",
+				},
+				{
+					Kind: "OTHER",
+					URL:  "https://user:pass@sgdev.org/repo.git/",
+				},
+				{
+					Kind: "PAGURE",
+					URL:  "https://pagure.sgdev.org/",
+				},
+				{
+					Kind: "PERFORCE",
+					URL:  "ssl:111.222.333.444:1666",
+				},
+				{
+					Kind: "PHABRICATOR",
+					URL:  "https://phabricator.sgdev.org/",
+				},
+				{
+					Kind: "PYTHONPACKAGES",
+					URL:  "PYTHONPACKAGES",
+				},
+				{
+					Kind: "RUBYPACKAGES",
+					URL:  "RUBYPACKAGES",
+				},
+				{
+					Kind: "RUSTPACKAGES",
+					URL:  "RUSTPACKAGES",
+				},
+			})
+		})
+	})
+
+	// Test that with a site config containing gitMaxCodehostRequestsPerSecond the
+	// git limits will be written correctly.
+	t.Run("GitConfig", func(t *testing.T) {
+		// Create a site config entry with the gitMaxCodehostRequestsPerSecond field set.
+		if err := store.Exec(ctx, sqlf.Sprintf("INSERT INTO critical_and_site_config (type, contents) VALUES ('site', %s)", `{"gitMaxCodehostRequestsPerSecond": 10}`)); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			if err := store.Exec(ctx, sqlf.Sprintf("DELETE FROM critical_and_site_config WHERE 1=1")); err != nil {
 				t.Fatal(err)
 			}
-		}
+		})
 
-		// Now we expect all services to be migrated.
-		progress, err = m.Progress(ctx, true)
-		assert.Nil(t, err)
-		assert.EqualValues(t, 1., progress)
+		t.Run("Progress", func(t *testing.T) {
+			ensureCleanDB(t, ctx, store)
 
-		// Now we'll clear the code hosts and expect progress to drop again.
-		clearCodeHosts(t, ctx, store)
-		progress, err = m.Progress(ctx, true)
-		assert.Nil(t, err)
-		assert.EqualValues(t, 0., progress)
+			// With no data in the db, this migration should be done.
+			progress, err := m.Progress(ctx, false)
+			assert.Nil(t, err)
+			assert.EqualValues(t, 1., progress)
+
+			// Now insert data.
+			created := createExternalServices(t, ctx, store, testExtSvcs, false)
+
+			// Assume no progress now since none of the new records are migrated yet.
+			progress, err = m.Progress(ctx, false)
+			assert.Nil(t, err)
+			assert.EqualValues(t, 0., progress)
+
+			// For each service, run up.
+			for i := 0; i < created; i++ {
+				if err := m.Up(ctx); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			// Now we expect all services to be migrated.
+			progress, err = m.Progress(ctx, false)
+			assert.Nil(t, err)
+			assert.EqualValues(t, 1., progress)
+
+			// Now we'll clear the code hosts and expect progress to drop again.
+			clearCodeHosts(t, ctx, store)
+			progress, err = m.Progress(ctx, false)
+			assert.Nil(t, err)
+			assert.EqualValues(t, 0., progress)
+		})
+
+		t.Run("Up", func(t *testing.T) {
+			ensureCleanDB(t, ctx, store)
+
+			// To start with, there should be nothing to do, no external services exist.
+			// Make sure no external services returns a nil error.
+			assert.Nil(t, m.Up(ctx))
+
+			// Now we'll create our external services.
+			created := createExternalServices(t, ctx, store, testExtSvcs, false)
+
+			// Now, we need to run Up up to created times, so every individual code
+			// host URL has been considered.
+			for i := 0; i < created; i++ {
+				assert.Nil(t, m.Up(ctx))
+			}
+
+			// Check that we're actually done.
+			progress, err := m.Progress(ctx, false)
+			assert.Nil(t, err)
+			assert.EqualValues(t, 1., progress)
+
+			// Now check that we have all code_hosts in the DB that we would expect
+			// to be there, one of each kind, and one for the deleted host:
+			// For all of those, we expect that there will be no values stored
+			// for either API or git requests.
+			verifyCodeHostsExist(t, store, []codeHost{
+				{
+					Kind:                        "AWSCODECOMMIT",
+					URL:                         "us-east-1:ABCDEF",
+					GitRateLimitQuota:           pointers.Ptr(int32(10)),
+					GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+				},
+				{
+					Kind:                        "AZUREDEVOPS",
+					URL:                         "https://dev.azure.com/",
+					GitRateLimitQuota:           pointers.Ptr(int32(10)),
+					GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+				},
+				{
+					Kind:                        "BITBUCKETCLOUD",
+					URL:                         "https://bitbucket.org/",
+					GitRateLimitQuota:           pointers.Ptr(int32(10)),
+					GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+				},
+				{
+					Kind:                        "BITBUCKETSERVER",
+					URL:                         "https://bitbucket.sgdev.org/",
+					GitRateLimitQuota:           pointers.Ptr(int32(10)),
+					GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+				},
+				{
+					Kind:                        "GERRIT",
+					URL:                         "https://gerrit.sgdev.org/",
+					GitRateLimitQuota:           pointers.Ptr(int32(10)),
+					GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+				},
+				// Our deleted code host.
+				{
+					Kind:                        "GITHUB",
+					URL:                         "https://ghe.sgdev.org/",
+					GitRateLimitQuota:           pointers.Ptr(int32(10)),
+					GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+				},
+				{
+					Kind:                        "GITHUB",
+					URL:                         "https://github.com/",
+					GitRateLimitQuota:           pointers.Ptr(int32(10)),
+					GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+				},
+				{
+					Kind:                        "GITLAB",
+					URL:                         "https://gitlab.com/",
+					GitRateLimitQuota:           pointers.Ptr(int32(10)),
+					GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+				},
+				{
+					Kind:                        "GITOLITE",
+					URL:                         "ssh://git@github.com/",
+					GitRateLimitQuota:           pointers.Ptr(int32(10)),
+					GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+				},
+				{
+					Kind:                        "GOMODULES",
+					URL:                         "GOMODULES",
+					GitRateLimitQuota:           pointers.Ptr(int32(10)),
+					GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+				},
+				{
+					Kind:                        "JVMPACKAGES",
+					URL:                         "JVMPACKAGES",
+					GitRateLimitQuota:           pointers.Ptr(int32(10)),
+					GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+				},
+				{
+					Kind:                        "LOCALGIT",
+					URL:                         "LOCALGIT",
+					GitRateLimitQuota:           pointers.Ptr(int32(10)),
+					GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+				},
+				{
+					Kind:                        "NPMPACKAGES",
+					URL:                         "NPMPACKAGES",
+					GitRateLimitQuota:           pointers.Ptr(int32(10)),
+					GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+				},
+				{
+					Kind:                        "OTHER",
+					URL:                         "https://user:pass@sgdev.org/repo.git/",
+					GitRateLimitQuota:           pointers.Ptr(int32(10)),
+					GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+				},
+				{
+					Kind:                        "PAGURE",
+					URL:                         "https://pagure.sgdev.org/",
+					GitRateLimitQuota:           pointers.Ptr(int32(10)),
+					GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+				},
+				{
+					Kind:                        "PERFORCE",
+					URL:                         "ssl:111.222.333.444:1666",
+					GitRateLimitQuota:           pointers.Ptr(int32(10)),
+					GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+				},
+				{
+					Kind:                        "PHABRICATOR",
+					URL:                         "https://phabricator.sgdev.org/",
+					GitRateLimitQuota:           pointers.Ptr(int32(10)),
+					GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+				},
+				{
+					Kind:                        "PYTHONPACKAGES",
+					URL:                         "PYTHONPACKAGES",
+					GitRateLimitQuota:           pointers.Ptr(int32(10)),
+					GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+				},
+				{
+					Kind:                        "RUBYPACKAGES",
+					URL:                         "RUBYPACKAGES",
+					GitRateLimitQuota:           pointers.Ptr(int32(10)),
+					GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+				},
+				{
+					Kind:                        "RUSTPACKAGES",
+					URL:                         "RUSTPACKAGES",
+					GitRateLimitQuota:           pointers.Ptr(int32(10)),
+					GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+				},
+			})
+		})
 	})
 
-	t.Run("Up", func(t *testing.T) {
-		key := et.TestKey{}
-		m := NewMigratorWithDB(store, key)
+	// Test that rate limits are extracted and written correctly.
+	t.Run("RateLimits", func(t *testing.T) {
+		t.Run("Progress", func(t *testing.T) {
+			ensureCleanDB(t, ctx, store)
 
-		// To start with, there should be nothing to do, no external services exist.
-		// Make sure no external services returns a nil error.
+			// With no data in the db, this migration should be done.
+			progress, err := m.Progress(ctx, false)
+			assert.Nil(t, err)
+			assert.EqualValues(t, 1., progress)
+
+			// Now insert data.
+			created := createExternalServices(t, ctx, store, testExtSvcsWithLimits, true)
+
+			// Assume no progress now since none of the new records are migrated yet.
+			progress, err = m.Progress(ctx, false)
+			assert.Nil(t, err)
+			assert.EqualValues(t, 0., progress)
+
+			// For each service, run up.
+			for i := 0; i < created; i++ {
+				if err := m.Up(ctx); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			// Now we expect all services to be migrated.
+			progress, err = m.Progress(ctx, false)
+			assert.Nil(t, err)
+			assert.EqualValues(t, 1., progress)
+
+			// Now we'll clear the code hosts and expect progress to drop again.
+			clearCodeHosts(t, ctx, store)
+			progress, err = m.Progress(ctx, false)
+			assert.Nil(t, err)
+			assert.EqualValues(t, 0., progress)
+		})
+
+		t.Run("Up", func(t *testing.T) {
+			ensureCleanDB(t, ctx, store)
+
+			// To start with, there should be nothing to do, no external services exist.
+			// Make sure no external services returns a nil error.
+			assert.Nil(t, m.Up(ctx))
+
+			// Now we'll create our external services.
+			created := createExternalServices(t, ctx, store, testExtSvcsWithLimits, true)
+
+			// Now, we need to run Up up to created times, so every individual code
+			// host URL has been considered.
+			for i := 0; i < created; i++ {
+				assert.Nil(t, m.Up(ctx))
+			}
+
+			// Check that we're actually done.
+			progress, err := m.Progress(ctx, false)
+			assert.Nil(t, err)
+			assert.EqualValues(t, 1., progress)
+
+			// Now check that we have all code_hosts in the DB that we would expect
+			// to be there, one of each kind, and one for the deleted host:
+			// For all of those, we expect that there will be no values stored
+			// for either API or git requests.
+			verifyCodeHostsExist(t, store, []codeHost{
+				{
+					Kind: "AWSCODECOMMIT",
+					URL:  "us-east-1:ABCDEF",
+					// Doesn't support limiting.
+				},
+				{
+					Kind: "AZUREDEVOPS",
+					URL:  "https://dev.azure.com/",
+					// Doesn't support limiting.
+				},
+				{
+					Kind:                        "BITBUCKETCLOUD",
+					URL:                         "https://bitbucket.org/",
+					APIRateLimitQuota:           pointers.Ptr(int32(1800)),
+					APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
+				},
+				{
+					Kind:                        "BITBUCKETSERVER",
+					URL:                         "https://bitbucket.sgdev.org/",
+					APIRateLimitQuota:           pointers.Ptr(int32(3600)),
+					APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
+				},
+				{
+					Kind: "GERRIT",
+					URL:  "https://gerrit.sgdev.org/",
+					// Doesn't support limiting.
+				},
+				// Our deleted code host.
+				{
+					Kind:                        "GITHUB",
+					URL:                         "https://ghe.sgdev.org/",
+					APIRateLimitQuota:           pointers.Ptr(int32(1000)),
+					APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
+				},
+				{
+					Kind:                        "GITHUB",
+					URL:                         "https://github.com/",
+					APIRateLimitQuota:           pointers.Ptr(int32(5000)),
+					APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
+				},
+				{
+					Kind:                        "GITLAB",
+					URL:                         "https://gitlab.com/",
+					APIRateLimitQuota:           pointers.Ptr(int32(6000)),
+					APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
+				},
+				{
+					Kind: "GITOLITE",
+					URL:  "ssh://git@github.com/",
+					// Doesn't support limiting.
+				},
+				{
+					Kind:                        "GOMODULES",
+					URL:                         "GOMODULES",
+					APIRateLimitQuota:           pointers.Ptr(int32(10000)),
+					APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
+				},
+				{
+					Kind:                        "JVMPACKAGES",
+					URL:                         "JVMPACKAGES",
+					APIRateLimitQuota:           pointers.Ptr(int32(11500)),
+					APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
+				},
+				{
+					Kind: "LOCALGIT",
+					URL:  "LOCALGIT",
+					// Doesn't support limiting.
+				},
+				{
+					Kind:                        "NPMPACKAGES",
+					URL:                         "NPMPACKAGES",
+					APIRateLimitQuota:           pointers.Ptr(int32(12000)),
+					APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
+				},
+				{
+					Kind: "OTHER",
+					URL:  "https://user:pass@sgdev.org/repo.git/",
+					// Doesn't support limiting.
+				},
+				{
+					Kind:                        "PAGURE",
+					URL:                         "https://pagure.sgdev.org/",
+					APIRateLimitQuota:           pointers.Ptr(int32(13000)),
+					APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
+				},
+				{
+					Kind:                        "PERFORCE",
+					URL:                         "ssl:111.222.333.444:1666",
+					APIRateLimitQuota:           pointers.Ptr(int32(14000)),
+					APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
+				},
+				{
+					Kind: "PHABRICATOR",
+					URL:  "https://phabricator.sgdev.org/",
+					// Doesn't support limiting.
+				},
+				{
+					Kind:                        "PYTHONPACKAGES",
+					URL:                         "PYTHONPACKAGES",
+					APIRateLimitQuota:           pointers.Ptr(int32(15000)),
+					APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
+				},
+				{
+					Kind:                        "RUBYPACKAGES",
+					URL:                         "RUBYPACKAGES",
+					APIRateLimitQuota:           pointers.Ptr(int32(16000)),
+					APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
+				},
+				{
+					Kind:                        "RUSTPACKAGES",
+					URL:                         "RUSTPACKAGES",
+					APIRateLimitQuota:           pointers.Ptr(int32(17000)),
+					APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
+				},
+			})
+		})
+	})
+
+	// Test that an existing code host from the new code paths does still make it
+	// so other external services get migrated.
+	t.Run("Existing code host", func(t *testing.T) {
+		ensureCleanDB(t, ctx, store)
+
+		// Create an external service that already has a code host.
+		require.NoError(t, store.Exec(ctx, sqlf.Sprintf("INSERT INTO code_hosts (kind, url) VALUES('GITHUB', 'https://github.com/')")))
+		require.NoError(t, store.Exec(ctx, sqlf.Sprintf(`INSERT INTO external_services (kind, display_name, config, code_host_id, created_at) VALUES ('GITHUB', 'GH', '{"url": "https://github.com/"}', (SELECT id FROM code_hosts WHERE url = 'https://github.com/'), NOW())`)))
+
+		// Create an additional external service that has no code host set yet but
+		// uses the same URL. Well, the same after normalization, we also leave
+		// the trailing slash out here to see if these two are still matched up against
+		// each other.
+		require.NoError(t, store.Exec(ctx, sqlf.Sprintf(`INSERT INTO external_services (kind, display_name, config, created_at) VALUES ('GITHUB', 'GH 2', '{"url": "https://github.com"}', NOW())`)))
+
+		// Check that we're only 50% done.
+		progress, err := m.Progress(ctx, false)
+		assert.Nil(t, err)
+		assert.EqualValues(t, .5, progress)
+
+		// Now, we need to run Up to get our other service migrated.
 		assert.Nil(t, m.Up(ctx))
 
-		// Now we'll create our external services.
-		created := createExternalServices(t, ctx, store)
-		t.Cleanup(func() {
-			clearCodeHosts(t, ctx, store)
-		})
-
-		// Now, we need to run Up up to created times, so every individual code
-		// host URL has been considered.
-		for i := 0; i < created; i++ {
-			assert.Nil(t, m.Up(ctx))
-		}
-
 		// Check that we're actually done.
-		progress, err := m.Progress(ctx, true)
+		progress, err = m.Progress(ctx, false)
 		assert.Nil(t, err)
 		assert.EqualValues(t, 1., progress)
 
-		// Now check that we have all code_hosts in the DB that we would expect
-		// to be there, one of each kind, and one for the deleted host:
-		// For all of those, we expect that there will be no values stored
-		// for either API or git requests.
+		// Check that only one code host exists.
 		verifyCodeHostsExist(t, store, []codeHost{
 			{
-				Kind: "AWSCODECOMMIT",
-				URL:  "us-east-1:ABCDEF",
-				// Doesn't support limiting.
-			},
-			{
-				Kind: "AZUREDEVOPS",
-				URL:  "https://dev.azure.com/",
-				// Doesn't support limiting.
-			},
-			{
-				Kind:                        "BITBUCKETCLOUD",
-				URL:                         "https://bitbucket.org/",
-				APIRateLimitQuota:           pointers.Ptr(int32(1800)),
-				APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
-			},
-			{
-				Kind:                        "BITBUCKETSERVER",
-				URL:                         "https://bitbucket.sgdev.org/",
-				APIRateLimitQuota:           pointers.Ptr(int32(3600)),
-				APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
-			},
-			{
-				Kind: "GERRIT",
-				URL:  "https://gerrit.sgdev.org/",
-				// Doesn't support limiting.
-			},
-			// Our deleted code host.
-			{
-				Kind:                        "GITHUB",
-				URL:                         "https://ghe.sgdev.org/",
-				APIRateLimitQuota:           pointers.Ptr(int32(1000)),
-				APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
-			},
-			{
-				Kind:                        "GITHUB",
-				URL:                         "https://github.com/",
-				APIRateLimitQuota:           pointers.Ptr(int32(5000)),
-				APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
-			},
-			{
-				Kind:                        "GITLAB",
-				URL:                         "https://gitlab.com/",
-				APIRateLimitQuota:           pointers.Ptr(int32(6000)),
-				APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
-			},
-			{
-				Kind: "GITOLITE",
-				URL:  "ssh://git@github.com/",
-				// Doesn't support limiting.
-			},
-			{
-				Kind:                        "GOMODULES",
-				URL:                         "GOMODULES",
-				APIRateLimitQuota:           pointers.Ptr(int32(10000)),
-				APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
-			},
-			{
-				Kind:                        "JVMPACKAGES",
-				URL:                         "JVMPACKAGES",
-				APIRateLimitQuota:           pointers.Ptr(int32(11500)),
-				APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
-			},
-			{
-				Kind: "LOCALGIT",
-				URL:  "LOCALGIT",
-				// Doesn't support limiting.
-			},
-			{
-				Kind:                        "NPMPACKAGES",
-				URL:                         "NPMPACKAGES",
-				APIRateLimitQuota:           pointers.Ptr(int32(12000)),
-				APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
-			},
-			{
-				Kind: "OTHER",
-				URL:  "https://user:pass@sgdev.org/repo.git/",
-				// Doesn't support limiting.
-			},
-			{
-				Kind:                        "PAGURE",
-				URL:                         "https://pagure.sgdev.org/",
-				APIRateLimitQuota:           pointers.Ptr(int32(13000)),
-				APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
-			},
-			{
-				Kind:                        "PERFORCE",
-				URL:                         "ssl:111.222.333.444:1666",
-				APIRateLimitQuota:           pointers.Ptr(int32(14000)),
-				APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
-			},
-			{
-				Kind: "PHABRICATOR",
-				URL:  "https://phabricator.sgdev.org/",
-				// Doesn't support limiting.
-			},
-			{
-				Kind:                        "PYTHONPACKAGES",
-				URL:                         "PYTHONPACKAGES",
-				APIRateLimitQuota:           pointers.Ptr(int32(15000)),
-				APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
-			},
-			{
-				Kind:                        "RUBYPACKAGES",
-				URL:                         "RUBYPACKAGES",
-				APIRateLimitQuota:           pointers.Ptr(int32(16000)),
-				APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
-			},
-			{
-				Kind:                        "RUSTPACKAGES",
-				URL:                         "RUSTPACKAGES",
-				APIRateLimitQuota:           pointers.Ptr(int32(17000)),
-				APIRateLimitIntervalSeconds: pointers.Ptr(int32(3600)),
+				Kind: "GITHUB",
+				URL:  "https://github.com/",
 			},
 		})
-	})
 
-	// Down doesn't do anything, so no need to test it for this migrator.
+		// Verify all external services now have code hosts set.
+		row := store.QueryRow(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM external_services WHERE code_host_id IS NULL`))
+		var count int
+		require.NoError(t, row.Scan(&count))
+		require.NoError(t, row.Err())
+		assert.Equal(t, 0, count)
+	})
 }
 
 type codeHost struct {
@@ -994,10 +815,10 @@ func verifyCodeHostsExist(t *testing.T, store *basestore.Store, expectedCodeHost
 		if err := rows.Scan(
 			&ch.Kind,
 			&ch.URL,
-			&NullInt32{N: &ch.APIRateLimitQuota},
-			&NullInt32{N: &ch.APIRateLimitIntervalSeconds},
-			&NullInt32{N: &ch.GitRateLimitQuota},
-			&NullInt32{N: &ch.GitRateLimitIntervalSeconds},
+			&nullInt32{N: &ch.APIRateLimitQuota},
+			&nullInt32{N: &ch.APIRateLimitIntervalSeconds},
+			&nullInt32{N: &ch.GitRateLimitQuota},
+			&nullInt32{N: &ch.GitRateLimitIntervalSeconds},
 		); err != nil {
 			t.Fatal(err)
 		}
@@ -1010,4 +831,91 @@ func verifyCodeHostsExist(t *testing.T, store *basestore.Store, expectedCodeHost
 	if diff := cmp.Diff(haveCodeHosts, expectedCodeHosts); diff != "" {
 		t.Fatalf("invalid code host configuration in database: %s", diff)
 	}
+}
+
+// clearCodeHosts resets the migration state effectively.
+func clearCodeHosts(t *testing.T, ctx context.Context, store *basestore.Store) {
+	t.Helper()
+
+	if err := store.Exec(
+		ctx,
+		sqlf.Sprintf("UPDATE external_services SET code_host_id = NULL"),
+	); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Exec(
+		ctx,
+		sqlf.Sprintf("DELETE FROM code_hosts WHERE 1=1"),
+	); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func ensureCleanDB(t *testing.T, ctx context.Context, store *basestore.Store) {
+	t.Helper()
+
+	clean := func() {
+		if err := store.Exec(
+			ctx,
+			sqlf.Sprintf("DELETE FROM external_services WHERE 1=1"),
+		); err != nil {
+			t.Fatal(err)
+		}
+		if err := store.Exec(
+			ctx,
+			sqlf.Sprintf("DELETE FROM code_hosts WHERE 1=1"),
+		); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	t.Cleanup(clean)
+	clean()
+}
+
+func createExternalServices(t *testing.T, ctx context.Context, store *basestore.Store, extSvcs []testExtSvc, deletedWithRateLimitConfig bool) (created int) {
+	t.Helper()
+
+	// Create a trivial external service of each kind
+	for i, svc := range extSvcs {
+		buf, err := json.MarshalIndent(svc.cfg, "", "  ")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if err := store.Exec(ctx, sqlf.Sprintf(`
+			INSERT INTO external_services (kind, display_name, config, created_at)
+			VALUES (%s, %s, %s, NOW())
+		`,
+			svc.kind,
+			svc.kind+strconv.Itoa(i),
+			string(buf),
+		)); err != nil {
+			t.Fatal(err)
+		}
+		created++
+	}
+
+	configForDeleted := `{"url":"https://ghe.sgdev.org"}`
+	if deletedWithRateLimitConfig {
+		configForDeleted = `{"url":"https://ghe.sgdev.org", "ratelimit": {"enabled": true, "requestsPerHour": 1000}}`
+	}
+	// We'll also add another external service that is deleted, to make sure that
+	// one is also getting an entry.
+	if err := store.Exec(
+		ctx,
+		sqlf.Sprintf(`
+			INSERT INTO external_services (kind, display_name, config, deleted_at)
+			VALUES (%s, %s, %s, NOW())
+		`,
+			"GITHUB",
+			"deleted",
+			configForDeleted,
+		),
+	); err != nil {
+		t.Fatal(err)
+	}
+	created++
+
+	return created
 }

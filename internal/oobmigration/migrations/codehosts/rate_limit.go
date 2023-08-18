@@ -20,15 +20,15 @@ import (
 // =======================================================================
 // =======================================================================
 
-// ExtractRateLimit extracts the rate limit from the given args. If rate limiting is not
+// extractRateLimit extracts the rate limit from the given args. If rate limiting is not
 // supported the error returned will be an ErrRateLimitUnsupported.
-func ExtractRateLimit(config, kind string) (limit rate.Limit, isDefault bool, err error) {
+func extractRateLimit(config, kind string) (limit rate.Limit, isDefault bool, err error) {
 	parsed, err := parseConfig(kind, config)
 	if err != nil {
 		return rate.Inf, false, errors.Wrap(err, "loading service configuration")
 	}
 
-	rlc, isDefault, err := GetLimitFromConfig(kind, parsed)
+	rlc, isDefault, err := getLimitFromConfig(kind, parsed)
 	if err != nil {
 		return rate.Inf, false, err
 	}
@@ -36,8 +36,8 @@ func ExtractRateLimit(config, kind string) (limit rate.Limit, isDefault bool, er
 	return rlc, isDefault, nil
 }
 
-// GetLimitFromConfig gets RateLimitConfig from an already parsed config schema.
-func GetLimitFromConfig(kind string, config any) (limit rate.Limit, isDefault bool, err error) {
+// getLimitFromConfig gets RateLimitConfig from an already parsed config schema.
+func getLimitFromConfig(kind string, config any) (limit rate.Limit, isDefault bool, err error) {
 	// Rate limit config can be in a few states:
 	// 1. Not defined: Some infinite, some limited, depending on code host.
 	// 2. Defined and enabled: We use their defined limit.
@@ -128,7 +128,7 @@ func GetLimitFromConfig(kind string, config any) (limit rate.Limit, isDefault bo
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	default:
-		return limit, isDefault, ErrRateLimitUnsupported{codehostKind: kind}
+		return limit, isDefault, errRateLimitUnsupported{codehostKind: kind}
 	}
 
 	return limit, isDefault, nil
@@ -141,10 +141,10 @@ func limitOrInf(enabled bool, perHour float64) rate.Limit {
 	return rate.Inf
 }
 
-type ErrRateLimitUnsupported struct {
+type errRateLimitUnsupported struct {
 	codehostKind string
 }
 
-func (e ErrRateLimitUnsupported) Error() string {
+func (e errRateLimitUnsupported) Error() string {
 	return fmt.Sprintf("internal rate limiting not supported for %s", e.codehostKind)
 }

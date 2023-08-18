@@ -17,12 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type codeHostsMigrator struct {
-	logger log.Logger
-	store  *basestore.Store
-	key    encryption.Key
-}
-
 var _ oobmigration.Migrator = &codeHostsMigrator{}
 
 func NewMigratorWithDB(store *basestore.Store, key encryption.Key) *codeHostsMigrator {
@@ -33,11 +27,22 @@ func NewMigratorWithDB(store *basestore.Store, key encryption.Key) *codeHostsMig
 	}
 }
 
+type codeHostsMigrator struct {
+	logger log.Logger
+	store  *basestore.Store
+	key    encryption.Key
+}
+
 func (m *codeHostsMigrator) ID() int                 { return 24 }
 func (m *codeHostsMigrator) Interval() time.Duration { return 3 * time.Second }
 
 // Progress returns the percentage (ranged [0, 1]) of external services that were migrated to the code_hosts table.
-func (m *codeHostsMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
+func (m *codeHostsMigrator) Progress(ctx context.Context, applyReverse bool) (float64, error) {
+	if applyReverse {
+		// Since this is a non-destructive migration, we don't need to track progress
+		// for rollback, as we don't actually do anything.
+		return 0., nil
+	}
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(codeHostsMigratorProgressQuery)))
 	return progress, err
 }
@@ -52,7 +57,7 @@ SELECT
 	END
 FROM
 	(SELECT COUNT(*) AS count FROM external_services WHERE code_host_id IS NOT NULL) c1,
-	(SELECT COUNT(*) AS count FROM external_services WHERE code_host_id IS NULL) c2
+	(SELECT COUNT(*) AS count FROM external_services) c2
 `
 
 // Up loads a set of external services without a populated code_host_id column and
@@ -89,10 +94,6 @@ func (m *codeHostsMigrator) Up(ctx context.Context) (err error) {
 		}
 	}
 
-	type svc struct {
-		ID           int
-		Kind, Config string
-	}
 	svcs, err := func() (svcs []svc, err error) {
 		// First, we load ALL external_services. This should be << 50 for most instances
 		// so this should not cause bigger issues.
@@ -129,43 +130,55 @@ func (m *codeHostsMigrator) Up(ctx context.Context) (err error) {
 
 	// Look at the first unmigrated external service.
 	current := svcs[0]
-	currentHostURL, err := UniqueCodeHostIdentifier(current.Kind, current.Config)
+	// Then get the URL for this host, so we can find other external_services
+	// for the same code host.
+	currentHostURL, err := uniqueCodeHostIdentifierFromConfig(current.Kind, current.Config)
 	if err != nil {
 		return err
 	}
-	lowestRateLimitPerHour, isLowestRateLimitDefault, err := ExtractRateLimit(current.Config, current.Kind)
-	if err != nil && !errors.HasType(err, ErrRateLimitUnsupported{}) {
-		return err
+	// Get the rate limit of the first service, this is our temporary lowest limit.
+	// We want to store the most restrictive limit across all services.
+	lowestRateLimitPerHour, isLowestRateLimitDefault, err := extractRateLimit(current.Config, current.Kind)
+	// Non-supported rate limit just means the code host doesn't support rate limiting
+	// yet. In that case we store all zeros.
+	if err != nil && !errors.HasType(err, errRateLimitUnsupported{}) {
+		return errors.Wrapf(err, "failed to get rate limit for external service %d", current.ID)
 	}
+
 	if lowestRateLimitPerHour < 0 {
 		lowestRateLimitPerHour = 0
 	}
+
+	// Collect all external_services for the same code host, so we can connect
+	// them all to the code_hosts entry.
 	svcsWithSameHost := []int{current.ID}
 
 	// Find all other external services for the same (kind, url).
 	for _, o := range svcs[1:] {
 		if o.Kind != current.Kind {
+			// Not of the same kind.
 			continue
 		}
-		haveHostURL, err := UniqueCodeHostIdentifier(o.Kind, o.Config)
+
+		haveHostURL, err := uniqueCodeHostIdentifierFromConfig(o.Kind, o.Config)
 		if err != nil {
 			return err
 		}
-
 		if haveHostURL != currentHostURL {
-			// TODO: Test for missing trailing slash.
+			// Not of the same host.
 			continue
 		}
 
 		svcsWithSameHost = append(svcsWithSameHost, o.ID)
 		// Find the smallest configured rate limit for the given host.
-		rateLimit, isDefaultRateLimit, err := ExtractRateLimit(current.Config, current.Kind)
-		if err != nil && !errors.HasType(err, ErrRateLimitUnsupported{}) {
-			return err
+		rateLimit, isDefaultRateLimit, err := extractRateLimit(current.Config, current.Kind)
+		if err != nil && !errors.HasType(err, errRateLimitUnsupported{}) {
+			return errors.Wrapf(err, "failed to get rate limit for external service %d", o.ID)
 		}
 		if isDefaultRateLimit {
 			continue
 		}
+		// If this external service has a lower rate limit, update the lowest.
 		if rateLimit >= 0 && rateLimit < lowestRateLimitPerHour {
 			lowestRateLimitPerHour = rateLimit
 			isLowestRateLimitDefault = false
@@ -174,6 +187,9 @@ func (m *codeHostsMigrator) Up(ctx context.Context) (err error) {
 
 	var apiInterval int
 	var apiRateLimit int
+	// Only store a rate limit in the DB if the rate is not rate.Inf, and if it
+	// wasn't the default rate limit, which we don't store as an "override" in the
+	// database.
 	if lowestRateLimitPerHour != rate.Inf && lowestRateLimitPerHour != 0. && !isLowestRateLimitDefault {
 		apiInterval = 60 * 60 // limits used to always be one hour.
 		apiRateLimit = int(lowestRateLimitPerHour * 60 * 60)
@@ -188,10 +204,10 @@ func (m *codeHostsMigrator) Up(ctx context.Context) (err error) {
 		upsertCodeHostQuery,
 		current.Kind,
 		currentHostURL,
-		NewNullInt(apiRateLimit),
-		NewNullInt(apiInterval),
-		NewNullInt(gitMaxCodehostRequestsPerSecond),
-		NewNullInt(gitInterval),
+		newNullInt(apiRateLimit),
+		newNullInt(apiInterval),
+		newNullInt(gitMaxCodehostRequestsPerSecond),
+		newNullInt(gitInterval),
 		currentHostURL,
 	))
 
@@ -200,7 +216,16 @@ func (m *codeHostsMigrator) Up(ctx context.Context) (err error) {
 		return errors.Wrap(err, "failed to upsert code host")
 	}
 
-	return tx.Exec(ctx, sqlf.Sprintf(setCodeHostIDOnExternalServiceQuery, codeHostID, pq.Array(svcsWithSameHost)))
+	if err := tx.Exec(ctx, sqlf.Sprintf(setCodeHostIDOnExternalServiceQuery, codeHostID, pq.Array(svcsWithSameHost))); err != nil {
+		return errors.Wrap(err, "failed to set code host ID on external services")
+	}
+
+	return nil
+}
+
+type svc struct {
+	ID           int
+	Kind, Config string
 }
 
 const listAllExternalServicesQuery = `

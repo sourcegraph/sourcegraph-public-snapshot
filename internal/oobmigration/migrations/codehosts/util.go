@@ -7,18 +7,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-type NullInt struct{ N *int }
+type nullInt struct{ N *int }
 
-// NewNullInt returns a NullInt treating zero value as null.
-func NewNullInt(i int) NullInt {
+// newNullInt returns a NullInt treating zero value as null.
+func newNullInt(i int) nullInt {
 	if i == 0 {
-		return NullInt{}
+		return nullInt{}
 	}
-	return NullInt{N: &i}
+	return nullInt{N: &i}
 }
 
 // Scan implements the Scanner interface.
-func (n *NullInt) Scan(value any) error {
+func (n *nullInt) Scan(value any) error {
 	switch value := value.(type) {
 	case int64:
 		*n.N = int(value)
@@ -33,17 +33,17 @@ func (n *NullInt) Scan(value any) error {
 }
 
 // Value implements the driver Valuer interface.
-func (n NullInt) Value() (driver.Value, error) {
+func (n nullInt) Value() (driver.Value, error) {
 	if n.N == nil {
 		return nil, nil
 	}
 	return *n.N, nil
 }
 
-type NullInt32 struct{ N **int32 }
+type nullInt32 struct{ N **int32 }
 
 // Scan implements the Scanner interface.
-func (n *NullInt32) Scan(value any) error {
+func (n *nullInt32) Scan(value any) error {
 	switch value := value.(type) {
 	case int64:
 		*n.N = pointers.Ptr(int32(value))
@@ -58,7 +58,7 @@ func (n *NullInt32) Scan(value any) error {
 }
 
 // Value implements the driver Valuer interface.
-func (n NullInt32) Value() (driver.Value, error) {
+func (n nullInt32) Value() (driver.Value, error) {
 	if n.N == nil {
 		return nil, nil
 	}
