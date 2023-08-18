@@ -18,7 +18,7 @@ let
   stdenv = pkgsStatic.stdenv;
 in
 # yoinked from github.com/nixos/nixpkgs
-unNixifyDylibs pkgs (stdenv.mkDerivation rec {
+unNixifyDylibs { inherit pkgs; } (stdenv.mkDerivation rec {
   pname = "universal-ctags";
   version = "5.9.20220403.0";
 
@@ -63,7 +63,7 @@ unNixifyDylibs pkgs (stdenv.mkDerivation rec {
   '';
 
   postFixup = ''
-    ln -s $out/bin/ctags $out/bin/universal-ctags
+    ln -s $out/bin/ctags $out/bin/universal-ctags-$version
   '';
 
   doCheck = true;

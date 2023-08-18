@@ -1,7 +1,8 @@
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
 
 DOCSITE_VERSION = "1.9.3"
 SRC_CLI_VERSION = "5.1.0"
+CTAGS_VERSION = "5.9.20220403.0"
 
 SRC_CLI_BUILDFILE = """
 filegroup(
@@ -56,3 +57,24 @@ def tool_deps():
         url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_darwin_arm64.tar.gz".format(SRC_CLI_VERSION),
     )
 
+    # universal-ctags #
+    http_file(
+        name = "universal-ctags-darwin-x86_64",
+        sha256 = "b69501d497b62021e8438e840e0bea62fdbe91d60cf8375c388f2736cd58a1bf",
+        url = "https://storage.googleapis.com/universal_ctags/x86_64-darwin/bin/universal-ctags-{0}".format(CTAGS_VERSION),
+        executable = True,
+    )
+
+    http_file(
+        name = "universal-ctags-darwin-arm64",
+        sha256 = "51b3b7ea296455e00fc5a7aafea49bb89551e81770b3728c97a04a5614fde8c5",
+        url = "https://storage.googleapis.com/universal_ctags/aarch64-darwin/bin/universal-ctags-{0}".format(CTAGS_VERSION),
+        executable = True,
+    )
+
+    http_file(
+        name = "universal-ctags-linux-amd64",
+        sha256 = "1d349d15736a30c9cc18c1fd9efbfc6081fb59125d799b84cef6b34c735fa28a",
+        url = "https://storage.googleapis.com/universal_ctags/x86_64-linux/bin/universal-ctags-{0}".format(CTAGS_VERSION),
+        executable = True,
+    )
