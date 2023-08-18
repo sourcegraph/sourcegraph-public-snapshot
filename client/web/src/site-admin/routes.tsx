@@ -1,6 +1,5 @@
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { RedirectRoute } from '../components/RedirectRoute'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { isPackagesEnabled } from './flags'
@@ -132,19 +131,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
         render: () => <AnalyticsNotebooksPage />,
     },
     {
-        path: '/configuration/',
-        render: () => (
-            <RedirectRoute
-                getRedirectURL={({ location }) =>
-                    `${location.pathname.replace('/configuration', '/configuration/basic')}${location.search}${
-                        location.hash
-                    }`
-                }
-            />
-        ),
-    },
-    {
-        path: '/configuration/:tab',
+        path: '/configuration/:tab?',
         render: props => <SiteAdminConfigurationPage {...props} />,
     },
     {
