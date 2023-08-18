@@ -111,7 +111,7 @@ Read the [code navigation documentation](../code_navigation/index.md) to learn m
 
 Cody is an AI code assistant that uses Sourcegraph code search, the code graph, and LLMs to provide context-aware answers about your codebase. Cody can explain code, refactor code, and write code, all within the context of your existing codebase.
 
-[Learn more about about Cody](../cody/index.md).
+[Learn more about about Cody](../cody/overview/index.md).
 
 ## Notebooks
 _Note: GA in version 3.39 or later_

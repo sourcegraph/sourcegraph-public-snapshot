@@ -32,7 +32,6 @@ func NewFileChunkContextResolver(gitTreeEntryResolver *GitTreeEntryResolver, sta
 type FileChunkContextResolver struct {
 	treeEntry          *GitTreeEntryResolver
 	startLine, endLine int32
-	debugSource        string
 }
 
 var _ ContextResultResolver = (*FileChunkContextResolver)(nil)

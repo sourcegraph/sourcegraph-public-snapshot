@@ -6,6 +6,7 @@ import (
 	"os/exec"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
@@ -26,6 +27,10 @@ func NewGitRepoSyncer(r *wrexec.RecordingCommandFactory) *gitRepoSyncer {
 func (s *gitRepoSyncer) Type() string {
 	return "git"
 }
+
+// testGitRepoExists is a test fixture that overrides the return value for
+// GitRepoSyncer.IsCloneable when it is set.
+var testGitRepoExists func(ctx context.Context, remoteURL *vcs.URL) error
 
 // IsCloneable checks to see if the Git remote URL is cloneable.
 func (s *gitRepoSyncer) IsCloneable(ctx context.Context, repoName api.RepoName, remoteURL *vcs.URL) error {

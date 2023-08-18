@@ -43,6 +43,8 @@ func validateCustom(cfg Unified) (problems Problems) {
 	// github.com/sourcegraph/sourcegraph/internal/auth/... packages (using
 	// ContributeValidator).
 
+	// TODO: not sure if we should keep it here or move it to `site_alerts.go` SMTP checks.
+	// For now, keeping it, since it's site-config related, but we can move it later.
 	{
 		hasSMTP := cfg.EmailSmtp != nil
 		hasSMTPAuth := cfg.EmailSmtp != nil && cfg.EmailSmtp.Authentication != "none"

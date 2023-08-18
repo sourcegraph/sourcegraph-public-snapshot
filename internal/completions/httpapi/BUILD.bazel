@@ -3,11 +3,11 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "httpapi",
     srcs = [
+        "chat.go",
         "codecompletion.go",
         "handler.go",
         "limiter.go",
         "observability.go",
-        "stream.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/completions/httpapi",
     visibility = ["//:__subpackages__"],
