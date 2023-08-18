@@ -62,8 +62,11 @@ unNixifyDylibs { inherit pkgs; } (stdenv.mkDerivation rec {
     patchShebangs misc/*
   '';
 
+  # extra ln to ctags without the version since it is referenced in shell.nix, and
+  # allows us to always point to the latest
   postFixup = ''
     ln -s $out/bin/ctags $out/bin/universal-ctags-$version
+    ln -s $out/bin/ctags $out/bin/universal-ctags
   '';
 
   doCheck = true;
