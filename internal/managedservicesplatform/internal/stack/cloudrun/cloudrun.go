@@ -7,12 +7,12 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2service"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/provider/google"
 	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/resource/bigquery"
 	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/resource/redis"
 	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/resource/serviceaccount"
 	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack"
+	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack/options/googleprovider"
 	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/internal/pointer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -86,7 +86,7 @@ func makeServiceEnvVarPrefix(serviceID string) string {
 // including networking and dependencies like Redis.
 func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	stack := stacks.New(StackName,
-		google.StackWithProject(vars.Project))
+		googleprovider.With(vars.Project))
 
 	tag, err := vars.Environment.Deploy.ResolveTag()
 	if err != nil {
