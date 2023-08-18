@@ -86,8 +86,17 @@ extend type Query {
 An exhaustive search is a search that can run against every repository and revision in Sourcegraph.
 """
 type ExhaustiveSearchQueryValidation {
+    """
+    The query that was validated.
+    """
     query: String!
+    """
+    Whether or not the query is valid.
+    """
     valid: Boolean!
+    """
+    The errors that were found in the query.
+    """
     errors: [String!]
 }
 
@@ -194,9 +203,21 @@ type ExhaustiveSearch implements Node {
 The repository stats for an exhaustive search.
 """
 type ExhaustiveSearchStats {
+    """
+    The total number of items.
+    """
     total: Int!
+    """
+    The number of items that have completed.
+    """
     completed: Int!
-    errored: Int!
+    """
+    The number of items that have failed.
+    """
+    failed: Int!
+    """
+    The number of items that are in progress.
+    """
     inProgress: Int!
 }
 

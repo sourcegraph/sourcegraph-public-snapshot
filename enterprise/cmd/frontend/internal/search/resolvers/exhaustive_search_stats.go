@@ -19,7 +19,7 @@ func (e *exhaustiveSearchStatsResolver) Completed() int32 {
 	panic("implement me")
 }
 
-func (e *exhaustiveSearchStatsResolver) Errored() int32 {
+func (e *exhaustiveSearchStatsResolver) Failed() int32 {
 	//TODO implement me
 	panic("implement me")
 }

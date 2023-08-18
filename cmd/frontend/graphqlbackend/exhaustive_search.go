@@ -53,7 +53,7 @@ type ExhaustiveSearchResolver interface {
 type ExhaustiveSearchStatsResolver interface {
 	Total() int32
 	Completed() int32
-	Errored() int32
+	Failed() int32
 	InProgress() int32
 }
 

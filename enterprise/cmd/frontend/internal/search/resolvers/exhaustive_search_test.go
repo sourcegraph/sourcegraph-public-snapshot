@@ -47,7 +47,7 @@ func TestExhaustiveSearchResolver(t *testing.T) {
 			repoStats {
 				total
 				completed
-				errored
+				failed
 				inProgress
 			}
 			repositories(first: 1) {
