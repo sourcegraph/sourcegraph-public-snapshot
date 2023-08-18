@@ -69,7 +69,7 @@ mocha_test(
     deps = [":end-to-end_tests"],
     node_toolchain = select({
         "//:darwin_docker_e2e_go": "@nodejs_darwin_arm64//:node_toolchain",
-        "//conditions:default": "",
+        "//conditions:default": None,
     })
 )
 
