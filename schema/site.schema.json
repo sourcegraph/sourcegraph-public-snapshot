@@ -199,7 +199,8 @@
           "description": "Allow adding Perforce code host connections",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "enabled"
+          "default": "enabled",
+          "deprecationMessage": "Deprecated, Perforce is always enabled, setting is no longer used."
         },
         "perforceChangelistMapping": {
           "description": "Allow mapping of Perforce changelists to their commit SHAs in the DB",
