@@ -30,12 +30,9 @@ go_library(
 go_test(
     name = "resolvers_test",
     srcs = [
-        "exhaustive_search_repo_connection_test.go",
-        "exhaustive_search_repo_revision_connection_test.go",
         "exhaustive_search_repo_revision_test.go",
         "exhaustive_search_repo_test.go",
         "exhaustive_search_test.go",
-        "exhaustive_searches_connection_test.go",
         "resolver_test.go",
         "resolvers_test.go",
         "validate_exhaustive_search_query_test.go",
