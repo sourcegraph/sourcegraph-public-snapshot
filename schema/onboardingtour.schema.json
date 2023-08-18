@@ -9,6 +9,7 @@
     "tasks": {
       "type": "array",
       "items": {
+        "title": "Onboarding task",
         "description": "An onboarding task",
         "type": "object",
         "additionalProperties": false,
@@ -26,6 +27,7 @@
             "description": "Steps that need to be completed by the user",
             "type": "array",
             "items": {
+              "title": "Onboarding step",
               "type": "object",
               "properties": {
                 "id": {
@@ -43,6 +45,7 @@
                 "action": {
                   "oneOf": [
                     {
+                      "title": "Video step",
                       "description": "Video step",
                       "type": "object",
                       "properties": {
@@ -56,6 +59,7 @@
                       "required": ["type", "value"]
                     },
                     {
+                      "title": "Link step",
                       "description": "Link step",
                       "type": "object",
                       "properties": {
@@ -72,6 +76,7 @@
                       "required": ["type", "value"]
                     },
                     {
+                      "title": "Restart step",
                       "description": "Restart step",
                       "type": "object",
                       "properties": {
