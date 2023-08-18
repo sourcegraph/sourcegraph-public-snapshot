@@ -352,7 +352,7 @@ commands:
     cmd: .bin/caddy_${CADDY_VERSION} run --watch --config=dev/Caddyfile
     install_func: installCaddy
     env:
-      CADDY_VERSION: 2.4.5
+      CADDY_VERSION: 2.7.3
 
   web:
     description: Enterprise version of the web app

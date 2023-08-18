@@ -35752,9 +35752,6 @@ type MockGitserverRepoStore struct {
 	// ListReposWithLastErrorFunc is an instance of a mock function object
 	// controlling the behavior of the method ListReposWithLastError.
 	ListReposWithLastErrorFunc *GitserverRepoStoreListReposWithLastErrorFunc
-	// ListReposWithoutSizeFunc is an instance of a mock function object
-	// controlling the behavior of the method ListReposWithoutSize.
-	ListReposWithoutSizeFunc *GitserverRepoStoreListReposWithoutSizeFunc
 	// LogCorruptionFunc is an instance of a mock function object
 	// controlling the behavior of the method LogCorruption.
 	LogCorruptionFunc *GitserverRepoStoreLogCorruptionFunc
@@ -35841,11 +35838,6 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 		},
 		ListReposWithLastErrorFunc: &GitserverRepoStoreListReposWithLastErrorFunc{
 			defaultHook: func(context.Context) (r0 []api.RepoName, r1 error) {
-				return
-			},
-		},
-		ListReposWithoutSizeFunc: &GitserverRepoStoreListReposWithoutSizeFunc{
-			defaultHook: func(context.Context) (r0 map[api.RepoName]api.RepoID, r1 error) {
 				return
 			},
 		},
@@ -35962,11 +35954,6 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 				panic("unexpected invocation of MockGitserverRepoStore.ListReposWithLastError")
 			},
 		},
-		ListReposWithoutSizeFunc: &GitserverRepoStoreListReposWithoutSizeFunc{
-			defaultHook: func(context.Context) (map[api.RepoName]api.RepoID, error) {
-				panic("unexpected invocation of MockGitserverRepoStore.ListReposWithoutSize")
-			},
-		},
 		LogCorruptionFunc: &GitserverRepoStoreLogCorruptionFunc{
 			defaultHook: func(context.Context, api.RepoName, string, string) error {
 				panic("unexpected invocation of MockGitserverRepoStore.LogCorruption")
@@ -36061,9 +36048,6 @@ func NewMockGitserverRepoStoreFrom(i database.GitserverRepoStore) *MockGitserver
 		},
 		ListReposWithLastErrorFunc: &GitserverRepoStoreListReposWithLastErrorFunc{
 			defaultHook: i.ListReposWithLastError,
-		},
-		ListReposWithoutSizeFunc: &GitserverRepoStoreListReposWithoutSizeFunc{
-			defaultHook: i.ListReposWithoutSize,
 		},
 		LogCorruptionFunc: &GitserverRepoStoreLogCorruptionFunc{
 			defaultHook: i.LogCorruption,
@@ -37096,115 +37080,6 @@ func (c GitserverRepoStoreListReposWithLastErrorFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverRepoStoreListReposWithLastErrorFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverRepoStoreListReposWithoutSizeFunc describes the behavior when
-// the ListReposWithoutSize method of the parent MockGitserverRepoStore
-// instance is invoked.
-type GitserverRepoStoreListReposWithoutSizeFunc struct {
-	defaultHook func(context.Context) (map[api.RepoName]api.RepoID, error)
-	hooks       []func(context.Context) (map[api.RepoName]api.RepoID, error)
-	history     []GitserverRepoStoreListReposWithoutSizeFuncCall
-	mutex       sync.Mutex
-}
-
-// ListReposWithoutSize delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) ListReposWithoutSize(v0 context.Context) (map[api.RepoName]api.RepoID, error) {
-	r0, r1 := m.ListReposWithoutSizeFunc.nextHook()(v0)
-	m.ListReposWithoutSizeFunc.appendCall(GitserverRepoStoreListReposWithoutSizeFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ListReposWithoutSize
-// method of the parent MockGitserverRepoStore instance is invoked and the
-// hook queue is empty.
-func (f *GitserverRepoStoreListReposWithoutSizeFunc) SetDefaultHook(hook func(context.Context) (map[api.RepoName]api.RepoID, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ListReposWithoutSize method of the parent MockGitserverRepoStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitserverRepoStoreListReposWithoutSizeFunc) PushHook(hook func(context.Context) (map[api.RepoName]api.RepoID, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverRepoStoreListReposWithoutSizeFunc) SetDefaultReturn(r0 map[api.RepoName]api.RepoID, r1 error) {
-	f.SetDefaultHook(func(context.Context) (map[api.RepoName]api.RepoID, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverRepoStoreListReposWithoutSizeFunc) PushReturn(r0 map[api.RepoName]api.RepoID, r1 error) {
-	f.PushHook(func(context.Context) (map[api.RepoName]api.RepoID, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverRepoStoreListReposWithoutSizeFunc) nextHook() func(context.Context) (map[api.RepoName]api.RepoID, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverRepoStoreListReposWithoutSizeFunc) appendCall(r0 GitserverRepoStoreListReposWithoutSizeFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// GitserverRepoStoreListReposWithoutSizeFuncCall objects describing the
-// invocations of this function.
-func (f *GitserverRepoStoreListReposWithoutSizeFunc) History() []GitserverRepoStoreListReposWithoutSizeFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverRepoStoreListReposWithoutSizeFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverRepoStoreListReposWithoutSizeFuncCall is an object that
-// describes an invocation of method ListReposWithoutSize on an instance of
-// MockGitserverRepoStore.
-type GitserverRepoStoreListReposWithoutSizeFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 map[api.RepoName]api.RepoID
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverRepoStoreListReposWithoutSizeFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverRepoStoreListReposWithoutSizeFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

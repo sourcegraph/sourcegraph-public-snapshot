@@ -598,6 +598,12 @@ func NewSchema(
 			resolver.AppResolver = appResolver
 			schemas = append(schemas, appSchema)
 		}
+
+		if contentLibraryResolver := optional.ContentLibraryResolver; contentLibraryResolver != nil {
+			EnterpriseResolvers.contentLibraryResolver = contentLibraryResolver
+			resolver.ContentLibraryResolver = contentLibraryResolver
+			schemas = append(schemas, contentLibrary)
+		}
 	}
 
 	logger := log.Scoped("GraphQL", "general GraphQL logging")
@@ -656,6 +662,7 @@ type OptionalResolver struct {
 	RBACResolver
 	SearchContextsResolver
 	WebhooksResolver
+	ContentLibraryResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
@@ -767,6 +774,7 @@ var EnterpriseResolvers = struct {
 	rbacResolver                RBACResolver
 	searchContextsResolver      SearchContextsResolver
 	webhooksResolver            WebhooksResolver
+	contentLibraryResolver      ContentLibraryResolver
 }{}
 
 // Root returns a new schemaResolver.
@@ -803,8 +811,8 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 	Repo graphql.ID
 },
 ) (*EmptyResponse, error) {
-	var repoID api.RepoID
-	if err := relay.UnmarshalSpec(args.Repo, &repoID); err != nil {
+	repoID, err := UnmarshalRepositoryID(args.Repo)
+	if err != nil {
 		return nil, err
 	}
 
