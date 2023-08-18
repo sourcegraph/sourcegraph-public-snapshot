@@ -798,7 +798,7 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 	}
 
 	uri := "http://" + addrForRepo + "/search"
-	resp, err := c.do(ctx, repoName, "POST", uri, buf.Bytes())
+	resp, err := c.do(ctx, repoName, uri, buf.Bytes())
 	if err != nil {
 		return false, err
 	}
@@ -1027,7 +1027,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 			}
 
 			uri := "http://" + addr + "/batch-log"
-			resp, err := c.do(ctx, api.RepoName(strings.Join(repoNames, ",")), "POST", uri, buf.Bytes())
+			resp, err := c.do(ctx, api.RepoName(strings.Join(repoNames, ",")), uri, buf.Bytes())
 			if err != nil {
 				return err
 			}
@@ -1480,7 +1480,7 @@ func (c *clientImplementor) removeFrom(ctx context.Context, repo api.RepoName, f
 	}
 
 	uri := "http://" + from + "/delete"
-	resp, err := c.do(ctx, repo, "POST", uri, b)
+	resp, err := c.do(ctx, repo, uri, b)
 	if err != nil {
 		return err
 	}
@@ -1506,7 +1506,7 @@ func (c *clientImplementor) httpPost(ctx context.Context, repo api.RepoName, op 
 
 	addrForRepo := c.AddrForRepo(ctx, repo)
 	uri := "http://" + addrForRepo + "/" + op
-	return c.do(ctx, repo, "POST", uri, b)
+	return c.do(ctx, repo, uri, b)
 }
 
 // do performs a request to a gitserver instance based on the address in the uri
@@ -1514,7 +1514,8 @@ func (c *clientImplementor) httpPost(ctx context.Context, repo api.RepoName, op 
 //
 // repoForTracing parameter is optional. If it is provided, then "repo" attribute is added
 // to trace span.
-func (c *clientImplementor) do(ctx context.Context, repoForTracing api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
+func (c *clientImplementor) do(ctx context.Context, repoForTracing api.RepoName, uri string, payload []byte) (resp *http.Response, err error) {
+	method := http.MethodPost
 	parsedURL, err := url.ParseRequestURI(uri)
 	if err != nil {
 		return nil, errors.Wrap(err, "do")
