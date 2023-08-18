@@ -836,73 +836,62 @@ export async function exportChangesets(
 ): Promise<void> {
     const result = await requestGraphQL<ExportChangesetsResult, ExportChangesetsVariables>(
         gql`
-        query BatchChangeChangesets($batchChange: ID!) {
-            node(id: $batchChange) {
-                ... on BatchChange {
-                    name,
-                    changesets {
-                        nodes {
-                            ... on ExternalChangeset {
-                                id
-                                title
-                                state
-                                reviewState
-                                externalURL {
-                                    url
-                                }
-                                repository {
-                                    name
-                                    url
+            query BatchChangeChangesets($batchChange: ID!) {
+                node(id: $batchChange) {
+                    ... on BatchChange {
+                        name
+                        changesets {
+                            nodes {
+                                ... on ExternalChangeset {
+                                    id
+                                    title
+                                    state
+                                    reviewState
+                                    externalURL {
+                                        url
+                                    }
+                                    repository {
+                                        name
+                                        url
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        }
         `,
         { batchChange: batchChange, changesets: changesets, draft: draft }
     ).toPromise()
     const batchChangeData = dataOrThrowErrors(result)
     let changesetNodes = batchChangeData?.node?.changesets.nodes
 
-    changesetNodes = changesetNodes.filter((node) => {
+    changesetNodes = changesetNodes.filter(node => {
         if (changesets.includes(node.id)) {
             return node
         }
     })
 
     if (batchChangeData.node && batchChangeData.node.changesets && batchChangeData.node.changesets.nodes) {
-        const csvData = [
-        ['Title', 'State', 'ReviewState', 'External URL', 'Repo Name'],
-        ];
-        
+        const csvData = [['Title', 'State', 'ReviewState', 'External URL', 'Repo Name']]
+
         changesetNodes.forEach(node => {
-        csvData.push([
-        node.title,
-        node.state,
-        node.reviewState,
-        node.externalURL?.url || '',
-        node.repository.name,
-        ]);
+            csvData.push([node.title, node.state, node.reviewState, node.externalURL?.url || '', node.repository.name])
         })
-        
-        const csvString = csvData.map((row) => row.join(',')).join('\n');
-        const blob = new Blob([csvString], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${batchChangeData.node.name}-changesets.csv`;
-        a.click();
-        
-        URL.revokeObjectURL(url);
-        a.remove();
-        }
+
+        const csvString = csvData.map(row => row.join(',')).join('\n')
+        const blob = new Blob([csvString], { type: 'text/csv' })
+        const url = URL.createObjectURL(blob)
+
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${batchChangeData.node.name}-changesets.csv`
+        a.click()
+
+        URL.revokeObjectURL(url)
+        a.remove()
+    }
 }
-
-
 
 export const BULK_OPERATIONS = gql`
     query BatchChangeBulkOperations($batchChange: ID!, $first: Int, $after: String) {

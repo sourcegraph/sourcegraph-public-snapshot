@@ -18,10 +18,10 @@ import {
 import { CloseChangesetsModal } from './CloseChangesetsModal'
 import { CreateCommentModal } from './CreateCommentModal'
 import { DetachChangesetsModal } from './DetachChangesetsModal'
+import { ExportChangesetsModal } from './ExportChangesetsModal'
 import { MergeChangesetsModal } from './MergeChangesetsModal'
 import { PublishChangesetsModal } from './PublishChangesetsModal'
 import { ReenqueueChangesetsModal } from './ReenqueueChangesetsModal'
-import { ExportChangesetsModal } from './ExportChangesetsModal'
 
 /**
  * Describes a possible action on the changeset list.
