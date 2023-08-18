@@ -1,5 +1,7 @@
 # Cody FAQ
 
+<p class="subtitle">Find answers to the most common questions about Cody.</p>
+
 ### General
 
 #### Troubleshooting
