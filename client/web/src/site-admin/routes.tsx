@@ -143,7 +143,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
         render: props => <SiteAdminSettingsPage {...props} />,
     },
     {
-        path: '/onboarding-tour',
+        path: '/end-user-onboarding',
         render: props => <SiteAdminOnboardingTourPage {...props} />,
     },
     {

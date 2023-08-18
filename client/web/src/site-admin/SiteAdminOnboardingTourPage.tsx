@@ -10,7 +10,7 @@ import type {
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { PageHeader, Text, Container, BeforeUnloadPrompt, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
+import { PageHeader, Text, Container, BeforeUnloadPrompt, LoadingSpinner, Alert, H3 } from '@sourcegraph/wildcard'
 
 import onboardingSchemaJSON from '../../../../schema/onboardingtour.schema.json'
 import { PageTitle } from '../components/PageTitle'
@@ -59,7 +59,7 @@ export const SiteAdminOnboardingTourPage: FC<PropsWithChildren<Props>> = () => {
     const config = loading ? value ?? '' : value !== null ? value : existingConfiguration || DEFAULT_VALUE
 
     const discard = (): void => {
-        if (dirty && window.confirm('Discard onboarding tour edits?')) {
+        if (dirty && window.confirm('Discard onboarding tour changes?')) {
             setValue(null)
         }
     }
@@ -79,17 +79,15 @@ export const SiteAdminOnboardingTourPage: FC<PropsWithChildren<Props>> = () => {
 
     return (
         <>
-            <PageTitle title="Onboarding tour" />
+            <PageTitle title="End user onboarding" />
             <PageHeader className="mb-3">
                 <PageHeader.Heading as="h3" styleAs="h2">
-                    <PageHeader.Breadcrumb>Onboarding tour</PageHeader.Breadcrumb>
+                    <PageHeader.Breadcrumb>End user onboarding</PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
-            <Text>Configure the onboarding tour steps</Text>
+            <Text>This settings controls the onboarding task list that is displayed to all users by default.</Text>
             <Container>
                 {initialLoad && <LoadingSpinner title="Loading onboarding configuration" />}
-                {error && <Alert>{error.message}</Alert>}
-                {mutationError && <Alert>{mutationError.message}</Alert>}
                 {!initialLoad && (
                     <>
                         <BeforeUnloadPrompt when={saving || dirty} message="Discard settings changes?" />
@@ -99,11 +97,26 @@ export const SiteAdminOnboardingTourPage: FC<PropsWithChildren<Props>> = () => {
                             jsonSchema={onboardingSchemaJSON}
                             value={config}
                             onChange={setValue}
+                            height={450}
                         />
-                        <SaveToolbar dirty={dirty} error={error} saving={saving} onSave={save} onDiscard={discard} />
+                        <SaveToolbar
+                            dirty={dirty}
+                            error={error || mutationError}
+                            saving={saving}
+                            onSave={save}
+                            onDiscard={discard}
+                        />
                     </>
                 )}
             </Container>
+            <H3 as="h4" className="mt-3">
+                Most common parameters reference
+            </H3>
+            <img
+                src="https://storage.googleapis.com/sourcegraph-assets/onboarding/onboarding-config-reference.svg"
+                alt="onboarding tour reference"
+                className="percy-hide w-100"
+            />
         </>
     )
 }

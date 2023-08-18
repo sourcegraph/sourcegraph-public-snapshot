@@ -80,8 +80,8 @@ export const configurationGroup: SiteAdminSideBarGroup = {
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
-            label: 'Onboarding tour',
-            to: '/site-admin/onboarding-tour',
+            label: 'End user onboarding',
+            to: '/site-admin/end-user-onboarding',
         },
         {
             label: 'Feature flags',
