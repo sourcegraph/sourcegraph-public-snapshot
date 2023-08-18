@@ -26,11 +26,10 @@ public class ConfigUtil {
         .setServerEndpoint(getSourcegraphUrl(project))
         .setAccessToken(getProjectAccessToken(project))
         .setCustomHeaders(getCustomRequestHeadersAsMap(project))
-        .setAutocompleteAdvancedProvider(
-            UserLevelConfig.getAutoCompleteProviderType().vscodeSettingString())
-        .setAutocompleteAdvancedServerEndpoint(UserLevelConfig.getAutoCompleteServerEndpoint())
+        .setAutocompleteAdvancedProvider("unstable-codegen")
+        .setAutocompleteAdvancedServerEndpoint("$CUSTOMER_ENDPOINT")
         .setAutocompleteAdvancedAccessToken(UserLevelConfig.getAutoCompleteAccessToken())
-        .setAutocompleteAdvancedEmbeddings(UserLevelConfig.getAutocompleteAdvancedEmbeddings())
+        .setAutocompleteAdvancedEmbeddings(true)
         .setDebug(isCodyDebugEnabled())
         .setVerboseDebug(isCodyVerboseDebugEnabled());
   }
@@ -226,7 +225,8 @@ public class ConfigUtil {
   }
 
   public static boolean isCodyDebugEnabled() {
-    return getApplicationLevelConfig().isCodyDebugEnabled();
+    return true;
+    // return getApplicationLevelConfig().isCodyDebugEnabled();
   }
 
   public static boolean isCodyVerboseDebugEnabled() {
@@ -234,7 +234,8 @@ public class ConfigUtil {
   }
 
   public static boolean isCodyAutoCompleteEnabled() {
-    return getApplicationLevelConfig().isCodyAutoCompleteEnabled();
+    return true;
+    // return getApplicationLevelConfig().isCodyAutoCompleteEnabled();
   }
 
   public static boolean isAccessTokenNotificationDismissed() {
