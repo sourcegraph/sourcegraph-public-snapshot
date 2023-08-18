@@ -30,7 +30,7 @@ const AnalyticsNotebooksPage = lazyComponent(
     'AnalyticsNotebooksPage'
 )
 const SiteAdminConfigurationPage = lazyComponent(
-    () => import('./SiteAdminConfigurationPage'),
+    () => import('./site-config/SiteAdminConfigurationPage'),
     'SiteAdminConfigurationPage'
 )
 const SiteAdminSettingsPage = lazyComponent(() => import('./SiteAdminSettingsPage'), 'SiteAdminSettingsPage')
@@ -131,7 +131,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
         render: () => <AnalyticsNotebooksPage />,
     },
     {
-        path: '/configuration',
+        path: '/configuration/:tab?',
         render: props => <SiteAdminConfigurationPage {...props} />,
     },
     {
