@@ -1,7 +1,7 @@
 package com.sourcegraph.cody.agent;
 
 import com.sourcegraph.cody.agent.protocol.*;
-import com.sourcegraph.cody.autocomplete.prompt_library.InlineAutoCompleteList;
+import com.sourcegraph.cody.vscode.InlineAutoCompleteList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;

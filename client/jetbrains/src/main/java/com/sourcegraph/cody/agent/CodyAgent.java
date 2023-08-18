@@ -43,9 +43,10 @@ public class CodyAgent implements Disposable {
   Disposable disposable = Disposer.newDisposable("CodyAgent");
   private final @NotNull Project project;
   private final CodyAgentClient client = new CodyAgentClient();
-  private String initializationErrorMessage = "";
+  private String agentNotRunningExplanation = "";
   private final CompletableFuture<CodyAgentServer> initialized = new CompletableFuture<>();
   private Future<Void> listeningToJsonRpc;
+  private Process process;
 
   public CodyAgent(@NotNull Project project) {
     this.project = project;
@@ -64,8 +65,13 @@ public class CodyAgent implements Disposable {
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   public static boolean isConnected(@NotNull Project project) {
     CodyAgent agent = project.getService(CodyAgent.class);
+    // NOTE(olafurpg): there are probably too many conditions below. We test multiple conditions
+    // because we don't know 100% yet what exactly constitutes a "connected" state. Out of abundance
+    // of caution, we check everything we can think of.
     return agent != null
-        && agent.initializationErrorMessage.isEmpty()
+        && agent.process != null
+        && agent.process.isAlive()
+        && agent.agentNotRunningExplanation.isEmpty()
         && agent.listeningToJsonRpc != null
         && !agent.listeningToJsonRpc.isDone()
         && !agent.listeningToJsonRpc.isCancelled()
@@ -113,14 +119,14 @@ public class CodyAgent implements Disposable {
               this.subscribeToFocusEvents();
               this.initialized.complete(server);
             } catch (Exception e) {
-              initializationErrorMessage =
+              agentNotRunningExplanation =
                   "failed to send 'initialize' JSON-RPC request Cody agent";
-              logger.warn(initializationErrorMessage, e);
+              logger.warn(agentNotRunningExplanation, e);
             }
           });
     } catch (Exception e) {
-      initializationErrorMessage = "unable to start Cody agent";
-      logger.warn(initializationErrorMessage, e);
+      agentNotRunningExplanation = "unable to start Cody agent";
+      logger.warn(agentNotRunningExplanation, e);
     }
   }
 
@@ -141,7 +147,16 @@ public class CodyAgent implements Disposable {
     if (server == null) {
       return;
     }
-    executorService.submit(() -> server.shutdown().thenAccept((Void) -> server.exit()));
+    executorService.submit(
+        () ->
+            server
+                .shutdown()
+                .thenAccept(
+                    (Void) -> {
+                      server.exit();
+                      agentNotRunningExplanation = "Cody Agent shut down";
+                      listeningToJsonRpc.cancel(true);
+                    }));
   }
 
   private static String binarySuffix() {
@@ -214,7 +229,7 @@ public class CodyAgent implements Disposable {
   private void startListeningToAgent() throws IOException, CodyAgentException {
     File binary = agentBinary();
     logger.info("starting Cody agent " + binary.getAbsolutePath());
-    Process process =
+    this.process =
         new ProcessBuilder(binary.getAbsolutePath())
             .redirectError(ProcessBuilder.Redirect.INHERIT)
             .start();

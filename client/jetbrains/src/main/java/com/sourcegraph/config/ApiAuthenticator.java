@@ -49,7 +49,7 @@ public class ApiAuthenticator {
         .start();
   }
 
-  enum ConnectionStatus {
+  public enum ConnectionStatus {
     AUTHENTICATED,
     COULD_NOT_CONNECT,
     COULD_CONNECT_BUT_NOT_AUTHENTICATED
