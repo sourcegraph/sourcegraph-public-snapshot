@@ -52,6 +52,7 @@ type GitserverServiceClient interface {
 	RepoCloneProgress(ctx context.Context, in *RepoCloneProgressRequest, opts ...grpc.CallOption) (*RepoCloneProgressResponse, error)
 	RepoDelete(ctx context.Context, in *RepoDeleteRequest, opts ...grpc.CallOption) (*RepoDeleteResponse, error)
 	RepoUpdate(ctx context.Context, in *RepoUpdateRequest, opts ...grpc.CallOption) (*RepoUpdateResponse, error)
+	// TODO: Remove this endpoint after 5.2, it is deprecated.
 	ReposStats(ctx context.Context, in *ReposStatsRequest, opts ...grpc.CallOption) (*ReposStatsResponse, error)
 }
 
@@ -298,6 +299,7 @@ type GitserverServiceServer interface {
 	RepoCloneProgress(context.Context, *RepoCloneProgressRequest) (*RepoCloneProgressResponse, error)
 	RepoDelete(context.Context, *RepoDeleteRequest) (*RepoDeleteResponse, error)
 	RepoUpdate(context.Context, *RepoUpdateRequest) (*RepoUpdateResponse, error)
+	// TODO: Remove this endpoint after 5.2, it is deprecated.
 	ReposStats(context.Context, *ReposStatsRequest) (*ReposStatsResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }

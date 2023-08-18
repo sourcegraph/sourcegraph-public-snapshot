@@ -71,6 +71,8 @@ type GitserverRepoStore interface {
 	// GetLastSyncOutput returns the last stored output from a repo sync (clone or fetch), or ok: false if
 	// no log is found.
 	GetLastSyncOutput(ctx context.Context, name api.RepoName) (output string, ok bool, err error)
+	// GetGitserverGitDirSize returns the total size of all git directories of cloned
+	// repos across all gitservers.
 	GetGitserverGitDirSize(ctx context.Context) (sizeBytes int64, err error)
 
 	// UpdatePoolRepoID updates the pool_repo_id column of a gitserver_repo.
