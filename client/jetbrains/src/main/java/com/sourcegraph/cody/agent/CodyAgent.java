@@ -23,6 +23,7 @@ import java.io.PrintWriter;
 import java.nio.file.*;
 import java.util.Objects;
 import java.util.concurrent.*;
+import java.util.function.Function;
 import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -76,6 +77,15 @@ public class CodyAgent implements Disposable {
         && !agent.listeningToJsonRpc.isDone()
         && !agent.listeningToJsonRpc.isCancelled()
         && agent.client.server != null;
+  }
+
+  public static <T> CompletableFuture<T> withServer(
+      @NotNull Project project, Function<CodyAgentServer, CompletableFuture<T>> callback) {
+    CodyAgentServer server = CodyAgent.getServer(project);
+    if (server == null) {
+      return CompletableFuture.failedFuture(CodyAgentException.NOT_INITIALIZED);
+    }
+    return callback.apply(server);
   }
 
   @Nullable

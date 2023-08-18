@@ -79,11 +79,11 @@ public class SettingsChangeListener implements Disposable {
 
             // Log install events
             if (!Objects.equals(context.oldUrl, context.newUrl)) {
-              GraphQlLogger.logInstallEvent(project, ConfigUtil::setInstallEventLogged);
+              GraphQlLogger.logInstallEvent(project).thenAccept(ConfigUtil::setInstallEventLogged);
             } else if ((context.isDotComAccessTokenChanged
                     || context.isEnterpriseAccessTokenChanged)
                 && !ConfigUtil.isInstallEventLogged()) {
-              GraphQlLogger.logInstallEvent(project, ConfigUtil::setInstallEventLogged);
+              GraphQlLogger.logInstallEvent(project).thenAccept(ConfigUtil::setInstallEventLogged);
             }
 
             boolean urlChanged = !Objects.equals(context.oldUrl, context.newUrl);
@@ -98,18 +98,15 @@ public class SettingsChangeListener implements Disposable {
             // Notify user about a successful connection
             if (connectionSettingsChanged) {
               String accessTokenToTest = ConfigUtil.getProjectAccessToken(project);
-              ApiAuthenticator.testConnection(
-                  context.newUrl,
-                  accessTokenToTest,
-                  context.newCustomRequestHeaders,
-                  (status) -> {
-                    if (ConfigUtil.didAuthenticationFailLastTime()
-                        && status == ApiAuthenticator.ConnectionStatus.AUTHENTICATED) {
-                      notifyAboutSuccessfulConnection();
-                    }
-                    ConfigUtil.setAuthenticationFailedLastTime(
-                        status != ApiAuthenticator.ConnectionStatus.AUTHENTICATED);
-                  });
+              ApiAuthenticator.testConnection(project)
+                  .thenAccept(
+                      (status) -> {
+                        if (ConfigUtil.didAuthenticationFailLastTime()
+                            && status == ApiAuthenticator.ConnectionStatus.AUTHENTICATED) {
+                          notifyAboutSuccessfulConnection();
+                        }
+                        ConfigUtil.setAuthenticationFailedLastTime(true);
+                      });
             }
 
             // clear autocomplete suggestions if freshly disabled

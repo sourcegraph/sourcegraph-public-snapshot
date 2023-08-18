@@ -31,6 +31,12 @@ public interface CodyAgentServer {
   @JsonRequest("autocomplete/execute")
   CompletableFuture<InlineAutoCompleteList> autocompleteExecute(AutocompleteExecuteParams params);
 
+  @JsonRequest("graphql/logEvent")
+  CompletableFuture<Void> logEvent(Event event);
+
+  @JsonRequest("graphql/currentUserId")
+  CompletableFuture<String> currentUserId();
+
   // Notifications
   @JsonNotification("initialized")
   void initialized();
