@@ -58,9 +58,23 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 		exhaustiveSearchIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.exhaustiveSearchByID(ctx, id)
 		},
+		exhaustiveSearchRepoIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.exhaustiveSearchRepoByID(ctx, id)
+		},
+		exhaustiveSearchRepoRevisionIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.exhaustiveSearchRepoRevisionByID(ctx, id)
+		},
 	}
 }
 
 func (r *Resolver) exhaustiveSearchByID(ctx context.Context, id graphql.ID) (graphqlbackend.ExhaustiveSearchResolver, error) {
 	return &exhaustiveSearchResolver{}, nil
+}
+
+func (r *Resolver) exhaustiveSearchRepoByID(ctx context.Context, id graphql.ID) (graphqlbackend.ExhaustiveSearchRepoResolver, error) {
+	return &exhaustiveSearchRepoResolver{}, nil
+}
+
+func (r *Resolver) exhaustiveSearchRepoRevisionByID(ctx context.Context, id graphql.ID) (graphqlbackend.ExhaustiveSearchRepoRevisionResolver, error) {
+	return &exhaustiveSearchRepoRevisionResolver{}, nil
 }
