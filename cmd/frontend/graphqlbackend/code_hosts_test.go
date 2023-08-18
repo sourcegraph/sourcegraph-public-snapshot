@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -18,41 +19,64 @@ func TestSchemaResolver_CodeHosts(t *testing.T) {
 	t.Parallel()
 
 	codeHosts := []*types.CodeHost{
-		{ID: 1, URL: "github.com", Kind: extsvc.KindGitHub, APIRateLimitQuota: pointers.Ptr(int32(1)), APIRateLimitIntervalSeconds: pointers.Ptr(int32(1)), GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)), GitRateLimitQuota: pointers.Ptr(int32(1))},
-		{ID: 2, URL: "gitlab.com", Kind: extsvc.KindGitLab, APIRateLimitQuota: pointers.Ptr(int32(2)), APIRateLimitIntervalSeconds: pointers.Ptr(int32(2)), GitRateLimitIntervalSeconds: pointers.Ptr(int32(2)), GitRateLimitQuota: pointers.Ptr(int32(2))},
-		{ID: 3, URL: "bitbucket-cloud.com", Kind: extsvc.KindBitbucketCloud},
-		{ID: 4, URL: "bitbucket.com", Kind: extsvc.KindBitbucketServer, APIRateLimitQuota: pointers.Ptr(int32(4)), APIRateLimitIntervalSeconds: pointers.Ptr(int32(4)), GitRateLimitIntervalSeconds: pointers.Ptr(int32(4)), GitRateLimitQuota: pointers.Ptr(int32(4))},
+		{
+			ID:                          1,
+			URL:                         "github.com",
+			Kind:                        extsvc.KindGitHub,
+			APIRateLimitQuota:           pointers.Ptr(int32(1)),
+			APIRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+			GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+			GitRateLimitQuota:           pointers.Ptr(int32(1)),
+		},
+		{
+			ID:                          2,
+			URL:                         "gitlab.com",
+			Kind:                        extsvc.KindGitLab,
+			APIRateLimitQuota:           pointers.Ptr(int32(2)),
+			APIRateLimitIntervalSeconds: pointers.Ptr(int32(2)),
+			GitRateLimitIntervalSeconds: pointers.Ptr(int32(2)),
+			GitRateLimitQuota:           pointers.Ptr(int32(2)),
+		},
+		{
+			ID:   3,
+			URL:  "bitbucket-cloud.com",
+			Kind: extsvc.KindBitbucketCloud,
+		},
+		{
+			ID:                          4,
+			URL:                         "bitbucket.com",
+			Kind:                        extsvc.KindBitbucketServer,
+			APIRateLimitQuota:           pointers.Ptr(int32(4)),
+			APIRateLimitIntervalSeconds: pointers.Ptr(int32(4)),
+			GitRateLimitIntervalSeconds: pointers.Ptr(int32(4)),
+			GitRateLimitQuota:           pointers.Ptr(int32(4)),
+		},
 	}
 
 	tests := []struct {
-		name  string
 		first int
 		after int32
 	}{
 		{
-			name:  "only first",
 			first: 1,
 			after: 0,
 		},
 		{
-			name:  "first 1 and after 1",
 			first: 1,
 			after: 1,
 		},
 		{
-			name:  "first 1 and after 2",
 			first: 1,
 			after: 2,
 		},
 		{
-			name:  "first 1 and after 3",
 			first: 1,
 			after: 3,
 		},
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(fmt.Sprintf("first=%d after=%d", tc.first, tc.after), func(t *testing.T) {
 			store := dbmocks.NewMockCodeHostStore()
 			store.CountFunc.SetDefaultReturn(4, nil)
 			codeHost := codeHosts[tc.after]
@@ -95,18 +119,13 @@ func TestSchemaResolver_CodeHosts(t *testing.T) {
 			if tc.after != 0 {
 				variables["after"] = gqlAfterID
 			}
-			newAfter := "null"
+			wantEndCursor := "null"
 			hasNext := "false"
 			if int(tc.after+1) < len(codeHosts) {
-				newAfter = `"` + string(MarshalCodeHostID(tc.after+1)) + `"`
+				wantEndCursor = `"` + string(MarshalCodeHostID(tc.after+1)) + `"`
 				hasNext = "true"
 			}
-			rateLimitValueOrNull := func(value *int32) string {
-				if value == nil {
-					return "null"
-				}
-				return strconv.Itoa(int(*value))
-			}
+
 			RunTest(t, &Test{
 				Context:   ctx,
 				Schema:    mustParseGraphQLSchema(t, db),
@@ -126,7 +145,7 @@ func TestSchemaResolver_CodeHosts(t *testing.T) {
 				  apiRateLimitIntervalSeconds
 				  gitRateLimitQuota
 				  gitRateLimitIntervalSeconds
-                  externalServices(first:1){
+				  externalServices(first:1){
 					nodes{
 					  id
 					  displayName
@@ -161,7 +180,7 @@ func TestSchemaResolver_CodeHosts(t *testing.T) {
 					 }
 				  ],
 				  "pageInfo":{
-					 "endCursor":` + newAfter + `,
+					 "endCursor":` + wantEndCursor + `,
 					 "hasNextPage":` + hasNext + `
 				  },
 				  "totalCount":4
@@ -177,7 +196,15 @@ func TestSchemaResolver_CodeHosts(t *testing.T) {
 }
 
 func TestCodeHostByID(t *testing.T) {
-	codeHost := &types.CodeHost{ID: 2, URL: "github.com", Kind: extsvc.KindGitHub, APIRateLimitQuota: pointers.Ptr(int32(1)), APIRateLimitIntervalSeconds: pointers.Ptr(int32(1)), GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)), GitRateLimitQuota: pointers.Ptr(int32(1))}
+	codeHost := &types.CodeHost{
+		ID:                          2,
+		URL:                         "github.com",
+		Kind:                        extsvc.KindGitHub,
+		APIRateLimitQuota:           pointers.Ptr(int32(1)),
+		APIRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+		GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
+		GitRateLimitQuota:           pointers.Ptr(int32(1)),
+	}
 
 	store := dbmocks.NewMockCodeHostStore()
 	store.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.CodeHost, error) {
@@ -204,9 +231,9 @@ func TestCodeHostByID(t *testing.T) {
 			id
 			__typename
 			... on CodeHost {
-						  kind
-					url
-						}
+				kind
+				url
+			}
 		  }
 		}`,
 		ExpectedResult: `{
@@ -220,4 +247,11 @@ func TestCodeHostByID(t *testing.T) {
 	})
 
 	mockassert.CalledOnce(t, store.GetByIDFunc)
+}
+
+func rateLimitValueOrNull(value *int32) string {
+	if value == nil {
+		return "null"
+	}
+	return strconv.Itoa(int(*value))
 }

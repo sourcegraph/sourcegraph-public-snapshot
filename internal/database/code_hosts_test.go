@@ -295,24 +295,24 @@ func TestCodeHostStore_Count(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
-	ten := int32(10)
-	twenty := int32(20)
+	quotaOne := int32(10)
+	quotaTwo := int32(20)
 	confGet := func() *conf.Unified { return &conf.Unified{} }
 	codeHostOne := &types.CodeHost{
 		Kind:                        extsvc.KindGitHub,
 		URL:                         "https://github.com/",
-		APIRateLimitQuota:           &ten,
-		APIRateLimitIntervalSeconds: &ten,
-		GitRateLimitQuota:           &ten,
-		GitRateLimitIntervalSeconds: &ten,
+		APIRateLimitQuota:           &quotaOne,
+		APIRateLimitIntervalSeconds: &quotaOne,
+		GitRateLimitQuota:           &quotaOne,
+		GitRateLimitIntervalSeconds: &quotaOne,
 	}
 	codeHostTwo := &types.CodeHost{
 		Kind:                        extsvc.KindGitLab,
 		URL:                         "https://gitlab.com/",
-		APIRateLimitQuota:           &twenty,
-		APIRateLimitIntervalSeconds: &twenty,
-		GitRateLimitQuota:           &twenty,
-		GitRateLimitIntervalSeconds: &twenty,
+		APIRateLimitQuota:           &quotaTwo,
+		APIRateLimitIntervalSeconds: &quotaTwo,
+		GitRateLimitQuota:           &quotaTwo,
+		GitRateLimitIntervalSeconds: &quotaTwo,
 	}
 
 	extsvcConfig := extsvc.NewUnencryptedConfig(`{"url": "https://github.com/", "repositoryQuery": ["none"], "token": "abc"}`)
@@ -336,9 +336,9 @@ func TestCodeHostStore_Count(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		listOpts ListCodeHostsOpts
-		results  int32
+		name        string
+		listOpts    ListCodeHostsOpts
+		wantResults int32
 	}{
 		{
 			name: "count with get 1 by id",
@@ -348,7 +348,7 @@ func TestCodeHostStore_Count(t *testing.T) {
 					Limit: 10,
 				},
 			},
-			results: 1,
+			wantResults: 1,
 		},
 		{
 			name: "count with get 1 by url",
@@ -358,7 +358,7 @@ func TestCodeHostStore_Count(t *testing.T) {
 					Limit: 10,
 				},
 			},
-			results: 1,
+			wantResults: 1,
 		},
 		{
 			name: "count with get all, non-deleted",
@@ -367,7 +367,7 @@ func TestCodeHostStore_Count(t *testing.T) {
 					Limit: 10,
 				},
 			},
-			results: 1,
+			wantResults: 1,
 		},
 		{
 			name: "count with get all, with deleted",
@@ -377,7 +377,7 @@ func TestCodeHostStore_Count(t *testing.T) {
 					Limit: 10,
 				},
 			},
-			results: 2,
+			wantResults: 2,
 		},
 		{
 			name: "count with search",
@@ -388,7 +388,7 @@ func TestCodeHostStore_Count(t *testing.T) {
 					Limit: 10,
 				},
 			},
-			results: 1,
+			wantResults: 1,
 		},
 		{
 			name: "count with search matching none",
@@ -399,7 +399,7 @@ func TestCodeHostStore_Count(t *testing.T) {
 					Limit: 10,
 				},
 			},
-			results: 0,
+			wantResults: 0,
 		},
 		{
 			name: "count with cursor",
@@ -410,10 +410,10 @@ func TestCodeHostStore_Count(t *testing.T) {
 					Limit: 10,
 				},
 			},
-			results: 1,
+			wantResults: 1,
 		},
 		{
-			name: "count with cursor , no matches",
+			name: "count with cursor, no matches",
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Cursor:         int32(3),
@@ -421,7 +421,7 @@ func TestCodeHostStore_Count(t *testing.T) {
 					Limit: 10,
 				},
 			},
-			results: 0,
+			wantResults: 0,
 		},
 	}
 
@@ -432,8 +432,8 @@ func TestCodeHostStore_Count(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if count != test.results {
-				t.Fatalf("unexpected code host count, got %d, expected: %d\n", count, test.results)
+			if count != test.wantResults {
+				t.Fatalf("unexpected code host count, got %d, expected: %d\n", count, test.wantResults)
 			}
 		})
 	}

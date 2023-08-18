@@ -45,7 +45,7 @@ type CodeHostExternalServicesArgs struct {
 }
 
 func (r *codeHostResolver) ExternalServices(args *CodeHostExternalServicesArgs) (*externalServiceConnectionResolver, error) {
-	// 🚨 SECURITY: This may only be returned by site-admins, but code host is
+	// 🚨 SECURITY: This may only be returned to site-admins, but code host is
 	// only accessible to admins anyways.
 
 	var afterID int64
