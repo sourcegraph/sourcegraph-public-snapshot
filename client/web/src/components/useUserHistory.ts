@@ -17,11 +17,13 @@ const LOCAL_STORAGE_KEY = 'user-history'
 const MAX_LOCAL_STORAGE_COUNT = 100
 
 /**
- * Collects all browser history events and stores which repos/files are visited
- * in local storage.  In the future, we should consider storing this history
- * remotely in temporary settings (or similar). The history is used to
- * personalize ranking in the fuzzy finder, but could theorically power other
- * features like improve ranking in the search bar suggestions.
+ * Collects all browser history events and stores which repos/files are visited in local
+ * storage. The history is used to personalize ranking in the fuzzy finder and populate
+ * suggestions in the Cody context selector.
+ *
+ * In the future, we should consider storing this history remotely in temporary settings
+ * and use them to power other features like improving ranking in the search bar
+ * suggestions.
  */
 export class UserHistory {
     private repos: Map<string, Map<string, number>> = new Map()
