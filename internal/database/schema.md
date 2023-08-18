@@ -3708,6 +3708,7 @@ Indexes:
  priority                | integer                  |           | not null | 0
  clone                   | boolean                  |           | not null | false
  overwrite_clone         | boolean                  |           | not null | false
+ fetch_revision          | text                     |           |          | ''::text
  last_fetched            | timestamp with time zone |           |          | 
  last_changed            | timestamp with time zone |           |          | 
  update_interval_seconds | integer                  |           |          | 
@@ -4905,6 +4906,7 @@ Foreign-key constraints:
     j.priority,
     j.clone,
     j.overwrite_clone,
+    j.fetch_revision,
     j.last_fetched,
     j.last_changed,
     j.update_interval_seconds,

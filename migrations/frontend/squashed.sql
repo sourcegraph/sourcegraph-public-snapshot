@@ -4466,6 +4466,7 @@ CREATE TABLE repo_update_jobs (
     priority integer DEFAULT 0 NOT NULL,
     clone boolean DEFAULT false NOT NULL,
     overwrite_clone boolean DEFAULT false NOT NULL,
+    fetch_revision text DEFAULT ''::text,
     last_fetched timestamp with time zone,
     last_changed timestamp with time zone,
     update_interval_seconds integer
@@ -4499,6 +4500,7 @@ CREATE VIEW repo_update_jobs_with_repo_name AS
     j.priority,
     j.clone,
     j.overwrite_clone,
+    j.fetch_revision,
     j.last_fetched,
     j.last_changed,
     j.update_interval_seconds,

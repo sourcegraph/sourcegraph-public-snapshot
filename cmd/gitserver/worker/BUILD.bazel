@@ -12,6 +12,10 @@ go_library(
         "//internal/database/basestore",
         "//internal/errcode",
         "//internal/gitserver",
+<<<<<<< HEAD
+=======
+        "//internal/gitserver/protocol",
+>>>>>>> 771c5a5c8b (gitserver: use database worker instead of an RPC call for repo update/clone.)
         "//internal/observation",
         "//internal/types",
         "//internal/workerutil",

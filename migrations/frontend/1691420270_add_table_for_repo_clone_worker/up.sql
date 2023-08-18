@@ -17,9 +17,11 @@ CREATE TABLE IF NOT EXISTS repo_update_jobs
     repo_id                 INTEGER NOT NULL REFERENCES repo (id) ON DELETE CASCADE,
     priority                INTEGER NOT NULL         DEFAULT 0,
     -- True if this is a clone job and we know it in advance. (Use case: reclone of an already cloned repo).
-    clone BOOLEAN NOT NULL DEFAULT FALSE,
+    clone                   BOOLEAN NOT NULL         DEFAULT FALSE,
     -- True if an existing clone should be overwritten.
     overwrite_clone         BOOLEAN NOT NULL         DEFAULT FALSE,
+    -- If provided, then the fetch (repo update) will be performed for a given revision.
+    fetch_revision          TEXT                     DEFAULT '',
     -- Populated after the job is processed.
     last_fetched            TIMESTAMP WITH TIME ZONE,
     -- Populated after the job is processed.
@@ -56,6 +58,7 @@ SELECT j.id,
        j.priority,
        j.clone,
        j.overwrite_clone,
+       j.fetch_revision,
        j.last_fetched,
        j.last_changed,
        j.update_interval_seconds,
