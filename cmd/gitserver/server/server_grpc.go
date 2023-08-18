@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -389,9 +390,13 @@ func (gs *GRPCServer) ReposStats(ctx context.Context, _ *proto.ReposStatsRequest
 		return nil, err
 	}
 
+	shardCount := len(gitserver.NewGitserverAddresses(gs.Server.DB, conf.Get()).Addresses)
+
 	resp := protocol.ReposStats{
-		UpdatedAt:   time.Now(), // Unused value, to keep the API pretend the data is fresh.
-		GitDirBytes: size,
+		UpdatedAt: time.Now(), // Unused value, to keep the API pretend the data is fresh.
+		// Divide the size by shard count so that the cumulative number on the client
+		// side is correct again.
+		GitDirBytes: size / int64(shardCount),
 	}
 
 	return resp.ToProto(), nil
