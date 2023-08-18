@@ -36,7 +36,6 @@ export const ExportChangesetsModal: React.FunctionComponent<React.PropsWithChild
             setIsLoading(asError(error))
         }
     }, [changesetIDs, exportChangesets, batchChangeID, draft, afterCreate])
-    
 
     const onToggleDraft = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setDraft(event.target.checked)
@@ -45,9 +44,7 @@ export const ExportChangesetsModal: React.FunctionComponent<React.PropsWithChild
     return (
         <Modal onDismiss={onCancel} aria-labelledby={MODAL_LABEL_ID}>
             <H3 id={MODAL_LABEL_ID}>Export changesets</H3>
-            <Text className="mb-4">
-                Are you sure you want to export all or selected changesets
-            </Text>
+            <Text className="mb-4">Are you sure you want to export all or selected changesets</Text>
             <Form>
                 <div className="form-group">
                     <Checkbox
