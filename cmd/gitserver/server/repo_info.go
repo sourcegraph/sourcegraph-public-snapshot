@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -13,6 +14,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// TODO: Remove this endpoint after 5.2, it is deprecated.
+func (s *Server) handleReposStats(w http.ResponseWriter, r *http.Request) {
+	size, err := s.DB.GitserverRepos().GetGitserverGitDirSize(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := protocol.ReposStats{
+		UpdatedAt:   time.Now(), // Unused value, to keep the API pretend the data is fresh.
+		GitDirBytes: size,
+	}
+	b, err := json.Marshal(resp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	_, _ = w.Write(b)
+}
 
 func repoCloneProgress(reposDir string, locker RepositoryLocker, repo api.RepoName) *protocol.RepoCloneProgress {
 	dir := repoDirFromName(reposDir, repo)
