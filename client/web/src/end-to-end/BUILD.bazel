@@ -60,6 +60,10 @@ mocha_test(
     name = "e2e",
     timeout = "moderate",
     env = {"INCLUDE_ADMIN_ONBOARDING": "false"},
+    node_toolchain = select({
+        "//:darwin_docker_e2e_go": "@nodejs_darwin_arm64//:node_toolchain",
+        "//conditions:default": None,
+    }),
     tags = [
         "manual",
         "requires-network",
@@ -67,10 +71,6 @@ mocha_test(
     tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
     visibility = ["//testing:__pkg__"],
     deps = [":end-to-end_tests"],
-    node_toolchain = select({
-        "//:darwin_docker_e2e_go": "@nodejs_darwin_arm64//:node_toolchain",
-        "//conditions:default": None,
-    })
 )
 
 # For some reason, we can't explicitly set a visibility on the target itself,
