@@ -193,7 +193,7 @@ func PermissionSyncingDisabled() bool {
 }
 
 var ValidateExternalServiceConfig = database.MakeValidateExternalServiceConfigFunc(
-	[]func(*types.GitHubConnection) error{github.ValidateAuthz},
+	[]func(database.DB, *types.GitHubConnection) error{github.ValidateAuthz},
 	[]func(*schema.GitLabConnection, []schema.AuthProviders) error{gitlab.ValidateAuthz},
 	[]func(*schema.BitbucketServerConnection) error{bitbucketserver.ValidateAuthz},
 	[]func(*schema.PerforceConnection) error{perforce.ValidateAuthz},

@@ -313,13 +313,13 @@ type ValidateExternalServiceConfigOptions struct {
 	AuthProviders []schema.AuthProviders
 }
 
-type ValidateExternalServiceConfigFunc = func(ctx context.Context, e ExternalServiceStore, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error)
+type ValidateExternalServiceConfigFunc = func(ctx context.Context, db DB, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error)
 
 // ValidateExternalServiceConfig is the default non-enterprise version of our validation function
 var ValidateExternalServiceConfig = MakeValidateExternalServiceConfigFunc(nil, nil, nil, nil, nil)
 
-func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHubConnection) error, gitLabValidators []func(*schema.GitLabConnection, []schema.AuthProviders) error, bitbucketServerValidators []func(*schema.BitbucketServerConnection) error, perforceValidators []func(*schema.PerforceConnection) error, azureDevOpsValidators []func(connection *schema.AzureDevOpsConnection) error) ValidateExternalServiceConfigFunc {
-	return func(ctx context.Context, e ExternalServiceStore, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error) {
+func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(DB, *types.GitHubConnection) error, gitLabValidators []func(*schema.GitLabConnection, []schema.AuthProviders) error, bitbucketServerValidators []func(*schema.BitbucketServerConnection) error, perforceValidators []func(*schema.PerforceConnection) error, azureDevOpsValidators []func(connection *schema.AzureDevOpsConnection) error) ValidateExternalServiceConfigFunc {
+	return func(ctx context.Context, db DB, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error) {
 		ext, ok := ExternalServiceKinds[opt.Kind]
 		if !ok {
 			return nil, errors.Errorf("invalid external service kind: %s", opt.Kind)
@@ -375,7 +375,7 @@ func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHub
 			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 				return nil, err
 			}
-			err = validateGitHubConnection(gitHubValidators, opt.ExternalServiceID, &c)
+			err = validateGitHubConnection(db, gitHubValidators, opt.ExternalServiceID, &c)
 
 		case extsvc.KindGitLab:
 			var c schema.GitLabConnection
@@ -450,11 +450,11 @@ func validateOtherExternalServiceConnection(c *schema.OtherExternalServiceConnec
 	return nil
 }
 
-func validateGitHubConnection(githubValidators []func(*types.GitHubConnection) error, id int64, c *schema.GitHubConnection) error {
+func validateGitHubConnection(db DB, githubValidators []func(DB, *types.GitHubConnection) error, id int64, c *schema.GitHubConnection) error {
 	var err error
 	for _, validate := range githubValidators {
 		err = errors.Append(err,
-			validate(&types.GitHubConnection{
+			validate(db, &types.GitHubConnection{
 				URN:              extsvc.URN(extsvc.KindGitHub, id),
 				GitHubConnection: c,
 			}),
@@ -536,7 +536,8 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		return err
 	}
 
-	normalized, err := ValidateExternalServiceConfig(ctx, e, ValidateExternalServiceConfigOptions{
+	db := NewDBWith(e.logger, e)
+	normalized, err := ValidateExternalServiceConfig(ctx, db, ValidateExternalServiceConfigOptions{
 		Kind:          es.Kind,
 		Config:        rawConfig,
 		AuthProviders: confGet().AuthProviders,
@@ -644,7 +645,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			return err
 		}
 
-		normalized, err := ValidateExternalServiceConfig(ctx, e, ValidateExternalServiceConfigOptions{
+		normalized, err := ValidateExternalServiceConfig(ctx, NewDBWith(e.logger, e), ValidateExternalServiceConfigOptions{
 			Kind:          s.Kind,
 			Config:        rawConfig,
 			AuthProviders: authProviders,
@@ -888,7 +889,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			hasWebhooks = false
 		}
 
-		normalized, err = ValidateExternalServiceConfig(ctx, tx, ValidateExternalServiceConfigOptions{
+		normalized, err = ValidateExternalServiceConfig(ctx, NewDBWith(e.logger, tx), ValidateExternalServiceConfigOptions{
 			ExternalServiceID: id,
 			Kind:              externalService.Kind,
 			Config:            unredactedConfig,
