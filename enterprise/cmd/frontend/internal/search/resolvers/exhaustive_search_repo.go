@@ -12,6 +12,7 @@ import (
 
 const exhaustiveSearchRepoIDKind = "ExhaustiveSearchRepo"
 
+// MarshalExhaustiveSearchRepoID marshals an int64 into a Relay ID for an exhaustive search repo.
 func MarshalExhaustiveSearchRepoID(id int64) graphql.ID {
 	return relay.MarshalID(exhaustiveSearchRepoIDKind, id)
 }
