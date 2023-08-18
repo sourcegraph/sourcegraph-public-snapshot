@@ -243,10 +243,11 @@ public class CodyAgent implements Disposable {
   private void startListeningToAgent() throws IOException, CodyAgentException {
     File binary = agentBinary();
     logger.info("starting Cody agent " + binary.getAbsolutePath());
-    this.process =
-        new ProcessBuilder(binary.getAbsolutePath())
-            .redirectError(ProcessBuilder.Redirect.INHERIT)
-            .start();
+    ProcessBuilder processBuilder = new ProcessBuilder(binary.getAbsolutePath());
+    if (Boolean.getBoolean("cody.accept-non-trusted-certificates-automatically")) {
+      processBuilder.environment().put("NODE_TLS_REJECT_UNAUTHORIZED", "0");
+    }
+    this.process = processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT).start();
     Launcher<CodyAgentServer> launcher =
         new Launcher.Builder<CodyAgentServer>()
             // emit `null` instead of leaving fields undefined because Cody in VSC has
