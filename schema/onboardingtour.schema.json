@@ -50,7 +50,7 @@
                           "const": "video"
                         },
                         "value": {
-                          "$ref": "#/definitions/ActionValue"
+                          "$ref": "#/definitions/StepAction"
                         }
                       },
                       "required": ["type", "value"]
@@ -66,7 +66,7 @@
                           "const": "button-primary"
                         },
                         "value": {
-                          "$ref": "#/definitions/ActionValue"
+                          "$ref": "#/definitions/StepAction"
                         }
                       },
                       "required": ["type", "value"]
@@ -109,7 +109,7 @@
   "required": ["tasks"],
   "additionalProperties": false,
   "definitions": {
-    "ActionValue": {
+    "StepAction": {
       "oneOf": [
         {
           "type": "string"
