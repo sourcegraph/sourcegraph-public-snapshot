@@ -26,6 +26,16 @@ extend type Mutation {
         """
         id: ID!
     ): EmptyResponse!
+
+    """
+    Experimental: Retry an exhaustive search. This will retry all of the search's repositories and revisions.
+    """
+    retryExhaustiveSearch(
+        """
+        The ID of the exhaustive search to retry.
+        """
+        id: ID!
+    ): ExhaustiveSearch!
 }
 
 extend type Query {
@@ -143,7 +153,7 @@ type ExhaustiveSearch implements Node {
         """
         The number of results to return. Defaults to 50.
         """
-        first: Int = 50,
+        first: Int = 50
         """
         The cursor to start at.
         """
@@ -200,7 +210,7 @@ type ExhaustiveSearchRepo implements Node {
         """
         The number of results to return. Defaults to 50.
         """
-        first: Int = 50,
+        first: Int = 50
         """
         The cursor to start at.
         """

@@ -97,6 +97,35 @@ func TestExhaustiveSearchesResolver_DeleteExhaustiveSearch(t *testing.T) {
 	assert.Equal(t, errors[0].Message, "panic occurred: implement me")
 }
 
+func TestExhaustiveSearchesResolver_RetryExhaustiveSearch(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	resolver := resolvers.New(logger, db)
+	s, err := graphqlbackend.NewSchemaWithExhaustiveSearchesResolver(db, resolver)
+	require.NoError(t, err)
+
+	variables := map[string]any{
+		"exhaustiveSearch": string(resolvers.MarshalExhaustiveSearchID(int64(123))),
+	}
+
+	query := `mutation($exhaustiveSearch: ID!) {
+	retryExhaustiveSearch(id: $exhaustiveSearch) {
+		id
+	}
+}`
+
+	var actual string
+	errors := exec(ctx, t, s, query, variables, &actual)
+	require.Equal(t, 1, len(errors))
+	assert.Equal(t, errors[0].Message, "panic occurred: implement me")
+}
+
 func TestExhaustiveSearchesResolver_ValidateExhaustiveSearchQuery(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

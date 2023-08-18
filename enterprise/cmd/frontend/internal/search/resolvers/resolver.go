@@ -38,6 +38,11 @@ func (r *Resolver) DeleteExhaustiveSearch(ctx context.Context, args *graphqlback
 	panic("implement me")
 }
 
+func (r *Resolver) RetryExhaustiveSearch(ctx context.Context, args *graphqlbackend.RetryExhaustiveSearchArgs) (graphqlbackend.ExhaustiveSearchResolver, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (r *Resolver) ValidateExhaustiveSearchQuery(ctx context.Context, args *graphqlbackend.ValidateExhaustiveSearchQueryArgs) (graphqlbackend.ValidateExhaustiveSearchQueryResolver, error) {
 	//TODO implement me
 	panic("implement me")

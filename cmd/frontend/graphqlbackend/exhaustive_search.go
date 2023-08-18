@@ -14,6 +14,7 @@ type ExhaustiveSearchesResolver interface {
 	CreateExhaustiveSearch(ctx context.Context, args *CreateExhaustiveSearchArgs) (ExhaustiveSearchResolver, error)
 	CancelExhaustiveSearch(ctx context.Context, args *CancelExhaustiveSearchArgs) (*EmptyResponse, error)
 	DeleteExhaustiveSearch(ctx context.Context, args *DeleteExhaustiveSearchArgs) (*EmptyResponse, error)
+	RetryExhaustiveSearch(ctx context.Context, args *RetryExhaustiveSearchArgs) (ExhaustiveSearchResolver, error)
 
 	// Queries
 	ValidateExhaustiveSearchQuery(ctx context.Context, args *ValidateExhaustiveSearchQueryArgs) (ValidateExhaustiveSearchQueryResolver, error)
@@ -104,6 +105,10 @@ type CancelExhaustiveSearchArgs struct {
 }
 
 type DeleteExhaustiveSearchArgs struct {
+	ID graphql.ID
+}
+
+type RetryExhaustiveSearchArgs struct {
 	ID graphql.ID
 }
 
