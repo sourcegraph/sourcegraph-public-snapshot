@@ -24,6 +24,7 @@ go_library(
         "//enterprise/cmd/worker/internal/insights",
         "//enterprise/cmd/worker/internal/own",
         "//enterprise/cmd/worker/internal/permissions",
+        "//enterprise/cmd/worker/internal/search",
         "//enterprise/cmd/worker/internal/telemetry",
         "//internal/auth/userpasswd",
         "//internal/authz",

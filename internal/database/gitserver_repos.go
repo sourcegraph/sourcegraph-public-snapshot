@@ -64,8 +64,6 @@ type GitserverRepoStore interface {
 	// TotalErroredCloudDefaultRepos returns the total number of repos which have a non-empty last_error field. Note that this is only
 	// counting repos with an associated cloud_default external service.
 	TotalErroredCloudDefaultRepos(ctx context.Context) (int, error)
-	// ListReposWithoutSize returns a map of repo name to repo ID for repos which do not have a repo_size_bytes.
-	ListReposWithoutSize(ctx context.Context) (map[api.RepoName]api.RepoID, error)
 	// UpdateRepoSizes sets repo sizes according to input map. Key is repoID, value is repo_size_bytes.
 	UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoName]int64) (int, error)
 	// SetCloningProgress updates a piece of text description from how cloning proceeds.
@@ -736,36 +734,6 @@ WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
 
 	return nil
 }
-
-func (s *gitserverRepoStore) ListReposWithoutSize(ctx context.Context) (_ map[api.RepoName]api.RepoID, err error) {
-	rows, err := s.Query(ctx, sqlf.Sprintf(listReposWithoutSizeQuery))
-	if err != nil {
-		return nil, errors.Wrap(err, "fetching repos without size")
-	}
-	defer func() {
-		err = basestore.CloseRows(rows, err)
-	}()
-
-	repos := make(map[api.RepoName]api.RepoID, 0)
-	for rows.Next() {
-		var name string
-		var ID int32
-		if err := rows.Scan(&name, &ID); err != nil {
-			return nil, errors.Wrap(err, "scanning row")
-		}
-		repos[api.RepoName(name)] = api.RepoID(ID)
-	}
-	return repos, nil
-}
-
-const listReposWithoutSizeQuery = `
-SELECT
-	repo.name,
-    repo.id
-FROM repo
-JOIN gitserver_repos gr ON gr.repo_id = repo.id
-WHERE gr.repo_size_bytes IS NULL
-`
 
 func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoName]int64) (updated int, err error) {
 	// NOTE: We have two args per row, so rows*2 should be less than maximum

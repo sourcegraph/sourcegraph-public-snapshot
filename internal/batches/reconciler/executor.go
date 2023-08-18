@@ -213,6 +213,8 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 					return afterDone, errCannotPushToArchivedRepo
 				}
 			}
+			// do not wrap the error (pushCommitError), so it can be nicely displayed in the UI
+			return afterDone, err
 		}
 		return afterDone, errors.Wrap(err, "pushing commit")
 	}
