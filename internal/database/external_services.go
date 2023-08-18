@@ -318,7 +318,21 @@ type ValidateExternalServiceConfigFunc = func(ctx context.Context, db DB, opt Va
 // ValidateExternalServiceConfig is the default non-enterprise version of our validation function
 var ValidateExternalServiceConfig = MakeValidateExternalServiceConfigFunc(nil, nil, nil, nil, nil)
 
-func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(DB, *types.GitHubConnection) error, gitLabValidators []func(*schema.GitLabConnection, []schema.AuthProviders) error, bitbucketServerValidators []func(*schema.BitbucketServerConnection) error, perforceValidators []func(*schema.PerforceConnection) error, azureDevOpsValidators []func(connection *schema.AzureDevOpsConnection) error) ValidateExternalServiceConfigFunc {
+type (
+	GitHubValidatorFunc          func(DB, *types.GitHubConnection) error
+	GitLabValidatorFunc          func(*schema.GitLabConnection, []schema.AuthProviders) error
+	BitbucketServerValidatorFunc func(*schema.BitbucketServerConnection) error
+	PerforceValidatorFunc        func(*schema.PerforceConnection) error
+	AzureDevOpsValidatorFunc     func(connection *schema.AzureDevOpsConnection) error
+)
+
+func MakeValidateExternalServiceConfigFunc(
+	gitHubValidators []GitHubValidatorFunc,
+	gitLabValidators []GitLabValidatorFunc,
+	bitbucketServerValidators []BitbucketServerValidatorFunc,
+	perforceValidators []PerforceValidatorFunc,
+	azureDevOpsValidators []AzureDevOpsValidatorFunc,
+) ValidateExternalServiceConfigFunc {
 	return func(ctx context.Context, db DB, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error) {
 		ext, ok := ExternalServiceKinds[opt.Kind]
 		if !ok {
@@ -450,7 +464,7 @@ func validateOtherExternalServiceConnection(c *schema.OtherExternalServiceConnec
 	return nil
 }
 
-func validateGitHubConnection(db DB, githubValidators []func(DB, *types.GitHubConnection) error, id int64, c *schema.GitHubConnection) error {
+func validateGitHubConnection(db DB, githubValidators []GitHubValidatorFunc, id int64, c *schema.GitHubConnection) error {
 	var err error
 	for _, validate := range githubValidators {
 		err = errors.Append(err,
@@ -470,7 +484,7 @@ func validateGitHubConnection(db DB, githubValidators []func(DB, *types.GitHubCo
 	return err
 }
 
-func validateGitLabConnection(gitLabValidators []func(*schema.GitLabConnection, []schema.AuthProviders) error, _ int64, c *schema.GitLabConnection, ps []schema.AuthProviders) error {
+func validateGitLabConnection(gitLabValidators []GitLabValidatorFunc, _ int64, c *schema.GitLabConnection, ps []schema.AuthProviders) error {
 	var err error
 	for _, validate := range gitLabValidators {
 		err = errors.Append(err, validate(c, ps))
@@ -478,7 +492,7 @@ func validateGitLabConnection(gitLabValidators []func(*schema.GitLabConnection, 
 	return err
 }
 
-func validateAzureDevOpsConnection(azureDevOpsValidators []func(connection *schema.AzureDevOpsConnection) error, _ int64, c *schema.AzureDevOpsConnection) error {
+func validateAzureDevOpsConnection(azureDevOpsValidators []AzureDevOpsValidatorFunc, _ int64, c *schema.AzureDevOpsConnection) error {
 	var err error
 	for _, validate := range azureDevOpsValidators {
 		err = errors.Append(err, validate(c))
@@ -489,7 +503,7 @@ func validateAzureDevOpsConnection(azureDevOpsValidators []func(connection *sche
 	return err
 }
 
-func validateBitbucketServerConnection(bitbucketServerValidators []func(connection *schema.BitbucketServerConnection) error, _ int64, c *schema.BitbucketServerConnection) error {
+func validateBitbucketServerConnection(bitbucketServerValidators []BitbucketServerValidatorFunc, _ int64, c *schema.BitbucketServerConnection) error {
 	var err error
 	for _, validate := range bitbucketServerValidators {
 		err = errors.Append(err, validate(c))
@@ -501,7 +515,7 @@ func validateBitbucketServerConnection(bitbucketServerValidators []func(connecti
 	return err
 }
 
-func validatePerforceConnection(perforceValidators []func(*schema.PerforceConnection) error, _ int64, c *schema.PerforceConnection) error {
+func validatePerforceConnection(perforceValidators []PerforceValidatorFunc, _ int64, c *schema.PerforceConnection) error {
 	var err error
 	for _, validate := range perforceValidators {
 		err = errors.Append(err, validate(c))
