@@ -10,7 +10,7 @@ import type {
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { PageHeader, Text, Container, BeforeUnloadPrompt, LoadingSpinner, Alert, H3 } from '@sourcegraph/wildcard'
+import { PageHeader, Text, Container, BeforeUnloadPrompt, LoadingSpinner, H3 } from '@sourcegraph/wildcard'
 
 import onboardingSchemaJSON from '../../../../schema/onboardingtour.schema.json'
 import { PageTitle } from '../components/PageTitle'
