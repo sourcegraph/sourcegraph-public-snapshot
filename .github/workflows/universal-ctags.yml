@@ -21,9 +21,7 @@ jobs:
         name: '🔓 Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v1'
         with:
-          workload_identity_provider: ${{ secrets.GCP_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-          create_credentials_file: true
+          credentials_json: ${{ secrets.CTAGS_GCP_SERVICE_ACCOUNT }}
       - id: nix-build
         name: Run `nix build`
         run: |
@@ -34,7 +32,7 @@ jobs:
         with:
           path: './result/bin/'
           destination: 'universal_ctags/x86_64-darwin/'
-          glob: 'ctags-*'
+          glob: 'universal-ctags-*'
   aarch64-darwin:
     name: Build ctags
     runs-on: macos-latest
@@ -46,9 +44,7 @@ jobs:
         name: '🔓 Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v1'
         with:
-          workload_identity_provider: ${{ secrets.GCP_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-          create_credentials_file: true
+          credentials_json: ${{ secrets.CTAGS_GCP_SERVICE_ACCOUNT }}
       - id: nix-build
         name: Run `nix build`
         run: |
@@ -71,9 +67,7 @@ jobs:
         name: '🔓 Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v1'
         with:
-          workload_identity_provider: ${{ secrets.GCP_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-          create_credentials_file: true
+          credentials_json: ${{ secrets.CTAGS_GCP_SERVICE_ACCOUNT }}
       - id: nix-build
         name: Run `nix build`
         run: |
