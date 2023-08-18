@@ -17,7 +17,6 @@ type ExhaustiveSearchesResolver interface {
 
 	// Queries
 	ValidateExhaustiveSearchQuery(ctx context.Context, args *ValidateExhaustiveSearchQueryArgs) (ValidateExhaustiveSearchQueryResolver, error)
-	ExhaustiveSearch(ctx context.Context, args *ExhaustiveSearchArgs) (ExhaustiveSearchResolver, error)
 	ExhaustiveSearches(ctx context.Context, args *ExhaustiveSearchesArgs) (ExhaustiveSearchesConnectionResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc

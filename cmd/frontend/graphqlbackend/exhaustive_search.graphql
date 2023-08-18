@@ -39,15 +39,6 @@ extend type Query {
         query: String!
     ): ExhaustiveSearchQueryValidation
     """
-    Experimental: Get an exhaustive search by ID.
-    """
-    exhaustiveSearch(
-        """
-        The ID of the exhaustive search to get.
-        """
-        id: ID!
-    ): ExhaustiveSearch
-    """
     Experimental: Get a list of exhaustive searches.
     """
     exhaustiveSearches(
