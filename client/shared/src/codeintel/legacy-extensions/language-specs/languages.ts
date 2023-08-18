@@ -323,6 +323,15 @@ const shellSpec: LanguageSpec = {
     commentStyles: [shellStyleComment],
 }
 
+const smithySpec: LanguageSpec = {
+    languageID: 'smithy',
+    stylized: 'Smithy',
+    fileExts: ['smithy'],
+    textDocumentImplemenationSupport: true,
+    commentStyles: [javaStyleComment],
+}
+
+
 const swiftSpec: LanguageSpec = {
     languageID: 'swift',
     stylized: 'Swift',
@@ -410,6 +419,7 @@ export const languageSpecs: LanguageSpec[] = [
     rubySpec,
     rustSpec,
     scalaSpec,
+    smithySpec,
     starlarkSpec,
     stratoSpec,
     shellSpec,

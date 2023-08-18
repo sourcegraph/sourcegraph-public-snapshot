@@ -1,5 +1,5 @@
 {
-  "checksum": "c30618ed9bc87fcd2c58cc8475a042ac740f0737ae192b358049e1ff2bd6a2e9",
+  "checksum": "813b944a8cb2d47a44757131cd4368504f2f14a86a0eae1dd94f5935099ca19a",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -9839,6 +9839,10 @@
               "target": "tree_sitter_scala"
             },
             {
+              "id": "tree-sitter-smithy 1.0.0",
+              "target": "tree_sitter_smithy"
+            },
+            {
               "id": "tree-sitter-sql 0.0.2",
               "target": "tree_sitter_sql"
             },
@@ -13883,6 +13887,74 @@
         },
         "edition": "2018",
         "version": "0.20.1"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "cc 1.0.73",
+              "target": "cc"
+            }
+          ],
+          "selects": {}
+        }
+      },
+      "license": "MIT"
+    },
+    "tree-sitter-smithy 1.0.0": {
+      "name": "tree-sitter-smithy",
+      "version": "1.0.0",
+      "repository": {
+        "Git": {
+          "remote": "https://github.com/indoorvivants/tree-sitter-smithy",
+          "commitish": {
+            "Rev": "cf8c7eb9faf7c7049839585eac19c94af231e6a0"
+          }
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "tree_sitter_smithy",
+            "crate_root": "bindings/rust/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "bindings/rust/build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "tree_sitter_smithy",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.20.9",
+              "target": "tree_sitter"
+            },
+            {
+              "id": "tree-sitter-smithy 1.0.0",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "1.0.0"
       },
       "build_script_attrs": {
         "data_glob": [

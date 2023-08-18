@@ -158,6 +158,7 @@ lazy_static::lazy_static! {
             Ruby,
             Rust,
             Scala,
+            Smithy,
             Sql,
             Xlsg,
             Zig

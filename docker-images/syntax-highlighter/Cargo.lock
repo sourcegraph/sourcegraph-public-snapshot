@@ -1799,6 +1799,7 @@ dependencies = [
  "tree-sitter-ruby",
  "tree-sitter-rust",
  "tree-sitter-scala",
+ "tree-sitter-smithy",
  "tree-sitter-sql",
  "tree-sitter-typescript",
  "tree-sitter-xlsg",
@@ -2528,6 +2529,15 @@ name = "tree-sitter-scala"
 version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4e1f1de7a274c95937c40bc75dcaee97b5f23107ffcc78fc99a7b982d4f745ef"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-smithy"
+version = "1.0.0"
+source = "git+https://github.com/indoorvivants/tree-sitter-smithy?rev=cf8c7eb9faf7c7049839585eac19c94af231e6a0#cf8c7eb9faf7c7049839585eac19c94af231e6a0"
 dependencies = [
  "cc",
  "tree-sitter",

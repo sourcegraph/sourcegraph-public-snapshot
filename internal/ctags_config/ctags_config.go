@@ -85,6 +85,7 @@ var DefaultEngines = map[string]ParserType{
 	"ruby":       ScipCtags,
 	"rust":       ScipCtags,
 	"scala":      ScipCtags,
+	"smithy":     ScipCtags,
 	"typescript": ScipCtags,
 	"zig":        ScipCtags,
 
