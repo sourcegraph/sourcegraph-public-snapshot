@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# This script is a wrapper around to download and run universal-ctags using bazel
+# This script is a wrapper around `universal-ctags` to download and run universal-ctags using bazel
 #
 # To use your own `universal-ctags` binary instead of this wrapper in your local dev server, use
 # `CTAGS_COMMAND=path/to/ctags sg start`.
