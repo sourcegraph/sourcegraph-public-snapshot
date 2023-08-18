@@ -60,6 +60,7 @@ def tool_deps():
     # universal-ctags #
     http_file(
         name = "universal-ctags-darwin-x86_64",
+        sha256 = "b69501d497b62021e8438e840e0bea62fdbe91d60cf8375c388f2736cd58a1bf",
         url = "https://storage.googleapis.com/universal_ctags/x86_64-darwin/bin/universal-ctags-{0}".format(CTAGS_VERSION),
         executable = True,
     )
