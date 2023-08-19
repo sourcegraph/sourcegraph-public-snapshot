@@ -2,7 +2,23 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "eventlogger",
-    srcs = ["event_logger.go"],
+    srcs = [
+        "event_handler.go",
+        "event_logger.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/eventlogger",
     visibility = ["//:__subpackages__"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//internal/conf",
+        "//internal/conf/deploy",
+        "//internal/database",
+        "//internal/env",
+        "//internal/featureflag",
+        "//internal/pubsub",
+        "//internal/siteid",
+        "//internal/version",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_inconshreveable_log15//:log15",
+    ],
 )

@@ -1,6 +1,8 @@
 // Package pubsub is a lightweight wrapper of the GCP Pub/Sub functionality.
 package pubsub
 
+// TODO: make a similar package to the GCP pubsub package but abstract away the GCP dependency
+
 import (
 	"context"
 
