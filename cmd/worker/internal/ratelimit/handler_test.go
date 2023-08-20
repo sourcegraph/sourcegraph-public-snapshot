@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -21,8 +21,7 @@ import (
 )
 
 func TestHandler_Handle(t *testing.T) {
-	obsCtx := observation.TestContextTB(t)
-	logger := obsCtx.Logger
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
@@ -87,9 +86,9 @@ func TestHandler_Handle(t *testing.T) {
 
 	// Create the handler to start the test
 	h := handler{
-		codeHostStore:  db.CodeHosts(),
-		rateLimiter:    ratelimit.NewCodeHostRateLimiter(rateLimiter),
-		observationCtx: obsCtx,
+		codeHostStore: db.CodeHosts(),
+		rateLimiter:   ratelimit.NewCodeHostRateLimiter(rateLimiter),
+		logger:        logger,
 	}
 	err = h.Handle(ctx)
 	assert.NoError(t, err)

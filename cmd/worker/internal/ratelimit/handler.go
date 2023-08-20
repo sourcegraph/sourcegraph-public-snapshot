@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -24,9 +23,9 @@ var (
 var _ goroutine.Handler = &handler{}
 
 type handler struct {
-	codeHostStore  database.CodeHostStore
-	rateLimiter    ratelimit.CodeHostRateLimiter
-	observationCtx *observation.Context
+	codeHostStore database.CodeHostStore
+	rateLimiter   ratelimit.CodeHostRateLimiter
+	logger        log.Logger
 }
 
 func (h *handler) Handle(ctx context.Context) error {
@@ -48,7 +47,7 @@ func (h *handler) Handle(ctx context.Context) error {
 	for _, codeHost := range codeHosts {
 		err = h.processCodeHost(ctx, *codeHost, defaultGitQuota)
 		if err != nil {
-			h.observationCtx.Logger.Error("error setting rate limit configuration", log.String("url", codeHost.URL), log.Error(err))
+			h.logger.Error("error setting rate limit configuration", log.String("url", codeHost.URL), log.Error(err))
 			errs = errors.Append(errs, err)
 		}
 	}
