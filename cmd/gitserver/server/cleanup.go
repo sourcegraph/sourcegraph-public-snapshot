@@ -596,32 +596,6 @@ func checkRepoDirCorrupt(rcf *wrexec.RecordingCommandFactory, reposDir string, d
 	return false, "", nil
 }
 
-// setRepoSizes uses calculated sizes of repos to update database entries of repos
-// with actual sizes, but only up to 10,000 in one run.
-func setRepoSizes(ctx context.Context, logger log.Logger, db database.DB, shardID string, repoToSize map[api.RepoName]int64) error {
-	logger = logger.Scoped("setRepoSizes", "setRepoSizes does cleanup of database entries")
-
-	reposNumber := len(repoToSize)
-	if reposNumber == 0 {
-		logger.Info("file system walk didn't yield any directory sizes")
-		return nil
-	}
-
-	logger.Debug("directory sizes calculated during file system walk",
-		log.Int("repoToSize", reposNumber))
-
-	// updating repos
-	updatedRepos, err := db.GitserverRepos().UpdateRepoSizes(ctx, shardID, repoToSize)
-	if err != nil {
-		return err
-	}
-	if updatedRepos > 0 {
-		logger.Info("repos had their sizes updated", log.Int("updatedRepos", updatedRepos))
-	}
-
-	return nil
-}
-
 // DiskSizer gets information about disk size and free space.
 type DiskSizer interface {
 	BytesFreeOnDisk(mountPoint string) (uint64, error)
