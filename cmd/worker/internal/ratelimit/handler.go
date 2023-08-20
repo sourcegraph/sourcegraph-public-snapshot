@@ -36,17 +36,17 @@ func (h *handler) Handle(ctx context.Context) error {
 	}
 
 	// TODO: @varsanojidan This is only needed before the OOB migration, once the OOB migration is done, we can remove this
-	var fallbackGitQuota int32
+	var defaultGitQuota int32
 	siteCfg := conf.Get()
 	if siteCfg.GitMaxCodehostRequestsPerSecond != nil {
-		fallbackGitQuota = int32(*siteCfg.GitMaxCodehostRequestsPerSecond)
+		defaultGitQuota = int32(*siteCfg.GitMaxCodehostRequestsPerSecond)
 	} else {
-		fallbackGitQuota = math.MaxInt32
+		defaultGitQuota = math.MaxInt32
 	}
 
 	var errs error
 	for _, codeHost := range codeHosts {
-		err = h.processCodeHost(ctx, *codeHost, fallbackGitQuota)
+		err = h.processCodeHost(ctx, *codeHost, defaultGitQuota)
 		if err != nil {
 			h.observationCtx.Logger.Error("error setting rate limit configuration", log.String("url", codeHost.URL), log.Error(err))
 			errs = errors.Append(errs, err)
@@ -55,8 +55,8 @@ func (h *handler) Handle(ctx context.Context) error {
 	return errs
 }
 
-func (h *handler) processCodeHost(ctx context.Context, codeHost types.CodeHost, fallbackGitQuota int32) error {
-	configs := h.getRateLimitConfigsOrDefaults(codeHost, fallbackGitQuota)
+func (h *handler) processCodeHost(ctx context.Context, codeHost types.CodeHost, defaultGitQuota int32) error {
+	configs := h.getRateLimitConfigsOrDefaults(codeHost, defaultGitQuota)
 
 	// We try setting both the API and git rate limits here even if we get an error when setting the API rate limits
 	// in oder to try to avoid any outages as much as possible.
@@ -69,43 +69,33 @@ func (h *handler) processCodeHost(ctx context.Context, codeHost types.CodeHost, 
 	return errors.CombineErrors(err, err2)
 }
 
-func (h *handler) getRateLimitConfigsOrDefaults(codeHost types.CodeHost, fallbackGitQuota int32) codeHostRateLimitConfigs {
+func (h *handler) getRateLimitConfigsOrDefaults(codeHost types.CodeHost, defaultGitQuota int32) codeHostRateLimitConfigs {
 	var configs codeHostRateLimitConfigs
 
 	// Determine the values of the 4 rate limit configurations by using their set value from the database or their default value if they are not set.
-	isDefaultAPILimit := true
-	if codeHost.APIRateLimitQuota != nil {
+	if codeHost.APIRateLimitQuota != nil && codeHost.APIRateLimitIntervalSeconds != nil {
 		configs.ApiQuota = *codeHost.APIRateLimitQuota
-		isDefaultAPILimit = false
+		configs.ApiReplenishmentInterval = *codeHost.APIRateLimitIntervalSeconds
 	} else {
+		// defaults
 		defaultAPILimit := extsvc.GetDefaultRateLimit(codeHost.Kind)
-		defaultRateLimitAsInt := int32(defaultAPILimit)
-		// Basically only happens if the rate limit is set to rate.Inf
-		if defaultAPILimit > rate.Limit(math.MaxInt32) {
+		defaultRateLimitAsInt := int32(defaultAPILimit * 3600.0)
+		if defaultAPILimit == rate.Inf {
 			defaultRateLimitAsInt = math.MaxInt32
 		}
 		configs.ApiQuota = defaultRateLimitAsInt
-	}
-
-	if !isDefaultAPILimit && codeHost.APIRateLimitIntervalSeconds != nil {
-		configs.ApiReplenishmentInterval = *codeHost.APIRateLimitIntervalSeconds
-	} else {
 		configs.ApiReplenishmentInterval = defaultAPIReplenishmentInterval
 	}
 
-	defaultGitLimit := true
-	if codeHost.GitRateLimitQuota != nil {
+	if codeHost.GitRateLimitQuota != nil && codeHost.GitRateLimitIntervalSeconds != nil {
 		configs.GitQuota = *codeHost.GitRateLimitQuota
-		defaultGitLimit = false
-	} else {
-		configs.GitQuota = fallbackGitQuota
-	}
-
-	if !defaultGitLimit && codeHost.GitRateLimitIntervalSeconds != nil {
 		configs.GitReplenishmentInterval = *codeHost.GitRateLimitIntervalSeconds
 	} else {
+		// defaults
+		configs.GitQuota = defaultGitQuota
 		configs.GitReplenishmentInterval = defaultGitReplenishmentInterval
 	}
+
 	return configs
 }
 

@@ -26,8 +26,8 @@ type RateLimiter interface {
 	// SetTokenBucketReplenishment sets the configuration for the specified token bucket.
 	// bucketName: the name of the bucket where the tokens are, e.g. github.com:api_tokens
 	// bucketCapacity: the number of tokens the bucket can hold.
-	// bucketReplenishRateSeconds: how often (in seconds) the bucket should be completely replenished.
-	SetTokenBucketReplenishment(ctx context.Context, bucketName string, bucketCapacity, bucketReplenishRateSeconds int32) error
+	// bucketReplenishIntervalSeconds: how often (in seconds) the bucket should be completely replenished.
+	SetTokenBucketReplenishment(ctx context.Context, bucketName string, bucketCapacity, bucketReplenishIntervalSeconds int32) error
 }
 
 type rateLimiter struct {
@@ -96,9 +96,9 @@ func (r *rateLimiter) GetTokensFromBucket(ctx context.Context, bucketName string
 	return allowedInt == 1, int(remTokens), nil
 }
 
-func (r *rateLimiter) SetTokenBucketReplenishment(ctx context.Context, bucketName string, bucketCapacity, bucketReplenishRateSeconds int32) error {
+func (r *rateLimiter) SetTokenBucketReplenishment(ctx context.Context, bucketName string, bucketCapacity, bucketReplenishIntervalSeconds int32) error {
 	bucketKey, bucketCapacityKey, bucketReplenishIntervalSecondsKey := getRateLimiterKeys(r.prefix, bucketName)
-	_, err := r.setReplenishmentScript.DoContext(ctx, r.pool.Get(), bucketKey, bucketCapacityKey, bucketReplenishIntervalSecondsKey, bucketCapacity, bucketReplenishRateSeconds)
+	_, err := r.setReplenishmentScript.DoContext(ctx, r.pool.Get(), bucketKey, bucketCapacityKey, bucketReplenishIntervalSecondsKey, bucketCapacity, bucketReplenishIntervalSeconds)
 	return errors.Wrapf(err, "error while setting token bucket replenishment for bucket %s", bucketName)
 }
 
