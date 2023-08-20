@@ -3,9 +3,9 @@ package server
 import (
 	"net/http"
 
-	"github.com/ricochet2200/go-disk-usage/du"
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"github.com/sourcegraph/sourcegraph/internal/diskusage"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
@@ -14,17 +14,23 @@ import (
 // It calculates the total and free disk space for the gitserver's repo
 // directory using du.DiskUsage. The results are returned as a
 // protocol.DiskInfoResponse struct.
-func (s *Server) getDiskInfo() protocol.DiskInfoResponse {
-	usage := du.NewDiskUsage(s.ReposDir)
-	return protocol.DiskInfoResponse{
+func (s *Server) getDiskInfo() (*protocol.DiskInfoResponse, error) {
+	usage, err := diskusage.New(s.ReposDir)
+	if err != nil {
+		return nil, err
+	}
+	return &protocol.DiskInfoResponse{
 		TotalSpace: usage.Size(),
 		FreeSpace:  usage.Free(),
-	}
+	}, nil
 }
 
 func (s *Server) handleDiskInfo(w http.ResponseWriter, r *http.Request) {
-	resp := s.getDiskInfo()
-
+	resp, err := s.getDiskInfo()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	protoResponse := resp.ToProto()
 
 	jsonBytes, err := protojson.Marshal(protoResponse)
