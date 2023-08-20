@@ -463,24 +463,48 @@ type SystemInfo struct {
 func (c *clientImplementor) SystemInfo(ctx context.Context) ([]SystemInfo, error) {
 	addresses := c.clientSource.Addresses()
 	infos := make([]SystemInfo, 0, len(addresses))
-	for _, address := range addresses {
-		client, err := address.GRPCClient()
+	for _, addr := range addresses {
+		response, err := c.getDiskInfo(ctx, addr)
 		if err != nil {
 			return nil, err
 		}
-		resp, err := client.DiskInfo(ctx, &proto.DiskInfoRequest{})
-		if err != nil {
-			return nil, err
-		}
-		rs := &protocol.DiskInfoResponse{}
-		rs.FromProto(resp)
 		infos = append(infos, SystemInfo{
-			Address:    address.Address(),
-			FreeSpace:  rs.FreeSpace,
-			TotalSpace: rs.TotalSpace,
+			Address:    addr.Address(),
+			FreeSpace:  response.FreeSpace,
+			TotalSpace: response.TotalSpace,
 		})
 	}
 	return infos, nil
+}
+
+func (c *clientImplementor) getDiskInfo(ctx context.Context, addr AddressWithClient) (*protocol.DiskInfoResponse, error) {
+	var resp protocol.DiskInfoResponse
+	if conf.IsGRPCEnabled(ctx) {
+		client, err := addr.GRPCClient()
+		if err != nil {
+			return nil, err
+		}
+		rs, err := client.DiskInfo(ctx, &proto.DiskInfoRequest{})
+		if err != nil {
+			return nil, err
+		}
+		resp.FromProto(rs)
+	} else {
+		uri := fmt.Sprintf("http://%s/disk-info", addr.Address())
+		rs, err := c.do(ctx, "", "POST", uri, nil)
+		if err != nil {
+			return nil, err
+		}
+		defer rs.Body.Close()
+		if rs.StatusCode != http.StatusOK {
+			return nil, errors.Newf("http status %d: %s", rs.StatusCode, readResponseBody(io.LimitReader(rs.Body, 200)))
+		}
+		if err := json.NewDecoder(rs.Body).Decode(&resp); err != nil {
+			return nil, err
+		}
+	}
+
+	return &resp, nil
 }
 
 func (c *clientImplementor) Addrs() []string {
@@ -1333,9 +1357,7 @@ func (c *clientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoNa
 		}
 
 		resp.FromProto(r)
-
 	} else {
-
 		req := &protocol.IsRepoCloneableRequest{
 			Repo: repo,
 		}

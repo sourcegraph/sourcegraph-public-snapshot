@@ -1,10 +1,10 @@
 package server
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/ricochet2200/go-disk-usage/du"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
@@ -24,13 +24,16 @@ func (s *Server) getDiskInfo() protocol.DiskInfoResponse {
 
 func (s *Server) handleDiskInfo(w http.ResponseWriter, r *http.Request) {
 	resp := s.getDiskInfo()
-	// Encode and write the disk info response.
-	//
-	// Attempts to JSON encode the disk info response object and write it to the
-	// HTTP response writer. If encoding fails, writes an internal server error
-	// HTTP status code and error message to the response writer instead.
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
+
+	protoResponse := resp.ToProto()
+
+	jsonBytes, err := protojson.Marshal(protoResponse)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonBytes)
 }

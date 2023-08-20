@@ -404,6 +404,7 @@ go_test(
         "git_revision_test.go",
         "git_tree_entry_test.go",
         "git_tree_test.go",
+        "gitserver_test.go",
         "graphqlbackend_test.go",
         "guardrails_test.go",
         "lfs_test.go",
