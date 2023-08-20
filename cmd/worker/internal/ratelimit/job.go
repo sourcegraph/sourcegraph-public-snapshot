@@ -37,7 +37,7 @@ func (s *rateLimitConfigJob) Routines(_ context.Context, observationCtx *observa
 		return nil, err
 	}
 	rlcWorker := makeRateLimitConfigWorker(&handler{
-		logger:        observationCtx.Logger.Scoped("Periodic rate limit config jon", "Routine that periodically copies rate limit configurations for code hosts from the database to Redis."),
+		logger:        observationCtx.Logger.Scoped("Periodic rate limit config job", "Routine that periodically copies rate limit configurations for code hosts from the database to Redis."),
 		codeHostStore: db.CodeHosts(),
 		rateLimiter:   ratelimit.NewCodeHostRateLimiter(rl),
 	})
