@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "diskusage",
+    srcs = ["diskusage.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/diskusage",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "diskusage_test",
+    srcs = ["diskusage_test.go"],
+    embed = [":diskusage"],
+    deps = ["@com_github_stretchr_testify//require"],
+)
