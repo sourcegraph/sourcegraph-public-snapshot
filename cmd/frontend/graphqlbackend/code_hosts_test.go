@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,38 +18,15 @@ func TestSchemaResolver_CodeHosts(t *testing.T) {
 	t.Parallel()
 
 	testCodeHosts := []*types.CodeHost{
+		newCodeHost(1, "github.com", extsvc.KindGitHub, 1),
+		newCodeHost(2, "gitlab.com", extsvc.KindGitLab, 2),
 		{
-			ID:                          1,
-			URL:                         "github.com",
-			Kind:                        extsvc.KindGitHub,
-			APIRateLimitQuota:           pointers.Ptr(int32(1)),
-			APIRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-			GitRateLimitQuota:           pointers.Ptr(int32(1)),
-		},
-		{
-			ID:                          2,
-			URL:                         "gitlab.com",
-			Kind:                        extsvc.KindGitLab,
-			APIRateLimitQuota:           pointers.Ptr(int32(2)),
-			APIRateLimitIntervalSeconds: pointers.Ptr(int32(2)),
-			GitRateLimitIntervalSeconds: pointers.Ptr(int32(2)),
-			GitRateLimitQuota:           pointers.Ptr(int32(2)),
-		},
-		{
+			// nil values for rate limit configs
 			ID:   3,
 			URL:  "bitbucket-cloud.com",
 			Kind: extsvc.KindBitbucketCloud,
 		},
-		{
-			ID:                          4,
-			URL:                         "bitbucket.com",
-			Kind:                        extsvc.KindBitbucketServer,
-			APIRateLimitQuota:           pointers.Ptr(int32(4)),
-			APIRateLimitIntervalSeconds: pointers.Ptr(int32(4)),
-			GitRateLimitIntervalSeconds: pointers.Ptr(int32(4)),
-			GitRateLimitQuota:           pointers.Ptr(int32(4)),
-		},
+		newCodeHost(4, "bitbucket-cloud.com", extsvc.KindBitbucketCloud, 4),
 	}
 
 	tests := []struct {
@@ -120,11 +96,11 @@ func TestSchemaResolver_CodeHosts(t *testing.T) {
 				variables["after"] = gqlAfterID
 			}
 			var wantEndCursor *string
-			hasNext := false
+			wantHasNext := false
 			if int(tc.after+1) < len(testCodeHosts) {
 				wantEndCursorValue := string(MarshalCodeHostID(tc.after + 1))
 				wantEndCursor = &wantEndCursorValue
-				hasNext = true
+				wantHasNext = true
 			}
 
 			wantResult := codeHostsResult{
@@ -154,7 +130,7 @@ func TestSchemaResolver_CodeHosts(t *testing.T) {
 					},
 					TotalCount: 4,
 					PageInfo: pageInfo{
-						HasNextPage: hasNext,
+						HasNextPage: wantHasNext,
 						EndCursor:   wantEndCursor,
 					},
 				},
@@ -201,16 +177,8 @@ func TestSchemaResolver_CodeHosts(t *testing.T) {
 }
 
 func TestCodeHostByID(t *testing.T) {
-	codeHost := &types.CodeHost{
-		ID:                          2,
-		URL:                         "github.com",
-		Kind:                        extsvc.KindGitHub,
-		APIRateLimitQuota:           pointers.Ptr(int32(1)),
-		APIRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-		GitRateLimitIntervalSeconds: pointers.Ptr(int32(1)),
-		GitRateLimitQuota:           pointers.Ptr(int32(1)),
-	}
 
+	codeHost := newCodeHost(1, "github.com", extsvc.KindGitHub, 1)
 	store := dbmocks.NewMockCodeHostStore()
 	store.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.CodeHost, error) {
 		assert.Equal(t, id, codeHost.ID)
@@ -232,7 +200,7 @@ func TestCodeHostByID(t *testing.T) {
 		Schema:    mustParseGraphQLSchema(t, db),
 		Variables: variables,
 		Query: `query CodeHostByID() {
-			node(id: "Q29kZUhvc3Q6Mg==") {
+			node(id: "Q29kZUhvc3Q6MQ==") {
 				id
 				__typename
 				... on CodeHost {
@@ -243,7 +211,7 @@ func TestCodeHostByID(t *testing.T) {
 		}`,
 		ExpectedResult: `{
 			"node": {
-				"id": "Q29kZUhvc3Q6Mg==",
+				"id": "Q29kZUhvc3Q6MQ==",
 				"__typename": "CodeHost",
 				"kind": "GITHUB",
 				"url": "github.com"
@@ -252,6 +220,22 @@ func TestCodeHostByID(t *testing.T) {
 	})
 
 	mockassert.CalledOnce(t, store.GetByIDFunc)
+}
+
+func newCodeHost(id int32, url, kind string, quota int32) *types.CodeHost {
+	var q *int32 = nil
+	if quota != 0 {
+		q = &quota
+	}
+	return &types.CodeHost{
+		ID:                          id,
+		URL:                         url,
+		Kind:                        kind,
+		APIRateLimitQuota:           q,
+		APIRateLimitIntervalSeconds: q,
+		GitRateLimitQuota:           q,
+		GitRateLimitIntervalSeconds: q,
+	}
 }
 
 type codeHostsResult struct {
