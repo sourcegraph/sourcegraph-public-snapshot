@@ -234,6 +234,10 @@ func (r *revisionFetcher) Read(ctx context.Context, fileName string) ([]byte, er
 func (r *revisionFetcher) List(ctx context.Context) ([]embed.FileEntry, error) {
 	fileInfos, err := r.gitserver.ReadDir(ctx, nil, r.repo, r.revision, "", true)
 	if err != nil {
+		original := err.Error()
+		if len(original) > 100 {
+			return nil, errors.Newf("%v... (truncated)", original[:100])
+		}
 		return nil, err
 	}
 
