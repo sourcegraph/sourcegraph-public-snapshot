@@ -19,7 +19,7 @@ export const RecipeAction = ({ title, onClick, to, disabled }: RecipeActionProps
                 {title}
             </MenuItem>
         ) : !!to ? (
-            <MenuLink as={AnchorLink} to={to}>
+            <MenuLink as={AnchorLink} to={to} disabled={disabled}>
                 {title} <Icon aria-hidden={true} className="ml-1" svgPath={mdiOpenInNew} />
             </MenuLink>
         ) : null}
