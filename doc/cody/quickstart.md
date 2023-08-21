@@ -26,7 +26,9 @@ Cody also supports `Commands` with VS Code. These are quick, ready-to-use prompt
 
 ## Working with the Cody extension
 
-Let's write a JavaScript function that converts a `given date` into a human-readable description of the time elapsed between the `given date` and the `current date`. Next, you'll use this code to perform the following tasks with Cody:
+Let's create a JavaScript function that converts a `given date` into a human-readable description of the time elapsed between the `given date` and the `current date`. This example uses the `cody-quickstart` repository which is configured for Cody in Sourcegraph. You can view the code in this repository to see how Cody can provide additional context.
+
+Next, you'll use the `date.js` file to perform the following tasks with Cody:
 
 - Try the `Generate Unit Tests` command
 - Ask Cody to suggest bug fixes and changes to code snippets
@@ -151,6 +153,6 @@ That's it for this quickstart guide! Feel free to continue chatting with Cody to
 - Refactor code and variable names
 - Translate code to different languages
 - Answer general questions about your code
-- Write context-aware code with general awareness of the broader codebase
+- Write context-aware code with a general awareness of the broader codebase
 
 [cody-with-sourcegraph]: overview//cody-with-sourcegraph.md
