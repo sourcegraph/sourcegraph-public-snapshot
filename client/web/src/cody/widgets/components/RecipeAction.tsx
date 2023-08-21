@@ -5,23 +5,18 @@ import { AnchorLink, MenuItem, Icon, MenuLink } from '@sourcegraph/wildcard'
 
 import styles from './Recipes.module.scss'
 
-export interface RecipeActionProps {
+export type RecipeActionProps = {
     title: string
-    onClick?: () => void
-    to?: string
     disabled?: boolean
-}
+} & ({ onClick: () => void } | { to: string })
 
-export const RecipeAction = ({ title, onClick, to, disabled }: RecipeActionProps): JSX.Element => (
-    <>
-        {!!onClick ? (
-            <MenuItem className={classNames(styles.recipeMenuWrapper)} onSelect={onClick} disabled={disabled}>
-                {title}
-            </MenuItem>
-        ) : !!to ? (
-            <MenuLink as={AnchorLink} to={to} disabled={disabled}>
-                {title} <Icon aria-hidden={true} className="ml-1" svgPath={mdiOpenInNew} />
-            </MenuLink>
-        ) : null}
-    </>
-)
+export const RecipeAction = ({ title, disabled, ...props }: RecipeActionProps): JSX.Element =>
+    'onClick' in props ? (
+        <MenuItem className={classNames(styles.recipeMenuWrapper)} onSelect={props.onClick} disabled={disabled}>
+            {title}
+        </MenuItem>
+    ) : (
+        <MenuLink as={AnchorLink} to={props.to} disabled={disabled}>
+            {title} <Icon aria-hidden={true} className="ml-1" svgPath={mdiOpenInNew} />
+        </MenuLink>
+    )
