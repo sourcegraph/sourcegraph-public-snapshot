@@ -748,6 +748,9 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 		permissionIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.permissionByID(ctx, id)
 		},
+		CodeHostKind: func(ctx context.Context, id graphql.ID) (Node, error) {
+			return CodeHostByID(ctx, r.db, id)
+		},
 	}
 	return r
 }
@@ -811,8 +814,8 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 	Repo graphql.ID
 },
 ) (*EmptyResponse, error) {
-	var repoID api.RepoID
-	if err := relay.UnmarshalSpec(args.Repo, &repoID); err != nil {
+	repoID, err := UnmarshalRepositoryID(args.Repo)
+	if err != nil {
 		return nil, err
 	}
 

@@ -1,7 +1,5 @@
 package com.sourcegraph.cody;
 
-import com.intellij.openapi.project.Project;
-import com.sourcegraph.cody.api.CodyLLMConfiguration;
 import org.jetbrains.annotations.NotNull;
 
 public class TruncationUtils {
@@ -19,17 +17,5 @@ public class TruncationUtils {
   public static String truncateText(@NotNull String text, int maxTokens) {
     int maxLength = maxTokens * CHARS_PER_TOKEN;
     return text.length() <= maxLength ? text : text.substring(0, maxLength);
-  }
-
-  public static int getChatMaxAvailablePromptLength(@NotNull Project project) {
-    return getChatMaxPromptTokenLength(project) - SOLUTION_TOKEN_LENGTH;
-  }
-
-  /**
-   * Gets the chat model max tokens for the given project, if available. Otherwise falls back to
-   * CodyLLMConfiguration.DEFAULT_CHAT_MODEL_MAX_TOKENS.
-   */
-  public static int getChatMaxPromptTokenLength(@NotNull Project project) {
-    return CodyLLMConfiguration.getInstance(project).getChatModelMaxTokensForProject();
   }
 }
