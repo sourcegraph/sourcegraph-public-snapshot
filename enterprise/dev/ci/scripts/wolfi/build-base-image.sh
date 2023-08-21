@@ -65,7 +65,7 @@ export SOURCE_DATE_EPOCH
 
 # On branches, if we modify a package then we'd like that modified version to be included in any base images built.
 # This is a bit hacky, but we do this by modifying the base image configs and passing the branch-specific repo to apko.
-add_custom_repo_cmd=""
+add_custom_repo_cmd=()
 if [[ "$IS_MAIN" != "true" ]]; then
   add_custom_repo_cmd=("--repository-append" "@branch https://packages.sgdev.org/branches/$BRANCH_PATH" "--keyring-append" "https://packages.sgdev.org/sourcegraph-melange-dev.rsa.pub")
   echo "Adding custom repo command: ${add_custom_repo_cmd[*]}"
