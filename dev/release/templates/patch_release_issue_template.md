@@ -82,9 +82,8 @@ Once there is a release candidate available:
   - For [deploy-sourcegraph-helm](https://github.com/sourcegraph/deploy-sourcegraph-helm), also:
     - [ ] Update the [changelog](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/CHANGELOG.md) to include changes from the patch
     - [ ] Cherry-pick the release-publishing PR from the release branch into `main`
-- [ ] Finalize and announce that the release is live:
+- [ ] Announce that the release is live:
   ```sh
-  pnpm run release release:finalize
   pnpm run release release:announce
   ```
 
