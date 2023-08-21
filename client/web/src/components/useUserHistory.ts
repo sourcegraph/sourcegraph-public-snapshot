@@ -63,7 +63,7 @@ export class UserHistory {
             this.deleteEntry(entries[index])
         }
     }
-    private loadEntries(): UserHistoryEntry[] {
+    public loadEntries(): UserHistoryEntry[] {
         return JSON.parse(this.storage.getItem(this.storageKey(this.userID)) ?? '[]')
     }
     private deleteEntry(entry: UserHistoryEntry): void {
