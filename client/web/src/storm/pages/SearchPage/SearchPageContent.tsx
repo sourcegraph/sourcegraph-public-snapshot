@@ -22,6 +22,7 @@ import { TryCodyCtaSection } from './TryCodyCtaSection'
 import { TryCodySignUpCtaSection } from './TryCodySignUpCtaSection'
 
 import styles from './SearchPageContent.module.scss'
+import { GettingStartedTour } from "../../../tour/GettingStartedTour";
 
 interface SearchPageContentProps {
     shouldShowAddCodeHostWidget?: boolean
@@ -137,8 +138,17 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                             isSourcegraphDotCom={isSourcegraphDotCom}
                         />
                     )}
+
+                    <GettingStartedTour
+                        className="mr-3"
+                        telemetryService={telemetryService}
+                        isAuthenticated={!!authenticatedUser}
+                        isSourcegraphDotCom={isSourcegraphDotCom}
+                    />
                 </div>
             )}
+
+
 
             <SearchPageFooter />
         </div>
