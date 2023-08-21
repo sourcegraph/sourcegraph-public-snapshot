@@ -34,6 +34,7 @@ type operations struct {
 	getExhaustiveSearchJobByID *observation.Operation
 
 	createExhaustiveSearchRepoJob *observation.Operation
+	listExhaustiveSearchRepoJobs  *observation.Operation
 
 	createExhaustiveSearchRepoRevisionJob *observation.Operation
 }
@@ -63,6 +64,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getExhaustiveSearchJobByID: op("GetExhaustiveSearchJobByID"),
 
 		createExhaustiveSearchRepoJob: op("CreateExhaustiveSearchRepoJob"),
+		listExhaustiveSearchRepoJobs:  op("ListExhaustiveSearchRepoJobs"),
 
 		createExhaustiveSearchRepoRevisionJob: op("CreateExhaustiveSearchRepoRevisionJob"),
 	}

@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -58,6 +59,36 @@ var repoSearchJobColumns = []*sqlf.Query{
 type ExhaustiveSearchRepoJobStore interface {
 	// CreateExhaustiveSearchRepoJob creates a new types.ExhaustiveSearchRepoJob.
 	CreateExhaustiveSearchRepoJob(ctx context.Context, job types.ExhaustiveSearchRepoJob) (int64, error)
+	// ListExhaustiveSearchRepoJobs lists types.ExhaustiveSearchRepoJobs matching the given options.
+	ListExhaustiveSearchRepoJobs(ctx context.Context, opts ListExhaustiveSearchRepoJobsOpts) ([]*types.ExhaustiveSearchRepoJob, error)
+}
+
+// ListExhaustiveSearchRepoJobsOpts captures the query options needed for listing exhaustive search repo jobs.
+type ListExhaustiveSearchRepoJobsOpts struct {
+	// First, if set, limits the number of actions returned
+	// to the first n.
+	First *int
+	// After, if set, begins listing actions after the given id.
+	After *int
+	// SearchJobID will constrain the listed actions to only.
+	SearchJobID int64
+}
+
+// Conds returns the SQL conditions for the list options.
+func (o ListExhaustiveSearchRepoJobsOpts) Conds() *sqlf.Query {
+	conds := []*sqlf.Query{sqlf.Sprintf("search_job_id = %s", o.SearchJobID)}
+	if o.After != nil {
+		conds = append(conds, sqlf.Sprintf("id > %s", *o.After))
+	}
+	return sqlf.Join(conds, "AND")
+}
+
+// Limit returns the SQL limit for the list options.
+func (o ListExhaustiveSearchRepoJobsOpts) Limit() *sqlf.Query {
+	if o.First == nil {
+		return sqlf.Sprintf("ALL")
+	}
+	return sqlf.Sprintf("%s", *o.First)
 }
 
 var _ ExhaustiveSearchRepoJobStore = &Store{}
@@ -103,6 +134,50 @@ INSERT INTO exhaustive_search_repo_jobs (repo_id, search_job_id, ref_spec)
 VALUES (%s, %s, %s)
 RETURNING id
 `
+
+func (s *Store) ListExhaustiveSearchRepoJobs(ctx context.Context, opts ListExhaustiveSearchRepoJobsOpts) ([]*types.ExhaustiveSearchRepoJob, error) {
+	var jobs []*types.ExhaustiveSearchRepoJob
+	var err error
+	ctx, _, endObservation := s.operations.createExhaustiveSearchRepoJob.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	if opts.SearchJobID <= 0 {
+		return nil, MissingSearchJobIDErr
+	}
+
+	q := sqlf.Sprintf(
+		listExhaustiveSearchRepoJobsQueryFmtr,
+		sqlf.Join(repoSearchJobColumns, ","),
+		opts.Conds(),
+		opts.Limit(),
+	)
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	jobs, err = scanRepoSearchJobs(rows)
+	return jobs, err
+}
+
+const listExhaustiveSearchRepoJobsQueryFmtr = `
+SELECT %s FROM exhaustive_search_repo_jobs
+WHERE %s
+ORDER BY id ASC
+LIMIT %s
+`
+
+func scanRepoSearchJobs(rows *sql.Rows) ([]*types.ExhaustiveSearchRepoJob, error) {
+	var jobs []*types.ExhaustiveSearchRepoJob
+	for rows.Next() {
+		job, err := scanRepoSearchJob(rows)
+		if err != nil {
+			return nil, err
+		}
+		jobs = append(jobs, job)
+	}
+	return jobs, rows.Err()
+}
 
 func scanRepoSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchRepoJob, error) {
 	var job types.ExhaustiveSearchRepoJob

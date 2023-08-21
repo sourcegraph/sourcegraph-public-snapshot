@@ -103,3 +103,100 @@ func TestStore_CreateExhaustiveSearchRepoJob(t *testing.T) {
 		})
 	}
 }
+
+func TestStore_ListExhaustiveSearchRepoJobs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	bs := basestore.NewWithHandle(db.Handle())
+
+	t.Cleanup(func() {
+		cleanupUsers(bs)
+		cleanupRepos(bs)
+		cleanupSearchJobs(bs)
+		cleanupRepoJobs(bs)
+	})
+
+	userID, err := createUser(bs, "alice")
+	require.NoError(t, err)
+	repoID, err := createRepo(db, "repo-test")
+	require.NoError(t, err)
+
+	s := store.New(db, &observation.TestContext)
+
+	searchJobID, err := s.CreateExhaustiveSearchJob(
+		context.Background(),
+		types.ExhaustiveSearchJob{InitiatorID: userID, Query: "repo:^github\\.com/hashicorp/errwrap$ CreateExhaustiveSearchRepoJob"},
+	)
+	require.NoError(t, err)
+
+	_, err = s.CreateExhaustiveSearchRepoJob(
+		context.Background(),
+		types.ExhaustiveSearchRepoJob{SearchJobID: searchJobID, RepoID: repoID, RefSpec: "foo"},
+	)
+	require.NoError(t, err)
+	_, err = s.CreateExhaustiveSearchRepoJob(
+		context.Background(),
+		types.ExhaustiveSearchRepoJob{SearchJobID: searchJobID, RepoID: repoID, RefSpec: "bar"},
+	)
+	require.NoError(t, err)
+
+	first := 1
+	firstJobID := 1
+
+	tests := []struct {
+		name           string
+		opts           store.ListExhaustiveSearchRepoJobsOpts
+		expectedLength int
+		expectedErr    error
+	}{
+		{
+			name: "All",
+			opts: store.ListExhaustiveSearchRepoJobsOpts{
+				SearchJobID: searchJobID,
+			},
+			expectedLength: 2,
+			expectedErr:    nil,
+		},
+		{
+			name: "First",
+			opts: store.ListExhaustiveSearchRepoJobsOpts{
+				First:       &first,
+				SearchJobID: searchJobID,
+			},
+			expectedLength: 1,
+			expectedErr:    nil,
+		},
+		{
+			name: "Last",
+			opts: store.ListExhaustiveSearchRepoJobsOpts{
+				After:       &firstJobID,
+				SearchJobID: searchJobID,
+			},
+			expectedLength: 1,
+			expectedErr:    nil,
+		},
+		{
+			name:        "Missing search job ID",
+			opts:        store.ListExhaustiveSearchRepoJobsOpts{},
+			expectedErr: errors.New("missing search job ID"),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			jobs, err := s.ListExhaustiveSearchRepoJobs(context.Background(), test.opts)
+
+			if test.expectedErr != nil {
+				require.Error(t, err)
+				assert.EqualError(t, err, test.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, len(jobs), test.expectedLength)
+			}
+		})
+	}
+}
