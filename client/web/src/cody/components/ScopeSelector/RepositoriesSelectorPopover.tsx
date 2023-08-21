@@ -28,6 +28,9 @@ import {
     Tooltip,
     Link,
     useDebounce,
+    Position,
+    Flipping,
+    Overlapping,
 } from '@sourcegraph/wildcard'
 
 import type { ReposSelectorSearchResult, ReposSelectorSearchVariables } from '../../../graphql-operations'
@@ -184,7 +187,12 @@ export const RepositoriesSelectorPopover: React.FC<{
                     />
                 </PopoverTrigger>
 
-                <PopoverContent>
+                {/* We try to explicitly encourage the popover to only appear beneath its trigger
+                    by restricting it only permitting the Flipping.opposite strategy and allowing
+                    overlap if necessary. Otherwise, on smaller viewports, the popover tends to
+                    sit below the initially visible scroll area, or awkwardly scrunch up to the
+                    left of the trigger. */}
+                <PopoverContent position={Position.bottom} flipping={Flipping.opposite} overlapping={Overlapping.all}>
                     <Card
                         className={classNames(
                             'd-flex flex-column justify-content-between',
