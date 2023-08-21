@@ -192,7 +192,11 @@ export const RepositoriesSelectorPopover: React.FC<{
                     overlap if necessary. Otherwise, on smaller viewports, the popover tends to
                     sit below the initially visible scroll area, or awkwardly scrunch up to the
                     left of the trigger. */}
-                <PopoverContent position={Position.bottom} flipping={Flipping.opposite} overlapping={Overlapping.all}>
+                <PopoverContent
+                    position={Position.bottomStart}
+                    flipping={Flipping.opposite}
+                    overlapping={Overlapping.all}
+                >
                     <Card
                         className={classNames(
                             'd-flex flex-column justify-content-between',
