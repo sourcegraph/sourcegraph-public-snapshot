@@ -2,7 +2,6 @@ package embeddings
 
 import (
 	"context"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
@@ -21,8 +20,17 @@ func ScheduleRepositoriesForEmbedding(
 	if err != nil {
 		return err
 	}
+
+	//embeddingsConf := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+	//c, err := embed.NewEmbeddingsClient(embeddingsConf)
+	//if err != nil {
+	//	return errors.Wrap(err, "getting embeddings client")
+	//}
+
 	defer func() { err = tx.Done(err) }()
 
+	//modelID := c.GetModelIdentifier()
+	modelID := ""
 	repoStore := db.Repos()
 	for _, repoName := range repoNames {
 		// Scope the iteration to an anonymous function, so we can capture all errors and properly rollback tx in defer above.
@@ -49,7 +57,7 @@ func ScheduleRepositoriesForEmbedding(
 				}
 			}
 
-			_, err = tx.CreateRepoEmbeddingJob(ctx, r.ID, latestRevision)
+			_, err = tx.CreateRepoEmbeddingJob(ctx, r.ID, latestRevision, modelID)
 			return err
 		}()
 		if err != nil {

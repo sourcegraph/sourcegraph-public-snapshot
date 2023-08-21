@@ -26,6 +26,7 @@ type RepoEmbeddingJob struct {
 
 	RepoID   api.RepoID
 	Revision api.CommitID
+	ModelID  string
 }
 
 func (j *RepoEmbeddingJob) RecordID() int {
@@ -43,6 +44,12 @@ func (j *RepoEmbeddingJob) IsRepoEmbeddingJobScheduledOrCompleted() bool {
 // EmptyRepoEmbeddingJob returns true if this job completed with an empty revision value and final state of failed
 func (j *RepoEmbeddingJob) EmptyRepoEmbeddingJob() bool {
 	return j != nil && j.State == "failed" && j.Revision == ""
+}
+
+// IsValidModel returns true if the desired model is valid for this job configuration.
+// If the job was scheduled with an empty modelID then we support indexing with any model.
+func (j *RepoEmbeddingJob) IsValidModel(desiredModelID string) bool {
+	return j != nil && (j.ModelID == "" || j.ModelID == desiredModelID)
 }
 
 type EmbedRepoStats struct {

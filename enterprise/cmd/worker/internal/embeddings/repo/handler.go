@@ -98,6 +98,13 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 	}
 
 	modelID := embeddingsClient.GetModelIdentifier()
+
+	// The site config provider and/or model have changed since this job was scheduled.
+	// Don't overwrite the current record's model ID and instead let a new job record and index the new model.
+	if record.IsValidModel(modelID) {
+		return errors.New("the globally configured provider and/or model have changed. Embedding request must be resubmitted.")
+	}
+
 	modelDims, err := embeddingsClient.GetDimensions()
 	if err != nil {
 		return err
@@ -113,7 +120,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		previousIndex, err = embeddings.DownloadRepoEmbeddingIndex(ctx, h.uploadStore, repo.ID, repo.Name)
 		if err != nil {
 			logger.Info("no previous embeddings index found. Performing a full index", log.Error(err))
-		} else if !previousIndex.IsModelCompatible(embeddingsClient.GetModelIdentifier()) {
+		} else if !previousIndex.IsModelCompatible(modelID) {
 			logger.Info("Embeddings model has changed in config. Performing a full index")
 			previousIndex = nil
 		}

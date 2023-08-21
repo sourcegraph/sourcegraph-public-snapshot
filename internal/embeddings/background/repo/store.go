@@ -50,6 +50,7 @@ var repoEmbeddingJobsColumns = []*sqlf.Query{
 
 	sqlf.Sprintf("repo_embedding_jobs.repo_id"),
 	sqlf.Sprintf("repo_embedding_jobs.revision"),
+	sqlf.Sprintf("repo_embedding_jobs.model_id"),
 }
 
 func scanRepoEmbeddingJob(s dbutil.Scanner) (*RepoEmbeddingJob, error) {
@@ -72,6 +73,7 @@ func scanRepoEmbeddingJob(s dbutil.Scanner) (*RepoEmbeddingJob, error) {
 		&job.Cancel,
 		&job.RepoID,
 		&job.Revision,
+		&job.ModelID,
 	); err != nil {
 		return nil, err
 	}
@@ -99,7 +101,7 @@ type RepoEmbeddingJobsStore interface {
 	Exec(ctx context.Context, query *sqlf.Query) error
 	Done(err error) error
 
-	CreateRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, revision api.CommitID) (int, error)
+	CreateRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, revision api.CommitID, modelID string) (int, error)
 	GetLastCompletedRepoEmbeddingJob(ctx context.Context, repoID api.RepoID) (*RepoEmbeddingJob, error)
 	GetLastRepoEmbeddingJobForRevision(ctx context.Context, repoID api.RepoID, revision api.CommitID) (*RepoEmbeddingJob, error)
 	ListRepoEmbeddingJobs(ctx context.Context, args ListOpts) ([]*RepoEmbeddingJob, error)
@@ -247,10 +249,10 @@ func (s *repoEmbeddingJobsStore) Transact(ctx context.Context) (RepoEmbeddingJob
 	return &repoEmbeddingJobsStore{Store: tx}, nil
 }
 
-const createRepoEmbeddingJobFmtStr = `INSERT INTO repo_embedding_jobs (repo_id, revision) VALUES (%s, %s) RETURNING id`
+const createRepoEmbeddingJobFmtStr = `INSERT INTO repo_embedding_jobs (repo_id, revision, model_id) VALUES (%s, %s, %s) RETURNING id`
 
-func (s *repoEmbeddingJobsStore) CreateRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, revision api.CommitID) (int, error) {
-	q := sqlf.Sprintf(createRepoEmbeddingJobFmtStr, repoID, revision)
+func (s *repoEmbeddingJobsStore) CreateRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, revision api.CommitID, modelID string) (int, error) {
+	q := sqlf.Sprintf(createRepoEmbeddingJobFmtStr, repoID, revision, modelID)
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return id, err
 }
