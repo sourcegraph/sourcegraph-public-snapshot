@@ -11,13 +11,16 @@ import (
 )
 
 var (
-	tokenBucketGlobalPrefix                   = "v2:rate_limiters"
+	TokenBucketGlobalPrefix            = "v2:rate_limiters"
 	bucketLastReplenishmentTimestampKeySuffix = "last_replenishment_timestamp"
 	bucketQuotaConfigKeySuffix                = "config:bucket_quota"
 	bucketReplenishmentConfigKeySuffix        = "config:bucket_replenishment_interval_seconds"
 	bucketMaxCapacity                         = 10
 )
 
+// RateLimiter is a Redis-backed rate limiter that utilizes lua scripts to manage rate limit token fetching and token bucket resetting.
+// NOTE: This limiter needs to be backed by a syncer that will dump its configurations into Redis.
+// See cmd/worker/internal/ratelimit/job.go for an example.
 type RateLimiter interface {
 	// GetTokensFromBucket gets tokens from the specified rate limit token bucket.
 	// bucketName: the name of the bucket where the tokens are, e.g. github.com:api_tokens
@@ -27,8 +30,8 @@ type RateLimiter interface {
 	// SetTokenBucketReplenishment sets the configuration for the specified token bucket.
 	// bucketName: the name of the bucket where the tokens are, e.g. github.com:api_tokens
 	// bucketCapacity: the number of tokens the bucket can hold.
-	// bucketReplenishRateSeconds: how often (in seconds) the bucket should be completely replenished.
-	SetTokenBucketReplenishment(ctx context.Context, bucketName string, bucketCapacity, bucketReplenishRateSeconds int) error
+	// bucketReplenishIntervalSeconds: how often (in seconds) the bucket should be completely replenished.
+	SetTokenBucketReplenishment(ctx context.Context, bucketName string, bucketCapacity, bucketReplenishIntervalSeconds int32) error
 }
 
 type rateLimiter struct {
@@ -39,20 +42,18 @@ type rateLimiter struct {
 }
 
 func NewRateLimiter() (RateLimiter, error) {
-	var err error
-
-	pool, ok := Cache.Pool()
+	pool, ok := Store.Pool()
 	if !ok {
-		err = errors.New("unable to get redis connection")
+		return nil, errors.New("unable to set default Redis pool")
 	}
 
 	return &rateLimiter{
-		prefix: tokenBucketGlobalPrefix,
+		prefix: TokenBucketGlobalPrefix,
 		pool:   pool,
 		// 3 is the key count, keys are arguments passed to the lua script that will be used to get values from Redis KV.
 		getTokensScript:        *redis.NewScript(3, getTokensFromBucketLuaScript),
 		setReplenishmentScript: *redis.NewScript(3, setTokenBucketReplenishmentLuaScript),
-	}, err
+	}, nil
 }
 
 func (r *rateLimiter) GetTokenFromBucket(ctx context.Context, bucketName string) (getTokensFromBucketResponse, error) {
