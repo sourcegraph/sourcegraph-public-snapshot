@@ -57,8 +57,6 @@ func (c *azureCompletionClient) Complete(
 		return &types.CompletionResponse{}, nil
 	}
 
-	fmt.Printf("Got response: %s\n", response.Choices[0].Text)
-
 	return &types.CompletionResponse{
 		Completion: response.Choices[0].Text,
 		StopReason: response.Choices[0].FinishReason,
@@ -220,7 +218,6 @@ func (c *azureCompletionClient) makeCompletionRequest(ctx context.Context, reque
 			role = "user"
 		case types.ASISSTANT_MESSAGE_SPEAKER:
 			role = "assistant"
-			//
 		default:
 			role = strings.ToLower(role)
 		}
@@ -229,10 +226,8 @@ func (c *azureCompletionClient) makeCompletionRequest(ctx context.Context, reque
 		}
 		first = false
 		payload.Prompt += role + ": " + m.Text
-		//
-	}
 
-	fmt.Printf("Sending prompt: %s\n", payload.Prompt)
+	}
 
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
