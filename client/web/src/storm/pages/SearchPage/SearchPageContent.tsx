@@ -148,8 +148,6 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                 </div>
             )}
 
-
-
             <SearchPageFooter />
         </div>
     )
