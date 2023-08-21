@@ -93,7 +93,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
                 setScope({ ...scope, repositories: [...scope.repositories, repoName] })
             }
         },
-        [scope, setScope]
+        [scope, setScope, logTranscriptEvent]
     )
 
     const removeRepository = useCallback(
@@ -101,7 +101,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
             logTranscriptEvent(EventName.CODY_CHAT_SCOPE_REPO_REMOVED)
             setScope({ ...scope, repositories: scope.repositories.filter(repo => repo !== repoName) })
         },
-        [scope, setScope]
+        [scope, setScope, logTranscriptEvent]
     )
 
     const resetScope = useCallback(async (): Promise<void> => {
@@ -112,7 +112,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
 
         const repositories = await fetchRepositoryNames(10)
         return setScope({ ...scope, repositories, includeInferredRepository: true, includeInferredFile: true })
-    }, [scope, setScope, fetchRepositoryNames, isSourcegraphApp])
+    }, [scope, setScope, fetchRepositoryNames, isSourcegraphApp, logTranscriptEvent])
 
     return (
         <>

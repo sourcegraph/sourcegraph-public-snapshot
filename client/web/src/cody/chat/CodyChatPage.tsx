@@ -40,7 +40,6 @@ import { MarketingBlock } from '../../components/MarketingBlock'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import type { SourcegraphContext } from '../../jscontext'
-import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import { ChatUI } from '../components/ChatUI'
 import { CodyMarketingPage } from '../components/CodyMarketingPage'
@@ -120,7 +119,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
 
     useEffect(() => {
         logTranscriptEvent(EventName.CODY_CHAT_PAGE_VIEWED)
-    }, [])
+    }, [logTranscriptEvent])
 
     const transcriptId = transcript?.id
 

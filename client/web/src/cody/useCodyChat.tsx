@@ -148,7 +148,7 @@ export const useCodyChat = ({
             }
             eventLogger.log(eventLabel, { transcriptId: transcript.id, ...eventProperties })
         },
-        [transcriptHistory, transcript?.id]
+        [transcript]
     )
 
     const loadTranscriptFromHistory = useCallback(
@@ -232,7 +232,6 @@ export const useCodyChat = ({
         scope,
         setScopeInternal,
         updateTranscriptInHistory,
-        transcriptHistory,
     ])
 
     const deleteHistoryItem = useCallback(
@@ -292,6 +291,7 @@ export const useCodyChat = ({
             autoLoadScopeWithRepositories,
             scope,
             updateTranscriptInHistory,
+            logTranscriptEvent,
         ]
     )
 
@@ -306,7 +306,7 @@ export const useCodyChat = ({
             logTranscriptEvent(EventName.CODY_CHAT_SUBMIT)
             return transcript
         },
-        [submitMessageInternal, updateTranscriptInHistory]
+        [submitMessageInternal, updateTranscriptInHistory, logTranscriptEvent]
     )
 
     const editMessage = useCallback<typeof editMessageInternal>(
@@ -320,7 +320,7 @@ export const useCodyChat = ({
             logTranscriptEvent(EventName.CODY_CHAT_EDIT)
             return transcript
         },
-        [editMessageInternal, updateTranscriptInHistory]
+        [editMessageInternal, updateTranscriptInHistory, logTranscriptEvent]
     )
 
     const initializeNewChat = useCallback((): Transcript | null => {
@@ -361,6 +361,7 @@ export const useCodyChat = ({
         autoLoadScopeWithRepositories,
         updateTranscriptInHistory,
         transcript,
+        logTranscriptEvent,
     ])
 
     const executeRecipe = useCallback<typeof executeRecipeInternal>(
@@ -447,7 +448,7 @@ export const useCodyChat = ({
                 includeInferredRepository: !scope.includeInferredRepository,
             }).catch(() => null)
         }
-    }, [transcript, updateTranscriptInHistory, scope, toggleIncludeInferredRepositoryInternal])
+    }, [transcript, updateTranscriptInHistory, scope, toggleIncludeInferredRepositoryInternal, logTranscriptEvent])
 
     const toggleIncludeInferredFile = useCallback<CodyClient['toggleIncludeInferredRepository']>(() => {
         logTranscriptEvent(
@@ -464,7 +465,7 @@ export const useCodyChat = ({
                 includeInferredFile: !scope.includeInferredFile,
             }).catch(() => null)
         }
-    }, [transcript, updateTranscriptInHistory, scope, toggleIncludeInferredFileInternal])
+    }, [transcript, updateTranscriptInHistory, scope, toggleIncludeInferredFileInternal, logTranscriptEvent])
 
     return {
         loaded,
