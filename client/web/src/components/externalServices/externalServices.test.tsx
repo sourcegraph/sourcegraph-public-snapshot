@@ -43,7 +43,7 @@ describe('gitHubAppConfig', () => {
                 kind: ExternalServiceKind.GITHUB,
             } as ExternalServiceFieldsWithConfig
 
-            expect(resolveExternalServiceCategory(externalService)).toEqual(codeHostExternalServices.ghe)
+            expect(resolveExternalServiceCategory(externalService)).toEqual(codeHostExternalServices.github)
         })
 
         test('returns GitLab dotcom if GITLAB kind and gitlab.com URL', () => {
@@ -61,7 +61,7 @@ describe('gitHubAppConfig', () => {
                 parsedConfig: { url: 'https://gitlab.example.com' },
             } as ExternalServiceFieldsWithConfig
 
-            expect(resolveExternalServiceCategory(externalService)).toEqual(codeHostExternalServices.gitlab)
+            expect(resolveExternalServiceCategory(externalService)).toEqual(codeHostExternalServices.gitlabcom)
         })
 
         test('returns GitHub App category if config contains gitHubAppDetails', () => {
