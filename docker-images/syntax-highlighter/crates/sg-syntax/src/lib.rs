@@ -283,6 +283,8 @@ pub fn syntect_highlight(q: SourcegraphQuery) -> JsonValue {
 }
 
 pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
+    println!("{}", q.filepath);
+    println!("{:?}", q.engine);
     match q.engine {
         SyntaxEngine::Syntect => SYNTAX_SET.with(|ss| {
             let sg_query = SourcegraphQuery {

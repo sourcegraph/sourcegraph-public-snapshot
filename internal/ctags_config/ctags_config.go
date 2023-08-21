@@ -70,6 +70,7 @@ var supportedLanguages = map[string]struct{}{
 	"ruby":       {},
 	"rust":       {},
 	"scala":      {},
+	"smithy":     {},
 	"typescript": {},
 	"zig":        {},
 }

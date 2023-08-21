@@ -30,8 +30,11 @@ func GetLanguage(path, contents string) (lang string, found bool) {
 
 	// Lastly, fall back to whatever enry decides is a useful algorithm for calculating.
 	lang = enry.GetLanguage(path, []byte(contents))
+
 	if lang != "" {
 		return NormalizeLanguage(lang), true
+	} else if strings.HasSuffix(path, ".smithy") {
+		return "smithy", true
 	}
 
 	return NormalizeLanguage(lang), false

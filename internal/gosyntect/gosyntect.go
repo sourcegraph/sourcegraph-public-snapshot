@@ -174,6 +174,7 @@ func IsTreesitterSupported(filetype string) bool {
 // Highlight performs a query to highlight some code.
 func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightResponseType) (_ *Response, err error) {
 	// Normalize filetype
+	fmt.Println(q)
 	q.Filetype = languages.NormalizeLanguage(q.Filetype)
 
 	tr, ctx := trace.New(ctx, "gosyntect.Highlight",
