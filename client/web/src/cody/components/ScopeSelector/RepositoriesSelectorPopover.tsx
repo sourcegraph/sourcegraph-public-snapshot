@@ -70,6 +70,9 @@ export const RepositoriesSelectorPopover: React.FC<{
     removeRepository: (repoName: string) => void
     toggleIncludeInferredRepository: () => void
     toggleIncludeInferredFile: () => void
+    // Whether to encourage the popover to overlap its trigger if necessary, rather than
+    // collapsing or flipping position.
+    encourageOverlap?: boolean
 }> = React.memo(function RepositoriesSelectorPopoverContent({
     inferredRepository,
     inferredFilePath,
@@ -81,6 +84,7 @@ export const RepositoriesSelectorPopover: React.FC<{
     includeInferredFile,
     toggleIncludeInferredRepository,
     toggleIncludeInferredFile,
+    encourageOverlap = false,
 }) {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
     const [searchText, setSearchText] = useState('')
@@ -187,15 +191,15 @@ export const RepositoriesSelectorPopover: React.FC<{
                     />
                 </PopoverTrigger>
 
-                {/* We try to explicitly encourage the popover to only appear beneath its trigger
-                    by restricting it only permitting the Flipping.opposite strategy and allowing
-                    overlap if necessary. Otherwise, on smaller viewports, the popover tends to
-                    sit below the initially visible scroll area, or awkwardly scrunch up to the
-                    left of the trigger. */}
+                {/* We can try to explicitly encourage the popover to only appear beneath its
+                    trigger by restricting it only permitting the Flipping.opposite strategy
+                    and allowing overlap if necessary. Otherwise, on smaller viewports, the
+                    popover may wind up partially below the initially visible scroll area, or
+                    else awkwardly scrunched up to the left or right of the trigger. */}
                 <PopoverContent
                     position={Position.bottomStart}
-                    flipping={Flipping.opposite}
-                    overlapping={Overlapping.all}
+                    flipping={encourageOverlap ? Flipping.opposite : undefined}
+                    overlapping={encourageOverlap ? Overlapping.all : undefined}
                 >
                     <Card
                         className={classNames(

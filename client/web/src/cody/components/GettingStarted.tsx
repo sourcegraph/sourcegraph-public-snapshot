@@ -189,7 +189,11 @@ export const GettingStarted: React.FC<
                                     onChange={event => setConversationScope(event.target.value as ConversationScope)}
                                 />
                                 <div className={styles.scopeSelectorWrapper}>
-                                    <ScopeSelector {...scopeSelectorProps} renderHint={renderRepoIndexingWarning} />
+                                    <ScopeSelector
+                                        {...scopeSelectorProps}
+                                        renderHint={renderRepoIndexingWarning}
+                                        encourageOverlap={true}
+                                    />
                                 </div>
                                 <hr className={styles.divider} />
 
