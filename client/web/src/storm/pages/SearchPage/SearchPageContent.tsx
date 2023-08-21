@@ -14,6 +14,7 @@ import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
+import { GettingStartedTour } from '../../../tour/GettingStartedTour'
 
 import { AddCodeHostWidget } from './AddCodeHostWidget'
 import { SearchPageFooter } from './SearchPageFooter'
@@ -22,7 +23,6 @@ import { TryCodyCtaSection } from './TryCodyCtaSection'
 import { TryCodySignUpCtaSection } from './TryCodySignUpCtaSection'
 
 import styles from './SearchPageContent.module.scss'
-import { GettingStartedTour } from "../../../tour/GettingStartedTour";
 
 interface SearchPageContentProps {
     shouldShowAddCodeHostWidget?: boolean
