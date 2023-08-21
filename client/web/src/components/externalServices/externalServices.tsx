@@ -1672,17 +1672,6 @@ export const resolveExternalServiceCategory = (
         if (!parsedConfig) {
             return externalServiceCategory
         }
-        if (parsedConfig.url) {
-            const url = isValidURL(parsedConfig.url) ? new URL(parsedConfig.url) : undefined
-            // We have no way of finding out whether an external service is GITHUB or GitHub.com or GitHub enterprise, so we need to guess based on the URL.
-            if (externalService.kind === ExternalServiceKind.GITHUB && url?.hostname !== 'github.com') {
-                externalServiceCategory = codeHostExternalServices.ghe
-            }
-            // We have no way of finding out whether an external service is GITLAB or Gitlab.com or Gitlab self-hosted, so we need to guess based on the URL.
-            if (externalService.kind === ExternalServiceKind.GITLAB && url?.hostname !== 'gitlab.com') {
-                externalServiceCategory = codeHostExternalServices.gitlab
-            }
-        }
         // if config contains gitHubAppDetails, we should use GitHub App instead
         if (parsedConfig.gitHubAppDetails && gitHubApp) {
             externalServiceCategory = { ...codeHostExternalServices.ghapp }
