@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo, type FC } from 'react'
+import React, { useEffect, useState, useCallback, useMemo, type FC, ReactElement } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { mdiCog, mdiConnection, mdiDelete } from '@mdi/js'
@@ -131,7 +131,7 @@ export const ExternalServicePage: FC<Props> = props => {
 
     const mergedError = fetchError || fetchGHAppError
 
-    const renderExternalService = (externalService: ExternalServiceFieldsWithConfig) => {
+    const renderExternalService = (externalService: ExternalServiceFieldsWithConfig): ReactElement => {
         let externalServiceAvailabilityStatus
         if (loading) {
             externalServiceAvailabilityStatus = (

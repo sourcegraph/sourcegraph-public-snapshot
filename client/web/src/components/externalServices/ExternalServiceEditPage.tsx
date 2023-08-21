@@ -1,4 +1,4 @@
-import React, { type FC, useEffect, useState, useCallback, useMemo } from 'react'
+import React, { type FC, useEffect, useState, useCallback, useMemo, ReactElement } from 'react'
 
 import { useNavigate, useParams } from 'react-router-dom'
 
@@ -101,7 +101,7 @@ export const ExternalServiceEditPage: FC<Props> = ({
         navigate(`/site-admin/external-services/${encodeURIComponent(externalService.id)}`, { replace: true })
     }
 
-    const renderService = (externalService: ExternalServiceFieldsWithConfig) => {
+    const renderService = (externalService: ExternalServiceFieldsWithConfig): ReactElement => {
         const externalServiceCategory = resolveExternalServiceCategory(externalService, ghApp)
         return (
             <Container className="mb-3">
