@@ -126,6 +126,26 @@ export class UserHistory {
     }
 }
 
+/**
+ * useUserHistory is a custom hook that collects browser history events for the current
+ * user and stores visited repos and files in local storage.
+ *
+ * It takes in the user ID of the current user and whether the current page is
+ * repository-related. On repository pages, it parses the location to extract the repo
+ * name and file path. It then updates the history entry for that repo/file with the
+ * current timestamp.
+ *
+ * The returned `UserHistory` instance provides methods to get the list of visited repos,
+ * and lookup the last accessed timestamp for a repo or file.
+ *
+ * The repo history is persisted to local storage and can be used to personalize and
+ * improve the search experience for the user.
+ *
+ * @param userID the ID of the currently-authenticated user, or undefined if the user is
+ * anonymous
+ * @param isRepositoryRelatedPage whether the component rendering this hook is on a page
+ * that is related to a repository (e.g. a code view page) and should be tracked
+ */
 export function useUserHistory(userID: Scalars['ID'] | undefined, isRepositoryRelatedPage: boolean): UserHistory {
     const location = useLocation()
     const userHistory = useMemo(() => new UserHistory(userID), [userID])
