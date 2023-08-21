@@ -26,6 +26,7 @@ import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/dist/terms'
 import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
+import { EventName, EventLocation } from '../../../util/constants'
 import { CodyPageIcon } from '../../chat/CodyPageIcon'
 import { isCodyEnabled, isEmailVerificationNeededForCody, isSignInRequiredForCody } from '../../isCodyEnabled'
 import { useCodySidebar } from '../../sidebar/Provider'
@@ -221,16 +222,16 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = React.mem
     )
 
     return (
-        <div className={classNames('d-flex', styles.feedbackButtonsWrapper)}>
+        <div className={classNames('d-flex align-items-center', styles.feedbackButtonsWrapper)}>
             {feedbackSubmitted ? (
-                <Button title="Feedback submitted." disabled={true} className="ml-1 p-1">
+                <Button title="Feedback submitted." disabled={true} className="p-1">
                     <Icon aria-label="Feedback submitted" svgPath={mdiCheck} />
                 </Button>
             ) : (
-                <>
+                <div className="d-flex">
                     <Button
                         title="Thumbs up"
-                        className="ml-1 p-1"
+                        className="p-1"
                         type="button"
                         onClick={() => onFeedbackBtnSubmit('positive')}
                     >
@@ -238,14 +239,21 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = React.mem
                     </Button>
                     <Button
                         title="Thumbs down"
-                        className="ml-1 p-1"
+                        className="p-1"
                         type="button"
                         onClick={() => onFeedbackBtnSubmit('negative')}
                     >
                         <Icon aria-label="Thumbs down" svgPath={mdiThumbDown} />
                     </Button>
-                </>
+                </div>
             )}
+            <Link
+                to="/get-cody"
+                className="d-inline-block w-100 ml-auto text-right font-italic"
+                onClick={() => eventLogger.log(EventName.CODY_CTA, { location: EventLocation.CHAT_RESPONSE })}
+            >
+                Use commands, autocomplete and more in your IDE.
+            </Link>
         </div>
     )
 })
