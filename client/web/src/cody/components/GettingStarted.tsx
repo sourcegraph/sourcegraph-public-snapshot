@@ -104,10 +104,10 @@ export const GettingStarted: React.FC<
             examples: [
                 {
                     label: 'Algorithms',
-                    text: 'How the QuickSort algorithm works with an implementation in Python?',
+                    text: 'Can you explain how the QuickSort algorithm works in Python?',
                 },
                 {
-                    label: 'Good Practice',
+                    label: 'Best practices',
                     text: "I'm working on a large-scale web application using React. What are some best practices or design patterns I should be aware of to maintain code readability and performance?",
                 },
                 {
@@ -168,7 +168,7 @@ export const GettingStarted: React.FC<
                                     name="general"
                                     label={
                                         <Text as="span" size="small">
-                                            General Coding Knowledge
+                                            General knowledge
                                         </Text>
                                     }
                                     value="general"
@@ -183,7 +183,7 @@ export const GettingStarted: React.FC<
                                     name="repo"
                                     label={
                                         <Text as="span" size="small">
-                                            My Repos:
+                                            Specific repositories:
                                         </Text>
                                     }
                                     value="repo"
@@ -202,11 +202,11 @@ export const GettingStarted: React.FC<
                                 <hr className={styles.divider} />
 
                                 <Text size="small" className={classNames('text-muted', styles.hintTitle)}>
-                                    Why context is important?
+                                    Why is context important?
                                 </Text>
                                 <Text size="small" className={classNames('text-muted', styles.hintText)}>
-                                    Without providing a specific repo as context, Cody won’t be able to answer with
-                                    relevant knowledge about your project.
+                                    Without providing specific repo(s) for context, Cody won't be able to answer
+                                    questions specific to your project.
                                 </Text>
 
                                 <Text size="small" className="mb-0 text-muted">
