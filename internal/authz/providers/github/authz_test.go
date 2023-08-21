@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -251,51 +252,88 @@ func TestNewAuthzProviders(t *testing.T) {
 }
 
 func TestValidateAuthz(t *testing.T) {
+	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
+		return &license.Info{
+			Tags: []string{"acls"},
+		}, "test-signature", nil
+	}
 
-  licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-    return &license.Info{
-      Tags: []string{"acls"},
-    }, "test-signature", nil
-  }
+	defer func() {
+		licensing.MockGetConfiguredProductLicenseInfo = nil
+	}()
 
-  defer func() {
-    licensing.MockGetConfiguredProductLicenseInfo = nil
-  }()
+	type testCase struct {
+		conn    *types.GitHubConnection
+		wantErr bool
+	}
 
-  testCases := map[string]*types.GitHubConnection{
-    "regular github conn": {
-      URN: "",
-      GitHubConnection: &schema.GitHubConnection{
-        Url: schema.DefaultGitHubURL,
-        Authorization: &schema.GitHubAuthorization{
-          GroupsCacheTTL: 72,
-        },
-      },
-    },
-    "github app conn": {
-      URN: "",
-      GitHubConnection: &schema.GitHubConnection{
-        Url: schema.DefaultGitHubURL,
-        Authorization: &schema.GitHubAuthorization{
-          GroupsCacheTTL: 72,
-        },
-        GitHubAppDetails: &schema.GitHubAppDetails{
-          AppID: 1,
-          BaseURL: schema.DefaultGitHubURL,
-          InstallationID: 1,
-        },
-      },
-    },
-  }
+	testCases := map[string]testCase{
+		"regular github conn": {
+			conn: &types.GitHubConnection{
+				URN: "",
+				GitHubConnection: &schema.GitHubConnection{
+					Url: schema.DefaultGitHubURL,
+					Authorization: &schema.GitHubAuthorization{
+						GroupsCacheTTL: 72,
+					},
+				},
+			},
+		},
+		"github app conn": {
+			conn: &types.GitHubConnection{
+				URN: "",
+				GitHubConnection: &schema.GitHubConnection{
+					Url: schema.DefaultGitHubURL,
+					Authorization: &schema.GitHubAuthorization{
+						GroupsCacheTTL: 72,
+					},
+					GitHubAppDetails: &schema.GitHubAppDetails{
+						AppID:          1,
+						BaseURL:        schema.DefaultGitHubURL,
+						InstallationID: 1,
+					},
+				},
+			},
+		},
+		"github app conn invalid": {
+			wantErr: true,
+			conn: &types.GitHubConnection{
+				URN: "",
+				GitHubConnection: &schema.GitHubConnection{
+					Url: schema.DefaultGitHubURL,
+					Authorization: &schema.GitHubAuthorization{
+						GroupsCacheTTL: 72,
+					},
+					GitHubAppDetails: &schema.GitHubAppDetails{
+						AppID:          2,
+						BaseURL:        schema.DefaultGitHubURL,
+						InstallationID: 1,
+					},
+				},
+			},
+		},
+	}
 
-  dbm := dbmocks.NewMockDB()
-  mockGHA := store.NewMockGitHubAppsStore()
-  mockGHA.GetByAppIDFunc.SetDefaultReturn(&ghatypes.GitHubApp{ID: 1, PrivateKey: testPrivateKey}, nil)
-  dbm.GitHubAppsFunc.SetDefaultReturn(mockGHA)
+	dbm := dbmocks.NewMockDB()
+	mockGHA := store.NewMockGitHubAppsStore()
+	mockGHA.GetByAppIDFunc.SetDefaultHook(func(ctx context.Context, i int, s string) (*ghatypes.GitHubApp, error) {
+		if i == 1 {
+			return &ghatypes.GitHubApp{ID: 1, PrivateKey: testPrivateKey}, nil
+		}
 
-  for name, conn := range testCases {
-    t.Run(name, func(t *testing.T) {
-      require.NoError(t, ValidateAuthz(dbm, conn))
-    })
-  }
+		return nil, errors.New("Not found")
+	})
+
+	dbm.GitHubAppsFunc.SetDefaultReturn(mockGHA)
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			err := ValidateAuthz(dbm, tc.conn)
+			if tc.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
 }
