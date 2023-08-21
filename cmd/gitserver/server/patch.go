@@ -20,12 +20,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/sshagent"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/unpack"
-
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/perforce"
+	"github.com/sourcegraph/sourcegraph/internal/unpack"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -317,7 +317,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 				// it in the background.
 				// This is used to pass the private key to be used when pushing to the remote,
 				// without the need to store it on the disk.
-				agent, err := newSSHAgent(logger, []byte(req.Push.PrivateKey), []byte(req.Push.Passphrase))
+				agent, err := sshagent.New(logger, []byte(req.Push.PrivateKey), []byte(req.Push.Passphrase))
 				if err != nil {
 					resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: error creating ssh-agent"))
 					return http.StatusInternalServerError, resp
