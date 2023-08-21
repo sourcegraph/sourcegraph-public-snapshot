@@ -44,6 +44,9 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	// Base set
 	ops := operations.NewSet()
 
+	if diff.Has(changed.Go) {
+		diff &^= changed.Go
+	}
 	// If the only thing that has change is the Client Jetbrains, then we skip:
 	// - BazelOperations
 	// - Sg Lint
