@@ -21,7 +21,8 @@ func BazelOperations(isMain bool) []operations.Operation {
 	if isMain {
 		ops = append(ops, bazelTest("//...", "//client/web:test", "//testing:codeintel_integration_test", "//testing:grpc_backend_integration_test"))
 	} else {
-		ops = append(ops, bazelTest("//...", "//client/web:test"))
+		// TODO remove codeintel-qa
+		ops = append(ops, bazelTest("//...", "//client/web:test", "//testing:codeintel_integration_test"))
 	}
 	ops = append(ops, bazelBackCompatTest(
 		"@sourcegraph_back_compat//cmd/...",
