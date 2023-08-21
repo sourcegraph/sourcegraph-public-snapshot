@@ -26,7 +26,6 @@ func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.Completions
 type azureCompletionClient struct {
 	cli         httpcli.Doer
 	accessToken string
-	// endpoint
 	endpoint string
 }
 
