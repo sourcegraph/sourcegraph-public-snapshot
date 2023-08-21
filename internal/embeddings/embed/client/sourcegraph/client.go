@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
@@ -49,13 +47,7 @@ func (c *sourcegraphEmbeddingsClient) GetDimensions() (int, error) {
 }
 
 func (c *sourcegraphEmbeddingsClient) GetModelIdentifier() string {
-	// Special-case the default model, since it already includes the provider name.
-	// This ensures we can safely migrate customers from the OpenAI provider to
-	// Cody Gateway.
-	if strings.EqualFold(c.model, "openai/text-embedding-ada-002") {
-		return "openai/text-embedding-ada-002"
-	}
-	return fmt.Sprintf("sourcegraph/%s", c.model)
+	return conftypes.EmbeddingsModelIdentifierSourcegraph(c.model)
 }
 
 func (c *sourcegraphEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) (*client.EmbeddingsResults, error) {

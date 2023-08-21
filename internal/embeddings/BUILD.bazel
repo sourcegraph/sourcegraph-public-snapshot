@@ -26,6 +26,7 @@ go_library(
     deps = [
         "//internal/api",
         "//internal/codeintel/types",
+        "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/conf/deploy",
         "//internal/database",
@@ -75,6 +76,7 @@ go_test(
     deps = [
         "//internal/api",
         "//internal/codeintel/types",
+        "//internal/conf",
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/embeddings/background/repo",
@@ -83,6 +85,7 @@ go_test(
         "//internal/uploadstore",
         "//lib/errors",
         "//lib/iterator",
+        "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_sourcegraph_log//logtest",

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"sort"
@@ -41,7 +40,7 @@ func (c *openaiEmbeddingsClient) GetDimensions() (int, error) {
 }
 
 func (c *openaiEmbeddingsClient) GetModelIdentifier() string {
-	return fmt.Sprintf("openai/%s", c.model)
+	return conftypes.EmbeddingsModelIdentifierOpenAI(c.model)
 }
 
 func (c *openaiEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) (*client.EmbeddingsResults, error) {

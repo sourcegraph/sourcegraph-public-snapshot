@@ -3,9 +3,11 @@ package embeddings
 import (
 	"context"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func ScheduleRepositoriesForEmbedding(
@@ -21,16 +23,17 @@ func ScheduleRepositoriesForEmbedding(
 		return err
 	}
 
-	//embeddingsConf := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
-	//c, err := embed.NewEmbeddingsClient(embeddingsConf)
-	//if err != nil {
-	//	return errors.Wrap(err, "getting embeddings client")
-	//}
-
+	embeddingsConf := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+	if embeddingsConf == nil {
+		return errors.New("embeddings not configured or disabled")
+	}
+	modelIdentifier, err := embeddingsConf.GetModelIdentifierFn()
+	if err != nil {
+		return err
+	}
 	defer func() { err = tx.Done(err) }()
 
-	//modelID := c.GetModelIdentifier()
-	modelID := ""
+	providerModelID := modelIdentifier(embeddingsConf.Model)
 	repoStore := db.Repos()
 	for _, repoName := range repoNames {
 		// Scope the iteration to an anonymous function, so we can capture all errors and properly rollback tx in defer above.
@@ -57,7 +60,7 @@ func ScheduleRepositoriesForEmbedding(
 				}
 			}
 
-			_, err = tx.CreateRepoEmbeddingJob(ctx, r.ID, latestRevision, modelID)
+			_, err = tx.CreateRepoEmbeddingJob(ctx, r.ID, latestRevision, providerModelID)
 			return err
 		}()
 		if err != nil {

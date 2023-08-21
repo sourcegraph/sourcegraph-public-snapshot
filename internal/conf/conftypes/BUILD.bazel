@@ -12,6 +12,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api/internalapi/v1:internalapi",
+        "//lib/errors",
         "//schema",
         "@org_golang_google_protobuf//types/known/durationpb",
     ],

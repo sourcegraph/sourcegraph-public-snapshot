@@ -9,20 +9,23 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestScheduleRepositoriesForEmbedding(t *testing.T) {
-	t.Parallel()
-
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	repoStore := db.Repos()
+
+	originalConf := setSiteConfig(true, "sourcegraph", "model", "token")
+	t.Cleanup(func() { revertSiteConfig(originalConf) })
 
 	createdRepo := &types.Repo{Name: "github.com/sourcegraph/sourcegraph", URI: "github.com/sourcegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
 	err := repoStore.Create(ctx, createdRepo)
@@ -30,7 +33,7 @@ func TestScheduleRepositoriesForEmbedding(t *testing.T) {
 
 	// Create a repo embedding job.
 	store := repo.NewRepoEmbeddingJobsStore(db)
-	_, err = store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "coffee")
+	_, err = store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "coffee", "sourcegraphProvider/model")
 	require.NoError(t, err)
 
 	gitserverClient := gitserver.NewMockClient()
@@ -52,13 +55,66 @@ func TestScheduleRepositoriesForEmbedding(t *testing.T) {
 	require.Equal(t, 2, count)
 }
 
-func TestScheduleRepositoriesForEmbeddingRepoNotFound(t *testing.T) {
-	t.Parallel()
-
+func TestScheduleRepositoriesForEmbeddingInvalidConfiguration(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	repoStore := db.Repos()
+	errStr := "embeddings not configured or disabled"
+
+	createdRepo := &types.Repo{Name: "github.com/sourcegraph/sourcegraph", URI: "github.com/sourcegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
+	err := repoStore.Create(ctx, createdRepo)
+	require.NoError(t, err)
+
+	// Create a repo embedding job.
+	store := repo.NewRepoEmbeddingJobsStore(db)
+
+	gitserverClient := gitserver.NewMockClient()
+	gitserverClient.GetDefaultBranchFunc.SetDefaultReturn("main", "coffee", nil)
+
+	// By default, we shouldn't schedule a new job for the same revision
+	repoNames := []api.RepoName{"github.com/sourcegraph/sourcegraph"}
+
+	originalConf := setSiteConfig(false, "sourcegraph", "model", "token")
+	t.Cleanup(func() { revertSiteConfig(originalConf) })
+
+	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, false, db, store, gitserverClient)
+	require.EqualError(t, err, errStr)
+	count, err := store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
+	require.NoError(t, err)
+	require.Equal(t, 0, count)
+
+	_ = setSiteConfig(true, "unknownProvider", "model", "token")
+	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, false, db, store, gitserverClient)
+	require.EqualError(t, err, errStr)
+	count, err = store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
+	require.NoError(t, err)
+	require.Equal(t, 0, count)
+
+	_ = setSiteConfig(true, "sourcegraph", "model", "")
+	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, false, db, store, gitserverClient)
+	require.EqualError(t, err, errStr)
+	count, err = store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
+	require.NoError(t, err)
+	require.Equal(t, 0, count)
+
+	// Resolve site configuration to enable scheduling of jobs
+	_ = setSiteConfig(true, "sourcegraph", "model", "token")
+	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, false, db, store, gitserverClient)
+	require.NoError(t, err)
+	count, err = store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
+	require.NoError(t, err)
+	require.Equal(t, 1, count)
+}
+
+func TestScheduleRepositoriesForEmbeddingRepoNotFound(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	repoStore := db.Repos()
+
+	originalConf := setSiteConfig(true, "sourcegraph", "model", "token")
+	t.Cleanup(func() { revertSiteConfig(originalConf) })
 
 	createdRepo0 := &types.Repo{Name: "github.com/sourcegraph/sourcegraph", URI: "github.com/sourcegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
 	err := repoStore.Create(ctx, createdRepo0)
@@ -85,12 +141,13 @@ func TestScheduleRepositoriesForEmbeddingRepoNotFound(t *testing.T) {
 }
 
 func TestScheduleRepositoriesForEmbeddingInvalidDefaultBranch(t *testing.T) {
-	t.Parallel()
-
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	repoStore := db.Repos()
+
+	originalConf := setSiteConfig(true, "sourcegraph", "model", "token")
+	t.Cleanup(func() { revertSiteConfig(originalConf) })
 
 	createdRepo0 := &types.Repo{Name: "github.com/sourcegraph/sourcegraph", URI: "github.com/sourcegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
 	err := repoStore.Create(ctx, createdRepo0)
@@ -117,12 +174,13 @@ func TestScheduleRepositoriesForEmbeddingInvalidDefaultBranch(t *testing.T) {
 }
 
 func TestScheduleRepositoriesForEmbeddingFailed(t *testing.T) {
-	t.Parallel()
-
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	repoStore := db.Repos()
+
+	originalConf := setSiteConfig(true, "sourcegraph", "model", "token")
+	t.Cleanup(func() { revertSiteConfig(originalConf) })
 
 	createdRepo0 := &types.Repo{Name: "github.com/sourcegraph/sourcegraph", URI: "github.com/sourcegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
 	err := repoStore.Create(ctx, createdRepo0)
@@ -194,4 +252,32 @@ func setJobState(t *testing.T, ctx context.Context, store repo.RepoEmbeddingJobs
 	if err != nil {
 		t.Fatalf("failed to set repo embedding job state: %s", err)
 	}
+}
+
+// set site config to enable embeddings with a provider and model.
+// return the original configuration.
+func setSiteConfig(codyEnabled bool, provider, model, token string) *scheduleTestConfig {
+	originalEnabled := conf.Get().CodyEnabled
+	originalEmbeddings := conf.Get().Embeddings
+
+	conf.Get().CodyEnabled = &codyEnabled
+	conf.Get().Embeddings = &schema.Embeddings{
+		Provider:    provider,
+		Model:       model,
+		AccessToken: token,
+	}
+	return &scheduleTestConfig{
+		codyEnabled:      originalEnabled,
+		embeddingsConfig: originalEmbeddings,
+	}
+}
+
+func revertSiteConfig(c *scheduleTestConfig) {
+	conf.Get().CodyEnabled = c.codyEnabled
+	conf.Get().Embeddings = c.embeddingsConfig
+}
+
+type scheduleTestConfig struct {
+	codyEnabled      *bool
+	embeddingsConfig *schema.Embeddings
 }

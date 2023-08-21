@@ -42,7 +42,7 @@ func (c *azureOpenaiEmbeddingsClient) GetDimensions() (int, error) {
 }
 
 func (c *azureOpenaiEmbeddingsClient) GetModelIdentifier() string {
-	return fmt.Sprintf("azure-openai/%s", c.model)
+	return conftypes.EmbeddingsModelIdentifierAzureOpenAI(c.model)
 }
 
 func (c *azureOpenaiEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) (*client.EmbeddingsResults, error) {
