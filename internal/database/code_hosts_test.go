@@ -173,7 +173,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			name: "get 1 by id",
 			listOpts: ListCodeHostsOpts{
 				ID: int32(1),
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -183,7 +183,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			name: "get 1 by url",
 			listOpts: ListCodeHostsOpts{
 				URL: "https://github.com/",
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -192,7 +192,7 @@ func TestCodeHostStore_List(t *testing.T) {
 		{
 			name: "get all, non-deleted",
 			listOpts: ListCodeHostsOpts{
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -202,7 +202,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			name: "get all, with deleted",
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -213,7 +213,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Search:         "gitlab",
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -224,7 +224,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Search:         "bitbucket",
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -235,7 +235,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Cursor:         int32(2),
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -246,7 +246,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Cursor:         int32(3),
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -256,7 +256,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			name: "cursor test, use next",
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 1,
 				},
 			},
@@ -344,7 +344,7 @@ func TestCodeHostStore_Count(t *testing.T) {
 			name: "count with get 1 by id",
 			listOpts: ListCodeHostsOpts{
 				ID: int32(1),
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -354,7 +354,7 @@ func TestCodeHostStore_Count(t *testing.T) {
 			name: "count with get 1 by url",
 			listOpts: ListCodeHostsOpts{
 				URL: "https://github.com/",
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -363,7 +363,7 @@ func TestCodeHostStore_Count(t *testing.T) {
 		{
 			name: "count with get all, non-deleted",
 			listOpts: ListCodeHostsOpts{
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -373,7 +373,7 @@ func TestCodeHostStore_Count(t *testing.T) {
 			name: "count with get all, with deleted",
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -384,7 +384,7 @@ func TestCodeHostStore_Count(t *testing.T) {
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Search:         "gitlab",
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -395,7 +395,7 @@ func TestCodeHostStore_Count(t *testing.T) {
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Search:         "bitbucket",
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -406,7 +406,7 @@ func TestCodeHostStore_Count(t *testing.T) {
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Cursor:         int32(2),
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -417,7 +417,7 @@ func TestCodeHostStore_Count(t *testing.T) {
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Cursor:         int32(3),
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},

@@ -28,7 +28,7 @@ func (r *schemaResolver) CodeHosts(ctx context.Context, args *CodeHostsArgs) (*c
 	}
 
 	opts := database.ListCodeHostsOpts{
-		LimitOffset: database.LimitOffset{Limit: int(args.First)},
+		LimitOffset: &database.LimitOffset{Limit: int(args.First)},
 	}
 	if args.Search != nil {
 		opts.Search = *args.Search
