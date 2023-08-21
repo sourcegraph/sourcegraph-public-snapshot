@@ -103,6 +103,12 @@ HERMETIC_CC_TOOLCHAIN_VERSION = "v2.0.0"
 
 # Please note that we only use zig-cc for local development purpose, at it eases the path to cross-compile
 # so we can produce container images locally on Mac laptops.
+#
+# @jhchabran See https://github.com/sourcegraph/sourcegraph/pull/55969, there is an ongoing issue with UBSAN
+# and treesitter, that breaks the compilation of syntax-highlighter. Since we only use
+# hermetic_cc for local development purposes, while it's a bit heavy handed for a --copt, it's acceptable
+# at this point. Passing --copt=-fno-sanitize=undefined sadly doesn't fix the problem, which is why
+# we have to patch to inject the flag.
 http_archive(
     name = "hermetic_cc_toolchain",
     patches = [
