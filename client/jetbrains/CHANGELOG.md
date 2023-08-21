@@ -11,15 +11,20 @@
 ### Changed
 
 - Improved settings UI [#55876](https://github.com/sourcegraph/sourcegraph/pull/55876)
+- Telemetry and other GraphQL requests are now sent through the agent [56001](https://github.com/sourcegraph/sourcegraph/pull/56001)
 
 ### Deprecated
 
 ### Removed
 
+- All network traffic from the plugin process [56001](https://github.com/sourcegraph/sourcegraph/pull/56001)
+- Non-agent autocomplete and chat [55997](https://github.com/sourcegraph/sourcegraph/pull/55997)
 - Support for 2022.0, 2022.1 is now required [#55831](https://github.com/sourcegraph/sourcegraph/pull/55831)
 
 ### Fixed
 
+- Await on agent server before submitting telemetry events [56007](https://github.com/sourcegraph/sourcegraph/pull/56007)
+- Bug causing exceptions to get thrown on editor events [55999](https://github.com/sourcegraph/sourcegraph/pull/55999)
 - Use inferred codebase for autocomplete [#55900](https://github.com/sourcegraph/sourcegraph/pull/55900)
 - Make sure caret is visible after accepting multiline completion [#55924](https://github.com/sourcegraph/sourcegraph/pull/55924)
 - Suppress duplicate telemetry when using agent [cody#689](https://github.com/sourcegraph/cody/pull/689)

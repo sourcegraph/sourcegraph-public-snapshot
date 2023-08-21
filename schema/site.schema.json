@@ -199,7 +199,8 @@
           "description": "Allow adding Perforce code host connections",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "enabled"
+          "default": "enabled",
+          "deprecationMessage": "Deprecated, Perforce is always enabled, setting is no longer used."
         },
         "perforceChangelistMapping": {
           "description": "Allow mapping of Perforce changelists to their commit SHAs in the DB",
@@ -2478,7 +2479,7 @@
           "format": "uri"
         },
         "fileFilters": {
-          "description": "Filters that will decode which files om a repository get embedded.",
+          "description": "Filters that allow you to specify which files in a repository should get embedded.",
           "type": "object",
           "properties": {
             "excludedFilePathPatterns": {

@@ -48,9 +48,10 @@ name=${1%/}
 
 pushd "wolfi-packages"
 
+# Soft-fail if file doesn't exist, as CI step is triggered whenever package configs are changed - including deletions/renames
 if [ ! -e "${name}.yaml" ]; then
   echo "File '$name.yaml' does not exist"
-  exit 1
+  exit 222
 fi
 
 # NOTE: Melange relies upon a more recent version of bubblewrap than ships with Ubuntu 20.04. We therefore build a recent
@@ -64,6 +65,7 @@ melange build "$name.yaml" --arch x86_64 --generate-index false
 # Upload package as build artifact
 buildkite-agent artifact upload packages/*/*
 
-# Upload package to repo
+# Upload package to repo, and finish with same exit code
 popd
 ./enterprise/dev/ci/scripts/wolfi/upload-package.sh
+exit $?
