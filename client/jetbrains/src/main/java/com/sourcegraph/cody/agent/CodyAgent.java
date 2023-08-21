@@ -182,7 +182,7 @@ public class CodyAgent implements Disposable {
   }
 
   private static String agentBinaryName() {
-    String os = SystemInfoRt.isMac ? "macos" : SystemInfoRt.isWindows ? "windows" : "linux";
+    String os = SystemInfoRt.isMac ? "macos" : SystemInfoRt.isWindows ? "win" : "linux";
     String arch = CpuArch.isArm64() ? "arm64" : "x64";
     return "agent-" + os + "-" + arch + binarySuffix();
   }
