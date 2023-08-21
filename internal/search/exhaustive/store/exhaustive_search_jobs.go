@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -57,6 +58,8 @@ var exhaustiveSearchJobColumns = []*sqlf.Query{
 type ExhaustiveSearchJobStore interface {
 	// CreateExhaustiveSearchJob creates a new types.ExhaustiveSearchJob.
 	CreateExhaustiveSearchJob(ctx context.Context, job types.ExhaustiveSearchJob) (int64, error)
+	// GetExhaustiveSearchJobByID returns the types.ExhaustiveSearchJob with the given ID.
+	GetExhaustiveSearchJobByID(ctx context.Context, id int64) (*types.ExhaustiveSearchJob, error)
 }
 
 var _ ExhaustiveSearchJobStore = &Store{}
@@ -95,6 +98,41 @@ const createExhaustiveSearchJobQueryFmtr = `
 INSERT INTO exhaustive_search_jobs (query, initiator_id)
 VALUES (%s, %s)
 RETURNING id
+`
+
+func (s *Store) GetExhaustiveSearchJobByID(ctx context.Context, id int64) (*types.ExhaustiveSearchJob, error) {
+	var job *types.ExhaustiveSearchJob
+	var err error
+	ctx, _, endObservation := s.operations.getExhaustiveSearchJobByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(id)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if id <= 0 {
+		return job, InvalidIDErr
+	}
+
+	row := s.Store.QueryRow(
+		ctx,
+		sqlf.Sprintf(
+			getExhaustiveSearchJobByIDQueryFmtr,
+			sqlf.Join(exhaustiveSearchJobColumns, ", "),
+			id,
+		),
+	)
+	job, err = scanExhaustiveSearchJob(row)
+	if err != nil {
+		return job, err
+	}
+	return job, nil
+}
+
+// InvalidIDErr is returned when an invalid ID is passed.
+var InvalidIDErr = errors.New("invalid id")
+
+const getExhaustiveSearchJobByIDQueryFmtr = `
+SELECT %s FROM exhaustive_search_jobs
+WHERE id = %s
 `
 
 func scanExhaustiveSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, error) {

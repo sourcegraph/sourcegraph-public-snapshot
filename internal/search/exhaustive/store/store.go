@@ -30,7 +30,8 @@ func New(db database.DB, observationCtx *observation.Context) *Store {
 }
 
 type operations struct {
-	createExhaustiveSearchJob *observation.Operation
+	createExhaustiveSearchJob  *observation.Operation
+	getExhaustiveSearchJobByID *observation.Operation
 
 	createExhaustiveSearchRepoJob *observation.Operation
 
@@ -58,7 +59,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		createExhaustiveSearchJob: op("CreateExhaustiveSearchJob"),
+		createExhaustiveSearchJob:  op("CreateExhaustiveSearchJob"),
+		getExhaustiveSearchJobByID: op("GetExhaustiveSearchJobByID"),
 
 		createExhaustiveSearchRepoJob: op("CreateExhaustiveSearchRepoJob"),
 

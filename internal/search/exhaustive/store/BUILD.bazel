@@ -22,6 +22,7 @@ go_library(
         "//lib/errors",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 

@@ -102,3 +102,70 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 		})
 	}
 }
+
+func TestStore_GetExhaustiveSearchJobByID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	bs := basestore.NewWithHandle(db.Handle())
+
+	t.Cleanup(func() {
+		cleanupUsers(bs)
+		cleanupSearchJobs(bs)
+	})
+
+	userID, err := createUser(bs, "alice")
+	require.NoError(t, err)
+
+	s := store.New(db, &observation.TestContext)
+	jobID, err := s.CreateExhaustiveSearchJob(
+		context.Background(),
+		types.ExhaustiveSearchJob{InitiatorID: userID, Query: "repo:^github\\.com/hashicorp/errwrap$ GetExhaustiveSearchJobByID"},
+	)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name                string
+		id                  int64
+		expectedInitiatorID int32
+		expectedQuery       string
+		expectedErr         error
+	}{
+		{
+			name:                "Get job",
+			id:                  jobID,
+			expectedInitiatorID: userID,
+			expectedQuery:       "repo:^github\\.com/hashicorp/errwrap$ GetExhaustiveSearchJobByID",
+			expectedErr:         nil,
+		},
+		{
+			name:        "Invalid ID",
+			id:          0,
+			expectedErr: errors.New("invalid id"),
+		},
+		{
+			name:        "Job does not exist",
+			id:          999,
+			expectedErr: errors.New("sql: no rows in result set"),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			actual, err := s.GetExhaustiveSearchJobByID(context.Background(), test.id)
+			if test.expectedErr != nil {
+				require.Error(t, err)
+				assert.EqualError(t, err, test.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, test.expectedInitiatorID, actual.InitiatorID)
+				assert.Equal(t, test.expectedQuery, actual.Query)
+				assert.Equal(t, types.JobState("queued"), actual.State)
+				assert.NotZero(t, actual.CreatedAt)
+			}
+		})
+	}
+}
