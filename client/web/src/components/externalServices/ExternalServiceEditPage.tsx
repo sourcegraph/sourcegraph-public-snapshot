@@ -45,6 +45,12 @@ export const ExternalServiceEditPage: FC<Props> = ({
     const [externalService, setExternalService] = useState<ExternalServiceFieldsWithConfig>()
 
     const { error: fetchError, loading: fetchLoading } = useFetchExternalService(externalServiceID!, setExternalService)
+    const {
+        error: fetchGHAppError,
+        loading: fetchGHAppLoading,
+        data: ghAppData,
+    } = useFetchGithubAppForES(externalService)
+    const ghApp = useMemo(() => ghAppData?.gitHubAppByAppID, [ghAppData])
 
     const [updated, setUpdated] = useState(false)
     const [updateExternalService, { error: updateExternalServiceError, loading: updateExternalServiceLoading }] =
@@ -88,26 +94,15 @@ export const ExternalServiceEditPage: FC<Props> = ({
 
     const path = useMemo(() => getBreadCrumbs(externalService, true), [externalService])
 
-    const combinedError = fetchError || updateExternalServiceError
-    const combinedLoading = fetchLoading || updateExternalServiceLoading
+    const combinedError = fetchError || updateExternalServiceError || fetchGHAppError
+    const combinedLoading = fetchLoading || updateExternalServiceLoading || fetchGHAppLoading
 
     if (updated && !combinedLoading && externalService?.warning === null) {
         navigate(`/site-admin/external-services/${encodeURIComponent(externalService.id)}`, { replace: true })
     }
 
-    const ExternalServiceContainer: FC<{ externalService: ExternalServiceFieldsWithConfig }> = ({
-        externalService,
-    }) => {
-        const {
-            error: fetchGHAppError,
-            loading: fetchGHAppLoading,
-            data: ghAppData,
-        } = useFetchGithubAppForES(externalService)
-        const ghApp = useMemo(() => ghAppData?.gitHubAppByAppID, [ghAppData])
-        const externalServiceCategory = useMemo(
-            () => resolveExternalServiceCategory(externalService, ghApp),
-            [externalService, ghApp]
-        )
+    const renderService = (externalService: ExternalServiceFieldsWithConfig): JSX.Element => {
+        const externalServiceCategory = resolveExternalServiceCategory(externalService, ghApp)
         return (
             <Container className="mb-3">
                 <PageHeader
@@ -130,9 +125,6 @@ export const ExternalServiceEditPage: FC<Props> = ({
                         </ButtonLink>
                     }
                 />
-                {fetchGHAppError !== undefined && !fetchGHAppLoading && (
-                    <ErrorAlert className="mb-3" error={fetchGHAppError} />
-                )}
                 {externalServiceCategory && (
                     <ExternalServiceForm
                         input={{ ...externalService }}
@@ -165,7 +157,7 @@ export const ExternalServiceEditPage: FC<Props> = ({
                 <PageTitle title="Code host" />
             )}
             {combinedError !== undefined && !combinedLoading && <ErrorAlert className="mb-3" error={combinedError} />}
-            {externalService && <ExternalServiceContainer externalService={externalService} />}
+            {externalService && renderService(externalService)}
         </div>
     )
 }
