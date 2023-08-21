@@ -2,11 +2,13 @@ package embeddings
 
 import (
 	"context"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func ScheduleRepositoriesForEmbedding(
@@ -21,6 +23,15 @@ func ScheduleRepositoriesForEmbedding(
 	if err != nil {
 		return err
 	}
+
+	embeddingsConf := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+	c, err := embed.NewEmbeddingsClient(embeddingsConf)
+	if err != nil {
+		return errors.Wrap(err, "getting embeddings client")
+	}
+
+	modelID := c.GetModelIdentifier()
+
 	defer func() { err = tx.Done(err) }()
 
 	repoStore := db.Repos()
@@ -43,13 +54,23 @@ func ScheduleRepositoriesForEmbedding(
 			if !forceReschedule {
 				job, _ := tx.GetLastRepoEmbeddingJobForRevision(ctx, r.ID, latestRevision)
 
-				// if job previously failed then only resubmit if revision is non-empty
-				if job.IsRepoEmbeddingJobScheduledOrCompleted() || job.EmptyRepoEmbeddingJob() {
+				// Skip if another job is scheduled or completed for this revision
+				duplicate := job.IsRepoEmbeddingJobScheduledOrCompleted()
+
+				// Skip if a job previously failed for empty revision and our fetched revision has not changed
+				skipEmptyRepo := job.EmptyRepoEmbeddingJob()
+
+				// Skip if we know the provider and model has not changed.
+				// If our previous job has an empty model identifier then schedule a job to identify provider & model from
+				// embedding index metadata.
+				modelIsCurrent := job.ModelID == modelID
+
+				if (duplicate || skipEmptyRepo) && modelIsCurrent {
 					return nil
 				}
 			}
 
-			_, err = tx.CreateRepoEmbeddingJob(ctx, r.ID, latestRevision)
+			_, err = tx.CreateRepoEmbeddingJob(ctx, r.ID, latestRevision, modelID)
 			return err
 		}()
 		if err != nil {

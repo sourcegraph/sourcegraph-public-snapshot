@@ -103,20 +103,60 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		return err
 	}
 
+	// The site config provider and/or model have changed since this job was scheduled.
+	// Don't overwrite the current record's model ID; a new job should be scheduled which targets the updated model ID.
+	if record.ModelID != modelID {
+		return errors.New("the globally configured provider and/or model have changed. Repo must be resubmitted.")
+	}
+
+	lastCompletedJob, err := h.repoEmbeddingJobsStore.GetLastCompletedRepoEmbeddingJob(ctx, record.RepoID)
+
+	//var previousModelID string
+	//if lastCompletedJob != nil && lastCompletedJob.ModelID != "" {
+	//	previousModelID = lastCompletedJob.ModelID
+	//}
+
+	// determine full vs. incremental using most recent completed job run
+
+	var previousIndex *embeddings.RepoEmbeddingIndex
+
+	// WE HAVE A CURRENT INDEX TO USE
+	if lastCompletedJob != nil {
+
+		identifiableModelID := lastCompletedJob.ModelID != ""
+		compatibleModelID := lastCompletedJob.ModelID == record.ModelID
+
+		// WE NEED A FULL REINDEX DUE TO MODEL ID DISCREPANCY
+		if identifiableModelID && !compatibleModelID {
+			//if lastCompletedJob.ModelID != "" && lastCompletedJob.ModelID != record.ModelID {
+			logger.Info("Embeddings model has changed in config. Performing a full index")
+
+			// SKIP FETCH
+		}
+
+		// WE NEED TO FETCH THE CURRENT INDEX
+		//if embeddingsConfig.Incremental || !identifiableModelID {
+		if !identifiableModelID || (embeddingsConfig.Incremental && compatibleModelID) {
+			previousIndex, err = embeddings.DownloadRepoEmbeddingIndex(ctx, h.uploadStore, repo.ID, repo.Name)
+			if err != nil {
+				logger.Info("no previous embeddings index found. Performing a full index", log.Error(err))
+			} else if !previousIndex.IsModelCompatible(embeddingsClient.GetModelIdentifier()) {
+				logger.Info("Embeddings model has changed in config. Performing a full index")
+				previousIndex = nil
+			} else if !identifiableModelID && previousIndex.Revision == lastCompletedJob.Revision && record.Revision == lastCompletedJob.Revision {
+				logger.Info("Previously untracked provider and model identifiers are now recorded for embedding jobs. "+
+					"Skipping indexing because the current embeddings index supports the requested revision and model. "+
+					"Resubmit with forceReschedule enabled for a full reindex.",
+					log.String("revision", string(previousIndex.Revision)),
+					log.String("modelID", previousIndex.EmbeddingsModel))
+				return nil
+			}
+		}
+	}
+
 	err = h.qdrantInserter.PrepareUpdate(ctx, modelID, uint64(modelDims))
 	if err != nil {
 		return err
-	}
-
-	var previousIndex *embeddings.RepoEmbeddingIndex
-	if embeddingsConfig.Incremental {
-		previousIndex, err = embeddings.DownloadRepoEmbeddingIndex(ctx, h.uploadStore, repo.ID, repo.Name)
-		if err != nil {
-			logger.Info("no previous embeddings index found. Performing a full index", log.Error(err))
-		} else if !previousIndex.IsModelCompatible(embeddingsClient.GetModelIdentifier()) {
-			logger.Info("Embeddings model has changed in config. Performing a full index")
-			previousIndex = nil
-		}
 	}
 
 	includedFiles, excludedFiles := getFileFilterPathPatterns(embeddingsConfig)
@@ -195,6 +235,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		"finished generating repo embeddings",
 		log.String("revision", string(record.Revision)),
 		log.Object("stats", stats.ToFields()...),
+		log.String("modelID", record.ModelID),
 	)
 
 	indexName := string(embeddings.GetRepoEmbeddingIndexName(repo.ID))
