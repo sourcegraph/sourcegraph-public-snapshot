@@ -10,7 +10,6 @@ BRANCH="${BUILDKITE_BRANCH:-'default-branch'}"
 # shellcheck disable=SC2001
 BRANCH_PATH=$(echo "$BRANCH" | sed 's/[^a-zA-Z0-9_-]/-/g')
 IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
-IS_MAIN="true"
 
 tmpdir=$(mktemp -d -t wolfi-bin.XXXXXXXX)
 builddir=$(mktemp -d -t wolfi-build.XXXXXXXX)
@@ -111,12 +110,12 @@ docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:latest"
 docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:latest"
 
 # Push to Dockerhub only on main branch
-# if [[ "$IS_MAIN" == "true" ]]; then
-#   docker tag "$image_name" "sourcegraph/wolfi-${name}-base:$tag"
-#   docker push "sourcegraph/wolfi-${name}-base:$tag"
-#   docker tag "$image_name" "sourcegraph/wolfi-${name}-base:latest"
-#   docker push "sourcegraph/wolfi-${name}-base:latest"
-# fi
+if [[ "$IS_MAIN" == "true" ]]; then
+  docker tag "$image_name" "sourcegraph/wolfi-${name}-base:$tag"
+  docker push "sourcegraph/wolfi-${name}-base:$tag"
+  docker tag "$image_name" "sourcegraph/wolfi-${name}-base:latest"
+  docker push "sourcegraph/wolfi-${name}-base:latest"
+fi
 
 # Show image usage message on branches
 if [[ "$IS_MAIN" != "true" ]]; then
