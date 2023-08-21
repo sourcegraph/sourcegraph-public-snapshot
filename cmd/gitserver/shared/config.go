@@ -40,6 +40,39 @@ type Config struct {
 
 	JanitorReposDesiredPercentFree int
 	JanitorInterval                time.Duration
+	// EnableGCAuto is a temporary flag that allows us to control whether or not
+	// `git gc --auto` is invoked during janitorial activities. This flag will
+	// likely evolve into some form of site config value in the future.
+	EnableGitGCAuto bool
+	// sg maintenance and git gc must not be enabled at the same time. However, both
+	// might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
+	// SRC_ENABLE_SG_MAINTENANCE.
+	EnableSGMaintenance bool
+	// The limit of 50 mirrors Git's gc_auto_pack_limit
+	GitAutoPackLimit int
+	// Our original Git gc job used 1 as limit, while git's default is 6700. We
+	// don't want to be too aggressive to avoid unnecessary IO, hence we choose a
+	// value somewhere in the middle. https://gitlab.com/gitlab-org/gitaly uses a
+	// limit of 1024, which corresponds to an average of 4 loose objects per folder.
+	// We can tune this parameter once we gain more experience.
+	GitLooseObjectsLimit int
+	// A failed sg maintenance run will place a log file in the git directory.
+	// Subsequent sg maintenance runs are skipped unless the log file is old.
+	//
+	// Based on how https://github.com/git/git handles the gc.log file.
+	SGMLogExpiry time.Duration
+	// Each failed sg maintenance run increments a counter in the sgmLog file.
+	// We reclone the repository if the number of retries exceeds sgmRetries.
+	// Setting SRC_SGM_RETRIES to -1 disables recloning due to sgm failures.
+	// Default value is 3 (reclone after 3 failed sgm runs).
+	//
+	// We mention this ENV variable in the header message of the sgmLog files. Make
+	// sure that changes here are reflected in sgmLogHeader, too.
+	SGMRetries int
+	// The limit of repos cloned on the wrong shard to delete in one janitor run - value <=0 disables delete.
+	JanitorWrongShardReposDeleteLimit int
+	// Controls if gitserver cleanup tries to remove repos from disk which are not defined in the DB. Defaults to false.
+	JanitorRemoveNonExistingRepos bool
 }
 
 func (c *Config) Load() {
@@ -89,4 +122,13 @@ func (c *Config) Load() {
 	}
 
 	c.JanitorInterval = c.GetInterval("SRC_REPOS_JANITOR_INTERVAL", "1m", "Interval between cleanup runs")
+	c.EnableGitGCAuto = c.GetBool("SRC_ENABLE_GC_AUTO", "true", "Use git-gc during janitorial cleanup phases")
+	c.EnableSGMaintenance = c.GetBool("SRC_ENABLE_SG_MAINTENANCE", "false", "Use sg maintenance during janitorial cleanup phases")
+	c.GitAutoPackLimit = c.GetInt("SRC_GIT_AUTO_PACK_LIMIT", "50", "the maximum number of pack files we tolerate before we trigger a repack")
+	c.GitLooseObjectsLimit = c.GetInt("SRC_GIT_LOOSE_OBJECTS_LIMIT", "1024", "the maximum number of loose objects we tolerate before we trigger a repack")
+	c.SGMLogExpiry = c.GetInterval("SRC_GIT_LOG_FILE_EXPIRY", "24h", "the number of hours after which sg maintenance runs even if a log file is present")
+	c.SGMRetries = c.GetInt("SRC_SGM_RETRIES", "3", "the maximum number of times we retry sg maintenance before triggering a reclone.")
+	c.JanitorWrongShardReposDeleteLimit = c.GetInt("SRC_WRONG_SHARD_DELETE_LIMIT", "10", "the maximum number of repos not assigned to this shard we delete in one run")
+	c.JanitorRemoveNonExistingRepos = c.GetBool("SRC_REMOVE_NON_EXISTING_REPOS", "false", "controls if gitserver cleanup tries to remove repos from disk which are not defined in the DB")
+
 }

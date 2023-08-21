@@ -206,16 +206,24 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			routines,
 			server.NewJanitor(
 				ctx,
-				server.JanitorConfig{
-					ShardID:            gitserver.Hostname,
-					JanitorInterval:    config.JanitorInterval,
-					ReposDir:           config.ReposDir,
-					DesiredPercentFree: config.JanitorReposDesiredPercentFree,
-				},
+				logger,
 				db,
 				recordingCommandFactory,
+				config.JanitorInterval,
+				server.JanitorConfig{
+					ShardID:                    gitserver.Hostname,
+					ReposDir:                   config.ReposDir,
+					DesiredPercentFree:         config.JanitorReposDesiredPercentFree,
+					EnableGitGCAuto:            config.EnableGitGCAuto,
+					EnableSGMaintenance:        config.EnableSGMaintenance,
+					GitAutoPackLimit:           config.GitAutoPackLimit,
+					GitLooseObjectsLimit:       config.GitLooseObjectsLimit,
+					SGMLogExpiry:               config.SGMLogExpiry,
+					SGMRetries:                 config.SGMRetries,
+					WrongShardReposDeleteLimit: config.JanitorWrongShardReposDeleteLimit,
+					RemoveNonExistingRepos:     config.JanitorRemoveNonExistingRepos,
+				},
 				gitserver.CloneRepo,
-				logger,
 			),
 		)
 	}

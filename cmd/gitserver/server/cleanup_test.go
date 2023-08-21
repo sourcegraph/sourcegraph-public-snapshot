@@ -85,10 +85,11 @@ UPDATE gitserver_repos SET repo_size_bytes = 5 where repo_id = 3;
 		logger,
 		db,
 		wrexec.NewNoOpRecordingCommandFactory(),
+		JanitorConfig{
+			ShardID:  "test-gitserver",
+			ReposDir: root,
+		},
 		&fakeDiskSizer{},
-		10,
-		"test-gitserver",
-		root,
 		func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
 			// Don't actually attempt clones.
 			return "", nil
@@ -158,10 +159,11 @@ func TestCleanupInactive(t *testing.T) {
 		logtest.Scoped(t),
 		newMockedGitserverDB(),
 		wrexec.NewNoOpRecordingCommandFactory(),
+		JanitorConfig{
+			ShardID:  "test-gitserver",
+			ReposDir: root,
+		},
 		&fakeDiskSizer{},
-		10,
-		"test-gitserver",
-		root,
 		func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
 			return "", nil
 		},
@@ -198,10 +200,11 @@ func TestCleanupWrongShard(t *testing.T) {
 			logtest.Scoped(t),
 			newMockedGitserverDB(),
 			wrexec.NewNoOpRecordingCommandFactory(),
+			JanitorConfig{
+				ShardID:  "does-not-exist",
+				ReposDir: root,
+			},
 			&fakeDiskSizer{},
-			10,
-			"does-not-exist",
-			root,
 			func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
 				return "", nil
 			},
@@ -236,10 +239,11 @@ func TestCleanupWrongShard(t *testing.T) {
 			logtest.Scoped(t),
 			newMockedGitserverDB(),
 			wrexec.NewNoOpRecordingCommandFactory(),
+			JanitorConfig{
+				ShardID:  "gitserver-0",
+				ReposDir: root,
+			},
 			&fakeDiskSizer{},
-			10,
-			"gitserver-0",
-			root,
 			func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
 				return "", nil
 			},
@@ -269,17 +273,17 @@ func TestCleanupWrongShard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		wrongShardReposDeleteLimit = -1
-
 		cleanupRepos(
 			context.Background(),
 			logtest.Scoped(t),
 			newMockedGitserverDB(),
 			wrexec.NewNoOpRecordingCommandFactory(),
+			JanitorConfig{
+				ShardID:                    "test-gitserver",
+				ReposDir:                   root,
+				WrongShardReposDeleteLimit: -1,
+			},
 			&fakeDiskSizer{},
-			10,
-			"gitserver-0",
-			root,
 			func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
 				t.Fatal("clone called")
 				return "", nil
@@ -350,10 +354,11 @@ func TestGitGCAuto(t *testing.T) {
 		logtest.Scoped(t),
 		newMockedGitserverDB(),
 		wrexec.NewNoOpRecordingCommandFactory(),
+		JanitorConfig{
+			ShardID:  "test-gitserver",
+			ReposDir: root,
+		},
 		&fakeDiskSizer{},
-		10,
-		"test-gitserver",
-		root,
 		func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
 			return "", nil
 		},
@@ -485,10 +490,11 @@ func TestCleanupExpired(t *testing.T) {
 		logtest.Scoped(t),
 		newMockedGitserverDB(),
 		wrexec.NewNoOpRecordingCommandFactory(),
+		JanitorConfig{
+			ShardID:  "test-gitserver",
+			ReposDir: root,
+		},
 		&fakeDiskSizer{},
-		10,
-		"test-gitserver",
-		root,
 		s.CloneRepo,
 		gitserver.GitserverAddresses{Addresses: []string{"test-gitserver"}},
 	)
@@ -573,10 +579,11 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 			logtest.Scoped(t),
 			mockDB,
 			wrexec.NewNoOpRecordingCommandFactory(),
+			JanitorConfig{
+				ShardID:  "test-gitserver",
+				ReposDir: root,
+			},
 			&fakeDiskSizer{},
-			10,
-			"test-gitserver",
-			root,
 			func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
 				return "", nil
 			},
@@ -593,8 +600,6 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 	})
 
 	t.Run("Should delete the repo dir that is not defined in DB", func(t *testing.T) {
-		mockRemoveNonExistingReposConfig(true)
-		defer mockRemoveNonExistingReposConfig(false)
 		root := t.TempDir()
 		repoExists, repoNotExists := initRepos(root)
 
@@ -603,10 +608,12 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 			logtest.Scoped(t),
 			mockDB,
 			wrexec.NewNoOpRecordingCommandFactory(),
+			JanitorConfig{
+				ShardID:                "test-gitserver",
+				ReposDir:               root,
+				RemoveNonExistingRepos: true,
+			},
 			&fakeDiskSizer{},
-			10,
-			"test-gitserver",
-			root,
 			func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
 				return "", nil
 			},
@@ -756,10 +763,11 @@ func TestCleanupOldLocks(t *testing.T) {
 		logtest.Scoped(t),
 		newMockedGitserverDB(),
 		wrexec.NewNoOpRecordingCommandFactory(),
+		JanitorConfig{
+			ShardID:  "test-gitserver",
+			ReposDir: root,
+		},
 		&fakeDiskSizer{},
-		10,
-		"test-gitserver",
-		root,
 		func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
 			return "", nil
 		},
@@ -1434,7 +1442,7 @@ func TestNeedsMaintenance(t *testing.T) {
 	dir := t.TempDir()
 	gitDir := prepareEmptyGitRepo(t, dir)
 
-	needed, reason, err := needsMaintenance(gitDir)
+	needed, reason, err := needsMaintenance(gitDir, 10, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1458,7 +1466,7 @@ git commit-graph write --reachable --changed-paths
 		t.Fatalf("out=%s, err=%s", out, err)
 	}
 
-	needed, reason, err = needsMaintenance(gitDir)
+	needed, reason, err = needsMaintenance(gitDir, 10, 100)
 	if err != nil {
 		t.Fatal(err)
 	}

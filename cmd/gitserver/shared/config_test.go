@@ -43,6 +43,30 @@ func TestConfigDefaults(t *testing.T) {
 	if have, want := config.JanitorInterval, time.Minute; have != want {
 		t.Errorf("invalid value for JanitorInterval: have=%s want=%s", have, want)
 	}
+	if have, want := config.EnableGitGCAuto, true; have != want {
+		t.Errorf("invalid value for EnableGitGCAuto: have=%t want=%t", have, want)
+	}
+	if have, want := config.EnableSGMaintenance, false; have != want {
+		t.Errorf("invalid value for EnableSGMaintenance: have=%t want=%t", have, want)
+	}
+	if have, want := config.GitAutoPackLimit, 50; have != want {
+		t.Errorf("invalid value for GitAutoPackLimit: have=%d want=%d", have, want)
+	}
+	if have, want := config.GitLooseObjectsLimit, 1024; have != want {
+		t.Errorf("invalid value for GitLooseObjectsLimit: have=%d want=%d", have, want)
+	}
+	if have, want := config.SGMLogExpiry, 24*time.Hour; have != want {
+		t.Errorf("invalid value for SGMLogExpiry: have=%v want=%v", have, want)
+	}
+	if have, want := config.SGMRetries, 3; have != want {
+		t.Errorf("invalid value for SGMRetries: have=%d want=%d", have, want)
+	}
+	if have, want := config.JanitorWrongShardReposDeleteLimit, 10; have != want {
+		t.Errorf("invalid value for JanitorWrongShardReposDeleteLimit: have=%d want=%d", have, want)
+	}
+	if have, want := config.JanitorRemoveNonExistingRepos, false; have != want {
+		t.Errorf("invalid value for JanitorRemoveNonExistingRepos: have=%t want=%t", have, want)
+	}
 }
 
 func TestConfig_PercentFree(t *testing.T) {
