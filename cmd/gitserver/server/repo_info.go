@@ -11,13 +11,14 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (s *Server) handleReposStats(w http.ResponseWriter, r *http.Request) {
-	b, err := s.readReposStatsFile(filepath.Join(s.ReposDir, reposStatsName))
+	b, err := readReposStatsFile(filepath.Join(s.ReposDir, reposStatsName))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to read %s: %v", reposStatsName, err.Error()), http.StatusInternalServerError)
 		return
@@ -27,7 +28,7 @@ func (s *Server) handleReposStats(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(b)
 }
 
-func (s *Server) readReposStatsFile(filePath string) ([]byte, error) {
+func readReposStatsFile(filePath string) ([]byte, error) {
 	b, err := os.ReadFile(filePath)
 	if errors.Is(err, os.ErrNotExist) {
 		// When a gitserver is new this file might not have been computed
@@ -40,12 +41,12 @@ func (s *Server) readReposStatsFile(filePath string) ([]byte, error) {
 	return b, nil
 }
 
-func (s *Server) repoCloneProgress(repo api.RepoName) *protocol.RepoCloneProgress {
-	dir := s.dir(repo)
+func repoCloneProgress(reposDir string, locker RepositoryLocker, repo api.RepoName) *protocol.RepoCloneProgress {
+	dir := repoDirFromName(reposDir, repo)
 	resp := protocol.RepoCloneProgress{
 		Cloned: repoCloned(dir),
 	}
-	resp.CloneProgress, resp.CloneInProgress = s.locker.Status(dir)
+	resp.CloneProgress, resp.CloneInProgress = locker.Status(dir)
 	if isAlwaysCloningTest(repo) {
 		resp.CloneInProgress = true
 		resp.CloneProgress = "This will never finish cloning"
@@ -64,7 +65,7 @@ func (s *Server) handleRepoCloneProgress(w http.ResponseWriter, r *http.Request)
 		Results: make(map[api.RepoName]*protocol.RepoCloneProgress, len(req.Repos)),
 	}
 	for _, repoName := range req.Repos {
-		result := s.repoCloneProgress(repoName)
+		result := repoCloneProgress(s.ReposDir, s.Locker, repoName)
 		resp.Results[repoName] = result
 	}
 
@@ -81,7 +82,7 @@ func (s *Server) handleRepoDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.deleteRepo(r.Context(), req.Repo); err != nil {
+	if err := deleteRepo(r.Context(), s.Logger, s.DB, s.Hostname, s.ReposDir, req.Repo); err != nil {
 		s.Logger.Error("failed to delete repository", log.String("repo", string(req.Repo)), log.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -89,14 +90,21 @@ func (s *Server) handleRepoDelete(w http.ResponseWriter, r *http.Request) {
 	s.Logger.Info("deleted repository", log.String("repo", string(req.Repo)))
 }
 
-func (s *Server) deleteRepo(ctx context.Context, repo api.RepoName) error {
+func deleteRepo(
+	ctx context.Context,
+	logger log.Logger,
+	db database.DB,
+	shardID string,
+	reposDir string,
+	repo api.RepoName,
+) error {
 	// The repo may be deleted in the database, in this case we need to get the
 	// original name in order to find it on disk
-	err := removeRepoDirectory(ctx, s.Logger, s.DB, s.Hostname, s.ReposDir, s.dir(api.UndeletedRepoName(repo)), true)
+	err := removeRepoDirectory(ctx, logger, db, shardID, reposDir, repoDirFromName(reposDir, api.UndeletedRepoName(repo)), true)
 	if err != nil {
 		return errors.Wrap(err, "removing repo directory")
 	}
-	err = s.setCloneStatus(ctx, repo, types.CloneStatusNotCloned)
+	err = db.GitserverRepos().SetCloneStatus(ctx, repo, types.CloneStatusNotCloned, shardID)
 	if err != nil {
 		return errors.Wrap(err, "setting clone status after delete")
 	}

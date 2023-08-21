@@ -435,7 +435,7 @@ require (
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
-	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/go-logr/stdr v1.2.2
 	github.com/go-openapi/analysis v0.21.4 // indirect
 	github.com/go-openapi/errors v0.20.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
@@ -543,7 +543,7 @@ require (
 	github.com/sourcegraph/conc v0.2.0
 	github.com/sourcegraph/mountinfo v0.0.0-20230106004439-7026e28cef67
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-20230124144931-b2d81b1accb6
-	github.com/sourcegraph/zoekt v0.0.0-20230811181333-956d775e32b3
+	github.com/sourcegraph/zoekt v0.0.0-20230818175017-993cfdb27a57
 	github.com/spf13/cobra v1.7.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect

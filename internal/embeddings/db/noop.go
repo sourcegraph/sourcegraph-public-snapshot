@@ -4,28 +4,55 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewNoopInserter() VectorInserter {
-	return noopInserter{}
+func NewNoopDB() VectorDB {
+	return noopDB{}
 }
 
-var _ VectorDB = noopInserter{}
+var _ VectorDB = noopDB{}
 
-type noopInserter struct{}
+type noopDB struct{}
 
-func (noopInserter) Search(context.Context, SearchParams) ([]ChunkResult, error) {
+func (noopDB) Search(context.Context, SearchParams) ([]ChunkResult, error) {
 	return nil, nil
 }
-func (noopInserter) PrepareUpdate(ctx context.Context, modelID string, modelDims uint64) error {
+func (noopDB) PrepareUpdate(ctx context.Context, modelID string, modelDims uint64) error {
 	return nil
 }
-func (noopInserter) HasIndex(ctx context.Context, modelID string, repoID api.RepoID, revision api.CommitID) (bool, error) {
+func (noopDB) HasIndex(ctx context.Context, modelID string, repoID api.RepoID, revision api.CommitID) (bool, error) {
 	return false, nil
 }
-func (noopInserter) InsertChunks(context.Context, InsertParams) error {
+func (noopDB) InsertChunks(context.Context, InsertParams) error {
 	return nil
 }
-func (noopInserter) FinalizeUpdate(context.Context, FinalizeUpdateParams) error {
+func (noopDB) FinalizeUpdate(context.Context, FinalizeUpdateParams) error {
 	return nil
+}
+
+var ErrDisabled = errors.New("Qdrant is disabled. Enable by setting QDRANT_ENDPOINT")
+
+func NewDisabledDB() VectorDB {
+	return disabledDB{}
+}
+
+var _ VectorDB = disabledDB{}
+
+type disabledDB struct{}
+
+func (disabledDB) Search(context.Context, SearchParams) ([]ChunkResult, error) {
+	return nil, ErrDisabled
+}
+func (disabledDB) PrepareUpdate(ctx context.Context, modelID string, modelDims uint64) error {
+	return ErrDisabled
+}
+func (disabledDB) HasIndex(ctx context.Context, modelID string, repoID api.RepoID, revision api.CommitID) (bool, error) {
+	return false, ErrDisabled
+}
+func (disabledDB) InsertChunks(context.Context, InsertParams) error {
+	return ErrDisabled
+}
+func (disabledDB) FinalizeUpdate(context.Context, FinalizeUpdateParams) error {
+	return ErrDisabled
 }

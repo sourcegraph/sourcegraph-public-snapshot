@@ -79,8 +79,8 @@ public class SettingsComponent implements Disposable {
     panel =
         FormBuilder.createFormBuilder()
             .addComponent(userAuthenticationPanel)
-            .addComponent(navigationSettingsPanel)
             .addComponent(codySettingsPanel)
+            .addComponent(navigationSettingsPanel)
             .addComponentFillVertically(new JPanel(), 0)
             .getPanel();
   }
@@ -333,7 +333,7 @@ public class SettingsComponent implements Disposable {
             .addTooltip("Whitespace around commas doesn't matter.")
             .getPanel();
     userAuthenticationPanel.setBorder(
-        IdeBorderFactory.createTitledBorder("User Authentication", true, JBUI.insetsTop(8)));
+        IdeBorderFactory.createTitledBorder("Authentication", true, JBUI.insetsTop(8)));
 
     updateVisibilityOfHelperLinks();
     codyAppStateCheckerExecutorService.scheduleWithFixedDelay(
@@ -442,6 +442,7 @@ public class SettingsComponent implements Disposable {
 
   public void setCodyEnabled(boolean value) {
     isCodyEnabledCheckBox.setSelected(value);
+    this.onDidCodyEnableSettingChange();
     if (!value) {
       setCodyAutoCompleteEnabled(false);
     }
@@ -594,7 +595,7 @@ public class SettingsComponent implements Disposable {
             .addComponent(isUrlNotificationDismissedCheckBox, 10)
             .getPanel();
     navigationSettingsPanel.setBorder(
-        IdeBorderFactory.createTitledBorder("Navigation Settings", true, JBUI.insetsTop(8)));
+        IdeBorderFactory.createTitledBorder("Code Search", true, JBUI.insetsTop(8)));
     return navigationSettingsPanel;
   }
 
@@ -616,18 +617,19 @@ public class SettingsComponent implements Disposable {
             .addComponent(isCodyVerboseDebugEnabledCheckBox)
             .getPanel();
     codySettingsPanel.setBorder(
-        IdeBorderFactory.createTitledBorder("Cody Settings", true, JBUI.insetsTop(8)));
+        IdeBorderFactory.createTitledBorder("Cody AI", true, JBUI.insetsTop(8)));
 
     // Disable isCodyAutoCompleteEnabledCheckBox if isCodyEnabledCheckBox is not selected
-    isCodyEnabledCheckBox.addActionListener(
-        e -> {
-          if (!isCodyEnabledCheckBox.isSelected()) {
-            isCodyAutoCompleteEnabledCheckBox.setSelected(false);
-          }
-          isCodyAutoCompleteEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
-        });
+    isCodyEnabledCheckBox.addActionListener(e -> this.onDidCodyEnableSettingChange());
+    this.onDidCodyEnableSettingChange();
 
     return codySettingsPanel;
+  }
+
+  private void onDidCodyEnableSettingChange() {
+    isCodyAutoCompleteEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
+    isCodyDebugEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
+    isCodyVerboseDebugEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
   }
 
   @Override

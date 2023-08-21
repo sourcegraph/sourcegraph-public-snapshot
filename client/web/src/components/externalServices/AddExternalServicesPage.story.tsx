@@ -39,6 +39,26 @@ export const Overview: Story = () => (
     </WebStory>
 )
 
+export const OverviewWithBusinessLicense: Story = () => {
+    window.context.licenseInfo = { currentPlan: 'business-0' }
+    return (
+        <WebStory>
+            {webProps => (
+                <AddExternalServicesPage
+                    {...webProps}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    codeHostExternalServices={codeHostExternalServices}
+                    nonCodeHostExternalServices={nonCodeHostExternalServices}
+                    autoFocusForm={false}
+                    externalServicesFromFile={false}
+                    allowEditExternalServicesWithFile={false}
+                    isSourcegraphApp={false}
+                />
+            )}
+        </WebStory>
+    )
+}
+
 export const AddConnectionBykind: Story = () => (
     <WebStory initialEntries={['/page?id=github']}>
         {webProps => (

@@ -16,7 +16,6 @@ var Indexes = indexesAPI{}
 type indexesAPI struct{}
 
 var defaultIndexers = map[string]string{
-	"clang":      "sourcegraph/lsif-clang",
 	"go":         "sourcegraph/scip-go",
 	"java":       "sourcegraph/scip-java",
 	"python":     "sourcegraph/scip-python",
@@ -28,7 +27,6 @@ var defaultIndexers = map[string]string{
 // To update, run `DOCKER_USER=... DOCKER_PASS=... ./update-shas.sh`
 var defaultIndexerSHAs = map[string]string{
 	"sourcegraph/scip-go":         "sha256:4f82e2490c4385a3c47ac0d062c9c53ce5a0bfc5acf0c4032ad07486b39163ec",
-	"sourcegraph/lsif-clang":      "sha256:ea814e5ab5c6e1e6ab4d001e4f4afddcc7b44128edbeeedf1d97da553813a4c8",
 	"sourcegraph/lsif-rust":       "sha256:83cb769788987eb52f21a18b62d51ebb67c9436e1b0d2e99904c70fef424f9d1",
 	"sourcegraph/scip-rust":       "sha256:adf0047fc3050ba4f7be71302b42c74b49901f38fb40916d94ac5fc9181ac078",
 	"sourcegraph/scip-java":       "sha256:9c6760bbb3a44ebe1ceb9c16b5f7b85c07f0b073d772c1715e635235ba231129",

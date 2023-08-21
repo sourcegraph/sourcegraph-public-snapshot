@@ -26,26 +26,18 @@ import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.agent.CodyAgent;
-import com.sourcegraph.cody.api.CodyLLMConfiguration;
-import com.sourcegraph.cody.api.Message;
 import com.sourcegraph.cody.chat.AssistantMessageWithSettingsButton;
 import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatMessage;
 import com.sourcegraph.cody.chat.ChatScrollPane;
 import com.sourcegraph.cody.chat.ChatUIConstants;
 import com.sourcegraph.cody.chat.ContextFilesMessage;
-import com.sourcegraph.cody.chat.Interaction;
 import com.sourcegraph.cody.chat.MessagePanel;
 import com.sourcegraph.cody.chat.Transcript;
-import com.sourcegraph.cody.context.ContextGetter;
 import com.sourcegraph.cody.context.ContextMessage;
 import com.sourcegraph.cody.context.EmbeddingStatusView;
-import com.sourcegraph.cody.editor.EditorContext;
-import com.sourcegraph.cody.editor.EditorContextGetter;
 import com.sourcegraph.cody.editor.EditorUtil;
 import com.sourcegraph.cody.localapp.LocalAppManager;
-import com.sourcegraph.cody.prompts.Preamble;
-import com.sourcegraph.cody.prompts.Prompter;
 import com.sourcegraph.cody.recipes.ExplainCodeDetailedAction;
 import com.sourcegraph.cody.recipes.ExplainCodeHighLevelAction;
 import com.sourcegraph.cody.recipes.FindCodeSmellsAction;
@@ -64,9 +56,6 @@ import com.sourcegraph.config.SettingsComponent.InstanceType;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import com.sourcegraph.vcs.RepoUtil;
 import java.awt.*;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import javax.swing.BorderFactory;
@@ -216,8 +205,6 @@ public class CodyToolWindowContent implements UpdatableChat {
     updateVisibilityOfContentPanels();
     // Add welcome message
     addWelcomeMessage();
-    // Refresh the LLM Configuration for the project for the incoming prompts
-    CodyLLMConfiguration.getInstance(project).refreshCache();
   }
 
   public static CodyToolWindowContent getInstance(@NotNull Project project) {
@@ -508,9 +495,6 @@ public class CodyToolWindowContent implements UpdatableChat {
     }
     startMessageProcessing();
     // Build message
-
-    EditorContext editorContext = EditorContextGetter.getEditorContext(project);
-
     String truncatedPrompt =
         TruncationUtils.truncateText(message.prompt(), TruncationUtils.MAX_HUMAN_INPUT_TOKENS);
     ChatMessage humanMessage =
@@ -523,52 +507,17 @@ public class CodyToolWindowContent implements UpdatableChat {
     ApplicationManager.getApplication()
         .executeOnPooledThread(
             () -> {
-              String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
               String accessToken = ConfigUtil.getProjectAccessToken(project);
-
-              String repoName = RepoUtil.findRepositoryName(project, currentFile);
-              String accessTokenOrEmpty = accessToken != null ? accessToken : "";
-              Chat chat = new Chat(instanceUrl, accessTokenOrEmpty);
-              if (CodyAgent.isConnected(project)) {
-                try {
-                  chat.sendMessageViaAgent(
-                      CodyAgent.getClient(project),
-                      CodyAgent.getInitializedServer(project),
-                      humanMessage,
-                      this,
-                      cancellationToken);
-                } catch (Exception e) {
-                  logger.warn("Error sending message '" + humanMessage + "' to chat", e);
-                }
-              } else {
-                try {
-                  List<ContextMessage> contextMessages =
-                      getContextFromEmbeddings(
-                          project, humanMessage, instanceUrl, repoName, accessTokenOrEmpty);
-                  this.displayUsedContext(contextMessages);
-                  List<ContextMessage> editorContextMessages =
-                      getEditorContextMessages(editorContext);
-                  contextMessages.addAll(editorContextMessages);
-                  List<ContextMessage> selectionContextMessages =
-                      getSelectionContextMessages(editorContext);
-                  contextMessages.addAll(selectionContextMessages);
-                  // Add human message
-                  transcript.addInteraction(new Interaction(humanMessage, contextMessages));
-
-                  List<Message> prompt =
-                      transcript.getPromptForLastInteraction(
-                          Preamble.getPreamble(repoName),
-                          TruncationUtils.getChatMaxAvailablePromptLength(project));
-
-                  try {
-                    chat.sendMessageWithoutAgent(prompt, responsePrefix, this, cancellationToken);
-                  } catch (Exception e) {
-                    logger.warn("Error sending message '" + humanMessage + "' to chat", e);
-                  }
-                } catch (InvalidAccessTokenException ex) {
-                  addMessageWithInformationAboutInvalidAccessToken();
-                  finishMessageProcessing();
-                }
+              Chat chat = new Chat();
+              try {
+                chat.sendMessageViaAgent(
+                    CodyAgent.getClient(project),
+                    CodyAgent.getInitializedServer(project),
+                    humanMessage,
+                    this,
+                    cancellationToken);
+              } catch (Exception e) {
+                logger.warn("Error sending message '" + humanMessage + "' to chat", e);
               }
               GraphQlLogger.logCodyEvent(this.project, "recipe:chat-question", "executed");
             });
@@ -599,72 +548,6 @@ public class CodyToolWindowContent implements UpdatableChat {
       messageContentPanel.add(contextFilesMessage);
       this.addComponentToChat(messageContentPanel);
     }
-  }
-
-  @NotNull
-  private List<ContextMessage> getContextFromEmbeddings(
-      @NotNull Project project,
-      ChatMessage humanMessage,
-      String instanceUrl,
-      String repoName,
-      String accessTokenOrEmpty) {
-    List<ContextMessage> contextMessages = new ArrayList<>();
-    if (repoName != null) {
-      try {
-        contextMessages =
-            new ContextGetter(
-                    repoName,
-                    instanceUrl,
-                    accessTokenOrEmpty,
-                    ConfigUtil.getCustomRequestHeaders(project))
-                .getContextMessages(humanMessage.getText(), 8, 2, true);
-      } catch (IOException e) {
-        logger.warn(
-            "Unable to load context for message: "
-                + humanMessage.getText()
-                + ", in repo: "
-                + repoName,
-            e);
-        String message = e.getMessage();
-        if (message != null && message.contains("request failed with status code 401")) {
-          throw new InvalidAccessTokenException(
-              "Invalid access token while loading context messages", e);
-        }
-      }
-    }
-    return contextMessages;
-  }
-
-  private List<ContextMessage> getEditorContextMessages(EditorContext editorContext) {
-    if (editorContext.getCurrentFileName() != null
-        && editorContext.getCurrentFileContent() != null) {
-      String truncatedCurrentFileContent =
-          TruncationUtils.truncateText(
-              editorContext.getCurrentFileContent(), TruncationUtils.MAX_CURRENT_FILE_TOKENS);
-      String currentFilePrompt =
-          Prompter.getCurrentEditorCodePrompt(
-              editorContext.getCurrentFileName(), truncatedCurrentFileContent);
-      ContextMessage currentFileHumanMessage = ContextMessage.createHumanMessage(currentFilePrompt);
-      ContextMessage defaultAssistantMessage = ContextMessage.createDefaultAssistantMessage();
-      return List.of(currentFileHumanMessage, defaultAssistantMessage);
-    }
-    return Collections.emptyList();
-  }
-
-  public List<ContextMessage> getSelectionContextMessages(EditorContext editorContext) {
-    if (editorContext.getCurrentFileName() != null && editorContext.getSelection() != null) {
-      String selectedText = editorContext.getSelection();
-      String truncatedSelectedText =
-          TruncationUtils.truncateText(selectedText, TruncationUtils.MAX_CURRENT_FILE_TOKENS);
-      String selectedTextPrompt =
-          Prompter.getCurrentEditorSelectedCode(
-              editorContext.getCurrentFileName(), truncatedSelectedText);
-      ContextMessage selectedTextHumanMessage =
-          ContextMessage.createHumanMessage(selectedTextPrompt);
-      ContextMessage defaultAssistantMessage = ContextMessage.createDefaultAssistantMessage();
-      return List.of(selectedTextHumanMessage, defaultAssistantMessage);
-    }
-    return Collections.emptyList();
   }
 
   public @NotNull JComponent getContentPanel() {

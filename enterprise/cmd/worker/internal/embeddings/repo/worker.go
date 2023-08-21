@@ -55,7 +55,7 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 		return nil, err
 	}
 
-	qdrantInserter := vdb.NewNoopInserter()
+	qdrantInserter := vdb.NewNoopDB()
 	if qdrantAddr := conf.Get().ServiceConnections().Qdrant; qdrantAddr != "" {
 		conn, err := defaults.Dial(qdrantAddr, observationCtx.Logger)
 		if err != nil {

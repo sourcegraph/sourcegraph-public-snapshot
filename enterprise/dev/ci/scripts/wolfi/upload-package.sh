@@ -31,12 +31,15 @@ apks=(*.apk)
 for apk in "${apks[@]}"; do
   echo " * Processing $apk"
 
+  package_name=$(echo "$apk" | sed -E 's/(-[0-9].*)//')
+  package_version=$(echo "$apk" | sed -E 's/^.*-([0-9.]+-r[0-9]+).apk$/\1/')
+
   # Generate the branch-specific path to upload the package to
-  dest_path="gs://$GCS_BUCKET/packages/$BRANCH_PATH/$TARGET_ARCH/"
+  dest_path="gs://$GCS_BUCKET/$BRANCH_PATH/$TARGET_ARCH/"
   echo "   -> File path: ${dest_path}${apk}"
 
   # Generate the path to the package file on the main branch
-  dest_path_main="gs://$GCS_BUCKET/packages/$MAIN_BRANCH/$TARGET_ARCH/"
+  dest_path_main="gs://$GCS_BUCKET/$MAIN_BRANCH/$TARGET_ARCH/"
 
   # Generate index fragment for this package
   melange index -o "$apk.APKINDEX.tar.gz" "$apk"
@@ -48,9 +51,10 @@ for apk in "${apks[@]}"; do
   # Check whether this version of the package already exists in the main package repo
   echo "   * Checking if this package version already exists in the production repo..."
   if gsutil -q -u "$GCP_PROJECT" stat "${dest_path_main}${apk}"; then
-    echo "The production package repository already contains a package with this version: $apk" >&2
-    echo "   -> Production repository file path: ${dest_path_main}${apk}" >&2
-    echo "Resolve this issue by incrementing the \`epoch\` field in the package's YAML file." >&2
+    echo -e "The production package repository already contains the package '$package_name' version '$package_version' at '${dest_path_main}${apk}'.\n\n
+Resolve this issue by incrementing the 'epoch' field in the package's YAML file." |
+      ../../../enterprise/dev/ci/scripts/annotate.sh -t "error"
+
     # Soft fail at the end - we still want to allow the package to be uploaded for cases like a Buildkite pipeline being rerun
     error="true"
   else
@@ -62,28 +66,29 @@ for apk in "${apks[@]}"; do
   gsutil -u "$GCP_PROJECT" -h "Cache-Control:no-cache" cp "$apk" "$index_fragment" "$dest_path"
 
   # Concat package names for annotation
-  package_name=$(echo "$apk" | sed -E 's/(-[0-9].*)//')
   package_usage_list="$package_usage_list    - ${package_name}@branch\n"
 done
 
 # Show package usage message on branches
 if [[ "$IS_MAIN" != "true" ]]; then
-
-  # TODO: Update keyring when keys change: https://storage.googleapis.com/package-repository/packages/${BRANCH_PATH}/melange.rsa.pub
   if [[ -n "$BUILDKITE" ]]; then
-    echo -e "To use this package locally, add the following lines to your base image config:
+    echo -e "Use this package locally by adding the following to your base image config under \`wolfi-images/\`:
 \`\`\`
 contents:
   keyring:
-    - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
+    - https://packages.sgdev.org/sourcegraph-melange-dev.rsa.pub
   repositories:
-    - '@branch https://storage.googleapis.com/package-repository/packages/${BRANCH_PATH}'
+    - '@branch https://packages.sgdev.org/${BRANCH_PATH}'
   packages:
 $package_usage_list
-  \`\`\`" | ../../../enterprise/dev/ci/scripts/annotate.sh -s "custom-repo" -m -t "info"
+  \`\`\`" | ../../../enterprise/dev/ci/scripts/annotate.sh -m -t "info"
   fi
 fi
 
 if [[ "$error" == "true" ]]; then
-  exit 222 # Soft fail
+  if [[ "$IS_MAIN" == "true" ]]; then
+    exit 222 # Soft fail on main branch to avoid breaking the build if a pipeline is re-run
+  else
+    exit 200 # Hard fail on branches to avoid merging duplicate packages
+  fi
 fi

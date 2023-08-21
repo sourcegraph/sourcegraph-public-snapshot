@@ -200,12 +200,12 @@ func TestTeamNodeViewerCanAdminister(t *testing.T) {
 					}
 				}
 			}`,
-			ExpectedResult: fmt.Sprintf(`{
+			ExpectedResult: `{
 				"node": {
 					"__typename": "Team",
 					"viewerCanAdminister": true
 				}
-			}`),
+			}`,
 			Variables: map[string]any{
 				"id": string(relay.MarshalID("Team", team.ID)),
 			},
@@ -368,7 +368,10 @@ func TestCreateTeamParentByID(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		fs.TeamStore.CreateTeamMember(ctx, &types.TeamMember{TeamID: parentTeam.ID, UserID: userID})
+		err = fs.TeamStore.CreateTeamMember(ctx, &types.TeamMember{TeamID: parentTeam.ID, UserID: userID})
+		if err != nil {
+			t.Fatalf("failed to add user to team: %s", err)
+		}
 		RunTest(t, &Test{
 			Schema:  mustParseGraphQLSchema(t, db),
 			Context: ctx,
