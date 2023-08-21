@@ -37,6 +37,11 @@ func (c *azureCompletionClient) Complete(
 ) (*types.CompletionResponse, error) {
 	var resp *http.Response
 	var err error
+	defer (func() {
+		if resp != nil {
+			resp.Body.Close()
+		}
+	})()
 	if feature == types.CompletionsFeatureCode {
 		resp, err = c.makeCompletionRequest(ctx, requestParams, false)
 	} else {
@@ -45,7 +50,6 @@ func (c *azureCompletionClient) Complete(
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	var response openaiResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
@@ -71,6 +75,12 @@ func (c *azureCompletionClient) Stream(
 ) error {
 	var resp *http.Response
 	var err error
+
+	defer (func() {
+		if resp != nil {
+			resp.Body.Close()
+		}
+	})()
 	if feature == types.CompletionsFeatureCode {
 		resp, err = c.makeCompletionRequest(ctx, requestParams, true)
 	} else {
@@ -79,7 +89,6 @@ func (c *azureCompletionClient) Stream(
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
 
 	dec := openai.NewDecoder(resp.Body)
 	var content string
@@ -233,7 +242,6 @@ func (c *azureCompletionClient) makeCompletionRequest(ctx context.Context, reque
 	if err != nil {
 		return nil, err
 	}
-
 	url, err := url.Parse(c.endpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse configured endpoint")
