@@ -32,6 +32,7 @@ futures = { version = "^0.3.27", features = ["std"], default-features = false }
 futures-util = { version = "^0.3.27", features = ["std"], default-features = false }
 futures-task = { version = "^0.3.27", features = ["std"], default-features = false }
 
+# See https://stackoverflow.com/questions/76905691/bazel-unable-to-build-external-rust-dependency-with-feature-serde1
 rustix = { version = "0.38.8", features = ["std", "use-libc"] }
 
 [workspace]
