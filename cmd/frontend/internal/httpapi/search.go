@@ -117,21 +117,6 @@ func (s *searchIndexerGRPCServer) List(ctx context.Context, r *proto.ListRequest
 	return &response, nil
 }
 
-func (s *searchIndexerGRPCServer) RepositoryRank(ctx context.Context, request *proto.RepositoryRankRequest) (*proto.RepositoryRankResponse, error) {
-	ranks, err := s.server.Ranking.GetRepoRank(ctx, api.RepoName(request.Repository))
-	if err != nil {
-		if errcode.IsNotFound(err) {
-			return nil, status.Error(codes.NotFound, err.Error())
-		}
-
-		return nil, err
-	}
-
-	return &proto.RepositoryRankResponse{
-		Rank: ranks,
-	}, nil
-}
-
 func (s *searchIndexerGRPCServer) DocumentRanks(ctx context.Context, request *proto.DocumentRanksRequest) (*proto.DocumentRanksResponse, error) {
 	ranks, err := s.server.Ranking.GetDocumentRanks(ctx, api.RepoName(request.Repository))
 	if err != nil {
@@ -474,10 +459,6 @@ var metricGetVersion = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_search_get_version_total",
 	Help: "The total number of times we poll gitserver for the version of a indexable branch.",
 })
-
-func (h *searchIndexerServer) serveRepoRank(w http.ResponseWriter, r *http.Request) error {
-	return serveRank(h.Ranking.GetRepoRank, w, r)
-}
 
 func (h *searchIndexerServer) serveDocumentRanks(w http.ResponseWriter, r *http.Request) error {
 	return serveRank(h.Ranking.GetDocumentRanks, w, r)
