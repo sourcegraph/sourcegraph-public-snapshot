@@ -19,10 +19,6 @@ describe('gitHubAppConfig', () => {
     })
 
     describe('resolveExternalServiceCategory', () => {
-        test('returns undefined with no external service', () => {
-            expect(resolveExternalServiceCategory()).toEqual(undefined)
-        })
-
         test('parses config from JSONC if parsed config is not given', () => {
             const externalService = {
                 config: '{"url": "https://github.com"}',

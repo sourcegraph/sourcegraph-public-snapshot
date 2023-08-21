@@ -380,7 +380,7 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
     },
 ]
 
-const gitHubAppEditorActions = (isEnterprise: boolean): EditorAction[] => {
+const gitHubAppEditorActions = (): EditorAction[] => {
     const actions = githubEditorActions(true).filter(
         item =>
             !['setURL', 'setAccessToken', 'addAffiliatedRepos', 'enablePermissions', 'addWebhooks'].includes(item.id)
@@ -603,7 +603,7 @@ const GITHUB_APP: AddExternalServiceOptions = {
     title: 'GitHub App',
     shortDescription:
         'Connect repositories on GitHub.com or self-hosted GitHub Enterprise installations using a GitHub App installation',
-    editorActions: gitHubAppEditorActions(false),
+    editorActions: gitHubAppEditorActions(),
     Instructions: () => <GitHubAppInstructions />,
     additionalFormComponent: <GitHubAppSelector />,
 }
@@ -1660,10 +1660,10 @@ export const EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES = new Set<ExternalServiceSyn
 ])
 
 export const resolveExternalServiceCategory = (
-    externalService?: ExternalServiceFieldsWithConfig,
+    externalService: ExternalServiceFieldsWithConfig,
     gitHubApp?: GitHubAppByAppIDResult['gitHubAppByAppID']
-): AddExternalServiceOptions | undefined => {
-    let externalServiceCategory = externalService && defaultExternalServices[externalService.kind]
+): AddExternalServiceOptions => {
+    let externalServiceCategory = defaultExternalServices[externalService.kind]
     if (externalService && [ExternalServiceKind.GITHUB, ExternalServiceKind.GITLAB].includes(externalService.kind)) {
         let { parsedConfig } = externalService
         if (!parsedConfig) {
