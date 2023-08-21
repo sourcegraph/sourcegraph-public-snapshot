@@ -51,6 +51,9 @@ var _ service.NewSearcher = &mockSearcher{}
 
 func (m *mockSearcher) NewSearch(ctx context.Context, q string) (service.SearchQuery, error) {
 	args := m.Called(ctx, q)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).(service.SearchQuery), args.Error(1)
 }
 
@@ -62,11 +65,17 @@ var _ service.SearchQuery = &mockSearchQuery{}
 
 func (m *mockSearchQuery) RepositoryRevSpecs(ctx context.Context) ([]service.RepositoryRevSpec, error) {
 	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).([]service.RepositoryRevSpec), args.Error(1)
 }
 
 func (m *mockSearchQuery) ResolveRepositoryRevSpec(ctx context.Context, spec service.RepositoryRevSpec) ([]service.RepositoryRevision, error) {
 	args := m.Called(ctx, spec)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).([]service.RepositoryRevision), args.Error(1)
 }
 
