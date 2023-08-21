@@ -26,7 +26,6 @@ func MakeRepoUpdateWorker(ctx context.Context, observationCtx *observation.Conte
 	numHandlers := conf.GitMaxConcurrentClones()
 	store := MakeStore(observationCtx, db.Handle())
 	handler := MakeRepoCloneHandler(observationCtx, db, database.RepoUpdateJobStoreWith(db), hostname, gitserver)
-	conf.GitLongCommandTimeout()
 	return dbworker.NewWorker[types.RepoUpdateJob](ctx, store, handler, workerutil.WorkerOptions{
 		Name:                 "repo_clone_worker",
 		Interval:             time.Second,
@@ -101,5 +100,10 @@ func (h *repoCloneHandler) PreDequeue(_ context.Context, _ log.Logger) (bool, an
 	for _, addr := range addresses {
 		addrPredicates = append(addrPredicates, sqlf.Sprintf("%s", addr))
 	}
-	return true, []*sqlf.Query{sqlf.Sprintf("addr_for_repo(repo_update_jobs.repository_name, ARRAY[%s]) = %s", sqlf.Join(addrPredicates, ","), h.hostname)}, nil
+	query := sqlf.Sprintf(
+		"addr_for_repo(repo_update_jobs.repository_name, ARRAY[%s]) = %s",
+		sqlf.Join(addrPredicates, ","),
+		h.hostname,
+	)
+	return true, []*sqlf.Query{query}, nil
 }

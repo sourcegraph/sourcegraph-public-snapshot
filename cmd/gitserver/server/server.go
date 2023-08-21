@@ -76,25 +76,6 @@ const P4HomeName = ".p4home"
 // logs to stderr
 var traceLogs bool
 
-var (
-	lastCheckAt    = make(map[api.RepoName]time.Time)
-	lastCheckMutex sync.Mutex
-)
-
-// debounce() provides some filtering to prevent spammy requests for the same
-// repository. If the last fetch of the repository was within the given
-// duration, returns false, otherwise returns true and updates the last
-// fetch stamp.
-func debounce(name api.RepoName, since time.Duration) bool {
-	lastCheckMutex.Lock()
-	defer lastCheckMutex.Unlock()
-	if t, ok := lastCheckAt[name]; ok && time.Now().Before(t.Add(since)) {
-		return false
-	}
-	lastCheckAt[name] = time.Now()
-	return true
-}
-
 func init() {
 	traceLogs, _ = strconv.ParseBool(env.Get("SRC_GITSERVER_TRACE", "false", "Toggles trace logging to stderr"))
 }
@@ -912,11 +893,8 @@ func (s *Server) HandleRepoUpdateRequest(ctx context.Context, req *protocol.Repo
 			resp.Error = err.Error()
 		}
 	} else {
-		var statusErr, updateErr error
-
-		if debounce(req.Repo, req.Since) {
-			updateErr = s.doRepoUpdate(ctx, req.Repo, "")
-		}
+		var statusErr error
+		updateErr := s.doRepoUpdate(ctx, req.Repo, "")
 
 		// attempts to acquire these values are not contingent on the success of
 		// the update.

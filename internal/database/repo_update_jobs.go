@@ -16,7 +16,7 @@ import (
 
 type RepoUpdateJobStore interface {
 	Handle() *basestore.Store
-	Create(ctx context.Context, opts RepoUpdateJobOpts) (types.RepoUpdateJob, bool, error)
+	Create(ctx context.Context, opts CreateRepoUpdateJobOpts) (types.RepoUpdateJob, bool, error)
 	List(ctx context.Context, opts ListRepoUpdateJobOpts) ([]types.RepoUpdateJob, error)
 	SaveUpdateJobResults(ctx context.Context, jobID int, opts SaveUpdateJobResultsOpts) error
 }
@@ -48,41 +48,50 @@ func (s *repoUpdateJobStore) Handle() *basestore.Store {
 	return s.db
 }
 
-type RepoUpdateJobOpts struct {
-	RepoID       api.RepoID
+type CreateRepoUpdateJobOpts struct {
+	RepoName     api.RepoName
 	Priority     types.RepoUpdateJobPriority
 	ProcessAfter time.Time
 }
 
 const createRepoUpdateJobQueryFmtstr = `
 INSERT INTO repo_update_jobs(repo_id, priority, process_after)
-VALUES (%s, %s, %s)
+SELECT r.id, %s, %s
+FROM repo r
+WHERE r.name = %s
 ON CONFLICT DO NOTHING
 RETURNING %s
 `
 
-func (s *repoUpdateJobStore) Create(ctx context.Context, opts RepoUpdateJobOpts) (types.RepoUpdateJob, bool, error) {
+func (s *repoUpdateJobStore) Create(ctx context.Context, opts CreateRepoUpdateJobOpts) (types.RepoUpdateJob, bool, error) {
 	return scanFirstRepoUpdateJob(s.db.Query(ctx, createRepoUpdateJobQuery(opts)))
 }
 
-func createRepoUpdateJobQuery(opts RepoUpdateJobOpts) *sqlf.Query {
+func createRepoUpdateJobQuery(opts CreateRepoUpdateJobOpts) *sqlf.Query {
 	return sqlf.Sprintf(
 		createRepoUpdateJobQueryFmtstr,
-		opts.RepoID,
 		opts.Priority,
 		dbutil.NullTimeColumn(opts.ProcessAfter),
+		opts.RepoName,
 		sqlf.Join(RepoUpdateJobColumns, ", "))
 }
 
+// ListRepoUpdateJobOpts contains variables which are used as predicates, for
+// ordering and limiting while listing the repo update jobs.
+//
+// Note: if both repoID and repoName are provided, repoID takes precedence.
 type ListRepoUpdateJobOpts struct {
-	ID     int
-	RepoID api.RepoID
-	States []string
+	ID             int
+	RepoID         api.RepoID
+	RepoName       api.RepoName
+	States         []string
+	PaginationArgs *PaginationArgs
 }
 
 const listRepoUpdateJobsFmtstr = `
 SELECT %s
 FROM repo_update_jobs
+%s -- optional join with repo table
 WHERE %s
 `
 
@@ -105,10 +114,28 @@ func createListRepoUpdateJobsQuery(opts ListRepoUpdateJobOpts) *sqlf.Query {
 		}
 		preds = append(preds, sqlf.Sprintf("state IN (%s)", sqlf.Join(states, ", ")))
 	}
+
+	joinClause := sqlf.Sprintf("")
+	if opts.RepoID == 0 && opts.RepoName != "" {
+		joinClause = sqlf.Sprintf("JOIN repo ON repo_update_jobs.repo_id = repo.id")
+		preds = append(preds, sqlf.Sprintf("repo.name = %s", opts.RepoName))
+	}
+
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
-	return sqlf.Sprintf(listRepoUpdateJobsFmtstr, sqlf.Join(RepoUpdateJobColumns, ", "), sqlf.Join(preds, "AND "))
+
+	query := sqlf.Sprintf(listRepoUpdateJobsFmtstr,
+		sqlf.Join(RepoUpdateJobColumns, ", "),
+		joinClause,
+		sqlf.Join(preds, "AND "))
+
+	if opts.PaginationArgs != nil {
+		args := opts.PaginationArgs.SQL()
+		query = args.AppendOrderToQuery(query)
+		query = args.AppendLimitToQuery(query)
+	}
+	return query
 }
 
 type SaveUpdateJobResultsOpts struct {
@@ -215,6 +242,7 @@ func ScanFullRepoUpdateJob(s dbutil.Scanner) (job types.RepoUpdateJob, _ error) 
 		&job.Cancel,
 		&job.RepoID,
 		&job.Priority,
+		&job.OverwriteClone,
 		&dbutil.NullTime{Time: &job.LastFetched},
 		&dbutil.NullTime{Time: &job.LastChanged},
 		&dbutil.NullInt{N: &job.UpdateIntervalSeconds},

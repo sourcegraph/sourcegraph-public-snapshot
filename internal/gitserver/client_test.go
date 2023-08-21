@@ -31,6 +31,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
@@ -1313,6 +1314,66 @@ func TestClient_BatchLog(t *testing.T) {
 	if diff := cmp.Diff(expectedResults, results); diff != "" {
 		t.Errorf("unexpected results (-want +got):\n%s", diff)
 	}
+}
+
+func TestClient_RequestRepoUpdate_JobsEnqueuedAndDebounced(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	// Creating 2 repos.
+	reposStore := db.Repos()
+	err := reposStore.Create(ctx, &types.Repo{ID: 1, Name: "repo1"})
+	require.NoError(t, err)
+	err = reposStore.Create(ctx, &types.Repo{ID: 2, Name: "repo2"})
+	require.NoError(t, err)
+
+	// Creating a client. We only need a real DB connection here.
+	source := gitserver.NewTestClientSource(t, db, []string{"172.16.8.1:8080"})
+	client := gitserver.NewTestClient(&http.Client{}, db, source)
+
+	// All we need from this response is to be non-empty which will indicate that
+	// the job was scheduled and "processed".
+	wantLastFetchedTime := time.Now()
+	gitserver.MockWaitForUpdateJobToFinish = func(_ context.Context, _ int, _ database.RepoUpdateJobStore) (*protocol.RepoUpdateResponse, error) {
+		return &protocol.RepoUpdateResponse{LastFetched: &wantLastFetchedTime}, nil
+	}
+	t.Cleanup(func() {
+		gitserver.MockWaitForUpdateJobToFinish = nil
+	})
+
+	// Scheduling the job for repo1 with no debounce ("since" == 0).
+	since := 0 * time.Second
+	gotResponse, err := client.RequestRepoUpdate(ctx, "repo1", since)
+	require.NoError(t, err)
+	require.NotNil(t, gotResponse)
+	assert.Equal(t, wantLastFetchedTime, *gotResponse.LastFetched)
+
+	// Scheduling the job for repo2 with a debounce of 1 hour.
+	since = 1 * time.Hour
+	gotResponse, err = client.RequestRepoUpdate(ctx, "repo2", since)
+	require.NoError(t, err)
+	// Job should be scheduled even with a debounce because it is the first job for
+	// repo2.
+	require.NotNil(t, gotResponse)
+	assert.Equal(t, wantLastFetchedTime, *gotResponse.LastFetched)
+
+	// Scheduling another job for repo1 with a little debounce which should've
+	// already passed.
+	since = 10 * time.Nanosecond
+	gotResponse, err = client.RequestRepoUpdate(ctx, "repo1", since)
+	require.NoError(t, err)
+	require.NotNil(t, gotResponse)
+	assert.Equal(t, wantLastFetchedTime, *gotResponse.LastFetched)
+
+	// Shouldn't schedule another job for repo2 because the debounce period haven't
+	// passed. In this case an empty response is returned.
+	wantResponse := protocol.RepoUpdateResponse{}
+	since = 1 * time.Hour
+	gotResponse, err = client.RequestRepoUpdate(ctx, "repo2", since)
+	require.NoError(t, err)
+	require.NotNil(t, gotResponse)
+	assert.Equal(t, wantResponse, *gotResponse)
 }
 
 func TestLocalGitCommand(t *testing.T) {

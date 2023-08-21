@@ -30,10 +30,9 @@ func CrateSyncerJob(
 	dependenciesSvc background.DependenciesService,
 	gitserverClient gitserver.Client,
 	extSvcStore background.ExternalServiceStore,
-	repoStore background.RepoStore,
 ) goroutine.CombinedRoutine {
 	return []goroutine.BackgroundRoutine{
-		background.NewCrateSyncer(observationCtx, autoindexingSvc, dependenciesSvc, gitserverClient, extSvcStore, repoStore),
+		background.NewCrateSyncer(observationCtx, autoindexingSvc, dependenciesSvc, gitserverClient, extSvcStore),
 	}
 }
 

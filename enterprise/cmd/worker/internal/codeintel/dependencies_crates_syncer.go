@@ -43,6 +43,5 @@ func (j *cratesSyncerJob) Routines(_ context.Context, observationCtx *observatio
 		services.DependenciesService,
 		services.GitserverClient,
 		db.ExternalServices(),
-		db.Repos(),
 	), nil
 }

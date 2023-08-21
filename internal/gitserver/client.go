@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/go-diff/diff"
 	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -338,7 +339,7 @@ type Client interface {
 	// Repo updates are not guaranteed to occur. If a repo has been updated
 	// recently (within the Since duration specified in the request), the
 	// update won't happen.
-	RequestRepoUpdate(context.Context, api.RepoID, time.Duration) (*protocol.RepoUpdateResponse, error)
+	RequestRepoUpdate(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
 
 	// RequestRepoClone is an asynchronous request to clone a repository.
 	RequestRepoClone(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error)
@@ -1174,13 +1175,33 @@ func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitComm
 	}
 }
 
-func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repoID api.RepoID, since time.Duration) (*protocol.RepoUpdateResponse, error) {
+func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repoName api.RepoName, since time.Duration) (*protocol.RepoUpdateResponse, error) {
 	repoUpdateJobs := database.RepoUpdateJobStoreWith(c.db)
-	// If the since is zero, we just don't add anything.
-	processAfter := time.Now().Add(since)
-	job, _, err := repoUpdateJobs.Create(ctx, database.RepoUpdateJobOpts{
-		RepoID:       repoID,
-		ProcessAfter: processAfter,
+	// If the "since" is not zero, we need to check whether there was a finished
+	// update job for a given repo within the "since" interval. If there was, we
+	// don't schedule another one.
+	//
+	// This "debouncing" logic used to be a part of a server, but moved here so that
+	// we don't enqueue the update job (now) vs. enqueue but don't process job
+	// (before).
+	if since != 0 {
+		// Fetching the most recently queued repo update job for a given repo.
+		paginationArgs := &database.PaginationArgs{
+			First:     pointers.Ptr(1),
+			OrderBy:   []database.OrderByOption{{Field: "repo_update_jobs.queued_at"}},
+			Ascending: false,
+		}
+		opts := database.ListRepoUpdateJobOpts{RepoName: repoName, PaginationArgs: paginationArgs}
+		jobs, err := repoUpdateJobs.List(ctx, opts)
+		if err != nil {
+			return nil, errors.Wrap(err, "fetching latest finished update job")
+		}
+		if len(jobs) == 1 && tooEarlyToSchedule(jobs[0], since) {
+			return &protocol.RepoUpdateResponse{}, nil
+		}
+	}
+	job, _, err := repoUpdateJobs.Create(ctx, database.CreateRepoUpdateJobOpts{
+		RepoName: repoName,
 	})
 	if err != nil {
 		return nil, err
@@ -1196,34 +1217,54 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repoID api.Re
 	return waitForUpdateJobToFinish(ctx, job.ID, repoUpdateJobs)
 }
 
+// tooEarlyToSchedule checks the last queued update job of the repository and if
+// it was within the given duration, returns true (cannot schedule another job
+// now). Otherwise, returns false, which means that we can schedule a new job
+// for the given repo right away.
+func tooEarlyToSchedule(job types.RepoUpdateJob, since time.Duration) bool {
+	return time.Now().Before(job.QueuedAt.Add(since))
+}
+
+// MockWaitForUpdateJobToFinish mocks waitForUpdateJobToFinish function for tests.
+var MockWaitForUpdateJobToFinish func(ctx context.Context, jobID int, s database.RepoUpdateJobStore) (*protocol.RepoUpdateResponse, error)
+
 func waitForUpdateJobToFinish(ctx context.Context, jobID int, s database.RepoUpdateJobStore) (*protocol.RepoUpdateResponse, error) {
+	if MockWaitForUpdateJobToFinish != nil {
+		return MockWaitForUpdateJobToFinish(ctx, jobID, s)
+	}
+
 	ctx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 	defer cancel()
 	start := time.Now()
-	finalJobStates := []string{"completed", "canceled", "errored", "failed"}
 	for {
-		select {
-		case <-ctx.Done():
-			return &protocol.RepoUpdateResponse{Error: "failed to update repository before timeout"}, nil
-		default:
-		}
-		jobs, err := s.List(ctx, database.ListRepoUpdateJobOpts{ID: jobID, States: finalJobStates})
+		jobs, err := s.List(ctx, database.ListRepoUpdateJobOpts{ID: jobID})
 		if err != nil {
 			return &protocol.RepoUpdateResponse{Error: err.Error()}, nil
 		}
-		// Because of DB constraints we can either have a length of 0 or 1 here.
+		// Because of DB constraints we can either have a length of 0 or 1 here. We
+		// cannot really have 0 because we've just created the job (or it was already
+		// queued before) in the `RequestRepoUpdate`. So this check guards us from weird
+		// out-of-bounds errors.
 		if len(jobs) == 1 {
 			job := jobs[0]
+			// We check for all states except "queued" and "processing". In those two cases
+			// we need to wait more for the job to finish.
 			switch job.State {
 			case "completed":
-				return &protocol.RepoUpdateResponse{LastFetched: pointers.Ptr(job.LastFetched), LastChanged: pointers.Ptr(job.LastChanged)}, nil
+				return &protocol.RepoUpdateResponse{LastFetched: &job.LastFetched, LastChanged: &job.LastChanged}, nil
 			case "canceled":
 				return &protocol.RepoUpdateResponse{Error: "repo update job was canceled"}, nil
-			default:
+			case "errored", "failed":
 				return &protocol.RepoUpdateResponse{Error: pointers.Deref(job.FailureMessage, "repo update job failed to run")}, nil
 			}
 		}
-		time.Sleep(calculatePollingBackoff(time.Since(start)))
+		backoffTimer := time.NewTimer(calculatePollingBackoff(time.Since(start)))
+		select {
+		case <-ctx.Done():
+			backoffTimer.Stop()
+			return &protocol.RepoUpdateResponse{Error: "failed to update repository before timeout"}, nil
+		case <-backoffTimer.C:
+		}
 	}
 }
 
