@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/aws/constructs-go/constructs/v10"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiammember"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/serviceaccount"
 
@@ -18,6 +19,8 @@ type Role struct {
 }
 
 type Config struct {
+	Project project.Project
+
 	AccountID   string
 	DisplayName string
 	Roles       []Role
@@ -28,8 +31,9 @@ type Output struct {
 }
 
 func New(scope constructs.Construct, id string, config Config) (*Output, error) {
-	// Set up service account for the Cloud Run instance
 	serviceAccount := serviceaccount.NewServiceAccount(scope, pointer.Value(id), &serviceaccount.ServiceAccountConfig{
+		Project: config.Project.ProjectId(),
+
 		AccountId:   pointer.Value(config.AccountID),
 		DisplayName: pointer.Value(config.DisplayName),
 	})
@@ -37,6 +41,8 @@ func New(scope constructs.Construct, id string, config Config) (*Output, error) 
 		_ = projectiammember.NewProjectIamMember(scope,
 			pointer.Value(fmt.Sprintf("sa_%s", role.ID)),
 			&projectiammember.ProjectIamMemberConfig{
+				Project: config.Project.ProjectId(),
+
 				Role:   pointer.Value(role.Role),
 				Member: pointer.Value(fmt.Sprintf("serviceAccount:%s", *serviceAccount.Email())),
 			})

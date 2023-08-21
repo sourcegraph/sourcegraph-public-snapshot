@@ -1,6 +1,10 @@
 package managedservicesplatform
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/sourcegraph/conc/panics"
 )
@@ -8,6 +12,8 @@ import (
 type CDKTF struct {
 	app    cdktf.App
 	stacks []string
+
+	terraformVersion string
 }
 
 // OutputDir is the directory that Synthesize will place output in.
@@ -25,7 +31,20 @@ func (c CDKTF) Synthesize() error {
 	// attempt to capture them.
 	var catcher panics.Catcher
 	catcher.Try(c.app.Synth)
-	return catcher.Recovered().AsError()
+	if err := catcher.Recovered().AsError(); err != nil {
+		return err
+	}
+
+	// Generate an asdf tool-version file for convenience to align Terraform
+	// with the configured Terraform versions of the generated stacks.
+	toolVersionsPath := filepath.Join(c.OutputDir(), ".tool-versions")
+	if err := os.WriteFile(toolVersionsPath,
+		[]byte(fmt.Sprintf("terraform %s", c.terraformVersion)),
+		os.ModePerm); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c CDKTF) Stacks() []string {

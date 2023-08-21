@@ -19,7 +19,7 @@ type Output struct {
 type Config struct {
 	DefaultProject project.Project
 
-	Spec spec.EnvironmentResourceBigQuerySpec
+	Spec spec.EnvironmentResourceBigQueryTableSpec
 }
 
 func New(scope constructs.Construct, name string, config Config) (*Output, error) {

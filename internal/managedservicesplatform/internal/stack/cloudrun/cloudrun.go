@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/resource/serviceaccount"
 	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack/options/googleprovider"
+	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack/options/randomprovider"
 	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/internal/pointer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -32,8 +33,8 @@ const StackName = "cloudrun"
 
 // Hardcoded variables.
 var (
-	// region is currently
-	region = "us-central1"
+	// gcpRegion is currently hardcoded.
+	gcpRegion = "us-central1"
 	// serviceAccountRoles are granted to the service account for the Cloud Run service.
 	serviceAccountRoles = []serviceaccount.Role{
 		// Allow env vars to source from secrets
@@ -86,54 +87,72 @@ func makeServiceEnvVarPrefix(serviceID string) string {
 // including networking and dependencies like Redis.
 func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	stack := stacks.New(StackName,
-		googleprovider.With(vars.Project))
+		googleprovider.With(vars.Project),
+		randomprovider.With())
 
-	tag, err := vars.Environment.Deploy.ResolveTag()
+	// TODO
+	serviceImageTag, err := vars.Environment.Deploy.ResolveTag()
 	if err != nil {
 		return nil, err
 	}
 
 	// Set up service account for the Cloud Run instance
-	serviceAccount, err := serviceaccount.New(stack, "default", serviceaccount.Config{
-		AccountID:   vars.Service.ID,
-		DisplayName: fmt.Sprintf("%s Service Account", vars.Service.Name),
-		Roles:       serviceAccountRoles,
+	serviceAccount, err := serviceaccount.New(stack, "cloudrun-sa", serviceaccount.Config{
+		Project:   vars.Project,
+		AccountID: vars.Service.ID,
+		DisplayName: fmt.Sprintf("%s Service Account",
+			pointer.IfNil(vars.Service.Name, vars.Service.ID)),
+		Roles: serviceAccountRoles,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render Cloud Run service account")
 	}
 
-	// TODO
-	var diagnosticsSecret *random.Output
+	// Set up networking for the Cloud Run service
+	networking := newCloudRunNetwork(stack, cloudRunNetworkConfig{
+		ProjectID: *vars.Project.Id(),
+		ServiceID: vars.Service.ID,
+		Region:    gcpRegion,
+	})
 
-	// TODO
+	// redisInstance is only created and non-nil if Redis is configured for the
+	// environment.
 	var redisInstance *redis.Output
 	if vars.Environment.Resources.Redis != nil {
-		redisInstance, err = redis.New(stack, "default", redis.Config{
-			Spec: *vars.Environment.Resources.Redis,
+		redisInstance, err = redis.New(stack, "redis", redis.Config{
+			Project: vars.Project,
+			Network: networking.network,
+			Region:  gcpRegion,
+			Spec:    *vars.Environment.Resources.Redis,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render Redis instance")
 		}
 	}
 
-	// TODO
+	// bigqueryDataset is only created and non-nil if BigQuery is configured for
+	// the environment.
 	var bigqueryDataset *bigquery.Output
-	if vars.Environment.Resources.BigQuery != nil {
-		bigqueryDataset, err = bigquery.New(stack, "default", bigquery.Config{
+	if vars.Environment.Resources.BigQueryTable != nil {
+		bigqueryDataset, err = bigquery.New(stack, "bigquery", bigquery.Config{
 			DefaultProject: vars.Project,
-			Spec:           *vars.Environment.Resources.BigQuery,
+			Spec:           *vars.Environment.Resources.BigQueryTable,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render BigQuery dataset")
 		}
 	}
 
+	// Create secret for healthcheck endpoints
+	diagnosticsSecret := random.New(stack, "diagnostics-secret", random.Config{
+		ByteLength: 8,
+	})
+
 	// Set up the core Cloud Run service
-	_ = cloudrunv2service.NewCloudRunV2Service(stack, pointer.Value("default"),
+	_ = cloudrunv2service.NewCloudRunV2Service(stack, pointer.Value("cloudrun"),
 		&cloudrunv2service.CloudRunV2ServiceConfig{
 			Name:     pointer.Value(vars.Service.ID),
-			Location: pointer.Value(region),
+			Location: pointer.Value(gcpRegion),
 			//  Disallows direct traffic from public internet, we have a LB set up for that.
 			Ingress: pointer.Value("INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"),
 
@@ -168,7 +187,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 
 				Containers: []*cloudrunv2service.CloudRunV2ServiceTemplateContainers{{
 					Name:  pointer.Value(vars.Service.ID),
-					Image: pointer.Value(fmt.Sprintf("%s:%s", vars.Image, tag)),
+					Image: pointer.Value(fmt.Sprintf("%s:%s", vars.Image, serviceImageTag)),
 
 					Resources: &cloudrunv2service.CloudRunV2ServiceTemplateContainersResources{
 						Limits: makeContainerResourceLimits(vars.Environment.Instances.Resources),
@@ -182,7 +201,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 					Env: makeContainerEnvVars(
 						vars.Project,
 						makeServiceEnvVarPrefix(vars.Service.ID),
-						diagnosticsSecret.Value,
+						diagnosticsSecret.HexValue,
 						vars.Environment.Env,
 						vars.Environment.SecretEnv,
 						// Additional optional components
@@ -190,12 +209,13 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 						bigqueryDataset,
 					),
 
+					// Do healtchecks with authorization based on MSP convention.
 					StartupProbe: &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbe{
 						HttpGet: &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGet{
 							Path: pointer.Value(healthCheckEndpoint),
 							HttpHeaders: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGetHttpHeaders{{
 								Name:  pointer.Value("Bearer"),
-								Value: pointer.Value(fmt.Sprintf("Authorization %s", diagnosticsSecret.Value)), // TODO
+								Value: pointer.Value(fmt.Sprintf("Authorization %s", diagnosticsSecret.HexValue)), // TODO
 							}},
 						},
 					},

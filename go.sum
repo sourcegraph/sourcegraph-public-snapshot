@@ -2015,6 +2015,8 @@ github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b h1:Mly
 github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b/go.mod h1:0MLTrjQI8EuVmvykEhcfr/7X0xmaDAZrqMgxIq3OXHk=
 github.com/sourcegraph/conc v0.3.0 h1:OQTbbt6P72L20UqAkXXuLOj79LfEanQ+YQFNpLA9ySo=
 github.com/sourcegraph/conc v0.3.0/go.mod h1:Sdozi7LEKbFPqYX2/J+iBAM6HpqSLTASQIKqDmF7Mt0=
+github.com/sourcegraph/controller-cdktf/gen/random v0.0.0-20230815032349-78f70b0362c6 h1:cwuqslpaq5kNYKeXGYoynk1Cd/7bH4R4Wam1OOt4AbQ=
+github.com/sourcegraph/controller-cdktf/gen/random v0.0.0-20230815032349-78f70b0362c6/go.mod h1:wOApvyom+zsXm7wQVMxkv0YVw1pVRhalCXOxwk6SRPk=
 github.com/sourcegraph/embedded-postgres v1.19.1-0.20230624001757-345a8df15ded h1:QcxHhicvH6TFpSmC3vZKWbwLSHmwy72+CESqjjaIsZA=
 github.com/sourcegraph/embedded-postgres v1.19.1-0.20230624001757-345a8df15ded/go.mod h1:0B+3bPsMvcNgR9nN+bdM2x9YaNYDnf3ksUqYp1OAub0=
 github.com/sourcegraph/go-ctags v0.0.0-20230111110657-c27675da7f71 h1:tsWE3F3StWvnwLnC4JWb0zX0UHY9GULQtu/aoQvLJvI=
@@ -2041,6 +2043,8 @@ github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-2023081
 github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20230816005624-901f851f170b/go.mod h1:P1liUcPEczidOp1kyPvi2eqil4243IuPJ+tCOASCHEk=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/projects_iam v0.0.0-20230816064627-ffa668a680d5 h1:s1tI/iEEayGphZ9lBGRbM+FZJMPHUY/4k/cTnWHwv7c=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/projects_iam v0.0.0-20230816064627-ffa668a680d5/go.mod h1:URSbp4NRizcalZTzNIBnChmA4tp9H5J/8Y5aCPm5tAg=
+github.com/sourcegraph/managed-services-platform-cdktf/gen/random v0.0.0-20230818181208-fc3b96d39c4e h1:fdLOK/VslVZ9Jpat3C8TUjJdpJG2SawJxiUipm4fV6w=
+github.com/sourcegraph/managed-services-platform-cdktf/gen/random v0.0.0-20230818181208-fc3b96d39c4e/go.mod h1:TiUqRvYs/Gah8bGw/toyVWCaP3dnCB4tBh3jf5HGdo0=
 github.com/sourcegraph/mountinfo v0.0.0-20230106004439-7026e28cef67 h1:NSYSPQOE7yyyytLbKQHjxSkPnBagaGQblgVMQrQ1je0=
 github.com/sourcegraph/mountinfo v0.0.0-20230106004439-7026e28cef67/go.mod h1:4DAabK408OEbyK2NUEQ5YRApyB/p0XNGJyC1YPBAKq4=
 github.com/sourcegraph/run v0.12.0 h1:3A8w5e8HIYPfafHekvmdmmh42RHKGVhmiTZAPJclg7I=

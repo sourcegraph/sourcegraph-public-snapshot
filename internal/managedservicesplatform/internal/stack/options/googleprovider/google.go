@@ -9,7 +9,10 @@ import (
 )
 
 // With modifies a new stack to use the Google Terraform provider with the given
-// project.
+// project. Every stack using GCP resources should be created with this option.
+//
+// All GCP resources created under a stack with this option should still explicitly
+// configure ProjectID individually.
 func With(p project.Project) stack.NewStackOption {
 	return func(s stack.Stack) {
 		_ = google.NewGoogleProvider(s.Stack, pointer.Value("google"), &google.GoogleProviderConfig{
@@ -19,7 +22,11 @@ func With(p project.Project) stack.NewStackOption {
 }
 
 // WithProjectID modifies a new stack to use the Google Terraform provider
-// with the given project ID.
+// with the given project ID. This should only be used if a project.Project is
+// not yet available.
+//
+// All GCP resources created under a stack with this option should still explicitly
+// configure ProjectID individually.
 func WithProjectID(projectID string) stack.NewStackOption {
 	return func(s stack.Stack) {
 		_ = google.NewGoogleProvider(s.Stack, pointer.Value("google"), &google.GoogleProviderConfig{
