@@ -253,7 +253,7 @@ func run(
 
 			// Don't run executors for Cody App
 			if deploy.IsApp() && !deploy.IsAppFullSourcegraph() && service.Name() == "executor" {
-				logger.Warn("Skipping", log.String("service", service.Name()))
+				logger.Info("Skipping", log.String("service", service.Name()))
 				return
 			}
 
