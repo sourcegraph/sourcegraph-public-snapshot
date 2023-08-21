@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 
+import { noop } from 'lodash'
+
 import {
     Transcript,
     type TranscriptJSON,
@@ -31,7 +33,6 @@ export interface CodyChatStore
         | 'messageInProgress'
         | 'submitMessage'
         | 'editMessage'
-        | 'initializeNewChat'
         | 'executeRecipe'
         | 'scope'
         | 'setScope'
@@ -47,6 +48,7 @@ export interface CodyChatStore
     deleteHistoryItem: (id: string) => void
     loadTranscriptFromHistory: (id: string) => Promise<void>
     logTranscriptEvent: (eventLabel: string, eventProperties?: { [key: string]: any }) => void
+    initializeNewChat: () => void
 }
 
 export const codyChatStoreMock: CodyChatStore = {
@@ -330,25 +332,28 @@ export const useCodyChat = ({
             return null
         }
 
-        const newTranscript = initializeNewChatInternal()
+        // TODO: Confirm correct behavior for autoLoadScope, i.e. with App, and add note
+        const newTranscript = initializeNewChatInternal(autoLoadScopeWithRepositories ? undefined : scope)
 
-        if (newTranscript) {
-            pushTranscriptToHistory(newTranscript).catch(() => null)
+        if (!newTranscript) {
+            return null
+        }
 
-            if (autoLoadScopeWithRepositories) {
-                fetchRepositoryNames(10)
-                    .then(repositories => {
-                        const updatedScope = {
-                            includeInferredRepository: true,
-                            includeInferredFile: true,
-                            repositories,
-                            editor: scope.editor,
-                        }
-                        setScopeInternal(updatedScope)
-                        updateTranscriptInHistory(newTranscript, updatedScope).catch(() => null)
-                    })
-                    .catch(() => null)
-            }
+        pushTranscriptToHistory(newTranscript).catch(noop)
+
+        if (autoLoadScopeWithRepositories) {
+            fetchRepositoryNames(10)
+                .then(repositories => {
+                    const updatedScope = {
+                        includeInferredRepository: true,
+                        includeInferredFile: true,
+                        repositories,
+                        editor: scope.editor,
+                    }
+                    setScopeInternal(updatedScope)
+                    updateTranscriptInHistory(newTranscript, updatedScope).catch(noop)
+                })
+                .catch(noop)
         }
 
         logTranscriptEvent(EventName.CODY_CHAT_INITIALIZED)
