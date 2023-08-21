@@ -18,6 +18,7 @@ import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetry
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, ButtonLink, Link, ProductStatusBadge, useWindowSize } from '@sourcegraph/wildcard'
 
+import { EventName, EventLocation } from '../../util/constants'
 import type { AuthenticatedUser } from '../auth'
 import type { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
@@ -312,7 +313,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             <Link
                                 to="/get-cody"
                                 className={classNames(styles.link, 'small')}
-                                onClick={() => eventLogger.log('ClickedOnCodyCTA', { location: 'NavBar' })}
+                                onClick={() => eventLogger.log(EventName.CODY_CTA, { location: EventLocation.NAV_BAR })}
                             >
                                 Install Cody locally
                             </Link>

@@ -26,6 +26,7 @@ import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/dist/terms'
 import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
+import { EventName, EventLocation } from '../../../util/constants'
 import { CodyPageIcon } from '../../chat/CodyPageIcon'
 import { isCodyEnabled, isEmailVerificationNeededForCody, isSignInRequiredForCody } from '../../isCodyEnabled'
 import { useCodySidebar } from '../../sidebar/Provider'
@@ -247,7 +248,7 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = React.mem
             <Link
                 to="/get-cody"
                 className="d-inline-block w-100 ml-auto text-right font-italic"
-                onClick={() => eventLogger.log('ClickedOnCodyCTA', { location: 'Chat Response' })}
+                onClick={() => eventLogger.log(EventName.CODY_CTA, { location: EventLocation.CHAT_RESPONSE })}
             >
                 Use commands, autocomplete and more in your IDE.
             </Link>
