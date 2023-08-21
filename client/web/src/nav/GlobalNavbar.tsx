@@ -18,7 +18,6 @@ import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetry
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, ButtonLink, Link, ProductStatusBadge, useWindowSize } from '@sourcegraph/wildcard'
 
-import { EventName, EventLocation } from '../../util/constants'
 import type { AuthenticatedUser } from '../auth'
 import type { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
@@ -40,6 +39,7 @@ import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/Ac
 import { NotificationsNavbarItem } from '../site-admin/notifications/NotificationsNavbarItem'
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
+import { EventName, EventLocation } from '../util/constants'
 
 import { NavAction, NavActions, NavBar, NavGroup, NavItem, NavLink } from '.'
 import { NavDropdown, type NavDropdownItem } from './NavBar/NavDropdown'
