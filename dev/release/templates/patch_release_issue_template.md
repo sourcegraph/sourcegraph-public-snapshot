@@ -73,7 +73,7 @@ Once there is a release candidate available:
 
 <!-- Keep in sync with release_issue_template's "Finalize release" section, except no blog post -->
 
-- [ ] From the [release batch change](https://sourcegraph.sourcegraph.com/organizations/sourcegraph/batch-changes/release-sourcegraph-$MAJOR.$MINOR.$PATCHs), merge the release-publishing PRs created previously. Note: some PRs require certain actions performed before merging.
+- [ ] From the [release batch change](https://sourcegraph.sourcegraph.com/organizations/sourcegraph/batch-changes/release-sourcegraph-$MAJOR.$MINOR.$PATCH), merge the release-publishing PRs created previously. Note: some PRs require certain actions performed before merging.
 - [ ] **After all the PRs are merged**, perform following checks/actions
   - For [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph)
     - [ ] Ensure the [release tag](https://github.com/sourcegraph/deploy-sourcegraph/tags) has been created
