@@ -57,6 +57,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
         loaded,
         scope,
         setScope,
+        logTranscriptEvent,
         toggleIncludeInferredRepository,
         toggleIncludeInferredFile,
         abortMessageInProgress,
@@ -88,7 +89,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
             toggleIncludeInferredFile,
             fetchRepositoryNames,
             isSourcegraphApp,
-            transcript,
+            logTranscriptEvent,
             className: 'mt-2',
         }),
         [
@@ -98,13 +99,13 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
             toggleIncludeInferredFile,
             fetchRepositoryNames,
             isSourcegraphApp,
-            transcript,
+            logTranscriptEvent,
         ]
     )
 
     const gettingStartedComponentProps = useMemo(
-        () => ({ ...scopeSelectorProps, transcript, isCodyChatPage }),
-        [scopeSelectorProps, isCodyChatPage, transcript]
+        () => ({ ...scopeSelectorProps, logTranscriptEvent, isCodyChatPage }),
+        [scopeSelectorProps, isCodyChatPage, logTranscriptEvent]
     )
 
     if (!loaded) {
