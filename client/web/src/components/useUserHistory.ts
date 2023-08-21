@@ -3,7 +3,7 @@ import { useEffect, useMemo } from 'react'
 import type * as H from 'history'
 import { useLocation } from 'react-router-dom'
 
-import { Scalars } from '../graphql-operations'
+import type { Scalars } from '../graphql-operations'
 import { parseBrowserRepoURL } from '../util/url'
 
 export interface UserHistoryEntry {
