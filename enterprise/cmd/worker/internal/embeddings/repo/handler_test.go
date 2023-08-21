@@ -43,7 +43,22 @@ func TestListTruncate(t *testing.T) {
 	}
 
 	errorMsg := err.Error()
+	// the trailing substring should not be returned.
+	// a placeholder to identify that we truncate the error should be included.
 	if strings.Contains(errorMsg, "entirety") || !strings.Contains(errorMsg, "(truncated)") {
+		t.Fatal(err)
+	}
+
+	// increase acceptable error string size
+	rf.maxError = 100
+
+	_, err = rf.List(ctx) // the sha1 is not relevant in this test
+	if err == nil {
+		t.Fatal(err)
+	}
+
+	errorMsg = err.Error()
+	if !strings.Contains(errorMsg, "entirety") || strings.Contains(errorMsg, "(truncated)") {
 		t.Fatal(err)
 	}
 }
