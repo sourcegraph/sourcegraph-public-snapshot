@@ -2804,7 +2804,6 @@ CREATE TABLE gitserver_repos (
     repo_size_bytes bigint,
     corrupted_at timestamp with time zone,
     corruption_logs jsonb DEFAULT '[]'::jsonb NOT NULL,
-    cloning_progress text DEFAULT ''::text,
     pool_repo_id integer
 );
 
@@ -4469,7 +4468,8 @@ CREATE TABLE repo_update_jobs (
     fetch_revision text DEFAULT ''::text,
     last_fetched timestamp with time zone,
     last_changed timestamp with time zone,
-    update_interval_seconds integer
+    update_interval_seconds integer,
+    cloning_progress text DEFAULT ''::text
 );
 
 CREATE SEQUENCE repo_update_jobs_id_seq
@@ -4504,6 +4504,7 @@ CREATE VIEW repo_update_jobs_with_repo_name AS
     j.last_fetched,
     j.last_changed,
     j.update_interval_seconds,
+    j.cloning_progress,
     r.name AS repository_name,
     g.pool_repo_id
    FROM ((repo_update_jobs j

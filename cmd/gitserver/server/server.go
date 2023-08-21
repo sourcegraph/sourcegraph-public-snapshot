@@ -123,8 +123,6 @@ type Server struct {
 	canceled bool
 	wg       sync.WaitGroup // tracks running background jobs
 
-	locker *RepositoryLocker
-
 	// cloneLimiter and cloneableLimiter limits the number of concurrent
 	// clones and ls-remotes respectively. Use s.acquireCloneLimiter() and
 	// s.acquireCloneableLimiter() instead of using these directly.
@@ -235,7 +233,6 @@ func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
 	s.ctx, s.cancel = context.WithCancel(context.Background())
-	s.locker = &RepositoryLocker{}
 
 	// GitMaxConcurrentClones controls the maximum number of clones that
 	// can happen at once on a single gitserver.
@@ -523,7 +520,7 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitserverAddresses, batc
 
 			dir := s.dir(repo.Name)
 			cloned := repoCloned(dir)
-			_, cloning := s.locker.Status(dir)
+			_, cloning := RepoCloningStatus(ctx, s.DB, repo.Name)
 
 			var shouldUpdate bool
 			if repo.ShardID != s.Hostname {
@@ -741,6 +738,8 @@ func (s *Server) repoUpdate(_ *protocol.RepoUpdateRequest) protocol.RepoUpdateRe
 // an API (which will anyway be removed in the end) to do that, we can just
 // create a new type.
 type RepoUpdatePayload struct {
+	// UpdateJobID is an ID of a job in `repo_update_jobs` table.
+	UpdateJobID int
 	// Repo identifies URL for repo.
 	Repo api.RepoName
 	// Since is a debounce interval.
@@ -761,7 +760,7 @@ func (s *Server) HandleRepoUpdateRequest(ctx context.Context, payload RepoUpdate
 	// If it is explicitly stated that we need to clone, or if we implicitly
 	// understand it (the repo isn't cloned), then we clone. Otherwise we fetch.
 	if payload.Clone || (!repoCloned(dir) && !s.skipCloneForTests) {
-		_, err := s.CloneRepo(ctx, payload.Repo, CloneOptions{Block: true})
+		_, err := s.CloneRepo(ctx, payload.Repo, CloneOptions{Block: true, CloneJobID: payload.UpdateJobID})
 		if err != nil {
 			logger.Warn("error cloning repo", log.String("repo", string(payload.Repo)), log.Error(err))
 			resp.Error = err.Error()
@@ -1044,7 +1043,7 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 			}
 		}
 
-		cloneProgress, cloneInProgress := s.locker.Status(dir)
+		cloneProgress, cloneInProgress := RepoCloningStatus(ctx, s.DB, repoName)
 		if cloneInProgress {
 			return false, &gitdomain.RepoNotExistError{
 				Repo:            repoName,
@@ -1839,6 +1838,9 @@ type CloneOptions struct {
 	// Priority of this clone. High priority is used for on-demand clones which
 	// should be scheduled sooner than any regularly scheduled clones/updates.
 	Priority types.RepoUpdateJobPriority
+
+	// CloneJobID is an ID of a job from `repo_update_jobs` table which performs the clone.
+	CloneJobID int
 }
 
 // CloneRepo performs a clone operation for the given repository. It is
@@ -1855,12 +1857,6 @@ func (s *Server) CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOpt
 	}()
 
 	dir := s.dir(repo)
-
-	// PERF: Before doing the network request to check if isCloneable, lets
-	// ensure we are not already cloning.
-	if progress, cloneInProgress := s.locker.Status(dir); cloneInProgress {
-		return progress, nil
-	}
 
 	syncer, err := s.GetVCSSyncer(ctx, repo)
 	if err != nil {
@@ -1893,18 +1889,7 @@ func (s *Server) CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOpt
 		return "", errors.Errorf("error cloning repo: repo %s not cloneable: %s", repo, redactedErr)
 	}
 
-	// Mark this repo as currently being cloned. We have to check again if someone else isn't already
-	// cloning since we released the lock. We released the lock since isCloneable is a potentially
-	// slow operation.
-	lock, ok := s.locker.TryAcquire(dir, "starting clone")
-	if !ok {
-		// Someone else beat us to it
-		status, _ := s.locker.Status(dir)
-		return status, nil
-	}
-
 	if s.skipCloneForTests {
-		lock.Release()
 		return "", nil
 	}
 
@@ -1915,15 +1900,14 @@ func (s *Server) CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOpt
 	defer cancel2()
 
 	// We are blocking, so use the passed in context.
-	err = s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
+	err = s.doClone(ctx, repo, dir, syncer, remoteURL, opts)
 	err = errors.Wrapf(err, "failed to clone %s", repo)
 	return "", err
 }
 
-func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitDir, syncer VCSSyncer, lock *RepositoryLock, remoteURL *vcs.URL, opts CloneOptions) (err error) {
+func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitDir, syncer VCSSyncer, remoteURL *vcs.URL, opts CloneOptions) (err error) {
 	logger := s.Logger.Scoped("doClone", "").With(log.String("repo", string(repo)))
 
-	defer lock.Release()
 	defer func() {
 		if err != nil {
 			repoCloneFailedCounter.Inc()
@@ -1983,7 +1967,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	pr, pw := io.Pipe()
 	defer pw.Close()
 
-	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
+	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), pr, repo, opts.CloneJobID)
 
 	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, s.Logger, repo, cmd), true, pw)
 	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
@@ -2062,7 +2046,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
-func readCloneProgress(db database.DB, logger log.Logger, redactor *urlRedactor, lock *RepositoryLock, pr io.Reader, repo api.RepoName) {
+func readCloneProgress(db database.DB, logger log.Logger, redactor *urlRedactor, pr io.Reader, repo api.RepoName, cloneJobID int) {
 	// Use a background context to ensure we still update the DB even if we
 	// time out. IE we intentionally don't take an input ctx.
 	ctx := featureflag.WithFlags(context.Background(), db.FeatureFlags())
@@ -2083,7 +2067,7 @@ func readCloneProgress(db database.DB, logger log.Logger, redactor *urlRedactor,
 	dbWritesLimiter := rate.NewLimiter(rate.Limit(1.0), 1)
 	scan := bufio.NewScanner(pr)
 	scan.Split(scanCRLF)
-	store := db.GitserverRepos()
+	repoUpdateJobs := db.RepoUpdateJobs()
 	for scan.Scan() {
 		progress := scan.Text()
 		// 🚨 SECURITY: The output could include the clone url with may contain a sensitive token.
@@ -2095,8 +2079,6 @@ func readCloneProgress(db database.DB, logger log.Logger, redactor *urlRedactor,
 		// fatal: repository 'http://token@github.com/foo/bar/' not found
 		redactedProgress := redactor.redact(progress)
 
-		lock.SetStatus(redactedProgress)
-
 		if logFile != nil {
 			// Failing to write here is non-fatal and we don't want to spam our logs if there
 			// are issues
@@ -2105,10 +2087,8 @@ func readCloneProgress(db database.DB, logger log.Logger, redactor *urlRedactor,
 		// Only write to the database persisted status if line indicates progress
 		// which is recognized by presence of a '%'. We filter these writes not to waste
 		// rate-limit tokens on log lines that would not be relevant to the user.
-		if featureflag.FromContext(ctx).GetBoolOr("clone-progress-logging", false) &&
-			strings.Contains(redactedProgress, "%") &&
-			dbWritesLimiter.Allow() {
-			if err := store.SetCloningProgress(ctx, repo, redactedProgress); err != nil {
+		if strings.Contains(redactedProgress, "%") && dbWritesLimiter.Allow() {
+			if err := repoUpdateJobs.SetCloningProgress(ctx, cloneJobID, redactedProgress); err != nil {
 				logger.Error("error updating cloning progress in the db", log.Error(err))
 			}
 		}

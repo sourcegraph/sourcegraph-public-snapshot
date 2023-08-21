@@ -734,7 +734,6 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		},
 		DB:                      db,
 		ctx:                     ctx,
-		locker:                  &RepositoryLocker{},
 		cloneLimiter:            limiter.NewMutable(1),
 		cloneableLimiter:        limiter.NewMutable(1),
 		rpsLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
@@ -753,9 +752,6 @@ func TestCloneRepo(t *testing.T) {
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	if _, err := db.FeatureFlags().CreateBool(ctx, "clone-progress-logging", true); err != nil {
-		t.Fatal(err)
-	}
 	dbRepo := &types.Repo{
 		Name:        repoName,
 		Description: "Test",
@@ -778,6 +774,12 @@ func TestCloneRepo(t *testing.T) {
 		}
 		assert.Equal(t, errString, fromDB.LastError)
 	}
+	// As we're bypassing the repo clone flow by directly calling `CloneRepo` we
+	// need to create a clone job ourselves.
+	repoUpdateJob, ok, err := db.RepoUpdateJobs().Create(ctx, database.CreateRepoUpdateJobOpts{RepoName: repoName})
+	if err != nil || !ok {
+		t.Fatal("cannot create a repo update job")
+	}
 
 	// Verify the gitserver repo entry exists.
 	assertRepoState(types.CloneStatusNotCloned, 0, nil)
@@ -794,20 +796,13 @@ func TestCloneRepo(t *testing.T) {
 	reposDir := t.TempDir()
 	s := makeTestServer(ctx, t, reposDir, remote, db)
 
-	_, err := s.CloneRepo(ctx, repoName, CloneOptions{})
+	_, err = s.CloneRepo(ctx, repoName, CloneOptions{CloneJobID: repoUpdateJob.ID})
 	require.NoError(t, err)
 
-	// Wait until the clone is done. Please do not use this code snippet
-	// outside of a test. We only know this works since our test only starts
-	// one clone and will have nothing else attempt to lock.
+	// Waiting for repo to get cloned.
+	waitForRepoToClone(t, ctx, db, repoName)
+
 	dst := s.dir(repoName)
-	for i := 0; i < 1000; i++ {
-		_, cloning := s.locker.Status(dst)
-		if !cloning {
-			break
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
 	wantRepoSize := dirSize(dst.Path("."))
 	assertRepoState(types.CloneStatusCloned, wantRepoSize, err)
 
@@ -818,7 +813,7 @@ func TestCloneRepo(t *testing.T) {
 	}
 
 	// Test blocking with a failure (already exists since we didn't specify overwrite)
-	_, err = s.CloneRepo(context.Background(), repoName, CloneOptions{Block: true})
+	_, err = s.CloneRepo(context.Background(), repoName, CloneOptions{Block: true, CloneJobID: repoUpdateJob.ID})
 	if !errors.Is(err, os.ErrExist) {
 		t.Fatalf("expected clone repo to fail with already exists: %s", err)
 	}
@@ -827,7 +822,7 @@ func TestCloneRepo(t *testing.T) {
 	// Test blocking with overwrite. First add random file to GIT_DIR. If the
 	// file is missing after cloning we know the directory was replaced
 	mkFiles(t, string(dst), "HELLO")
-	_, err = s.CloneRepo(context.Background(), repoName, CloneOptions{Block: true, Overwrite: true})
+	_, err = s.CloneRepo(context.Background(), repoName, CloneOptions{Block: true, Overwrite: true, CloneJobID: repoUpdateJob.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -842,11 +837,16 @@ func TestCloneRepo(t *testing.T) {
 	if wantCommit != gotCommit {
 		t.Fatal("failed to clone:", gotCommit)
 	}
-	gitserverRepo, err := db.GitserverRepos().GetByName(ctx, repoName)
+
+	// We should have only 1 job, no ListRepoUpdateJobOpts required.
+	repoUpdateJobs, err := db.RepoUpdateJobs().List(ctx, database.ListRepoUpdateJobOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if gitserverRepo.CloningProgress == "" {
+	if len(repoUpdateJobs) != 1 {
+		t.Fatal("want 1 repo update job")
+	}
+	if repoUpdateJobs[0].CloningProgress == "" {
 		t.Error("want non-empty CloningProgress")
 	}
 }
@@ -935,7 +935,6 @@ var ignoreVolatileGitserverRepoFields = cmpopts.IgnoreFields(
 	"RepoSizeBytes",
 	"UpdatedAt",
 	"CorruptionLogs",
-	"CloningProgress",
 	"LastSyncOutput",
 )
 
@@ -1242,6 +1241,8 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	repoName := api.RepoName("example.com/foo/bar")
+
 	t.Run("with no remote HEAD file", func(t *testing.T) {
 		var (
 			remote   = t.TempDir()
@@ -1256,7 +1257,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		cmd("rm", ".git/HEAD")
 
 		s := makeTestServer(ctx, t, reposDir, remote, nil)
-		if _, err := s.CloneRepo(ctx, "example.com/foo/bar", CloneOptions{}); err == nil {
+		if _, err := s.CloneRepo(ctx, repoName, CloneOptions{}); err == nil {
 			t.Fatal("expected an error, got none")
 		}
 	})
@@ -1274,7 +1275,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		cmd("sh", "-c", ": > .git/HEAD")
 
 		s := makeTestServer(ctx, t, reposDir, remote, nil)
-		if _, err := s.CloneRepo(ctx, "example.com/foo/bar", CloneOptions{}); err == nil {
+		if _, err := s.CloneRepo(ctx, repoName, CloneOptions{}); err == nil {
 			t.Fatal("expected an error, got none")
 		}
 	})
@@ -1289,7 +1290,9 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		)
 
 		_ = makeSingleCommitRepo(cmd)
-		s := makeTestServer(ctx, t, reposDir, remote, nil)
+		logger := logtest.Scoped(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		s := makeTestServer(ctx, t, reposDir, remote, db)
 
 		testRepoCorrupter = func(_ context.Context, tmpDir common.GitDir) {
 			if err := os.Remove(tmpDir.Path("HEAD")); err != nil {
@@ -1297,18 +1300,24 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			}
 		}
 		t.Cleanup(func() { testRepoCorrupter = nil })
-		if _, err := s.CloneRepo(ctx, "example.com/foo/bar", CloneOptions{}); err != nil {
+
+		// Creating a repo.
+		dbRepo := &types.Repo{
+			Name:        repoName,
+			Description: "Test",
+		}
+		// Inserting the repo into the database.
+		if err := db.Repos().Create(ctx, dbRepo); err != nil {
+			t.Fatal(err)
+		}
+
+		if _, err := s.CloneRepo(ctx, repoName, CloneOptions{}); err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		dst := s.dir("example.com/foo/bar")
-		for i := 0; i < 1000; i++ {
-			_, cloning := s.locker.Status(dst)
-			if !cloning {
-				break
-			}
-			time.Sleep(10 * time.Millisecond)
-		}
+		dst := s.dir(repoName)
+		// Waiting for repo to get cloned.
+		waitForRepoToClone(t, ctx, db, repoName)
 
 		head, err := os.ReadFile(fmt.Sprintf("%s/HEAD", dst))
 		if os.IsNotExist(err) {
@@ -1329,25 +1338,32 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		)
 
 		_ = makeSingleCommitRepo(cmd)
-		s := makeTestServer(ctx, t, reposDir, remote, nil)
+		logger := logtest.Scoped(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		s := makeTestServer(ctx, t, reposDir, remote, db)
 
 		testRepoCorrupter = func(_ context.Context, tmpDir common.GitDir) {
 			cmd("sh", "-c", fmt.Sprintf(": > %s/HEAD", tmpDir))
 		}
 		t.Cleanup(func() { testRepoCorrupter = nil })
-		if _, err := s.CloneRepo(ctx, "example.com/foo/bar", CloneOptions{}); err != nil {
+
+		// Creating a repo.
+		dbRepo := &types.Repo{
+			Name:        repoName,
+			Description: "Test",
+		}
+		// Inserting the repo into the database.
+		if err := db.Repos().Create(ctx, dbRepo); err != nil {
+			t.Fatal(err)
+		}
+
+		if _, err := s.CloneRepo(ctx, repoName, CloneOptions{}); err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		// wait for repo to be cloned
-		dst := s.dir("example.com/foo/bar")
-		for i := 0; i < 1000; i++ {
-			_, cloning := s.locker.Status(dst)
-			if !cloning {
-				break
-			}
-			time.Sleep(10 * time.Millisecond)
-		}
+		dst := s.dir(repoName)
+		// Waiting for repo to get cloned.
+		waitForRepoToClone(t, ctx, db, repoName)
 
 		head, err := os.ReadFile(fmt.Sprintf("%s/HEAD", dst))
 		if os.IsNotExist(err) {
@@ -1853,4 +1869,24 @@ func TestMain(m *testing.M) {
 		logtest.Init(m)
 	}
 	os.Exit(m.Run())
+}
+
+func waitForRepoToClone(t *testing.T, ctx context.Context, db database.DB, repoName api.RepoName) {
+	t.Helper()
+	for i := 0; i < 1000; i++ {
+		repo, err := db.GitserverRepos().GetByName(ctx, repoName)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if repo.CloneStatus == types.CloneStatusCloned {
+			return
+		}
+		timer := time.NewTimer(10 * time.Millisecond)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return
+		case <-timer.C:
+		}
+	}
 }

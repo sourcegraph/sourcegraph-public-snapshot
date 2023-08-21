@@ -346,7 +346,7 @@ func (gs *GRPCServer) RepoClone(ctx context.Context, in *proto.RepoCloneRequest)
 	return &proto.RepoCloneResponse{Error: ""}, nil
 }
 
-func (gs *GRPCServer) RepoCloneProgress(_ context.Context, req *proto.RepoCloneProgressRequest) (*proto.RepoCloneProgressResponse, error) {
+func (gs *GRPCServer) RepoCloneProgress(ctx context.Context, req *proto.RepoCloneProgressRequest) (*proto.RepoCloneProgressResponse, error) {
 	repositories := req.GetRepos()
 
 	resp := protocol.RepoCloneProgressResponse{
@@ -354,7 +354,7 @@ func (gs *GRPCServer) RepoCloneProgress(_ context.Context, req *proto.RepoCloneP
 	}
 	for _, repo := range repositories {
 		repoName := api.RepoName(repo)
-		result := gs.Server.repoCloneProgress(repoName)
+		result := gs.Server.repoCloneProgress(ctx, repoName)
 		resp.Results[repoName] = result
 	}
 	return resp.ToProto(), nil

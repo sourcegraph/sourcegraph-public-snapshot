@@ -22,7 +22,6 @@ export type FeatureFlagName =
     | 'search-ranking'
     | 'blob-page-switch-areas-shortcuts'
     | 'sentinel'
-    | 'clone-progress-logging'
     | 'sourcegraph-operator-site-admin-hide-maintenance'
     | 'repository-metadata'
     | 'cody-web-search'

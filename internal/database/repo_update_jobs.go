@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RepoUpdateJobStore interface {
@@ -19,6 +20,8 @@ type RepoUpdateJobStore interface {
 	Create(ctx context.Context, opts CreateRepoUpdateJobOpts) (types.RepoUpdateJob, bool, error)
 	List(ctx context.Context, opts ListRepoUpdateJobOpts) ([]types.RepoUpdateJob, error)
 	SaveUpdateJobResults(ctx context.Context, jobID int, opts SaveUpdateJobResultsOpts) error
+	// SetCloningProgress updates a piece of text description from how cloning proceeds.
+	SetCloningProgress(context.Context, int, string) error
 }
 
 type repoUpdateJobStore struct {
@@ -165,6 +168,25 @@ func (s *repoUpdateJobStore) SaveUpdateJobResults(ctx context.Context, jobID int
 	))
 }
 
+const setCloningProgressQueryFmtstr = `
+UPDATE repo_update_jobs
+SET cloning_progress = %s
+WHERE id = %s
+`
+
+func (s *repoUpdateJobStore) SetCloningProgress(ctx context.Context, jobID int, progressLine string) error {
+	res, err := s.db.ExecResult(ctx, sqlf.Sprintf(setCloningProgressQueryFmtstr, progressLine, jobID))
+	if err != nil {
+		return err
+	}
+	if nrows, err := res.RowsAffected(); err != nil {
+		return err
+	} else if nrows != 1 {
+		return errors.Newf("failed to set repo update job cloning progress, job with ID=%d not found", jobID)
+	}
+	return nil
+}
+
 // RepoUpdateJobColumns is a set of columns which are in the `repo_update_jobs`
 // table.
 var RepoUpdateJobColumns = []*sqlf.Query{
@@ -192,6 +214,7 @@ var RepoUpdateJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("repo_update_jobs.last_fetched"),
 	sqlf.Sprintf("repo_update_jobs.last_changed"),
 	sqlf.Sprintf("repo_update_jobs.update_interval_seconds"),
+	sqlf.Sprintf("repo_update_jobs.cloning_progress"),
 }
 
 // FullRepoUpdateJobColumns is a set of columns of `repo_update_jobs_with_repo_name` view.
@@ -227,6 +250,7 @@ func ScanRepoUpdateJob(s dbutil.Scanner) (job types.RepoUpdateJob, _ error) {
 		&dbutil.NullTime{Time: &job.LastFetched},
 		&dbutil.NullTime{Time: &job.LastChanged},
 		&dbutil.NullInt{N: &job.UpdateIntervalSeconds},
+		&job.CloningProgress,
 	); err != nil {
 		return job, err
 	}
@@ -258,6 +282,7 @@ func ScanFullRepoUpdateJob(s dbutil.Scanner) (job types.RepoUpdateJob, _ error) 
 		&dbutil.NullTime{Time: &job.LastFetched},
 		&dbutil.NullTime{Time: &job.LastChanged},
 		&dbutil.NullInt{N: &job.UpdateIntervalSeconds},
+		&job.CloningProgress,
 		&job.RepositoryName,
 		&job.PoolRepoID,
 	); err != nil {

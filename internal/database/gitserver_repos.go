@@ -68,8 +68,6 @@ type GitserverRepoStore interface {
 	ListReposWithoutSize(ctx context.Context) (map[api.RepoName]api.RepoID, error)
 	// UpdateRepoSizes sets repo sizes according to input map. Key is repoID, value is repo_size_bytes.
 	UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoName]int64) (int, error)
-	// SetCloningProgress updates a piece of text description from how cloning proceeds.
-	SetCloningProgress(context.Context, api.RepoName, string) error
 
 	// UpdatePoolRepoID updates the pool_repo_id column of a gitserver_repo.
 	UpdatePoolRepoID(ctx context.Context, poolRepoName, repoName api.RepoName) (err error)
@@ -398,7 +396,6 @@ SELECT
 	gr.repo_id,
 	repo.name,
 	gr.clone_status,
-	gr.cloning_progress,
 	gr.shard_id,
 	gr.last_error,
 	gr.last_fetched,
@@ -434,7 +431,6 @@ SELECT
 	-- We don't need this here, but the scanner needs it.
 	'' as name,
 	gr.clone_status,
-	gr.cloning_progress,
 	gr.shard_id,
 	gr.last_error,
 	gr.last_fetched,
@@ -467,7 +463,6 @@ SELECT
 	-- We don't need this here, but the scanner needs it.
 	'' as name,
 	gr.clone_status,
-	gr.cloning_progress,
 	gr.shard_id,
 	gr.last_error,
 	gr.last_fetched,
@@ -494,7 +489,6 @@ SELECT
 	gr.repo_id,
 	r.name,
 	gr.clone_status,
-	gr.cloning_progress,
 	gr.shard_id,
 	gr.last_error,
 	gr.last_fetched,
@@ -541,7 +535,6 @@ func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoNa
 		&gr.RepoID,
 		&repoName,
 		&cloneStatus,
-		&gr.CloningProgress,
 		&gr.ShardID,
 		&dbutil.NullString{S: &gr.LastError},
 		&gr.LastFetched,
@@ -843,24 +836,3 @@ func sanitizeToUTF8(s string) string {
 	// Sanitize to a valid UTF-8 string and return it.
 	return strings.ToValidUTF8(t, "")
 }
-
-func (s *gitserverRepoStore) SetCloningProgress(ctx context.Context, repoName api.RepoName, progressLine string) error {
-	res, err := s.ExecResult(ctx, sqlf.Sprintf(setCloningProgressQueryFmtstr, progressLine, repoName))
-	if err != nil {
-		return errors.Wrap(err, "failed to set cloning progress")
-	}
-	if nrows, err := res.RowsAffected(); err != nil {
-		return errors.Wrap(err, "failed to set cloning progress, cannot verify rows updated")
-	} else if nrows != 1 {
-		return errors.Newf("failed to set cloning progress, repo %q not found", repoName)
-	}
-	return nil
-}
-
-const setCloningProgressQueryFmtstr = `
-UPDATE gitserver_repos
-SET
-	cloning_progress = %s,
-	updated_at = NOW()
-WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
-`

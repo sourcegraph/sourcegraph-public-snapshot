@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -40,12 +42,12 @@ func (s *Server) readReposStatsFile(filePath string) ([]byte, error) {
 	return b, nil
 }
 
-func (s *Server) repoCloneProgress(repo api.RepoName) *protocol.RepoCloneProgress {
+func (s *Server) repoCloneProgress(ctx context.Context, repo api.RepoName) *protocol.RepoCloneProgress {
 	dir := s.dir(repo)
 	resp := protocol.RepoCloneProgress{
 		Cloned: repoCloned(dir),
 	}
-	resp.CloneProgress, resp.CloneInProgress = s.locker.Status(dir)
+	resp.CloneProgress, resp.CloneInProgress = RepoCloningStatus(ctx, s.DB, repo)
 	if isAlwaysCloningTest(repo) {
 		resp.CloneInProgress = true
 		resp.CloneProgress = "This will never finish cloning"
@@ -64,7 +66,7 @@ func (s *Server) handleRepoCloneProgress(w http.ResponseWriter, r *http.Request)
 		Results: make(map[api.RepoName]*protocol.RepoCloneProgress, len(req.Repos)),
 	}
 	for _, repoName := range req.Repos {
-		result := s.repoCloneProgress(repoName)
+		result := s.repoCloneProgress(r.Context(), repoName)
 		resp.Results[repoName] = result
 	}
 
@@ -101,4 +103,23 @@ func (s *Server) deleteRepo(ctx context.Context, repo api.RepoName) error {
 		return errors.Wrap(err, "setting clone status after delete")
 	}
 	return nil
+}
+
+func RepoCloningStatus(ctx context.Context, db database.DB, repoName api.RepoName) (status string, cloning bool) {
+	paginationArgs := &database.PaginationArgs{
+		First:     pointers.Ptr(1),
+		OrderBy:   []database.OrderByOption{{Field: "repo_update_jobs.queued_at"}},
+		Ascending: false,
+	}
+	opts := database.ListRepoUpdateJobOpts{RepoName: repoName, States: []string{"processing"}, PaginationArgs: paginationArgs}
+	repoUpdateJobs, err := db.RepoUpdateJobs().List(ctx, opts)
+	// If there is an error or there are no processing jobs for a given repo --
+	// return empty string and false.
+	if err != nil || len(repoUpdateJobs) != 1 {
+		return
+	}
+	// If we have a status -- we're cloning and not fetching.
+	status = repoUpdateJobs[0].CloningProgress
+	cloning = status != ""
+	return
 }
