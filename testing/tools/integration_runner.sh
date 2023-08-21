@@ -112,6 +112,7 @@ function _run_server_image() {
     -d \
     --name "$container_name" \
     --publish "$server_port":7080 \
+    --platform linux/amd64 \
     -e BAZEL_SKIP_OOB_INFER_VERSION=true \
     -e ALLOW_SINGLE_DOCKER_CODE_INSIGHTS="$ALLOW_SINGLE_DOCKER_CODE_INSIGHTS" \
     -e SOURCEGRAPH_LICENSE_GENERATION_KEY="$SOURCEGRAPH_LICENSE_GENERATION_KEY" \
