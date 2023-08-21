@@ -46,7 +46,7 @@ Create and test the first release candidate:
 
 Once there is a release candidate available:
 
-- [ ] Create a [Security release approval](https://github.com/sourcegraph/sourcegraph/issues/new/choose#:~:text=Security%20release%20approval) issue and post a message in the [#ask-security](https://sourcegraph.slack.com/archives/C1JH2BEHZ) channel tagging `@security-support`.
+- [ ] Create a [Security release approval](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=andreeleuterio%2C+evict%2C+willdollman%2C+mohammadualam&labels=release-blocker&projects=&template=security-release-approval.md&title=$MAJOR.$MINOR.$PATCH+Security+approval) issue and post a message in the [#discuss-security](https://sourcegraph.slack.com/archives/C1JH2BEHZ) channel tagging `@security-support`.
 
 ## Stage release
 
