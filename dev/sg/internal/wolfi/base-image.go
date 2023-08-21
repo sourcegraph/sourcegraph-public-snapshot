@@ -102,7 +102,7 @@ func (c PackageRepoConfig) LoadBaseImage(name string) error {
 	}
 
 	std.Out.Write("")
-	std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Run base image locally using:\n\n\tdocker run -it --entrypoint /bin/sh %s...\n", dockerImageName(name)))
+	std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Run base image locally using:\n\n\tdocker run -it --entrypoint /bin/sh %s\n", dockerImageName(name)))
 
 	return nil
 }

@@ -1,7 +1,8 @@
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
 
-DOCSITE_VERSION = "1.9.3"
+DOCSITE_VERSION = "1.9.4"
 SRC_CLI_VERSION = "5.1.0"
+CTAGS_VERSION = "5.9.20220403.0"
 
 SRC_CLI_BUILDFILE = """
 filegroup(
@@ -16,21 +17,21 @@ def tool_deps():
     http_file(
         name = "docsite_darwin_amd64",
         urls = ["https://github.com/sourcegraph/docsite/releases/download/v{0}/docsite_v{0}_darwin_amd64".format(DOCSITE_VERSION)],
-        sha256 = "1bd76fba15dd6e11fc5215c7307eba38cf7db75cd739613e301c899c8cdf2c1b",
+        sha256 = "f3ad94e1398cc30e45518c82bd6fa9f7c386a8c395811ba49def24113215a2d9",
         executable = True,
     )
 
     http_file(
         name = "docsite_darwin_arm64",
         urls = ["https://github.com/sourcegraph/docsite/releases/download/v{0}/docsite_v{0}_darwin_arm64".format(DOCSITE_VERSION)],
-        sha256 = "a494aad157dfc0b2de3b5126908c31fda64220ac5b59d1ec91ad4dfd4e1e1343",
+        sha256 = "b817d794537f38720d5c07eb323e729391b2d4ff85d1dac691e3cfe7a3cb6d13",
         executable = True,
     )
 
     http_file(
         name = "docsite_linux_amd64",
         urls = ["https://github.com/sourcegraph/docsite/releases/download/v{0}/docsite_v{0}_linux_amd64".format(DOCSITE_VERSION)],
-        sha256 = "99f3b38b7590c2e9d1b94bde0352535210ee8a328e055d5a0d51d09ef5849f07",
+        sha256 = "7d60a55eb5017ebeb3a523143bd3007f74297db685491fad84499b2c60b3a872",
         executable = True,
     )
 
@@ -56,3 +57,24 @@ def tool_deps():
         url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_darwin_arm64.tar.gz".format(SRC_CLI_VERSION),
     )
 
+    # universal-ctags #
+    http_file(
+        name = "universal-ctags-darwin-x86_64",
+        sha256 = "b69501d497b62021e8438e840e0bea62fdbe91d60cf8375c388f2736cd58a1bf",
+        url = "https://storage.googleapis.com/universal_ctags/x86_64-darwin/bin/universal-ctags-{0}".format(CTAGS_VERSION),
+        executable = True,
+    )
+
+    http_file(
+        name = "universal-ctags-darwin-arm64",
+        sha256 = "51b3b7ea296455e00fc5a7aafea49bb89551e81770b3728c97a04a5614fde8c5",
+        url = "https://storage.googleapis.com/universal_ctags/aarch64-darwin/bin/universal-ctags-{0}".format(CTAGS_VERSION),
+        executable = True,
+    )
+
+    http_file(
+        name = "universal-ctags-linux-amd64",
+        sha256 = "1d349d15736a30c9cc18c1fd9efbfc6081fb59125d799b84cef6b34c735fa28a",
+        url = "https://storage.googleapis.com/universal_ctags/x86_64-linux/bin/universal-ctags-{0}".format(CTAGS_VERSION),
+        executable = True,
+    )

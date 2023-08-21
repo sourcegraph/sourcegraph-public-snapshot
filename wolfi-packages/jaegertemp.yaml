@@ -2,9 +2,9 @@
 # Previously packaged in the scip-java repo
 
 package:
-  name: jaeger
+  name: jaegertemp
   version: 1.45.0 # Keep in sync with version in sg.config.yaml
-  epoch: 3
+  epoch: 4
   description: "Distributed Tracing Platform"
   target-architecture:
     - x86_64
@@ -37,20 +37,3 @@ pipeline:
       set -x
       mkdir -p ${{targets.destdir}}/usr/local/bin/
       mv jaeger-${{package.version}}-linux-amd64/* ${{targets.destdir}}/usr/local/bin/
-
-subpackages:
-  - name: jaeger-agent
-    description: Jaeger Agent
-    pipeline:
-      - runs: |
-          set -x
-          mkdir -p "${{targets.subpkgdir}}/usr/local/bin/"
-          cp "${{targets.destdir}}/usr/local/bin/jaeger-agent" "${{targets.subpkgdir}}/usr/local/bin/"
-  - name: jaeger-all-in-one
-    description: Jaeger All-In-One
-    pipeline:
-      - runs: |
-          set -x
-          mkdir -p "${{targets.subpkgdir}}/usr/local/bin/"
-          cp "${{targets.destdir}}/usr/local/bin/jaeger-all-in-one" "${{targets.subpkgdir}}/usr/local/bin/"
-
