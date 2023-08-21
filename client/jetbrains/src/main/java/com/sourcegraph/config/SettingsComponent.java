@@ -21,10 +21,7 @@ import com.jetbrains.jsonSchema.settings.mappings.JsonSchemaConfigurable;
 import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.cody.ui.PasswordFieldWithShowHideButton;
 import com.sourcegraph.common.AuthorizationUtil;
-
 import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import java.util.Enumeration;
 import java.util.Optional;
@@ -43,14 +40,10 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
-
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Supports creating and managing a {@link JPanel} for the Settings Dialog.
- */
+/** Supports creating and managing a {@link JPanel} for the Settings Dialog. */
 public class SettingsComponent implements Disposable {
   private final JPanel panel;
   private ButtonGroup instanceTypeButtonGroup;
@@ -143,8 +136,7 @@ public class SettingsComponent implements Disposable {
     urlTextField.setToolTipText("The default is \"" + ConfigUtil.DOTCOM_URL + "\".");
     addValidation(
         urlTextField,
-        () ->
-        {
+        () -> {
           if (urlTextField.getText().isEmpty()) {
             return new ValidationInfo("Missing URL", urlTextField);
           } else {
