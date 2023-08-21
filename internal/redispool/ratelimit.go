@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	TokenBucketGlobalPrefix            = "v2:rate_limiters"
+	tokenBucketGlobalPrefix                   = "v2:rate_limiters"
 	bucketLastReplenishmentTimestampKeySuffix = "last_replenishment_timestamp"
 	bucketQuotaConfigKeySuffix                = "config:bucket_quota"
 	bucketReplenishmentConfigKeySuffix        = "config:bucket_replenishment_interval_seconds"
@@ -22,21 +22,22 @@ var (
 // NOTE: This limiter needs to be backed by a syncer that will dump its configurations into Redis.
 // See cmd/worker/internal/ratelimit/job.go for an example.
 type RateLimiter interface {
-	// GetTokensFromBucket gets tokens from the specified rate limit token bucket.
+	// GetTokenFromBucket gets a token from the specified rate limit token bucket, it is a synchronous operation
+	// and will wait until the token is permitted to be used or context is canceled before returning.
 	// bucketName: the name of the bucket where the tokens are, e.g. github.com:api_tokens
-	// tokensWanted: the number of tokens you want from the bucket; if the number is greater than the remaining capacity, no tokens will be given.
-	GetTokensFromBucket(ctx context.Context, bucketName string, maxTimeToWait int) (allowed bool, remainingTokens int, err error)
+	GetTokenFromBucket(ctx context.Context, bucketName string) (getTokensFromBucketResponse, error)
 
 	// SetTokenBucketReplenishment sets the configuration for the specified token bucket.
 	// bucketName: the name of the bucket where the tokens are, e.g. github.com:api_tokens
-	// bucketCapacity: the number of tokens the bucket can hold.
+	// bucketQuota: the number of tokens the bucket can hold.
 	// bucketReplenishIntervalSeconds: how often (in seconds) the bucket should be completely replenished.
-	SetTokenBucketReplenishment(ctx context.Context, bucketName string, bucketCapacity, bucketReplenishIntervalSeconds int32) error
+	SetTokenBucketReplenishment(ctx context.Context, bucketName string, bucketQuota, bucketReplenishIntervalSeconds int32) error
 }
 
 type rateLimiter struct {
 	prefix                 string
 	pool                   *redis.Pool
+	timerFunc              func(d time.Duration) (<-chan time.Time, func() bool, func())
 	getTokensScript        redis.Script
 	setReplenishmentScript redis.Script
 }
@@ -48,8 +49,9 @@ func NewRateLimiter() (RateLimiter, error) {
 	}
 
 	return &rateLimiter{
-		prefix: TokenBucketGlobalPrefix,
-		pool:   pool,
+		prefix:    tokenBucketGlobalPrefix,
+		pool:      pool,
+		timerFunc: defaultRateLimitTimer,
 		// 3 is the key count, keys are arguments passed to the lua script that will be used to get values from Redis KV.
 		getTokensScript:        *redis.NewScript(3, getTokensFromBucketLuaScript),
 		setReplenishmentScript: *redis.NewScript(3, setTokenBucketReplenishmentLuaScript),
@@ -57,56 +59,43 @@ func NewRateLimiter() (RateLimiter, error) {
 }
 
 func (r *rateLimiter) GetTokenFromBucket(ctx context.Context, bucketName string) (getTokensFromBucketResponse, error) {
-	// The test code calls lim.wait with a fake timer generator.
-	// This is the real timer generator.
-	newTimer := func(d time.Duration) (<-chan time.Time, func() bool, func()) {
-		timer := time.NewTimer(d)
-		return timer.C, timer.Stop, func() {}
-	}
+	now := time.Now()
 	// Check if ctx is already cancelled
 	select {
 	case <-ctx.Done():
 		return getTokensFromBucketResponse{}, ctx.Err()
 	default:
 	}
+
 	// Determine wait limit
 	waitLimit := time.Duration(math.MaxInt32)
 	if deadline, ok := ctx.Deadline(); ok {
-		waitLimit = deadline.Sub(t)
+		waitLimit = deadline.Sub(now)
 	}
-	// Reserve
-	resp, err := r.getTokenFromBucket(ctx, bucketName, waitLimit)
+
+	// Reserve a token from the bucket
+	resp, err := r.getTokenFromBucket(ctx, bucketName, waitLimit, now)
 	if err != nil {
 		return getTokensFromBucketResponse{}, err
 	}
 
-	// Wait if necessary
-	delay := r.DelayFrom(t)
-	if delay == 0 {
-		return nil
-	}
-	ch, stop, advance := newTimer(delay)
+	// Wait for the required time before the token can be used.
+	ch, stop, advance := r.timerFunc(resp.TimeToWait)
 	defer stop()
 	advance() // only has an effect when testing
 	select {
 	case <-ch:
 		// We can proceed.
-		return nil
+		return resp, nil
 	case <-ctx.Done():
-		// Context was canceled before we could proceed.  Cancel the
-		// reservation, which may permit other events to proceed sooner.
-		r.Cancel()
-		return ctx.Err()
+		return getTokensFromBucketResponse{}, ctx.Err()
 	}
-
-	return r.wait(ctx, n, time.Now(), newTimer)
 }
 
-func (r *rateLimiter) getTokenFromBucket(ctx context.Context, bucketName string, maxTimeToWait time.Duration) (getTokensFromBucketResponse, error) {
+func (r *rateLimiter) getTokenFromBucket(ctx context.Context, bucketName string, maxTimeToWait time.Duration, t time.Time) (getTokensFromBucketResponse, error) {
 	var response getTokensFromBucketResponse
 	keys := r.getRateLimiterKeys(bucketName)
-	now := time.Now().Unix()
-	result, err := r.getTokensScript.DoContext(ctx, r.pool.Get(), keys.BucketKey, keys.LastReplenishmentTimestampKey, keys.QuotaKey, keys.ReplenishmentIntervalSecondsKey, bucketMaxCapacity, now, maxTimeToWait)
+	result, err := r.getTokensScript.DoContext(ctx, r.pool.Get(), keys.BucketKey, keys.LastReplenishmentTimestampKey, keys.QuotaKey, keys.ReplenishmentIntervalSecondsKey, bucketMaxCapacity, t, maxTimeToWait)
 	if err != nil {
 		return response, errors.Wrapf(err, "error while getting tokens from bucket %s", keys.BucketKey)
 	}
@@ -132,15 +121,22 @@ func (r *rateLimiter) getTokenFromBucket(ctx context.Context, bucketName string,
 	}
 
 	response = getTokensFromBucketResponse{
-		Allowed:           rateLimitScriptGrantResponse(allowedInt),
-		TimeToWaitSeconds: time.Duration(timeToWaitSeconds) * time.Second,
-		TokensRemaining:   int(remTokens),
+		Allowed:         rateLimitScriptGrantResponse(allowedInt),
+		TimeToWait:      time.Duration(timeToWaitSeconds) * time.Second,
+		TokensRemaining: int(remTokens),
 	}
 
 	return response, response.Error()
 }
 
-func (r *rateLimiter) SetTokenBucketReplenishment(ctx context.Context, bucketName string, bucketQuota, bucketReplenishRateSeconds int) error {
+// defaultRateLimitTimer returns the default timer used for rate limiting.
+// All non-test clients should use defaultRateLimitTimer.
+func defaultRateLimitTimer(d time.Duration) (<-chan time.Time, func() bool, func()) {
+	timer := time.NewTimer(d)
+	return timer.C, timer.Stop, func() {}
+}
+
+func (r *rateLimiter) SetTokenBucketReplenishment(ctx context.Context, bucketName string, bucketQuota, bucketReplenishRateSeconds int32) error {
 	keys := r.getRateLimiterKeys(bucketName)
 	_, err := r.setReplenishmentScript.DoContext(ctx, r.pool.Get(), keys.BucketKey, keys.QuotaKey, keys.ReplenishmentIntervalSecondsKey, bucketQuota, bucketReplenishRateSeconds)
 	return errors.Wrapf(err, "error while setting token bucket replenishment for bucket %s", bucketName)
@@ -255,9 +251,9 @@ redis.call('SET', bucket_capacity_key, bucket_capacity)
 redis.call('SET', replenish_interval_seconds_key, bucket_replenish_rate_seconds)`
 
 type getTokensFromBucketResponse struct {
-	Allowed           rateLimitScriptGrantResponse
-	TimeToWaitSeconds time.Duration
-	TokensRemaining   int
+	Allowed         rateLimitScriptGrantResponse
+	TimeToWait      time.Duration
+	TokensRemaining int
 }
 
 type rateLimitScriptGrantResponse int64
@@ -273,7 +269,7 @@ func (r getTokensFromBucketResponse) Error() error {
 	case tokenGranted:
 		return nil
 	case tokenGrantExceedsMaxWaitTime:
-		return errors.Errorf("acquiring token would require a wait of %+v seconds which exceeds the limit", r.TimeToWaitSeconds)
+		return errors.Errorf("acquiring token would require a wait of %s which exceeds the limit", r.TimeToWait.String())
 	case negativeTimeDifference:
 		return errors.New("time difference between now and the last replenishment is negative")
 	default:
