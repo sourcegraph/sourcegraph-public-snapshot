@@ -127,7 +127,6 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
                 submitButtonComponent={SubmitButton}
                 fileLinkComponent={isSourcegraphApp ? AppFileLink : FileLink}
                 className={styles.container}
-                afterMarkdown={transcriptHistory.length > 1 ? '' : CODY_TERMS_MARKDOWN}
                 transcriptItemClassName={styles.transcriptItem}
                 humanTranscriptItemClassName={styles.humanTranscriptItem}
                 transcriptItemParticipantClassName="text-muted"
