@@ -181,7 +181,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (navigator.clipboard) {
       let button = document.createElement("button");
 
-      //button.innerHTML = copyButtonLabel;
       button.appendChild(
         button.ownerDocument.importNode(copyButtonLabel.documentElement, true)
       );
