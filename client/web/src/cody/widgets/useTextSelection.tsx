@@ -1,15 +1,11 @@
 import { useCallback, useLayoutEffect, useState } from 'react'
 
-type ClientRect = Record<keyof Omit<DOMRect, 'toJSON'>, number>
+import { mapValues } from 'lodash'
 
-function roundValues(_rect: ClientRect): ClientRect {
-    const rect: ClientRect = {
-        ..._rect,
-    }
-    for (const key of Object.keys(rect) as any as keyof ClientRect) {
-        rect[key as any as keyof ClientRect] = Math.round(rect[key as any as keyof ClientRect])
-    }
-    return rect
+type ClientRect = Omit<DOMRect, 'toJSON'>
+
+function roundValues(rect: ClientRect): ClientRect {
+    return mapValues(rect, Math.round)
 }
 
 function shallowDiff(prev: any = {}, next: any = {}) {
@@ -29,9 +25,10 @@ interface TextSelectionState {
     clientRect?: ClientRect
     isCollapsed?: boolean
     textContent?: string
+    selection?: Selection
 }
 
-const defaultState: TextSelectionState = {
+const DEFAULT_STATE: TextSelectionState = {
     clientRect: {
         height: 0,
         width: 0,
@@ -47,7 +44,7 @@ const defaultState: TextSelectionState = {
 }
 
 export function useTextSelection(target?: HTMLElement): TextSelectionState {
-    const [{ clientRect, isCollapsed, textContent }, setState] = useState<TextSelectionState>(defaultState)
+    const [{ clientRect, isCollapsed, textContent, selection }, setState] = useState<TextSelectionState>(DEFAULT_STATE)
 
     const handler = useCallback(() => {
         let newRect: ClientRect
@@ -61,13 +58,19 @@ export function useTextSelection(target?: HTMLElement): TextSelectionState {
 
         const range = selection.getRangeAt(0)
 
-        if (target !== null && !target?.contains(range.commonAncestorContainer)) {
+        if (!target?.contains(range.commonAncestorContainer)) {
             setState(newState)
             return
         }
 
         if (!range) {
             setState(newState)
+            return
+        }
+
+        // Restrict popover to only code content.
+        // Hack because Cody's dangerouslySetInnerHTML forces us to use a ref on code block's wrapper text
+        if (selection?.getRangeAt(0)?.commonAncestorContainer?.nodeName !== 'CODE') {
             return
         }
 
@@ -114,5 +117,6 @@ export function useTextSelection(target?: HTMLElement): TextSelectionState {
         clientRect,
         isCollapsed,
         textContent,
+        selection,
     }
 }

@@ -2,6 +2,7 @@ import { URI } from 'vscode-uri'
 
 import {
     ActiveTextEditor,
+    ActiveTextEditorDiagnostic,
     ActiveTextEditorSelection,
     ActiveTextEditorVisibleContent,
     Editor,
@@ -31,10 +32,6 @@ export class ChatEditor implements Editor {
 
     public get revision(): string | undefined {
         return this.editor?.revision
-    }
-
-    public getWorkspaceRootPath(): string | null {
-        return null
     }
 
     public getActiveTextEditor(): ActiveTextEditor | null {
@@ -107,6 +104,24 @@ export class ChatEditor implements Editor {
         return null
     }
 
+    /** The path of the workspace root if on the file system, otherwise `null`. */
+    public getWorkspaceRootPath(): string | null {
+        return null
+    }
+
+    /** Gets the active text editor's selection, or the visible content if the selected range is empty. */
+    public getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null {
+        return null
+    }
+
+    public getActiveInlineChatTextEditor(): ActiveTextEditor | null {
+        return null
+    }
+
+    public getActiveInlineChatSelection(): ActiveTextEditorSelection | null {
+        return null
+    }
+
     public replaceSelection(_fileName: string, _selectedText: string, _replacement: string): Promise<void> {
         // Not implemented.
         return Promise.resolve()
@@ -134,8 +149,13 @@ export class ChatEditor implements Editor {
         return Promise.resolve(undefined)
     }
 
+    /** Get diagnostics (errors, warnings, hints) for a range within the active text editor. */
+    public getActiveTextEditorDiagnosticsForRange(): ActiveTextEditorDiagnostic[] | null {
+        return null
+    }
+
+    /** Not implemented: The URI of the workspace root. */
     public getWorkspaceRootUri(): URI | null {
-        // Not implemented.
         return null
     }
 }
