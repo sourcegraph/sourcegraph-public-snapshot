@@ -66,7 +66,7 @@ export function useTextSelection(target?: HTMLElement): TextSelectionState {
             return
         }
 
-        if (range === null) {
+        if (!range) {
             setState(newState)
             return
         }
