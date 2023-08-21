@@ -304,11 +304,9 @@ public class CodyAutocompleteManager {
     }
   }
 
-  private String inferLineSeparator(@NotNull Editor editor) {
-    // Get virtual file from editor
+  private @NotNull String inferLineSeparator(@NotNull Editor editor) {
     VirtualFile virtualFile = FileDocumentManager.getInstance().getFile(editor.getDocument());
 
-    // Get line separator from virtual file
     if (virtualFile != null) {
       return virtualFile.getDetectedLineSeparator();
     } else {
