@@ -238,7 +238,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                             </MenuButton>
 
                             <MenuList>
-                                {transcriptHistory[0].interactions.length > 0 && (
+                                {(transcriptHistory.length > 1 || !!transcriptHistory[0]?.interactions?.length) && (
                                     <>
                                         <MenuItem onSelect={clearHistory}>
                                             <Icon aria-hidden={true} svgPath={mdiDelete} /> Clear all chats
@@ -427,7 +427,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                         <Icon aria-hidden={true} svgPath={mdiPlus} />
                                     </Button>
                                 </Tooltip>
-                                {showMobileHistory && transcriptHistory[0].interactions.length > 0 && (
+                                {(transcriptHistory.length > 1 || !!transcriptHistory[0]?.interactions?.length) && (
                                     <Tooltip content="Clear all chats">
                                         <Button
                                             variant="icon"
