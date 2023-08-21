@@ -4965,6 +4965,1243 @@ func (c BitbucketProjectPermissionsStoreWithTransactFuncCall) Results() []interf
 	return []interface{}{c.Result0}
 }
 
+// MockCodeHostStore is a mock implementation of the CodeHostStore interface
+// (from the package github.com/sourcegraph/sourcegraph/internal/database)
+// used for unit testing.
+type MockCodeHostStore struct {
+	// CountFunc is an instance of a mock function object controlling the
+	// behavior of the method Count.
+	CountFunc *CodeHostStoreCountFunc
+	// CreateFunc is an instance of a mock function object controlling the
+	// behavior of the method Create.
+	CreateFunc *CodeHostStoreCreateFunc
+	// DeleteFunc is an instance of a mock function object controlling the
+	// behavior of the method Delete.
+	DeleteFunc *CodeHostStoreDeleteFunc
+	// GetByIDFunc is an instance of a mock function object controlling the
+	// behavior of the method GetByID.
+	GetByIDFunc *CodeHostStoreGetByIDFunc
+	// GetByURLFunc is an instance of a mock function object controlling the
+	// behavior of the method GetByURL.
+	GetByURLFunc *CodeHostStoreGetByURLFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *CodeHostStoreHandleFunc
+	// ListFunc is an instance of a mock function object controlling the
+	// behavior of the method List.
+	ListFunc *CodeHostStoreListFunc
+	// UpdateFunc is an instance of a mock function object controlling the
+	// behavior of the method Update.
+	UpdateFunc *CodeHostStoreUpdateFunc
+	// WithFunc is an instance of a mock function object controlling the
+	// behavior of the method With.
+	WithFunc *CodeHostStoreWithFunc
+	// WithTransactFunc is an instance of a mock function object controlling
+	// the behavior of the method WithTransact.
+	WithTransactFunc *CodeHostStoreWithTransactFunc
+}
+
+// NewMockCodeHostStore creates a new mock of the CodeHostStore interface.
+// All methods return zero values for all results, unless overwritten.
+func NewMockCodeHostStore() *MockCodeHostStore {
+	return &MockCodeHostStore{
+		CountFunc: &CodeHostStoreCountFunc{
+			defaultHook: func(context.Context, database.ListCodeHostsOpts) (r0 int32, r1 error) {
+				return
+			},
+		},
+		CreateFunc: &CodeHostStoreCreateFunc{
+			defaultHook: func(context.Context, *types.CodeHost) (r0 error) {
+				return
+			},
+		},
+		DeleteFunc: &CodeHostStoreDeleteFunc{
+			defaultHook: func(context.Context, int32) (r0 error) {
+				return
+			},
+		},
+		GetByIDFunc: &CodeHostStoreGetByIDFunc{
+			defaultHook: func(context.Context, int32) (r0 *types.CodeHost, r1 error) {
+				return
+			},
+		},
+		GetByURLFunc: &CodeHostStoreGetByURLFunc{
+			defaultHook: func(context.Context, string) (r0 *types.CodeHost, r1 error) {
+				return
+			},
+		},
+		HandleFunc: &CodeHostStoreHandleFunc{
+			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		ListFunc: &CodeHostStoreListFunc{
+			defaultHook: func(context.Context, database.ListCodeHostsOpts) (r0 []*types.CodeHost, r1 int32, r2 error) {
+				return
+			},
+		},
+		UpdateFunc: &CodeHostStoreUpdateFunc{
+			defaultHook: func(context.Context, *types.CodeHost) (r0 error) {
+				return
+			},
+		},
+		WithFunc: &CodeHostStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) (r0 database.CodeHostStore) {
+				return
+			},
+		},
+		WithTransactFunc: &CodeHostStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(database.CodeHostStore) error) (r0 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockCodeHostStore creates a new mock of the CodeHostStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockCodeHostStore() *MockCodeHostStore {
+	return &MockCodeHostStore{
+		CountFunc: &CodeHostStoreCountFunc{
+			defaultHook: func(context.Context, database.ListCodeHostsOpts) (int32, error) {
+				panic("unexpected invocation of MockCodeHostStore.Count")
+			},
+		},
+		CreateFunc: &CodeHostStoreCreateFunc{
+			defaultHook: func(context.Context, *types.CodeHost) error {
+				panic("unexpected invocation of MockCodeHostStore.Create")
+			},
+		},
+		DeleteFunc: &CodeHostStoreDeleteFunc{
+			defaultHook: func(context.Context, int32) error {
+				panic("unexpected invocation of MockCodeHostStore.Delete")
+			},
+		},
+		GetByIDFunc: &CodeHostStoreGetByIDFunc{
+			defaultHook: func(context.Context, int32) (*types.CodeHost, error) {
+				panic("unexpected invocation of MockCodeHostStore.GetByID")
+			},
+		},
+		GetByURLFunc: &CodeHostStoreGetByURLFunc{
+			defaultHook: func(context.Context, string) (*types.CodeHost, error) {
+				panic("unexpected invocation of MockCodeHostStore.GetByURL")
+			},
+		},
+		HandleFunc: &CodeHostStoreHandleFunc{
+			defaultHook: func() basestore.TransactableHandle {
+				panic("unexpected invocation of MockCodeHostStore.Handle")
+			},
+		},
+		ListFunc: &CodeHostStoreListFunc{
+			defaultHook: func(context.Context, database.ListCodeHostsOpts) ([]*types.CodeHost, int32, error) {
+				panic("unexpected invocation of MockCodeHostStore.List")
+			},
+		},
+		UpdateFunc: &CodeHostStoreUpdateFunc{
+			defaultHook: func(context.Context, *types.CodeHost) error {
+				panic("unexpected invocation of MockCodeHostStore.Update")
+			},
+		},
+		WithFunc: &CodeHostStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.CodeHostStore {
+				panic("unexpected invocation of MockCodeHostStore.With")
+			},
+		},
+		WithTransactFunc: &CodeHostStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(database.CodeHostStore) error) error {
+				panic("unexpected invocation of MockCodeHostStore.WithTransact")
+			},
+		},
+	}
+}
+
+// NewMockCodeHostStoreFrom creates a new mock of the MockCodeHostStore
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockCodeHostStoreFrom(i database.CodeHostStore) *MockCodeHostStore {
+	return &MockCodeHostStore{
+		CountFunc: &CodeHostStoreCountFunc{
+			defaultHook: i.Count,
+		},
+		CreateFunc: &CodeHostStoreCreateFunc{
+			defaultHook: i.Create,
+		},
+		DeleteFunc: &CodeHostStoreDeleteFunc{
+			defaultHook: i.Delete,
+		},
+		GetByIDFunc: &CodeHostStoreGetByIDFunc{
+			defaultHook: i.GetByID,
+		},
+		GetByURLFunc: &CodeHostStoreGetByURLFunc{
+			defaultHook: i.GetByURL,
+		},
+		HandleFunc: &CodeHostStoreHandleFunc{
+			defaultHook: i.Handle,
+		},
+		ListFunc: &CodeHostStoreListFunc{
+			defaultHook: i.List,
+		},
+		UpdateFunc: &CodeHostStoreUpdateFunc{
+			defaultHook: i.Update,
+		},
+		WithFunc: &CodeHostStoreWithFunc{
+			defaultHook: i.With,
+		},
+		WithTransactFunc: &CodeHostStoreWithTransactFunc{
+			defaultHook: i.WithTransact,
+		},
+	}
+}
+
+// CodeHostStoreCountFunc describes the behavior when the Count method of
+// the parent MockCodeHostStore instance is invoked.
+type CodeHostStoreCountFunc struct {
+	defaultHook func(context.Context, database.ListCodeHostsOpts) (int32, error)
+	hooks       []func(context.Context, database.ListCodeHostsOpts) (int32, error)
+	history     []CodeHostStoreCountFuncCall
+	mutex       sync.Mutex
+}
+
+// Count delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeHostStore) Count(v0 context.Context, v1 database.ListCodeHostsOpts) (int32, error) {
+	r0, r1 := m.CountFunc.nextHook()(v0, v1)
+	m.CountFunc.appendCall(CodeHostStoreCountFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Count method of the
+// parent MockCodeHostStore instance is invoked and the hook queue is empty.
+func (f *CodeHostStoreCountFunc) SetDefaultHook(hook func(context.Context, database.ListCodeHostsOpts) (int32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Count method of the parent MockCodeHostStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CodeHostStoreCountFunc) PushHook(hook func(context.Context, database.ListCodeHostsOpts) (int32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeHostStoreCountFunc) SetDefaultReturn(r0 int32, r1 error) {
+	f.SetDefaultHook(func(context.Context, database.ListCodeHostsOpts) (int32, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeHostStoreCountFunc) PushReturn(r0 int32, r1 error) {
+	f.PushHook(func(context.Context, database.ListCodeHostsOpts) (int32, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeHostStoreCountFunc) nextHook() func(context.Context, database.ListCodeHostsOpts) (int32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeHostStoreCountFunc) appendCall(r0 CodeHostStoreCountFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeHostStoreCountFuncCall objects
+// describing the invocations of this function.
+func (f *CodeHostStoreCountFunc) History() []CodeHostStoreCountFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeHostStoreCountFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeHostStoreCountFuncCall is an object that describes an invocation of
+// method Count on an instance of MockCodeHostStore.
+type CodeHostStoreCountFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 database.ListCodeHostsOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int32
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeHostStoreCountFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeHostStoreCountFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeHostStoreCreateFunc describes the behavior when the Create method of
+// the parent MockCodeHostStore instance is invoked.
+type CodeHostStoreCreateFunc struct {
+	defaultHook func(context.Context, *types.CodeHost) error
+	hooks       []func(context.Context, *types.CodeHost) error
+	history     []CodeHostStoreCreateFuncCall
+	mutex       sync.Mutex
+}
+
+// Create delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeHostStore) Create(v0 context.Context, v1 *types.CodeHost) error {
+	r0 := m.CreateFunc.nextHook()(v0, v1)
+	m.CreateFunc.appendCall(CodeHostStoreCreateFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Create method of the
+// parent MockCodeHostStore instance is invoked and the hook queue is empty.
+func (f *CodeHostStoreCreateFunc) SetDefaultHook(hook func(context.Context, *types.CodeHost) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Create method of the parent MockCodeHostStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CodeHostStoreCreateFunc) PushHook(hook func(context.Context, *types.CodeHost) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeHostStoreCreateFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *types.CodeHost) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeHostStoreCreateFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *types.CodeHost) error {
+		return r0
+	})
+}
+
+func (f *CodeHostStoreCreateFunc) nextHook() func(context.Context, *types.CodeHost) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeHostStoreCreateFunc) appendCall(r0 CodeHostStoreCreateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeHostStoreCreateFuncCall objects
+// describing the invocations of this function.
+func (f *CodeHostStoreCreateFunc) History() []CodeHostStoreCreateFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeHostStoreCreateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeHostStoreCreateFuncCall is an object that describes an invocation of
+// method Create on an instance of MockCodeHostStore.
+type CodeHostStoreCreateFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types.CodeHost
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeHostStoreCreateFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeHostStoreCreateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeHostStoreDeleteFunc describes the behavior when the Delete method of
+// the parent MockCodeHostStore instance is invoked.
+type CodeHostStoreDeleteFunc struct {
+	defaultHook func(context.Context, int32) error
+	hooks       []func(context.Context, int32) error
+	history     []CodeHostStoreDeleteFuncCall
+	mutex       sync.Mutex
+}
+
+// Delete delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeHostStore) Delete(v0 context.Context, v1 int32) error {
+	r0 := m.DeleteFunc.nextHook()(v0, v1)
+	m.DeleteFunc.appendCall(CodeHostStoreDeleteFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Delete method of the
+// parent MockCodeHostStore instance is invoked and the hook queue is empty.
+func (f *CodeHostStoreDeleteFunc) SetDefaultHook(hook func(context.Context, int32) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Delete method of the parent MockCodeHostStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CodeHostStoreDeleteFunc) PushHook(hook func(context.Context, int32) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeHostStoreDeleteFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeHostStoreDeleteFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32) error {
+		return r0
+	})
+}
+
+func (f *CodeHostStoreDeleteFunc) nextHook() func(context.Context, int32) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeHostStoreDeleteFunc) appendCall(r0 CodeHostStoreDeleteFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeHostStoreDeleteFuncCall objects
+// describing the invocations of this function.
+func (f *CodeHostStoreDeleteFunc) History() []CodeHostStoreDeleteFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeHostStoreDeleteFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeHostStoreDeleteFuncCall is an object that describes an invocation of
+// method Delete on an instance of MockCodeHostStore.
+type CodeHostStoreDeleteFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeHostStoreDeleteFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeHostStoreDeleteFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeHostStoreGetByIDFunc describes the behavior when the GetByID method
+// of the parent MockCodeHostStore instance is invoked.
+type CodeHostStoreGetByIDFunc struct {
+	defaultHook func(context.Context, int32) (*types.CodeHost, error)
+	hooks       []func(context.Context, int32) (*types.CodeHost, error)
+	history     []CodeHostStoreGetByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetByID delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeHostStore) GetByID(v0 context.Context, v1 int32) (*types.CodeHost, error) {
+	r0, r1 := m.GetByIDFunc.nextHook()(v0, v1)
+	m.GetByIDFunc.appendCall(CodeHostStoreGetByIDFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetByID method of
+// the parent MockCodeHostStore instance is invoked and the hook queue is
+// empty.
+func (f *CodeHostStoreGetByIDFunc) SetDefaultHook(hook func(context.Context, int32) (*types.CodeHost, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetByID method of the parent MockCodeHostStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CodeHostStoreGetByIDFunc) PushHook(hook func(context.Context, int32) (*types.CodeHost, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeHostStoreGetByIDFunc) SetDefaultReturn(r0 *types.CodeHost, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32) (*types.CodeHost, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeHostStoreGetByIDFunc) PushReturn(r0 *types.CodeHost, r1 error) {
+	f.PushHook(func(context.Context, int32) (*types.CodeHost, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeHostStoreGetByIDFunc) nextHook() func(context.Context, int32) (*types.CodeHost, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeHostStoreGetByIDFunc) appendCall(r0 CodeHostStoreGetByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeHostStoreGetByIDFuncCall objects
+// describing the invocations of this function.
+func (f *CodeHostStoreGetByIDFunc) History() []CodeHostStoreGetByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeHostStoreGetByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeHostStoreGetByIDFuncCall is an object that describes an invocation of
+// method GetByID on an instance of MockCodeHostStore.
+type CodeHostStoreGetByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.CodeHost
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeHostStoreGetByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeHostStoreGetByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeHostStoreGetByURLFunc describes the behavior when the GetByURL method
+// of the parent MockCodeHostStore instance is invoked.
+type CodeHostStoreGetByURLFunc struct {
+	defaultHook func(context.Context, string) (*types.CodeHost, error)
+	hooks       []func(context.Context, string) (*types.CodeHost, error)
+	history     []CodeHostStoreGetByURLFuncCall
+	mutex       sync.Mutex
+}
+
+// GetByURL delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeHostStore) GetByURL(v0 context.Context, v1 string) (*types.CodeHost, error) {
+	r0, r1 := m.GetByURLFunc.nextHook()(v0, v1)
+	m.GetByURLFunc.appendCall(CodeHostStoreGetByURLFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetByURL method of
+// the parent MockCodeHostStore instance is invoked and the hook queue is
+// empty.
+func (f *CodeHostStoreGetByURLFunc) SetDefaultHook(hook func(context.Context, string) (*types.CodeHost, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetByURL method of the parent MockCodeHostStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CodeHostStoreGetByURLFunc) PushHook(hook func(context.Context, string) (*types.CodeHost, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeHostStoreGetByURLFunc) SetDefaultReturn(r0 *types.CodeHost, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (*types.CodeHost, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeHostStoreGetByURLFunc) PushReturn(r0 *types.CodeHost, r1 error) {
+	f.PushHook(func(context.Context, string) (*types.CodeHost, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeHostStoreGetByURLFunc) nextHook() func(context.Context, string) (*types.CodeHost, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeHostStoreGetByURLFunc) appendCall(r0 CodeHostStoreGetByURLFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeHostStoreGetByURLFuncCall objects
+// describing the invocations of this function.
+func (f *CodeHostStoreGetByURLFunc) History() []CodeHostStoreGetByURLFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeHostStoreGetByURLFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeHostStoreGetByURLFuncCall is an object that describes an invocation
+// of method GetByURL on an instance of MockCodeHostStore.
+type CodeHostStoreGetByURLFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.CodeHost
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeHostStoreGetByURLFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeHostStoreGetByURLFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeHostStoreHandleFunc describes the behavior when the Handle method of
+// the parent MockCodeHostStore instance is invoked.
+type CodeHostStoreHandleFunc struct {
+	defaultHook func() basestore.TransactableHandle
+	hooks       []func() basestore.TransactableHandle
+	history     []CodeHostStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeHostStore) Handle() basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(CodeHostStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockCodeHostStore instance is invoked and the hook queue is empty.
+func (f *CodeHostStoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockCodeHostStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CodeHostStoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeHostStoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
+	f.SetDefaultHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeHostStoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
+	f.PushHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *CodeHostStoreHandleFunc) nextHook() func() basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeHostStoreHandleFunc) appendCall(r0 CodeHostStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeHostStoreHandleFuncCall objects
+// describing the invocations of this function.
+func (f *CodeHostStoreHandleFunc) History() []CodeHostStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeHostStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeHostStoreHandleFuncCall is an object that describes an invocation of
+// method Handle on an instance of MockCodeHostStore.
+type CodeHostStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeHostStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeHostStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeHostStoreListFunc describes the behavior when the List method of the
+// parent MockCodeHostStore instance is invoked.
+type CodeHostStoreListFunc struct {
+	defaultHook func(context.Context, database.ListCodeHostsOpts) ([]*types.CodeHost, int32, error)
+	hooks       []func(context.Context, database.ListCodeHostsOpts) ([]*types.CodeHost, int32, error)
+	history     []CodeHostStoreListFuncCall
+	mutex       sync.Mutex
+}
+
+// List delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeHostStore) List(v0 context.Context, v1 database.ListCodeHostsOpts) ([]*types.CodeHost, int32, error) {
+	r0, r1, r2 := m.ListFunc.nextHook()(v0, v1)
+	m.ListFunc.appendCall(CodeHostStoreListFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the List method of the
+// parent MockCodeHostStore instance is invoked and the hook queue is empty.
+func (f *CodeHostStoreListFunc) SetDefaultHook(hook func(context.Context, database.ListCodeHostsOpts) ([]*types.CodeHost, int32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// List method of the parent MockCodeHostStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CodeHostStoreListFunc) PushHook(hook func(context.Context, database.ListCodeHostsOpts) ([]*types.CodeHost, int32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeHostStoreListFunc) SetDefaultReturn(r0 []*types.CodeHost, r1 int32, r2 error) {
+	f.SetDefaultHook(func(context.Context, database.ListCodeHostsOpts) ([]*types.CodeHost, int32, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeHostStoreListFunc) PushReturn(r0 []*types.CodeHost, r1 int32, r2 error) {
+	f.PushHook(func(context.Context, database.ListCodeHostsOpts) ([]*types.CodeHost, int32, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *CodeHostStoreListFunc) nextHook() func(context.Context, database.ListCodeHostsOpts) ([]*types.CodeHost, int32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeHostStoreListFunc) appendCall(r0 CodeHostStoreListFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeHostStoreListFuncCall objects
+// describing the invocations of this function.
+func (f *CodeHostStoreListFunc) History() []CodeHostStoreListFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeHostStoreListFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeHostStoreListFuncCall is an object that describes an invocation of
+// method List on an instance of MockCodeHostStore.
+type CodeHostStoreListFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 database.ListCodeHostsOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*types.CodeHost
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int32
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeHostStoreListFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeHostStoreListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// CodeHostStoreUpdateFunc describes the behavior when the Update method of
+// the parent MockCodeHostStore instance is invoked.
+type CodeHostStoreUpdateFunc struct {
+	defaultHook func(context.Context, *types.CodeHost) error
+	hooks       []func(context.Context, *types.CodeHost) error
+	history     []CodeHostStoreUpdateFuncCall
+	mutex       sync.Mutex
+}
+
+// Update delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeHostStore) Update(v0 context.Context, v1 *types.CodeHost) error {
+	r0 := m.UpdateFunc.nextHook()(v0, v1)
+	m.UpdateFunc.appendCall(CodeHostStoreUpdateFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Update method of the
+// parent MockCodeHostStore instance is invoked and the hook queue is empty.
+func (f *CodeHostStoreUpdateFunc) SetDefaultHook(hook func(context.Context, *types.CodeHost) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Update method of the parent MockCodeHostStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CodeHostStoreUpdateFunc) PushHook(hook func(context.Context, *types.CodeHost) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeHostStoreUpdateFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *types.CodeHost) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeHostStoreUpdateFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *types.CodeHost) error {
+		return r0
+	})
+}
+
+func (f *CodeHostStoreUpdateFunc) nextHook() func(context.Context, *types.CodeHost) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeHostStoreUpdateFunc) appendCall(r0 CodeHostStoreUpdateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeHostStoreUpdateFuncCall objects
+// describing the invocations of this function.
+func (f *CodeHostStoreUpdateFunc) History() []CodeHostStoreUpdateFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeHostStoreUpdateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeHostStoreUpdateFuncCall is an object that describes an invocation of
+// method Update on an instance of MockCodeHostStore.
+type CodeHostStoreUpdateFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types.CodeHost
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeHostStoreUpdateFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeHostStoreUpdateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeHostStoreWithFunc describes the behavior when the With method of the
+// parent MockCodeHostStore instance is invoked.
+type CodeHostStoreWithFunc struct {
+	defaultHook func(basestore.ShareableStore) database.CodeHostStore
+	hooks       []func(basestore.ShareableStore) database.CodeHostStore
+	history     []CodeHostStoreWithFuncCall
+	mutex       sync.Mutex
+}
+
+// With delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeHostStore) With(v0 basestore.ShareableStore) database.CodeHostStore {
+	r0 := m.WithFunc.nextHook()(v0)
+	m.WithFunc.appendCall(CodeHostStoreWithFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the With method of the
+// parent MockCodeHostStore instance is invoked and the hook queue is empty.
+func (f *CodeHostStoreWithFunc) SetDefaultHook(hook func(basestore.ShareableStore) database.CodeHostStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// With method of the parent MockCodeHostStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CodeHostStoreWithFunc) PushHook(hook func(basestore.ShareableStore) database.CodeHostStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeHostStoreWithFunc) SetDefaultReturn(r0 database.CodeHostStore) {
+	f.SetDefaultHook(func(basestore.ShareableStore) database.CodeHostStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeHostStoreWithFunc) PushReturn(r0 database.CodeHostStore) {
+	f.PushHook(func(basestore.ShareableStore) database.CodeHostStore {
+		return r0
+	})
+}
+
+func (f *CodeHostStoreWithFunc) nextHook() func(basestore.ShareableStore) database.CodeHostStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeHostStoreWithFunc) appendCall(r0 CodeHostStoreWithFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeHostStoreWithFuncCall objects
+// describing the invocations of this function.
+func (f *CodeHostStoreWithFunc) History() []CodeHostStoreWithFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeHostStoreWithFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeHostStoreWithFuncCall is an object that describes an invocation of
+// method With on an instance of MockCodeHostStore.
+type CodeHostStoreWithFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 basestore.ShareableStore
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.CodeHostStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeHostStoreWithFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeHostStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeHostStoreWithTransactFunc describes the behavior when the
+// WithTransact method of the parent MockCodeHostStore instance is invoked.
+type CodeHostStoreWithTransactFunc struct {
+	defaultHook func(context.Context, func(database.CodeHostStore) error) error
+	hooks       []func(context.Context, func(database.CodeHostStore) error) error
+	history     []CodeHostStoreWithTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// WithTransact delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeHostStore) WithTransact(v0 context.Context, v1 func(database.CodeHostStore) error) error {
+	r0 := m.WithTransactFunc.nextHook()(v0, v1)
+	m.WithTransactFunc.appendCall(CodeHostStoreWithTransactFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithTransact method
+// of the parent MockCodeHostStore instance is invoked and the hook queue is
+// empty.
+func (f *CodeHostStoreWithTransactFunc) SetDefaultHook(hook func(context.Context, func(database.CodeHostStore) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithTransact method of the parent MockCodeHostStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CodeHostStoreWithTransactFunc) PushHook(hook func(context.Context, func(database.CodeHostStore) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeHostStoreWithTransactFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, func(database.CodeHostStore) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeHostStoreWithTransactFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, func(database.CodeHostStore) error) error {
+		return r0
+	})
+}
+
+func (f *CodeHostStoreWithTransactFunc) nextHook() func(context.Context, func(database.CodeHostStore) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeHostStoreWithTransactFunc) appendCall(r0 CodeHostStoreWithTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeHostStoreWithTransactFuncCall objects
+// describing the invocations of this function.
+func (f *CodeHostStoreWithTransactFunc) History() []CodeHostStoreWithTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeHostStoreWithTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeHostStoreWithTransactFuncCall is an object that describes an
+// invocation of method WithTransact on an instance of MockCodeHostStore.
+type CodeHostStoreWithTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 func(database.CodeHostStore) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeHostStoreWithTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeHostStoreWithTransactFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // MockCodeMonitorStore is a mock implementation of the CodeMonitorStore
 // interface (from the package
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit

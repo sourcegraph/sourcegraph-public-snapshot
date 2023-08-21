@@ -748,6 +748,9 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 		permissionIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.permissionByID(ctx, id)
 		},
+		CodeHostKind: func(ctx context.Context, id graphql.ID) (Node, error) {
+			return CodeHostByID(ctx, r.db, id)
+		},
 	}
 	return r
 }
