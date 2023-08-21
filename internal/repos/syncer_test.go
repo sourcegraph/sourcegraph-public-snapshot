@@ -750,28 +750,20 @@ func TestSyncer_MaybePrepareForDeduplication(t *testing.T) {
 		expectedOK           bool
 	}{
 		{
-			name:                 "not a fork",
-			inputRepo:            repo,
-			expectedPoolRepoName: api.RepoName(""),
-			expectedOK:           false,
+			name:      "not a fork",
+			inputRepo: repo,
 		},
 		{
-			name:                 "fork, but not a github repo",
-			inputRepo:            gitlabRepo,
-			expectedPoolRepoName: api.RepoName(""),
-			expectedOK:           false,
+			name:      "fork, but not a github repo",
+			inputRepo: gitlabRepo,
 		},
 		{
-			name:                 "fork, but ghe repo",
-			inputRepo:            gheRepo,
-			expectedPoolRepoName: api.RepoName(""),
-			expectedOK:           false,
+			name:      "fork, but ghe repo",
+			inputRepo: gheRepo,
 		},
 		{
-			name:                 "fork, github repo but parent not in dedulicateForks config",
-			inputRepo:            forkedRepo,
-			expectedPoolRepoName: api.RepoName(""),
-			expectedOK:           false,
+			name:      "fork, github repo but parent not in deduplicateForks config",
+			inputRepo: forkedRepo,
 		},
 		{
 			name:                 "fork, github repo parent in deduplicateForks config",

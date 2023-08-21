@@ -22,17 +22,10 @@ func NewRepoURISet(index collections.Set[string]) *RepoURISet {
 }
 
 func (c *RepoURISet) IsEmpty() bool {
-	if c == nil {
-		return true
-	}
 	return c.index.IsEmpty()
 }
 
 func (c *RepoURISet) Contains(name string) bool {
-	if c == nil {
-		return false
-	}
-
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 

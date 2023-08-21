@@ -2095,7 +2095,7 @@ func (s *Server) getDeduplicatedCloneOptions(ctx context.Context, repo *types.Re
 		dedupeCloneType: dedupeNone,
 	}
 
-	if s.DeduplicatedForksSet.IsEmpty() {
+	if s.DeduplicatedForksSet == nil || s.DeduplicatedForksSet.IsEmpty() {
 		return dedupeNoneOpts
 	}
 
