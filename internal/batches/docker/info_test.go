@@ -2,7 +2,9 @@ package docker
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -88,7 +90,7 @@ func Test_NCPU(t *testing.T) {
 		assert.Zero(t, ncpu)
 		var terr *fastCommandTimeoutError
 		assert.ErrorAs(t, err, &terr)
-		assert.Equal(t, []string{"info", "--format", "{{ .NCPU }}"}, terr.args)
+		assert.Equal(t, []string{"info", "--format", "{{ json .}}"}, terr.args)
 		assert.Equal(t, fastCommandTimeoutDefault, terr.timeout)
 	})
 
@@ -118,15 +120,22 @@ func Test_NCPU(t *testing.T) {
 }
 
 func infoSuccess(ncpu string) *expect.Expectation {
+	var b []byte
+	n, err := strconv.Atoi(ncpu)
+	if err == nil {
+		b, _ = json.Marshal(Info{NCPU: n})
+	} else {
+		b = []byte(ncpu)
+	}
 	return expect.NewLiteral(
-		expect.Behaviour{Stdout: []byte(fmt.Sprintf("%s\n", ncpu))},
-		"docker", "info", "--format", "{{ .NCPU }}",
+		expect.Behaviour{Stdout: b},
+		"docker", "info", "--format", "{{ json .}}",
 	)
 }
 
 func infoFailure() *expect.Expectation {
 	return expect.NewLiteral(
 		expect.Behaviour{ExitCode: 1},
-		"docker", "info", "--format", "{{ .NCPU }}",
+		"docker", "info", "--format", "{{ json .}}",
 	)
 }
