@@ -1,45 +1,135 @@
 # Cody Quickstart
 
-<p class="subtitle">In this quickstart guide, you'll learn how to use Cody once you have it installed the extension in your VS Code editor.</p>
+<p class="subtitle">In this quickstart guide, you'll learn how to use Cody once you have installed the extension in your VS Code editor. Here you will:</p>
+
+- Try the `Generate Unit Tests` command
+- Ask Cody to pull information from the documentation
+- Ask Cody to write context-aware code
 
 ## Prerequisites
 
+- Make sure you have the [Cody extension installed](overview/install-vscode.md) in your VS Code editor
+- You have enabled an instance for [Cody from your Sourcegraph.com](overview/cody-with-sourcegraph.md) account
+- You have a project open in VS Code that Cody has access to via Sourcegraph
 
+## Getting started with Cody extension and commands
 
-If you haven't yet enabled Cody for your Sourcegraph instance or installed the VS Code extension, go here first:
+After installing the extension, the side activity bar will display an icon for **Cody**. Click this icon, and Cody's `Chat` panel will open. This interface is used to ask Cody questions and paste in code snippets.
 
-- [Enabling Cody for Sourcegraph Enterprise customers](overview/enable-cody-enterprise.md)
-- [Enabling Cody for Sourcegraph.com users](overview/cody-with-sourcegraph.md)
-- [Installing Cody for VS Code](overview/install-vscode.md)
-- [Installing Cody for Jetbrains](overview/install-jetbrains.md)
-- [Installing the Cody app](overview/app/index.md)
+Cody also supports `Commands` with VS Code. These are quick, ready-to-use prompt actions that you can apply to any code or text-based snippet you've highlighted. You can run a command in 3 ways:
 
-## Introduction
-
-Once you have access to Cody, we recommend:
-
-- Trying the `Generate Unit Tests` command
-- Asking Cody to pull information from documentation
-- Asking Cody to write context-aware code
-
-## Getting started with the Cody extension and commands
-
-Once you've installed the Cody extension, the Cody icon should appear in the activity bar. Clicking the icon will open Cody's `Chat` panel. This can be used to ask Cody questions and paste in snippets of code.
-
-You can also run `Commands` with Cody, quick actions that apply to any code you currently have highlighted. Once you've highlighted a snippet of code, you can run a command in 3 ways:
-
-1. Type `/` in the chat bar. Cody will then suggest a list of commands.
-2. Right click -> Cody -> Select a command.
+1. Type `/` in the chat bar, and Cody will suggest a list of commands
+2. Right click -> Cody -> Select a command
 3. Press the command hotkey (`⌥` + `c` / `alt` + `c`)
+
+## Working with Cody extension
+
+Let's write a JavaScript function that converts a `given date` into a human-readable description of the time elapsed between the `given date` and the `current date`. Next, you'll use this code to perform the following tasks with Cody:
+
+- Try the `Generate Unit Tests` command
+- Ask Cody to pull information from the documentation
+- Ask Cody to write context-aware code
+
+Here's the code for the date elapsed function from `date.js` file:
+
+```js
+function getTimeAgoDescription(dateString) {
+	const startDate = new Date(dateString);
+	const currentDate = new Date();
+
+	const years = currentDate.getFullYear() - startDate.getFullYear();
+	const months = currentDate.getMonth() - startDate.getMonth();
+	const days = currentDate.getDate() - startDate.getDate();
+
+	let timeAgoDescription = '';
+
+	if (years > 0) {
+		timeAgoDescription += `${years} ${years === 1 ? 'year' : 'years'}`;
+	}
+
+	if (months > 0) {
+		if (timeAgoDescription !== '') {
+			timeAgoDescription += ' ';
+		}
+		timeAgoDescription += `${months} ${months === 1 ? 'month' : 'months'}`;
+	}
+
+	if (days > 0) {
+		if (timeAgoDescription !== '') {
+			timeAgoDescription += ' ';
+		}
+		timeAgoDescription += `${days} ${days === 1 ? 'day' : 'days'}`;
+	}
+
+	if (timeAgoDescription === '') {
+		timeAgoDescription = 'today';
+	} else {
+		timeAgoDescription += ' ago';
+	}
+
+	return timeAgoDescription;
+}
+
+const inputDate = '2020-02-09';
+const description = getTimeAgoDescription(inputDate);
+console.log(description);
+
+const outputElement = document.getElementById('output');
+outputElement.textContent = description;
+```
 
 ## Generate a unit test
 
-Cody offers a number of commands. One command, `Generate Unit Tests`, quickly writes test code for any snippet that you have highlighted. To use this command:
+To ensure code quality and early bug detection, one of the most useful commands that Cody offers is `Generate Unit Tests`. It quickly helps you write a test code for any snippet that you have highlighted. To generate a unit test for our example function:
 
-1. Open a code file in VS Code
-3. Highlight a code snippet that you'd like to test
-3. Press the command hotkey (`⌥` + `c` / `alt` + `c`), then select `Generate Unit Tests`
-5. Cody will provide a unit test as a code snippet in the sidebar
+- Open the `date.js` file in VS Code
+- Highlight a code snippet that you'd like to test
+- Inside Cody chat type `/test` or press the command hotkey (`⌥` + `c` / `alt` + `c`)
+- Select `Generate Unit Tests` option and hit `Enter`
+
+Cody will help you generate the following unit test in the sidebar:
+
+```js
+import assert from 'assert';
+import { getTimeAgoDescription } from '../src/date.js';
+
+describe('getTimeAgoDescription', () => {
+	it('returns correct relative time for date 1 month ago', () => {
+		const oneMonthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+		const result = getTimeAgoDescription(oneMonthAgo);
+		assert.equal(result, '1 month ago');
+	});
+
+	it('returns correct relative time for date 2 months ago', () => {
+		const twoMonthsAgo = new Date(Date.now() - 2 * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+		const result = getTimeAgoDescription(twoMonthsAgo);
+		assert.equal(result, '2 months ago');
+	});
+});
+
+```
+
+This unit test file tests the `getTimeAgoDescription()` function from the `date.js` file. These tests help you validate that the `getTimeAgoDescription()` function correctly returns the relative time descriptions for dates in the past. The tests generate specific sample input dates and confirms that the output matches the expected result.
+
+## Suggest bug fixes and changes to code snippets
+
+Cody is very efficient at catching bugs and suggesting improvements to code snippets. To try this out, let's run our previously generated unit test and see if Cody notices any issues. Inside your VS Code terminal run the following command to try the unit test:
+
+```bash
+node tests/test.js
+```
+
+This results in an error, as our function does not correctly handle dates more than a year ago.
+
+![Example of running failed unit test ](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-quickstart/unit-test-fail.png)
+
+Let's paste this error into the Cody chat and see what suggestions it provides:
+
+![Example of error debugging with Cody ](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-quickstart/debug-with-cody.png)
+
+Leveraging the failed test output, Cody is able to identify the potential bug and suggest a fix. It recommends to install `mocha`, importing it at the top of the `test.js` file to identify `describe` and finally running it with `mocha`.
+
+![Example of running failed unit test ](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-quickstart/passed-tests.png)
 
 ## Ask Cody to pull reference documentation
 
