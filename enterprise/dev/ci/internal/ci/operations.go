@@ -44,7 +44,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	// Base set
 	ops := operations.NewSet()
 
-	if !diff.Has(changed.ClientJetbrains) {
+	if !diff.Has(changed.ClientJetbrains) && !diff.Has(changed.Go) {
 		// Simple, fast-ish linter checks
 		ops.Append(BazelOperations(opts.IsMainBranch)...)
 		linterOps := operations.NewNamedSet("Linters and static analysis")
@@ -54,7 +54,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		ops.Merge(linterOps)
 	}
 
-	if diff.Has(changed.Client | changed.GraphQL) {
+	if diff.Has(changed.Client | changed.GraphQL | changed.ClientJetbrains) {
 		// If there are any Graphql changes, they are impacting the client as well.
 		clientChecks := operations.NewNamedSet("Client checks",
 			clientChromaticTests(opts),
