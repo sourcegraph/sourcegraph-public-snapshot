@@ -153,7 +153,6 @@ def back_compat_defs():
         remote = "https://github.com/sourcegraph/sourcegraph.git",
         patches = [
             "//dev/backcompat/patches:back_compat_migrations.patch",
-            "//dev/backcompat/patches:ui_assets.patch",
             "//dev/backcompat/patches:back_compat_internal_instrumentation.patch",
             "//dev/backcompat/patches:back_compat_otlp_adapter.patch",
         ],
