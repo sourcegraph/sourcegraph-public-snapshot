@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/time/rate"
 
@@ -574,7 +573,7 @@ func ExtractEncryptableRateLimit(ctx context.Context, config *EncryptableConfig,
 		return rate.Inf, errors.Wrap(err, "loading service configuration")
 	}
 
-	rlc, _, err := GetLimitFromConfig(parsed)
+	rlc, _, err := GetLimitFromConfig(parsed, kind)
 	if err != nil {
 		return rate.Inf, err
 	}
@@ -590,7 +589,7 @@ func ExtractRateLimit(config, kind string) (limit rate.Limit, isDefault bool, er
 		return rate.Inf, false, errors.Wrap(err, "loading service configuration")
 	}
 
-	rlc, isDefault, err := GetLimitFromConfig(parsed)
+	rlc, isDefault, err := GetLimitFromConfig(parsed, kind)
 	if err != nil {
 		return rate.Inf, false, err
 	}
@@ -599,7 +598,7 @@ func ExtractRateLimit(config, kind string) (limit rate.Limit, isDefault bool, er
 }
 
 // GetLimitFromConfig gets RateLimitConfig from an already parsed config schema.
-func GetLimitFromConfig(config any) (limit rate.Limit, isDefault bool, err error) {
+func GetLimitFromConfig(config any, kind string) (limit rate.Limit, isDefault bool, err error) {
 	// Rate limit config can be in a few states:
 	// 1. Not defined: Some infinite, some limited, depending on code host.
 	// 2. Defined and enabled: We use their defined limit.
@@ -680,8 +679,7 @@ func GetLimitFromConfig(config any) (limit rate.Limit, isDefault bool, err error
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	default:
-		// will go to the default case
-		return GetDefaultRateLimit("default"), isDefault, nil
+		return limit, isDefault, ErrRateLimitUnsupported{codehostKind: kind}
 	}
 
 	return limit, isDefault, nil
@@ -725,14 +723,7 @@ func GetDefaultRateLimit(kind string) rate.Limit {
 		// The rubygems.org API allows 10 rps https://guides.rubygems.org/rubygems-org-rate-limits/
 		return rate.Limit(10)
 	default:
-		defaultRateLimit := conf.Get().DefaultRateLimit
-		// the rate limit in the config is in requests per hour, whereas rate.Limit is in
-		// requests per second.
-		fallbackRateLimit := rate.Limit(defaultRateLimit / 3600.0)
-		if defaultRateLimit <= 0 {
-			fallbackRateLimit = rate.Inf
-		}
-		return fallbackRateLimit
+		return rate.Inf
 	}
 }
 
