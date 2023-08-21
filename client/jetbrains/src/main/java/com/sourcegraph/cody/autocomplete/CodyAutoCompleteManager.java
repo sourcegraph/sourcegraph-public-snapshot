@@ -19,6 +19,8 @@ import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.agent.protocol.AutocompleteExecuteParams;
 import com.sourcegraph.cody.autocomplete.render.*;
+import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus;
+import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService;
 import com.sourcegraph.cody.vscode.*;
 import com.sourcegraph.cody.vscode.InlineAutoCompleteList;
 import com.sourcegraph.common.EditorUtils;
@@ -159,54 +161,71 @@ public class CodyAutoCompleteManager {
                     new com.sourcegraph.cody.agent.protocol.Position()
                         .setLine(position.line)
                         .setCharacter(position.character)));
-    return asyncCompletions.thenAccept(
-        result -> {
-          if (Thread.interrupted()) {
-            if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)) {
-              logger.warn("canceled autocomplete due to thread interruption");
-            }
-            return;
-          }
-          InlayModel inlayModel = editor.getInlayModel();
-          Optional<InlineAutoCompleteItem> maybeItem = result.items.stream().findFirst();
-          if (maybeItem.isEmpty()) {
-            if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)) {
-              logger.warn("explicit autocomplete returned empty suggestions");
-              // NOTE(olafur): it would be nice to give the user a visual hint when this happens.
-              // We don't do anything now because it's unclear what would be the most idiomatic
-              // IntelliJ API to use.
-            }
-            return;
-          }
-          final InlineAutoCompleteItem item = maybeItem.get();
-          try {
-            ApplicationManager.getApplication()
-                .invokeLater(
-                    () -> {
-                      this.clearAutoCompleteSuggestions(editor);
+    return CompletableFuture.runAsync(
+            () ->
+                CodyAutocompleteStatusService.notifyApplication(
+                    CodyAutocompleteStatus.AutocompleteInProgress))
+        .thenCompose(
+            unused ->
+                asyncCompletions.thenAccept(
+                    result ->
+                        processAutocompleteResult(project, editor, offset, triggerKind, result)))
+        .thenAccept(
+            unused ->
+                CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.Ready));
+  }
 
-                      if (currentAutocompleteTelemetry != null) {
-                        currentAutocompleteTelemetry.markCompletionDisplayed();
-                      }
+  private void processAutocompleteResult(
+      @NotNull Project project,
+      @NotNull Editor editor,
+      int offset,
+      InlineCompletionTriggerKind triggerKind,
+      InlineAutoCompleteList result) {
+    if (Thread.interrupted()) {
+      if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)) {
+        logger.warn("canceled autocomplete due to thread interruption");
+      }
+      return;
+    }
+    InlayModel inlayModel = editor.getInlayModel();
+    Optional<InlineAutoCompleteItem> maybeItem = result.items.stream().findFirst();
+    if (maybeItem.isEmpty()) {
+      if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)) {
+        logger.warn("explicit autocomplete returned empty suggestions");
+        // NOTE(olafur): it would be nice to give the user a visual hint when this happens.
+        // We don't do anything now because it's unclear what would be the most idiomatic
+        // IntelliJ API to use.
+      }
+      return;
+    }
+    final InlineAutoCompleteItem item = maybeItem.get();
+    try {
+      ApplicationManager.getApplication()
+          .invokeLater(
+              () -> {
+                this.clearAutoCompleteSuggestions(editor);
 
-                      // Avoid displaying autocomplete when IntelliJ is already displaying
-                      // built-in completions. When built-in completions are visible, we can't
-                      // accept the Cody autocomplete with TAB because it accepts the built-in
-                      // completion.
-                      if (LookupManager.getInstance(project).getActiveLookup() != null) {
-                        if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)
-                            || UserLevelConfig.isVerboseLoggingEnabled()) {
-                          logger.warn("Skipping autocomplete because lookup is active: " + item);
-                        }
-                        return;
-                      }
-                      displayAgentAutocomplete(editor, offset, item, inlayModel, triggerKind);
-                    });
-          } catch (Exception e) {
-            // TODO: do something smarter with unexpected errors.
-            logger.warn(e);
-          }
-        });
+                if (currentAutocompleteTelemetry != null) {
+                  currentAutocompleteTelemetry.markCompletionDisplayed();
+                }
+
+                // Avoid displaying autocomplete when IntelliJ is already displaying
+                // built-in completions. When built-in completions are visible, we can't
+                // accept the Cody autocomplete with TAB because it accepts the built-in
+                // completion.
+                if (LookupManager.getInstance(project).getActiveLookup() != null) {
+                  if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)
+                      || UserLevelConfig.isVerboseLoggingEnabled()) {
+                    logger.warn("Skipping autocomplete because lookup is active: " + item);
+                  }
+                  return;
+                }
+                displayAgentAutocomplete(editor, offset, item, inlayModel, triggerKind);
+              });
+    } catch (Exception e) {
+      // TODO: do something smarter with unexpected errors.
+      logger.warn(e);
+    }
   }
 
   /**
@@ -343,5 +362,6 @@ public class CodyAutoCompleteManager {
                 job.cancel(true);
               }
             });
+    CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.Ready);
   }
 }
