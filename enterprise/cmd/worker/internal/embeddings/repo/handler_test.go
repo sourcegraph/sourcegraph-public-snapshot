@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -17,6 +18,35 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
+
+func TestListTruncate(t *testing.T) {
+	ctx := context.Background()
+
+	readDirFunc := &gitserver.ClientReadDirFunc{}
+	readDirFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+		return nil, errors.New("this message should not be returned in its entirety")
+	})
+	mockGitServer := &gitserver.MockClient{
+		ReadDirFunc: readDirFunc,
+	}
+
+	rf := revisionFetcher{
+		repo:      "dummy",
+		revision:  "d3245f2908c191992b97d579eaf6a280e3034fe1", // the sha1 is not relevant in this test
+		gitserver: mockGitServer,
+		maxError:  10,
+	}
+
+	_, err := rf.List(ctx) // the sha1 is not relevant in this test
+	if err == nil {
+		t.Fatal(err)
+	}
+
+	errorMsg := err.Error()
+	if strings.Contains(errorMsg, "entirety") || !strings.Contains(errorMsg, "(truncated)") {
+		t.Fatal(err)
+	}
+}
 
 func TestDiff(t *testing.T) {
 	ctx := context.Background()

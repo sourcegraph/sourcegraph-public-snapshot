@@ -72,6 +72,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		repo:      repo.Name,
 		revision:  record.Revision,
 		gitserver: h.gitserverClient,
+		maxError:  100,
 	}
 
 	err = fetcher.validateRevision(ctx)
@@ -225,6 +226,7 @@ type revisionFetcher struct {
 	repo      api.RepoName
 	revision  api.CommitID
 	gitserver gitserver.Client
+	maxError  int
 }
 
 func (r *revisionFetcher) Read(ctx context.Context, fileName string) ([]byte, error) {
@@ -235,8 +237,8 @@ func (r *revisionFetcher) List(ctx context.Context) ([]embed.FileEntry, error) {
 	fileInfos, err := r.gitserver.ReadDir(ctx, nil, r.repo, r.revision, "", true)
 	if err != nil {
 		original := err.Error()
-		if len(original) > 100 {
-			return nil, errors.Newf("%v... (truncated)", original[:100])
+		if len(original) > r.maxError {
+			return nil, errors.Newf("%v... (truncated)", original[:r.maxError])
 		}
 		return nil, err
 	}
