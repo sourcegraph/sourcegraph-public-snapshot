@@ -1202,10 +1202,21 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 		args.Limit = math.MaxInt32
 	}
 
-	// We used to have a check for an uncloned repo and an `ensureRevision` call here which were obsolete, because a
-	// search for an unknown revision of the repo (of an uncloned repo) won't make it to gitserver and
-	// fail with an ErrNoResolvedRepos and a related search alert before calling the
-	// gitserver.
+	// We used to have an `ensureRevision`/`CloneRepo` calls here that were
+	// obsolete, because a search for an unknown revision of the repo (of an
+	// uncloned repo) won't make it to gitserver and fail with an ErrNoResolvedRepos
+	// and a related search alert before calling the gitserver.
+	//
+	// However, to protect for a weird case of getting an uncloned repo here (e.g.
+	// via a direct API call), we leave a `repoCloned` check and return an error if
+	// the repo is not cloned.
+	dir := repoDirFromName(s.ReposDir, args.Repo)
+	if !repoCloned(dir) {
+		s.Logger.Debug("attempted to search for a not cloned repo")
+		return false, &gitdomain.RepoNotExistError{
+			Repo: args.Repo,
+		}
+	}
 
 	mt, err := search.ToMatchTree(args.Query)
 	if err != nil {
@@ -1240,7 +1251,7 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 	searcher := &search.CommitSearcher{
 		Logger:               s.Logger,
 		RepoName:             args.Repo,
-		RepoDir:              repoDirFromName(s.ReposDir, args.Repo).Path(),
+		RepoDir:              dir.Path(),
 		Revisions:            args.Revisions,
 		Query:                mt,
 		IncludeDiff:          args.IncludeDiff,
