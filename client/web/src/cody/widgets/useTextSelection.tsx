@@ -73,7 +73,7 @@ export function useTextSelection(target?: HTMLElement): TextSelectionState {
 
         const contents = range.cloneContents()
 
-        if (contents.textContent !== null) {
+        if (!!contents.textContent) {
             newState.textContent = contents.textContent
         }
 
