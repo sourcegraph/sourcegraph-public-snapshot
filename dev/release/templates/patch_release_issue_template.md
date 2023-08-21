@@ -96,5 +96,8 @@ Once there is a release candidate available:
 ```
 
 - [ ] Open a PR to update [`dev/release/release-config.jsonc`](https://github.com/sourcegraph/sourcegraph/edit/main/dev/release/release-config.jsonc) after the auto-generated changes above if any.
+- [ ] Update the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) by opening and merging a PR into `main` (**not** the release branch), making the following changes:
+  - [ ] Move the released changes into the $MAJOR.$MINOR.$PATCH version section
+  - [ ] Add a new section for the [upcoming patch release](https://handbook.sourcegraph.com/departments/engineering/dev/process/releases/#current-patch-schedule) if this is not the last planned patch release for version $MAJOR.$MINOR 
 
 > **Note:** If another patch release is requested after the release, ask that a [patch request issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=team%2Fdistribution&template=request_patch_release.md) be filled out and approved first.
