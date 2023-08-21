@@ -152,7 +152,11 @@ public class CodyAgent implements Disposable {
     EditorEventMulticaster multicaster = EditorFactory.getInstance().getEventMulticaster();
     if (multicaster instanceof EditorEventMulticasterEx) {
       EditorEventMulticasterEx ex = (EditorEventMulticasterEx) multicaster;
-      ex.addFocusChangeListener(new CodyAgentFocusListener(), this.disposable);
+      try {
+        ex.addFocusChangeListener(new CodyAgentFocusListener(), this.disposable);
+      } catch (Exception ignored) {
+        // Ignore exception https://github.com/sourcegraph/sourcegraph/issues/56032
+      }
     }
   }
 
