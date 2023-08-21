@@ -1,4 +1,4 @@
-package server
+package sshagent
 
 import (
 	"net"
@@ -21,7 +21,7 @@ func TestSSHAgent(t *testing.T) {
 	}
 
 	// Spawn the agent using the keypair from above.
-	a, err := newSSHAgent(logtest.Scoped(t), []byte(keypair.PrivateKey), []byte(keypair.Passphrase))
+	a, err := New(logtest.Scoped(t), []byte(keypair.PrivateKey), []byte(keypair.Passphrase))
 	if err != nil {
 		t.Fatal(err)
 	}

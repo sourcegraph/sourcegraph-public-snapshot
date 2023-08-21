@@ -1,4 +1,4 @@
-package server
+package sshagent
 
 import (
 	"fmt"
@@ -27,8 +27,8 @@ type sshAgent struct {
 	done    chan struct{}
 }
 
-// newSSHAgent takes a private key and it's passphrase and returns an `sshAgent`.
-func newSSHAgent(logger log.Logger, raw, passphrase []byte) (*sshAgent, error) {
+// New takes a private key and it's passphrase and returns an `sshAgent`.
+func New(logger log.Logger, raw, passphrase []byte) (*sshAgent, error) {
 	// This does error if the passphrase is invalid, so we get immediate
 	// feedback here if we screw up.
 	key, err := ssh.ParseRawPrivateKeyWithPassphrase(raw, passphrase)
