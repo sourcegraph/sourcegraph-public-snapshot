@@ -55,15 +55,12 @@
 
 .repository-selector-content {
     width: 20rem;
-    height: 100%;
     max-width: 20rem;
-    min-height: 24rem;
-    max-height: 29rem;
-    overflow: hidden;
+    height: 20rem;
 }
 
 .context-items-container {
-    max-height: 23rem;
+    flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -82,6 +79,7 @@
 .repository-list-item {
     all: unset;
     font-size: 0.8rem;
+    flex-shrink: 0;
     line-height: 1rem;
     display: block;
 
