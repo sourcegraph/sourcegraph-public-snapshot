@@ -22,7 +22,6 @@ import {
     type FeedbackButtonsProps,
 } from '@sourcegraph/cody-ui/dist/Chat'
 import type { FileLinkProps } from '@sourcegraph/cody-ui/dist/chat/ContextFiles'
-import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/dist/terms'
 import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
