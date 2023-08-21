@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { H4, H5, RadioButton, Text, Button, Grid, Icon, Link } from '@sourcegraph/wildcard'
 
 import { CodyColorIcon, CodySpeechBubbleIcon } from '../chat/CodyPageIcon'
@@ -30,8 +31,9 @@ export const GettingStarted: React.FC<
         isSourcegraphApp?: boolean
         isCodyChatPage?: boolean
         submitInput: (input: string, submitType: 'user' | 'suggestion' | 'example') => void
+        authenticatedUser: AuthenticatedUser | null
     }
-> = ({ isCodyChatPage, submitInput, ...scopeSelectorProps }) => {
+> = ({ isCodyChatPage, submitInput, authenticatedUser, ...scopeSelectorProps }) => {
     const [conversationScope, setConversationScope] = useState<ConversationScope>(
         !isCodyChatPage || scopeSelectorProps.scope.repositories.length > 0 ? 'repo' : 'general'
     )
@@ -193,6 +195,7 @@ export const GettingStarted: React.FC<
                                         {...scopeSelectorProps}
                                         renderHint={renderRepoIndexingWarning}
                                         encourageOverlap={true}
+                                        authenticatedUser={authenticatedUser}
                                     />
                                 </div>
                                 <hr className={styles.divider} />

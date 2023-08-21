@@ -22,7 +22,7 @@ import {
     type FeedbackButtonsProps,
 } from '@sourcegraph/cody-ui/dist/Chat'
 import type { FileLinkProps } from '@sourcegraph/cody-ui/dist/chat/ContextFiles'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -113,8 +113,8 @@ export const ChatUI: React.FC<IChatUIProps> = ({
     )
 
     const gettingStartedComponentProps = useMemo(
-        () => ({ ...scopeSelectorProps, logTranscriptEvent, isCodyChatPage }),
-        [scopeSelectorProps, logTranscriptEvent, isCodyChatPage]
+        () => ({ ...scopeSelectorProps, logTranscriptEvent, isCodyChatPage, authenticatedUser }),
+        [scopeSelectorProps, isCodyChatPage, logTranscriptEvent, authenticatedUser]
     )
 
     if (!loaded) {
