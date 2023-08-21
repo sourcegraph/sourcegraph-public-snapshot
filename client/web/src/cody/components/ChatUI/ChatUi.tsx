@@ -249,7 +249,7 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = React.mem
                 className="d-inline-block w-100 ml-auto text-right font-italic"
                 onClick={() => eventLogger.log('ClickedOnCodyCTA', { location: 'Chat Response' })}
             >
-                Use commands, autocomplete and more in your IDE
+                Use commands, autocomplete and more in your IDE.
             </Link>
         </div>
     )
