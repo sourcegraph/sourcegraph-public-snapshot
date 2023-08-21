@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -22,10 +23,11 @@ func NewExhaustiveSearchRepoWorker(
 	observationCtx *observation.Context,
 	workerStore dbworkerstore.Store[*types.ExhaustiveSearchRepoJob],
 	exhaustiveSearchStore *store.Store,
+	searcher service.NewSearcher,
 ) goroutine.BackgroundRoutine {
 	handler := &exhaustiveSearchRepoHandler{
-		logger: log.Scoped("exhaustive-search-repo", "The background worker running exhaustive searches on a repository"),
-		store:  exhaustiveSearchStore,
+		store:    exhaustiveSearchStore,
+		searcher: searcher,
 	}
 
 	opts := workerutil.WorkerOptions{
@@ -41,8 +43,8 @@ func NewExhaustiveSearchRepoWorker(
 }
 
 type exhaustiveSearchRepoHandler struct {
-	logger log.Logger
-	store  *store.Store
+	store    *store.Store
+	searcher service.NewSearcher
 }
 
 var _ workerutil.Handler[*types.ExhaustiveSearchRepoJob] = &exhaustiveSearchRepoHandler{}
