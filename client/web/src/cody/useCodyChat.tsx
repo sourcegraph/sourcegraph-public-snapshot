@@ -87,7 +87,6 @@ interface CodyChatProps {
         transcriptHistory: TranscriptJSON[],
         initializeNewChat: CodyClient['initializeNewChat']
     ) => void
-    logTranscriptEvent?: (eventLabel: string, eventProperties?: { [key: string]: any }) => void
     autoLoadTranscriptFromHistory?: boolean
     autoLoadScopeWithRepositories?: boolean
 }
@@ -142,12 +141,15 @@ export const useCodyChat = ({
     })
 
     /** Event logger for transcript specific events to capture the transcriptId */
-    const logTranscriptEvent = (eventLabel: string, eventProperties?: { [key: string]: any }) => {
-        if (!transcript) {
-            return
-        }
-        eventLogger.log(eventLabel, { transcriptId: transcript.id, ...eventProperties })
-    }
+    const logTranscriptEvent = useCallback(
+        (eventLabel: string, eventProperties?: { [key: string]: any }) => {
+            if (!transcript) {
+                return
+            }
+            eventLogger.log(eventLabel, { transcriptId: transcript.id, ...eventProperties })
+        },
+        [transcriptHistory, transcript?.id]
+    )
 
     const loadTranscriptFromHistory = useCallback(
         async (id: string) => {

@@ -7,7 +7,6 @@ import { useLazyQuery } from '@sourcegraph/http-client'
 import { Text } from '@sourcegraph/wildcard'
 
 import type { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { EventName } from '../../../util/constants'
 
 import { ReposStatusQuery } from './backend'
