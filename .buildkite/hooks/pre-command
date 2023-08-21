@@ -36,4 +36,13 @@ fi
 if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" == "bazel" ]]; then
     echo "~~~ Checking dangling docker containers"
     docker ps -a
+
+    if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then
+      SENTRY_DSN="$CI_SENTRY_DSN" sentry-cli send-event \
+        -m "Dangling containers detected" \
+        -e "job_name:$BUILDKITE_LABEL" \
+        -e "job_url:$BUILDKITE_BUILD_URL" \
+        -e "build_number:$BUILDKITE_BUILD_NUMBER" \
+        -e "agent_name:$BUILDKITE_AGENT_NAME"
+    fi
 fi

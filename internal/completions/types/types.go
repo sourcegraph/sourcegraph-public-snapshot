@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const HUMAN_MESSAGE_SPEAKER = "human"
@@ -58,9 +59,32 @@ type CompletionRequestParameters struct {
 	TopK              int       `json:"topK,omitempty"`
 	TopP              float32   `json:"topP,omitempty"`
 	Model             string    `json:"model,omitempty"`
+	Stream            *bool     `json:"stream,omitempty"`
 }
 
-func (p *CompletionRequestParameters) Attrs() []attribute.KeyValue {
+// IsStream returns whether a streaming response is requested. For backwards
+// compatibility reasons, we are using a pointer to a bool instead of a bool
+// to default to true in case the value is not explicity provided.
+func (p CompletionRequestParameters) IsStream(feature CompletionsFeature) bool {
+	if p.Stream == nil {
+		return defaultStreamMode(feature)
+	}
+	return *p.Stream
+}
+
+func defaultStreamMode(feature CompletionsFeature) bool {
+	switch feature {
+	case CompletionsFeatureChat:
+		return true
+	case CompletionsFeatureCode:
+		return false
+	default:
+		// Safeguard, should be never reached.
+		return true
+	}
+}
+
+func (p *CompletionRequestParameters) Attrs(feature CompletionsFeature) []attribute.KeyValue {
 	return []attribute.KeyValue{
 		attribute.Int("promptLength", len(p.Prompt)),
 		attribute.Int("numMessages", len(p.Messages)),
@@ -69,6 +93,7 @@ func (p *CompletionRequestParameters) Attrs() []attribute.KeyValue {
 		attribute.Int("topK", p.TopK),
 		attribute.Float64("topP", float64(p.TopP)),
 		attribute.String("model", p.Model),
+		attribute.Bool("stream", p.IsStream(feature)),
 	}
 }
 

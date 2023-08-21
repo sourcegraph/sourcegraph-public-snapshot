@@ -1,6 +1,5 @@
-package com.sourcegraph.cody.autocomplete.prompt_library;
+package com.sourcegraph.cody.vscode;
 
-import com.sourcegraph.cody.vscode.InlineAutoCompleteItem;
 import java.util.List;
 
 public class InlineAutoCompleteList {

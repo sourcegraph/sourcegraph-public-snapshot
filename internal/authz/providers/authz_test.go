@@ -2112,8 +2112,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 				tc.ps = conf.Get().AuthProviders
 			}
 
-			s := dbmocks.NewMockExternalServiceStore()
-			_, err := ValidateExternalServiceConfig(context.Background(), s, database.ValidateExternalServiceConfigOptions{
+			_, err := ValidateExternalServiceConfig(context.Background(), dbmocks.NewMockDB(), database.ValidateExternalServiceConfigOptions{
 				Kind:          tc.kind,
 				Config:        tc.config,
 				AuthProviders: tc.ps,

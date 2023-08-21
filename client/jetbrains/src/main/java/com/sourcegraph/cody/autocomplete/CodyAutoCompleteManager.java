@@ -18,13 +18,11 @@ import com.sourcegraph.cody.CodyCompatibility;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.agent.protocol.AutocompleteExecuteParams;
-import com.sourcegraph.cody.api.CompletionsService;
-import com.sourcegraph.cody.autocomplete.prompt_library.*;
 import com.sourcegraph.cody.autocomplete.render.*;
 import com.sourcegraph.cody.vscode.*;
+import com.sourcegraph.cody.vscode.InlineAutoCompleteList;
 import com.sourcegraph.common.EditorUtils;
 import com.sourcegraph.config.ConfigUtil;
-import com.sourcegraph.config.NotificationActivity;
 import com.sourcegraph.config.UserLevelConfig;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import difflib.Delta;
@@ -36,7 +34,6 @@ import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -121,22 +118,6 @@ public class CodyAutoCompleteManager {
     currentAutocompleteTelemetry = AutocompleteTelemetry.createAndMarkTriggered();
     GraphQlLogger.logCodyEvent(project, "completion", "started");
 
-    CancellationToken token = new CancellationToken();
-    SourcegraphNodeCompletionsClient client =
-        new SourcegraphNodeCompletionsClient(autoCompleteService(editor), token);
-    CodyAutoCompleteItemProvider provider =
-        new CodyAutoCompleteItemProvider(
-            new WebviewErrorMessenger(),
-            client,
-            new AutoCompleteDocumentProvider(),
-            new History(),
-            2048,
-            4,
-            200,
-            0.6,
-            0.1);
-
-    // Gets AutoCompleteDocumentContext for the current offset
     TextDocument textDocument = new IntelliJTextDocument(editor, project);
     AutoCompleteDocumentContext autoCompleteDocumentContext =
         textDocument.getAutoCompleteContext(offset);
@@ -145,16 +126,7 @@ public class CodyAutoCompleteManager {
     if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)
         || autoCompleteDocumentContext.isCompletionTriggerValid()) { // TODO: skip this condition
       Callable<CompletableFuture<Void>> callable =
-          () ->
-              triggerAutoCompleteAsync(
-                  project,
-                  editor,
-                  offset,
-                  token,
-                  provider,
-                  textDocument,
-                  autoCompleteDocumentContext,
-                  triggerKind);
+          () -> triggerAutoCompleteAsync(project, editor, offset, textDocument, triggerKind);
       // debouncing the autocomplete trigger
       cancelCurrentJob();
       this.currentJob.set(
@@ -167,32 +139,26 @@ public class CodyAutoCompleteManager {
       @NotNull Project project,
       @NotNull Editor editor,
       int offset,
-      @NotNull CancellationToken token,
-      @NotNull CodyAutoCompleteItemProvider provider,
       @NotNull TextDocument textDocument,
-      @NotNull AutoCompleteDocumentContext autoCompleteDocumentContext,
       InlineCompletionTriggerKind triggerKind) {
     CodyAgentServer server = CodyAgent.getServer(project);
     boolean isAgentAutocomplete = server != null;
+    if (!isAgentAutocomplete) {
+      logger.warn("Doing nothing, Agent is not running");
+      return CompletableFuture.completedFuture(null);
+    }
     Position position = textDocument.positionAt(offset);
     CompletableFuture<InlineAutoCompleteList> asyncCompletions =
-        isAgentAutocomplete
-            ? server.autocompleteExecute(
-                new AutocompleteExecuteParams()
-                    .setFilePath(
-                        Objects.requireNonNull(
-                                FileDocumentManager.getInstance().getFile(editor.getDocument()))
-                            .getPath())
-                    .setPosition(
-                        new com.sourcegraph.cody.agent.protocol.Position()
-                            .setLine(position.line)
-                            .setCharacter(position.character)))
-            : provider.provideInlineAutoCompleteItems(
-                textDocument,
-                position,
-                new InlineAutoCompleteContext(InlineAutoCompleteTriggerKind.Automatic, null),
-                token);
-
+        server.autocompleteExecute(
+            new AutocompleteExecuteParams()
+                .setFilePath(
+                    Objects.requireNonNull(
+                            FileDocumentManager.getInstance().getFile(editor.getDocument()))
+                        .getPath())
+                .setPosition(
+                    new com.sourcegraph.cody.agent.protocol.Position()
+                        .setLine(position.line)
+                        .setCharacter(position.character)));
     return asyncCompletions.thenAccept(
         result -> {
           if (Thread.interrupted()) {
@@ -202,16 +168,7 @@ public class CodyAutoCompleteManager {
             return;
           }
           InlayModel inlayModel = editor.getInlayModel();
-          // TODO: smarter logic around selecting the best completion item.
-          Optional<InlineAutoCompleteItem> maybeItem =
-              isAgentAutocomplete
-                  ? // TODO: filter out insertText that introduce deletion
-                  result.items.stream().findFirst()
-                  : result.items.stream()
-                      .map(CodyAutoCompleteManager::removeUndesiredCharacters)
-                      .map(item -> normalizeIndentation(item, EditorUtils.indentOptions(editor)))
-                      .filter(resultItem -> !resultItem.insertText.isEmpty())
-                      .findFirst();
+          Optional<InlineAutoCompleteItem> maybeItem = result.items.stream().findFirst();
           if (maybeItem.isEmpty()) {
             if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)) {
               logger.warn("explicit autocomplete returned empty suggestions");
@@ -243,13 +200,7 @@ public class CodyAutoCompleteManager {
                         }
                         return;
                       }
-
-                      if (isAgentAutocomplete) {
-                        displayAgentAutocomplete(editor, offset, item, inlayModel, triggerKind);
-                      } else {
-                        displayAutocomplete(
-                            editor, offset, autoCompleteDocumentContext, item, inlayModel);
-                      }
+                      displayAgentAutocomplete(editor, offset, item, inlayModel, triggerKind);
                     });
           } catch (Exception e) {
             // TODO: do something smarter with unexpected errors.
@@ -323,29 +274,6 @@ public class CodyAutoCompleteManager {
     return value.chars().mapToObj(c -> String.valueOf((char) c)).collect(Collectors.toList());
   }
 
-  private static void displayAutocomplete(
-      @NotNull Editor editor,
-      int offset,
-      @NotNull AutoCompleteDocumentContext autoCompleteDocumentContext,
-      InlineAutoCompleteItem item,
-      InlayModel inlayModel) {
-    AutoCompleteText autoCompleteText =
-        item.toAutoCompleteText(autoCompleteDocumentContext.getSameLineSuffix().trim());
-    autoCompleteText
-        .getInlineRenderer(editor)
-        .ifPresent(inlineRenderer -> inlayModel.addInlineElement(offset, true, inlineRenderer));
-    autoCompleteText
-        .getAfterLineEndRenderer(editor)
-        .ifPresent(
-            afterLineEndRenderer ->
-                inlayModel.addAfterLineEndElement(offset, true, afterLineEndRenderer));
-    autoCompleteText
-        .getBlockRenderer(editor)
-        .ifPresent(
-            blockRenderer ->
-                inlayModel.addBlockElement(offset, true, false, Integer.MAX_VALUE, blockRenderer));
-  }
-
   // TODO: handle tabs in multiline autocomplete suggestions when we add them
   public static @NotNull InlineAutoCompleteItem normalizeIndentation(
       @NotNull InlineAutoCompleteItem item,
@@ -362,16 +290,6 @@ public class CodyAutoCompleteManager {
           item.range.withEnd(item.range.end.withCharacter(item.range.end.character - rangeDiff));
       return item.withInsertText(newInsertText).withRange(newRange);
     } else return item;
-  }
-
-  public static @NotNull InlineAutoCompleteItem removeUndesiredCharacters(
-      @NotNull InlineAutoCompleteItem item) {
-    // no zero-width spaces or line separator chars, pls
-    String newInsertText = item.insertText.replaceAll("[\u200b\u2028]", "");
-    int rangeDiff = item.insertText.length() - newInsertText.length();
-    Range newRange =
-        item.range.withEnd(item.range.end.withCharacter(item.range.end.character - rangeDiff));
-    return item.withRange(newRange).withInsertText(newInsertText);
   }
 
   private boolean isProjectAvailable(Project project) {
@@ -402,24 +320,6 @@ public class CodyAutoCompleteManager {
         && !(editor instanceof EditorWindow)
         && !(editor instanceof ImaginaryEditor)
         && (!(editor instanceof EditorEx) || !((EditorEx) editor).isEmbeddedIntoDialogWrapper());
-  }
-
-  @Nullable
-  private CompletionsService autoCompleteService(@NotNull Editor editor) {
-    Optional<Project> project = Optional.ofNullable(editor.getProject());
-    String instanceUrl =
-        project
-            .map(ConfigUtil::getSourcegraphUrl)
-            .map(url -> url.endsWith("/") ? url : url + "/")
-            .orElse(ConfigUtil.DOTCOM_URL);
-    Optional<String> accessToken =
-        project
-            .flatMap(p -> Optional.ofNullable(ConfigUtil.getProjectAccessToken(p)))
-            .filter(StringUtils::isNotEmpty);
-    if (accessToken.isEmpty() && !ConfigUtil.isAccessTokenNotificationDismissed()) {
-      NotificationActivity.notifyAboutSourcegraphAccessToken(Optional.of(instanceUrl));
-    }
-    return accessToken.map(token -> new CompletionsService(instanceUrl, token)).orElse(null);
   }
 
   private void cancelCurrentJob() {
