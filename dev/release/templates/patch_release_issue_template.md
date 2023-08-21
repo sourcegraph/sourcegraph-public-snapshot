@@ -30,8 +30,6 @@ pnpm run release release:activate-release
 
 - [ ] Ensure that all [backported PRs](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+label%3Abackported-to-$MAJOR.$MINOR+sort%3Aupdated-desc) have been merged
 
-- [ ] Ensure CI passes on all release branches listed above.
-
 Create and test the first release candidate:
 
 - [ ] Push a new release candidate tag. This command will automatically detect the appropriate release candidate number. This command can be executed as many times as required, and will increment the release candidate number for each subsequent build: :
