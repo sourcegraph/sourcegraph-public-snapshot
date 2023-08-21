@@ -21,6 +21,9 @@ The default run type.
   - **Linters and static analysis**: Run sg lint
   - **Security Scanning**: Sonarcloud Scan
 
+- Pipeline for `ClientJetbrains` changes:
+  - **Security Scanning**: Sonarcloud Scan
+
 - Pipeline for `Client` changes:
   - Perform bazel prechecks
   - Tests
