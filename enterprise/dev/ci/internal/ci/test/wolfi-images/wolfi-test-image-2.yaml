@@ -1,0 +1,21 @@
+# Base image config, used for unit tests
+
+contents:
+  packages:
+    - tini
+    - mailcap
+    - git
+    - foobar-package
+    - wolfi-test-package-subpackage@sourcegraph
+    - wolfi-test-package-2@sourcegraph
+
+accounts:
+  run-as: sourcegraph
+  groups:
+    - groupname: sourcegraph
+      gid: 101
+  users:
+    - username: sourcegraph
+      uid: 100
+      gid: 101
+

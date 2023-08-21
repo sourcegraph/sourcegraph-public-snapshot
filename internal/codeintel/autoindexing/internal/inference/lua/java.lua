@@ -1,21 +1,9 @@
 local path = require("path")
 local pattern = require("sg.autoindex.patterns")
 
-local is_project_structure_supported = function(base)
-  local supported = {
-    ["pom.xml"] = true,
-    ["build.gradle"] = true,
-    ["build.gradle.kts"] = true,
-    ["build.sbt"] = true,
-    ["build.sc"] = true,
-  }
-  return supported[base] ~= nil
-end
-
 local recognizer = require("sg.autoindex.recognizer")
 
 local java_indexer = require("sg.autoindex.indexes").get "java"
-
 
 local patterns = require "internal_patterns"
 
@@ -107,42 +95,5 @@ return recognizer.new_path_recognizer {
     end
 
     return {}
-  end,
-
-  hints = function(_, paths)
-    local hints = {}
-    local visited = {}
-
-    for i = 1, #paths do
-      local dir = path.dirname(paths[i])
-      local base = path.basename(paths[i])
-
-      if visited[dir] == nil and is_project_structure_supported(base) then
-        table.insert(hints, {
-          root = dir,
-          indexer = java_indexer,
-          confidence = "PROJECT_STRUCTURE_SUPPORTED",
-        })
-
-        visited[dir] = true
-      end
-    end
-
-    for i = 1, #paths do
-      local dir = path.dirname(paths[i])
-      local base = path.basename(paths[i])
-
-      if visited[dir] == nil and not is_project_structure_supported(base) then
-        table.insert(hints, {
-          root = dir,
-          indexer = java_indexer,
-          confidence = "LANGUAGE_SUPPORTED",
-        })
-
-        visited[dir] = true
-      end
-    end
-
-    return hints
   end,
 }

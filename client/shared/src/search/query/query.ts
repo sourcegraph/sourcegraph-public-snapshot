@@ -1,6 +1,6 @@
 import { FilterType } from './filters'
 import { scanSearchQuery } from './scanner'
-import { Filter, Token } from './token'
+import type { Filter, Token } from './token'
 
 export enum FilterKind {
     Global = 'Global',

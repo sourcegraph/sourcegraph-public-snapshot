@@ -50,6 +50,7 @@ const git = "git"
 var (
 	clientFactory  = httpcli.NewInternalClientFactory("gitserver")
 	defaultDoer, _ = clientFactory.Doer()
+	// defaultLimiter limits concurrent HTTP requests per running process to gitserver.
 	defaultLimiter = limiter.New(500)
 )
 
@@ -298,9 +299,6 @@ type Client interface {
 
 	// Remove removes the repository clone from gitserver.
 	Remove(context.Context, api.RepoName) error
-
-	// RemoveFrom removes the repository clone from the given gitserver.
-	RemoveFrom(ctx context.Context, repo api.RepoName, from string) error
 
 	RepoCloneProgress(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
 
@@ -622,7 +620,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 		req := &proto.ExecRequest{
 			Repo:           string(repoName),
 			EnsureRevision: c.EnsureRevision(),
-			Args:           c.args[1:],
+			Args:           stringsToByteSlices(c.args[1:]),
 			Stdin:          c.stdin,
 			NoTimeout:      c.noTimeout,
 		}
@@ -1517,9 +1515,10 @@ func (c *clientImplementor) doReposStats(ctx context.Context, addr string) (*pro
 func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) error {
 	// In case the repo has already been deleted from the database we need to pass
 	// the old name in order to land on the correct gitserver instance
-	repo = api.UndeletedRepoName(repo)
+	undeletedName := api.UndeletedRepoName(repo)
+
 	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(ctx, repo)
+		client, err := c.ClientForRepo(ctx, undeletedName)
 		if err != nil {
 			return err
 		}
@@ -1527,13 +1526,13 @@ func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) error
 			Repo: string(repo),
 		})
 		return err
-	} else {
-		addr := c.AddrForRepo(ctx, repo)
-		return c.RemoveFrom(ctx, repo, addr)
 	}
+
+	addr := c.AddrForRepo(ctx, undeletedName)
+	return c.removeFrom(ctx, undeletedName, addr)
 }
 
-func (c *clientImplementor) RemoveFrom(ctx context.Context, repo api.RepoName, from string) error {
+func (c *clientImplementor) removeFrom(ctx context.Context, repo api.RepoName, from string) error {
 	b, err := json.Marshal(&protocol.RepoDeleteRequest{
 		Repo: repo,
 	})
@@ -1775,4 +1774,12 @@ func readResponseBody(body io.Reader) string {
 	// strings.TrimSpace, see attached screenshots in this pull request:
 	// https://github.com/sourcegraph/sourcegraph/pull/39358.
 	return strings.TrimSpace(string(content))
+}
+
+func stringsToByteSlices(in []string) [][]byte {
+	res := make([][]byte, len(in))
+	for i, s := range in {
+		res[i] = []byte(s)
+	}
+	return res
 }

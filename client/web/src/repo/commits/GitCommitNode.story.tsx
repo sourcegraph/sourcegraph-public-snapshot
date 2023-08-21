@@ -1,10 +1,10 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 
 import { Card } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
-import { GitCommitFields } from '../../graphql-operations'
+import type { GitCommitFields } from '../../graphql-operations'
 
 import { GitCommitNode } from './GitCommitNode'
 

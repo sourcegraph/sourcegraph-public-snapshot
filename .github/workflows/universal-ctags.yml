@@ -1,0 +1,80 @@
+name: universal-ctags
+
+on:
+  push:
+    paths:
+    - 'dev/nix/ctags.nix'
+  workflow_dispatch:
+permissions:
+  contents: 'read'
+  id-token: 'write'
+
+jobs:
+  x86_64-darwin:
+    name: Build ctags
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v4
+      - id: auth
+        name: '🔓 Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: ${{ secrets.CTAGS_GCP_SERVICE_ACCOUNT }}
+      - id: nix-build
+        name: Run `nix build`
+        run: |
+          nix build .#ctags
+          sudo codesign --force -s - ./result/bin/universal-ctags-*
+      - id: 'upload-file'
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: './result/bin/'
+          destination: 'universal_ctags/x86_64-darwin/'
+          glob: 'universal-ctags-*'
+  aarch64-darwin:
+    name: Build ctags
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v4
+      - id: auth
+        name: '🔓 Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: ${{ secrets.CTAGS_GCP_SERVICE_ACCOUNT }}
+      - id: nix-build
+        name: Run `nix build`
+        run: |
+          nix build .#ctags-aarch64-darwin
+          sudo codesign --force -s - ./result/bin/universal-ctags-*
+      - id: 'upload-file'
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: './result/bin/'
+          destination: 'universal_ctags/aarch64-darwin'
+          glob: 'universal-ctags-*'
+  x86_64-linux:
+    name: Build ctags
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v4
+      - id: auth
+        name: '🔓 Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: ${{ secrets.CTAGS_GCP_SERVICE_ACCOUNT }}
+      - id: nix-build
+        name: Run `nix build`
+        run: |
+          nix build .#ctags
+      - id: 'upload-file'
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: './result/bin/'
+          destination: 'universal_ctags/x86_64-linux'
+          glob: 'universal-ctags-*'

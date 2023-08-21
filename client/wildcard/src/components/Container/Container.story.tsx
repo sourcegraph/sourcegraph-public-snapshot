@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { H1, H2, H3, Text, Input } from '..'
 import { BrandedStory } from '../../stories/BrandedStory'

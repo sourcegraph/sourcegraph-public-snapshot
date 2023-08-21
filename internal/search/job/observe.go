@@ -45,7 +45,7 @@ func (o *observingStream) Send(event streaming.SearchEvent) {
 		// Only log the first results once. We can rely on reusing the atomic
 		// int64 as a "sync.Once" since it is only ever incremented.
 		if newTotal == int64(l) {
-			o.tr.SetAttributes(attribute.String("event", "first results"))
+			o.tr.AddEvent("first results")
 		}
 	}
 	o.parent.Send(event)

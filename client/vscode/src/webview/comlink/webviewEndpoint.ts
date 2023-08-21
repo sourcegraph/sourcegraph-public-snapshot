@@ -1,11 +1,11 @@
 import * as Comlink from 'comlink'
 import { isObject } from 'lodash'
 
-import { EndpointPair } from '@sourcegraph/shared/src/platform/context'
+import type { EndpointPair } from '@sourcegraph/shared/src/platform/context'
 
-import { VsCodeApi } from '../../vsCodeApi'
+import type { VsCodeApi } from '../../vsCodeApi'
 
-import { generateUUID, isNestedConnection, NestedConnectionData, RelationshipType } from '.'
+import { generateUUID, isNestedConnection, type NestedConnectionData, type RelationshipType } from '.'
 
 const panelId = self.document ? self.document.documentElement.dataset.panelId! : 'web-worker'
 

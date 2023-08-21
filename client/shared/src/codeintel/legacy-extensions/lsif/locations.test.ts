@@ -1,7 +1,7 @@
 import * as assert from 'assert'
 
 import * as scip from '../../scip'
-import * as sourcegraph from '../api'
+import type * as sourcegraph from '../api'
 
 import { nodeToLocation } from './locations'
 

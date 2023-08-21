@@ -3,7 +3,7 @@
 package:
   name: ctags
   version: f95bb3497f53748c2b6afc7f298cff218103ab90
-  epoch: 1
+  epoch: 2
   description: "A maintained ctags implementation"
   target-architecture:
     - x86_64

@@ -37,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -54,11 +55,11 @@ import (
 )
 
 func newMockDB() database.DB {
-	db := database.NewMockDB()
-	db.GitserverReposFunc.SetDefaultReturn(database.NewMockGitserverRepoStore())
-	db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
+	db := dbmocks.NewMockDB()
+	db.GitserverReposFunc.SetDefaultReturn(dbmocks.NewMockGitserverRepoStore())
+	db.FeatureFlagsFunc.SetDefaultReturn(dbmocks.NewMockFeatureFlagStore())
 
-	r := database.NewMockRepoStore()
+	r := dbmocks.NewMockRepoStore()
 	r.GetByNameFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName) (*types.Repo, error) {
 		return &types.Repo{
 			Name: repoName,
@@ -373,7 +374,7 @@ func TestClient_ListGitolite_ProtoRoundTrip(t *testing.T) {
 
 func TestClient_Remove(t *testing.T) {
 	test := func(t *testing.T, called *bool) {
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		repo := api.RepoName("github.com/sourcegraph/sourcegraph")
 		addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080"}
 
@@ -410,11 +411,6 @@ func TestClient_Remove(t *testing.T) {
 		)
 
 		err := cli.Remove(context.Background(), repo)
-		if err != nil {
-			t.Fatalf("expected URL %q, but got err %q", expected, err)
-		}
-
-		err = cli.RemoveFrom(context.Background(), repo, "172.16.8.1:8080")
 		if err != nil {
 			t.Fatalf("expected URL %q, but got err %q", expected, err)
 		}
@@ -532,6 +528,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 					return server.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 				},
 				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
+				Locker:                  server.NewRepositoryLocker(),
 			}
 
 			grpcServer := defaults.NewServer(logtest.Scoped(t))
@@ -618,7 +615,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 			conf.Mock(nil)
 		})
 		for _, test := range tests {
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			repoName := api.RepoName(test.name)
 			called := false
 
@@ -668,7 +665,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 		})
 
 		for _, test := range tests {
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			repoName := api.RepoName(test.name)
 			called := false
 
@@ -890,7 +887,7 @@ func TestClient_P4ExecGRPC(t *testing.T) {
 
 	t.Run("GRPC", func(t *testing.T) {
 		for _, test := range tests {
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			conf.Mock(&conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					ExperimentalFeatures: &schema.ExperimentalFeatures{
@@ -1016,7 +1013,7 @@ func TestClient_P4Exec(t *testing.T) {
 
 	}
 	t.Run("HTTP", func(t *testing.T) {
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		for _, test := range tests {
 			conf.Mock(&conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
@@ -1099,6 +1096,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		DB:                      db,
 		Perforce:                perforce.NewService(ctx, observation.TestContextTB(t), logger, db, list.New()),
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
+		Locker:                  server.NewRepositoryLocker(),
 	}
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
@@ -1148,7 +1146,7 @@ func TestClient_BatchLogGRPC(t *testing.T) {
 
 	called := false
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	source := gitserver.NewTestClientSource(t, db, addrs, func(o *gitserver.TestClientSourceOptions) {
 		o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 			mockBatchLog := func(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error) {
@@ -1234,7 +1232,7 @@ func TestClient_BatchLogGRPC(t *testing.T) {
 }
 
 func TestClient_BatchLog(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080", "172.16.8.3:8080"}
 	source := gitserver.NewTestClientSource(t, db, addrs)
 
@@ -1374,7 +1372,7 @@ func TestClient_ReposStats(t *testing.T) {
 		GitDirBytes: 1337,
 	}
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	source := gitserver.NewTestClientSource(t, db, addrs)
 	cli := gitserver.NewTestClient(
 		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
@@ -1419,7 +1417,7 @@ func TestClient_ReposStatsGRPC(t *testing.T) {
 		GitDirBytes: 1337,
 	}
 	called := false
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	source := gitserver.NewTestClientSource(t, db, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
 		o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 			mockRepoStats := func(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error) {
@@ -1517,7 +1515,7 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 		for _, tc := range testCases {
 
 			called := false
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			source := gitserver.NewTestClientSource(t, db, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
 				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 					mockIsRepoCloneable := func(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error) {
@@ -1556,7 +1554,7 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 		for _, tc := range testCases {
 
 			called := false
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			source := gitserver.NewTestClientSource(t, db, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
 				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 					mockIsRepoCloneable := func(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error) {

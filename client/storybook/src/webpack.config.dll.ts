@@ -1,5 +1,5 @@
 import signale from 'signale'
-import { DllPlugin, Configuration } from 'webpack'
+import { DllPlugin, type Configuration } from 'webpack'
 import { WebpackManifestPlugin } from 'webpack-manifest-plugin'
 
 import {

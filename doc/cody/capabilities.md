@@ -55,21 +55,6 @@ Examples of fix-up instructions Cody can handle:
   <a class="demo text-center" target="_blank" href="https://twitter.com/sqs/status/1647673013343780864">View Demo</a>
 </div>
 
-## Cody Recipes
-
-Cody can generate unit tests, documentation, and more, leveraging its full awareness of your codebase. You can access various helpful recipes to streamline your development process with just a few clicks.
-
-Select the recipes tab in your editor or right click on a code section, then choose one of the `Ask Cody > ...` recipes. You'll find options such as:
-
-- Explain code
-- Generate unit test
-- Detect code smells
-- Generate `docstring`
-- Generate release notes
-- Improve variable names
-- Translate to different language
-- Summarize recent code changes
-
 ## Code Autocomplete
 
 Cody provides real-time code auto-completion as you type, based on the context around your open files and file history. This predictive feature tells what you are trying to implement for a smoother coding experience.
@@ -80,7 +65,7 @@ Cody provides real-time code auto-completion as you type, based on the context a
 
 By default, a fully configured Sourcegraph instance picks a default LLM to generate code autocomplete. Custom models can be used for Cody autocomplete via the `completionModel` option inside the `completions` site config.
 
-We also recommend reading the [Enabling Cody on Sourcegraph Enterprise](explanations/enabling_cody_enterprise.md) guide before you configure the autocomplete feature.
+We also recommend reading the [Enabling Cody on Sourcegraph Enterprise](overview/enable-cody-enterprise.md) guide before you configure the autocomplete feature.
 
 > NOTE: Self-hosted customers need to update to a minimum of version 5.0.4 to use autocomplete.
 

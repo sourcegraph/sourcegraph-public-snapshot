@@ -1,9 +1,9 @@
-import { EditorState, Extension, Range as CodeMirrorRange } from '@codemirror/state'
+import type { EditorState, Extension, Range as CodeMirrorRange } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
 import classNames from 'classnames'
 
-import { Range } from '@sourcegraph/extension-api-types'
-import { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
+import type { Range } from '@sourcegraph/extension-api-types'
+import type { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
 
 import { rangeToCmSelection } from '../occurrence-utils'
 import { positionToOffset, sortRangeValuesByStart } from '../utils'

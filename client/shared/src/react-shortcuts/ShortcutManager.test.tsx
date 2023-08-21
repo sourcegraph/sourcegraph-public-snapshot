@@ -5,7 +5,7 @@ import * as sinon from 'sinon'
 import { platform } from '../testing/dom-utils'
 
 import { Shortcut, ShortcutProvider } from '.'
-import { ModifierKey } from './keys'
+import type { ModifierKey } from './keys'
 
 describe('ShortcutManager', () => {
     // We only want to preserve the original implementation, not call it as a

@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react'
 
 import { highlightNode } from '@sourcegraph/common'
 import { displayRepoName, splitPath } from '@sourcegraph/shared/src/components/RepoLink'
-import { Range } from '@sourcegraph/shared/src/search/stream'
+import type { Range } from '@sourcegraph/shared/src/search/stream'
 import { Link } from '@sourcegraph/wildcard'
 
 interface Props {

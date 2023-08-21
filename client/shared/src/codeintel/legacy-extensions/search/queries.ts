@@ -3,7 +3,7 @@ import { extname } from 'path'
 
 import { escapeRegExp } from 'lodash'
 
-import * as sourcegraph from '../api'
+import type * as sourcegraph from '../api'
 import { parseGitURI } from '../util/uri'
 
 /**

@@ -123,6 +123,7 @@ Available commands in `sg.config.yaml`:
 * monitoring-generator
 * multiqueue-executor
 * otel-collector: OpenTelemetry collector
+* pings
 * postgres_exporter
 * prometheus
 * qdrant
@@ -263,7 +264,6 @@ This command is useful when:
 
 Supported run types when providing an argument for 'sg ci build [runtype]':
 
-* wolfi - Wolfi Exp Branch
 * _manually_triggered_external - Manually Triggered External Build
 * main-dry-run - Main dry run
 * docker-images-patch - Patch image
@@ -341,17 +341,6 @@ Arguments: `[pipeline]`
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
-
-### sg ci search-failures
-
-Open Sourcegraph's CI failures Grafana logs page in browser.
-
-Arguments: `[text to search for]`
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a GitHub discussion
-* `--step="<value>"`: Filter by step name (--step STEP_NAME will translate to '.*STEP_NAME.*')
 
 ## sg test
 

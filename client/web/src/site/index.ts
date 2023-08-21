@@ -1,3 +1,3 @@
-import { SiteFlagFields } from '../graphql-operations'
+import type { SiteFlagFields } from '../graphql-operations'
 
 export type SiteFlags = SiteFlagFields

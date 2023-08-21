@@ -1,4 +1,4 @@
-import { MockedResponse } from '@apollo/client/testing'
+import type { MockedResponse } from '@apollo/client/testing'
 import { render, waitFor, screen } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 
@@ -7,8 +7,8 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import {
     ExternalServiceKind,
-    SettingsAreaRepositoryFields,
-    RepositoryRecordedCommandsResult,
+    type SettingsAreaRepositoryFields,
+    type RepositoryRecordedCommandsResult,
 } from '../../../graphql-operations'
 
 import { REPOSITORY_RECORDED_COMMANDS_QUERY, REPOSITORY_RECORDED_COMMANDS_LIMIT } from './backend'

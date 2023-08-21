@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -36,8 +36,8 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 		licensing.MockCheckFeature = oldMock
 	})
 
-	mockDB := database.NewMockDB()
-	mockRepos := database.NewMockRepoStore()
+	mockDB := dbmocks.NewMockDB()
+	mockRepos := dbmocks.NewMockRepoStore()
 	mockRepos.GetByIDsFunc.SetDefaultReturn([]*types.Repo{{ID: 1, Name: "repo1"}}, nil)
 	mockDB.ReposFunc.SetDefaultReturn(mockRepos)
 

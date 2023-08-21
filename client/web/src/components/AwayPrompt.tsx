@@ -1,6 +1,11 @@
-import { FC, useState, useCallback } from 'react'
+import { type FC, useState, useCallback } from 'react'
 
-import { Location, useNavigate, unstable_useBlocker as useBlocker, unstable_BlockerFunction } from 'react-router-dom'
+import {
+    type Location,
+    useNavigate,
+    unstable_useBlocker as useBlocker,
+    type unstable_BlockerFunction,
+} from 'react-router-dom'
 
 import { Button, Modal, H3 } from '@sourcegraph/wildcard'
 

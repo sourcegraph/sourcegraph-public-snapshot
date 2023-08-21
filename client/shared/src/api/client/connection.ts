@@ -1,18 +1,18 @@
 import * as comlink from 'comlink'
-import { from, Subscription, Unsubscribable } from 'rxjs'
+import { from, Subscription, type Unsubscribable } from 'rxjs'
 import { first } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
 
-import { PlatformContext, ClosableEndpointPair } from '../../platform/context'
+import type { PlatformContext, ClosableEndpointPair } from '../../platform/context'
 import { isSettingsValid } from '../../settings/settings'
-import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
-import { ExtensionHostAPIFactory } from '../extension/api/api'
-import { InitData } from '../extension/extensionHost'
+import type { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
+import type { ExtensionHostAPIFactory } from '../extension/api/api'
+import type { InitData } from '../extension/extensionHost'
 import { registerComlinkTransferHandlers } from '../util'
 
-import { ClientAPI } from './api/api'
-import { ExposedToClient, initMainThreadAPI } from './mainthread-api'
+import type { ClientAPI } from './api/api'
+import { type ExposedToClient, initMainThreadAPI } from './mainthread-api'
 
 export interface ExtensionHostClientConnection {
     /**

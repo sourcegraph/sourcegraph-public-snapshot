@@ -12,11 +12,12 @@ import (
 	"syscall"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/cacert"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/trace" //nolint:staticcheck // OT is deprecated
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 // unsetExitStatus is a sentinel value for an unknown/unset exit status.
@@ -76,7 +77,6 @@ func runCommandCombinedOutput(ctx context.Context, cmd wrexec.Cmder) ([]byte, er
 	cmd.Unwrap().Stdout = &buf
 	cmd.Unwrap().Stderr = &buf
 	_, err := runCommand(ctx, cmd)
-	cmd.CombinedOutput()
 	return buf.Bytes(), err
 }
 

@@ -1,8 +1,8 @@
-import React, { FC } from 'react'
+import React, { type FC } from 'react'
 
 import classNames from 'classnames'
 
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import type { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { Icon, Link, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from '../../site-admin/WebhookInformation.module.scss'

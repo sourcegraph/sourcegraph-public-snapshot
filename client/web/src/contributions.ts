@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 
-import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom'
+import { type NavigateFunction, useLocation, useNavigate } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {}
 

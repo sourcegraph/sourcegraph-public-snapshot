@@ -1,10 +1,10 @@
 import { SymbolKind } from '../../graphql-operations'
-import { isSearchMatchOfType, SearchMatch } from '../stream'
+import { isSearchMatchOfType, type SearchMatch } from '../stream'
 
-import { FetchSuggestions, getCompletionItems } from './completion'
+import { type FetchSuggestions, getCompletionItems } from './completion'
 import { POPULAR_LANGUAGES } from './languageFilter'
-import { ScanResult, scanSearchQuery, ScanSuccess } from './scanner'
-import { Token } from './token'
+import { type ScanResult, scanSearchQuery, type ScanSuccess } from './scanner'
+import type { Token } from './token'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value, null, 2),

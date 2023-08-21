@@ -1,6 +1,5 @@
 <script lang="ts">
     import { mdiMapSearch } from '@mdi/js'
-    import { map, catchError } from 'rxjs/operators'
 
     import { asError, isErrorLike, type ErrorLike } from '$lib/common'
     import HeroPage from '$lib/HeroPage.svelte'
@@ -13,12 +12,10 @@
     logViewEvent('RepositoryError')
 
     function check(repoName: string): Promise<ErrorLike | boolean> {
-        return checkMirrorRepositoryConnection({ name: repoName })
-            .pipe(
-                map(result => result.error === null),
-                catchError(error => [asError(error)])
-            )
-            .toPromise()
+        return checkMirrorRepositoryConnection({ name: repoName }).then(
+            result => result.error === null,
+            error => asError(error)
+        )
     }
 </script>
 

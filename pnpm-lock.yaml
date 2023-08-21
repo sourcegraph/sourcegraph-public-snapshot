@@ -137,6 +137,9 @@ importers:
       '@testing-library/react':
         specifier: ^13.4.0
         version: 13.4.0(react-dom@18.1.0)(react@18.1.0)
+      '@types/react-router-hash-link':
+        specifier: ^2.4.6
+        version: 2.4.6
       '@visx/annotation':
         specifier: ^2.10.0
         version: 2.10.0(react-dom@18.1.0)(react@18.1.0)
@@ -392,6 +395,9 @@ importers:
       react-router-dom:
         specifier: ^6.8.1
         version: 6.8.1(react-dom@18.1.0)(react@18.1.0)
+      react-router-hash-link:
+        specifier: ^2.4.3
+        version: 2.4.3(react-router-dom@6.8.1)(react@18.1.0)
       react-spring:
         specifier: ^9.4.2
         version: 9.4.2(@react-three/fiber@8.13.2)(konva@9.2.0)(react-dom@18.1.0)(react-konva@16.8.6)(react-native@0.71.10)(react-zdog@1.0.11)(react@18.1.0)(three@0.153.0)(zdog@1.1.3)
@@ -1581,11 +1587,11 @@ importers:
         specifier: workspace:*
         version: link:../codeintellify
       '@sourcegraph/cody-shared':
-        specifier: ^0.0.4
-        version: 0.0.4
+        specifier: ^0.0.5
+        version: 0.0.5
       '@sourcegraph/cody-ui':
-        specifier: ^0.0.6
-        version: 0.0.6
+        specifier: ^0.0.7
+        version: 0.0.7
       '@sourcegraph/common':
         specifier: workspace:*
         version: link:../common
@@ -10196,6 +10202,31 @@ packages:
       '@sourcegraph/codemod-toolkit-ts': 1.0.1
     dev: true
 
+  /@sourcegraph/cody-shared@0.0.5:
+    resolution: {integrity: sha512-xwNHKsE9NPEUcQoEqJMYuU86D3NRqBn/V6Fjc09FlkgNQUcouJhGZuVntpOuBa3g8aEqOVT+bI/QcX0Oy1QGfQ==}
+    dependencies:
+      '@microsoft/fetch-event-source': 2.0.1
+      dompurify: 3.0.4
+      highlight.js: 10.7.3
+      isomorphic-fetch: 3.0.0
+      lodash: 4.17.21
+      marked: 4.0.16
+      vscode-uri: 3.0.7
+      x2js: 3.4.4
+    transitivePeerDependencies:
+      - encoding
+    dev: false
+
+  /@sourcegraph/cody-ui@0.0.7:
+    resolution: {integrity: sha512-JhPcZppe01jMAWSUqYeCfGoy0Eq6W0+wgeAHjxBADDXmeNlswODgyTtNA4OBD5/8Rw6bYvsxEjnV2u9iWRCsZw==}
+    dependencies:
+      '@mdi/js': 7.2.96
+      '@sourcegraph/cody-shared': 0.0.5
+      classnames: 2.3.2
+    transitivePeerDependencies:
+      - encoding
+    dev: false
+
   /@sourcegraph/eslint-config@0.32.0(eslint@8.34.0)(typescript@5.0.2):
     resolution: {integrity: sha512-vy9tewUjx7w+4WpQ+vVADYypBI9/yXjYy3BJ23e3XbXPOEJBL6Upt8s6tphDSVGfeRUUnYv/1BnG5nlH68XPSw==}
     dependencies:
@@ -13718,7 +13749,6 @@ packages:
 
   /@types/history@4.7.11:
     resolution: {integrity: sha512-qjDJRrmvBMiTx+jyLxvLfJU7UznFuokDv4f3WRuriHKERccVpFU+8XMQUAbDzoiJCsmexxRExQeMwwCdamSKDA==}
-    dev: true
 
   /@types/html-minifier-terser@5.1.1:
     resolution: {integrity: sha512-giAlZwstKbmvMk1OO7WXSj4OZ0keXAcl2TQq4LWHiiPH2ByaH7WeUzng+Qej8UPxxv+8lRTuouo0iaNDBuzIBA==}
@@ -14060,6 +14090,29 @@ packages:
     dependencies:
       '@types/react': 18.0.8
     dev: true
+
+  /@types/react-router-dom@5.3.3:
+    resolution: {integrity: sha512-kpqnYK4wcdm5UaWI3fLcELopqLrHgLqNsdpHauzlQktfkHL3npOSwtj1Uz9oKBAzs7lFtVkV8j83voAz2D8fhw==}
+    dependencies:
+      '@types/history': 4.7.11
+      '@types/react': 18.0.8
+      '@types/react-router': 5.1.20
+    dev: false
+
+  /@types/react-router-hash-link@2.4.6:
+    resolution: {integrity: sha512-JOV4Q1N60tJJUPisS/u1jiXn8c4jX7ThQf8XavzZYIWOIv0RP17nbyI9YgEZh1r3APXpP9ZkU1ytrlv+1+8jcw==}
+    dependencies:
+      '@types/history': 4.7.11
+      '@types/react': 18.0.8
+      '@types/react-router-dom': 5.3.3
+    dev: false
+
+  /@types/react-router@5.1.20:
+    resolution: {integrity: sha512-jGjmu/ZqS7FjSH6owMcD5qpq19+1RS9DeVRqfl1FeBMxTDQAGwlMWOcs52NDoXaNKyG3d1cYQFMs9rCrb88o9Q==}
+    dependencies:
+      '@types/history': 4.7.11
+      '@types/react': 18.0.8
+    dev: false
 
   /@types/react@17.0.43:
     resolution: {integrity: sha512-8Q+LNpdxf057brvPu1lMtC5Vn7J119xrP1aq4qiaefNioQUYANF/CYeK4NsKorSZyUGJ66g0IM+4bbjwx45o2A==}
@@ -15109,7 +15162,6 @@ packages:
   /@xmldom/xmldom@0.8.10:
     resolution: {integrity: sha512-2WALfTl4xo2SkGCYRt6rDTFfk9R1czmBvUQy12gK2KuRKIpWEhcbbzy8EZXtz/jkRqHX8bFEc6FC1HjX4TUWYw==}
     engines: {node: '>=10.0.0'}
-    dev: true
 
   /@xtuc/ieee754@1.2.0:
     resolution: {integrity: sha512-DX8nKgqcGwsc0eJSqYt5lwP4DH5FlHnmuWWBRy7X0NcaGR0ZtuyeESgMwTYVEtxmsNGY+qit4QYT/MIYTOTPeA==}
@@ -30528,6 +30580,17 @@ packages:
       react-router: 6.8.1(react@18.1.0)
     dev: false
 
+  /react-router-hash-link@2.4.3(react-router-dom@6.8.1)(react@18.1.0):
+    resolution: {integrity: sha512-NU7GWc265m92xh/aYD79Vr1W+zAIXDWp3L2YZOYP4rCqPnJ6LI6vh3+rKgkidtYijozHclaEQTAHaAaMWPVI4A==}
+    peerDependencies:
+      react: '>=15'
+      react-router-dom: '>=4'
+    dependencies:
+      prop-types: 15.8.1
+      react: 18.1.0
+      react-router-dom: 6.8.1(react-dom@18.1.0)(react@18.1.0)
+    dev: false
+
   /react-router@6.8.1(react@18.1.0):
     resolution: {integrity: sha512-Jgi8BzAJQ8MkPt8ipXnR73rnD7EmZ0HFFb7jdQU24TynGW1Ooqin2KVDN9voSC+7xhqbbCd2cjGUepb6RObnyg==}
     engines: {node: '>=14'}
@@ -35919,6 +35982,12 @@ packages:
     optionalDependencies:
       default-browser-id: 1.0.4
     dev: true
+
+  /x2js@3.4.4:
+    resolution: {integrity: sha512-yG/ThaBCgnsa3aoMPAe7QwDpcyU4D70hjXC4Y1lZSfD/Tgd0MpE19FnZZRAjekryw0c8cffpOt9zsPEiqktO6Q==}
+    dependencies:
+      '@xmldom/xmldom': 0.8.10
+    dev: false
 
   /xdg-basedir@3.0.0:
     resolution: {integrity: sha512-1Dly4xqlulvPD3fZUQJLY+FUIeqN3N2MM3uqe4rCJftAvOjFa3jFGfctOgluGx4ahPbUCsZkmJILiP0Vi4T6lQ==}

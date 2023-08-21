@@ -104,6 +104,7 @@ func NewHandler(
 							"upstream_request_duration_ms":                   upstreamFinished.Milliseconds(),
 							"resolved_status_code":                           resolvedStatusCode,
 							codygateway.EmbeddingsTokenUsageMetadataField:    usedTokens,
+							"batch_size": len(body.Input),
 						},
 					},
 				)

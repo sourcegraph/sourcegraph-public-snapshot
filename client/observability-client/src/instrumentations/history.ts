@@ -1,4 +1,4 @@
-import { AttributeValue } from '@opentelemetry/api'
+import type { AttributeValue } from '@opentelemetry/api'
 
 import { ClientAttributes } from '../processors/clientAttributesSpanProcessor'
 import { SharedSpanName, InstrumentationBaseWeb, sharedSpanStore } from '../sdk'

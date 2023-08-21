@@ -20,36 +20,13 @@ import (
 
 func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.DB) {
 	if runtime.GOOS != "windows" {
-		s.Logger.Info("Enabling 'echo' metric")
-		// test the latency of exec, which may increase under certain memory
-		// conditions
-		echoDuration := prometheus.NewGauge(prometheus.GaugeOpts{
-			Name: "src_gitserver_echo_duration_seconds",
-			Help: "Duration of executing the echo command.",
-		})
-		prometheus.MustRegister(echoDuration)
-		go func(server *Server) {
-			for {
-				time.Sleep(10 * time.Second)
-				s := time.Now()
-				if err := exec.Command("echo").Run(); err != nil {
-					server.Logger.Warn("exec measurement failed", log.Error(err))
-					continue
-				}
-				echoDuration.Set(time.Since(s).Seconds())
-			}
-		}(s)
+		registerEchoMetric(s.Logger)
 	} else {
 		// See https://github.com/sourcegraph/sourcegraph/issues/54317 for details.
 		s.Logger.Warn("Disabling 'echo' metric")
 	}
 
 	// report the size of the repos dir
-	if s.ReposDir == "" {
-		s.Logger.Error("ReposDir is not set, cannot export disk_space_available and gitserver_mount_info metric.")
-		return
-	}
-
 	logger := s.Logger
 	if deploy.IsApp() {
 		logger = logger.IncreaseLevel("mountinfo", "", log.LevelError)
@@ -60,6 +37,7 @@ func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.
 
 	metrics.MustRegisterDiskMonitor(s.ReposDir)
 
+	// TODO: Start removal of these.
 	// TODO(keegan) these are older names for the above disk metric. Keeping
 	// them to prevent breaking dashboards. Can remove once no
 	// alert/dashboards use them.
@@ -83,4 +61,26 @@ func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.
 
 	// Register uniform observability via internal/observation
 	s.operations = newOperations(observationCtx)
+}
+
+func registerEchoMetric(logger log.Logger) {
+	// test the latency of exec, which may increase under certain memory
+	// conditions
+	echoDuration := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "src_gitserver_echo_duration_seconds",
+		Help: "Duration of executing the echo command.",
+	})
+	prometheus.MustRegister(echoDuration)
+	go func() {
+		logger = logger.Scoped("echoMetricReporter", "")
+		for {
+			time.Sleep(10 * time.Second)
+			s := time.Now()
+			if err := exec.Command("echo").Run(); err != nil {
+				logger.Warn("exec measurement failed", log.Error(err))
+				continue
+			}
+			echoDuration.Set(time.Since(s).Seconds())
+		}
+	}()
 }
