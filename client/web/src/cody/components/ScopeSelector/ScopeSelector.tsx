@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useCallback } from 'react'
 
 import classNames from 'classnames'
 
+import type { TranscriptJSON } from '@sourcegraph/cody-shared/dist/chat/transcript'
 import type { CodyClientScope } from '@sourcegraph/cody-shared/dist/chat/useClient'
 import { useLazyQuery } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
@@ -23,6 +24,7 @@ export interface ScopeSelectorProps {
     fetchRepositoryNames: (count: number) => Promise<string[]>
     isSourcegraphApp?: boolean
     logTranscriptEvent: (eventLabel: string, eventProperties?: { [key: string]: any }) => void
+    transcriptHistory: TranscriptJSON[]
     className?: string
     renderHint?: (repos: IRepo[]) => React.ReactNode
     // Whether to encourage the selector popover to overlap its trigger if necessary,
@@ -39,6 +41,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     fetchRepositoryNames,
     isSourcegraphApp,
     logTranscriptEvent,
+    transcriptHistory,
     className,
     renderHint,
     encourageOverlap,
@@ -137,6 +140,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
                         toggleIncludeInferredRepository={toggleIncludeInferredRepository}
                         toggleIncludeInferredFile={toggleIncludeInferredFile}
                         encourageOverlap={encourageOverlap}
+                        transcriptHistory={transcriptHistory}
                         authenticatedUser={authenticatedUser}
                     />
                     {scope.includeInferredFile && activeEditor?.filePath && (
