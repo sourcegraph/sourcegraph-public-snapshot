@@ -97,6 +97,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({
             fetchRepositoryNames,
             isSourcegraphApp,
             logTranscriptEvent,
+            transcriptHistory,
             className: 'mt-2',
             authenticatedUser,
         }),
@@ -108,6 +109,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({
             fetchRepositoryNames,
             isSourcegraphApp,
             logTranscriptEvent,
+            transcriptHistory,
             authenticatedUser,
         ]
     )
