@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -20,6 +19,7 @@ import (
 	repoupdaterprotocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func (r *RepositoryResolver) MirrorInfo() *repositoryMirrorInfoResolver {
@@ -127,27 +127,27 @@ func (r *repositoryMirrorInfoResolver) CloneInProgress(ctx context.Context) (boo
 }
 
 func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*string, error) {
-	if featureflag.FromContext(ctx).GetBoolOr("clone-progress-logging", false) {
-		info, err := r.computeGitserverRepo(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if info.CloneStatus != types.CloneStatusCloning {
-			return nil, nil
-		}
-		return strptr(info.CloningProgress), nil
-	}
-	progress, err := r.gitServerClient.RepoCloneProgress(ctx, r.repository.RepoName())
+	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	result, ok := progress.Results[r.repository.RepoName()]
-	if !ok {
-		return nil, errors.New("got empty result for repo from RepoCloneProgress")
+	if info.CloneStatus != types.CloneStatusCloning {
+		return nil, nil
 	}
-
-	return strptr(result.CloneProgress), nil
+	paginationArgs := &database.PaginationArgs{
+		First:     pointers.Ptr(1),
+		OrderBy:   []database.OrderByOption{{Field: "repo_update_jobs.queued_at"}},
+		Ascending: false,
+	}
+	opts := database.ListRepoUpdateJobOpts{RepoID: info.RepoID, States: []string{"processing"}, PaginationArgs: paginationArgs}
+	repoUpdateJobs, err := r.db.RepoUpdateJobs().List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	if len(repoUpdateJobs) != 1 {
+		return nil, nil
+	}
+	return &repoUpdateJobs[0].CloningProgress, nil
 }
 
 func (r *repositoryMirrorInfoResolver) LastError(ctx context.Context) (*string, error) {

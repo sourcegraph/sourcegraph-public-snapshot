@@ -1847,20 +1847,19 @@ Indexes:
 
 # Table "public.gitserver_repos"
 ```
-      Column      |           Type           | Collation | Nullable |      Default       
-------------------+--------------------------+-----------+----------+--------------------
- repo_id          | integer                  |           | not null | 
- clone_status     | text                     |           | not null | 'not_cloned'::text
- shard_id         | text                     |           | not null | 
- last_error       | text                     |           |          | 
- updated_at       | timestamp with time zone |           | not null | now()
- last_fetched     | timestamp with time zone |           | not null | now()
- last_changed     | timestamp with time zone |           | not null | now()
- repo_size_bytes  | bigint                   |           |          | 
- corrupted_at     | timestamp with time zone |           |          | 
- corruption_logs  | jsonb                    |           | not null | '[]'::jsonb
- cloning_progress | text                     |           |          | ''::text
- pool_repo_id     | integer                  |           |          | 
+     Column      |           Type           | Collation | Nullable |      Default       
+-----------------+--------------------------+-----------+----------+--------------------
+ repo_id         | integer                  |           | not null | 
+ clone_status    | text                     |           | not null | 'not_cloned'::text
+ shard_id        | text                     |           | not null | 
+ last_error      | text                     |           |          | 
+ updated_at      | timestamp with time zone |           | not null | now()
+ last_fetched    | timestamp with time zone |           | not null | now()
+ last_changed    | timestamp with time zone |           | not null | now()
+ repo_size_bytes | bigint                   |           |          | 
+ corrupted_at    | timestamp with time zone |           |          | 
+ corruption_logs | jsonb                    |           | not null | '[]'::jsonb
+ pool_repo_id    | integer                  |           |          | 
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repo_size_bytes" btree (repo_size_bytes)
@@ -3712,6 +3711,7 @@ Indexes:
  last_fetched            | timestamp with time zone |           |          | 
  last_changed            | timestamp with time zone |           |          | 
  update_interval_seconds | integer                  |           |          | 
+ cloning_progress        | text                     |           |          | ''::text
 Indexes:
     "repo_update_jobs_pkey" PRIMARY KEY, btree (id)
     "repo_update_jobs_repo_id_queued_idx" UNIQUE, btree (repo_id) WHERE state = 'queued'::text
@@ -4910,6 +4910,7 @@ Foreign-key constraints:
     j.last_fetched,
     j.last_changed,
     j.update_interval_seconds,
+    j.cloning_progress,
     r.name AS repository_name,
     g.pool_repo_id
    FROM ((repo_update_jobs j

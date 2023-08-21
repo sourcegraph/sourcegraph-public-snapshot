@@ -27,7 +27,8 @@ CREATE TABLE IF NOT EXISTS repo_update_jobs
     -- Populated after the job is processed.
     last_changed            TIMESTAMP WITH TIME ZONE,
     -- Used for jobs scheduling.
-    update_interval_seconds INTEGER
+    update_interval_seconds INTEGER,
+    cloning_progress        TEXT                     DEFAULT ''
 );
 
 CREATE INDEX IF NOT EXISTS repo_update_jobs_state_idx ON repo_update_jobs (state);
@@ -62,6 +63,7 @@ SELECT j.id,
        j.last_fetched,
        j.last_changed,
        j.update_interval_seconds,
+       j.cloning_progress,
        r.name         AS repository_name,
        g.pool_repo_id AS pool_repo_id
 FROM repo_update_jobs j
@@ -93,3 +95,7 @@ BEGIN
     RETURN addrs[(server_index % array_length(addrs, 1)) + 1];
 END;
 $$ LANGUAGE plpgsql;
+
+-- Removing `cloning_progress` column from `gitserver_repos` because we added it to `repo_update_jobs`.
+ALTER TABLE IF EXISTS gitserver_repos
+    DROP COLUMN IF EXISTS cloning_progress;

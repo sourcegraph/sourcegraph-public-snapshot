@@ -216,3 +216,66 @@ func TestRepoUpdateJobs_SaveUpdateJobResults(t *testing.T) {
 	assert.Equal(t, now, gotJob.LastChanged)
 	assert.Equal(t, 42, gotJob.UpdateIntervalSeconds)
 }
+
+func TestRepoUpdateJobs_SetCloningProgress(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	store := RepoUpdateJobStoreWith(db)
+
+	// An error should be returned when setting progress to a non-existent job.
+	err := store.SetCloningProgress(ctx, 1, "no progress")
+	require.ErrorContains(t, err, "failed to set repo update job cloning progress, job with ID=1 not found")
+
+	// Creating 2 repos.
+	err = db.Repos().Create(ctx, &types.Repo{ID: api.RepoID(1), Name: "repo1"})
+	require.NoError(t, err)
+	err = db.Repos().Create(ctx, &types.Repo{ID: api.RepoID(2), Name: "repo2"})
+	require.NoError(t, err)
+
+	// Queued jobs should be successfully created.
+	haveJob, _, err := store.Create(ctx, CreateRepoUpdateJobOpts{RepoName: "repo1", Priority: types.HighPriorityRepoUpdate})
+	require.NoError(t, err)
+	assert.Empty(t, haveJob.CloningProgress)
+	_, _, err = store.Create(ctx, CreateRepoUpdateJobOpts{RepoName: "repo2"})
+	require.NoError(t, err)
+
+	wantProgress := "awesome progress!"
+	err = store.SetCloningProgress(ctx, haveJob.ID, wantProgress)
+	require.NoError(t, err)
+
+	// Checking that we have updated correct job.
+	repoUpdateJobs, err := store.List(ctx, ListRepoUpdateJobOpts{})
+	require.NoError(t, err)
+	assert.Len(t, repoUpdateJobs, 2)
+	for _, gotJob := range repoUpdateJobs {
+		gotProgress := gotJob.CloningProgress
+		if gotJob.ID == 1 {
+			assert.Equal(t, wantProgress, gotProgress)
+		} else {
+			assert.Empty(t, gotProgress)
+		}
+	}
+
+	// One more update and check.
+	wantProgress = "even more awesome progress!"
+	err = store.SetCloningProgress(ctx, haveJob.ID, wantProgress)
+	require.NoError(t, err)
+
+	// Checking that we have updated correct job.
+	repoUpdateJobs, err = store.List(ctx, ListRepoUpdateJobOpts{})
+	require.NoError(t, err)
+	assert.Len(t, repoUpdateJobs, 2)
+	for _, gotJob := range repoUpdateJobs {
+		gotProgress := gotJob.CloningProgress
+		if gotJob.ID == 1 {
+			assert.Equal(t, wantProgress, gotProgress)
+		} else {
+			assert.Empty(t, gotProgress)
+		}
+	}
+}

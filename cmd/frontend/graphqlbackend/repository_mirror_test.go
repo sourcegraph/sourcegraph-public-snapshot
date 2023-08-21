@@ -290,19 +290,18 @@ func TestRepositoryMirrorInfoCloneProgressFetchedFromDatabase(t *testing.T) {
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	featureFlags := database.NewMockFeatureFlagStore()
-	featureFlags.GetGlobalFeatureFlagsFunc.SetDefaultReturn(map[string]bool{"clone-progress-logging": true}, nil)
-
 	gitserverRepos := database.NewMockGitserverRepoStore()
 	gitserverRepos.GetByIDFunc.SetDefaultReturn(&types.GitserverRepo{
-		CloneStatus:     types.CloneStatusCloning,
-		CloningProgress: "cloning progress from the db",
+		CloneStatus: types.CloneStatusCloning,
 	}, nil)
+
+	repoUpdateJobs := database.NewMockRepoUpdateJobStore()
+	repoUpdateJobs.ListFunc.SetDefaultReturn([]types.RepoUpdateJob{{CloningProgress: "cloning progress from the db"}}, nil)
 
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
-	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 	db.GitserverReposFunc.SetDefaultReturn(gitserverRepos)
+	db.RepoUpdateJobsFunc.SetDefaultReturn(repoUpdateJobs)
 
 	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
 		return &types.Repo{

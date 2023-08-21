@@ -590,9 +590,8 @@ func ParseCloneStatusFromGraphQL(s string) CloneStatus {
 type GitserverRepo struct {
 	RepoID api.RepoID
 	// Usually represented by a gitserver hostname
-	ShardID         string
-	CloneStatus     CloneStatus
-	CloningProgress string
+	ShardID     string
+	CloneStatus CloneStatus
 	// The last error that occurred or empty if the last action was successful
 	LastError string
 	// the output of the most recent repo sync job
@@ -2154,6 +2153,7 @@ type RepoUpdateJob struct {
 	Clone                 bool
 	OverwriteClone        bool
 	FetchRevision         string
+	CloningProgress       string
 }
 
 func (r RepoUpdateJob) RecordID() int {

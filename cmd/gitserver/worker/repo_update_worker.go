@@ -73,7 +73,7 @@ type repoCloneHandler struct {
 
 func (h *repoCloneHandler) Handle(ctx context.Context, logger log.Logger, record types.RepoUpdateJob) error {
 	repoName := record.RepositoryName
-	resp, err := h.gitserver.HandleRepoUpdateRequest(ctx, server.RepoUpdatePayload{Repo: repoName, Clone: record.Clone}, logger)
+	resp, err := h.gitserver.HandleRepoUpdateRequest(ctx, server.RepoUpdatePayload{Repo: repoName, Clone: record.Clone, UpdateJobID: record.ID}, logger)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return errcode.MakeNonRetryable(err)

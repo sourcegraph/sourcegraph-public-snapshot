@@ -23,7 +23,7 @@ func (s *Server) maybeStartClone(ctx context.Context, logger log.Logger, repoNam
 		return &protocol.NotFoundPayload{}, false
 	}
 
-	cloneProgress, cloneInProgress := s.locker.Status(dir)
+	cloneProgress, cloneInProgress := RepoCloningStatus(ctx, s.DB, repoName)
 	if cloneInProgress {
 		return &protocol.NotFoundPayload{
 			CloneInProgress: true,
