@@ -18,7 +18,7 @@ interface RecipesWidgetWrapperProps {
 }
 
 export const CodyRecipesWidgetWrapper: React.FunctionComponent<RecipesWidgetWrapperProps> = React.memo(
-    function CodyRecipesWidgetWrapper({ targetRef, children, codyChatStore }) {
+    ({ targetRef, children, codyChatStore }) => {
         return (
             <>
                 {children}
@@ -31,47 +31,13 @@ export const CodyRecipesWidgetWrapper: React.FunctionComponent<RecipesWidgetWrap
 const RecipePopoverManager: React.FunctionComponent<{
     targetRef: RefObject<HTMLElement>
     codyChatStore: CodyChatStore
-}> = React.memo(function ReacipePopoverMangerComponent({ targetRef, codyChatStore }) {
-    const { isCollapsed, textContent } = useTextSelection(targetRef?.current || undefined)
+}> = React.memo(({ targetRef, codyChatStore }) => {
+    const { isCollapsed, textContent: selectedText } = useTextSelection(targetRef?.current || undefined)
 
-    if (isCollapsed || !textContent) {
+    if (isCollapsed || !selectedText) {
         return null
     }
 
-    return (
-        <RecipePopoverPortal
-            key={textContent}
-            targetRef={targetRef}
-            codyChatStore={codyChatStore}
-            selectedText={textContent || ''}
-        />
-    )
-})
-
-function getElementFromNode(node: any): HTMLElement {
-    const currentElement =
-        node.previousElementSibling?.nextElementSibling || node.nextElementSibling?.previousElementSibling
-
-    if (currentElement) {
-        return currentElement
-    }
-
-    const lastElementChild = node.parentElement?.lastElementChild
-    if (lastElementChild) {
-        if (lastElementChild.className.includes('cody-recipe-widget')) {
-            return lastElementChild.previousElementSibling || node.parentElement
-        }
-
-        return lastElementChild
-    }
-    return node.parentElement
-}
-
-const RecipePopoverPortal: React.FunctionComponent<{
-    targetRef: RefObject<HTMLElement>
-    codyChatStore: CodyChatStore
-    selectedText: string
-}> = function ReacipePopoverPortalComponent({ targetRef, codyChatStore, selectedText }) {
     const selection = window.getSelection()
 
     const commonAncestorContainer = selection?.getRangeAt(0)?.commonAncestorContainer as any
@@ -109,4 +75,23 @@ const RecipePopoverPortal: React.FunctionComponent<{
         />,
         commonAncestorContainer.lastChild?.previousSibling || commonAncestorContainer
     )
+})
+
+function getElementFromNode(node: any): HTMLElement {
+    const currentElement =
+        node.previousElementSibling?.nextElementSibling || node.nextElementSibling?.previousElementSibling
+
+    if (currentElement) {
+        return currentElement
+    }
+
+    const lastElementChild = node.parentElement?.lastElementChild
+    if (lastElementChild) {
+        if (lastElementChild.className.includes('cody-recipe-widget')) {
+            return lastElementChild.previousElementSibling || node.parentElement
+        }
+
+        return lastElementChild
+    }
+    return node.parentElement
 }
