@@ -17,7 +17,6 @@ interface UseJSONCParserReturnType<T extends object> {
     reset: () => void
 }
 
-// todo: add tests
 /**
  * React wrapper around 'jsonc-parser' to parse and modify settings JSON.
  * - It parses 'rawJsonValue' and stores local copies during updates as 'json' and 'rawJson'.
