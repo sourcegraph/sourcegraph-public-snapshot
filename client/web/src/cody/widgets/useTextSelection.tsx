@@ -54,7 +54,7 @@ export function useTextSelection(target?: HTMLElement): TextSelectionState {
         const selection = window.getSelection()
         const newState: TextSelectionState = {}
 
-        if (selection === null || !selection.rangeCount) {
+        if (!selection?.rangeCount) {
             setState(newState)
             return
         }
