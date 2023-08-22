@@ -8,9 +8,9 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform"
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/internal/pointer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

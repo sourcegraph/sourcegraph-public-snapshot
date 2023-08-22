@@ -8,7 +8,7 @@ import (
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2service"
 
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/internal/pointer"
 )
 

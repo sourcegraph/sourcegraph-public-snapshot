@@ -4,7 +4,7 @@ import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 )
 
 type Output struct {

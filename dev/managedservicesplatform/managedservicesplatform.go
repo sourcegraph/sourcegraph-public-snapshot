@@ -5,19 +5,18 @@ package managedservicesplatform
 import (
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/internal/pointer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack/options/terraformversion"
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack/options/tfcbackend"
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/terraform"
-	"github.com/sourcegraph/sourcegraph/internal/pointer"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/cloudrun"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/iam"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/terraformversion"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/tfcbackend"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/project"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/terraform"
 
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack"
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack/cloudrun"
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack/iam"
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack/project"
-
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 )
 
 type TerraformCloudOptions struct {

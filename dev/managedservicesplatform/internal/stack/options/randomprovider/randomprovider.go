@@ -3,7 +3,7 @@ package randomprovider
 import (
 	random "github.com/sourcegraph/controller-cdktf/gen/random/provider"
 
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/internal/pointer"
 )
 

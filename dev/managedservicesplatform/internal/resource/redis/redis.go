@@ -9,8 +9,8 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/redisinstance"
 
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/resource/gsmsecret"
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/internal/pointer"
 )
 

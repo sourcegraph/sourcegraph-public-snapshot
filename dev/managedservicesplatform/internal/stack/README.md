@@ -7,7 +7,7 @@ Each stack package must declare the following interface:
 
 ```go
 import (
-  "github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack"
+  "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 )
 
 type Output struct {}

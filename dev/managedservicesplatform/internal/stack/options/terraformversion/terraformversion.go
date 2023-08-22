@@ -7,7 +7,7 @@ import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/internal/pointer"
 )
 

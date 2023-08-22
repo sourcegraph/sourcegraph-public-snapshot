@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectservice"
 
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack"
-	"github.com/sourcegraph/sourcegraph/internal/managedservicesplatform/internal/stack/options/googleprovider"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
 	"github.com/sourcegraph/sourcegraph/internal/pointer"
 )
 
