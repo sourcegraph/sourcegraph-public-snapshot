@@ -6,27 +6,27 @@ import com.intellij.openapi.editor.Inlay;
 import com.intellij.openapi.editor.colors.EditorFontType;
 import com.intellij.openapi.editor.impl.EditorImpl;
 import com.intellij.openapi.editor.markup.TextAttributes;
-import com.sourcegraph.cody.vscode.InlineAutoCompleteItem;
+import com.sourcegraph.cody.vscode.InlineAutocompleteItem;
 import java.awt.*;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class CodyAutoCompleteElementRenderer implements EditorCustomElementRenderer {
+public abstract class CodyAutocompleteElementRenderer implements EditorCustomElementRenderer {
   @NotNull public final String text;
-  @Nullable public final InlineAutoCompleteItem completionItem;
+  @Nullable public final InlineAutocompleteItem completionItem;
   @NotNull protected final TextAttributes themeAttributes;
   @NotNull protected final Editor editor;
-  @Nullable protected final AutoCompleteRendererType type;
+  @Nullable protected final AutocompleteRendererType type;
 
-  public CodyAutoCompleteElementRenderer(
+  public CodyAutocompleteElementRenderer(
       @NotNull String text,
-      @Nullable InlineAutoCompleteItem completionItem,
+      @Nullable InlineAutocompleteItem completionItem,
       @NotNull Editor editor,
-      @Nullable AutoCompleteRendererType type) {
+      @Nullable AutocompleteRendererType type) {
     this.text = text;
     this.completionItem = completionItem;
-    this.themeAttributes = AutoCompleteRenderUtils.getTextAttributesForEditor(editor);
+    this.themeAttributes = AutocompleteRenderUtils.getTextAttributesForEditor(editor);
     this.editor = editor;
     this.type = type;
   }
@@ -43,7 +43,7 @@ public abstract class CodyAutoCompleteElementRenderer implements EditorCustomEle
   }
 
   protected int fontYOffset() {
-    return (int) AutoCompleteRenderUtils.fontYOffset(getFont(), this.editor);
+    return (int) AutocompleteRenderUtils.fontYOffset(getFont(), this.editor);
   }
 
   @Override
@@ -55,7 +55,7 @@ public abstract class CodyAutoCompleteElementRenderer implements EditorCustomEle
     return this.text;
   }
 
-  public @Nullable AutoCompleteRendererType getType() {
+  public @Nullable AutocompleteRendererType getType() {
     return this.type;
   }
 }
