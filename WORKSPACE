@@ -101,7 +101,7 @@ http_archive(
 # hermetic_cc_toolchain setup ================================
 HERMETIC_CC_TOOLCHAIN_VERSION = "v2.0.0"
 
-# Please note that we only use zig-cc for local development purpose, at it eases the path to cross-compile
+# Please note that we only use hermetic-cc for local development purpose and Nix, at it eases the path to cross-compile
 # so we can produce container images locally on Mac laptops.
 #
 # @jhchabran See https://github.com/sourcegraph/sourcegraph/pull/55969, there is an ongoing issue with UBSAN
