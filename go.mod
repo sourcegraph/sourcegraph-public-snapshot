@@ -247,7 +247,7 @@ require (
 	golang.org/x/sync v0.3.0
 	golang.org/x/sys v0.11.0
 	golang.org/x/time v0.3.0
-	golang.org/x/tools v0.12.0
+	golang.org/x/tools v0.10.0
 	gonum.org/v1/gonum v0.13.0
 	google.golang.org/api v0.132.0
 	google.golang.org/genproto v0.0.0-20230717213848-3f92550aa753 // indirect
@@ -266,7 +266,7 @@ require (
 
 require (
 	github.com/aws/constructs-go/constructs/v10 v10.2.69
-	github.com/aws/jsii-runtime-go v1.87.0
+	github.com/aws/jsii-runtime-go v1.79.0
 	github.com/edsrzf/mmap-go v1.1.0
 	github.com/go-redsync/redsync/v4 v4.8.1
 	github.com/hashicorp/cronexpr v1.1.1
