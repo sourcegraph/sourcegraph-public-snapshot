@@ -58,6 +58,22 @@ func NewRateLimiter() (RateLimiter, error) {
 	}, nil
 }
 
+// NewTestRateLimiterWithPoolAndPrefix same as NewRateLimiter but with configurable pool and prefix, used for testing
+func NewTestRateLimiterWithPoolAndPrefix(pool *redis.Pool, prefix string) (RateLimiter, error) {
+	if pool == nil {
+		return nil, errors.New("Redis pool can't be nil")
+	}
+
+	return &rateLimiter{
+		prefix:    prefix,
+		pool:      pool,
+		timerFunc: defaultRateLimitTimer,
+		// 3 is the key count, keys are arguments passed to the lua script that will be used to get values from Redis KV.
+		getTokensScript:        *redis.NewScript(3, getTokensFromBucketLuaScript),
+		setReplenishmentScript: *redis.NewScript(3, setTokenBucketReplenishmentLuaScript),
+	}, nil
+}
+
 func (r *rateLimiter) GetToken(ctx context.Context, bucketName string) error {
 	now := time.Now()
 	// Check if ctx is already cancelled.
