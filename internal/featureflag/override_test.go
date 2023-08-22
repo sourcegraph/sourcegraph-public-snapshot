@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -133,6 +134,13 @@ func TestOverrides(t *testing.T) {
 		Want: map[string]bool{
 			"feat-true":  true,
 			"feat-false": false,
+		},
+	}, {
+		Name:   "disallow-sensitive",
+		Header: []string{ProductSubscriptionsServiceAccount},
+		Want: map[string]bool{
+			"feat-false": false,
+			"feat-true":  true,
 		},
 	}}
 

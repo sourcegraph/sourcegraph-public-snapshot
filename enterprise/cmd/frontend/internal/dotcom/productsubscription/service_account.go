@@ -6,16 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-)
-
-const (
-	// featureFlagProductSubscriptionsServiceAccount is a feature flag that should be
-	// set on service accounts that can read AND write product subscriptions.
-	featureFlagProductSubscriptionsServiceAccount = "product-subscriptions-service-account"
-
-	// featureFlagProductSubscriptionsReaderServiceAccount is a feature flag that should be
-	// set on service accounts that can only read product subscriptions.
-	featureFlagProductSubscriptionsReaderServiceAccount = "product-subscriptions-reader-service-account"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 )
 
 // 🚨 SECURITY: Use this to check if access to a subscription query or mutation
@@ -41,7 +32,7 @@ func serviceAccountOrOwnerOrSiteAdmin(
 	requiresWriterServiceAccount bool,
 ) error {
 	// Check if the user is has the prerequisite service account.
-	serviceAccountIsWriter := readFeatureFlagFromDB(ctx, db, featureFlagProductSubscriptionsServiceAccount, false)
+	serviceAccountIsWriter := readFeatureFlagFromDB(ctx, db, featureflag.ProductSubscriptionsServiceAccount, false)
 	if requiresWriterServiceAccount {
 		// 🚨 SECURITY: Require the more strict featureFlagProductSubscriptionsServiceAccount
 		// if requiresWriterServiceAccount=true
@@ -52,7 +43,7 @@ func serviceAccountOrOwnerOrSiteAdmin(
 	} else {
 		// If requiresWriterServiceAccount==false, then just
 		// featureFlagProductSubscriptionsReaderServiceAccount is sufficient.
-		if serviceAccountIsWriter || readFeatureFlagFromDB(ctx, db, featureFlagProductSubscriptionsReaderServiceAccount, false) {
+		if serviceAccountIsWriter || readFeatureFlagFromDB(ctx, db, featureflag.ProductSubscriptionsReaderServiceAccount, false) {
 			return nil
 		}
 	}

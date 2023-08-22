@@ -37,6 +37,10 @@ func requestOverrides(r *http.Request) (flags map[string]bool, ok bool) {
 		// flags starting with "-" override to false
 		v := !strings.HasPrefix(k, "-")
 		k = strings.TrimPrefix(k, "-")
+		// skip sensitive feature flags from being in the override
+		if _, ok := sensitiveFeatureFlags[k]; ok {
+			continue
+		}
 		flags[k] = v
 	}
 

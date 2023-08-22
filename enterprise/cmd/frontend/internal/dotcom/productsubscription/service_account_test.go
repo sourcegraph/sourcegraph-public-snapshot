@@ -28,14 +28,14 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 		{
 			name: "reader service account",
 			featureFlags: map[string]bool{
-				featureFlagProductSubscriptionsReaderServiceAccount: true,
+				featureflag.ProductSubscriptionsReaderServiceAccount: true,
 			},
 			wantErr: nil,
 		},
 		{
 			name: "service account",
 			featureFlags: map[string]bool{
-				featureFlagProductSubscriptionsServiceAccount: true,
+				featureflag.ProductSubscriptionsServiceAccount: true,
 			},
 			wantErr: nil,
 		},
@@ -67,7 +67,7 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 		{
 			name: "service account needs writer flag",
 			featureFlags: map[string]bool{
-				featureFlagProductSubscriptionsReaderServiceAccount: true,
+				featureflag.ProductSubscriptionsReaderServiceAccount: true,
 			},
 			serviceAccountCanWrite: true,
 			wantErr:                autogold.Expect("must be site admin"),
@@ -75,7 +75,7 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 		{
 			name: "service account fulfills writer flag",
 			featureFlags: map[string]bool{
-				featureFlagProductSubscriptionsServiceAccount: true,
+				featureflag.ProductSubscriptionsServiceAccount: true,
 			},
 			serviceAccountCanWrite: true,
 			wantErr:                nil,
@@ -102,8 +102,8 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 			// is NOT used. We don't want to allow ovverriding service account checks.
 			ctx := featureflag.WithFlags(context.Background(),
 				featureflag.NewMemoryStore(map[string]bool{
-					featureFlagProductSubscriptionsReaderServiceAccount: true,
-					featureFlagProductSubscriptionsServiceAccount:       true,
+					featureflag.ProductSubscriptionsReaderServiceAccount: true,
+					featureflag.ProductSubscriptionsServiceAccount:       true,
 				}, nil, nil))
 
 			err := serviceAccountOrOwnerOrSiteAdmin(
