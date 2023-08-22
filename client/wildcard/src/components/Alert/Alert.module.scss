@@ -3,6 +3,8 @@
     margin-bottom: 1rem;
     border-radius: var(--border-radius);
     border: 1px solid transparent;
+    max-width: 100%;
+    word-wrap: break-word;
 }
 
 .alert a:not(.btn) {
