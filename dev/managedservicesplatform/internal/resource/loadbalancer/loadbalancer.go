@@ -20,8 +20,7 @@ type Config struct {
 	Project project.Project
 	Region  string
 
-	TargetService      cloudrunv2service.CloudRunV2Service
-	TargetHTTPPortName string
+	TargetService cloudrunv2service.CloudRunV2Service
 }
 
 // New instantiates a set of resources for a load-balancer backend that routes
