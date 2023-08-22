@@ -27,7 +27,9 @@ func NewDBFromConfFunc(logger log.Logger, def VectorDB) func() (VectorDB, error)
 			newConn, dialErr := defaults.Dial(newAddr, logger)
 			err = dialErr
 			oldConn := ptr.Swap(newConn)
-			oldConn.Close()
+			if oldConn != nil {
+				oldConn.Close()
+			}
 		}
 	})
 
