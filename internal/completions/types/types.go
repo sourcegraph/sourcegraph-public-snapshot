@@ -48,11 +48,8 @@ type CodyCompletionRequestParameters struct {
 }
 
 type CompletionRequestParameters struct {
-	// Prompt exists only for backwards compatibility. Do not use it in new
-	// implementations. It will be removed once we are reasonably sure 99%
-	// of VSCode extension installations are upgraded to a new Cody version.
-	Prompt            string    `json:"prompt"`
-	Messages          []Message `json:"messages"`
+	Prompt            string    `json:"prompt"`   // For completion based models
+	Messages          []Message `json:"messages"` // For chat based models
 	MaxTokensToSample int       `json:"maxTokensToSample,omitempty"`
 	Temperature       float32   `json:"temperature,omitempty"`
 	StopSequences     []string  `json:"stopSequences,omitempty"`
