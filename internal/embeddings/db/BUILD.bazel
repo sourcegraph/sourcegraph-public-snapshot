@@ -28,7 +28,15 @@ go_library(
 
 go_test(
     name = "db_test",
-    srcs = ["chunk_point_test.go"],
+    srcs = [
+        "chunk_point_test.go",
+        "conf_test.go",
+    ],
     embed = [":db"],
-    deps = ["@com_github_stretchr_testify//require"],
+    deps = [
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+    ],
 )
