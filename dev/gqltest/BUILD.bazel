@@ -45,12 +45,3 @@ go_test(
         "@io_k8s_utils//strings/slices",
     ],
 )
-
-genrule(
-    name = "foo",
-    outs = ["1"],
-    cmd = select({
-        "//:darwin_docker_e2e_go": "echo docker > $@",
-        "//conditions:default": "echo default > $@",
-    }),
-)
