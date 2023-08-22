@@ -7,7 +7,7 @@ import com.intellij.openapi.editor.markup.TextAttributes;
 import java.awt.*;
 import org.jetbrains.annotations.NotNull;
 
-public class AutoCompleteRenderUtils {
+public class AutocompleteRenderUtils {
   public static double fontYOffset(@NotNull Font font, @NotNull Editor editor) {
     FontMetrics metrics =
         FontInfo.getFontMetrics(font, FontInfo.getFontRenderContext(editor.getContentComponent()));

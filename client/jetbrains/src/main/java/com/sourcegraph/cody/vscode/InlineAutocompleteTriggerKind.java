@@ -1,6 +1,6 @@
 package com.sourcegraph.cody.vscode;
 
-public enum InlineAutoCompleteTriggerKind {
+public enum InlineAutocompleteTriggerKind {
   Invoke,
   Automatic;
 }
