@@ -48,7 +48,7 @@
 
 
         <!-- autocomplete -->
-        <applicationService serviceImplementation="com.sourcegraph.cody.autocomplete.CodyAutoCompleteManager"/>
+        <applicationService serviceImplementation="com.sourcegraph.cody.autocomplete.CodyAutocompleteManager"/>
         <editorFactoryListener implementation="com.sourcegraph.cody.autocomplete.CodyEditorFactoryListener"/>
 
         <projectService serviceImplementation="com.sourcegraph.cody.CodyToolWindowContent"/>
@@ -126,7 +126,7 @@
         </action>
 
         <!-- autocomplete -->
-        <action id="cody.acceptAutoCompleteAction" class="com.sourcegraph.cody.autocomplete.AcceptCodyAutoCompleteAction">
+        <action id="cody.acceptAutocompleteAction" class="com.sourcegraph.cody.autocomplete.AcceptCodyAutocompleteAction">
             <keyboard-shortcut first-keystroke="TAB" keymap="$default"/>
             <override-text place="MainMenu" text="Accept Autocomplete Suggestion"/>
         </action>

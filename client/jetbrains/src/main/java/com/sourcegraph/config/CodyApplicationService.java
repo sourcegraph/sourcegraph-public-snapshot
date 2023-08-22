@@ -38,13 +38,13 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
   public boolean isInstallEventLogged;
   public boolean isUrlNotificationDismissed;
 
-  // Use isCodyAutoCompleteEnabled instead. Remove this after 2024-01-01.
+  // Use isCodyAutocompleteEnabled instead. Remove this after 2024-01-01.
   @Deprecated(since = "3.0.4")
   @Nullable
   public Boolean areCodyCompletionsEnabled; // kept for backwards compatibility
 
   public boolean isCodyEnabled = true;
-  @Nullable public Boolean isCodyAutoCompleteEnabled;
+  @Nullable public Boolean isCodyAutocompleteEnabled;
   public boolean isAccessTokenNotificationDismissed;
   @Nullable public Boolean authenticationFailedLastTime;
   @Nullable public Boolean isCodyDebugEnabled;
@@ -120,8 +120,8 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     isCodyEnabled = enabled;
   }
 
-  public boolean isCodyAutoCompleteEnabled() {
-    return Optional.ofNullable(isCodyAutoCompleteEnabled) // the current key takes priority
+  public boolean isCodyAutocompleteEnabled() {
+    return Optional.ofNullable(isCodyAutocompleteEnabled) // the current key takes priority
         .or(() -> Optional.ofNullable(areCodyCompletionsEnabled)) // fallback to the old key
         .orElse(false);
   }
@@ -172,7 +172,7 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     this.isUrlNotificationDismissed = settings.isUrlNotificationDismissed;
     this.areCodyCompletionsEnabled = settings.areCodyCompletionsEnabled;
     this.isCodyEnabled = settings.isCodyEnabled;
-    this.isCodyAutoCompleteEnabled = settings.isCodyAutoCompleteEnabled;
+    this.isCodyAutocompleteEnabled = settings.isCodyAutocompleteEnabled;
     this.isAccessTokenNotificationDismissed = settings.isAccessTokenNotificationDismissed;
     this.authenticationFailedLastTime = settings.authenticationFailedLastTime;
     this.lastUpdateNotificationPluginVersion = settings.lastUpdateNotificationPluginVersion;

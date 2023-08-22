@@ -21,7 +21,7 @@ import com.sourcegraph.cody.agent.CodyAgentClient;
 import com.sourcegraph.cody.agent.protocol.Position;
 import com.sourcegraph.cody.agent.protocol.Range;
 import com.sourcegraph.cody.agent.protocol.TextDocument;
-import com.sourcegraph.cody.vscode.InlineAutoCompleteTriggerKind;
+import com.sourcegraph.cody.vscode.InlineAutocompleteTriggerKind;
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind;
 import com.sourcegraph.config.ConfigUtil;
 import java.util.List;
@@ -65,11 +65,11 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
         return;
       }
       informAgentAboutEditorChange(e.getEditor());
-      CodyAutoCompleteManager suggestions = CodyAutoCompleteManager.getInstance();
+      CodyAutocompleteManager suggestions = CodyAutocompleteManager.getInstance();
       if (suggestions.isEnabledForEditor(e.getEditor())
           && CodyEditorFactoryListener.isSelectedEditor(e.getEditor())) {
-        suggestions.clearAutoCompleteSuggestions(e.getEditor());
-        suggestions.triggerAutoComplete(
+        suggestions.clearAutocompleteSuggestions(e.getEditor());
+        suggestions.triggerAutocomplete(
             e.getEditor(),
             e.getEditor().getCaretModel().getOffset(),
             InlineCompletionTriggerKind.AUTOMATIC);
@@ -84,10 +84,10 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
         return;
       }
       informAgentAboutEditorChange(e.getEditor());
-      CodyAutoCompleteManager suggestions = CodyAutoCompleteManager.getInstance();
+      CodyAutocompleteManager suggestions = CodyAutocompleteManager.getInstance();
       if (suggestions.isEnabledForEditor(e.getEditor())
           && CodyEditorFactoryListener.isSelectedEditor(e.getEditor())) {
-        suggestions.clearAutoCompleteSuggestions(e.getEditor());
+        suggestions.clearAutocompleteSuggestions(e.getEditor());
       }
     }
   }
@@ -103,18 +103,18 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
       if (!CodyEditorFactoryListener.isSelectedEditor(this.editor)) {
         return;
       }
-      CodyAutoCompleteManager completions = CodyAutoCompleteManager.getInstance();
-      completions.clearAutoCompleteSuggestions(this.editor);
+      CodyAutocompleteManager completions = CodyAutocompleteManager.getInstance();
+      completions.clearAutocompleteSuggestions(this.editor);
       if (completions.isEnabledForEditor(this.editor)
           && !CommandProcessor.getInstance().isUndoTransparentActionInProgress()) {
         informAgentAboutEditorChange(this.editor);
         int changeOffset = event.getOffset() + event.getNewLength();
         if (this.editor.getCaretModel().getOffset() == changeOffset) {
-          InlineAutoCompleteTriggerKind requestType =
+          InlineAutocompleteTriggerKind requestType =
               event.getOldLength() != event.getNewLength()
-                  ? InlineAutoCompleteTriggerKind.Invoke
-                  : InlineAutoCompleteTriggerKind.Automatic;
-          completions.triggerAutoComplete(
+                  ? InlineAutocompleteTriggerKind.Invoke
+                  : InlineAutocompleteTriggerKind.Automatic;
+          completions.triggerAutocomplete(
               this.editor, changeOffset, InlineCompletionTriggerKind.AUTOMATIC);
         }
       }

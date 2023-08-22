@@ -1,16 +1,16 @@
 package com.sourcegraph.cody.vscode;
 
-import com.sourcegraph.cody.autocomplete.AutoCompleteText;
+import com.sourcegraph.cody.autocomplete.AutocompleteText;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
-public class InlineAutoCompleteItem {
+public class InlineAutocompleteItem {
   public final String insertText;
   public final String filterText;
   public final Range range;
   public final Command command;
 
-  public InlineAutoCompleteItem(
+  public InlineAutocompleteItem(
       String insertText, String filterText, Range range, Command command) {
     this.insertText = insertText;
     this.filterText = filterText;
@@ -18,24 +18,24 @@ public class InlineAutoCompleteItem {
     this.command = command;
   }
 
-  public InlineAutoCompleteItem withInsertText(String newInsertText) {
-    return new InlineAutoCompleteItem(newInsertText, this.filterText, this.range, this.command);
+  public InlineAutocompleteItem withInsertText(String newInsertText) {
+    return new InlineAutocompleteItem(newInsertText, this.filterText, this.range, this.command);
   }
 
-  public InlineAutoCompleteItem withFilterText(String newFilterText) {
-    return new InlineAutoCompleteItem(this.insertText, newFilterText, this.range, this.command);
+  public InlineAutocompleteItem withFilterText(String newFilterText) {
+    return new InlineAutocompleteItem(this.insertText, newFilterText, this.range, this.command);
   }
 
-  public InlineAutoCompleteItem withRange(Range newRange) {
-    return new InlineAutoCompleteItem(this.insertText, this.filterText, newRange, this.command);
+  public InlineAutocompleteItem withRange(Range newRange) {
+    return new InlineAutocompleteItem(this.insertText, this.filterText, newRange, this.command);
   }
 
-  public InlineAutoCompleteItem withCommand(Command newCommand) {
-    return new InlineAutoCompleteItem(this.insertText, this.filterText, this.range, newCommand);
+  public InlineAutocompleteItem withCommand(Command newCommand) {
+    return new InlineAutocompleteItem(this.insertText, this.filterText, this.range, newCommand);
   }
 
-  public static InlineAutoCompleteItem fromCompletion(Completion completion) {
-    return new InlineAutoCompleteItem(
+  public static InlineAutocompleteItem fromCompletion(Completion completion) {
+    return new InlineAutocompleteItem(
         completion.content,
         completion.prefix,
         new Range(new Position(0, 0), new Position(0, completion.content.length())),
@@ -48,7 +48,7 @@ public class InlineAutoCompleteItem {
 
   @Override
   public String toString() {
-    return "InlineAutoCompleteItem{"
+    return "InlineAutocompleteItem{"
         + "insertText='"
         + insertText
         + '\''
@@ -62,7 +62,7 @@ public class InlineAutoCompleteItem {
         + '}';
   }
 
-  public @NotNull AutoCompleteText toAutoCompleteText(@NotNull String sameLineSuffix) {
+  public @NotNull AutocompleteText toAutocompleteText(@NotNull String sameLineSuffix) {
     boolean multiline = this.isMultiline();
     String sameLineRawAutocomplete =
         multiline ? this.insertText.lines().findFirst().orElse("") : this.insertText;
@@ -81,6 +81,6 @@ public class InlineAutoCompleteItem {
         multiline
             ? this.insertText.lines().skip(1).collect(Collectors.joining(System.lineSeparator()))
             : "";
-    return new AutoCompleteText(sameLineBeforeSuffixText, afterEndOfLineSuffix, blockText);
+    return new AutocompleteText(sameLineBeforeSuffixText, afterEndOfLineSuffix, blockText);
   }
 }

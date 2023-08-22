@@ -4,7 +4,7 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.Inlay;
 import com.intellij.openapi.editor.impl.EditorImpl;
 import com.intellij.openapi.editor.markup.TextAttributes;
-import com.sourcegraph.cody.vscode.InlineAutoCompleteItem;
+import com.sourcegraph.cody.vscode.InlineAutocompleteItem;
 import java.awt.*;
 import java.util.Comparator;
 import java.util.stream.Collectors;
@@ -12,13 +12,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Implements the logic to render an autocomplete item inline in the editor. */
-public class CodyAutoCompleteBlockElementRenderer extends CodyAutoCompleteElementRenderer {
+public class CodyAutocompleteBlockElementRenderer extends CodyAutocompleteElementRenderer {
 
-  public CodyAutoCompleteBlockElementRenderer(
+  public CodyAutocompleteBlockElementRenderer(
       @NotNull String text,
-      @Nullable InlineAutoCompleteItem completionItem,
+      @Nullable InlineAutocompleteItem completionItem,
       @NotNull Editor editor) {
-    super(text, completionItem, editor, AutoCompleteRendererType.BLOCK);
+    super(text, completionItem, editor, AutocompleteRendererType.BLOCK);
   }
 
   @Override
@@ -55,6 +55,6 @@ public class CodyAutoCompleteBlockElementRenderer extends CodyAutoCompleteElemen
 
   @Override
   public String toString() {
-    return "CodyAutoCompleteBlockElementRenderer{" + "text='" + text + '\'' + '}';
+    return "CodyAutocompleteBlockElementRenderer{" + "text='" + text + '\'' + '}';
   }
 }
