@@ -61,7 +61,7 @@ const TourWithErrorBoundary = memo(
 
 
         return (
-            <TourAuth
+            <TourAuthenticated
                 {...props}
                 id="TourAuthenticated"
                 extraTask={authenticatedExtraTask}
@@ -80,12 +80,9 @@ export const TourAuth: FC<PropsWithChildren<Props>> = (props) => {
         {}
     )
 
-    console.log(data?.onboardingTourContent.current?.value)
-
-
     return (
         <div>
-            {!loading && <TourAuthenticated
+            {!loading && <Tour
                 {...props}
                 tasks={JSON.parse(data?.onboardingTourContent.current?.value).tasks}
             />}
@@ -98,7 +95,7 @@ export const TourAuth: FC<PropsWithChildren<Props>> = (props) => {
 
 
 // Show for enabled control group
-export const TourAuthenticated = withFeatureFlag('quick-start-tour-for-authenticated-users', Tour)
+export const TourAuthenticated = withFeatureFlag('quick-start-tour-for-authenticated-users', TourAuth)
 
 export const GettingStartedTour = Object.assign(TourWithErrorBoundary, {
     Info: TourInfo,
