@@ -45,7 +45,6 @@ func TestExhaustiveSearchHandler_Handle(t *testing.T) {
 	t.Cleanup(func() {
 		cleanupUsers(bs)
 		cleanupRepos(bs)
-		cleanupSearchJobs(bs)
 	})
 
 	tests := []struct {

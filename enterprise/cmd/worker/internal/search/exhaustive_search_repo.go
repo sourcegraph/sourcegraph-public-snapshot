@@ -94,7 +94,7 @@ func (h *ExhaustiveSearchRepoHandler) Handle(ctx context.Context, logger log.Log
 		}
 		if _, err = h.Store.CreateExhaustiveSearchRepoRevisionJob(ctx, job); err != nil {
 			// TODO: should this be an error or just log it?
-			return errors.Wrap(err, "creating exhaustive search repo revision job")
+			return errors.Wrapf(err, "creating exhaustive search repo revision job for revision %q", spec.Revision)
 		}
 	}
 
