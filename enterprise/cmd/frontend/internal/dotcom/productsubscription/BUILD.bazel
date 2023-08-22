@@ -27,6 +27,7 @@ go_library(
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/actor",
+        "//internal/audit",
         "//internal/auth",
         "//internal/authz",
         "//internal/codygateway",
@@ -85,6 +86,7 @@ go_test(
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//internal/actor",
+        "//internal/audit/audittest",
         "//internal/auth",
         "//internal/authz",
         "//internal/conf",
@@ -108,6 +110,7 @@ go_test(
         "@com_github_gomodule_redigo//redis",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_uuid//:uuid",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_hexops_valast//:valast",
         "@com_github_sourcegraph_log//logtest",
