@@ -3,4 +3,4 @@ steps:
     key: "bazel-backcompat"
     agents: { queue: bazel }
     commands:
-    - ./dev/ci/bazel-backcompat.sh
+    - ./dev/backcompat/bazel-backcompat.sh
