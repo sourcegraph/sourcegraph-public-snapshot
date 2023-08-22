@@ -22,7 +22,6 @@ import com.sourcegraph.cody.CodyAgentProjectListener;
 import com.sourcegraph.cody.CodyToolWindowFactory;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
-import com.sourcegraph.cody.api.CodyLLMConfiguration;
 import com.sourcegraph.cody.autocomplete.CodyAutoCompleteManager;
 import com.sourcegraph.find.browser.JavaToJSBridge;
 import com.sourcegraph.telemetry.GraphQlLogger;
@@ -64,12 +63,12 @@ public class SettingsChangeListener implements Disposable {
               javaToJSBridge.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project));
             }
 
-            if (context.oldCodyEnabled && !context.newCodyEnabled) {
-              logger.warn("Stopping Cody agent because of config changes");
-              new CodyAgentProjectListener().stopAgent(project);
-            } else if (!context.oldCodyEnabled && context.newCodyEnabled) {
-              logger.warn("Starting Cody agent because of config changes");
+            if (context.newCodyEnabled) {
+              // Starting the agent is idempotent, so it's OK if we call startAgent multiple times.
               new CodyAgentProjectListener().startAgent(project);
+            } else {
+              // Stopping the agent is idempotent, so it's OK if we call stopAgent multiple times.
+              new CodyAgentProjectListener().stopAgent(project);
             }
 
             // Notify Cody Agent about config changes.
@@ -80,11 +79,11 @@ public class SettingsChangeListener implements Disposable {
 
             // Log install events
             if (!Objects.equals(context.oldUrl, context.newUrl)) {
-              GraphQlLogger.logInstallEvent(project, ConfigUtil::setInstallEventLogged);
+              GraphQlLogger.logInstallEvent(project).thenAccept(ConfigUtil::setInstallEventLogged);
             } else if ((context.isDotComAccessTokenChanged
                     || context.isEnterpriseAccessTokenChanged)
                 && !ConfigUtil.isInstallEventLogged()) {
-              GraphQlLogger.logInstallEvent(project, ConfigUtil::setInstallEventLogged);
+              GraphQlLogger.logInstallEvent(project).thenAccept(ConfigUtil::setInstallEventLogged);
             }
 
             boolean urlChanged = !Objects.equals(context.oldUrl, context.newUrl);
@@ -99,18 +98,15 @@ public class SettingsChangeListener implements Disposable {
             // Notify user about a successful connection
             if (connectionSettingsChanged) {
               String accessTokenToTest = ConfigUtil.getProjectAccessToken(project);
-              ApiAuthenticator.testConnection(
-                  context.newUrl,
-                  accessTokenToTest,
-                  context.newCustomRequestHeaders,
-                  (status) -> {
-                    if (ConfigUtil.didAuthenticationFailLastTime()
-                        && status == ApiAuthenticator.ConnectionStatus.AUTHENTICATED) {
-                      notifyAboutSuccessfulConnection();
-                    }
-                    ConfigUtil.setAuthenticationFailedLastTime(
-                        status != ApiAuthenticator.ConnectionStatus.AUTHENTICATED);
-                  });
+              ApiAuthenticator.testConnection(project)
+                  .thenAccept(
+                      (status) -> {
+                        if (ConfigUtil.didAuthenticationFailLastTime()
+                            && status == ApiAuthenticator.ConnectionStatus.AUTHENTICATED) {
+                          notifyAboutSuccessfulConnection();
+                        }
+                        ConfigUtil.setAuthenticationFailedLastTime(true);
+                      });
             }
 
             // clear autocomplete suggestions if freshly disabled
@@ -142,10 +138,6 @@ public class SettingsChangeListener implements Disposable {
               if (toolWindow != null) {
                 toolWindow.setAvailable(true, null);
               }
-            }
-            if (context.newCodyEnabled) {
-              // refresh Cody LLM configuration
-              CodyLLMConfiguration.getInstance(project).refreshCache();
             }
           }
         });

@@ -30,13 +30,13 @@ public class PostStartupActivity implements StartupActivity.DumbAware {
     PluginInstaller.addStateListener(
         new PluginStateListener() {
           public void install(@NotNull IdeaPluginDescriptor ideaPluginDescriptor) {
-            GraphQlLogger.logInstallEvent(
-                project,
-                (wasSuccessful) -> {
-                  if (wasSuccessful) {
-                    ConfigUtil.setInstallEventLogged(true);
-                  }
-                });
+            GraphQlLogger.logInstallEvent(project)
+                .thenAccept(
+                    wasSuccessful -> {
+                      if (wasSuccessful) {
+                        ConfigUtil.setInstallEventLogged(true);
+                      }
+                    });
           }
 
           @Override

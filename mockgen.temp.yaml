@@ -30,6 +30,7 @@
     - AssignedTeamsStore
     - AuthzStore
     - BitbucketProjectPermissionsStore
+    - CodeHostStore
     - CodeMonitorStore
     - CodeownersStore
     - ConfStore
