@@ -43,7 +43,7 @@
     "@sourcegraph/branded": "workspace:*",
     "@sourcegraph/client-api": "workspace:*",
     "@sourcegraph/codeintellify": "workspace:*",
-    "@sourcegraph/cody-shared": "^0.0.5",
+    "@sourcegraph/cody-shared": "^0.0.6",
     "@sourcegraph/cody-ui": "^0.0.7",
     "@sourcegraph/common": "workspace:*",
     "@sourcegraph/http-client": "workspace:*",
