@@ -171,7 +171,6 @@ body {
     display: flex;
 }
 .container {
-  max-width: var(--width);
   margin-left: auto;
   margin-right: auto;
   padding-left: var(--gutter);
@@ -179,11 +178,7 @@ body {
 }
 body > div#page {
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
     justify-content: space-between;
-    overflow-x: hidden; /* Prevent horizontal scrolling */
     margin-top: calc(2*var(--spacing));
 }
 /* Responsive */
@@ -397,23 +392,6 @@ body > #sidebar .external a, body > #page > footer .external a {
         margin-top: calc(1*var(--spacing));
     }
 }
-@media (min-width: 1200px /* == var(--index-breakpoint-width) */) {
-	body > #page > main {
-		display: flex;
-		flex-direction: row-reverse;
-	}
-	body > #page > main > #index {
-
-
-        /* Note: all ancestors up to <html> (the scrolling element) must be overflow: visible (default) for this to work. */
-        top: calc(2*var(--spacing));
-        max-height: calc(100vh - 4*var(--spacing));
- }
-    body > #page > main > #content {
-        flex: 8 4 auto;
-        min-width: 0;
-    }
-}
 
 body > #page > main > #index {
 	font-size: 90%;
@@ -423,8 +401,8 @@ body > #page > main > #index {
 	position: fixed;
 	min-width: 300px;
 	max-width: 300px;
-	margin-top: calc(3*var(--spacing));
 }
+
 body > #page > main > #index > h3.version {
 	font-weight: bold;
 	font-size: 100%;
@@ -437,6 +415,7 @@ body > #page > main > #index > h4 {
     padding-bottom: 0;
     line-height: 1.5rem;
     margin-bottom: 1rem;
+    margin-top: calc(3*var(--spacing));
 }
 body > #page > main > #index .on-this-page {
     opacity: 0.7;
@@ -460,6 +439,32 @@ body > #page > main > #index > ul li::before {
 body > #page > main > #content {
     margin-bottom: calc(3*var(--spacing));
 }
+
+@media (min-width: 1200px /* == var(--index-breakpoint-width) */) {
+	body > #page > main {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        column-gap: 20px;
+	}
+	body > #page > main > #index {
+        /* Note: all ancestors up to <html> (the scrolling element) must be overflow: visible (default) for this to work. */
+        top: calc(2*var(--spacing));
+        max-height: calc(100vh - 4*var(--spacing));
+
+        grid-column: 2;
+        display: block;
+        position: sticky;
+        height: 100vh;
+        top: 0;
+ }
+    body > #page > main > #content {
+        flex: 8 4 auto;
+        min-width: 0;
+        grid-column: 1;
+        grid-row: 1;
+    }
+}
+
 #content > .breadcrumbs {
 	font-size: 90%;
 }
@@ -533,7 +538,6 @@ body > #page > main > #content {
   line-height: 1.77;
   word-wrap: break-word;
   tab-size: 2;
-  max-width: 665px;
   margin-top: calc(2*var(--spacing));
   padding: 0 1rem;
 }
@@ -1458,14 +1462,12 @@ body > #sidebar .current > a  {
 
 @media (min-width: 1350px) {
     .markdown-body {
-        max-width: 665px;
         margin: unset;
     }
 }
 
 @media (max-width: 1350px) {
     .markdown-body {
-        max-width: 600px;
     }
 }
 
@@ -1501,5 +1503,15 @@ body > #sidebar .current > a  {
 @media (max-width: 800px) {
     body > #sidebar {
         background-color: var(--sidebar-bg);
+    }
+}
+
+@media (min-width: 1920px) {
+    .container {
+        max-width: 1590px;
+    }
+
+    .markdown-body {
+        max-width: 1200px;
     }
 }
