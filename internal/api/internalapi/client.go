@@ -11,16 +11,23 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	proto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
+	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var frontendInternal = env.Get("SRC_FRONTEND_INTERNAL", defaultFrontendInternal(), "HTTP address for internal frontend HTTP API.")
+
+// NOTE: this intentionally does not use the site configuration option because we need to make the decision
+// about whether or not to use gRPC to fetch the site configuration in the first place.
+var enableGRPC = env.MustGetBool("SRC_GRPC_ENABLE_CONF", false, "Enable gRPC for configuration updates")
 
 func defaultFrontendInternal() string {
 	if deploy.IsApp() {
@@ -32,44 +39,27 @@ func defaultFrontendInternal() string {
 type internalClient struct {
 	// URL is the root to the internal API frontend server.
 	URL string
+
+	getConfClient func() (proto.ConfigServiceClient, error)
 }
 
-var Client = &internalClient{URL: "http://" + frontendInternal}
+var Client = &internalClient{
+	URL: "http://" + frontendInternal,
+	getConfClient: syncx.OnceValues(func() (proto.ConfigServiceClient, error) {
+		logger := log.Scoped("internalapi", "")
+		conn, err := defaults.Dial(frontendInternal, logger)
+		if err != nil {
+			return nil, err
+		}
+		return proto.NewConfigServiceClient(conn), nil
+	}),
+}
 
 var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "src_frontend_internal_request_duration_seconds",
 	Help:    "Time (in seconds) spent on request.",
 	Buckets: prometheus.DefBuckets,
 }, []string{"category", "code"})
-
-// TODO(slimsag): In the future, once we're no longer using environment
-// variables to build ExternalURL, remove this in favor of services just reading it
-// directly from the configuration file.
-//
-// TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
-func (c *internalClient) ExternalURL(ctx context.Context) (string, error) {
-	var externalURL string
-	err := c.postInternal(ctx, "app-url", nil, &externalURL)
-	if err != nil {
-		return "", err
-	}
-	return externalURL, nil
-}
-
-// SendEmail issues a request to send an email. All services outside the frontend should
-// use this to send emails.  Source is used to categorize metrics, and should indicate the
-// product feature that is sending this email.
-//
-// 🚨 SECURITY: If the email address is associated with a user, make sure to assess whether
-// the email should be verified or not, and conduct the appropriate checks before sending.
-// This helps reduce the chance that we damage email sender reputations when attempting to
-// send emails to nonexistent email addresses.
-func (c *internalClient) SendEmail(ctx context.Context, source string, message txtypes.Message) error {
-	return c.postInternal(ctx, "send-email", &txtypes.InternalAPIMessage{
-		Source:  source,
-		Message: message,
-	}, nil)
-}
 
 // MockClientConfiguration mocks (*internalClient).Configuration.
 var MockClientConfiguration func() (conftypes.RawUnified, error)
@@ -78,6 +68,21 @@ func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnifie
 	if MockClientConfiguration != nil {
 		return MockClientConfiguration()
 	}
+
+	if enableGRPC {
+		cc, err := c.getConfClient()
+		if err != nil {
+			return conftypes.RawUnified{}, err
+		}
+		resp, err := cc.GetConfig(ctx, &proto.GetConfigRequest{})
+		if err != nil {
+			return conftypes.RawUnified{}, err
+		}
+		var raw conftypes.RawUnified
+		raw.FromProto(resp.RawUnified)
+		return raw, nil
+	}
+
 	var cfg conftypes.RawUnified
 	err := c.postInternal(ctx, "configuration", nil, &cfg)
 	return cfg, err

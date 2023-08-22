@@ -31,6 +31,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The gRPC implementation for the Symbol service's `LocalCodeIntel` endpoint has been changed to stream its results. [#55242](https://github.com/sourcegraph/sourcegraph/pull/55242)
 - Pressing `Mod-f` will always select the input value in the file view search [#55546](https://github.com/sourcegraph/sourcegraph/pull/55546)
 - When using OpenAI or Azure OpenAI for Cody completions, code completions will be disabled - chat will continue to work. This is because we currently don't support code completions with OpenAI. [#55624](https://github.com/sourcegraph/sourcegraph/pull/55624)
+- Caddy has been updated to version 2.7.3 resolving a number of vulnerabilities. [#55606](https://github.com/sourcegraph/sourcegraph/pull/55606)
 - The commit message defined in a batch spec will now be passed to `git commit` on stdin using `--file=-` instead of being included inline with `git commit -m` to improve how the message is interpreted by `git` in certain edge cases, such as when the commit message begins with a dash, and to prevent extra quotes being added to the message. This may mean that previous escaping strategies will behave differently.
 - Improved performance of ping aggregations by adding functional indexes. [#55538](https://github.com/sourcegraph/sourcegraph/pull/55538)
 
