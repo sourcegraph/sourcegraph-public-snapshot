@@ -9,11 +9,13 @@ import com.sourcegraph.cody.api.Speaker;
 import com.sourcegraph.cody.context.ContextFile;
 import com.sourcegraph.cody.context.ContextMessage;
 import com.sourcegraph.cody.vscode.CancellationToken;
+
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+
 import org.jetbrains.annotations.NotNull;
 
 public class Chat {
@@ -23,7 +25,9 @@ public class Chat {
       @NotNull CompletableFuture<CodyAgentServer> codyAgentServer,
       @NotNull ChatMessage humanMessage,
       @NotNull UpdatableChat chat,
-      @NotNull CancellationToken cancellationToken)
+      @NotNull CancellationToken cancellationToken,
+      @NotNull WaitingForContentMessage waitingForContentMessage
+  )
       throws ExecutionException, InterruptedException {
     final AtomicBoolean isFirstMessage = new AtomicBoolean(false);
     client.onChatUpdateMessageInProgress =
@@ -48,9 +52,11 @@ public class Chat {
                                     contextFile.repoName,
                                     contextFile.revision)))
                     .collect(Collectors.toList());
+            waitingForContentMessage.removeAll();
             chat.displayUsedContext(contextMessages);
             chat.addMessageToChat(chatMessage);
           } else {
+            waitingForContentMessage.removeAll();
             chat.updateLastMessage(chatMessage);
           }
         };

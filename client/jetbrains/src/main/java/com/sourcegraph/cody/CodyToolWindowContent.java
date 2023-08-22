@@ -509,13 +509,14 @@ public class CodyToolWindowContent implements UpdatableChat {
     if (!sendButton.isEnabled()) {
       return;
     }
+    waitingForContentMessage = new WaitingForContentMessage();
     startMessageProcessing();
     // Build message
     String truncatedPrompt =
         TruncationUtils.truncateText(message.prompt(), TruncationUtils.MAX_HUMAN_INPUT_TOKENS);
     ChatMessage humanMessage =
         ChatMessage.createHumanMessage(truncatedPrompt, message.getDisplayText());
-    addMessageToChat(humanMessage);
+    addMessageToChat(humanMessage, () -> addComponentToChat(waitingForContentMessage));
     VirtualFile currentFile = EditorUtil.getCurrentFile(project);
     // This cannot run on EDT (Event Dispatch Thread) because it may block for a long time.
     // Also, if we did the back-end call in the main thread and then waited, we wouldn't see the
@@ -531,7 +532,9 @@ public class CodyToolWindowContent implements UpdatableChat {
                     CodyAgent.getInitializedServer(project),
                     humanMessage,
                     this,
-                    cancellationToken);
+                    cancellationToken,
+                    waitingForContentMessage
+                );
               } catch (Exception e) {
                 logger.warn("Error sending message '" + humanMessage + "' to chat", e);
               }
@@ -541,7 +544,6 @@ public class CodyToolWindowContent implements UpdatableChat {
 
   @Override
   public void displayUsedContext(@NotNull List<ContextMessage> contextMessages) {
-    waitingForContentMessage = new WaitingForContentMessage();
     // Use context
     if (contextMessages.size() == 0) {
       InstanceType instanceType = ConfigUtil.getInstanceType(project);
@@ -563,7 +565,6 @@ public class CodyToolWindowContent implements UpdatableChat {
       ContextFilesMessage contextFilesMessage = new ContextFilesMessage(contextMessages);
       var messageContentPanel = new JPanel(new BorderLayout());
       messageContentPanel.add(contextFilesMessage);
-      this.addComponentToChat(messageContentPanel, () -> addComponentToChat(waitingForContentMessage));
     }
   }
 
