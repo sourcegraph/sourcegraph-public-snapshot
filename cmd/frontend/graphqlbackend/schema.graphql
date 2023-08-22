@@ -9995,7 +9995,7 @@ input TeamMemberInput {
 
 enum SMTPAuthType {
     """
-    No authentication
+    No authentication.
     """
     NONE
     """
