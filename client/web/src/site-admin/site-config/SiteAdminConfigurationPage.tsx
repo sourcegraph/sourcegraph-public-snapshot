@@ -50,7 +50,7 @@ import { SiteConfigurationChangeList } from '../SiteConfigurationChangeList'
 import { ConfigPanel } from './ConfigPanel'
 import { LicenseKeyForm } from './forms/license'
 import { SMTPConfigForm } from './forms/smtp'
-import { useJSONCParser } from './hooks/useJSONCParser'
+import { useJsoncParser } from './hooks/useJsoncParser'
 
 import styles from './SiteAdminConfigurationPage.module.scss'
 
@@ -337,7 +337,7 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
     )
     const contents = data?.site?.configuration?.effectiveContents
 
-    const { json, rawJson, update, reset, error: jsonError } = useJSONCParser<SiteConfiguration>(contents || '')
+    const { json, rawJson, update, reset, error: jsonError } = useJsoncParser<SiteConfiguration>(contents || '')
 
     let effectiveError: Error | undefined = error || reloadError
     if (updateError) {

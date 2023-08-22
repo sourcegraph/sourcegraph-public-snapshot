@@ -1,11 +1,11 @@
 import { act, renderHook } from '@testing-library/react'
 
-import { useJSONCParser } from './useJSONCParser'
+import { useJsoncParser } from './useJsoncParser'
 
-describe('useJSONCParser', () => {
+describe('useJsoncParser', () => {
     it('parses, updates & resets correctly', () => {
         // initial parsing
-        const { result } = renderHook(() => useJSONCParser<{ foo?: string; bar?: string }>('{"foo": "bar"}'))
+        const { result } = renderHook(() => useJsoncParser<{ foo?: string; bar?: string }>('{"foo": "bar"}'))
         const { update, reset } = result.current
         expect(result?.current?.json).toEqual({ foo: 'bar' })
         expect(result?.current?.rawJson).toEqual('{"foo": "bar"}')
@@ -29,7 +29,7 @@ describe('useJSONCParser', () => {
     it('re-parses on originalRawJson change', () => {
         // initial parsing
         const { result, rerender } = renderHook(
-            ({ jsonValue }: { jsonValue: string }) => useJSONCParser<{ foo?: string; bar?: string }>(jsonValue),
+            ({ jsonValue }: { jsonValue: string }) => useJsoncParser<{ foo?: string; bar?: string }>(jsonValue),
             {
                 initialProps: { jsonValue: '{"foo": "bar"}' },
             }
@@ -45,7 +45,7 @@ describe('useJSONCParser', () => {
     })
 
     it('handles parse errors', () => {
-        const { result } = renderHook(() => useJSONCParser<{ foo?: string; bar?: string }>('{"foo"/ "bar"}'))
+        const { result } = renderHook(() => useJsoncParser<{ foo?: string; bar?: string }>('{"foo"/ "bar"}'))
         const { json, rawJson, error } = result.current
         expect(rawJson).toEqual('{"foo"/ "bar"}')
         expect(json).toBeUndefined()

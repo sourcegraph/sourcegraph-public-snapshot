@@ -1599,7 +1599,7 @@ ts_project(
         "src/site-admin/site-config/forms/license/index.tsx",
         "src/site-admin/site-config/forms/smtp/SendTestEmailForm.tsx",
         "src/site-admin/site-config/forms/smtp/index.tsx",
-        "src/site-admin/site-config/hooks/useJSONCParser.ts",
+        "src/site-admin/site-config/hooks/useJsoncParser.ts",
         "src/site-admin/user-select/UserSelect.tsx",
         "src/site-admin/user-select/backend.ts",
         "src/site-admin/webhooks/MessagePanel.tsx",

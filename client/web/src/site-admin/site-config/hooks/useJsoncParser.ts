@@ -4,7 +4,7 @@ import { ParseError, applyEdits, modify, parse } from 'jsonc-parser'
 
 import { defaultModificationOptions } from '../SiteAdminConfigurationPage'
 
-interface UseJSONCParserReturnType<T extends object> {
+interface UseJsoncParserReturnType<T extends object> {
     /* parsed JSON */
     json?: T
     /* raw JSON */
@@ -22,7 +22,7 @@ interface UseJSONCParserReturnType<T extends object> {
  * - It parses 'rawJsonValue' and stores local copies during updates as 'json' and 'rawJson'.
  * - if 'rawJsonValue' changes, it re-parses and updates 'json' and 'rawJson'.
  */
-export function useJSONCParser<T extends object>(originalRawJson?: string): UseJSONCParserReturnType<T> {
+export function useJsoncParser<T extends object>(originalRawJson?: string): UseJsoncParserReturnType<T> {
     const [error, setError] = useState<Error>()
     const [json, setJson] = useState<T>()
     const [rawJson, setRawJson] = useState<string>()
