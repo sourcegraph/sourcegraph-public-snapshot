@@ -360,7 +360,8 @@ public class CodyToolWindowContent implements UpdatableChat {
             });
   }
 
-  public synchronized void addMessageToChat(@NotNull ChatMessage message, Runnable executeAfterMessageIsAdded) {
+  public synchronized void addMessageToChat(
+      @NotNull ChatMessage message, Runnable executeAfterMessageIsAdded) {
     ApplicationManager.getApplication()
         .invokeLater(
             () -> {
@@ -533,8 +534,7 @@ public class CodyToolWindowContent implements UpdatableChat {
                     humanMessage,
                     this,
                     cancellationToken,
-                    waitingForContentMessage
-                );
+                    waitingForContentMessage);
               } catch (Exception e) {
                 logger.warn("Error sending message '" + humanMessage + "' to chat", e);
               }
@@ -559,7 +559,8 @@ public class CodyToolWindowContent implements UpdatableChat {
                       : ""));
       String resolution = "I will try to answer without context.";
       this.addMessageToChat(
-          ChatMessage.createAssistantMessage(report + " " + ask + " " + resolution), () -> addComponentToChat(waitingForContentMessage));
+          ChatMessage.createAssistantMessage(report + " " + ask + " " + resolution),
+          () -> addComponentToChat(waitingForContentMessage));
     } else {
 
       ContextFilesMessage contextFilesMessage = new ContextFilesMessage(contextMessages);

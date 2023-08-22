@@ -3,7 +3,6 @@ package com.sourcegraph.cody.api;
 import com.intellij.openapi.diagnostic.Logger;
 import com.sourcegraph.cody.UpdatableChat;
 import com.sourcegraph.cody.chat.ChatMessage;
-import com.sourcegraph.cody.chat.WaitingForContentMessage;
 import com.sourcegraph.cody.vscode.CancellationToken;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,8 +25,7 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
   public ChatUpdaterCallbacks(
       @NotNull UpdatableChat chat,
       @NotNull CancellationToken cancellationToken,
-      @NotNull String prefix
-      ) {
+      @NotNull String prefix) {
     this.chat = chat;
     this.cancellationToken = cancellationToken;
     this.prefix = prefix;
