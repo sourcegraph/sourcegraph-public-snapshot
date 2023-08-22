@@ -79,7 +79,7 @@ export const LicenseKeyForm: FC<LicenseKeyFormProps> = ({ className, licenseKey 
             <Input
                 id="license-key"
                 placeholder="Paste your license key here"
-                onChange={e => onLicenseKeyChange(e.target.value)}
+                onChange={event => onLicenseKeyChange(event.target.value)}
                 value={licenseKey}
                 className="mb-2"
             />
