@@ -5,7 +5,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 bazelrcs=(--bazelrc=.bazelrc)
 current_commit=$(git rev-parse HEAD)
-tag="5.0.0-dave"
+tag="dt/5.0"
 
 function restore_current_commit() {
   git checkout --force "${current_commit}"
@@ -29,7 +29,7 @@ else
 fi
 
 echo "--- :git::rewind: checkout v${tag}"
-git checkout --force "v${tag}"
+git checkout --force "${tag}"
 
 echo "--- :git: checkout migrations and scripts at ${current_commit}"
 git checkout --force "${current_commit}" -- migrations/ dev/backcompat/patch_flakes.sh dev/backcompat/flakes.json
