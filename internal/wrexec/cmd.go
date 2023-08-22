@@ -15,6 +15,7 @@ type Cmd struct {
 	logger      log.Logger
 	beforeHooks []BeforeHook
 	afterHooks  []AfterHook
+	output      []byte
 }
 
 // BeforeHook are called before the execution of a command. Returning an error within a before
@@ -111,12 +112,17 @@ func (c *Cmd) runAfterHooks() {
 
 // CombinedOutput calls os/exec.Cmd.CombinedOutput after running the before hooks,
 // and run the after hooks once it returns.
-func (c *Cmd) CombinedOutput() ([]byte, error) {
+func (c *Cmd) CombinedOutput() (_ []byte, err error) {
 	if err := c.runBeforeHooks(); err != nil {
 		return nil, err
 	}
 	defer c.runAfterHooks()
-	return c.Cmd.CombinedOutput()
+	c.output, err = c.Cmd.CombinedOutput()
+	return c.output, err
+}
+
+func (c *Cmd) GetOutput() []byte {
+	return c.output
 }
 
 // Environ returns the underlying command environ. It never call the hooks.
@@ -126,12 +132,13 @@ func (c *Cmd) Environ() []string {
 
 // Output calls os/exec.Cmd.Output after running the before hooks,
 // and run the after hooks once it returns.
-func (c *Cmd) Output() ([]byte, error) {
+func (c *Cmd) Output() (_ []byte, err error) {
 	if err := c.runBeforeHooks(); err != nil {
 		return nil, err
 	}
 	defer c.runAfterHooks()
-	return c.Cmd.Output()
+	c.output, err = c.Cmd.Output()
+	return c.output, err
 }
 
 // Run calls os/exec.Cmd.Run after running the before hooks,
