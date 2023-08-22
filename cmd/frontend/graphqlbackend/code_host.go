@@ -1,14 +1,30 @@
 package graphqlbackend
 
 import (
+	"context"
+
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type codeHostResolver struct {
 	ch *types.CodeHost
 	db database.DB
+}
+
+type SetCodeHostRateLimitsArgs struct {
+	Input SetCodeHostRateLimitsInput
+}
+
+type SetCodeHostRateLimitsInput struct {
+	CodeHostID                      graphql.ID
+	APIQuota                        int32
+	APIReplenishmentIntervalSeconds int32
+	GitQuota                        int32
+	GitReplenishmentIntervalSeconds int32
 }
 
 func (r *codeHostResolver) ID() graphql.ID {
@@ -64,4 +80,35 @@ func (r *codeHostResolver) ExternalServices(args *CodeHostExternalServicesArgs) 
 		LimitOffset: &database.LimitOffset{Limit: int(args.First)},
 	}
 	return &externalServiceConnectionResolver{db: r.db, opt: opt}, nil
+}
+
+func (r *schemaResolver) SetCodeHostRateLimits(ctx context.Context, args SetCodeHostRateLimitsArgs) (*EmptyResponse, error) {
+	// Security 🚨: Code Hosts may only be updated by site admins.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	if args.Input.APIQuota < 0 || args.Input.GitQuota < 0 || args.Input.APIReplenishmentIntervalSeconds < 0 || args.Input.GitReplenishmentIntervalSeconds < 0 {
+		return nil, errors.New("rate limit settings must be positive integers")
+	}
+
+	codeHostID, err := UnmarshalCodeHostID(args.Input.CodeHostID)
+	if err != nil {
+		return nil, errors.Wrap(err, "invalid code host id")
+	}
+	codeHostIDInt32 := int32(codeHostID)
+	codeHost, err := r.db.CodeHosts().GetByID(ctx, codeHostIDInt32)
+	if err != nil {
+		return nil, err
+	}
+	codeHost.APIRateLimitQuota = &args.Input.APIQuota
+	codeHost.APIRateLimitIntervalSeconds = &args.Input.APIReplenishmentIntervalSeconds
+	codeHost.GitRateLimitQuota = &args.Input.GitQuota
+	codeHost.GitRateLimitIntervalSeconds = &args.Input.GitReplenishmentIntervalSeconds
+
+	err = r.db.CodeHosts().Update(ctx, codeHost)
+	if err != nil {
+		return nil, err
+	}
+	return &EmptyResponse{}, err
 }
