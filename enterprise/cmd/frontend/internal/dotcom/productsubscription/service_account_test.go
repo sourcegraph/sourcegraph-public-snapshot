@@ -94,8 +94,17 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 
 			db.UsersFunc.SetDefaultReturn(mockUsers)
 
+			ffStore := dbmocks.NewMockFeatureFlagStore()
+			ffStore.GetUserFlagsFunc.SetDefaultReturn(tc.featureFlags, nil)
+			db.FeatureFlagsFunc.SetDefaultReturn(ffStore)
+
+			// Test that a feature flag store with potential overrides on the context
+			// is NOT used. We don't want to allow ovverriding service account checks.
 			ctx := featureflag.WithFlags(context.Background(),
-				featureflag.NewMemoryStore(tc.featureFlags, nil, nil))
+				featureflag.NewMemoryStore(map[string]bool{
+					featureFlagProductSubscriptionsReaderServiceAccount: true,
+					featureFlagProductSubscriptionsServiceAccount:       true,
+				}, nil, nil))
 
 			err := serviceAccountOrOwnerOrSiteAdmin(
 				actor.WithActor(ctx, &actor.Actor{UID: actorID}),

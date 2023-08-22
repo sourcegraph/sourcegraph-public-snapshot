@@ -5,6 +5,7 @@ import com.intellij.ide.plugins.PluginInstaller;
 import com.intellij.ide.plugins.PluginStateListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
+import com.sourcegraph.cody.CodyAgentProjectListener;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsChangeListener;
 import java.util.UUID;
@@ -30,6 +31,7 @@ public class PostStartupActivity implements StartupActivity.DumbAware {
     PluginInstaller.addStateListener(
         new PluginStateListener() {
           public void install(@NotNull IdeaPluginDescriptor ideaPluginDescriptor) {
+            CodyAgentProjectListener.startAgent(project);
             GraphQlLogger.logInstallEvent(project)
                 .thenAccept(
                     wasSuccessful -> {
@@ -41,6 +43,7 @@ public class PostStartupActivity implements StartupActivity.DumbAware {
 
           @Override
           public void uninstall(@NotNull IdeaPluginDescriptor ideaPluginDescriptor) {
+            CodyAgentProjectListener.stopAgent(project);
             if (ideaPluginDescriptor
                 .getPluginId()
                 .getIdString()

@@ -170,8 +170,12 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 	adminUser, err := db.Users().Create(ctx, database.NewUser{Username: "admin", EmailIsVerified: true, Email: "admin@test.com"})
 	require.NoError(t, err)
 
-	// Not Admin
+	// Not Admin with feature flag
 	notAdminUser, err := db.Users().Create(ctx, database.NewUser{Username: "verified", EmailIsVerified: true, Email: "verified@test.com"})
+	require.NoError(t, err)
+
+	// No admin, no feature flag
+	noAccessUser, err := db.Users().Create(ctx, database.NewUser{Username: "nottheone", EmailIsVerified: true, Email: "nottheone@test.com"})
 	require.NoError(t, err)
 
 	// cody user
@@ -182,11 +186,16 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 	codyUserGatewayToken := makeGatewayToken(codyUserApiToken)
 	require.NoError(t, err)
 
+	// Create a feature flag override entry for the notAdminUser.
+	_, err = db.FeatureFlags().CreateBool(context.Background(), "product-subscriptions-reader-service-account", false)
+	require.NoError(t, err)
+	_, err = db.FeatureFlags().CreateOverride(context.Background(), &featureflag.Override{FlagName: "product-subscriptions-reader-service-account", Value: true, UserID: &notAdminUser.ID})
+	require.NoError(t, err)
+
 	tests := []struct {
-		name     string
-		user     *types.User
-		features map[string]bool
-		wantErr  error
+		name    string
+		user    *types.User
+		wantErr error
 	}{
 		{
 			name:    "admin user",
@@ -194,14 +203,13 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name:     "service account",
-			user:     notAdminUser,
-			features: map[string]bool{"product-subscriptions-reader-service-account": true},
-			wantErr:  nil,
+			name:    "service account",
+			user:    notAdminUser,
+			wantErr: nil,
 		},
 		{
 			name:    "not admin or service account user",
-			user:    notAdminUser,
+			user:    noAccessUser,
 			wantErr: auth.ErrMustBeSiteAdmin,
 		},
 	}
@@ -211,14 +219,12 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 
 			// Create a request context from the user
 			userContext := actor.WithActor(context.Background(), actor.FromActualUser(test.user))
-			requestContext := featureflag.WithFlags(userContext, featureflag.NewMemoryStore(test.features, nil, nil))
 
 			// Make request from the test user
 			r := productsubscription.CodyGatewayDotcomUserResolver{DB: db}
-			_, err := r.CodyGatewayDotcomUserByToken(requestContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: codyUserGatewayToken})
+			_, err := r.CodyGatewayDotcomUserByToken(userContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: codyUserGatewayToken})
 
 			require.ErrorIs(t, err, test.wantErr)
-
 		})
 	}
 }

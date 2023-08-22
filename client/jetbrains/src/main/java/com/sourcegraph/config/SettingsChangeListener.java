@@ -22,7 +22,9 @@ import com.sourcegraph.cody.CodyAgentProjectListener;
 import com.sourcegraph.cody.CodyToolWindowFactory;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
-import com.sourcegraph.cody.autocomplete.CodyAutoCompleteManager;
+import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager;
+import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus;
+import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService;
 import com.sourcegraph.find.browser.JavaToJSBridge;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import java.awt.event.InputEvent;
@@ -110,17 +112,17 @@ public class SettingsChangeListener implements Disposable {
             }
 
             // clear autocomplete suggestions if freshly disabled
-            if (context.oldCodyAutoCompleteEnabled && !context.newCodyAutoCompleteEnabled) {
+            if (context.oldCodyAutocompleteEnabled && !context.newCodyAutocompleteEnabled) {
               Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
-              CodyAutoCompleteManager codyAutoCompleteManager =
-                  CodyAutoCompleteManager.getInstance();
+              CodyAutocompleteManager codyAutocompleteManager =
+                  CodyAutocompleteManager.getInstance();
               Arrays.stream(openProjects)
                   .flatMap(
                       project ->
                           Arrays.stream(FileEditorManager.getInstance(project).getAllEditors()))
                   .filter(fileEditor -> fileEditor instanceof TextEditor)
                   .map(fileEditor -> ((TextEditor) fileEditor).getEditor())
-                  .forEach(codyAutoCompleteManager::clearAutoCompleteSuggestions);
+                  .forEach(codyAutocompleteManager::clearAutocompleteSuggestions);
             }
 
             // Disable/enable the Cody tool window depending on the setting
@@ -138,6 +140,14 @@ public class SettingsChangeListener implements Disposable {
               if (toolWindow != null) {
                 toolWindow.setAvailable(true, null);
               }
+            }
+            if (!context.newCodyEnabled) {
+              CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.CodyDisabled);
+            } else if (!context.newCodyAutocompleteEnabled) {
+              CodyAutocompleteStatusService.notifyApplication(
+                  CodyAutocompleteStatus.AutocompleteDisabled);
+            } else {
+              CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.Ready);
             }
           }
         });

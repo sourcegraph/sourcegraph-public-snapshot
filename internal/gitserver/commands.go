@@ -538,6 +538,19 @@ func (c *clientImplementor) lStat(ctx context.Context, checker authz.SubRepoPerm
 	}
 }
 
+func errorMessageTruncatedOutput(cmd []string, out []byte) string {
+	const maxOutput = 5000
+
+	message := fmt.Sprintf("git command %v failed", cmd)
+	if len(out) > maxOutput {
+		message += fmt.Sprintf(" (truncated output: %q, %d more)", out[:maxOutput], len(out)-maxOutput)
+	} else {
+		message += fmt.Sprintf(" (output: %q)", out)
+	}
+
+	return message
+}
+
 func (c *clientImplementor) lsTreeUncached(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
 	if err := gitdomain.EnsureAbsoluteCommit(commit); err != nil {
 		return nil, err
@@ -569,7 +582,9 @@ func (c *clientImplementor) lsTreeUncached(ctx context.Context, repo api.RepoNam
 		if bytes.Contains(out, []byte("exists on disk, but not in")) {
 			return nil, &os.PathError{Op: "ls-tree", Path: filepath.ToSlash(path), Err: os.ErrNotExist}
 		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+
+		message := errorMessageTruncatedOutput(cmd.Args(), out)
+		return nil, errors.WithMessage(err, message)
 	}
 
 	if len(out) == 0 {

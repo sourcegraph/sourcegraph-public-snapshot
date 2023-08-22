@@ -46,9 +46,11 @@ import { refreshSiteFlags } from '../../site/backend'
 import { eventLogger } from '../../tracking/eventLogger'
 import { RELOAD_SITE, SITE_CONFIG_QUERY, UPDATE_SITE_CONFIG } from '../backend'
 import { SiteConfigurationChangeList } from '../SiteConfigurationChangeList'
-import { SMTPConfigForm } from '../smtp/ConfigForm'
 
 import { ConfigPanel } from './ConfigPanel'
+import { LicenseKeyForm } from './forms/license'
+import { SMTPConfigForm } from './forms/smtp'
+import { useJsoncParser } from './hooks/useJsoncParser'
 
 import styles from './SiteAdminConfigurationPage.module.scss'
 
@@ -254,7 +256,6 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
     const [tabIndex, setTabIndex] = useState(tab ? tabs[tab as TabKey] : tabs.basic)
     const [reloadStartedAt, setReloadStartedAt] = useState<Date>(new Date(0))
     const [enabledCompletions, setEnabledCompletions] = useState(false)
-    const [config, setConfig] = useState('')
     const isLightTheme = useIsLightTheme()
 
     useEffect(() => eventLogger.logViewEvent('SiteAdminConfiguration'))
@@ -334,6 +335,9 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
         },
         [client, data, setEnabledCompletions, updateSiteConfig]
     )
+    const contents = data?.site?.configuration?.effectiveContents
+
+    const { json, rawJson, update, reset, error: jsonError } = useJsoncParser<SiteConfiguration>(contents || '')
 
     let effectiveError: Error | undefined = error || reloadError
     if (updateError) {
@@ -345,53 +349,7 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
             )
     }
 
-    const alerts: JSX.Element[] = []
-    if (effectiveError) {
-        alerts.push(<ErrorAlert key="error" className={styles.alert} error={effectiveError} />)
-    }
-    if (reloadLoading) {
-        alerts.push(
-            <Alert key="error" className={styles.alert} variant="primary">
-                <Text>
-                    <LoadingSpinner /> Waiting for site to reload...
-                </Text>
-                {Date.now() - reloadStartedAt.valueOf() > EXPECTED_RELOAD_WAIT && (
-                    <Text>
-                        <small>It's taking longer than expected. Check the server logs for error messages.</small>
-                    </Text>
-                )}
-            </Alert>
-        )
-    }
-    if (window.context.needServerRestart) {
-        alerts.push(
-            <Alert key="remote-dirty" className={classNames(styles.alert, styles.alertFlex)} variant="warning">
-                Server restart is required for the configuration to take effect.
-                {(!data?.site || data.site?.canReloadSite) && (
-                    <Button onClick={reloadSite} variant="primary" size="sm">
-                        Restart server
-                    </Button>
-                )}
-            </Alert>
-        )
-    }
-    if (data?.site?.configuration?.validationMessages && data?.site.configuration.validationMessages.length > 0) {
-        alerts.push(
-            <Alert key="validation-messages" className={styles.alert} variant="danger">
-                <Text>The server reported issues in the last-saved config:</Text>
-                <ul>
-                    {data?.site.configuration.validationMessages.map((message, index) => (
-                        <li key={index} className={styles.alertItem}>
-                            {message}
-                        </li>
-                    ))}
-                </ul>
-            </Alert>
-        )
-    }
-
     // Avoid user confusion with values.yaml properties mixed in with site config properties.
-    const contents = data?.site?.configuration?.effectiveContents
     const legacyKubernetesConfigProps = [
         'alertmanagerConfig',
         'alertmanagerURL',
@@ -420,34 +378,69 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
         'storageClass',
         'useAlertManager',
     ].filter(property => contents?.includes(`"${property}"`))
-    if (legacyKubernetesConfigProps.length > 0) {
-        alerts.push(
-            <Alert key="legacy-cluster-props-present" className={styles.alert} variant="info">
-                The configuration contains properties that are valid only in the
-                <Code>values.yaml</Code> config file used for Kubernetes cluster deployments of Sourcegraph:{' '}
-                <Code>{legacyKubernetesConfigProps.join(' ')}</Code>. You can disregard the validation warnings for
-                these properties reported by the configuration editor.
-            </Alert>
-        )
-    }
-
-    if (enabledCompletions) {
-        alerts.push(
-            <Alert key="cody-beta-notice" className={styles.alert} variant="info">
-                By turning on completions for "Cody beta," you have read the{' '}
-                <Link to="/help/cody">Cody Documentation</Link> and agree to the{' '}
-                <Link to="https://about.sourcegraph.com/terms/cody-notice">Cody Notice and Usage Policy</Link>. In
-                particular, some code snippets will be sent to a third-party language model provider when you use Cody
-                questions.
-            </Alert>
-        )
-    }
 
     return (
         <div>
             <PageTitle title="Configuration - Admin" />
             <PageHeader path={[{ text: 'Site configuration' }]} headingElement="h2" className="mb-3" />
-            <div>{alerts}</div>
+            <div>
+                {jsonError && <ErrorAlert key="error" className={styles.alert} error={jsonError} />}
+                {effectiveError && <ErrorAlert key="error" className={styles.alert} error={effectiveError} />}
+                {reloadError && (
+                    <Alert key="error" className={styles.alert} variant="primary">
+                        <Text>
+                            <LoadingSpinner /> Waiting for site to reload...
+                        </Text>
+                        {Date.now() - reloadStartedAt.valueOf() > EXPECTED_RELOAD_WAIT && (
+                            <Text>
+                                <small>
+                                    It's taking longer than expected. Check the server logs for error messages.
+                                </small>
+                            </Text>
+                        )}
+                    </Alert>
+                )}
+                {window.context.needServerRestart && (
+                    <Alert key="remote-dirty" className={classNames(styles.alert, styles.alertFlex)} variant="warning">
+                        Server restart is required for the configuration to take effect.
+                        {(!data?.site || data.site?.canReloadSite) && (
+                            <Button onClick={reloadSite} variant="primary" size="sm">
+                                Restart server
+                            </Button>
+                        )}
+                    </Alert>
+                )}
+                {data?.site?.configuration?.validationMessages &&
+                    data?.site.configuration.validationMessages.length > 0 && (
+                        <Alert key="validation-messages" className={styles.alert} variant="danger">
+                            <Text>The server reported issues in the last-saved config:</Text>
+                            <ul>
+                                {data?.site.configuration.validationMessages.map((message, index) => (
+                                    <li key={index} className={styles.alertItem}>
+                                        {message}
+                                    </li>
+                                ))}
+                            </ul>
+                        </Alert>
+                    )}
+                {legacyKubernetesConfigProps.length > 0 && (
+                    <Alert key="legacy-cluster-props-present" className={styles.alert} variant="info">
+                        The configuration contains properties that are valid only in the
+                        <Code>values.yaml</Code> config file used for Kubernetes cluster deployments of Sourcegraph:{' '}
+                        <Code>{legacyKubernetesConfigProps.join(' ')}</Code>. You can disregard the validation warnings
+                        for these properties reported by the configuration editor.
+                    </Alert>
+                )}
+                {enabledCompletions && (
+                    <Alert key="cody-beta-notice" className={styles.alert} variant="info">
+                        By turning on completions for "Cody beta," you have read the{' '}
+                        <Link to="/help/cody">Cody Documentation</Link> and agree to the{' '}
+                        <Link to="https://about.sourcegraph.com/terms/cody-notice">Cody Notice and Usage Policy</Link>.
+                        In particular, some code snippets will be sent to a third-party language model provider when you
+                        use Cody questions.
+                    </Alert>
+                )}
+            </div>
             {loading && <LoadingSpinner />}
             {isSetupChecklistEnabled && data && (
                 <>
@@ -458,25 +451,32 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
                         </TabList>
                         <TabPanels>
                             <TabPanel>
+                                <ConfigPanel id="license" title="License" className="mt-3">
+                                    <LicenseKeyForm
+                                        onLicenseKeyChange={newKey => update({ licenseKey: newKey })}
+                                        licenseKey={json?.licenseKey}
+                                    />
+                                </ConfigPanel>
                                 <ConfigPanel id="smtp" title="SMTP" className="mt-3">
                                     <SMTPConfigForm
                                         authenticatedUser={authenticatedUser}
-                                        config={data?.site?.configuration?.effectiveContents}
-                                        configChanged={setConfig}
-                                        loading={loading || updateLoading}
-                                        error={updateError}
+                                        config={json}
+                                        onConfigChange={update}
                                     />
                                 </ConfigPanel>
                                 <StickyBox offsetBottom={20} bottom={true}>
-                                    <Container className="mt-3 p-3">
+                                    <Container className="mt-3 p-3 d-flex">
                                         <LoaderButton
                                             type="submit"
                                             variant="primary"
                                             label="Update site configuration"
                                             loading={loading}
-                                            onClick={event => onSave(config)}
-                                            disabled={config === contents}
+                                            onClick={() => rawJson && onSave(rawJson)}
+                                            disabled={rawJson === contents}
                                         />
+                                        <Button className="ml-2" type="button" variant="secondary" onClick={reset}>
+                                            Discard changes
+                                        </Button>
                                     </Container>
                                 </StickyBox>
                             </TabPanel>
@@ -491,7 +491,7 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
                                             for more information.
                                         </Text>
                                         <DynamicallyImportedMonacoSettingsEditor
-                                            value={contents || ''}
+                                            value={rawJson || ''}
                                             jsonSchema={siteSchemaJSON}
                                             canEdit={true}
                                             saving={updateLoading}
@@ -518,10 +518,6 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
                             </TabPanel>
                         </TabPanels>
                     </Tabs>
-                    {/* TODO: what to do about discard changes button
-                    <Button className="ml-2" type="button" variant="secondary" onClick={reset}>
-                        Discard changes
-                    </Button> */}
                 </>
             )}
             {!isSetupChecklistEnabled && data?.site?.configuration && (
