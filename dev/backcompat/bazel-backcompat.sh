@@ -5,7 +5,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 bazelrcs=(--bazelrc=.bazelrc)
 current_commit=$(git rev-parse HEAD)
-tag="5.1.0"
+tag="5.0.0"
 
 function restore_current_commit() {
   git checkout --force "${current_commit}"
@@ -44,6 +44,5 @@ bazel "${bazelrcs[@]}" \
   //lib/... \
   //internal/... \
   //enterprise/cmd/... \
-  //enterprise/internal/...\
-  -//cmd/migrator/... \
+  //enterprise/internal/... -//cmd/migrator/... \
   -//enterprise/cmd/migrator/...
