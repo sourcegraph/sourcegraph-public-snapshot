@@ -222,7 +222,7 @@ interface SDCRTProps {
 const SearchDynamicContentResultsTask: React.FunctionComponent<React.PropsWithChildren<SDCRTProps>> = (props) => {
     const [selectedQuery, setSelectedQuery] = useState<string>('')
 
-    const [repo, setRepo] = useState<string>('^github\\.com/sourcegraph/sourcegraph$')
+    const [repo, setRepo] = useState<string>('sourcegraph/sourcegraph')
     const [lang, setLang] = useState<string>('Go')
 
     useEffect(() => {
@@ -240,13 +240,14 @@ const SearchDynamicContentResultsTask: React.FunctionComponent<React.PropsWithCh
 
     return (
         <div>
-            <Link
+            {selectedQuery && <Link
                 // className={classNames('flex-grow-1')}
                 to={buildSearchUri(buildBasicQuery(selectedQuery, repo, lang))}
                 // onClick={handleLinkClick}
             >
                 {buildBasicQuery(selectedQuery, repo, lang)}
-            </Link>
+            </Link>}
+
         </div>
     )
 }
@@ -257,11 +258,11 @@ function buildSearchUri(query: String): String {
 
 function buildBasicQuery(snippet: String, repo?: String, lang?: String): String {
     let query = `${snippet}`
-    if (repo) {
-        query = `repo:${repo} ${query}`
-    }
     if (lang) {
         query = `lang:${lang} ${query}`
+    }
+    if (repo) {
+        query = `repo:${repo} ${query}`
     }
     return query
 }
@@ -270,8 +271,11 @@ function generateDynamicQueryPromise(snippet: String, repo?: String, lang?: Stri
     let query = `${buildBasicQuery(snippet, repo, lang)} timeout:5s count:1 select:content`
     console.log(`searching for ${query}`)
 
-    return fetchStreamSuggestions(query).toPromise().then(() => {
-        return snippet
+    return fetchStreamSuggestions(query).toPromise().then((res) => {
+        if (res.length > 0) {
+            return snippet
+        }
+        return Promise.reject()
     })
 }
 

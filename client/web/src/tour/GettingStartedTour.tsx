@@ -58,8 +58,6 @@ const TourWithErrorBoundary = memo(
             return <TourVisitor {...props} />
         }
 
-
-
         return (
             <TourAuthenticated
                 {...props}
