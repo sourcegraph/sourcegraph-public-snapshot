@@ -9,6 +9,8 @@ import (
 )
 
 func TestToBuildNotification(t *testing.T) {
+	t.Fail()
+
 	num := 160000
 	url := "http://www.google.com"
 	commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"

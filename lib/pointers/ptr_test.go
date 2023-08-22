@@ -8,6 +8,8 @@ import (
 )
 
 func TestPtr(t *testing.T) {
+	t.Fail()
+
 	tests := []struct {
 		name string
 		val  interface{}
