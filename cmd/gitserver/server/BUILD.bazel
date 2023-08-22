@@ -84,7 +84,6 @@ go_library(
         "//internal/wrexec",
         "//lib/errors",
         "//lib/gitservice",
-        "//lib/pointers",
         "//schema",
         "@com_github_mxk_go_flowrate//flowrate",
         "@com_github_prometheus_client_golang//prometheus",

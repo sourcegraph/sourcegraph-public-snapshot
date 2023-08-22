@@ -19,7 +19,6 @@ import (
 	repoupdaterprotocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func (r *RepositoryResolver) MirrorInfo() *repositoryMirrorInfoResolver {
@@ -134,20 +133,8 @@ func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*stri
 	if info.CloneStatus != types.CloneStatusCloning {
 		return nil, nil
 	}
-	paginationArgs := &database.PaginationArgs{
-		First:     pointers.Ptr(1),
-		OrderBy:   []database.OrderByOption{{Field: "repo_update_jobs.queued_at"}},
-		Ascending: false,
-	}
-	opts := database.ListRepoUpdateJobOpts{RepoID: info.RepoID, States: []string{"processing"}, PaginationArgs: paginationArgs}
-	repoUpdateJobs, err := r.db.RepoUpdateJobs().List(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
-	if len(repoUpdateJobs) != 1 {
-		return nil, nil
-	}
-	return &repoUpdateJobs[0].CloningProgress, nil
+	progress, err := r.db.RepoUpdateJobs().GetCloningProgress(ctx, r.repository.RepoName())
+	return &progress, nil
 }
 
 func (r *repositoryMirrorInfoResolver) LastError(ctx context.Context) (*string, error) {

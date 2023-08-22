@@ -4469,7 +4469,7 @@ CREATE TABLE repo_update_jobs (
     last_fetched timestamp with time zone,
     last_changed timestamp with time zone,
     update_interval_seconds integer,
-    cloning_progress text DEFAULT ''::text
+    cloning_progress text
 );
 
 CREATE SEQUENCE repo_update_jobs_id_seq
@@ -6300,7 +6300,7 @@ CREATE INDEX repo_stars_idx ON repo USING btree (stars DESC NULLS LAST);
 
 CREATE INDEX repo_update_jobs_priority_process_after_idx ON repo_update_jobs USING btree (priority, process_after, id);
 
-CREATE UNIQUE INDEX repo_update_jobs_repo_id_queued_idx ON repo_update_jobs USING btree (repo_id) WHERE (state = 'queued'::text);
+CREATE UNIQUE INDEX repo_update_jobs_repo_id_queued_idx ON repo_update_jobs USING btree (repo_id, clone) WHERE (state = 'queued'::text);
 
 CREATE INDEX repo_update_jobs_state_idx ON repo_update_jobs USING btree (state);
 

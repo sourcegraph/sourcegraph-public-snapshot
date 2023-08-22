@@ -1889,4 +1889,5 @@ func waitForRepoToClone(t *testing.T, ctx context.Context, db database.DB, repoN
 		case <-timer.C:
 		}
 	}
+	t.Fatalf("exhausted retries waiting for repo to be cloned")
 }

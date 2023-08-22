@@ -24237,7 +24237,7 @@
           "Index": 22,
           "TypeName": "text",
           "IsNullable": true,
-          "Default": "''::text",
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -24510,7 +24510,7 @@
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX repo_update_jobs_repo_id_queued_idx ON repo_update_jobs USING btree (repo_id) WHERE state = 'queued'::text",
+          "IndexDefinition": "CREATE UNIQUE INDEX repo_update_jobs_repo_id_queued_idx ON repo_update_jobs USING btree (repo_id, clone) WHERE state = 'queued'::text",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },

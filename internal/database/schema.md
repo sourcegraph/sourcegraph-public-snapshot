@@ -3711,10 +3711,10 @@ Indexes:
  last_fetched            | timestamp with time zone |           |          | 
  last_changed            | timestamp with time zone |           |          | 
  update_interval_seconds | integer                  |           |          | 
- cloning_progress        | text                     |           |          | ''::text
+ cloning_progress        | text                     |           |          | 
 Indexes:
     "repo_update_jobs_pkey" PRIMARY KEY, btree (id)
-    "repo_update_jobs_repo_id_queued_idx" UNIQUE, btree (repo_id) WHERE state = 'queued'::text
+    "repo_update_jobs_repo_id_queued_idx" UNIQUE, btree (repo_id, clone) WHERE state = 'queued'::text
     "repo_update_jobs_priority_process_after_idx" btree (priority, process_after, id)
     "repo_update_jobs_state_idx" btree (state)
 Foreign-key constraints:

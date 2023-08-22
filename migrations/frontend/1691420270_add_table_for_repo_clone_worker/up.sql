@@ -28,15 +28,15 @@ CREATE TABLE IF NOT EXISTS repo_update_jobs
     last_changed            TIMESTAMP WITH TIME ZONE,
     -- Used for jobs scheduling.
     update_interval_seconds INTEGER,
-    cloning_progress        TEXT                     DEFAULT ''
+    cloning_progress        TEXT                     DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS repo_update_jobs_state_idx ON repo_update_jobs (state);
 -- Index used for jobs dequeue ordering.
 CREATE INDEX IF NOT EXISTS repo_update_jobs_priority_process_after_idx ON repo_update_jobs (priority, process_after, id);
 
--- Only one queued repo ID at a time.
-CREATE UNIQUE INDEX IF NOT EXISTS repo_update_jobs_repo_id_queued_idx ON repo_update_jobs (repo_id) WHERE state = 'queued';
+-- Only one queued job of each type (clone/update) for a given repo ID at a time.
+CREATE UNIQUE INDEX IF NOT EXISTS repo_update_jobs_repo_id_queued_idx ON repo_update_jobs (repo_id, clone) WHERE state = 'queued';
 
 DROP VIEW IF EXISTS repo_update_jobs_with_repo_name;
 

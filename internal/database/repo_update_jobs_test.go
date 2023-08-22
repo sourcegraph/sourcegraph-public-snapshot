@@ -59,28 +59,45 @@ func TestRepoUpdateJobs_Create(t *testing.T) {
 	// Created job should be listed.
 	listAndAssert(createdJob, ListRepoUpdateJobOpts{ID: createdJob.ID, States: []string{createdJob.State, "errored", "failed"}})
 
-	// Second queued job for the same Repo ID should not be created.
+	// Second queued update job for the same Repo ID should not be created.
 	_, ok, err = store.Create(ctx, CreateRepoUpdateJobOpts{RepoName: "repo1", Priority: types.HighPriorityRepoUpdate})
 	require.NoError(t, err)
 	assert.False(t, ok)
 
 	// Second queued job for a different repo should be created successfully.
-	createdJob, ok, err = store.Create(ctx, CreateRepoUpdateJobOpts{RepoName: "repo2", Priority: types.LowPriorityRepoUpdate, Clone: true, OverwriteClone: true})
+	createdJob, ok, err = store.Create(ctx, CreateRepoUpdateJobOpts{RepoName: "repo2", Priority: types.LowPriorityRepoUpdate})
 	require.NoError(t, err)
 	assert.True(t, ok)
 	assert.Equal(t, 3, createdJob.ID)
 	assert.Equal(t, types.LowPriorityRepoUpdate, createdJob.Priority)
 	assert.Equal(t, "queued", createdJob.State)
-	assert.True(t, createdJob.Clone)
-	assert.True(t, createdJob.OverwriteClone)
 
 	// Created job should be listed.
 	listAndAssert(createdJob, ListRepoUpdateJobOpts{ID: createdJob.ID, States: []string{createdJob.State}})
 
-	// Both job should be listed if we don't specify the ID.
+	// Second queued job for the same repo should be created successfully if it is a
+	// different job type (clone).
+	createdJob, ok, err = store.Create(ctx, CreateRepoUpdateJobOpts{RepoName: "repo2", Clone: true, Priority: types.HighPriorityRepoUpdate})
+	require.NoError(t, err)
+	assert.True(t, ok)
+	assert.Equal(t, 4, createdJob.ID)
+	assert.Equal(t, types.HighPriorityRepoUpdate, createdJob.Priority)
+	assert.Equal(t, "queued", createdJob.State)
+	assert.True(t, createdJob.Clone)
+
+	// Created job should be listed.
+	listAndAssert(createdJob, ListRepoUpdateJobOpts{ID: createdJob.ID, States: []string{createdJob.State}})
+
+	// But if we try to create another clone job for repo2, it won't be created.
+	// Second queued update job for the same Repo ID should not be created.
+	_, ok, err = store.Create(ctx, CreateRepoUpdateJobOpts{RepoName: "repo2", Clone: true})
+	require.NoError(t, err)
+	assert.False(t, ok)
+
+	// All 3 jobs should be listed if we don't specify the ID.
 	repoUpdateJobs, err = store.List(ctx, ListRepoUpdateJobOpts{})
 	require.NoError(t, err)
-	assert.Len(t, repoUpdateJobs, 2)
+	assert.Len(t, repoUpdateJobs, 3)
 }
 
 func TestRepoUpdateJobs_List(t *testing.T) {
@@ -215,6 +232,57 @@ func TestRepoUpdateJobs_SaveUpdateJobResults(t *testing.T) {
 	assert.Zero(t, gotJob.LastFetched)
 	assert.Equal(t, now, gotJob.LastChanged)
 	assert.Equal(t, 42, gotJob.UpdateIntervalSeconds)
+}
+
+func TestRepoUpdateJobs_GetCloningProgress(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	store := RepoUpdateJobStoreWith(db)
+
+	// Creating 2 repos.
+	err := db.Repos().Create(ctx, &types.Repo{ID: api.RepoID(1), Name: "repo1"})
+	require.NoError(t, err)
+	err = db.Repos().Create(ctx, &types.Repo{ID: api.RepoID(2), Name: "repo2"})
+	require.NoError(t, err)
+
+	// Queued jobs should be successfully created.
+	haveJob, _, err := store.Create(ctx, CreateRepoUpdateJobOpts{RepoName: "repo1", Priority: types.HighPriorityRepoUpdate})
+	require.NoError(t, err)
+	assert.Empty(t, haveJob.CloningProgress)
+	_, _, err = store.Create(ctx, CreateRepoUpdateJobOpts{RepoName: "repo2"})
+	require.NoError(t, err)
+
+	// Setting the same cloning progress to both jobs.
+	err = store.Handle().Exec(ctx, sqlf.Sprintf("UPDATE repo_update_jobs SET cloning_progress = 'awesome progress!'"))
+	require.NoError(t, err)
+
+	// Making the first job "processing".
+	err = store.Handle().Exec(ctx, sqlf.Sprintf("UPDATE repo_update_jobs SET state = 'processing' WHERE id = 1"))
+	require.NoError(t, err)
+
+	// Verifying that first job has "awesome progress!".
+	wantProgress := "awesome progress!"
+	gotProgress, err := store.GetCloningProgress(ctx, "repo1")
+	require.NoError(t, err)
+	assert.Equal(t, wantProgress, gotProgress)
+
+	// Verifying that second job has empty progress because it is queued.
+	wantProgress = ""
+	gotProgress, err = store.GetCloningProgress(ctx, "repo2")
+	require.NoError(t, err)
+	assert.Equal(t, wantProgress, gotProgress)
+
+	// Making the first job "completed" and checking that no progress is returned.
+	err = store.Handle().Exec(ctx, sqlf.Sprintf("UPDATE repo_update_jobs SET state = 'completed' WHERE id = 1"))
+	require.NoError(t, err)
+	gotProgress, err = store.GetCloningProgress(ctx, "repo1")
+	require.NoError(t, err)
+	assert.Equal(t, wantProgress, gotProgress)
 }
 
 func TestRepoUpdateJobs_SetCloningProgress(t *testing.T) {

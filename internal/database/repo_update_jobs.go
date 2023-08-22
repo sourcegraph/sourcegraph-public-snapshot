@@ -20,6 +20,7 @@ type RepoUpdateJobStore interface {
 	Create(ctx context.Context, opts CreateRepoUpdateJobOpts) (types.RepoUpdateJob, bool, error)
 	List(ctx context.Context, opts ListRepoUpdateJobOpts) ([]types.RepoUpdateJob, error)
 	SaveUpdateJobResults(ctx context.Context, jobID int, opts SaveUpdateJobResultsOpts) error
+	GetCloningProgress(ctx context.Context, repoName api.RepoName) (string, error)
 	// SetCloningProgress updates a piece of text description from how cloning proceeds.
 	SetCloningProgress(context.Context, int, string) error
 }
@@ -168,6 +169,24 @@ func (s *repoUpdateJobStore) SaveUpdateJobResults(ctx context.Context, jobID int
 	))
 }
 
+const getCloningProgressQueryFmtstr = `
+SELECT %s
+FROM repo_update_jobs
+JOIN repo ON repo_update_jobs.repo_id = repo.id
+WHERE repo.name = %s AND repo_update_jobs.state = 'processing'
+ORDER BY repo_update_jobs.queued_at DESC
+LIMIT 1
+`
+
+func (s *repoUpdateJobStore) GetCloningProgress(ctx context.Context, repoName api.RepoName) (progress string, err error) {
+	query := sqlf.Sprintf(getCloningProgressQueryFmtstr, sqlf.Join(RepoUpdateJobColumns, ", "), repoName)
+	job, ok, err := scanFirstRepoUpdateJob(s.db.Query(ctx, query))
+	if err != nil || !ok {
+		return
+	}
+	return job.CloningProgress, err
+}
+
 const setCloningProgressQueryFmtstr = `
 UPDATE repo_update_jobs
 SET cloning_progress = %s
@@ -250,7 +269,7 @@ func ScanRepoUpdateJob(s dbutil.Scanner) (job types.RepoUpdateJob, _ error) {
 		&dbutil.NullTime{Time: &job.LastFetched},
 		&dbutil.NullTime{Time: &job.LastChanged},
 		&dbutil.NullInt{N: &job.UpdateIntervalSeconds},
-		&job.CloningProgress,
+		&dbutil.NullString{S: &job.CloningProgress},
 	); err != nil {
 		return job, err
 	}
@@ -282,7 +301,7 @@ func ScanFullRepoUpdateJob(s dbutil.Scanner) (job types.RepoUpdateJob, _ error) 
 		&dbutil.NullTime{Time: &job.LastFetched},
 		&dbutil.NullTime{Time: &job.LastChanged},
 		&dbutil.NullInt{N: &job.UpdateIntervalSeconds},
-		&job.CloningProgress,
+		&dbutil.NullString{S: &job.CloningProgress},
 		&job.RepositoryName,
 		&job.PoolRepoID,
 	); err != nil {

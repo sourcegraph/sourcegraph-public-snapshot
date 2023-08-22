@@ -99,10 +99,17 @@ func (h *repoCloneHandler) PreDequeue(_ context.Context, _ log.Logger) (bool, an
 	for _, addr := range addresses {
 		addrPredicates = append(addrPredicates, sqlf.Sprintf("%s", addr))
 	}
-	query := sqlf.Sprintf(
+	gitserverAddressPredicate := sqlf.Sprintf(
 		"addr_for_repo(repo_update_jobs.repository_name, ARRAY[%s]) = %s",
 		sqlf.Join(addrPredicates, ","),
 		h.hostname,
 	)
-	return true, []*sqlf.Query{query}, nil
+	// Since we can have 2 queued jobs per repo (1 clone and 1 update), we need to
+	// be sure that we don't run them both at the same time.
+	noRunningJobsForTheSameRepoPredicate := sqlf.Sprintf(
+		"repo_update_jobs.repo_id NOT IN (" +
+			"SELECT j.repo_id FROM repo_update_jobs j WHERE j.state = 'processing'" +
+			")",
+	)
+	return true, []*sqlf.Query{gitserverAddressPredicate, noRunningJobsForTheSameRepoPredicate}, nil
 }
