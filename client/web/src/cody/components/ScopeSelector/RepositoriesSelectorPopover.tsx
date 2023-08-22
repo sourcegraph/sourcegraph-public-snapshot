@@ -370,7 +370,10 @@ export const RepositoriesSelectorPopover: React.FC<{
                                         {!inferredRepository && !inferredFilePath && !additionalRepositories.length && (
                                             <>
                                                 <div className="d-flex border-bottom">
-                                                    <Text size="small" className="m-0 text-center text-muted">
+                                                    <Text
+                                                        size="small"
+                                                        className="m-0 px-4 py-2 mb-1 text-center text-muted"
+                                                    >
                                                         Add up to {MAX_ADDITIONAL_REPOSITORIES} repositories for Cody to
                                                         reference when providing answers.
                                                     </Text>
