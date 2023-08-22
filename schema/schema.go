@@ -664,7 +664,7 @@ type Embeddings struct {
 	ExcludeChunkOnError *bool `json:"excludeChunkOnError,omitempty"`
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
-	// FileFilters description: Filters that will decode which files on a repository get embedded.
+	// FileFilters description: Filters that allow you to specify which files in a repository should get embedded.
 	FileFilters *FileFilters `json:"fileFilters,omitempty"`
 	// Incremental description: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.
 	Incremental *bool `json:"incremental,omitempty"`
@@ -986,7 +986,7 @@ type ExternalIdentity struct {
 	Type           string `json:"type"`
 }
 
-// FileFilters description: Filters that will decode which files on a repository get embedded.
+// FileFilters description: Filters that allow you to specify which files in a repository should get embedded.
 type FileFilters struct {
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`

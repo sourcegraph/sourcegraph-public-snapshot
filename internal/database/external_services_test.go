@@ -2002,7 +2002,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			t.Fatalf("List error: %s", err)
 		}
 		chs, _, err := db.CodeHosts().List(ctx, ListCodeHostsOpts{
-			LimitOffset: LimitOffset{
+			LimitOffset: &LimitOffset{
 				Limit: 20,
 			},
 		})

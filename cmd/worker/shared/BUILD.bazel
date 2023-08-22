@@ -16,6 +16,7 @@ go_library(
         "//cmd/worker/internal/licensecheck",
         "//cmd/worker/internal/migrations",
         "//cmd/worker/internal/outboundwebhooks",
+        "//cmd/worker/internal/ratelimit",
         "//cmd/worker/internal/repostatistics",
         "//cmd/worker/internal/webhooks",
         "//cmd/worker/internal/zoektrepos",

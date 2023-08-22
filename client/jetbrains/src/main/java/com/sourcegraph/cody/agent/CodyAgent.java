@@ -152,7 +152,11 @@ public class CodyAgent implements Disposable {
     EditorEventMulticaster multicaster = EditorFactory.getInstance().getEventMulticaster();
     if (multicaster instanceof EditorEventMulticasterEx) {
       EditorEventMulticasterEx ex = (EditorEventMulticasterEx) multicaster;
-      ex.addFocusChangeListener(new CodyAgentFocusListener(), this.disposable);
+      try {
+        ex.addFocusChangeListener(new CodyAgentFocusListener(), this.disposable);
+      } catch (Exception ignored) {
+        // Ignore exception https://github.com/sourcegraph/sourcegraph/issues/56032
+      }
     }
   }
 
@@ -178,7 +182,7 @@ public class CodyAgent implements Disposable {
   }
 
   private static String agentBinaryName() {
-    String os = SystemInfoRt.isMac ? "macos" : SystemInfoRt.isWindows ? "windows" : "linux";
+    String os = SystemInfoRt.isMac ? "macos" : SystemInfoRt.isWindows ? "win" : "linux";
     String arch = CpuArch.isArm64() ? "arm64" : "x64";
     return "agent-" + os + "-" + arch + binarySuffix();
   }

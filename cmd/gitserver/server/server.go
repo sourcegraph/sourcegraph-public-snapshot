@@ -1202,46 +1202,19 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 		args.Limit = math.MaxInt32
 	}
 
+	// We used to have an `ensureRevision`/`CloneRepo` calls here that were
+	// obsolete, because a search for an unknown revision of the repo (of an
+	// uncloned repo) won't make it to gitserver and fail with an ErrNoResolvedRepos
+	// and a related search alert before calling the gitserver.
+	//
+	// However, to protect for a weird case of getting an uncloned repo here (e.g.
+	// via a direct API call), we leave a `repoCloned` check and return an error if
+	// the repo is not cloned.
 	dir := repoDirFromName(s.ReposDir, args.Repo)
 	if !repoCloned(dir) {
-		if conf.Get().DisableAutoGitUpdates {
-			s.Logger.Debug("not cloning on demand as DisableAutoGitUpdates is set")
-			return false, &gitdomain.RepoNotExistError{
-				Repo: args.Repo,
-			}
-		}
-
-		cloneProgress, cloneInProgress := s.Locker.Status(dir)
-		if cloneInProgress {
-			return false, &gitdomain.RepoNotExistError{
-				Repo:            args.Repo,
-				CloneInProgress: true,
-				CloneProgress:   cloneProgress,
-			}
-		}
-
-		cloneProgress, err := s.CloneRepo(ctx, args.Repo, CloneOptions{})
-		if err != nil {
-			s.Logger.Debug("error starting repo clone", log.String("repo", string(args.Repo)), log.Error(err))
-			return false, &gitdomain.RepoNotExistError{
-				Repo:            args.Repo,
-				CloneInProgress: false,
-			}
-		}
-
+		s.Logger.Debug("attempted to search for a not cloned repo")
 		return false, &gitdomain.RepoNotExistError{
-			Repo:            args.Repo,
-			CloneInProgress: true,
-			CloneProgress:   cloneProgress,
-		}
-	}
-
-	for _, rev := range args.Revisions {
-		// TODO add result to trace
-		if rev.RevSpec != "" {
-			_ = s.ensureRevision(ctx, args.Repo, rev.RevSpec, dir)
-		} else if rev.RefGlob != "" {
-			_ = s.ensureRevision(ctx, args.Repo, rev.RefGlob, dir)
+			Repo: args.Repo,
 		}
 	}
 
