@@ -80,7 +80,7 @@ func TestCombinedOutput(t *testing.T) {
 	})
 
 	t.Run("output is correctly saved", func(t *testing.T) {
-		if diff := cmp.Diff(string(want), tc.cmd.GetOutput()); diff != "" {
+		if diff := cmp.Diff(string(want), tc.cmd.GetExecutionOutput()); diff != "" {
 			t.Error(diff)
 		}
 	})
@@ -140,7 +140,7 @@ func TestOutput(t *testing.T) {
 	})
 
 	t.Run("output is correctly saved", func(t *testing.T) {
-		if diff := cmp.Diff(string(want), tc.cmd.GetOutput()); diff != "" {
+		if diff := cmp.Diff(string(want), tc.cmd.GetExecutionOutput()); diff != "" {
 			t.Error(diff)
 		}
 	})
