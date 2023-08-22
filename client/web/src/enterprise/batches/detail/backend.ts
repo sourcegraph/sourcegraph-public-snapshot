@@ -836,7 +836,7 @@ export async function exportChangesets(
 ): Promise<void> {
     const result = await requestGraphQL<ExportChangesetsResult, ExportChangesetsVariables>(
         gql`
-            query BatchChangeChangesetsQuery($batchChange: ID!) {
+            query  ExportChangesets($batchChange: ID!) {
                 node(id: $batchChange) {
                     ... on BatchChange {
                         name
