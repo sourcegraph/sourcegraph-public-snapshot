@@ -1471,6 +1471,10 @@ tests:
     cmd: go test
     defaultArgs: ./...
 
+  bazel-e2e:
+    cmd: bazel test //testing:*integration_test //testing:e2e_test --config darwin-docker --define=E2E_HEADLESS=false --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080" --define=GH_TOKEN=$GH_TOKEN
+
+
   backend-integration:
     cmd: cd dev/gqltest && go test -long -base-url $BASE_URL -email $EMAIL -username $USERNAME -password $PASSWORD ./gqltest
     env:

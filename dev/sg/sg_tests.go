@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"sort"
 	"strings"
 
 	"github.com/urfave/cli/v2"
+
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -100,4 +103,26 @@ func constructTestCmdLongHelp() string {
 	fmt.Fprint(&out, "* "+strings.Join(names, "\n* "))
 
 	return out.String()
+}
+
+func getCredentials(ctx context.Context, envs []string) (map[string]string, error) {
+	envSecrets := make(map[string]string)
+	sec, err := secrets.FromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, key := range envs {
+		clientCredentials, err := sec.GetExternal(ctx, secrets.ExternalSecret{
+			Project: "sourcegraph-local-dev",
+			// sg Google client credentials
+			Name: key,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		envSecrets[key] = clientCredentials
+	}
+	return envSecrets, nil
 }
