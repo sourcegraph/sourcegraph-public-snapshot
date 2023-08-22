@@ -1,6 +1,8 @@
 package cloudflare
 
 import (
+	"fmt"
+
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare/datacloudflarezones"
@@ -10,9 +12,9 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesslcertificate"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesslpolicy"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computetargethttpsproxy"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/datagooglesecretmanagersecretversion"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/loadbalancer"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/internal/pointer"
@@ -48,20 +50,15 @@ func New(scope constructs.Construct, id string, config Config) (*Output, error) 
 			Name:    pointer.Value(id),
 			Project: config.Project.ProjectId(),
 
-			PrivateKey: datagooglesecretmanagersecretversion.NewDataGoogleSecretManagerSecretVersion(scope,
-				pointer.Stringf("%s-origin-private-key", id),
-				&datagooglesecretmanagersecretversion.DataGoogleSecretManagerSecretVersionConfig{
-					// TODO: Parameterize
-					Secret:  pointer.Stringf("SOURCEGRAPH_WILDCARD_KEY"),
-					Project: &config.SharedSecretsProjectID,
-				}).SecretData(),
-			Certificate: datagooglesecretmanagersecretversion.NewDataGoogleSecretManagerSecretVersion(scope,
-				pointer.Stringf("%s-origin-cert", id),
-				&datagooglesecretmanagersecretversion.DataGoogleSecretManagerSecretVersionConfig{
-					// TODO: Parameterize
-					Secret:  pointer.Stringf("SOURCEGRAPH_WILDCARD_CERT"),
-					Project: &config.SharedSecretsProjectID,
-				}).SecretData(),
+			PrivateKey: &gsmsecret.Get(scope, fmt.Sprintf("%s-secret-origin-private-key", id), gsmsecret.DataConfig{
+				Secret:    "SOURCEGRAPH_WILDCARD_KEY",
+				ProjectID: config.SharedSecretsProjectID,
+			}).Value,
+			Certificate: &gsmsecret.Get(scope, fmt.Sprintf("%s-secret-origin-cert", id), gsmsecret.DataConfig{
+				Secret:    "SOURCEGRAPH_WILDCARD_CERT",
+				ProjectID: config.SharedSecretsProjectID,
+			}).Value,
+
 			Count: pointer.Float64(1),
 
 			Lifecycle: &cdktf.TerraformResourceLifecycle{

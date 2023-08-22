@@ -10,11 +10,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/bigquery"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudflare"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/loadbalancer"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/redis"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/serviceaccount"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/cloudflareprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/randomprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
@@ -96,6 +98,9 @@ func makeServiceEnvVarPrefix(serviceID string) string {
 func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	stack := stacks.New(StackName,
 		googleprovider.With(vars.Project),
+		cloudflareprovider.With(gsmsecret.DataConfig{
+			// TODO
+		}),
 		randomprovider.With())
 
 	// Set up a service-specific env var prefix to avoid conflicts where relevant

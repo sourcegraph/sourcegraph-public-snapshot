@@ -109,19 +109,20 @@ func init() {
 							},
 							Resources: spec.EnvironmentResourcesSpec{
 								Redis: &spec.EnvironmentResourceRedisSpec{},
-								BigQueryTable: &spec.EnvironmentResourceBigQueryTableSpec{
-									Region:  "us-central1",
-									TableID: "events",
-									Schema: []spec.EnvironmentResourceBigQuerySchemaColumn{
-										{
-											Name:        "name",
-											Type:        "STRING",
-											Mode:        "REQUIRED",
-											Description: "The name of the event",
-										},
-										// TODO
-									},
-								},
+								// TODO: Not implemented.
+								// BigQueryTable: &spec.EnvironmentResourceBigQueryTableSpec{
+								// 	Region:  "us-central1",
+								// 	TableID: "events",
+								// 	Schema: []spec.EnvironmentResourceBigQuerySchemaColumn{
+								// 		{
+								// 			Name:        "name",
+								// 			Type:        "STRING",
+								// 			Mode:        "REQUIRED",
+								// 			Description: "The name of the event",
+								// 		},
+								// 		// TODO
+								// 	},
+								// },
 							},
 							Env: map[string]string{
 								"SRC_LOG_LEVEL": "debug",
@@ -133,7 +134,7 @@ func init() {
 					},
 				}
 
-				cdktf, err := renderer.RenderEnvironment(exampleSpec.Service, exampleSpec.Build, *exampleSpec.GetEnvironment("prod"))
+				cdktf, err := renderer.RenderEnvironment(exampleSpec.Service, exampleSpec.Build, *exampleSpec.GetEnvironment("dev"))
 				if err != nil {
 					return err
 				}

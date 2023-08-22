@@ -33,6 +33,7 @@ func New(scope constructs.Construct, id string, config Config) (*Output, error) 
 	redis := redisinstance.NewRedisInstance(scope, &id, &redisinstance.RedisInstanceConfig{
 		Project: config.Project.ProjectId(),
 		Region:  &config.Region,
+		Name:    pointer.Value(id),
 
 		Tier:         pointer.Value(pointer.IfNil(config.Spec.Tier, "STANDARD_HA")),
 		MemorySizeGb: pointer.Float64(pointer.IfNil(config.Spec.MemoryGB, 1)),

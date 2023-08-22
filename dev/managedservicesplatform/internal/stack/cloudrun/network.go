@@ -70,6 +70,7 @@ func newCloudRunPrivateNetwork(scope constructs.Construct, config cloudRunPrivat
 		&vpcaccessconnector.VpcAccessConnectorConfig{
 			Project: &config.ProjectID,
 			Region:  &config.Region,
+			Name:    pointer.Value(config.ServiceID),
 			Subnet: &vpcaccessconnector.VpcAccessConnectorSubnet{
 				Name: subnetwork.Name(),
 			},

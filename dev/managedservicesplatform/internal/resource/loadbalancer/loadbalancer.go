@@ -53,7 +53,9 @@ func New(scope constructs.Construct, id string, config Config) *Output {
 			// TODO: Parameterize
 			SecurityPolicy: nil,
 
-			Backend: endpoint.Id(),
+			Backend: []*computebackendservice.ComputeBackendServiceBackend{{
+				Group: endpoint.Id(),
+			}},
 		})
 
 	// Enable routing requests to the backend service working serving traffic
