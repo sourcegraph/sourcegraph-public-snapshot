@@ -82,7 +82,7 @@ export const GettingStarted: React.FC<
             return {
                 title: `Great examples to start with${
                     scopeSelectorProps.scope.repositories.length === 1
-                        ? ` for ${scopeSelectorProps.scope.repositories[0]}`
+                        ? ` for ${scopeSelectorProps.scope.repositories[0].split('/').slice(-2).join('/')}`
                         : ''
                 }`,
                 examples: [
@@ -205,7 +205,7 @@ export const GettingStarted: React.FC<
                                     Why is context important?
                                 </Text>
                                 <Text size="small" className={classNames('text-muted', styles.hintText)}>
-                                    Without providing specific repo(s) for context, Cody won't be able to answer
+                                    Without providing relevant repo(s) for context, Cody won't be able to answer
                                     questions specific to your project.
                                 </Text>
 
