@@ -10,7 +10,15 @@ import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import type { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button, LoadingSpinner, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
+import {
+    Button,
+    LoadingSpinner,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+    Position,
+    Tooltip,
+} from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
 import type { BatchChangesProps } from '../batches'
@@ -115,28 +123,34 @@ export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = 
     const togglePopover = useCallback(() => setPopoverOpen(previous => !previous), [])
 
     const revisionLabel = (revision && revision === resolvedRevision?.commitID
-        ? resolvedRevision?.commitID.slice(0, 7)
-        : revision.slice(0, 7)) ||
+        ? resolvedRevision?.commitID
+        : revision) ||
         resolvedRevision?.defaultBranch || <LoadingSpinner />
+
+    const isTruncated: boolean = typeof revisionLabel === 'string' && revisionLabel.length > 7
 
     const isPopoverContentReady = repo && resolvedRevision
 
     return (
         <Popover isOpen={popoverOpen} onOpenChange={event => setPopoverOpen(event.isOpen)}>
-            <PopoverTrigger
-                as={Button}
-                className="d-flex align-items-center text-nowrap"
-                key="repo-revision"
-                id="repo-revision-popover"
-                aria-label="Change revision"
-                outline={true}
-                variant="secondary"
-                size="sm"
-                disabled={!isPopoverContentReady}
-            >
-                {revisionLabel}
-                <RepoRevisionChevronDownIcon aria-hidden={true} />
-            </PopoverTrigger>
+            <Tooltip content={isTruncated ? revisionLabel : null}>
+                <PopoverTrigger
+                    as={Button}
+                    className="d-flex align-items-center text-nowrap"
+                    key="repo-revision"
+                    id="repo-revision-popover"
+                    aria-label="Change revision"
+                    outline={true}
+                    variant="secondary"
+                    size="sm"
+                    disabled={!isPopoverContentReady}
+                >
+                    <span className={styles.revisionLabel}>{revisionLabel}</span>
+
+                    <RepoRevisionChevronDownIcon aria-hidden={true} />
+                </PopoverTrigger>
+            </Tooltip>
+
             <PopoverContent
                 position={Position.bottomStart}
                 className="pt-0 pb-0"
