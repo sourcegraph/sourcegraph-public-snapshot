@@ -24,11 +24,16 @@ type Config struct {
 	TargetHTTPPortName string
 }
 
-// New instantiates a set of resources for a load-balancer frontend for a Cloud
-// Run service.
+// New instantiates a set of resources for a load-balancer backend that routes
+// requests to a Cloud Run service:
+//
+//	URLMap -> BackendService -> NetworkEndpointGroup -> CloudRun
+//
+// Typically some other frontend will then be placed in front of URLMap, e.g.
+// resource/cloudflare.
 func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
-	// Endpoint represents the Cloud Run service.
-	endpoint := computeregionnetworkendpointgroup.NewComputeRegionNetworkEndpointGroup(scope,
+	// Endpoint group represents the Cloud Run service.
+	endpointGroup := computeregionnetworkendpointgroup.NewComputeRegionNetworkEndpointGroup(scope,
 		id.ResourceID("endpoint_group"),
 		&computeregionnetworkendpointgroup.ComputeRegionNetworkEndpointGroupConfig{
 			Name:    pointer.Value(id.DisplayName()),
@@ -55,7 +60,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 			SecurityPolicy: nil,
 
 			Backend: []*computebackendservice.ComputeBackendServiceBackend{{
-				Group: endpoint.Id(),
+				Group: endpointGroup.Id(),
 			}},
 		})
 
