@@ -67,7 +67,7 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 			db,
 			uploadStore,
 			gitserver.NewClient(db),
-			qdrantInserter,
+			getQdrantInserterFunc(observationCtx.Logger),
 			services.ContextService,
 			repoembeddingsbg.NewRepoEmbeddingJobsStore(db),
 		),
@@ -81,7 +81,7 @@ func newRepoEmbeddingJobWorker(
 	db database.DB,
 	uploadStore uploadstore.Store,
 	gitserverClient gitserver.Client,
-	qdrantInserter vdb.VectorInserter,
+	getQdrantInserter func() (vdb.VectorInserter, error),
 	contextService embed.ContextService,
 	repoEmbeddingJobsStore repoembeddingsbg.RepoEmbeddingJobsStore,
 ) *workerutil.Worker[*repoembeddingsbg.RepoEmbeddingJob] {
@@ -89,7 +89,7 @@ func newRepoEmbeddingJobWorker(
 		db:                     db,
 		uploadStore:            uploadStore,
 		gitserverClient:        gitserverClient,
-		qdrantInserter:         qdrantInserter,
+		getQdrantInserter:      getQdrantInserter,
 		contextService:         contextService,
 		repoEmbeddingJobsStore: repoEmbeddingJobsStore,
 	}
@@ -102,19 +102,32 @@ func newRepoEmbeddingJobWorker(
 	})
 }
 
-func newGetVectorDBFunc(logger log.Logger) func() (vdb.VectorDB, error) {
-	var err error
-	var ptr atomic.Pointer[grpc.ClientConn]
+func getQdrantInserterFunc(logger log.Logger) func() (vdb.VectorInserter, error) {
+	var (
+		oldAddr string
+		err     error
+		ptr     atomic.Pointer[grpc.ClientConn]
+	)
 
 	conf.Watch(func() {
 		if newAddr := conf.Get().ServiceConnections().Qdrant; newAddr != oldAddr {
-			conn, dialErr := defaults.Dial(newAddr, logger)
-			ptr.Store(conn)
+			newConn, dialErr := defaults.Dial(newAddr, logger)
 			err = dialErr
+			oldConn := ptr.Swap(newConn)
+			oldConn.Close()
 		}
 	})
 
-	return func() (vdb.VectorDB, error) {
-		return *ptr.Load()
+	return func() (vdb.VectorInserter, error) {
+		if err != nil {
+			return nil, err
+		}
+
+		conn := ptr.Load()
+		if conn == nil {
+			return vdb.NewNoopDB(), nil
+		}
+
+		return vdb.NewQdrantDBFromConn(conn), nil
 	}
 }
