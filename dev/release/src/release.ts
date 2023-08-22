@@ -835,8 +835,8 @@ cc @${release.captainGitHubUsername}
                         title: defaultPRMessage,
                         edits: [
                             `for i in charts/{sourcegraph,sourcegraph-executor/{dind,k8s},sourcegraph-migrator}; do sg ops update-images -kind helm -pin-tag ${release.version.version} $i/.; done`,
-                            `${sed} -i 's/appVersion:.*/appVersion: "${release.version.version}"/g' charts/*/Chart.yaml`,
-                            `${sed} -i 's/version:.*/version: "${release.version.version}"/g' charts/*/Chart.yaml`,
+                            `find charts -name Chart.yaml | xargs ${sed} -i 's/appVersion:.*/appVersion: "${release.version.version}"/g'`,
+                            `find charts -name Chart.yaml | xargs ${sed} -i 's/version:.*/version: "${release.version.version}"/g'`,
                             './scripts/helm-docs.sh',
                         ],
                         ...prBodyAndDraftState([]),
