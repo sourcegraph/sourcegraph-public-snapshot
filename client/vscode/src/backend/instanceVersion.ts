@@ -1,12 +1,12 @@
 import { noop } from 'lodash'
-import { from, Observable } from 'rxjs'
+import { from, type Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { EventSource } from '@sourcegraph/shared/src/graphql-operations'
 
 import { displayWarning } from '../settings/displayWarnings'
-import { INSTANCE_VERSION_NUMBER_KEY, LocalStorageService } from '../settings/LocalStorageService'
+import { INSTANCE_VERSION_NUMBER_KEY, type LocalStorageService } from '../settings/LocalStorageService'
 
 import { requestGraphQLFromVSCode } from './requestGraphQl'
 

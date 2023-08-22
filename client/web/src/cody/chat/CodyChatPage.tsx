@@ -15,7 +15,7 @@ import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { CodyLogo } from '@sourcegraph/cody-ui/dist/icons/CodyLogo'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import {
     Badge,
@@ -39,14 +39,13 @@ import {
 import { MarketingBlock } from '../../components/MarketingBlock'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { SourcegraphContext } from '../../jscontext'
-import { eventLogger } from '../../tracking/eventLogger'
+import type { SourcegraphContext } from '../../jscontext'
 import { EventName } from '../../util/constants'
 import { ChatUI } from '../components/ChatUI'
 import { CodyMarketingPage } from '../components/CodyMarketingPage'
 import { HistoryList } from '../components/HistoryList'
 import { isCodyEnabled } from '../isCodyEnabled'
-import { CodyChatStore, useCodyChat } from '../useCodyChat'
+import { type CodyChatStore, useCodyChat } from '../useCodyChat'
 
 import { CodyColorIcon } from './CodyPageIcon'
 
@@ -58,9 +57,6 @@ interface CodyChatPageProps {
     isSourcegraphApp: boolean
     context: Pick<SourcegraphContext, 'authProviders'>
 }
-
-const onDownloadVSCodeClick = (): void => eventLogger.log(EventName.CODY_CHAT_DOWNLOAD_VSCODE)
-const onTryOnPublicCodeClick = (): void => eventLogger.log(EventName.CODY_CHAT_TRY_ON_PUBLIC_CODE)
 
 const transcriptIdFromUrl = (pathname: string): string | undefined => {
     const serializedID = pathname.split('/').pop()
@@ -115,14 +111,15 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
         transcriptHistory,
         loadTranscriptFromHistory,
         deleteHistoryItem,
+        logTranscriptEvent,
     } = codyChatStore
     const [showVSCodeCTA] = useState<boolean>(Math.random() < 0.5 || true)
     const [isCTADismissed = true, setIsCTADismissed] = useTemporarySetting('cody.chatPageCta.dismissed', false)
     const onCTADismiss = (): void => setIsCTADismissed(true)
 
     useEffect(() => {
-        eventLogger.log(EventName.CODY_CHAT_PAGE_VIEWED)
-    }, [])
+        logTranscriptEvent(EventName.CODY_CHAT_PAGE_VIEWED)
+    }, [logTranscriptEvent])
 
     const transcriptId = transcript?.id
 
@@ -289,7 +286,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                             'd-inline-flex align-items-center text-merged',
                                             styles.ctaLink
                                         )}
-                                        onClick={onDownloadVSCodeClick}
+                                        onClick={() => logTranscriptEvent(EventName.CODY_CHAT_DOWNLOAD_VSCODE)}
                                     >
                                         Download the VS Code Extension
                                         <Icon svgPath={mdiChevronRight} aria-hidden={true} />
@@ -327,7 +324,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                             'd-inline-flex align-items-center text-merged',
                                             styles.ctaLink
                                         )}
-                                        onClick={onTryOnPublicCodeClick}
+                                        onClick={() => logTranscriptEvent(EventName.CODY_CHAT_TRY_ON_PUBLIC_CODE)}
                                     >
                                         Try on a file, or repository
                                         <Icon svgPath={mdiChevronRight} aria-hidden={true} />
@@ -376,7 +373,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                     New chat
                                 </Button>
                             </div>
-                            <ChatUI codyChatStore={codyChatStore} isSourcegraphApp={true} />
+                            <ChatUI codyChatStore={codyChatStore} isSourcegraphApp={true} isCodyChatPage={true} />
                         </div>
 
                         {showMobileHistory && (
@@ -456,7 +453,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                 deleteHistoryItem={deleteHistoryItem}
                             />
                         ) : (
-                            <ChatUI codyChatStore={codyChatStore} />
+                            <ChatUI codyChatStore={codyChatStore} isCodyChatPage={true} />
                         )}
                     </div>
                 )}

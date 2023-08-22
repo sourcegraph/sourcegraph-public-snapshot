@@ -1,9 +1,9 @@
 import { readFileSync, writeFileSync } from 'fs'
 import path from 'path'
 
-import { WebpackPluginFunction } from 'webpack'
+import type { WebpackPluginFunction } from 'webpack'
 
-import { SourcegraphContext } from '../../src/jscontext'
+import type { SourcegraphContext } from '../../src/jscontext'
 
 import { createJsContext, ENVIRONMENT_CONFIG, HTTPS_WEB_SERVER_URL, STATIC_INDEX_PATH } from '.'
 

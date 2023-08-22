@@ -1,17 +1,17 @@
-import { FC, useEffect, useState } from 'react'
+import { type FC, useEffect, useState } from 'react'
 
 import { gql, useLazyQuery } from '@apollo/client'
 import { Route, Routes, Navigate } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { NotFoundPage } from '../../components/HeroPage'
 import { RedirectRoute } from '../../components/RedirectRoute'
-import { GetFirstAvailableDashboardResult, GetFirstAvailableDashboardVariables } from '../../graphql-operations'
+import type { GetFirstAvailableDashboardResult, GetFirstAvailableDashboardVariables } from '../../graphql-operations'
 
 import { CodeInsightsBackendContext } from './core'
 import { useApi } from './hooks'

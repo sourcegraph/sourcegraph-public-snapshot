@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "metrics",
+    srcs = ["metrics.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/executor/internal/metrics",
+    visibility = ["//cmd/executor:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_model//go",
+        "@com_github_prometheus_common//expfmt",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

@@ -1,10 +1,10 @@
-import { ReactElement, useMemo } from 'react'
+import { type ReactElement, useMemo } from 'react'
 
 import { mdiLanguageMarkdownOutline, mdiMagnify, mdiCodeTags, mdiFunction } from '@mdi/js'
 
 import { Icon } from '@sourcegraph/wildcard'
 
-import { BlockInput } from '..'
+import type { BlockInput } from '..'
 import { SymbolKind } from '../../graphql-operations'
 import { parseFileBlockInput } from '../serialize'
 

@@ -8,7 +8,7 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { isPackagesEnabled } from './flags'
-import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
+import type { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 export const analyticsGroup: SiteAdminSideBarGroup = {
     condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
@@ -78,6 +78,11 @@ export const configurationGroup: SiteAdminSideBarGroup = {
             label: 'Global settings',
             to: '/site-admin/global-settings',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+        },
+        {
+            label: 'End user onboarding',
+            to: '/site-admin/end-user-onboarding',
+            condition: ({ endUserOnboardingEnabled }) => endUserOnboardingEnabled,
         },
         {
             label: 'Feature flags',

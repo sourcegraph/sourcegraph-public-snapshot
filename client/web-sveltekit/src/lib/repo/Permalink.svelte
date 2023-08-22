@@ -5,12 +5,13 @@
     import { isErrorLike, type ErrorLike } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
-    import { replaceRevisionInURL, type RepoResolvedRevision } from '$lib/web'
+    import { replaceRevisionInURL } from '$lib/web'
+    import type { ResolvedRevision } from '$lib/repo/api/repo'
 
-    export let resolvedRevision: RepoResolvedRevision | ErrorLike
+    export let resolvedRevision: ResolvedRevision | ErrorLike
 
     $: href = !isErrorLike(resolvedRevision)
-        ? replaceRevisionInURL($page.url.pathname + $page.url.search + $page.url.hash, resolvedRevision.commitID)
+        ? replaceRevisionInURL($page.url.toString(), resolvedRevision.commitID)
         : ''
 </script>
 

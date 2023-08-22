@@ -1,9 +1,9 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Link } from '@sourcegraph/wildcard'
 
-import { Maybe, UserAreaUserFields } from '../../graphql-operations'
+import type { Maybe, UserAreaUserFields } from '../../graphql-operations'
 
 type UserData = Maybe<Pick<UserAreaUserFields, 'url' | 'username'>>
 

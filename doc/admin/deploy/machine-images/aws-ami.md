@@ -68,11 +68,21 @@ Executors are supported using [native kubernetes executors](../../../admin/execu
 
 Executors support [auto-indexing](../../../code_navigation/explanations/auto_indexing.md) and [server-side batch changes](../../../batch_changes/explanations/server_side.md).
 
-To enable executors add the following to the site-admin config:
+To enable executors you must do the following:
+1. Connect to the AMI instance using `ssh`
+2. Run `cd /home/ec2-user/deploy/install/`
+3. Replace the placeholder `executor.frontendPassword` in `override.yaml`
+4. Run the following command to update the executor
 ```
-"executors.accessToken": "sourcegraph-ami-password",
+helm upgrade -i -f ./override.yaml --version "$(cat /home/ec2-user/.sourcegraph-version)" executor ./sourcegraph-executor-k8s-charts.tgz
+```
+5. Add the following to the site-admin config using the password you chose previously
+```
+"executors.accessToken": "<exector.frontendPassword>",
 "executors.frontendURL": "http://sourcegraph-frontend:30080",
+"codeIntelAutoIndexing.enabled": true
 ```
+6. Check `Site-Admin > Executors > Instances` to verify the executor connected successfully. If it does not appear try reboot the instance
 
 To use server-side batch changes you will need to enable the `native-ssbc-execution` [feature flag](../../../admin/executors/native_execution.md#enable).
 

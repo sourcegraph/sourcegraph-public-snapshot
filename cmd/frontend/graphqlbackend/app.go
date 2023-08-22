@@ -30,7 +30,6 @@ type AppResolver interface {
 
 	SetupNewAppRepositoriesForEmbedding(ctx context.Context, args SetupNewAppRepositoriesForEmbeddingArgs) (*EmptyResponse, error)
 	EmbeddingsSetupProgress(ctx context.Context, args EmbeddingSetupProgressArgs) (EmbeddingsSetupProgressResolver, error)
-	CodyGatewayRateLimitStatus(ctx context.Context) ([]RateLimitStatus, error)
 
 	AddLocalRepositories(ctx context.Context, args AddLocalRepositoriesArgs) (*EmptyResponse, error)
 }

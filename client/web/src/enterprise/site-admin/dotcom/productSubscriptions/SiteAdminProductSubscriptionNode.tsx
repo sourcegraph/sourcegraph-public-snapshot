@@ -3,7 +3,7 @@ import * as React from 'react'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { LinkOrSpan } from '@sourcegraph/wildcard'
 
-import { SiteAdminProductSubscriptionFields } from '../../../../graphql-operations'
+import type { SiteAdminProductSubscriptionFields } from '../../../../graphql-operations'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 import { ProductLicenseTags } from '../../../productSubscription/ProductLicenseTags'

@@ -1,7 +1,7 @@
 // A collection of Monaco related helper functions
-import * as Monaco from 'monaco-editor'
+import type * as Monaco from 'monaco-editor'
 
-import { CharacterRange } from './token'
+import type { CharacterRange } from './token'
 
 /**
  * Converts a zero-indexed, possibly multiline, offset {@link CharacterRange} to a {@link Monaco.IRange} line-and-column range.

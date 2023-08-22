@@ -15,47 +15,6 @@ extend type Query {
     Allows Admin users to list the progress of embeddings for 1 or more repos. This is intended to be used only by the Cody App
     """
     embeddingsSetupProgress(repoNames: [String!]): EmbeddingsSetupProgress!
-
-    """
-    Allows user to see the status of the Cody Rate limits when using sourcegraph provider
-    If the user is not using the Cody Gateway there will be no rate limits
-    This is intended to be used only by the Cody App
-    """
-    codyGatewayRateLimitStatus: [RateLimitStatus!]!
-}
-"""
-RateLimitStatus current status of a rate limit.
-"""
-type RateLimitStatus {
-    """
-    The feature that the rate limit applies to
-    """
-    feature: String!
-
-    """
-    The limit allowed
-    """
-    limit: BigInt!
-
-    """
-    The number of usages in current period
-    """
-    usage: BigInt!
-
-    """
-    The percentage of the rate limit used
-    """
-    percentUsed: Int!
-
-    """
-    The time interval for the rate limit
-    """
-    interval: String!
-
-    """
-    When the rate limit next resets if an interval has already started
-    """
-    nextLimitReset: DateTime
 }
 
 """

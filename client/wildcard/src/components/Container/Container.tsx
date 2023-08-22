@@ -2,7 +2,7 @@ import { forwardRef } from 'react'
 
 import classNames from 'classnames'
 
-import { ForwardReferenceComponent } from '../../types'
+import type { ForwardReferenceComponent } from '../../types'
 
 import styles from './Container.module.scss'
 

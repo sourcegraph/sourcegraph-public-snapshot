@@ -9,7 +9,7 @@ import { Container, Icon } from '@sourcegraph/wildcard'
 import { dismissAlert } from '../../../components/DismissibleAlert'
 import {
     useShowMorePagination,
-    UseShowMorePaginationResult,
+    type UseShowMorePaginationResult,
 } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
@@ -20,7 +20,7 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
-import {
+import type {
     BatchChangeBulkOperationsResult,
     BatchChangeBulkOperationsVariables,
     BulkOperationFields,

@@ -43,14 +43,19 @@ type CoreTestOperationsOptions struct {
 func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *operations.Set {
 	// Base set
 	ops := operations.NewSet()
-	ops.Append(BazelOperations(opts.IsMainBranch)...)
 
-	// Simple, fast-ish linter checks
-	linterOps := operations.NewNamedSet("Linters and static analysis")
-	if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
-		linterOps.Append(addSgLints(targets))
+	// If the only thing that has change is the Client Jetbrains, then we skip:
+	// - BazelOperations
+	// - Sg Lint
+	if !diff.Only(changed.ClientJetbrains) || opts.IsMainBranch {
+		// Simple, fast-ish linter checks
+		ops.Append(BazelOperations(opts.IsMainBranch)...)
+		linterOps := operations.NewNamedSet("Linters and static analysis")
+		if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
+			linterOps.Append(addSgLints(targets))
+		}
+		ops.Merge(linterOps)
 	}
-	ops.Merge(linterOps)
 
 	if diff.Has(changed.Client | changed.GraphQL) {
 		// If there are any Graphql changes, they are impacting the client as well.
@@ -817,10 +822,10 @@ func buildExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 			stepOpts = append(stepOpts,
 				// Soft-fail with code 222 if nothing has changed
 				bk.SoftFail(222),
-				bk.Cmd(fmt.Sprintf("%s ./enterprise/cmd/executor/hash.sh", compareHashScript)))
+				bk.Cmd(fmt.Sprintf("%s ./cmd/executor/hash.sh", compareHashScript)))
 		}
 		stepOpts = append(stepOpts,
-			bk.Cmd("./enterprise/cmd/executor/vm-image/build.sh"))
+			bk.Cmd("./cmd/executor/vm-image/build.sh"))
 
 		pipeline.AddStep(":packer: :construction: Build executor image", stepOpts...)
 	}
@@ -834,7 +839,7 @@ func buildExecutorBinary(c Config) operations.Operation {
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		stepOpts = append(stepOpts,
-			bk.Cmd("./enterprise/cmd/executor/build_binary.sh"))
+			bk.Cmd("./cmd/executor/build_binary.sh"))
 
 		pipeline.AddStep(":construction: Build executor binary", stepOpts...)
 	}
@@ -859,7 +864,7 @@ func publishExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 				bk.Cmd(fmt.Sprintf("%s %s", checkDependencySoftFailScript, candidateBuildStep)))
 		}
 		stepOpts = append(stepOpts,
-			bk.Cmd("./enterprise/cmd/executor/vm-image/release.sh"))
+			bk.Cmd("./cmd/executor/vm-image/release.sh"))
 
 		pipeline.AddStep(":packer: :white_check_mark: Publish executor image", stepOpts...)
 	}
@@ -874,7 +879,7 @@ func publishExecutorBinary(c Config) operations.Operation {
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		stepOpts = append(stepOpts,
-			bk.Cmd("./enterprise/cmd/executor/release_binary.sh"))
+			bk.Cmd("./cmd/executor/release_binary.sh"))
 
 		pipeline.AddStep(":white_check_mark: Publish executor binary", stepOpts...)
 	}
@@ -906,7 +911,7 @@ func buildExecutorDockerMirror(c Config) operations.Operation {
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		stepOpts = append(stepOpts,
-			bk.Cmd("./enterprise/cmd/executor/docker-mirror/build.sh"))
+			bk.Cmd("./cmd/executor/docker-mirror/build.sh"))
 
 		pipeline.AddStep(":packer: :construction: Build docker registry mirror image", stepOpts...)
 	}
@@ -923,7 +928,7 @@ func publishExecutorDockerMirror(c Config) operations.Operation {
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		stepOpts = append(stepOpts,
-			bk.Cmd("./enterprise/cmd/executor/docker-mirror/release.sh"))
+			bk.Cmd("./cmd/executor/docker-mirror/release.sh"))
 
 		pipeline.AddStep(":packer: :white_check_mark: Publish docker registry mirror image", stepOpts...)
 	}

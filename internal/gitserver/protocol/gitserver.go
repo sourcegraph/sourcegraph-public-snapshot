@@ -378,7 +378,7 @@ func (r *P4ExecRequest) ToProto() *proto.P4ExecRequest {
 		P4Port:   r.P4Port,
 		P4User:   r.P4User,
 		P4Passwd: r.P4Passwd,
-		Args:     r.Args,
+		Args:     stringsToByteSlices(r.Args),
 	}
 }
 
@@ -387,34 +387,29 @@ func (r *P4ExecRequest) FromProto(p *proto.P4ExecRequest) {
 		P4Port:   p.GetP4Port(),
 		P4User:   p.GetP4User(),
 		P4Passwd: p.GetP4Passwd(),
-		Args:     p.GetArgs(),
+		Args:     byteSlicesToStrings(p.GetArgs()),
 	}
 }
 
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
 type RepoUpdateRequest struct {
-	Repo  api.RepoName  `json:"repo"`  // identifying URL for repo
-	Since time.Duration `json:"since"` // debounce interval for queries, used only with request-repo-update
-
-	// CloneFromShard is the hostname of the gitserver instance that is the current owner of the
-	// repository. If this is set, then the RepoUpdateRequest is to migrate the repo from
-	// that gitserver instance to the new home of the repo.
-	CloneFromShard string `json:"cloneFromShard"`
+	// Repo identifies URL for repo.
+	Repo api.RepoName `json:"repo"`
+	// Since is a debounce interval for queries, used only with request-repo-update.
+	Since time.Duration `json:"since"`
 }
 
 func (r *RepoUpdateRequest) ToProto() *proto.RepoUpdateRequest {
 	return &proto.RepoUpdateRequest{
-		Repo:           string(r.Repo),
-		Since:          durationpb.New(r.Since),
-		CloneFromShard: r.CloneFromShard,
+		Repo:  string(r.Repo),
+		Since: durationpb.New(r.Since),
 	}
 }
 
 func (r *RepoUpdateRequest) FromProto(p *proto.RepoUpdateRequest) {
 	*r = RepoUpdateRequest{
-		Repo:           api.RepoName(p.GetRepo()),
-		Since:          p.GetSince().AsDuration(),
-		CloneFromShard: p.GetCloneFromShard(),
+		Repo:  api.RepoName(p.GetRepo()),
+		Since: p.GetSince().AsDuration(),
 	}
 }
 
@@ -927,4 +922,20 @@ func ParsePerforceChangelistState(state string) (PerforceChangelistState, error)
 	default:
 		return "", errors.Newf("invalid Perforce changelist state: %s", state)
 	}
+}
+
+func stringsToByteSlices(in []string) [][]byte {
+	res := make([][]byte, len(in))
+	for i, s := range in {
+		res[i] = []byte(s)
+	}
+	return res
+}
+
+func byteSlicesToStrings(in [][]byte) []string {
+	res := make([]string, len(in))
+	for i, s := range in {
+		res[i] = string(s)
+	}
+	return res
 }

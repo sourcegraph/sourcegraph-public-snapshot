@@ -1,10 +1,10 @@
 import { mdiLoading, mdiPlus } from '@mdi/js'
 
-import { ErrorLike, asError } from '@sourcegraph/common'
+import { type ErrorLike, asError } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { AssignOwnerResult, AssignOwnerVariables } from '../../../graphql-operations'
+import type { AssignOwnerResult, AssignOwnerVariables } from '../../../graphql-operations'
 
 import { ASSIGN_OWNER } from './grapqlQueries'
 

@@ -1,10 +1,10 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery } from '@sourcegraph/http-client'
 import { Alert, BarChart, Card, ErrorAlert, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
-import {
+import type {
     GetInstanceOwnStatsResult,
     GetOwnSignalConfigurationsResult,
     OwnSignalConfig,

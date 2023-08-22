@@ -14,11 +14,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/licensecheck"
 	workermigrations "github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/outboundwebhooks"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/repostatistics"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/zoektrepos"
@@ -59,6 +61,8 @@ func LoadConfig(additionalJobs map[string]workerjob.Job, registerEnterpriseMigra
 		"zoekt-repos-updater":       zoektrepos.NewUpdater(),
 		"outbound-webhook-sender":   outboundwebhooks.NewSender(),
 		"license-check":             licensecheck.NewJob(),
+		"cody-gateway-usage-check":  codygateway.NewUsageJob(),
+		"rate-limit-config":         ratelimit.NewRateLimitConfigJob(),
 	}
 
 	var config Config

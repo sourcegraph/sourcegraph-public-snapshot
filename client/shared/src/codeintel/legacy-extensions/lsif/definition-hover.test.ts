@@ -4,10 +4,10 @@ import * as assert from 'assert'
 import * as sinon from 'sinon'
 
 import * as sourcegraph from '../api'
-import { QueryGraphQLFn } from '../util/graphql'
+import type { QueryGraphQLFn } from '../util/graphql'
 
-import { GenericLSIFResponse } from './api'
-import { definitionAndHoverForPosition, DefinitionAndHoverResponse } from './definition-hover'
+import type { GenericLSIFResponse } from './api'
+import { definitionAndHoverForPosition, type DefinitionAndHoverResponse } from './definition-hover'
 import { makeEnvelope, resource1, resource2, resource3, range1, range2, range3, document, position } from './util.test'
 
 describe('definitionAndHoverForPosition', () => {

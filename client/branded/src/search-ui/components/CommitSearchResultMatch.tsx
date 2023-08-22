@@ -7,9 +7,9 @@ import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
 import { highlightNode, logger } from '@sourcegraph/common'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { highlightCode } from '@sourcegraph/shared/src/search'
-import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
+import type { CommitMatch } from '@sourcegraph/shared/src/search/stream'
 import { LoadingSpinner, Link, Code, Markdown } from '@sourcegraph/wildcard'
 
 import styles from './CommitSearchResultMatch.module.scss'

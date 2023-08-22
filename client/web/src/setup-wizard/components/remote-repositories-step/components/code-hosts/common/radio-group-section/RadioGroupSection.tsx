@@ -1,4 +1,4 @@
-import { ChangeEvent, PropsWithChildren, ReactElement } from 'react'
+import type { ChangeEvent, PropsWithChildren, ReactElement } from 'react'
 
 import { Label } from '@sourcegraph/wildcard'
 

@@ -43,7 +43,7 @@ func (r *schemaResolver) SendTestEmail(ctx context.Context, args struct{ To stri
 	}
 	logger.Info("sent test email")
 
-	return fmt.Sprintf("Sent test email to %q successfully! Please check it was received - look for test ID: %s",
+	return fmt.Sprintf("Sent test email to %q successfully! Please check that it was received successfully. Compare the test ID on received email with: %s",
 		args.To, testID), nil
 }
 

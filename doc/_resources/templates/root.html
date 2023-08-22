@@ -9,16 +9,22 @@
 		<head>
 			<title>{{block "title" .}}Home{{end}} - Sourcegraph docs</title>
             <link rel="icon" type="image/png" href="https://about.sourcegraph.com/sourcegraph-mark.png" />
-			<link rel="stylesheet" type="text/css" href="{{asset "docsite.css"}}" />
+            {{if .ContentVersion}}
+                <link rel="stylesheet" type="text/css" href="{{assetsFromVersion .ContentVersion "docsite.css" }}" />
+                <script src="{{assetsFromVersion .ContentVersion "docsite.js" }}"></script>
+                <script src="{{assetsFromVersion .ContentVersion "railroad.js" }}"></script>
+            {{else}}
+                <link rel="stylesheet" type="text/css" href="{{asset "docsite.css" }}" />
+                <script src="{{asset "docsite.js" }}"></script>
+                <script src="{{asset "railroad.js" }}"></script>
+            {{end}}
             <link rel="preconnect" href="https://fonts.googleapis.com" />
             <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
             <link
                 href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap"
                 rel="stylesheet"
             />
-            <script src="{{asset "docsite.js"}}"></script>
-            <script src="{{asset "railroad.js"}}"></script>
-			<meta name="viewport" content="width=device-width, initial-scale=1" />
+           <meta name="viewport" content="width=device-width, initial-scale=1" />
 			{{block "seo" . }}{{end}}
 			{{block "head" .}}{{end}}
 
@@ -39,7 +45,6 @@
 
         <!-- Default to light theme if no JavaScript -->
 		<body class="theme-light">
-
             <script>
                 // If dark theme is requested, set it immediately to avoid flashing.
                 // The rest of theme handling happens in docsite.js.
@@ -50,12 +55,12 @@
                 }
             </script>
 
-            <link rel="stylesheet" href="https://esm.sh/@markprompt/css@0.11.1?css" />
+            <link rel="stylesheet" href="https://esm.sh/@markprompt/css@0.12.0?css" />
 
             <script>
             </script>
             <script type="module">
-                import { markprompt, openMarkprompt } from 'https://esm.sh/@markprompt/web@0.14.3';
+                import { markprompt, openMarkprompt } from 'https://esm.sh/@markprompt/web@0.15.0';
 
                 function showMarkprompt() {
                     openMarkprompt()
@@ -74,13 +79,6 @@
 
                 const markpromptEl = newMarkprompt
 
-                const pathToHref = (path) => {
-                    return path
-                        ?.replace(/^\/*doc\//, "/")
-                        ?.replace(/\.[^.]+$/, "")
-                        ?.replace(/\/index$/, "")
-                };
-
                 const sluggify = (text) => {
                     return text
                         .toLowerCase()
@@ -88,14 +86,48 @@
                         .replace(/\s+/g, '-');
                 }
 
-                const getHref = (path, sectionHeading) => {
-                    const p = pathToHref(path);
-                    if (sectionHeading?.id) {
-                        return `${p}#${sectionHeading.id}`;
-                    } else if (sectionHeading?.value) {
-                        return `${p}#${sluggify(sectionHeading.value)}`;
+                const pathToHref = (path) => {
+                    const lastDotIndex = path.lastIndexOf('.');
+                    let cleanPath = path;
+                    if (lastDotIndex >= 0) {
+                        cleanPath = path.substring(0, lastDotIndex);
                     }
-                    return p;
+                    if (cleanPath.endsWith('/index')) {
+                        cleanPath = cleanPath.replace(/\/index/gi, '');
+                    }
+                    return cleanPath.replace(/^\/*doc\//, "/")?.replace(/\.[^.]+$/, "");
+                };
+
+                const getHref = (result) => {
+                    const path = pathToHref(result.file.path);
+                    if (result.meta?.leadHeading?.id) {
+                        return `${path}#${result.meta.leadHeading.id}`;
+                    } else if (result.meta?.leadHeading?.value) {
+                        return `${path}#${result.meta.leadHeading.slug}`;
+                    }
+                    return path;
+                };
+
+                const removeFileExtension = (fileName) => {
+                    const lastDotIndex = fileName.lastIndexOf('.');
+                    if (lastDotIndex === -1) {
+                        return fileName;
+                    }
+                    return fileName.substring(0, lastDotIndex);
+                };
+
+                const getLabel = (result) => {
+                    let label = (
+                        result.meta?.leadHeading?.value ||
+                        result.file?.title ||
+                        removeFileExtension(result.file.path.split('/').slice(-1)[0])
+                    );
+                    if (label === "index") {
+                        label = "Home"
+                    }
+                    label = label.replace(/[_-]+/gi, " ")
+                    label = label.charAt(0).toUpperCase() + label.slice(1);
+                    return label
                 };
 
                 const promptTemplate = `You are a very enthusiastic company representative from Sourcegraph who loves to help people! Below is a list of context sections separated by three dashes ('---'). They consist of a section id, which corresponds to the file from which the section is in, followed by the actual section content, in Markdown format.
@@ -117,7 +149,7 @@ Answer (including related code snippets if available):`
 
                 markprompt('dzvb1USv2SLXKiQMnH56ua3dW54mSChj',
                     markpromptEl, {
-                        debug: true,
+                        debug: false,
                         prompt: {
                             model: "gpt-4",
                             promptTemplate,
@@ -127,9 +159,7 @@ Answer (including related code snippets if available):`
                         feedback: { enabled: true },
                         search: {
                             enabled: showInstantSearch,
-                            getResultHref: (path, sectionHeading) => {
-                                return getHref(path, sectionHeading);
-                            }
+                            getHref
                         },
                         trigger: {
                             label: 'Search or ask Docs AI',
@@ -138,25 +168,7 @@ Answer (including related code snippets if available):`
                             customElement: !showInstantSearch,
                         },
                         showBranding: false,
-                        references: {
-                            transformReferenceId: (referenceId) => {
-                                const parts = referenceId.split("/")
-                                let text = parts.slice(-1)[0].replace(/\.[^.]+$/, '')
-                                if (text === "index") {
-                                    if (parts.length === 1) {
-                                        text = "Home"
-                                    } else {
-                                        text = parts.slice(-2)[0]
-                                    }
-                                }
-                                text = text.replace(/[_-]+/gi, " ")
-                                text = text.charAt(0).toUpperCase() + text.slice(1);
-
-                                const href = pathToHref(referenceId);
-
-                                return { text, href }
-                            },
-                        },
+                        references: { getHref, getLabel },
                     }
                 );
             </script>
@@ -170,8 +182,14 @@ Answer (including related code snippets if available):`
 			<aside id="sidebar">
                 <header>
 				    <h1 id="logo"><a href="/">
-                        <img src="{{asset "logo-theme-light.svg"}}" class="theme-light" alt="Sourcegraph docs"/>
-                        <img src="{{asset "logo-theme-dark.svg"}}" class="theme-dark" alt="Sourcegraph docs"/>
+                    {{if .ContentVersion}}
+                        <img src="{{assetsFromVersion .ContentVersion "logo-theme-light.svg" }}" class="theme-light" alt="Sourcegraph docs"/>
+                        <img src="{{assetsFromVersion .ContentVersion "logo-theme-dark.svg" }}" class="theme-dark" alt="Sourcegraph docs"/>
+                    {{else}}
+                        <img src="{{asset "logo-theme-light.svg" }}" class="theme-light" alt="Sourcegraph docs"/>
+                        <img src="{{asset "logo-theme-dark.svg" }}" class="theme-dark" alt="Sourcegraph docs"/>
+                    {{end}}
+                        <span class="sr-only">Sourcegraph Docs</span>
                     </a></h1>
                     <div class="markprompt-search-container">
                         <form id="search-form" method="get" action="/search">
@@ -182,9 +200,9 @@ Answer (including related code snippets if available):`
                             <button id="search-button" type="submit" aria-label="Search" class="sr-only">Search</button>
                         </form>
                         <button id="markprompt-button" aria-label="Open prompt" onclick="showMarkprompt()">
-                            <svg id="markprompt-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                            <svg id="markprompt-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                         </button>
-                        <div id="markprompt" />
+                        <div id="markprompt" style="display: none" />
                     </div>
                 </header>
                 <nav id="sections" class="links sidebar">
@@ -230,11 +248,15 @@ Answer (including related code snippets if available):`
                     </div>
                 </nav>
                 <div id="theme">
-                    <div>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" title="Theme">
+                        <title>Theme</title>
+                        <path fill-rule="evenodd" clip-rule="evenodd"
+                            d="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21ZM12 24C18.6274 24 24 18.6274 24 12C24 5.37258 18.6274 0 12 0C5.37258 0 0 5.37258 0 12C0 18.6274 5.37258 24 12 24Z" />
+                        <path d="M12 12V24C5.37258 24 0 18.6274 0 12C0 5.37258 5.37258 0 12 0V12Z" />
+                    </svg>
                     <button type="button" data-theme-preference="auto">Auto</button>
                     <button type="button" data-theme-preference="light">Light</button>
                     <button type="button" data-theme-preference="dark">Dark</button>
-                    </div>
                 </div>
 			</aside>
 

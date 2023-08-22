@@ -9,7 +9,7 @@ import { createRoot } from 'react-dom/client'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { AnchorLink, setLinkComponent, useObservable } from '@sourcegraph/wildcard'
 
-import { ExtensionCoreAPI, HelpSidebarAPI } from '../../../contract'
+import type { ExtensionCoreAPI, HelpSidebarAPI } from '../../../contract'
 import { createEndpointsForWebToNode } from '../../comlink/webviewEndpoint'
 import { createPlatformContext } from '../../platform/context'
 

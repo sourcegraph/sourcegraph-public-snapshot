@@ -6,8 +6,8 @@ import { Key } from 'ts-key-enum'
 
 import { asError, logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import {
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type {
     GitHubAuthProvider,
     GitLabAuthProvider,
     OpenIDConnectAuthProvider,
@@ -15,11 +15,11 @@ import {
     SiteConfiguration,
 } from '@sourcegraph/shared/src/schema/site.schema'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
-import { Config } from '@sourcegraph/shared/src/testing/config'
-import { Driver } from '@sourcegraph/shared/src/testing/driver'
+import type { Config } from '@sourcegraph/shared/src/testing/config'
+import type { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
-import {
+import type {
     CreateOrganizationResult,
     CreateOrganizationVariables,
     CreateUserResult,
@@ -38,8 +38,8 @@ import {
     fetchSiteConfiguration,
     updateSiteConfiguration,
 } from './api'
-import { GraphQLClient } from './GraphQlClient'
-import { ResourceDestructor } from './TestResourceManager'
+import type { GraphQLClient } from './GraphQlClient'
+import type { ResourceDestructor } from './TestResourceManager'
 
 /**
  * Create the user with the specified password. Returns a destructor that destroys the test user. Assumes basic auth.

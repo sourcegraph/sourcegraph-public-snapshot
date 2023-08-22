@@ -27,6 +27,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -294,7 +295,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			wantChangeset: bt.ChangesetAssertions{
 				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 			},
-			wantErr: errors.New("pushing commit: creating commit from patch for repository \"\": \n```\n$ \narchived\n```"),
+			wantErr: errors.New("creating commit from patch for repository \"\": \n```\n$ \narchived\n```"),
 		},
 		"general push error": {
 			hasCurrentSpec: true,
@@ -1210,7 +1211,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 func TestDecorateChangesetBody(t *testing.T) {
 	ctx := context.Background()
 
-	ns := database.NewMockNamespaceStore()
+	ns := dbmocks.NewMockNamespaceStore()
 	ns.GetByIDFunc.SetDefaultHook(func(_ context.Context, _ int32, user int32) (*database.Namespace, error) {
 		return &database.Namespace{Name: "my-user", User: user}, nil
 	})

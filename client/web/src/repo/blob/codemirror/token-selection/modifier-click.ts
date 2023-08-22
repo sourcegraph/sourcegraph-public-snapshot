@@ -1,5 +1,5 @@
-import { Extension, StateEffect, StateField } from '@codemirror/state'
-import { EditorView, PluginValue, ViewPlugin } from '@codemirror/view'
+import { type Extension, StateEffect, StateField } from '@codemirror/state'
+import { EditorView, type PluginValue, ViewPlugin } from '@codemirror/view'
 
 import { isMacPlatform } from '@sourcegraph/common'
 

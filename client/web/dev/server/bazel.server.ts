@@ -1,5 +1,5 @@
 import compression from 'compression'
-import WebpackDevServer from 'webpack-dev-server'
+import type WebpackDevServer from 'webpack-dev-server'
 
 import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 

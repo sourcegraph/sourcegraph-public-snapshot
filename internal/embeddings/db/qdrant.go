@@ -4,10 +4,15 @@ import (
 	"context"
 
 	qdrant "github.com/qdrant/go-client/qdrant"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
+
+func NewQdrantDBFromConn(conn *grpc.ClientConn) VectorDB {
+	return NewQdrantDB(qdrant.NewPointsClient(conn), qdrant.NewCollectionsClient(conn))
+}
 
 func NewQdrantDB(pointsClient qdrant.PointsClient, collectionsClient qdrant.CollectionsClient) VectorDB {
 	return &qdrantDB{
@@ -24,10 +29,22 @@ type qdrantDB struct {
 var _ VectorDB = (*qdrantDB)(nil)
 
 type SearchParams struct {
-	ModelID   string
-	RepoIDs   []api.RepoID
-	Query     []float32
+	// RepoIDs is the set of repos to search.
+	// If empty, all repos are searched.
+	RepoIDs []api.RepoID
+
+	// The ID of the model that the query was embedded with.
+	// Embeddings for other models will not be searched.
+	ModelID string
+
+	// Query is the embedding for the search query.
+	// Its dimensions must match the model dimensions.
+	Query []float32
+
+	// The maximum number of code results to return
 	CodeLimit int
+
+	// The maximum number of text results to return
 	TextLimit int
 }
 

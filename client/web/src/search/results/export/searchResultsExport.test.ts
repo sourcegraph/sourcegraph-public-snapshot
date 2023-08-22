@@ -1,4 +1,4 @@
-import { SearchMatch, SearchType, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import type { SearchMatch, SearchType, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { searchResultsToFileContent, buildFileName } from './searchResultsExport'
 

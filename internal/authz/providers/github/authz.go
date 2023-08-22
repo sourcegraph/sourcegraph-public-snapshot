@@ -8,6 +8,7 @@ import (
 
 	atypes "github.com/sourcegraph/sourcegraph/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	eauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
@@ -130,7 +131,7 @@ func newAuthzProvider(
 
 	var auther eauth.Authenticator
 	if ghaDetails := c.GitHubConnection.GitHubAppDetails; ghaDetails != nil {
-		auther, err = auth.FromConnection(ctx, c.GitHubConnection.GitHubConnection)
+		auther, err = auth.FromConnection(ctx, c.GitHubConnection.GitHubConnection, db.GitHubApps(), keyring.Default().GitHubAppKey)
 		if err != nil {
 			return nil, err
 		}
@@ -149,7 +150,7 @@ func newAuthzProvider(
 
 // ValidateAuthz validates the authorization fields of the given GitHub external
 // service config.
-func ValidateAuthz(c *types.GitHubConnection) error {
-	_, err := newAuthzProvider(context.Background(), nil, &ExternalConnection{GitHubConnection: c})
+func ValidateAuthz(db database.DB, c *types.GitHubConnection) error {
+	_, err := newAuthzProvider(context.Background(), db, &ExternalConnection{GitHubConnection: c})
 	return err
 }

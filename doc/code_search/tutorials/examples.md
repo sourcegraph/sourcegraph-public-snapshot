@@ -8,6 +8,21 @@ Below are some additional examples that search repositories on [Sourcegraph.com]
 
 > See [**search query syntax**](../reference/queries.md) reference.
 
+[Search through all the repositories in an organization](https://sourcegraph.com/search?q=context:global+r:hashicorp/+terraform&patternType=standard&sm=1&groupBy=repo)
+```sgquery
+context:global r:hashicorp/ terraform
+```
+
+[Search a subset of repositories in an organization by language](https://sourcegraph.com/search?q=context:global+r:hashicorp/vault*+lang:yaml+terraform&patternType=standard&sm=1&groupBy=repo)
+```sgquery
+context:global r:hashicorp/vault* lang:yaml terraform
+```
+
+[Search for one term or another in a specific repository](https://sourcegraph.com/search?q=context:global+r:hashicorp/vault%24+print%28+OR+log%28&patternType=standard&sm=1&groupBy=repo)
+```sgquery
+context:global r:hashicorp/vault$ print( OR log(
+```
+
 [Find private keys and GitHub access tokens checked in to code](https://sourcegraph.com/search?q=context:global+%28-----BEGIN+%5BA-Z+%5D*PRIVATE+KEY------%29%7C%28%28%22gh%7C%27gh%29%5Bpousr%5D_%5BA-Za-z0-9_%5D%7B16%2C%7D%29&patternType=regexp&case=yes)
 ```sgquery
 (-----BEGIN [A-Z ]*PRIVATE KEY------)|(("gh|'gh)[pousr]_[A-Za-z0-9_]{16,}) patternType:regexp case:yes

@@ -1,9 +1,9 @@
-import React, { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { closeCompletion, startCompletion } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
-import { EditorSelection, Extension, Prec, Compartment, EditorState } from '@codemirror/state'
-import { EditorView, ViewUpdate, keymap, placeholder as placeholderExtension } from '@codemirror/view'
+import { EditorSelection, type Extension, Prec, Compartment, EditorState } from '@codemirror/state'
+import { EditorView, type ViewUpdate, keymap, placeholder as placeholderExtension } from '@codemirror/view'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
@@ -19,7 +19,7 @@ import {
 } from '@sourcegraph/shared/src/search'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
+import type { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
@@ -30,7 +30,7 @@ import { HISTORY_USER_EVENT, searchHistory as searchHistoryFacet } from './codem
 import { parseInputAsQuery, setQueryParseOptions } from './codemirror/parsedQuery'
 import { querySyntaxHighlighting } from './codemirror/syntax-highlighting'
 import { tokenInfo } from './codemirror/token-info'
-import { QueryInputProps } from './QueryInput'
+import type { QueryInputProps } from './QueryInput'
 
 import styles from './CodeMirrorQueryInput.module.scss'
 

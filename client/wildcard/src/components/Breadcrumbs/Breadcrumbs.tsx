@@ -1,4 +1,4 @@
-import { FC, ReactNode, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { type FC, type ReactNode, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import { mdiFolderOutline } from '@mdi/js'
 import classNames from 'classnames'

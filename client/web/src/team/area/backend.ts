@@ -1,8 +1,8 @@
-import { MutationTuple, QueryResult } from '@apollo/client'
+import type { MutationTuple, QueryResult } from '@apollo/client'
 
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 
-import {
+import type {
     AssignParentTeamResult,
     AssignParentTeamVariables,
     ChangeTeamDisplayNameResult,

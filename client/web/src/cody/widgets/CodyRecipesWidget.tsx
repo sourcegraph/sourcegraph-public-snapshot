@@ -8,8 +8,8 @@ import { TranslateToLanguage } from '@sourcegraph/cody-shared/dist/chat/recipes/
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
-import { CodeMirrorEditor } from '../components/CodeMirrorEditor'
-import { useCodySidebar } from '../sidebar/Provider'
+import type { CodeMirrorEditor } from '../components/CodeMirrorEditor'
+import type { useCodySidebar } from '../sidebar/Provider'
 
 import { Recipe } from './components/Recipe'
 import { RecipeAction } from './components/RecipeAction'
@@ -87,6 +87,7 @@ export const CodyRecipesWidget: React.FC<{ editor?: CodeMirrorEditor }> = ({ edi
                     onClick={() => void executeRecipe('find-code-smells', { scope: { editor } })}
                     disabled={isMessageInProgress}
                 />
+                <RecipeAction title="Get Cody for your IDE" to="/get-cody" disabled={isMessageInProgress} />
             </Recipe>
         </Recipes>
     )

@@ -80,6 +80,7 @@ go_test(
         "//internal/actor",
         "//internal/conf",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/rcache",
         "//internal/session",
         "//internal/txemail",

@@ -1,12 +1,16 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 
-import { Transcript, TranscriptJSON, TranscriptJSONScope } from '@sourcegraph/cody-shared/dist/chat/transcript'
+import {
+    Transcript,
+    type TranscriptJSON,
+    type TranscriptJSONScope,
+} from '@sourcegraph/cody-shared/dist/chat/transcript'
 import {
     useClient,
-    CodyClient,
-    CodyClientScope,
-    CodyClientConfig,
-    CodyClientEvent,
+    type CodyClient,
+    type CodyClientScope,
+    type CodyClientConfig,
+    type CodyClientEvent,
 } from '@sourcegraph/cody-shared/dist/chat/useClient'
 import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
 import { useLocalStorage } from '@sourcegraph/wildcard'
@@ -42,6 +46,7 @@ export interface CodyChatStore
     clearHistory: () => void
     deleteHistoryItem: (id: string) => void
     loadTranscriptFromHistory: (id: string) => Promise<void>
+    logTranscriptEvent: (eventLabel: string, eventProperties?: { [key: string]: any }) => void
 }
 
 export const codyChatStoreMock: CodyChatStore = {
@@ -66,6 +71,7 @@ export const codyChatStoreMock: CodyChatStore = {
     clearHistory: () => {},
     deleteHistoryItem: () => {},
     loadTranscriptFromHistory: () => Promise.resolve(),
+    logTranscriptEvent: () => {},
     toggleIncludeInferredRepository: () => {},
     toggleIncludeInferredFile: () => {},
     abortMessageInProgress: () => {},
@@ -133,6 +139,17 @@ export const useCodyChat = ({
         scope: initialScope,
         onEvent,
     })
+
+    /** Event logger for transcript specific events to capture the transcriptId */
+    const logTranscriptEvent = useCallback(
+        (eventLabel: string, eventProperties?: { [key: string]: any }) => {
+            if (!transcript) {
+                return
+            }
+            eventLogger.log(eventLabel, { transcriptId: transcript.id, ...eventProperties })
+        },
+        [transcript]
+    )
 
     const loadTranscriptFromHistory = useCallback(
         async (id: string) => {
@@ -223,7 +240,7 @@ export const useCodyChat = ({
                 return
             }
 
-            eventLogger.log(EventName.CODY_CHAT_HISTORY_ITEM_DELETED)
+            logTranscriptEvent(EventName.CODY_CHAT_HISTORY_ITEM_DELETED)
 
             setTranscriptHistoryState((history: TranscriptJSON[]) => {
                 const updatedHistory = [...history.filter(transcript => transcript.id !== id)]
@@ -274,34 +291,36 @@ export const useCodyChat = ({
             autoLoadScopeWithRepositories,
             scope,
             updateTranscriptInHistory,
+            logTranscriptEvent,
         ]
     )
 
     const submitMessage = useCallback<typeof submitMessageInternal>(
         async (humanInputText, scope): Promise<Transcript | null> => {
-            eventLogger.log(EventName.CODY_CHAT_SUBMIT)
             const transcript = await submitMessageInternal(humanInputText, scope)
 
             if (transcript) {
                 await updateTranscriptInHistory(transcript)
             }
 
+            logTranscriptEvent(EventName.CODY_CHAT_SUBMIT)
             return transcript
         },
-        [submitMessageInternal, updateTranscriptInHistory]
+        [submitMessageInternal, updateTranscriptInHistory, logTranscriptEvent]
     )
+
     const editMessage = useCallback<typeof editMessageInternal>(
         async (humanInputText, messageId?, scope?): Promise<Transcript | null> => {
-            eventLogger.log(EventName.CODY_CHAT_EDIT)
             const transcript = await editMessageInternal(humanInputText, messageId, scope)
 
             if (transcript) {
                 await updateTranscriptInHistory(transcript)
             }
 
+            logTranscriptEvent(EventName.CODY_CHAT_EDIT)
             return transcript
         },
-        [editMessageInternal, updateTranscriptInHistory]
+        [editMessageInternal, updateTranscriptInHistory, logTranscriptEvent]
     )
 
     const initializeNewChat = useCallback((): Transcript | null => {
@@ -310,7 +329,6 @@ export const useCodyChat = ({
             return null
         }
 
-        eventLogger.log(EventName.CODY_CHAT_INITIALIZED)
         const newTranscript = initializeNewChatInternal()
 
         if (newTranscript) {
@@ -332,6 +350,7 @@ export const useCodyChat = ({
             }
         }
 
+        logTranscriptEvent(EventName.CODY_CHAT_INITIALIZED)
         return newTranscript
     }, [
         initializeNewChatInternal,
@@ -342,6 +361,7 @@ export const useCodyChat = ({
         autoLoadScopeWithRepositories,
         updateTranscriptInHistory,
         transcript,
+        logTranscriptEvent,
     ])
 
     const executeRecipe = useCallback<typeof executeRecipeInternal>(
@@ -414,7 +434,7 @@ export const useCodyChat = ({
     )
 
     const toggleIncludeInferredRepository = useCallback<CodyClient['toggleIncludeInferredRepository']>(() => {
-        eventLogger.log(
+        logTranscriptEvent(
             scope.includeInferredRepository
                 ? EventName.CODY_CHAT_SCOPE_INFERRED_REPO_DISABLED
                 : EventName.CODY_CHAT_SCOPE_INFERRED_REPO_ENABLED
@@ -428,10 +448,10 @@ export const useCodyChat = ({
                 includeInferredRepository: !scope.includeInferredRepository,
             }).catch(() => null)
         }
-    }, [transcript, updateTranscriptInHistory, scope, toggleIncludeInferredRepositoryInternal])
+    }, [transcript, updateTranscriptInHistory, scope, toggleIncludeInferredRepositoryInternal, logTranscriptEvent])
 
     const toggleIncludeInferredFile = useCallback<CodyClient['toggleIncludeInferredRepository']>(() => {
-        eventLogger.log(
+        logTranscriptEvent(
             scope.includeInferredRepository
                 ? EventName.CODY_CHAT_SCOPE_INFERRED_FILE_DISABLED
                 : EventName.CODY_CHAT_SCOPE_INFERRED_FILE_ENABLED
@@ -445,7 +465,7 @@ export const useCodyChat = ({
                 includeInferredFile: !scope.includeInferredFile,
             }).catch(() => null)
         }
-    }, [transcript, updateTranscriptInHistory, scope, toggleIncludeInferredFileInternal])
+    }, [transcript, updateTranscriptInHistory, scope, toggleIncludeInferredFileInternal, logTranscriptEvent])
 
     return {
         loaded,
@@ -460,6 +480,7 @@ export const useCodyChat = ({
         clearHistory,
         deleteHistoryItem,
         loadTranscriptFromHistory,
+        logTranscriptEvent,
         executeRecipe,
         scope,
         setScope,

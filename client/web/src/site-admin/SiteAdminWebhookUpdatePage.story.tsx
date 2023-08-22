@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { Route, Routes } from 'react-router-dom'
 import { WildcardMockLink } from 'wildcard-mock-link'
 

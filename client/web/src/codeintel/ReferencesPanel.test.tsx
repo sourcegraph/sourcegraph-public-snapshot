@@ -9,7 +9,7 @@ import '@sourcegraph/shared/src/testing/mockReactVisibilitySensor'
 import { Code } from '@sourcegraph/wildcard'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { BlobProps } from '../repo/blob/CodeMirrorBlob'
+import type { BlobProps } from '../repo/blob/CodeMirrorBlob'
 
 import { ReferencesPanel } from './ReferencesPanel'
 import { buildReferencePanelMocks, defaultProps } from './ReferencesPanel.mocks'

@@ -1,6 +1,6 @@
-import { forwardRef, MouseEvent, useState } from 'react'
+import { forwardRef, type MouseEvent, useState } from 'react'
 
-import { ButtonProps } from '@sourcegraph/wildcard'
+import type { ButtonProps } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 

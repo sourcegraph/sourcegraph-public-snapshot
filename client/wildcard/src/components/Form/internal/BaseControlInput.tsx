@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { AccessibleFieldProps } from './AccessibleFieldType'
+import type { AccessibleFieldProps } from './AccessibleFieldType'
 import { FormFieldLabel } from './FormFieldLabel'
 import { FormFieldMessage } from './FormFieldMessage'
 import { getValidStyle } from './utils'

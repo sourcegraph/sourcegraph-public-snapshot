@@ -1,16 +1,16 @@
-import { ChangeSpec, EditorState, Extension } from '@codemirror/state'
-import { EditorView, ViewUpdate } from '@codemirror/view'
-import { NavigateFunction } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import { type ChangeSpec, EditorState, type Extension } from '@codemirror/state'
+import { EditorView, type ViewUpdate } from '@codemirror/view'
+import type { NavigateFunction } from 'react-router-dom'
+import type { Observable } from 'rxjs'
 
 import { createCancelableFetchSuggestions } from '@sourcegraph/shared/src/search/query/providers-utils'
-import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import type { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import {
     createDefaultSuggestionSources,
-    DefaultSuggestionSourcesOptions,
+    type DefaultSuggestionSourcesOptions,
     searchQueryAutocompletion,
-    StandardSuggestionSource,
+    type StandardSuggestionSource,
 } from './completion'
 import { loadingIndicator } from './loading-indicator'
 

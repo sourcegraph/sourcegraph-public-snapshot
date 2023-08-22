@@ -1,18 +1,18 @@
-import { proxy, Remote } from 'comlink'
+import { proxy, type Remote } from 'comlink'
 import { noop, sortBy } from 'lodash'
-import { BehaviorSubject, EMPTY, Unsubscribable } from 'rxjs'
+import { BehaviorSubject, EMPTY, type Unsubscribable } from 'rxjs'
 import { mapTo } from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
+import type * as sourcegraph from 'sourcegraph'
 
 import { logger } from '@sourcegraph/common'
 import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
 
-import { ClientAPI } from '../client/api/api'
+import type { ClientAPI } from '../client/api/api'
 import { syncRemoteSubscription } from '../util'
 
 import { DocumentHighlightKind } from './api/documentHighlights'
-import { InitData, updateContext } from './extensionHost'
-import { ExtensionHostState } from './extensionHostState'
+import { type InitData, updateContext } from './extensionHost'
+import type { ExtensionHostState } from './extensionHostState'
 import { addWithRollback } from './util'
 
 export interface InitResult {

@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/own"
@@ -31,7 +31,7 @@ type fakeGitserver struct {
 
 func TestCodeownersIngestionGuarding(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	git := fakeGitserver{}
 	svc := own.NewService(git, db)

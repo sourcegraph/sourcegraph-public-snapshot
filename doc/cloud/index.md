@@ -192,7 +192,7 @@ To learn more about how the Sourcegraph team operates managed SMTP internally, r
 </p>
 </aside>
 
-Cody is an AI coding assistant that lives in your editor that can find, explain, and write code. Cody uses a combination of Large Language Models (LLMs), Sourcegraph search, and Sourcegraph code intelligence to provide answers that eliminate toil and keep human programmers in flow. You can think of Cody as your programmer buddy who has read through all the code in open source, all the questions on StackOverflow, and all your organization's private code, and is always there to answer questions you might have or suggest ways of doing something based on prior knowledge. Learn more from [Cody documentation](../cody/index.md) about how Cody can help you.
+Cody is an AI coding assistant that lives in your editor that can find, explain, and write code. Cody uses a combination of Large Language Models (LLMs), Sourcegraph search, and Sourcegraph code intelligence to provide answers that eliminate toil and keep human programmers in flow. You can think of Cody as your programmer buddy who has read through all the code in open source, all the questions on StackOverflow, and all your organization's private code, and is always there to answer questions you might have or suggest ways of doing something based on prior knowledge. Learn more from [Cody documentation](../cody/overview/index.md) about how Cody can help you.
 
 On Cloud, Cody can be enabled by contacting your Sourcegraph account team. Once Cody has been enabled by us, you can follow the instruction below to try it out.
 
@@ -224,10 +224,6 @@ A few things you can ask Cody:
 - "What are popular go libraries for building CLIs?"
 - Open your workspace, and ask "Do we have a React date picker component in this repository?"
 - Right click on a function, and ask Cody to explain it
-- Try any of the Cody recipes!
-
-<img width="510" alt="image" src="https://user-images.githubusercontent.com/25070988/227511383-aa60f074-817d-4875-af41-54558dfe1951.png">
-
 
 ## Requirements
 
