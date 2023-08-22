@@ -334,33 +334,36 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                         authenticatedUser={authenticatedUser}
                                                     />
                                                 ))}
-                                                <Text
-                                                    className={classNames(
-                                                        'mb-0 pl-2 pr-3 py-1 text-muted d-flex justify-content-between border-top',
-                                                        styles.subHeader
-                                                    )}
-                                                >
-                                                    <span className="small">Suggestions</span>
-                                                </Text>
-                                                <div
-                                                    className={classNames(
-                                                        'd-flex flex-column',
-                                                        styles.contextItemsContainer
-                                                    )}
-                                                >
-                                                    {suggestions.length &&
-                                                        suggestions.map(repository => (
-                                                            <SearchResultsListItem
-                                                                additionalRepositories={[]}
-                                                                key={repository.id}
-                                                                repository={repository}
-                                                                searchText=""
-                                                                addRepository={addRepository}
-                                                                removeRepository={removeRepository}
-                                                                authenticatedUser={authenticatedUser}
-                                                            />
-                                                        ))}
-                                                </div>
+                                                {suggestions.length > 0 && (
+                                                    <>
+                                                        <Text
+                                                            className={classNames(
+                                                                'mb-0 pl-2 pr-3 py-1 text-muted d-flex justify-content-between border-top',
+                                                                styles.subHeader
+                                                            )}
+                                                        >
+                                                            <span className="small">Suggestions</span>
+                                                        </Text>
+                                                        <div
+                                                            className={classNames(
+                                                                'd-flex flex-column',
+                                                                styles.contextItemsContainer
+                                                            )}
+                                                        >
+                                                            {suggestions.map(repository => (
+                                                                <SearchResultsListItem
+                                                                    additionalRepositories={[]}
+                                                                    key={repository.id}
+                                                                    repository={repository}
+                                                                    searchText=""
+                                                                    addRepository={addRepository}
+                                                                    removeRepository={removeRepository}
+                                                                    authenticatedUser={authenticatedUser}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    </>
+                                                )}
                                             </div>
                                         )}
 
