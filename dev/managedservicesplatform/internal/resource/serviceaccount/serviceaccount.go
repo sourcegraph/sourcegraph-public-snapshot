@@ -1,8 +1,6 @@
 package serviceaccount
 
 import (
-	"fmt"
-
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiammember"
@@ -12,7 +10,7 @@ import (
 )
 
 type Role struct {
-	// ID is used to generate a resource ID for the role grant
+	// ID is used to generate a resource ID for the role grant. Must be provided
 	ID string
 	// Role is sourced from https://cloud.google.com/iam/docs/understanding-roles#predefined
 	Role string
@@ -30,21 +28,24 @@ type Output struct {
 	Email string
 }
 
+// New provisions a service account, including roles for it to inherit.
 func New(scope constructs.Construct, id string, config Config) *Output {
-	serviceAccount := serviceaccount.NewServiceAccount(scope, pointer.Value(id), &serviceaccount.ServiceAccountConfig{
-		Project: config.Project.ProjectId(),
+	serviceAccount := serviceaccount.NewServiceAccount(scope,
+		pointer.Stringf("%s-sa", id),
+		&serviceaccount.ServiceAccountConfig{
+			Project: config.Project.ProjectId(),
 
-		AccountId:   pointer.Value(config.AccountID),
-		DisplayName: pointer.Value(config.DisplayName),
-	})
+			AccountId:   pointer.Value(config.AccountID),
+			DisplayName: pointer.Value(config.DisplayName),
+		})
 	for _, role := range config.Roles {
 		_ = projectiammember.NewProjectIamMember(scope,
-			pointer.Value(fmt.Sprintf("sa_%s", role.ID)),
+			pointer.Stringf("%s_sa_%s", id, role.ID),
 			&projectiammember.ProjectIamMemberConfig{
 				Project: config.Project.ProjectId(),
 
 				Role:   pointer.Value(role.Role),
-				Member: pointer.Value(fmt.Sprintf("serviceAccount:%s", *serviceAccount.Email())),
+				Member: serviceAccount.Member(),
 			})
 	}
 	return &Output{
