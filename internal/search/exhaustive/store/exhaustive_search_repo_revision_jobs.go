@@ -2,9 +2,11 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -57,6 +59,36 @@ var revSearchJobColumns = []*sqlf.Query{
 type ExhaustiveSearchRepoRevisionJobStore interface {
 	// CreateExhaustiveSearchRepoRevisionJob creates a new types.ExhaustiveSearchRepoRevisionJob.
 	CreateExhaustiveSearchRepoRevisionJob(ctx context.Context, job types.ExhaustiveSearchRepoRevisionJob) (int64, error)
+	// ListExhaustiveSearchRepoRevisionJobs lists types.ExhaustiveSearchRepoRevisionJob matching the given options.
+	ListExhaustiveSearchRepoRevisionJobs(ctx context.Context, opts ListExhaustiveSearchRepoRevisionJobsOpts) ([]*types.ExhaustiveSearchRepoRevisionJob, error)
+}
+
+// ListExhaustiveSearchRepoRevisionJobsOpts captures the query options needed for listing exhaustive search repo revision jobs.
+type ListExhaustiveSearchRepoRevisionJobsOpts struct {
+	// First, if set, limits the number of actions returned
+	// to the first n.
+	First *int
+	// After, if set, begins listing actions after the given id.
+	After *int
+	// SearchRepoJobID will constrain the listed actions to only.
+	SearchRepoJobID int64
+}
+
+// Conds returns the SQL conditions for the list options.
+func (o ListExhaustiveSearchRepoRevisionJobsOpts) Conds() *sqlf.Query {
+	conds := []*sqlf.Query{sqlf.Sprintf("search_repo_job_id = %s", o.SearchRepoJobID)}
+	if o.After != nil {
+		conds = append(conds, sqlf.Sprintf("id > %s", *o.After))
+	}
+	return sqlf.Join(conds, "AND")
+}
+
+// Limit returns the SQL limit for the list options.
+func (o ListExhaustiveSearchRepoRevisionJobsOpts) Limit() *sqlf.Query {
+	if o.First == nil {
+		return sqlf.Sprintf("ALL")
+	}
+	return sqlf.Sprintf("%s", *o.First)
 }
 
 var _ ExhaustiveSearchRepoJobStore = &Store{}
@@ -96,6 +128,52 @@ INSERT INTO exhaustive_search_repo_revision_jobs (revision, search_repo_job_id)
 VALUES (%s, %s)
 RETURNING id
 `
+
+func (s *Store) ListExhaustiveSearchRepoRevisionJobs(ctx context.Context, opts ListExhaustiveSearchRepoRevisionJobsOpts) ([]*types.ExhaustiveSearchRepoRevisionJob, error) {
+	var jobs []*types.ExhaustiveSearchRepoRevisionJob
+	var err error
+	ctx, _, endObservation := s.operations.listExhaustiveSearchRepoRevisionJob.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(opts.SearchRepoJobID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if opts.SearchRepoJobID <= 0 {
+		return nil, MissingSearchRepoJobIDErr
+	}
+
+	q := sqlf.Sprintf(
+		listExhaustiveSearchRepoRevisionJobsQueryFmtr,
+		sqlf.Join(revSearchJobColumns, ","),
+		opts.Conds(),
+		opts.Limit(),
+	)
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	jobs, err = scanRevSearchJobs(rows)
+	return jobs, err
+}
+
+const listExhaustiveSearchRepoRevisionJobsQueryFmtr = `
+SELECT %s FROM exhaustive_search_repo_revision_jobs
+WHERE %s
+ORDER BY id ASC
+LIMIT %s
+`
+
+func scanRevSearchJobs(rows *sql.Rows) ([]*types.ExhaustiveSearchRepoRevisionJob, error) {
+	var jobs []*types.ExhaustiveSearchRepoRevisionJob
+	for rows.Next() {
+		job, err := scanRevSearchJob(rows)
+		if err != nil {
+			return nil, err
+		}
+		jobs = append(jobs, job)
+	}
+	return jobs, rows.Err()
+}
 
 func scanRevSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchRepoRevisionJob, error) {
 	var job types.ExhaustiveSearchRepoRevisionJob
