@@ -2004,8 +2004,6 @@ github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b h1:Mly
 github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b/go.mod h1:0MLTrjQI8EuVmvykEhcfr/7X0xmaDAZrqMgxIq3OXHk=
 github.com/sourcegraph/conc v0.3.0 h1:OQTbbt6P72L20UqAkXXuLOj79LfEanQ+YQFNpLA9ySo=
 github.com/sourcegraph/conc v0.3.0/go.mod h1:Sdozi7LEKbFPqYX2/J+iBAM6HpqSLTASQIKqDmF7Mt0=
-github.com/sourcegraph/controller-cdktf/gen/random v0.0.0-20230815032349-78f70b0362c6 h1:cwuqslpaq5kNYKeXGYoynk1Cd/7bH4R4Wam1OOt4AbQ=
-github.com/sourcegraph/controller-cdktf/gen/random v0.0.0-20230815032349-78f70b0362c6/go.mod h1:wOApvyom+zsXm7wQVMxkv0YVw1pVRhalCXOxwk6SRPk=
 github.com/sourcegraph/embedded-postgres v1.19.1-0.20230624001757-345a8df15ded h1:QcxHhicvH6TFpSmC3vZKWbwLSHmwy72+CESqjjaIsZA=
 github.com/sourcegraph/embedded-postgres v1.19.1-0.20230624001757-345a8df15ded/go.mod h1:0B+3bPsMvcNgR9nN+bdM2x9YaNYDnf3ksUqYp1OAub0=
 github.com/sourcegraph/go-ctags v0.0.0-20230111110657-c27675da7f71 h1:tsWE3F3StWvnwLnC4JWb0zX0UHY9GULQtu/aoQvLJvI=

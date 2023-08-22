@@ -276,7 +276,6 @@ require (
 	github.com/mroth/weightedrand/v2 v2.0.1
 	github.com/qdrant/go-client v1.3.0
 	github.com/ricochet2200/go-disk-usage/du v0.0.0-20210707232629-ac9918953285
-	github.com/sourcegraph/controller-cdktf/gen/random v0.0.0-20230815032349-78f70b0362c6
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare v0.0.0-20230818181208-fc3b96d39c4e
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20230816005624-901f851f170b
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/projects_iam v0.0.0-20230816064627-ffa668a680d5
