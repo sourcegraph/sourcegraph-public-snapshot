@@ -2,6 +2,8 @@
 // handy for libraries that accept everything as pointers.
 package pointer
 
+import "fmt"
+
 // Value returns a pointer to the given value.
 func Value[V any](v V) *V { return &v }
 
@@ -32,4 +34,9 @@ type numberType interface {
 // Float64 returns a pointer to the provided numeric value as a float64.
 func Float64[T numberType](v T) *float64 {
 	return Value(float64(v))
+}
+
+// Stringf is an alias for pointer.Value(fmt.Sprintf)
+func Stringf(format string, args ...any) *string {
+	return Value(fmt.Sprintf(format, args...))
 }

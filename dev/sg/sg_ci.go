@@ -21,6 +21,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/loki"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
@@ -197,7 +198,7 @@ sg ci build --force --commit my-commit main-dry-run
 # View the available special build types
 sg ci build --help
 `,
-	Category: CategoryDev,
+	Category: category.Dev,
 	Subcommands: []*cli.Command{{
 		Name:    "preview",
 		Aliases: []string{"plan"},

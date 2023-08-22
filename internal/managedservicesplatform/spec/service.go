@@ -10,4 +10,8 @@ type ServiceSpec struct {
 	// Owners denotes the teams or individuals primarily responsible for the
 	// service.
 	Owners []string `json:"owners"`
+	// EnvVarPrefix is an optional prefix for env vars exposed specifically for
+	// the service, e.g. "CODY_GATEWAY_". If empty, default the an capitalized,
+	// lowercase-delimited version of the service ID.
+	EnvVarPrefix *string
 }

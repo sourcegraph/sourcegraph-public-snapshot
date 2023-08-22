@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-github/v41/github"
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/slack"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -41,7 +42,7 @@ sg teammate time thorsten ball
 # Open their handbook bio
 sg teammate handbook asdine
 `,
-		Category: CategoryCompany,
+		Category: category.Company,
 		Subcommands: []*cli.Command{{
 			Name:      "time",
 			ArgsUsage: "<nickname>",

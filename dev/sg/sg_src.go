@@ -5,12 +5,14 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/urfave/cli/v2"
+
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
-	"github.com/urfave/cli/v2"
 )
 
 type srcInstance struct {
@@ -27,7 +29,7 @@ var srcInstanceCommand = &cli.Command{
 	Name:      "src-instance",
 	UsageText: "sg src-instance [command]",
 	Usage:     "Interact with Sourcegraph instances that 'sg src' will use",
-	Category:  CategoryDev,
+	Category:  category.Dev,
 	Subcommands: []*cli.Command{
 		{
 			Name:      "register",
@@ -122,7 +124,7 @@ var srcCommand = &cli.Command{
 	Name:      "src",
 	UsageText: "sg src [src-cli args]\nsg src help # get src-cli help",
 	Usage:     "Run src-cli on a given instance defined with 'sg src-instance'",
-	Category:  CategoryDev,
+	Category:  category.Dev,
 	Action: func(cmd *cli.Context) error {
 		_, sc, err := getSrcInstances(cmd.Context)
 		if err != nil {

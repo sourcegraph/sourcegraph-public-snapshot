@@ -13,6 +13,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/adr"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -45,7 +46,7 @@ sg adr view 420
 # Create a new ADR!
 sg adr create my ADR title
 `,
-	Category: CategoryCompany,
+	Category: category.Company,
 	Subcommands: []*cli.Command{
 		{
 			Name:  "list",

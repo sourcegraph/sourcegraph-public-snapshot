@@ -9,6 +9,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -30,7 +31,7 @@ sg --verbose generate ... # Enable verbose output
 	Usage:       "Run code and docs generation tasks",
 	Description: "If no target is provided, all target are run with default arguments.",
 	Aliases:     []string{"gen"},
-	Category:    CategoryDev,
+	Category:    category.Dev,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:        "quiet",

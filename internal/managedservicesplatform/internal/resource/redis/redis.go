@@ -28,6 +28,7 @@ type Config struct {
 	Spec spec.EnvironmentResourceRedisSpec
 }
 
+// TODO: Add validation
 func New(scope constructs.Construct, id string, config Config) (*Output, error) {
 	redis := redisinstance.NewRedisInstance(scope, &id, &redisinstance.RedisInstanceConfig{
 		Project: config.Project.ProjectId(),
@@ -45,8 +46,8 @@ func New(scope constructs.Construct, id string, config Config) (*Output, error) 
 		AuthorizedNetwork: config.Network.SelfLink(),
 	})
 
-	// TODO: Redis networking
-	redisCert := gsmsecret.New(scope, fmt.Sprintf("%s-cert", id), gsmsecret.Config{
+	// Share CA certificate for connecting to Redis over TLS as a GSM secret
+	redisCACert := gsmsecret.New(scope, fmt.Sprintf("%s-ca-cert", id), gsmsecret.Config{
 		Project: config.Project,
 		ID:      strings.ToUpper(id) + "_CA_CERT",
 		Value:   *redis.ServerCaCerts().Get(pointer.Float64(0)).Cert(),
@@ -57,6 +58,6 @@ func New(scope constructs.Construct, id string, config Config) (*Output, error) 
 		// https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/redis_instance#server_ca_certs
 		Endpoint: fmt.Sprintf("rediss://:%s@%s:%d",
 			*redis.AuthString(), *redis.Host(), int(*redis.Port())),
-		Certificate: *redisCert,
+		Certificate: *redisCACert,
 	}, nil
 }

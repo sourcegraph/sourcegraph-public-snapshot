@@ -1,4 +1,7 @@
-package main
+//go:build msp
+// +build msp
+
+package msp
 
 import (
 	"context"
@@ -12,61 +15,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// mspLoadGCPConfig retrieves secret GCP configuration for Managed Services Platform.
-func mspLoadGCPConfig(ctx context.Context, s *secrets.Store) (*managedservicesplatform.GCPOptions, error) {
-	parentFolderID, err := s.GetExternal(ctx, secrets.ExternalSecret{
-		Project: "",
-		Name:    "",
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "get ParentFolderID")
-	}
+// This file is only built when '-tags=msp' is passed to go build while 'sg msp'
+// is experimental, as the introduction of this command significantly introduces
+// the binary size of 'sg'.
+//
+// To install a variant of 'sg' with 'sg msp' enabled, run:
+//
+//   go build -tags=msp -o=./sg ./dev/sg && ./sg install -f -p=false
+//
+// To work with msp in VS Code, add the following to your VS Code configuration:
+//
+//  "gopls": {
+//     "build.buildFlags": ["-tags=msp"]
+//  }
 
-	billingAccountID, err := s.GetExternal(ctx, secrets.ExternalSecret{
-		Project: "",
-		Name:    "",
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "get BillingAccountID")
-	}
-
-	return &managedservicesplatform.GCPOptions{
-		ParentFolderID:   parentFolderID,
-		BillingAccountID: billingAccountID,
-	}, nil
-}
-
-// mspLoadTFCConfig retrieves secret TFC configuration for Managed Services Platform.
-func mspLoadTFCConfig(ctx context.Context, s *secrets.Store, enabled bool) (*managedservicesplatform.TerraformCloudOptions, error) {
-	if !enabled {
-		return &managedservicesplatform.TerraformCloudOptions{
-			Enabled: false,
-		}, nil
-	}
-
-	accessToken, err := s.GetExternal(ctx, secrets.ExternalSecret{
-		Project: "",
-		Name:    "",
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "get AccessToken")
-	}
-
-	return &managedservicesplatform.TerraformCloudOptions{
-		Enabled:     true,
-		AccessToken: accessToken,
-	}, nil
-}
-
-var managedServicesPlatformCommand = &cli.Command{
-	Hidden: true, // TODO: Still in POC.
-
-	Name:        "managed-services-platform",
-	Aliases:     []string{"msp"},
-	Usage:       "Generate and manage services deployed on the Sourcegraph Managed Services Platform",
-	Description: `This is currently still an experimental project. To learm more, see go/rfc-msp`,
-	Category:    CategoryCompany,
-	Subcommands: []*cli.Command{
+func init() {
+	// Override no-op implementation with our real implementation.
+	Command.Hidden = false
+	Command.Action = nil
+	Command.Subcommands = []*cli.Command{
 		{
 			Name: "generate",
 			Flags: []cli.Flag{
@@ -80,6 +47,11 @@ var managedServicesPlatformCommand = &cli.Command{
 					Usage: "Generate infrastructure stacks with Terraform Cloud backends",
 					Value: false, // TODO default to true
 				},
+				&cli.BoolFlag{
+					Name:  "gcp",
+					Usage: "Generate infrastructure stacks on real GCP configuration",
+					Value: false, // TODO default to true
+				},
 			},
 			Action: func(c *cli.Context) error {
 				secretStore, err := secrets.FromContext(c.Context)
@@ -91,7 +63,7 @@ var managedServicesPlatformCommand = &cli.Command{
 				if err != nil {
 					return errors.Wrap(err, "load TFC config")
 				}
-				gcpOptions, err := mspLoadGCPConfig(c.Context, secretStore)
+				gcpOptions, err := mspLoadGCPConfig(c.Context, secretStore, c.Bool("gcp"))
 				if err != nil {
 					return errors.Wrap(err, "load GCP config")
 				}
@@ -168,5 +140,61 @@ var managedServicesPlatformCommand = &cli.Command{
 				return cdktf.Synthesize()
 			},
 		},
-	},
+	}
+}
+
+// mspLoadGCPConfig retrieves secret GCP configuration for Managed Services Platform.
+func mspLoadGCPConfig(ctx context.Context, s *secrets.Store, enabled bool) (*managedservicesplatform.GCPOptions, error) {
+	if !enabled {
+		return &managedservicesplatform.GCPOptions{
+			ParentFolderID:   "EXAMPLE",
+			BillingAccountID: "EXAMPLE",
+		}, nil
+	}
+
+	// TODO
+	parentFolderID, err := s.GetExternal(ctx, secrets.ExternalSecret{
+		Project: "",
+		Name:    "",
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "get ParentFolderID")
+	}
+
+	// TODO
+	billingAccountID, err := s.GetExternal(ctx, secrets.ExternalSecret{
+		Project: "",
+		Name:    "",
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "get BillingAccountID")
+	}
+
+	return &managedservicesplatform.GCPOptions{
+		ParentFolderID:   parentFolderID,
+		BillingAccountID: billingAccountID,
+	}, nil
+}
+
+// mspLoadTFCConfig retrieves secret TFC configuration for Managed Services Platform.
+func mspLoadTFCConfig(ctx context.Context, s *secrets.Store, enabled bool) (*managedservicesplatform.TerraformCloudOptions, error) {
+	if !enabled {
+		return &managedservicesplatform.TerraformCloudOptions{
+			Enabled: false,
+		}, nil
+	}
+
+	// TODO
+	accessToken, err := s.GetExternal(ctx, secrets.ExternalSecret{
+		Project: "",
+		Name:    "",
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "get AccessToken")
+	}
+
+	return &managedservicesplatform.TerraformCloudOptions{
+		Enabled:     true,
+		AccessToken: accessToken,
+	}, nil
 }

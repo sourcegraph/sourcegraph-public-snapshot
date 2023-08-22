@@ -7,10 +7,11 @@ type EnvironmentSpec struct {
 	// environment, e.g. "prod" or "dev".
 	ID string `json:"id"`
 
-	Deploy    EnvironmentDeploySpec    `json:"deploy"`
-	Domain    EnvironmentDomainSpec    `json:"domain"`
-	Instances EnvironmentInstancesSpec `json:"instances"`
-	Resources EnvironmentResourcesSpec `json:"resources"`
+	Deploy      EnvironmentDeploySpec      `json:"deploy"`
+	Domain      EnvironmentDomainSpec      `json:"domain"`
+	Instances   EnvironmentInstancesSpec   `json:"instances"`
+	Resources   EnvironmentResourcesSpec   `json:"resources"`
+	Healthcheck EnvironmentHealthcheckSpec `json:"healtcheck"`
 
 	Env       map[string]string `json:"env"`
 	SecretEnv map[string]string `json:"secretEnv"`
@@ -86,8 +87,8 @@ type EnvironmentInstancesScalingSpec struct {
 
 type EnvironmentHealthcheckSpec struct {
 	// LivenessProbeInterval configures the interval, in seconds, at which to
-	// probe the deployed service.
-	LivenessProbeInterval int `json:"livenessProbeInterval"`
+	// probe the deployed service. If nil, no liveness probe is configured.
+	LivenessProbeInterval *int `json:"livenessProbeInterval"`
 }
 
 type EnvironmentResourcesSpec struct {

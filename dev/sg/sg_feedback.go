@@ -12,6 +12,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -46,7 +47,7 @@ func addFeedbackFlags(commands []*cli.Command) {
 var feedbackCommand = &cli.Command{
 	Name:     "feedback",
 	Usage:    "Provide feedback about sg",
-	Category: CategoryUtil,
+	Category: category.Util,
 	Action:   feedbackAction,
 }
 

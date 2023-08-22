@@ -30,7 +30,7 @@ type Output struct {
 	Email string
 }
 
-func New(scope constructs.Construct, id string, config Config) (*Output, error) {
+func New(scope constructs.Construct, id string, config Config) *Output {
 	serviceAccount := serviceaccount.NewServiceAccount(scope, pointer.Value(id), &serviceaccount.ServiceAccountConfig{
 		Project: config.Project.ProjectId(),
 
@@ -49,5 +49,5 @@ func New(scope constructs.Construct, id string, config Config) (*Output, error) 
 	}
 	return &Output{
 		Email: *serviceAccount.Email(),
-	}, nil
+	}
 }

@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	sgslack "github.com/sourcegraph/sourcegraph/dev/sg/internal/slack"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/team"
@@ -31,7 +32,7 @@ var auditCommand = &cli.Command{
 	Usage:     "Display audit trail for resources",
 	ArgsUsage: "[target]",
 	Hidden:    true,
-	Category:  CategoryCompany,
+	Category:  category.Company,
 	Subcommands: []*cli.Command{{
 		Name:  "pr",
 		Usage: "Display audit trail for pull requests",

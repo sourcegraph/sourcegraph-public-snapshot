@@ -9,6 +9,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -18,7 +19,7 @@ var funkyLogoCommand = &cli.Command{
 	ArgsUsage:   "[classic]",
 	Usage:       "Print the sg logo",
 	Description: "By default, prints the sg logo in different colors. When the 'classic' argument is passed it prints the classic logo.",
-	Category:    CategoryUtil,
+	Category:    category.Util,
 	Action:      logoExec,
 }
 

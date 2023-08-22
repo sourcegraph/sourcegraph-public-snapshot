@@ -8,6 +8,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/dependencies"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/exit"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -16,7 +17,7 @@ import (
 var setupCommand = &cli.Command{
 	Name:     "setup",
 	Usage:    "Validate and set up your local dev environment!",
-	Category: CategoryEnv,
+	Category: category.Env,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:    "check",

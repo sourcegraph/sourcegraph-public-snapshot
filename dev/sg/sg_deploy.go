@@ -9,6 +9,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -45,7 +46,7 @@ servicePorts:
     targetPort: test # Set to the name or port number of the containerPort you want to expose
 dns: dave-app.sgdev.org
 `,
-	Category: CategoryDev,
+	Category: category.Dev,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:        "values",

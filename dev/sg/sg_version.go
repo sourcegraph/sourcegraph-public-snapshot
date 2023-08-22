@@ -8,6 +8,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -22,7 +23,7 @@ var (
 		Name:     "version",
 		Usage:    "View details for this installation of sg",
 		Action:   versionExec,
-		Category: CategoryUtil,
+		Category: category.Util,
 		Subcommands: []*cli.Command{
 			{
 				Name:    "changelog",

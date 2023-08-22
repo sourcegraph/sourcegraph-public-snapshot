@@ -22,6 +22,7 @@ import (
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -69,7 +70,7 @@ Various commands to handle management of releases, and processes around Cody App
 
 `,
 	ArgsUsage: "",
-	Category:  CategoryDev,
+	Category:  category.Dev,
 	Subcommands: []*cli.Command{
 		{
 			Name:  "update-manifest",

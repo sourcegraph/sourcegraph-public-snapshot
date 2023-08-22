@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/wolfi"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -24,7 +25,7 @@ sg wolfi package jaeger.yaml
 sg wolfi image gitserver
 sg wolfi image gitserver.yaml
 `,
-		Category: CategoryDev,
+		Category: category.Dev,
 		Subcommands: []*cli.Command{{
 			Name:      "package",
 			ArgsUsage: "<package-manifest>",
