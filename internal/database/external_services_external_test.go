@@ -106,11 +106,13 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			dbm := dbmocks.NewMockDB()
 			ess := dbmocks.NewMockExternalServiceStore()
 			if test.listFunc != nil {
 				ess.ListFunc.SetDefaultHook(test.listFunc)
 			}
-			_, err := database.ValidateExternalServiceConfig(context.Background(), ess, database.ValidateExternalServiceConfigOptions{
+			dbm.ExternalServicesFunc.SetDefaultReturn(ess)
+			_, err := database.ValidateExternalServiceConfig(context.Background(), dbm, database.ValidateExternalServiceConfigOptions{
 				Kind:   test.kind,
 				Config: test.config,
 			})

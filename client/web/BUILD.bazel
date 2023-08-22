@@ -1499,6 +1499,7 @@ ts_project(
         "src/site-admin/SiteAdminFeatureFlagsPage.tsx",
         "src/site-admin/SiteAdminGitHubAppsArea.tsx",
         "src/site-admin/SiteAdminMigrationsPage.tsx",
+        "src/site-admin/SiteAdminOnboardingTourPage.tsx",
         "src/site-admin/SiteAdminOrgsPage.tsx",
         "src/site-admin/SiteAdminOutboundRequestsPage.tsx",
         "src/site-admin/SiteAdminPackagesPage.tsx",

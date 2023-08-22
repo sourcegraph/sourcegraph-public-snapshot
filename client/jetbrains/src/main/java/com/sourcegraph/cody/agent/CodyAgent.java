@@ -23,6 +23,8 @@ import java.io.PrintWriter;
 import java.nio.file.*;
 import java.util.Objects;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,9 +45,11 @@ public class CodyAgent implements Disposable {
   Disposable disposable = Disposer.newDisposable("CodyAgent");
   private final @NotNull Project project;
   private final CodyAgentClient client = new CodyAgentClient();
-  private String initializationErrorMessage = "";
-  private final CompletableFuture<CodyAgentServer> initialized = new CompletableFuture<>();
+  private String agentNotRunningExplanation = "";
+  private @NotNull CompletableFuture<CodyAgentServer> initialized = new CompletableFuture<>();
+  private AtomicBoolean firstConnection = new AtomicBoolean(true);
   private Future<Void> listeningToJsonRpc;
+  private Process process;
 
   public CodyAgent(@NotNull Project project) {
     this.project = project;
@@ -64,12 +68,22 @@ public class CodyAgent implements Disposable {
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
   public static boolean isConnected(@NotNull Project project) {
     CodyAgent agent = project.getService(CodyAgent.class);
+    // NOTE(olafurpg): there are probably too many conditions below. We test multiple conditions
+    // because we don't know 100% yet what exactly constitutes a "connected" state. Out of abundance
+    // of caution, we check everything we can think of.
     return agent != null
-        && agent.initializationErrorMessage.isEmpty()
+        && agent.process != null
+        && agent.process.isAlive()
+        && agent.agentNotRunningExplanation.isEmpty()
         && agent.listeningToJsonRpc != null
         && !agent.listeningToJsonRpc.isDone()
         && !agent.listeningToJsonRpc.isCancelled()
         && agent.client.server != null;
+  }
+
+  public static <T> CompletableFuture<T> withServer(
+      @NotNull Project project, Function<CodyAgentServer, CompletableFuture<T>> callback) {
+    return CodyAgent.getInitializedServer(project).thenCompose(callback);
   }
 
   @Nullable
@@ -93,6 +107,12 @@ public class CodyAgent implements Disposable {
       return;
     }
     try {
+      boolean isFirstConnection = this.firstConnection.getAndSet(false);
+      if (!isFirstConnection) {
+        // Restart `initialized` future so that new callers can subscribe to the next instance of
+        // the Cody agent server.
+        this.initialized = new CompletableFuture<>();
+      }
       startListeningToAgent();
       executorService.submit(
           () -> {
@@ -113,14 +133,14 @@ public class CodyAgent implements Disposable {
               this.subscribeToFocusEvents();
               this.initialized.complete(server);
             } catch (Exception e) {
-              initializationErrorMessage =
+              agentNotRunningExplanation =
                   "failed to send 'initialize' JSON-RPC request Cody agent";
-              logger.warn(initializationErrorMessage, e);
+              logger.warn(agentNotRunningExplanation, e);
             }
           });
     } catch (Exception e) {
-      initializationErrorMessage = "unable to start Cody agent";
-      logger.warn(initializationErrorMessage, e);
+      agentNotRunningExplanation = "unable to start Cody agent";
+      logger.warn(agentNotRunningExplanation, e);
     }
   }
 
@@ -132,7 +152,11 @@ public class CodyAgent implements Disposable {
     EditorEventMulticaster multicaster = EditorFactory.getInstance().getEventMulticaster();
     if (multicaster instanceof EditorEventMulticasterEx) {
       EditorEventMulticasterEx ex = (EditorEventMulticasterEx) multicaster;
-      ex.addFocusChangeListener(new CodyAgentFocusListener(), this.disposable);
+      try {
+        ex.addFocusChangeListener(new CodyAgentFocusListener(), this.disposable);
+      } catch (Exception ignored) {
+        // Ignore exception https://github.com/sourcegraph/sourcegraph/issues/56032
+      }
     }
   }
 
@@ -141,7 +165,16 @@ public class CodyAgent implements Disposable {
     if (server == null) {
       return;
     }
-    executorService.submit(() -> server.shutdown().thenAccept((Void) -> server.exit()));
+    executorService.submit(
+        () ->
+            server
+                .shutdown()
+                .thenAccept(
+                    (Void) -> {
+                      server.exit();
+                      agentNotRunningExplanation = "Cody Agent shut down";
+                      listeningToJsonRpc.cancel(true);
+                    }));
   }
 
   private static String binarySuffix() {
@@ -149,7 +182,7 @@ public class CodyAgent implements Disposable {
   }
 
   private static String agentBinaryName() {
-    String os = SystemInfoRt.isMac ? "macos" : SystemInfoRt.isWindows ? "windows" : "linux";
+    String os = SystemInfoRt.isMac ? "macos" : SystemInfoRt.isWindows ? "win" : "linux";
     String arch = CpuArch.isArm64() ? "arm64" : "x64";
     return "agent-" + os + "-" + arch + binarySuffix();
   }
@@ -214,10 +247,11 @@ public class CodyAgent implements Disposable {
   private void startListeningToAgent() throws IOException, CodyAgentException {
     File binary = agentBinary();
     logger.info("starting Cody agent " + binary.getAbsolutePath());
-    Process process =
-        new ProcessBuilder(binary.getAbsolutePath())
-            .redirectError(ProcessBuilder.Redirect.INHERIT)
-            .start();
+    ProcessBuilder processBuilder = new ProcessBuilder(binary.getAbsolutePath());
+    if (Boolean.getBoolean("cody.accept-non-trusted-certificates-automatically")) {
+      processBuilder.environment().put("NODE_TLS_REJECT_UNAUTHORIZED", "0");
+    }
+    this.process = processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT).start();
     Launcher<CodyAgentServer> launcher =
         new Launcher.Builder<CodyAgentServer>()
             // emit `null` instead of leaving fields undefined because Cody in VSC has

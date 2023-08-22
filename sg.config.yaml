@@ -123,6 +123,10 @@ env:
   SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED: "true"
   SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: "1KB"
   SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: "100MB"
+  ## zoekt-specific message logging
+  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED: "true"
+  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: "1KB"
+  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: "100MB"
 
 commands:
   server:
@@ -239,7 +243,6 @@ commands:
         export GCFLAGS='-N -l'
       fi
 
-      ./cmd/symbols/build-ctags.sh &&
       go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
     checkBinary: .bin/symbols
     env:
@@ -927,7 +930,6 @@ bazelCommands:
     env:
       ENTERPRISE: 1
   symbols:
-    # TODO build ctags thing
     target: //enterprise/cmd/symbols
     checkBinary: .bin/symbols
     env:
@@ -1498,7 +1500,7 @@ tests:
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
     env:
-      DOCSITE_VERSION: v1.9.2 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
+      DOCSITE_VERSION: v1.9.4 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
 
   web-e2e:
     preamble: |

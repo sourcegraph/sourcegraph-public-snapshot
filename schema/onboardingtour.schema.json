@@ -1,0 +1,134 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "onboardingtour.schema.json#",
+  "title": "Onboarding tour configuration",
+  "description": "Configuration for a onboarding tour.",
+  "allowComments": true,
+  "type": "object",
+  "properties": {
+    "tasks": {
+      "type": "array",
+      "items": {
+        "title": "Onboarding task",
+        "description": "An onboarding task",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "description": "Title of this task",
+            "type": "string"
+          },
+          "dataAttributes": {
+            "description": "Additional attributes to add to the task HTML element as data-* attributes",
+            "type": "object",
+            "additionalProperties": true
+          },
+          "steps": {
+            "description": "Steps that need to be completed by the user",
+            "type": "array",
+            "items": {
+              "title": "Onboarding step",
+              "type": "object",
+              "properties": {
+                "id": {
+                  "description": "Unique step ID",
+                  "type": "string"
+                },
+                "label": {
+                  "description": "Label of the step shown to the user",
+                  "type": "string"
+                },
+                "tooltip": {
+                  "description": "More information about this step",
+                  "type": "string"
+                },
+                "action": {
+                  "oneOf": [
+                    {
+                      "title": "Video step",
+                      "description": "Video step",
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "const": "video"
+                        },
+                        "value": {
+                          "$ref": "#/definitions/StepAction"
+                        }
+                      },
+                      "required": ["type", "value"]
+                    },
+                    {
+                      "title": "Link step",
+                      "description": "Link step",
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "enum": ["link", "new-tab-link"]
+                        },
+                        "variant": {
+                          "const": "button-primary"
+                        },
+                        "value": {
+                          "$ref": "#/definitions/StepAction"
+                        }
+                      },
+                      "required": ["type", "value"]
+                    },
+                    {
+                      "title": "Restart step",
+                      "description": "Restart step",
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "const": "restart"
+                        },
+                        "value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["type", "value"]
+                    }
+                  ]
+                },
+                "info": {
+                  "type": "string"
+                },
+                "completeAfterEvents": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": ["id", "label", "action"],
+              "additionalProperties": false
+            },
+            "minItems": 1
+          }
+        },
+        "required": ["steps"]
+      }
+    }
+  },
+  "required": ["tasks"],
+  "additionalProperties": false,
+  "definitions": {
+    "StepAction": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "patternProperties": {
+            "^.*$": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}
