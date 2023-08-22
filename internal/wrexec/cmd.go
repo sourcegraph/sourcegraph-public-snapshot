@@ -121,8 +121,10 @@ func (c *Cmd) CombinedOutput() (_ []byte, err error) {
 	return c.output, err
 }
 
-func (c *Cmd) GetOutput() []byte {
-	return c.output
+// This is a workaround created to retrieve the output of an executed command without
+// calling `.Output()` or `.CombinedOutput()` again.
+func (c *Cmd) GetOutput() string {
+	return string(c.output)
 }
 
 // Environ returns the underlying command environ. It never call the hooks.

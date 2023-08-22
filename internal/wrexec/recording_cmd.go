@@ -108,18 +108,16 @@ func (rc *RecordingCmd) after(_ context.Context, logger log.Logger, cmd *exec.Cm
 		return
 	}
 
-	isSuccess := cmd.ProcessState.Success()
-	output := rc.Cmd.GetOutput()
-
 	// record this command in redis
 	val := RecordedCommand{
-		Start:     rc.start,
-		Duration:  time.Since(rc.start).Seconds(),
-		Args:      cmd.Args,
-		Dir:       cmd.Dir,
-		Path:      cmd.Path,
-		IsSuccess: isSuccess,
-		Output:    string(output),
+		Start:    rc.start,
+		Duration: time.Since(rc.start).Seconds(),
+		Args:     cmd.Args,
+		Dir:      cmd.Dir,
+		Path:     cmd.Path,
+
+		IsSuccess: cmd.ProcessState.Success(),
+		Output:    rc.Cmd.GetOutput(),
 	}
 
 	data, err := json.Marshal(&val)
