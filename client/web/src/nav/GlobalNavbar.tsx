@@ -39,6 +39,7 @@ import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/Ac
 import { NotificationsNavbarItem } from '../site-admin/notifications/NotificationsNavbarItem'
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
+import { EventName, EventLocation } from '../util/constants'
 
 import { NavAction, NavActions, NavBar, NavGroup, NavItem, NavLink } from '.'
 import { NavDropdown, type NavDropdownItem } from './NavBar/NavDropdown'
@@ -312,7 +313,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             <Link
                                 to="/get-cody"
                                 className={classNames(styles.link, 'small')}
-                                onClick={() => eventLogger.log('ClickedOnCodyCTA', { location: 'NavBar' })}
+                                onClick={() => eventLogger.log(EventName.CODY_CTA, { location: EventLocation.NAV_BAR })}
                             >
                                 Install Cody locally
                             </Link>

@@ -21,7 +21,7 @@ export const GettingStarted: React.FC<
     Pick<
         CodyChatStore,
         | 'scope'
-        | 'transcript'
+        | 'logTranscriptEvent'
         | 'setScope'
         | 'toggleIncludeInferredRepository'
         | 'toggleIncludeInferredFile'

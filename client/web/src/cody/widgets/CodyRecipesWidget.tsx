@@ -17,7 +17,7 @@ import { RecipeAction } from './components/RecipeAction'
 import { Recipes } from './components/Recipes'
 
 interface IProps {
-    editor?: CodeMirrorEditor | ChatEditor
+    editor: CodeMirrorEditor | ChatEditor
     codyChatStore?: CodyChatStore | null
     style?: React.CSSProperties
     className?: string
@@ -107,6 +107,7 @@ export const CodyRecipesWidget: React.FC<IProps> = ({ editor, codyChatStore, sty
                         onClick={() => void executeRecipe('find-code-smells', { scope: { editor } })}
                         disabled={isMessageInProgress}
                     />
+                    <RecipeAction title="Get Cody for your IDE" to="/get-cody" disabled={isMessageInProgress} />
                 </Recipe>
             </Recipes>
         </div>
