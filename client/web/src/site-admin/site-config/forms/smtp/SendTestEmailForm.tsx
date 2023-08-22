@@ -5,10 +5,10 @@ import { FetchResult } from '@apollo/client'
 import { useMutation } from '@sourcegraph/http-client'
 import { Link, Alert, Button, Select, Label } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { LoaderButton } from '../../components/LoaderButton'
-import { SendTestEmailToResult, SendTestEmailToVariables } from '../../graphql-operations'
-import { SEND_TEST_EMAIL } from '../backend'
+import { AuthenticatedUser } from '../../../../auth'
+import { LoaderButton } from '../../../../components/LoaderButton'
+import { SendTestEmailToResult, SendTestEmailToVariables } from '../../../../graphql-operations'
+import { SEND_TEST_EMAIL } from '../../../backend'
 
 interface SendTestEmailProps {
     className?: string
