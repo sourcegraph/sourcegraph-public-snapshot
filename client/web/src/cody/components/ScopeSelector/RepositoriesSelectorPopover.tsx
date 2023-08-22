@@ -221,7 +221,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                         <>
                             {!searchText && (
                                 <>
-                                    <div className="d-flex justify-content-between p-2 border-bottom mb-1">
+                                    <div className="d-flex justify-content-between p-2 border-bottom">
                                         <Text className={classNames('m-0', styles.header)}>Chat Context</Text>
                                         {resetScope && scopeChanged && (
                                             <Button
@@ -237,12 +237,12 @@ export const RepositoriesSelectorPopover: React.FC<{
                                     </div>
                                     <div className={classNames('d-flex flex-column', styles.contextItemsContainer)}>
                                         {inferredRepository && (
-                                            <div className="d-flex flex-column">
+                                            <div className="d-flex flex-column py-1">
                                                 {inferredFilePath && (
                                                     <button
                                                         type="button"
                                                         className={classNames(
-                                                            'd-flex justify-content-between flex-row text-truncate pl-2 pr-3 py-1 mt-1',
+                                                            'd-flex justify-content-between flex-row text-truncate pl-2 pr-3 py-1',
                                                             styles.repositoryListItem,
                                                             {
                                                                 [styles.notIncludedInContext]: !includeInferredFile,
@@ -307,14 +307,11 @@ export const RepositoriesSelectorPopover: React.FC<{
                                             </div>
                                         )}
                                         {!!additionalRepositories.length && (
-                                            <div className="d-flex flex-column">
+                                            <div className="d-flex flex-column mb-1">
                                                 <Text
                                                     className={classNames(
-                                                        'mb-0 pl-2 pr-3 py-1 text-muted d-flex justify-content-between',
-                                                        styles.subHeader,
-                                                        {
-                                                            'mt-1': inferredRepository || inferredFilePath,
-                                                        }
+                                                        'm-0 pl-2 pr-3 py-1 text-muted d-flex justify-content-between',
+                                                        styles.subHeader
                                                     )}
                                                 >
                                                     <span className="small">
@@ -334,53 +331,21 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                         authenticatedUser={authenticatedUser}
                                                     />
                                                 ))}
-                                                {suggestions.length > 0 && (
-                                                    <>
-                                                        <Text
-                                                            className={classNames(
-                                                                'mb-0 pl-2 pr-3 py-1 text-muted d-flex justify-content-between border-top',
-                                                                styles.subHeader
-                                                            )}
-                                                        >
-                                                            <span className="small">Suggestions</span>
-                                                        </Text>
-                                                        <div
-                                                            className={classNames(
-                                                                'd-flex flex-column',
-                                                                styles.contextItemsContainer
-                                                            )}
-                                                        >
-                                                            {suggestions.map(repository => (
-                                                                <SearchResultsListItem
-                                                                    additionalRepositories={[]}
-                                                                    key={repository.id}
-                                                                    repository={repository}
-                                                                    searchText=""
-                                                                    addRepository={addRepository}
-                                                                    removeRepository={removeRepository}
-                                                                    authenticatedUser={authenticatedUser}
-                                                                />
-                                                            ))}
-                                                        </div>
-                                                    </>
-                                                )}
                                             </div>
                                         )}
 
                                         {!inferredRepository && !inferredFilePath && !additionalRepositories.length && (
-                                            <>
-                                                <div className="d-flex border-bottom">
-                                                    <Text
-                                                        size="small"
-                                                        className="m-0 px-4 py-2 mb-1 text-center text-muted"
-                                                    >
-                                                        Add up to {MAX_ADDITIONAL_REPOSITORIES} repositories for Cody to
-                                                        reference when providing answers.
-                                                    </Text>
-                                                </div>
+                                            <Text size="small" className="m-0 px-4 py-2 my-1 text-center text-muted">
+                                                Add up to {MAX_ADDITIONAL_REPOSITORIES} repositories for Cody to
+                                                reference when providing answers.
+                                            </Text>
+                                        )}
+
+                                        {!!suggestions.length && (
+                                            <div className="d-flex flex-column">
                                                 <Text
                                                     className={classNames(
-                                                        'mb-0 pl-2 pr-3 py-1 text-muted d-flex justify-content-between',
+                                                        'mb-0 pl-2 pr-3 py-1 text-muted d-flex justify-content-between border-top',
                                                         styles.subHeader
                                                     )}
                                                 >
@@ -392,20 +357,19 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                         styles.contextItemsContainer
                                                     )}
                                                 >
-                                                    {suggestions.length &&
-                                                        suggestions.map(repository => (
-                                                            <SearchResultsListItem
-                                                                additionalRepositories={[]}
-                                                                key={repository.id}
-                                                                repository={repository}
-                                                                searchText=""
-                                                                addRepository={addRepository}
-                                                                removeRepository={removeRepository}
-                                                                authenticatedUser={authenticatedUser}
-                                                            />
-                                                        ))}
+                                                    {suggestions.map(repository => (
+                                                        <SearchResultsListItem
+                                                            additionalRepositories={[]}
+                                                            key={repository.id}
+                                                            repository={repository}
+                                                            searchText=""
+                                                            addRepository={addRepository}
+                                                            removeRepository={removeRepository}
+                                                            authenticatedUser={authenticatedUser}
+                                                        />
+                                                    ))}
                                                 </div>
-                                            </>
+                                            </div>
                                         )}
                                     </div>
                                 </>
