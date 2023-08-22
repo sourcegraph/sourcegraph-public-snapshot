@@ -1,5 +1,5 @@
 steps:
-  - label: ':bazel: backcompat tests'
+  - label: ':recycle: backcompat tests'
     key: "bazel-backcompat"
     agents: { queue: bazel }
     commands:

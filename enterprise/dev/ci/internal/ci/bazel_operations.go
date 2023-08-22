@@ -168,13 +168,6 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 }
 
 func triggerBackCompatTest(buildOpts bk.BuildOptions) func(*bk.Pipeline) {
-	// backCompatOpts := bk.BuildOptions{
-	// 	Message: "Back Compatibility tests",
-	// 	Commit:  "c691c3f50c0a288fbc8e796327417136459fa35f",
-	// 	MetaData: map[string]any{
-	// 		"target_commit": buildOpts.Commit,
-	// 	},
-	// }
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddTrigger(":bazel::snail: Async BackCompat Tests", "sourcegraph-backcompat",
 			bk.Key("trigger-backcompat"),
