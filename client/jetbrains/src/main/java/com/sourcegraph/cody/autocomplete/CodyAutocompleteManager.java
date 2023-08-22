@@ -224,6 +224,7 @@ public class CodyAutocompleteManager {
               if (cancellationToken.isCancelled()) {
                 return;
               }
+              cancellationToken.dispose();
               this.clearAutocompleteSuggestions(editor);
 
               if (currentAutocompleteTelemetry != null) {
