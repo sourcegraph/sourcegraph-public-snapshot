@@ -37,23 +37,22 @@ func (r LicenseInfoResolver) UserCount() int32 { return int32(r.Info.UserCount) 
 func (r LicenseInfoResolver) UserCountRestricted() bool {
 	return !r.Info.HasTag(licensing.TrueUpUserCountTag)
 }
-func (r LicenseInfoResolver) Features() []LicenseFeatureResolver {
+func (r LicenseInfoResolver) Features() []licenseFeatureResolver {
 	plan := r.Info.Plan()
-	allFeatures := licensing.AllFeatures[:]
-	var featureResolvers []LicenseFeatureResolver
-	for _, feature := range allFeatures {
-		featureResolvers = append(featureResolvers, LicenseFeatureResolver{
+	featureResolvers := make([]licenseFeatureResolver, len(licensing.AllFeatures))
+	for i, feature := range licensing.AllFeatures {
+		featureResolvers[i] = licenseFeatureResolver{
 			feature: feature,
 			enabled: plan.HasFeature(feature, false),
-		})
+		}
 	}
 	return featureResolvers
 }
 
-type LicenseFeatureResolver struct {
+type licenseFeatureResolver struct {
 	feature licensing.Feature
 	enabled bool
 }
 
-func (r LicenseFeatureResolver) Name() string  { return r.feature.DisplayName() }
-func (r LicenseFeatureResolver) Enabled() bool { return r.enabled }
+func (r licenseFeatureResolver) Name() string  { return r.feature.DisplayName() }
+func (r licenseFeatureResolver) Enabled() bool { return r.enabled }

@@ -6,18 +6,7 @@ import { reverse, sortBy } from 'lodash'
 
 import { pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
-import {
-    Alert,
-    Text,
-    H3,
-    Icon,
-    Label,
-    Input,
-    useDebounce,
-    LoadingSpinner,
-    Link,
-    Grid,
-} from '@sourcegraph/wildcard'
+import { Alert, Text, H3, Icon, Label, Input, useDebounce, LoadingSpinner, Link, Grid } from '@sourcegraph/wildcard'
 
 import { GetLicenseInfoResult, GetLicenseInfoVariables } from '../../../../graphql-operations'
 import { GET_LICENSE_INFO } from '../../../backend'
