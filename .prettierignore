@@ -51,5 +51,7 @@ client/completions-review-tool/data/
 *.module.scss.d.ts
 .vscode-test
 
+dev/backcompat/flakes.json
+
 # Errors when used with @ianvs/prettier-plugin-sort-imports due to TS language API hitting global `eval`
 client/browser/src/types/webextension-polyfill/index.d.ts
