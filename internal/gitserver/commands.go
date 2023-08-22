@@ -569,7 +569,17 @@ func (c *clientImplementor) lsTreeUncached(ctx context.Context, repo api.RepoNam
 		if bytes.Contains(out, []byte("exists on disk, but not in")) {
 			return nil, &os.PathError{Op: "ls-tree", Path: filepath.ToSlash(path), Err: os.ErrNotExist}
 		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+
+		// update returned output since CombinedOutput does not truncate for us
+		// TODO: consider removing truncate after https://github.com/sourcegraph/sourcegraph/issues/56080
+		var outMsg string
+		maxOutLen := 100
+		if len(out) > maxOutLen {
+			outMsg = fmt.Sprintf("output: %q... (truncated)", out[:maxOutLen])
+		} else {
+			outMsg = fmt.Sprintf("output: %q", out)
+		}
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (%v)", cmd.Args(), outMsg))
 	}
 
 	if len(out) == 0 {
