@@ -49,6 +49,8 @@ import type {
     AvailableBulkOperationsVariables,
     AvailableBulkOperationsResult,
     BulkOperationType,
+    ExternalChangesetFields,
+    ChangeSetNodes,
 } from '../../../graphql-operations'
 import { VIEWER_BATCH_CHANGES_CODE_HOST_FRAGMENT } from '../MissingCredentialsAlert'
 
@@ -829,6 +831,7 @@ export async function publishChangesets(
     dataOrThrowErrors(result)
 }
 
+
 export async function exportChangesets(
     batchChange: Scalars['ID'],
     changesets: Scalars['ID'][],
@@ -840,9 +843,11 @@ export async function exportChangesets(
                 node(id: $batchChange) {
                     ... on BatchChange {
                         name
+                        __typename
                         changesets {
                             nodes {
                                 ... on ExternalChangeset {
+                                    __typename
                                     id
                                     title
                                     state
@@ -861,36 +866,48 @@ export async function exportChangesets(
                 }
             }
         `,
-        { batchChange: batchChange, changesets: changesets, draft: draft }
-    ).toPromise()
-    const batchChangeData = dataOrThrowErrors(result)
-    let changesetNodes = batchChangeData?.node?.changesets.nodes
-
-    changesetNodes = changesetNodes.filter(node => {
-        if (changesets.includes(node.id)) {
-            return node
-        }
-    })
-
-    if (batchChangeData.node && batchChangeData.node.changesets && batchChangeData.node.changesets.nodes) {
-        const csvData = [['Title', 'State', 'ReviewState', 'External URL', 'Repo Name']]
-
-        changesetNodes.forEach(node => {
-            csvData.push([node.title, node.state, node.reviewState, node.externalURL?.url || '', node.repository.name])
+        { batchChange }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`Batch change with ID ${batchChange} does not exist`)
+            }
+            if (node.__typename !== 'BatchChange') {
+                throw new Error(`The given ID is a ${node.__typename}, not a BatchChange`)
+            }
+            let changesetNodes = node?.changesets.nodes
+        
+            changesetNodes = changesetNodes.filter((c: ChangeSetNodes) => {
+                if (c.__typename === "ExternalChangeset" && changesets.includes(c.id)) {
+                    return c
+                } else {
+                    return null
+                }
+            })
+        
+            if (node && changesetNodes) {
+                const csvData = [['Title', 'State', 'ReviewState', 'External URL', 'Repo Name']]
+                changesetNodes.forEach((c: ChangeSetNodes) => {
+                    if (c.__typename === "ExternalChangeset" && c.title && c.reviewState){
+                        csvData.push([c.title, c.state, c.reviewState, c.externalURL?.url || '', c.repository.name || ''])
+                    }
+                })
+        
+                const csvString = csvData.map(row => row.join(',')).join('\n')
+                const blob = new Blob([csvString], { type: 'text/csv' })
+                const url = URL.createObjectURL(blob)
+        
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `${node.name}-changesets.csv`
+                a.click()
+        
+                URL.revokeObjectURL(url)
+                a.remove()
+            }
         })
-
-        const csvString = csvData.map(row => row.join(',')).join('\n')
-        const blob = new Blob([csvString], { type: 'text/csv' })
-        const url = URL.createObjectURL(blob)
-
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `${batchChangeData.node.name}-changesets.csv`
-        a.click()
-
-        URL.revokeObjectURL(url)
-        a.remove()
-    }
+    ).toPromise()
 }
 
 export const BULK_OPERATIONS = gql`
