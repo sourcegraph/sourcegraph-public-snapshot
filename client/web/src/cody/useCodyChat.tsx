@@ -145,6 +145,7 @@ export const useCodyChat = ({
             customHeaders: window.context.xhrHeaders,
             debugEnable: false,
             needsEmailVerification: isEmailVerificationNeededForCody(),
+            experimentalLocalSymbols: false,
         },
         scope: initialScope,
         onEvent,
