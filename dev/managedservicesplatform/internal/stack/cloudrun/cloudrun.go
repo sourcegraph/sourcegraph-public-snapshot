@@ -195,7 +195,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	// bigqueryDataset is only created and non-nil if BigQuery is configured for
 	// the environment.
 	if vars.Environment.Resources.BigQueryTable != nil {
-		bigqueryDataset, err := bigquery.New(stack, "bigquery", bigquery.Config{
+		bigqueryDataset, err := bigquery.New(stack, resourceid.New("bigquery"), bigquery.Config{
 			DefaultProject: vars.Project,
 			Spec:           *vars.Environment.Resources.BigQueryTable,
 		})
