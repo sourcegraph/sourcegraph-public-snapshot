@@ -43,6 +43,7 @@ go_library(
         "//internal/workerutil/dbworker/store",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
+        "@org_golang_google_grpc//:go_default_library",
     ],
 )
 
