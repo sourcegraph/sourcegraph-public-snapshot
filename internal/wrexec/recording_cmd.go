@@ -117,7 +117,7 @@ func (rc *RecordingCmd) after(_ context.Context, logger log.Logger, cmd *exec.Cm
 		Path:     cmd.Path,
 
 		IsSuccess: cmd.ProcessState.Success(),
-		Output:    rc.Cmd.GetOutput(),
+		Output:    rc.Cmd.GetExecutionOutput(),
 	}
 
 	data, err := json.Marshal(&val)

@@ -8,6 +8,8 @@ import (
 	"github.com/sourcegraph/log"
 )
 
+const maxRecordedOutput = 5000
+
 // Cmd wraps an os/exec.Cmd into a thin layer than enables one to set hooks for before and after the commands.
 type Cmd struct {
 	*exec.Cmd
@@ -112,18 +114,30 @@ func (c *Cmd) runAfterHooks() {
 
 // CombinedOutput calls os/exec.Cmd.CombinedOutput after running the before hooks,
 // and run the after hooks once it returns.
-func (c *Cmd) CombinedOutput() (_ []byte, err error) {
-	if err = c.runBeforeHooks(); err != nil {
+func (c *Cmd) CombinedOutput() ([]byte, error) {
+	if err := c.runBeforeHooks(); err != nil {
 		return nil, err
 	}
 	defer c.runAfterHooks()
-	c.output, err = c.Cmd.CombinedOutput()
-	return c.output, err
+	output, err := c.Cmd.CombinedOutput()
+	c.SetExecutionOutput(output)
+	return output, err
+}
+
+// This is used to save the output of the command execution for later retrieval.
+// We truncate the output at 5000 characters so we don't store too much data.
+func (c *Cmd) SetExecutionOutput(output []byte) {
+	c.output = make([]byte, 0, maxRecordedOutput)
+	if len(c.output) > maxRecordedOutput {
+		c.output = output[:maxRecordedOutput]
+	} else {
+		c.output = output
+	}
 }
 
 // This is a workaround created to retrieve the output of an executed command without
 // calling `.Output()` or `.CombinedOutput()` again.
-func (c *Cmd) GetOutput() string {
+func (c *Cmd) GetExecutionOutput() string {
 	return string(c.output)
 }
 
@@ -134,13 +148,14 @@ func (c *Cmd) Environ() []string {
 
 // Output calls os/exec.Cmd.Output after running the before hooks,
 // and run the after hooks once it returns.
-func (c *Cmd) Output() (_ []byte, err error) {
+func (c *Cmd) Output() ([]byte, error) {
 	if err := c.runBeforeHooks(); err != nil {
 		return nil, err
 	}
 	defer c.runAfterHooks()
-	c.output, err = c.Cmd.Output()
-	return c.output, err
+	output, err := c.Cmd.Output()
+	c.SetExecutionOutput(output)
+	return output, err
 }
 
 // Run calls os/exec.Cmd.Run after running the before hooks,
