@@ -778,6 +778,7 @@ cc @${release.captainGitHubUsername}
                         edits: [
                             `sg ops update-images -pin-tag ${release.version.version} base/`,
                             `sg ops update-images -pin-tag ${release.version.version} components/executors/`,
+                            `sg ops update-images -pin-tag ${release.version.version} components/utils/migrator`,
                         ],
                         ...prBodyAndDraftState([]),
                     },
