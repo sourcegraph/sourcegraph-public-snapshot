@@ -5,19 +5,23 @@ package msp
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/internal/pointer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // This file is only built when '-tags=msp' is passed to go build while 'sg msp'
-// is experimental, as the introduction of this command significantly introduces
-// the binary size of 'sg'.
+// is experimental, as the introduction of this command currently increases the
+// the binary size of 'sg' by ~20%.
 //
 // To install a variant of 'sg' with 'sg msp' enabled, run:
 //
@@ -35,54 +39,26 @@ func init() {
 	Command.Action = nil
 	Command.Subcommands = []*cli.Command{
 		{
-			Name: "generate",
+			Name:        "init",
+			ArgsUsage:   "<service ID>",
+			Description: "Initialize a template Managed Services Platform service spec",
 			Flags: []cli.Flag{
 				&cli.StringFlag{
-					Name:     "output",
-					Usage:    "Output directory for generated Terraform assets",
-					Required: true, // TODO have a default
-				},
-				&cli.BoolFlag{
-					Name:  "tfc",
-					Usage: "Generate infrastructure stacks with Terraform Cloud backends",
-					Value: false, // TODO default to true
-				},
-				&cli.BoolFlag{
-					Name:  "gcp",
-					Usage: "Generate infrastructure stacks on real GCP configuration",
-					Value: false, // TODO default to true
+					Name:    "output",
+					Aliases: []string{"o"},
+					Usage:   "Output directory for generated spec file",
 				},
 			},
 			Action: func(c *cli.Context) error {
-				secretStore, err := secrets.FromContext(c.Context)
-				if err != nil {
-					return err
+				if c.Args().Len() != 1 {
+					return errors.New("exactly 1 argument required: service ID")
 				}
-
-				tfcOptions, err := mspLoadTFCConfig(c.Context, secretStore, c.Bool("tfc"))
-				if err != nil {
-					return errors.Wrap(err, "load TFC config")
-				}
-				gcpOptions, err := mspLoadGCPConfig(c.Context, secretStore, c.Bool("gcp"))
-				if err != nil {
-					return errors.Wrap(err, "load GCP config")
-				}
-
-				renderer := managedservicesplatform.Renderer{
-					OutputDir: c.String("output"),
-					GCP:       *gcpOptions,
-					TFC:       *tfcOptions,
-				}
-
-				// This is just an example spec for now emulating Cody Gateway
-				// infrastructure.
-				// TODO: load from file.
-				exampleSpec := spec.Spec{
+				exampleSpec, err := (spec.Spec{
 					Service: spec.ServiceSpec{
-						ID: "cody-gateway",
+						ID: c.Args().First(),
 					},
 					Build: spec.BuildSpec{
-						Image: "index.docker.io/sourcegraph/cody-gateway",
+						Image: "index.docker.io/sourcegraph/" + c.Args().First(),
 					},
 					Environments: []spec.EnvironmentSpec{
 						{
@@ -93,7 +69,7 @@ func init() {
 							Domain: spec.EnvironmentDomainSpec{
 								Type: "cloudflare",
 								Cloudflare: &spec.EnvironmentDomainCloudflareSpec{
-									Subdomain: "cody-gateway",
+									Subdomain: c.Args().First(),
 									Zone:      "sgdev.org",
 									Required:  false,
 								},
@@ -125,16 +101,89 @@ func init() {
 								// },
 							},
 							Env: map[string]string{
-								"SRC_LOG_LEVEL": "debug",
+								"SRC_LOG_LEVEL": "info",
 							},
 							SecretEnv: map[string]string{
-								"CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN": "CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN",
+								"SUPER_SEKRET_VAR": "SUPER_SEKRET_VAR",
 							},
 						},
 					},
+				}).MarshalYAML()
+				if err != nil {
+					return err
+				}
+				output := filepath.Join(
+					c.String("output"), fmt.Sprintf("%s.service.yaml", c.Args().First()))
+				if err := os.WriteFile(output, exampleSpec, os.ModePerm); err != nil {
+					return err
 				}
 
-				cdktf, err := renderer.RenderEnvironment(exampleSpec.Service, exampleSpec.Build, *exampleSpec.GetEnvironment("dev"))
+				std.Out.WriteSuccessf("Rendered template spec in %s", output)
+				return nil
+			},
+		},
+		{
+			Name:        "generate",
+			ArgsUsage:   "<service spec file> <environment ID>",
+			Description: "Generate Terraform assets for a Managed Services Platform service spec.",
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:     "output",
+					Aliases:  []string{"o"},
+					Usage:    "Output directory for generated Terraform assets",
+					Required: true,
+				},
+				&cli.BoolFlag{
+					Name:  "tfc",
+					Usage: "Generate infrastructure stacks with Terraform Cloud backends",
+					Value: false, // TODO default to true
+				},
+				&cli.BoolFlag{
+					Name:  "gcp",
+					Usage: "Generate infrastructure stacks on real GCP configuration",
+					Value: false, // TODO default to true
+				},
+			},
+			Action: func(c *cli.Context) error {
+				if c.Args().Len() != 2 {
+					return errors.New("exactly 2 arguments required: service spec file and environment ID")
+				}
+
+				// Load specification
+				serviceSpecData, err := os.ReadFile(c.Args().First())
+				if err != nil {
+					return err
+				}
+				serviceSpec, err := spec.Parse(serviceSpecData)
+				if err != nil {
+					return err
+				}
+				deployEnv := serviceSpec.GetEnvironment(c.Args().Get(1))
+				if deployEnv == nil {
+					return errors.Newf("environment %q not found in service spec", c.Args().Get(1))
+				}
+
+				// Collect shared configuration
+				secretStore, err := secrets.FromContext(c.Context)
+				if err != nil {
+					return err
+				}
+				tfcOptions, err := mspLoadTFCConfig(c.Context, secretStore, c.Bool("tfc"))
+				if err != nil {
+					return errors.Wrap(err, "load TFC config")
+				}
+				gcpOptions, err := mspLoadGCPConfig(c.Context, secretStore, c.Bool("gcp"))
+				if err != nil {
+					return errors.Wrap(err, "load GCP config")
+				}
+
+				// Render assets
+				renderer := managedservicesplatform.Renderer{
+					OutputDir: c.String("output"),
+					GCP:       *gcpOptions,
+					TFC:       *tfcOptions,
+				}
+				cdktf, err := renderer.RenderEnvironment(serviceSpec.Service, serviceSpec.Build, *deployEnv)
 				if err != nil {
 					return err
 				}
