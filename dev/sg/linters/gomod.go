@@ -21,6 +21,9 @@ func goModGuards() *linter {
 			//
 			// https://github.com/sourcegraph/zoekt/pull/330#issuecomment-1116857568
 			"github.com/prometheus/common": semver.MustParse("v0.32.1"),
+			// Disallow imports of controller-cdktf, which is definitely not for use
+			// in Sourcegraph.
+			"github.com/sourcegraph/controller-cdktf": nil,
 		},
 		"monitoring/go.mod": {
 			// See above
