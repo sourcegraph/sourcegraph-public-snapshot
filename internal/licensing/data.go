@@ -108,9 +108,11 @@ var AllFeatures = []Feature{
 	FeatureMonitoring,
 	FeatureBackupAndRestore,
 	FeatureCodeInsights,
-	&FeatureBatchChanges{},
 	FeatureSCIM,
+	FeatureCody,
 	FeatureAllowAirGapped,
+	&FeaturePrivateRepositories{},
+	&FeatureBatchChanges{},
 }
 
 type PlanDetails struct {

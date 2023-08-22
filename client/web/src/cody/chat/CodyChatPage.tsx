@@ -40,7 +40,6 @@ import { MarketingBlock } from '../../components/MarketingBlock'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import type { SourcegraphContext } from '../../jscontext'
-import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import { ChatUI } from '../components/ChatUI'
 import { CodyMarketingPage } from '../components/CodyMarketingPage'
@@ -112,14 +111,15 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
         transcriptHistory,
         loadTranscriptFromHistory,
         deleteHistoryItem,
+        logTranscriptEvent,
     } = codyChatStore
     const [showVSCodeCTA] = useState<boolean>(Math.random() < 0.5 || true)
     const [isCTADismissed = true, setIsCTADismissed] = useTemporarySetting('cody.chatPageCta.dismissed', false)
     const onCTADismiss = (): void => setIsCTADismissed(true)
 
     useEffect(() => {
-        eventLogger.log(EventName.CODY_CHAT_PAGE_VIEWED, { chatId: transcript?.id })
-    }, [transcript?.id])
+        logTranscriptEvent(EventName.CODY_CHAT_PAGE_VIEWED)
+    }, [logTranscriptEvent])
 
     const transcriptId = transcript?.id
 
@@ -286,11 +286,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                             'd-inline-flex align-items-center text-merged',
                                             styles.ctaLink
                                         )}
-                                        onClick={() =>
-                                            eventLogger.log(EventName.CODY_CHAT_DOWNLOAD_VSCODE, {
-                                                chatId: transcript?.id,
-                                            })
-                                        }
+                                        onClick={() => logTranscriptEvent(EventName.CODY_CHAT_DOWNLOAD_VSCODE)}
                                     >
                                         Download the VS Code Extension
                                         <Icon svgPath={mdiChevronRight} aria-hidden={true} />
@@ -328,11 +324,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                             'd-inline-flex align-items-center text-merged',
                                             styles.ctaLink
                                         )}
-                                        onClick={() =>
-                                            eventLogger.log(EventName.CODY_CHAT_TRY_ON_PUBLIC_CODE, {
-                                                chatId: transcript?.id,
-                                            })
-                                        }
+                                        onClick={() => logTranscriptEvent(EventName.CODY_CHAT_TRY_ON_PUBLIC_CODE)}
                                     >
                                         Try on a file, or repository
                                         <Icon svgPath={mdiChevronRight} aria-hidden={true} />

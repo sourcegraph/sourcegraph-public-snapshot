@@ -52,7 +52,6 @@ export const ORGANIZATION_MEMBERS_QUERY = gql`
         username
         displayName
         avatarURL
-        siteAdmin
     }
 `
 

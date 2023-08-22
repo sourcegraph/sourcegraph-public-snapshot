@@ -22,7 +22,6 @@ import {
     type FeedbackButtonsProps,
 } from '@sourcegraph/cody-ui/dist/Chat'
 import type { FileLinkProps } from '@sourcegraph/cody-ui/dist/chat/ContextFiles'
-import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/dist/terms'
 import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -58,6 +57,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
         loaded,
         scope,
         setScope,
+        logTranscriptEvent,
         toggleIncludeInferredRepository,
         toggleIncludeInferredFile,
         abortMessageInProgress,
@@ -89,7 +89,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
             toggleIncludeInferredFile,
             fetchRepositoryNames,
             isSourcegraphApp,
-            transcript,
+            logTranscriptEvent,
             className: 'mt-2',
         }),
         [
@@ -99,13 +99,13 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
             toggleIncludeInferredFile,
             fetchRepositoryNames,
             isSourcegraphApp,
-            transcript,
+            logTranscriptEvent,
         ]
     )
 
     const gettingStartedComponentProps = useMemo(
-        () => ({ ...scopeSelectorProps, transcript, isCodyChatPage }),
-        [scopeSelectorProps, isCodyChatPage, transcript]
+        () => ({ ...scopeSelectorProps, logTranscriptEvent, isCodyChatPage }),
+        [scopeSelectorProps, logTranscriptEvent, isCodyChatPage]
     )
 
     if (!loaded) {
@@ -128,7 +128,6 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
                 submitButtonComponent={SubmitButton}
                 fileLinkComponent={isSourcegraphApp ? AppFileLink : FileLink}
                 className={styles.container}
-                afterMarkdown={transcriptHistory.length > 1 ? '' : CODY_TERMS_MARKDOWN}
                 transcriptItemClassName={styles.transcriptItem}
                 humanTranscriptItemClassName={styles.humanTranscriptItem}
                 transcriptItemParticipantClassName="text-muted"

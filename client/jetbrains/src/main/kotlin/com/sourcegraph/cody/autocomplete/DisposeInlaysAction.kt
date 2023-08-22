@@ -12,8 +12,8 @@ class DisposeInlaysAction : EditorAction(DisposeInlaysActionHandler()), DumbAwar
   }
 }
 
-class DisposeInlaysActionHandler : AutoCompleteActionHandler() {
+class DisposeInlaysActionHandler : AutocompleteActionHandler() {
   override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext?) {
-    CodyAutoCompleteManager.getInstance().disposeInlays(editor)
+    CodyAutocompleteManager.getInstance().disposeInlays(editor)
   }
 }

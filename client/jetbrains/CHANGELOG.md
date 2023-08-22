@@ -7,6 +7,7 @@
 - New settings to enable debugging with the agent [#55821](https://github.com/sourcegraph/sourcegraph/pull/55821)
 - Added ability to hide completion suggestions with ESC key [#55955](https://github.com/sourcegraph/sourcegraph/pull/55955)
 - New alt-backslash shortcut to exlicitly trigger autocomplete [#55926](https://github.com/sourcegraph/sourcegraph/pull/55926)
+- Add visual hints about Cody status to status bar [#56046](https://github.com/sourcegraph/sourcegraph/pull/56046)
 
 ### Changed
 
