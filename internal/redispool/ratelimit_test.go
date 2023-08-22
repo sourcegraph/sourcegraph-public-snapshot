@@ -2,6 +2,7 @@ package redispool
 
 import (
 	"context"
+	"math"
 	"testing"
 	"time"
 
@@ -10,7 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRateLimiter_BasicFunctionality(t *testing.T) {
+func Test_RateLimiter_BasicFunctionality(t *testing.T) {
+	// This test is verifying the basic functionality of the rate limiter.
+	// We should be able to get a token once the token bucket config is set.
 	prefix := "__test__" + t.Name()
 	pool := redisPoolForTest(t, prefix)
 	rl := rateLimiter{
@@ -34,7 +37,9 @@ func TestRateLimiter_BasicFunctionality(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestRateLimiter_TimeToWaitExceedsLimit(t *testing.T) {
+func Test_GetToken_TimeToWaitExceedsLimit(t *testing.T) {
+	// This test is verifying that if the amount of time needed to wait for a token
+	// exceeds the context deadline, a TokenGrantExceedsLimitError is returned.
 	prefix := "__test__" + t.Name()
 	pool := redisPoolForTest(t, prefix)
 	rl := rateLimiter{
@@ -65,7 +70,9 @@ func TestRateLimiter_TimeToWaitExceedsLimit(t *testing.T) {
 	assert.True(t, errors.As(err, &expectedErr))
 }
 
-func TestRateLimiterBasicFunctionality(t *testing.T) {
+func Test_GetToken_BucketConfigDoesntExist(t *testing.T) {
+	// This test is verifying that if the configs for the token bucket are not set in Redis
+	// when GetToken is called, a TokenBucketConfigsDontExistError is returned.
 	prefix := "__test__" + t.Name()
 	pool := redisPoolForTest(t, prefix)
 	rl := rateLimiter{
@@ -84,13 +91,61 @@ func TestRateLimiterBasicFunctionality(t *testing.T) {
 	assert.True(t, errors.As(err, &expectedErr))
 }
 
-func TestRateLimiter_CanceledContext(t *testing.T) {
+func Test_GetToken_CanceledContext(t *testing.T) {
+	// This test is verifying that if the context we give to GetToken is
+	// already canceled, then we get back a context.Canceled error.
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	rl := rateLimiter{}
 	err := rl.GetToken(ctx, "doesnt_matter")
 	assert.NotNil(t, err)
 	assert.True(t, errors.Is(err, context.Canceled))
+}
+
+func Test_getToken_WaitTimes(t *testing.T) {
+	// This test is verifying that there are no wait times when the bucket capacity is above 0
+	// and increasing wait times when the bucket goes below 0.
+	prefix := "__test__" + t.Name()
+	pool := redisPoolForTest(t, prefix)
+	rl := rateLimiter{
+		pool:                   pool,
+		prefix:                 prefix,
+		getTokensScript:        *redis.NewScript(4, getTokensFromBucketLuaScript),
+		setReplenishmentScript: *redis.NewScript(3, setTokenBucketReplenishmentLuaScript),
+		timerFunc:              defaultRateLimitTimer,
+	}
+
+	// Set up the test by initializing the bucket with some initial quota and replenishment interval
+	ctx := context.Background()
+	bucketName := "github.com:api_tokens"
+	bucketQuota := int32(1)
+	// Setting the bucket replenishment to be really low so that we don't replenish any tokens during the test.
+	bucketReplenishIntervalSeconds := int32(10000)
+	err := rl.SetTokenBucketConfig(ctx, bucketName, bucketQuota, bucketReplenishIntervalSeconds)
+	assert.Nil(t, err)
+
+	maxTimeToWait := time.Duration(math.MaxInt32) * time.Second
+	now := time.Now()
+
+	// bucketMaxCapacity is 10, so the first 10 requests shouldn't need to wait any time
+	// before using the token, and the 11th request should need to wait a near infinite amount of
+	// time since our bucketReplenishIntervalSeconds is so high.
+	for i := 0; i < 10; i++ {
+		waitTime, err := rl.getToken(ctx, bucketName, now, maxTimeToWait)
+		assert.Nil(t, err)
+		assert.Equal(t, 0, int(waitTime.Seconds()))
+	}
+	waitTime, err := rl.getToken(ctx, bucketName, now, maxTimeToWait)
+	assert.Nil(t, err)
+	// We want to assert here that the time we are told to wait is 10000 since
+	// 10000 is our replenishment interval, and there is -1 tokens in the bucket.
+	assert.Less(t, bucketReplenishIntervalSeconds, int32(waitTime.Seconds()))
+
+	waitTime, err = rl.getToken(ctx, bucketName, now, maxTimeToWait)
+	assert.Nil(t, err)
+	// We want to assert here that the time we are told to wait is 20000 since
+	// 10000 is our replenishment interval, and there are now -2 tokens in the bucket.
+	assert.Less(t, (2 * bucketReplenishIntervalSeconds), int32(waitTime.Seconds()))
 }
 
 // Mostly copy-pasta from rache. Will clean up later as the relationship
@@ -112,7 +167,7 @@ func redisPoolForTest(t *testing.T, prefix string) *redis.Pool {
 
 	c := pool.Get()
 	t.Cleanup(func() {
-		c.Close()
+		_ = c.Close()
 	})
 
 	if err := DeleteAllKeysWithPrefix(c, prefix); err != nil {

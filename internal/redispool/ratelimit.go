@@ -37,7 +37,7 @@ type RateLimiter interface {
 type rateLimiter struct {
 	prefix                 string
 	pool                   *redis.Pool
-	timerFunc              func(d time.Duration) (<-chan time.Time, func() bool, func())
+	timerFunc              func(d time.Duration) (<-chan time.Time, func() bool)
 	getTokensScript        redis.Script
 	setReplenishmentScript redis.Script
 }
@@ -80,9 +80,8 @@ func (r *rateLimiter) GetToken(ctx context.Context, bucketName string) error {
 	}
 
 	// Wait for the required time before the token can be used.
-	ch, stop, advance := r.timerFunc(timeToWait)
+	ch, stop := r.timerFunc(timeToWait)
 	defer stop()
-	advance() // only has an effect when testing
 	select {
 	case <-ch:
 		// We can proceed.
@@ -142,9 +141,9 @@ func getTokeBucketError(bucketKey string, allowed getTokenGrantType, timeToWait 
 
 // defaultRateLimitTimer returns the default timer used for rate limiting.
 // All non-test clients should use defaultRateLimitTimer.
-func defaultRateLimitTimer(d time.Duration) (<-chan time.Time, func() bool, func()) {
+func defaultRateLimitTimer(d time.Duration) (<-chan time.Time, func() bool) {
 	timer := time.NewTimer(d)
-	return timer.C, timer.Stop, func() {}
+	return timer.C, timer.Stop
 }
 
 func (r *rateLimiter) SetTokenBucketConfig(ctx context.Context, bucketName string, bucketQuota, bucketReplenishIntervalSeconds int32) error {
