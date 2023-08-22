@@ -1,7 +1,7 @@
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { SiteConfiguration, SMTPServerConfig } from '@sourcegraph/shared/src/schema/site.schema'
-import { Checkbox, Form, Input, Label, Link, Select, Text, useDebounce } from '@sourcegraph/wildcard'
+import { Checkbox, Form, Input, Label, Link, Select, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 
@@ -49,10 +49,12 @@ export const SMTPConfigForm: FC<Props> = ({ config, authenticatedUser, onConfigC
             authentication: config['email.smtp']?.authentication ?? 'PLAIN',
         } as FormData
 
-        setForm({
+        const newForm = {
             ...initialConfig,
             ...result,
-        })
+        }
+
+        setForm(newForm)
     }, [config, setForm])
 
     const isValid = useMemo(
@@ -74,6 +76,40 @@ export const SMTPConfigForm: FC<Props> = ({ config, authenticatedUser, onConfigC
         [form]
     )
 
+    const applyChanges = useCallback(
+        (newValue: FormData) => {
+            if (!isValid) {
+                return
+            }
+
+            const normalizedConfig = { ...newValue } as FormData
+            if (normalizedConfig.authentication === 'none') {
+                delete normalizedConfig.username
+                delete normalizedConfig.password
+            }
+            for (const [key, val] of Object.entries(normalizedConfig)) {
+                if (val === '' || val === undefined) {
+                    delete normalizedConfig[key]
+                }
+            }
+
+            onConfigChange({
+                'email.address': normalizedConfig.emailAddress,
+                'email.senderName': normalizedConfig.emailSenderName,
+                'email.smtp': {
+                    host: normalizedConfig.host,
+                    port: normalizedConfig.port,
+                    authentication: normalizedConfig.authentication,
+                    username: normalizedConfig.username,
+                    password: normalizedConfig.password,
+                    noVerifyTLS: normalizedConfig.noVerifyTLS,
+                    domain: normalizedConfig.domain,
+                },
+            })
+        },
+        [form, isValid, onConfigChange]
+    )
+
     const fieldChanged = useCallback(
         (evt: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLSelectElement>) => {
             const { name, value } = evt.target
@@ -88,43 +124,11 @@ export const SMTPConfigForm: FC<Props> = ({ config, authenticatedUser, onConfigC
             if (name === 'port') {
                 newValue.port = Number(value)
             }
-            setForm(newValue)
+
+            applyChanges(newValue)
         },
-        [form, setForm]
+        [form, setForm, applyChanges]
     )
-
-    const applyChanges = useCallback(() => {
-        if (!isValid) {
-            return
-        }
-
-        const normalizedConfig = { ...form } as FormData
-        if (normalizedConfig.authentication === 'none') {
-            delete normalizedConfig.username
-            delete normalizedConfig.password
-        }
-        for (const [key, val] of Object.entries(normalizedConfig)) {
-            if (val === '' || val === undefined) {
-                delete normalizedConfig[key]
-            }
-        }
-
-        onConfigChange({
-            'email.address': normalizedConfig.emailAddress,
-            'email.senderName': normalizedConfig.emailSenderName,
-            'email.smtp': {
-                host: normalizedConfig.host,
-                port: normalizedConfig.port,
-                authentication: normalizedConfig.authentication,
-                username: normalizedConfig.username,
-                password: normalizedConfig.password,
-                noVerifyTLS: normalizedConfig.noVerifyTLS,
-                domain: normalizedConfig.domain,
-            },
-        })
-    }, [form, onConfigChange, isValid])
-
-    const applyChangesDebounced = useDebounce(applyChanges, 300)
 
     return (
         <>
@@ -136,7 +140,7 @@ export const SMTPConfigForm: FC<Props> = ({ config, authenticatedUser, onConfigC
                 for more information.
             </Text>
 
-            <Form className="mt-2" onChange={applyChangesDebounced}>
+            <Form className="mt-2">
                 <Label className="w-100 mt-2">
                     <Text className="mb-2">Email</Text>
                     <Input
