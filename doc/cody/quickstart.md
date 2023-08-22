@@ -1,6 +1,6 @@
 # Cody Quickstart
 
-<p class="subtitle">In this quickstart guide, you'll learn how to use Cody once you have installed the extension in your VS Code editor. Here you will:</p>
+<p class="subtitle">In this quickstart guide, you'll learn how to use Cody once you have installed the extension in your VS Code editor. Here you will perform the following three tasks:</p>
 
 - Try the `Generate Unit Tests` command
 - Ask Cody to suggest bug fixes and changes to code snippets
@@ -27,12 +27,6 @@ Cody also supports `Commands` with VS Code. These are quick, ready-to-use prompt
 ## Working with the Cody extension
 
 Let's create a JavaScript function that converts a `given date` into a human-readable description of the time elapsed between the `given date` and the `current date`. This example uses the `cody-quickstart` repository which is configured for Cody in Sourcegraph. You can view the code in this repository to see how Cody can provide additional context.
-
-Next, you'll use the `date.js` file to perform the following tasks with Cody:
-
-- Try the `Generate Unit Tests` command
-- Ask Cody to suggest bug fixes and changes to code snippets
-- Ask Cody to pull additional information from the documentation
 
 Here's the code for the date elapsed function from the `date.js` file:
 
@@ -73,13 +67,6 @@ function getTimeAgoDescription(dateString) {
 
 	return timeAgoDescription;
 }
-
-const inputDate = '2020-02-09';
-const description = getTimeAgoDescription(inputDate);
-console.log(description);
-
-const outputElement = document.getElementById('output');
-outputElement.textContent = description;
 ```
 
 ## Generate a unit test
