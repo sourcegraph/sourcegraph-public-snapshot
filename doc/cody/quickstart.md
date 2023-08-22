@@ -2,9 +2,9 @@
 
 <p class="subtitle">In this quickstart guide, you'll learn how to use Cody once you have installed the extension in your VS Code editor. Here you will perform the following three tasks:</p>
 
-- Try the `Generate Unit Tests` command
-- Ask Cody to suggest bug fixes and changes to code snippets
-- Ask Cody to pull additional information from the documentation
+1. Try the `Generate Unit Tests` command
+2. Ask Cody to suggest bug fixes and changes to code snippets
+3. Ask Cody to pull additional information from the documentation
 
 ## Prerequisites
 
@@ -21,7 +21,7 @@ After installing the extension, the side activity bar will display an icon for *
 Cody also supports `Commands` with VS Code. These are quick, ready-to-use prompt actions that you can apply to any code or text-based snippet you've highlighted. You can run a command in 3 ways:
 
 1. Type `/` in the chat bar, and Cody will suggest a list of commands
-2. Right click -> Cody -> Select a command
+2. Right click > Cody > Select a command
 3. Press the command hotkey (`⌥` + `c` / `alt` + `c`)
 
 ## Working with the Cody extension
@@ -69,7 +69,7 @@ function getTimeAgoDescription(dateString) {
 }
 ```
 
-## Generate a unit test
+## 1. Generate a unit test
 
 To ensure code quality and early bug detection, one of the most useful commands that Cody offers is `Generate Unit Tests`. It quickly helps you write a test code for any snippet that you have highlighted. To generate a unit test for our example function:
 
@@ -102,7 +102,7 @@ describe('getTimeAgoDescription', () => {
 
 This unit test file tests the `getTimeAgoDescription()` function from the `date.js` file. These tests help you validate that the `getTimeAgoDescription()` function correctly returns the relative time descriptions for dates in the past. The tests generate specific sample input dates and confirm that the output matches the expected result.
 
-## Suggest bug fixes and changes to code snippets
+## 2. Suggest bug fixes and changes to code snippets
 
 Cody is very efficient at catching bugs and suggesting improvements to code snippets. To try this out, let's run our previously generated unit test and see if Cody notices any issues. Inside your VS Code terminal, run the following command to try the unit test:
 
@@ -122,7 +122,7 @@ Leveraging the failed test output, Cody is able to identify the potential bug an
 
 ![Example of successfully running unit test ](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-quickstart/passed-tests.png)
 
-## Ask Cody to pull reference documentation
+## 3. Ask Cody to pull reference documentation
 
 Cody can also directly reference documentation. If you've committed docs within your codebase, Cody can search through the text to understand documentation and quickly pull out information so you don't have to search it yourself.
 
