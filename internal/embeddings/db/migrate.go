@@ -74,6 +74,7 @@ func ensureCollection(ctx context.Context, cc qdrant.CollectionsClient, name str
 }
 
 func ensureRepoIDIndex(ctx context.Context, cc qdrant.PointsClient, name string) error {
+	// This is idempotent, so no need to check if it exists first
 	_, err := cc.CreateFieldIndex(ctx, &qdrant.CreateFieldIndexCollection{
 		CollectionName:   name,
 		Wait:             pointers.Ptr(true),
