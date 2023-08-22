@@ -15,7 +15,7 @@ import {
 import classNames from 'classnames'
 
 import type { TranscriptJSON } from '@sourcegraph/cody-shared/dist/chat/transcript'
-import { useLazyQuery, useQuery } from '@sourcegraph/http-client'
+import { useLazyQuery } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import {
@@ -35,18 +35,12 @@ import {
     Overlapping,
 } from '@sourcegraph/wildcard'
 
-import { useUserHistory } from '../../../components/useUserHistory'
-import type {
-    ContextSelectorRepoFields,
-    SuggestedReposResult,
-    SuggestedReposVariables,
-    ReposSelectorSearchResult,
-    ReposSelectorSearchVariables,
-} from '../../../graphql-operations'
+import type { ReposSelectorSearchResult, ReposSelectorSearchVariables } from '../../../graphql-operations'
 import { ExternalRepositoryIcon } from '../../../site-admin/components/ExternalRepositoryIcon'
 
-import { SuggestedReposQuery, ReposSelectorSearchQuery } from './backend'
+import { ReposSelectorSearchQuery } from './backend'
 import { Callout } from './Callout'
+import { useRepoSuggestions } from './useRepoSuggestions'
 
 import styles from './ScopeSelector.module.scss'
 
@@ -67,33 +61,6 @@ export interface IRepo {
 }
 
 export const MAX_ADDITIONAL_REPOSITORIES = 10
-const MAX_SUGGESTED_REPOSITORIES = 10
-
-// NOTE: The actual 10 most popular OSS repositories on GitHub are typically just
-// plaintext resource collections like awesome lists or how-to-program tutorials, which
-// are not likely to be as interesting to Cody users. Instead, we hardcode a list of
-// repositories that are among the top 100 that contain actual source code.
-const TOP_TEN_DOTCOM_REPOS = [
-    'github.com/sourcegraph/sourcegraph',
-    'github.com/freeCodeCamp/freeCodeCamp',
-    'github.com/facebook/react',
-    'github.com/tensorflow/tensorflow',
-    'github.com/torvalds/linux',
-    'github.com/microsoft/vscode',
-    'github.com/flutter/flutter',
-    'github.com/golang/go',
-    'github.com/d3/d3',
-    'github.com/kubernetes/kubernetes',
-]
-
-/**
- * removeDupes is an `Array.filter` predicate function which removes duplicate entries
- * from an array of objects based on the `name` property. It filters out any entries which
- * are not the first occurrence with a given `name`, which means it will preserve the
- * earliest occurrence of each.
- */
-const removeDupes = (first: { name: string }, index: number, self: { name: string }[]): boolean =>
-    index === self.findIndex(entry => entry.name === first.name)
 
 export const RepositoriesSelectorPopover: React.FC<{
     includeInferredRepository: boolean
@@ -135,102 +102,9 @@ export const RepositoriesSelectorPopover: React.FC<{
         ReposSelectorSearchVariables
     >(ReposSelectorSearchQuery, {})
 
-    // TODO: Refactor out into custom hook
-    const userHistory = useUserHistory(authenticatedUser?.id, false)
-    const suggestedRepoNames: string[] = useMemo(() => {
-        const flattenedTranscriptHistoryEntries = transcriptHistory
-            .map(item => {
-                const { scope, lastInteractionTimestamp } = item
-                return (
-                    // Return a new item for each repository in the scope.
-                    scope?.repositories.map(name => ({
-                        // Parse a date from the last interaction timestamp.
-                        lastAccessed: new Date(lastInteractionTimestamp),
-                        name,
-                    })) || []
-                )
-            })
-            .flat()
-            // Remove duplicates.
-            .filter(removeDupes)
-            // We only need up to the first MAX_SUGGESTED_REPOSITORIES.
-            .slice(0, MAX_SUGGESTED_REPOSITORIES)
-
-        const userHistoryEntries =
-            userHistory
-                .loadEntries()
-                .map(item => ({
-                    name: item.repoName,
-                    // Parse a date from the last acessed timestamp.
-                    lastAccessed: new Date(item.lastAccessed),
-                }))
-                // We only need up to the first MAX_SUGGESTED_REPOSITORIES.
-                .slice(0, MAX_SUGGESTED_REPOSITORIES) || []
-
-        // We also take a list of 10 of the most popular OSS repositories on GitHub to
-        // fill in if we have fewer than MAX_SUGGESTED_REPOSITORIES. This is mostly
-        // relevant for dotcom but could fill in for any instance which indexes GitHub OSS
-        // repositories. If the repositories are not indexed on the instance, they will
-        // not return any results from the search API and thus will not be included in the
-        // final list of suggestions.
-        const topTenDotcomRepos = TOP_TEN_DOTCOM_REPOS.map(name => ({
-            name,
-            // We order by most recently accessed; these should always be ranked last.
-            lastAccessed: new Date(0),
-        }))
-
-        // Merge the lists.
-        const merged = [...flattenedTranscriptHistoryEntries, ...userHistoryEntries, ...topTenDotcomRepos]
-            // Sort by most recently accessed.
-            .sort((a, b) => b.lastAccessed.getTime() - a.lastAccessed.getTime())
-            // Remove duplicates.
-            .filter(removeDupes)
-            // Take the most recent MAX_SUGGESTED_REPOSITORIES.
-            .slice(0, MAX_SUGGESTED_REPOSITORIES)
-
-        // Return just the names.
-        return merged.map(({ name }) => name)
-    }, [transcriptHistory, userHistory])
-
-    // Query for the suggested repositories.
-    const { data: suggestedReposData } = useQuery<SuggestedReposResult, SuggestedReposVariables>(SuggestedReposQuery, {
-        variables: {
-            names: suggestedRepoNames,
-            includeJobs: !!authenticatedUser?.siteAdmin,
-        },
-        fetchPolicy: 'cache-first',
+    const suggestions = useRepoSuggestions(transcriptHistory, authenticatedUser, {
+        omitSuggestions: additionalRepositories,
     })
-    // Filter out and reorder the suggested repository results.
-    const displaySuggestedRepos: ContextSelectorRepoFields[] = useMemo(() => {
-        if (!suggestedReposData) {
-            return []
-        }
-
-        const nodes = [...suggestedReposData.byName.nodes]
-        // The order of the by-name repos returned by the search API will not match the
-        // order of suggestions we intend to display (the ordering of suggestedRepoNames),
-        // since the default ordering of the search API is alphabetical. Thus, we reorder
-        // them to match the initial ordering of suggestedRepoNames.
-        const sortedByNameNodes = nodes.sort(
-            (a, b) => suggestedRepoNames.indexOf(a.name) - suggestedRepoNames.indexOf(b.name)
-        )
-        // Make sure we have a full MAX_SUGGESTED_REPOSITORIES to display in the
-        // suggestions. We'll prioritize the repositories we looked up by name, and then
-        // fill in the rest from the first 10 embedded repositories returned by the search
-        // API.
-        return (
-            [...sortedByNameNodes, ...suggestedReposData.firstTen.nodes]
-                // Remove any duplicates.
-                .filter(removeDupes)
-                // Take the first MAX_SUGGESTED_REPOSITORIES.
-                .slice(0, MAX_SUGGESTED_REPOSITORIES)
-                // Finally, filter out repositories that are already selected in the chat
-                // context.
-                .filter(
-                    suggestion => !additionalRepositories.find(alreadyAdded => alreadyAdded.name === suggestion.name)
-                )
-        )
-    }, [suggestedReposData, suggestedRepoNames, additionalRepositories])
 
     const searchResults = useMemo(() => searchResultsData?.repositories.nodes || [], [searchResultsData])
 
@@ -474,8 +348,8 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                         styles.contextItemsContainer
                                                     )}
                                                 >
-                                                    {displaySuggestedRepos.length &&
-                                                        displaySuggestedRepos.map(repository => (
+                                                    {suggestions.length &&
+                                                        suggestions.map(repository => (
                                                             <SearchResultsListItem
                                                                 additionalRepositories={[]}
                                                                 key={repository.id}
@@ -512,8 +386,8 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                         styles.contextItemsContainer
                                                     )}
                                                 >
-                                                    {displaySuggestedRepos.length &&
-                                                        displaySuggestedRepos.map(repository => (
+                                                    {suggestions.length &&
+                                                        suggestions.map(repository => (
                                                             <SearchResultsListItem
                                                                 additionalRepositories={[]}
                                                                 key={repository.id}

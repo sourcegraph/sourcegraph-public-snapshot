@@ -145,6 +145,7 @@ export class UserHistory {
  * anonymous
  * @param isRepositoryRelatedPage whether the component rendering this hook is on a page
  * that is related to a repository (e.g. a code view page) and should be tracked
+ * @returns a `UserHistory` instance
  */
 export function useUserHistory(userID: Scalars['ID'] | undefined, isRepositoryRelatedPage: boolean): UserHistory {
     const location = useLocation()

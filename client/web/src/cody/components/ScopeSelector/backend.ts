@@ -39,8 +39,8 @@ export const ReposSelectorSearchQuery = gql`
 `
 
 export const SuggestedReposQuery = gql`
-    query SuggestedRepos($names: [String!]!, $includeJobs: Boolean!) {
-        byName: repositories(names: $names, first: 10) {
+    query SuggestedRepos($names: [String!]!, $numResults: Int!, $includeJobs: Boolean!) {
+        byName: repositories(names: $names, first: $numResults) {
             nodes {
                 ...ContextSelectorRepoFields
                 embeddingJobs(first: 1) @include(if: $includeJobs) {
@@ -50,9 +50,9 @@ export const SuggestedReposQuery = gql`
                 }
             }
         }
-        # We also grab the first 10 embedded repos available on the site to
-        # show in suggestions as a backup.
-        firstTen: repositories(first: 10, embedded: true) {
+        # We also grab the first $numResults embedded repos available on the site
+        # to show in suggestions as a backup.
+        firstN: repositories(first: $numResults, embedded: true) {
             nodes {
                 ...ContextSelectorRepoFields
                 embeddingJobs(first: 1) @include(if: $includeJobs) {
