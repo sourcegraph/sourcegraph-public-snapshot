@@ -571,6 +571,7 @@ body > #page > main > #content {
   margin-bottom: 16px;
   font-weight: 600;
   line-height: 1.25;
+  max-width: 665px;
 
   /** For .anchor. **/
   position: relative;
