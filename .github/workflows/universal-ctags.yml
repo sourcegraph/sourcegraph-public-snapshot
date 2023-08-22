@@ -1,9 +1,9 @@
 name: universal-ctags
 
 on:
-  push:
+  pull_request:
     paths:
-    - 'dev/nix/ctags.nix'
+      - 'dev/nix/ctags.nix'
   workflow_dispatch:
 permissions:
   contents: 'read'
