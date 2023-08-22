@@ -2,87 +2,95 @@ package redispool
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestRateLimiter(t *testing.T) {
+func TestRateLimiter_BasicFunctionality(t *testing.T) {
 	prefix := "__test__" + t.Name()
 	pool := redisPoolForTest(t, prefix)
 	rl := rateLimiter{
 		pool:                   pool,
 		prefix:                 prefix,
-		getTokensScript:        *redis.NewScript(3, getTokensFromBucketLuaScript),
+		getTokensScript:        *redis.NewScript(4, getTokensFromBucketLuaScript),
 		setReplenishmentScript: *redis.NewScript(3, setTokenBucketReplenishmentLuaScript),
 		timerFunc:              defaultRateLimitTimer,
 	}
 
-	// Set up the test by initializing the bucket with some initial capacity and replenishment rate
+	// Set up the test by initializing the bucket with some initial quota and replenishment interval
 	ctx := context.Background()
 	bucketName := "github.com:api_tokens"
-	bucketCapacity := int32(100)
-	bucketReplenishRateSeconds := int32(10)
+	bucketQuota := int32(100)
+	bucketReplenishIntervalSeconds := int32(100)
+	err := rl.SetTokenBucketConfig(ctx, bucketName, bucketQuota, bucketReplenishIntervalSeconds)
+	assert.Nil(t, err)
 
-	// Try to get tokens before rate limiter config is set in Redis
-	_, err := rl.GetToken(ctx, bucketName)
-	if err == nil {
-		t.Fatalf("Expected error getting tokens from bucket without config")
-	}
-	var configErr *RateLimiterConfigNotCreatedError
-	if !errors.As(err, &configErr) {
-		t.Fatalf("Expected rate limiter config not created error, got: %+v", err)
-	}
+	// Get a token from the bucket
+	err = rl.GetToken(ctx, bucketName)
+	assert.Nil(t, err)
+}
 
-	err = rl.SetTokenBucketConfig(ctx, bucketName, bucketCapacity, bucketReplenishRateSeconds)
-	if err != nil {
-		t.Fatalf("Error setting token bucket configuration: %v", err)
-	}
-
-	// Get tokens from the bucket
-	requestedTokens := 10
-	tokens, err := rl.GetToken(ctx, bucketName, requestedTokens)
-	if err != nil {
-		t.Fatalf("Error getting tokens from bucket: %v", err)
-	}
-	if !allowed {
-		t.Errorf("Expected the request to be allowed, but it was not.")
+func TestRateLimiter_TimeToWaitExceedsLimit(t *testing.T) {
+	prefix := "__test__" + t.Name()
+	pool := redisPoolForTest(t, prefix)
+	rl := rateLimiter{
+		pool:                   pool,
+		prefix:                 prefix,
+		getTokensScript:        *redis.NewScript(4, getTokensFromBucketLuaScript),
+		setReplenishmentScript: *redis.NewScript(3, setTokenBucketReplenishmentLuaScript),
+		timerFunc:              defaultRateLimitTimer,
 	}
 
-	if remTokens != 90 {
-		t.Errorf("Expected %d remaining tokens, but got %d", 90, remTokens)
+	// Set up the test by initializing the bucket with some initial quota and replenishment interval
+	ctx := context.Background()
+	bucketName := "github.com:api_tokens"
+	bucketQuota := int32(100)
+	bucketReplenishIntervalSeconds := int32(100)
+	err := rl.SetTokenBucketConfig(ctx, bucketName, bucketQuota, bucketReplenishIntervalSeconds)
+	assert.Nil(t, err)
+
+	// Setting the max capacity to -10 means that the first token requester will have to wait 10s before using it.
+	bucketMaxCapacity = -10
+	// Ser a context with a deadline of 5s from now so that it can't wait the 10s to use the token.
+	ctxWithDeadline, _ := context.WithDeadline(ctx, time.Now().Add(5*time.Second))
+
+	// Get a token from the bucket
+	err = rl.GetToken(ctxWithDeadline, bucketName)
+	var expectedErr TokenGrantExceedsLimitError
+	assert.NotNil(t, err)
+	assert.True(t, errors.As(err, &expectedErr))
+}
+
+func TestRateLimiterBasicFunctionality(t *testing.T) {
+	prefix := "__test__" + t.Name()
+	pool := redisPoolForTest(t, prefix)
+	rl := rateLimiter{
+		pool:            pool,
+		prefix:          prefix,
+		getTokensScript: *redis.NewScript(4, getTokensFromBucketLuaScript),
 	}
 
-	// Get more tokens
-	requestedTokens2 := 30
-	allowed, remTokens, err = rl.GetTokensFromBucket(ctx, bucketName, requestedTokens2)
-	if err != nil {
-		t.Fatalf("Error getting tokens from bucket: %v", err)
-	}
-	if !allowed {
-		t.Errorf("Expected the request to be allowed, but it was not.")
-	}
+	ctx := context.Background()
+	bucketName := "github.com:api_tokens"
 
-	if remTokens != 60 {
-		t.Errorf("Expected %d remaining tokens, but got %d", 60, remTokens)
-	}
+	// Try to get a token before rate limiter config is set in Redis, should return an error.
+	var expectedErr TokenBucketConfigsDontExistError
+	err := rl.GetToken(ctx, bucketName)
+	assert.NotNil(t, err)
+	assert.True(t, errors.As(err, &expectedErr))
+}
 
-	// Try to get more tokens than the remaining capacity
-	requestedTokens = remTokens + 1
-	allowed, remTokens, err = rl.GetTokensFromBucket(ctx, bucketName, requestedTokens)
-	if err != nil {
-		t.Fatalf("Error getting tokens from bucket: %v", err)
-	}
-
-	if allowed {
-		t.Errorf("Expected the request to be denied due to insufficient tokens, but it was allowed.")
-	}
-	// Remaining tokens should be unchanged
-	if remTokens != 60 {
-		t.Errorf("Expected %d remaining tokens, but got %d", 60, remTokens)
-	}
+func TestRateLimiter_CanceledContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	rl := rateLimiter{}
+	err := rl.GetToken(ctx, "doesnt_matter")
+	assert.NotNil(t, err)
+	assert.True(t, errors.Is(err, context.Canceled))
 }
 
 // Mostly copy-pasta from rache. Will clean up later as the relationship

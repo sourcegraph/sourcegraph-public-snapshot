@@ -53,7 +53,7 @@ func NewRateLimiter() (RateLimiter, error) {
 		pool:      pool,
 		timerFunc: defaultRateLimitTimer,
 		// 3 is the key count, keys are arguments passed to the lua script that will be used to get values from Redis KV.
-		getTokensScript:        *redis.NewScript(3, getTokensFromBucketLuaScript),
+		getTokensScript:        *redis.NewScript(4, getTokensFromBucketLuaScript),
 		setReplenishmentScript: *redis.NewScript(3, setTokenBucketReplenishmentLuaScript),
 	}, nil
 }
@@ -74,7 +74,7 @@ func (r *rateLimiter) GetToken(ctx context.Context, bucketName string) error {
 	}
 
 	// Reserve a token from the bucket.
-	timeToWait, err := r.getToken(ctx, bucketName, waitLimit, now)
+	timeToWait, err := r.getToken(ctx, bucketName, now, waitLimit)
 	if err != nil {
 		return err
 	}
@@ -92,12 +92,13 @@ func (r *rateLimiter) GetToken(ctx context.Context, bucketName string) error {
 	}
 }
 
-func (r *rateLimiter) getToken(ctx context.Context, bucketName string, maxTimeToWait time.Duration, t time.Time) (timeToWait time.Duration, err error) {
+func (r *rateLimiter) getToken(ctx context.Context, bucketName string, requestTime time.Time, maxTimeToWait time.Duration) (timeToWait time.Duration, err error) {
 	keys := r.getRateLimiterKeys(bucketName)
 	connection := r.pool.Get()
 	defer connection.Close()
 
-	result, err := r.getTokensScript.DoContext(ctx, connection, keys.BucketKey, keys.LastReplenishmentTimestampKey, keys.QuotaKey, keys.ReplenishmentIntervalSecondsKey, bucketMaxCapacity, t, maxTimeToWait)
+	//maxTimeToWaitInt32 := int32(maxTimeToWait.Seconds())
+	result, err := r.getTokensScript.DoContext(ctx, connection, keys.BucketKey, keys.LastReplenishmentTimestampKey, keys.QuotaKey, keys.ReplenishmentIntervalSecondsKey, bucketMaxCapacity, requestTime.Unix(), maxTimeToWait.Seconds())
 	if err != nil {
 		return 0, errors.Wrapf(err, "error while getting tokens from bucket %s", keys.BucketKey)
 	}
@@ -291,7 +292,7 @@ type TokenBucketConfigsDontExistError struct {
 }
 
 func (e TokenBucketConfigsDontExistError) Error() string {
-	return fmt.Sprintf("Token Bucket vonfig not created for bucket key: %s", e.tokenBucketKey)
+	return fmt.Sprintf("token bucket config not created for bucket key: %s", e.tokenBucketKey)
 }
 
 type TokenGrantExceedsLimitError struct {
