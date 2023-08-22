@@ -96,8 +96,8 @@ func (r *schemaResolver) SetCodeHostRateLimits(ctx context.Context, args SetCode
 	if err != nil {
 		return nil, errors.Wrap(err, "invalid code host id")
 	}
-	codeHostIDInt32 := int32(codeHostID)
-	codeHost, err := r.db.CodeHosts().GetByID(ctx, codeHostIDInt32)
+
+	codeHost, err := r.db.CodeHosts().GetByID(ctx, codeHostID)
 	if err != nil {
 		return nil, err
 	}
