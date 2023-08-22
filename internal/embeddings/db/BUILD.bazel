@@ -5,6 +5,7 @@ go_library(
     name = "db",
     srcs = [
         "chunk_point.go",
+        "conf.go",
         "db.go",
         "migrate.go",
         "noop.go",
@@ -14,10 +15,13 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
+        "//internal/conf",
+        "//internal/grpc/defaults",
         "//lib/errors",
         "//lib/pointers",
         "@com_github_google_uuid//:uuid",
         "@com_github_qdrant_go_client//qdrant",
+        "@com_github_sourcegraph_log//:log",
         "@org_golang_google_grpc//:go_default_library",
     ],
 )
