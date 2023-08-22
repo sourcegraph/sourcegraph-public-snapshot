@@ -1472,6 +1472,7 @@ pre.chroma.sgquery button {
     cursor: pointer;
     color: #a1a1a1;
     outline: none;
+    padding: 5px 10px 0 0;
 }
 
 @media (min-width: 1350px) {
