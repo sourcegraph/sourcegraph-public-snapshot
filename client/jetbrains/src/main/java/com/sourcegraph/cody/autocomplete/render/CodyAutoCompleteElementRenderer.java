@@ -26,6 +26,8 @@ public abstract class CodyAutoCompleteElementRenderer implements EditorCustomEle
       @Nullable AutoCompleteRendererType type) {
     this.text = text;
     this.completionItem = completionItem;
+    int a = 42;
+    System.out.println("a: ");
     this.themeAttributes = AutoCompleteRenderUtils.getTextAttributesForEditor(editor);
     this.editor = editor;
     this.type = type;

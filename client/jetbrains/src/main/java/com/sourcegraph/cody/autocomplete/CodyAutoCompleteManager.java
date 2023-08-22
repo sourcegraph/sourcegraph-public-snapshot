@@ -149,27 +149,29 @@ public class CodyAutoCompleteManager {
       logger.warn("Doing nothing, Agent is not running");
       return CompletableFuture.completedFuture(null);
     }
+
     Position position = textDocument.positionAt(offset);
-    CompletableFuture<InlineAutoCompleteList> asyncCompletions =
-        server.autocompleteExecute(
-            new AutocompleteExecuteParams()
-                .setFilePath(
-                    Objects.requireNonNull(
-                            FileDocumentManager.getInstance().getFile(editor.getDocument()))
-                        .getPath())
-                .setPosition(
-                    new com.sourcegraph.cody.agent.protocol.Position()
-                        .setLine(position.line)
-                        .setCharacter(position.character)));
-    return CompletableFuture.runAsync(
-            () ->
-                CodyAutocompleteStatusService.notifyApplication(
-                    CodyAutocompleteStatus.AutocompleteInProgress))
-        .thenCompose(
-            unused ->
-                asyncCompletions.thenAccept(
-                    result ->
-                        processAutocompleteResult(project, editor, offset, triggerKind, result)))
+    AutocompleteExecuteParams params =
+        new AutocompleteExecuteParams()
+            .setFilePath(
+                Objects.requireNonNull(
+                        FileDocumentManager.getInstance().getFile(editor.getDocument()))
+                    .getPath())
+            .setPosition(
+                new com.sourcegraph.cody.agent.protocol.Position()
+                    .setLine(position.line)
+                    .setCharacter(position.character));
+
+    CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.AutocompleteInProgress);
+    return server
+        .autocompleteExecute(params)
+        .thenAccept(
+            result -> processAutocompleteResult(project, editor, offset, triggerKind, result))
+        .exceptionally(
+            error -> {
+              logger.warn("failed autocomplete request " + params, error);
+              return null;
+            })
         .thenAccept(
             unused ->
                 CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.Ready));
@@ -199,33 +201,28 @@ public class CodyAutoCompleteManager {
       return;
     }
     final InlineAutoCompleteItem item = maybeItem.get();
-    try {
-      ApplicationManager.getApplication()
-          .invokeLater(
-              () -> {
-                this.clearAutoCompleteSuggestions(editor);
+    ApplicationManager.getApplication()
+        .invokeLater(
+            () -> {
+              this.clearAutoCompleteSuggestions(editor);
 
-                if (currentAutocompleteTelemetry != null) {
-                  currentAutocompleteTelemetry.markCompletionDisplayed();
-                }
+              if (currentAutocompleteTelemetry != null) {
+                currentAutocompleteTelemetry.markCompletionDisplayed();
+              }
 
-                // Avoid displaying autocomplete when IntelliJ is already displaying
-                // built-in completions. When built-in completions are visible, we can't
-                // accept the Cody autocomplete with TAB because it accepts the built-in
-                // completion.
-                if (LookupManager.getInstance(project).getActiveLookup() != null) {
-                  if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)
-                      || UserLevelConfig.isVerboseLoggingEnabled()) {
-                    logger.warn("Skipping autocomplete because lookup is active: " + item);
-                  }
-                  return;
+              // Avoid displaying autocomplete when IntelliJ is already displaying
+              // built-in completions. When built-in completions are visible, we can't
+              // accept the Cody autocomplete with TAB because it accepts the built-in
+              // completion.
+              if (LookupManager.getInstance(project).getActiveLookup() != null) {
+                if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)
+                    || UserLevelConfig.isVerboseLoggingEnabled()) {
+                  logger.warn("Skipping autocomplete because lookup is active: " + item);
                 }
-                displayAgentAutocomplete(editor, offset, item, inlayModel, triggerKind);
-              });
-    } catch (Exception e) {
-      // TODO: do something smarter with unexpected errors.
-      logger.warn(e);
-    }
+                return;
+              }
+              displayAgentAutocomplete(editor, offset, item, inlayModel, triggerKind);
+            });
   }
 
   /**
