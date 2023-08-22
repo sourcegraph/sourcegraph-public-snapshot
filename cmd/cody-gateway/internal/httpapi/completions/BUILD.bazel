@@ -4,6 +4,7 @@ go_library(
     name = "completions",
     srcs = [
         "anthropic.go",
+        "fireworks.go",
         "openai.go",
         "upstream.go",
     ],
@@ -18,6 +19,7 @@ go_library(
         "//cmd/cody-gateway/internal/response",
         "//internal/codygateway",
         "//internal/completions/client/anthropic",
+        "//internal/completions/client/fireworks",
         "//internal/completions/client/openai",
         "//internal/conf/conftypes",
         "//internal/httpcli",
