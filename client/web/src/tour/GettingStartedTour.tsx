@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { FC, memo, PropsWithChildren } from 'react'
 
 import { withFeatureFlag } from '../featureFlags/withFeatureFlag'
 
@@ -12,6 +12,9 @@ import {
     visitorsTasksWithNotebook,
     visitorsTasksWithNotebookExtraTask,
 } from './data'
+import { gql, useQuery } from "@sourcegraph/http-client";
+import { OnboardingTourConfigResult, OnboardingTourConfigVariables } from "../graphql-operations";
+import { LoadingSpinner } from "@sourcegraph/wildcard";
 
 function TourVisitorWithNotebook(props: Omit<TourProps, 'tasks' | 'id'>): JSX.Element {
     return (
@@ -26,6 +29,17 @@ function TourVisitorWithNotebook(props: Omit<TourProps, 'tasks' | 'id'>): JSX.El
     )
 }
 
+const ONBOARDING_TOUR_QUERY = gql`
+    query OnboardingTourConfig {
+        onboardingTourContent {
+            current {
+                id
+                value
+            }
+        }
+    }
+`
+
 function TourVisitorRegular(props: Omit<TourProps, 'tasks' | 'id'>): JSX.Element {
     return <Tour {...props} id="Tour" tasks={visitorsTasks} />
 }
@@ -39,26 +53,49 @@ type TourWithErrorBoundaryProps = Omit<TourProps, 'useStore' | 'eventPrefix' | '
 
 const TourWithErrorBoundary = memo(
     withErrorBoundary(({ isAuthenticated, isSourcegraphDotCom, ...props }: TourWithErrorBoundaryProps) => {
-        // Do not show if on prem
-        if (!isSourcegraphDotCom) {
-            return null
-        }
-
         // Show visitors version
         if (!isAuthenticated) {
             return <TourVisitor {...props} />
         }
 
+
+
         return (
-            <TourAuthenticated
+            <TourAuth
                 {...props}
                 id="TourAuthenticated"
-                tasks={authenticatedTasks}
                 extraTask={authenticatedExtraTask}
             />
         )
     })
 )
+
+interface Props {
+
+}
+
+export const TourAuth: FC<PropsWithChildren<Props>> = (props) => {
+    const { data, loading, error, previousData } = useQuery<OnboardingTourConfigResult, OnboardingTourConfigVariables>(
+        ONBOARDING_TOUR_QUERY,
+        {}
+    )
+
+    console.log(data?.onboardingTourContent.current?.value)
+
+
+    return (
+        <div>
+            {!loading && <TourAuthenticated
+                {...props}
+                tasks={JSON.parse(data?.onboardingTourContent.current?.value).tasks}
+            />}
+
+            {loading && <LoadingSpinner></LoadingSpinner>}
+        </div>
+    )
+}
+
+
 
 // Show for enabled control group
 export const TourAuthenticated = withFeatureFlag('quick-start-tour-for-authenticated-users', Tour)
