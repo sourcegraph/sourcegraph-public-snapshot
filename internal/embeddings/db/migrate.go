@@ -90,7 +90,6 @@ func ensureRepoIDIndex(ctx context.Context, cc qdrant.PointsClient, name string)
 	return nil
 }
 
-// TODO: loudly document that changing this will cause a rebuild of the vector indexes
 func defaultConfig(dims uint64) *qdrant.CollectionConfig {
 	return &qdrant.CollectionConfig{
 		Params: &qdrant.CollectionParams{
