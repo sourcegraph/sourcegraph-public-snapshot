@@ -174,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
   );
 
   // use a class selector if available
-  let blocks = document.querySelectorAll("pre.chroma.sgquery");
+  let blocks = document.querySelectorAll("pre.chroma.sgquery, pre.chroma.js");
 
   blocks.forEach((block) => {
     // only add button if browser supports Clipboard API
