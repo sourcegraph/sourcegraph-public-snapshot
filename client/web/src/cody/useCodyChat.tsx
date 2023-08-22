@@ -340,8 +340,7 @@ export const useCodyChat = ({
             return null
         }
 
-        // TODO: Confirm correct behavior for autoLoadScope, i.e. with App, and add note
-        const newTranscript = initializeNewChatInternal(autoLoadScopeWithRepositories ? undefined : scope)
+        const newTranscript = initializeNewChatInternal(scope)
 
         if (!newTranscript) {
             return null
@@ -349,7 +348,10 @@ export const useCodyChat = ({
 
         pushTranscriptToHistory(newTranscript).catch(noop)
 
-        if (autoLoadScopeWithRepositories) {
+        // If we couldn't populate the scope with repositories from the last chat
+        // conversation and `autoLoadScopeWithRepositories` is enabled, then we fetch 10
+        // to set in the scope.
+        if (scope.repositories.length === 0 && autoLoadScopeWithRepositories) {
             fetchRepositoryNames(10)
                 .then(repositories => {
                     const updatedScope = {
