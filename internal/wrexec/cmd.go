@@ -113,7 +113,7 @@ func (c *Cmd) runAfterHooks() {
 // CombinedOutput calls os/exec.Cmd.CombinedOutput after running the before hooks,
 // and run the after hooks once it returns.
 func (c *Cmd) CombinedOutput() (_ []byte, err error) {
-	if err := c.runBeforeHooks(); err != nil {
+	if err = c.runBeforeHooks(); err != nil {
 		return nil, err
 	}
 	defer c.runAfterHooks()
