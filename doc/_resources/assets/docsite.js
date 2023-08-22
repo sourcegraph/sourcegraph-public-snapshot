@@ -165,3 +165,46 @@ Promise.all([domContentLoadedPromise, importEventLoggerPromise]).then(([_, { Eve
     }
   })
 })
+
+// Add a "Copy" button to code blocks
+document.addEventListener('DOMContentLoaded', () => {
+  let copyButtonLabel = new DOMParser().parseFromString(
+    '<svg xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 0 24 24" width="18px" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>',
+    'application/xml'
+  );
+
+  // use a class selector if available
+  let blocks = document.querySelectorAll("pre.chroma.sgquery");
+
+  blocks.forEach((block) => {
+    // only add button if browser supports Clipboard API
+    if (navigator.clipboard) {
+      let button = document.createElement("button");
+
+      button.appendChild(
+        button.ownerDocument.importNode(copyButtonLabel.documentElement, true)
+      );
+      block.appendChild(button);
+
+      button.addEventListener("click", async () => {
+        await copyCode(block, button);
+      });
+    }
+  });
+
+  async function copyCode(block, button) {
+    let text = block.innerText;
+
+    await navigator.clipboard.writeText(text);
+
+    // visual feedback that task is completed
+    button.innerText = "Copied!";
+
+    setTimeout(() => {
+      button.replaceChild(
+        button.ownerDocument.importNode(copyButtonLabel.documentElement, true),
+        button.childNodes[0]
+      );
+    }, 900);
+  }
+})

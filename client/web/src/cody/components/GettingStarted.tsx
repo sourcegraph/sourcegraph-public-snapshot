@@ -42,7 +42,7 @@ export const GettingStarted: React.FC<
     causes content top and bottom positions to change. This results in a "jumping" effect and not-optimal UX
     when interacting with conversation scope radio group.
     In order to avoid this, we calculate the vertical offset of the content and apply it as a margin. In this case
-    when content height chages, the top position remains the same and only the bottom position changes.
+    when content height changes, the top position remains the same and only the bottom position changes.
     */
     const [contentVerticalOffset, setContentVerticalOffset] = useState<string>(DEFAULT_VERTICAL_OFFSET)
     const containerRef = useRef<HTMLDivElement>(null)
@@ -136,19 +136,21 @@ export const GettingStarted: React.FC<
         <div ref={containerRef} className={styles.container}>
             {/* eslint-disable-next-line react/forbid-dom-props */}
             <div ref={contentRef} style={{ margin: `${contentVerticalOffset} 20%` }}>
-                <Grid templateColumns="1fr 1fr" spacing={0} className={styles.iconSection}>
-                    <Grid templateColumns="1fr" spacing={0} className={styles.greetingContainer}>
-                        <div className={styles.greetingIcon}>
-                            <Icon as={CodySpeechBubbleIcon} className="h-auto w-auto" aria-hidden="true" />
+                {isCodyChatPage ? null : (
+                    <Grid templateColumns="1fr 1fr" spacing={0} className={styles.iconSection}>
+                        <Grid templateColumns="1fr" spacing={0} className={styles.greetingContainer}>
+                            <div className={styles.greetingIcon}>
+                                <Icon as={CodySpeechBubbleIcon} className="h-auto w-auto" aria-hidden="true" />
+                            </div>
+                            <Text as="span" className={styles.greetingText}>
+                                Hi! I'm Cody
+                            </Text>
+                        </Grid>
+                        <div className={styles.codyIconContainer}>
+                            <Icon as={CodyColorIcon} aria-hidden="true" className={styles.codyIcon} />
                         </div>
-                        <Text as="span" className={styles.greetingText}>
-                            Hi! I'm Cody
-                        </Text>
                     </Grid>
-                    <div className={styles.codyIconContainer}>
-                        <Icon as={CodyColorIcon} aria-hidden="true" className={styles.codyIcon} />
-                    </div>
-                </Grid>
+                )}
 
                 {isCodyChatPage ? (
                     <div className={classNames(styles.section, 'mb-3')}>
@@ -187,7 +189,11 @@ export const GettingStarted: React.FC<
                                     onChange={event => setConversationScope(event.target.value as ConversationScope)}
                                 />
                                 <div className={styles.scopeSelectorWrapper}>
-                                    <ScopeSelector {...scopeSelectorProps} renderHint={renderRepoIndexingWarning} />
+                                    <ScopeSelector
+                                        {...scopeSelectorProps}
+                                        renderHint={renderRepoIndexingWarning}
+                                        encourageOverlap={true}
+                                    />
                                 </div>
                                 <hr className={styles.divider} />
 

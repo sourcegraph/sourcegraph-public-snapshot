@@ -1456,6 +1456,25 @@ body > #sidebar .current > a  {
     display: none;
 }
 
+pre.chroma.sgquery {
+    position: relative;
+    margin: 5px 0;
+    padding: 1.75rem 0 1.5rem 1rem;
+    border-radius: 5px;
+}
+
+pre.chroma.sgquery button {
+    position: absolute;
+    top: 5px;
+    right: 0px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #a1a1a1;
+    outline: none;
+    padding: 5px 10px 0 0;
+}
+
 @media (min-width: 1350px) {
     .markdown-body {
         max-width: 665px;
