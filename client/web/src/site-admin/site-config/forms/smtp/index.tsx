@@ -140,7 +140,7 @@ export const SMTPConfigForm: FC<Props> = ({ config, authenticatedUser, onConfigC
                 <Label className="w-100 mt-2">
                     <Text className="mb-2">Email</Text>
                     <Input
-                        name="email"
+                        name="emailAddress"
                         type="email"
                         message="The 'from' address for emails sent by this server."
                         value={form.emailAddress}
@@ -152,7 +152,7 @@ export const SMTPConfigForm: FC<Props> = ({ config, authenticatedUser, onConfigC
                 <Label className="w-100 mt-2">
                     <Text className="mb-2">Sender name</Text>
                     <Input
-                        name="senderName"
+                        name="emailSenderName"
                         message="The name to use in the 'from' address for emails sent by this server."
                         value={form.emailSenderName}
                         onChange={fieldChanged}
