@@ -51,6 +51,7 @@ go_test(
         "resolver_test.go",
     ],
     embed = [":resolvers"],
+    race = "off",
     deps = [
         "//cmd/frontend/envvar",
         "//cmd/frontend/globals",
