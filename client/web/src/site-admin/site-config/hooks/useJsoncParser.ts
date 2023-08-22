@@ -58,7 +58,12 @@ export function useJsoncParser<T extends object>(originalRawJson?: string): UseJ
             }
             let newRawJson = prevRawJson
             for (const key in value) {
-                newRawJson = applyEdits(newRawJson, modify(newRawJson, [key], value[key], defaultModificationOptions))
+                if (value.hasOwnProperty(key)) {
+                    newRawJson = applyEdits(
+                        newRawJson,
+                        modify(newRawJson, [key], value[key], defaultModificationOptions)
+                    )
+                }
             }
             return newRawJson
         })

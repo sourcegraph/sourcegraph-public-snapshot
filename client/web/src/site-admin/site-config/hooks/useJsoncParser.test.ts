@@ -38,7 +38,7 @@ describe('useJsoncParser', () => {
         expect(result?.current?.rawJson).toEqual('{"foo": "bar"}')
         expect(result?.current?.error).toBeUndefined()
 
-        rerender({ jsonValue: `{"bar": "baz"}` })
+        rerender({ jsonValue: '{"bar": "baz"}' })
         expect(result?.current?.json).toEqual({ bar: 'baz' })
         expect(result?.current?.rawJson).toEqual('{"bar": "baz"}')
         expect(result?.current?.error).toBeUndefined()
