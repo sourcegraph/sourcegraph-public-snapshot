@@ -1,11 +1,8 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 362
 expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 ---
   #![allow(all)]
-//   ^^^^^ Identifier
-//         ^^^ Identifier
   #![allow(unreachable_patterns)]
 //   ^^^^^ Identifier
 //         ^^^^^^^^^^^^^^^^^^^^ Identifier
@@ -363,6 +360,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //        ^^^^ IdentifierType
           $x * 2
 //        ^^ IdentifierAttribute
+//           ^ IdentifierOperator
 //             ^ NumericLiteral
       };
   }
