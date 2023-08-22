@@ -13,7 +13,8 @@ Arguments:
 
 This release is scheduled for **$RELEASE_DATE**.
 
-> **Warning**: To get your commits in `main` included in this patch release, add the `backport-$MAJOR.$MINOR` to the PR to `main`.
+> ![WARNING]
+> To get your commits in `main` included in this patch release, add the `backport-$MAJOR.$MINOR` to the PR to `main`.
 
 ## Setup
 
@@ -34,7 +35,9 @@ Create and test the first release candidate:
 
 > ![NOTE]
 > Ensure that you've pulled both main and release branches before running this command.
+
 - [ ] Push a new release candidate tag. This command will automatically detect the appropriate release candidate number. This command can be executed as many times as required, and will increment the release candidate number for each subsequent build: :
+
   ```sh
   pnpm run release release:create-candidate
   ```
@@ -43,7 +46,8 @@ Create and test the first release candidate:
   - [ ] [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.1)
 - [ ] File any failures and regressions in the pipelines as `release-blocker` issues and assign the appropriate teams.
 
-**Note**: You will need to re-check the above pipelines for any subsequent release candidates. You can see the Buildkite logs by tweaking the "branch" query parameter in the URLs to point to the desired release candidate. In general, the URL scheme looks like the following (replacing `N` in the URL): `https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.N`
+> ![NOTE] 
+> You will need to re-check the above pipelines for any subsequent release candidates. You can see the Buildkite logs by tweaking the "branch" query parameter in the URLs to point to the desired release candidate. In general, the URL scheme looks like the following (replacing `N` in the URL): `https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.N`
 
 Once there is a release candidate available:
 
@@ -99,6 +103,7 @@ Once there is a release candidate available:
 - [ ] Open a PR to update [`dev/release/release-config.jsonc`](https://github.com/sourcegraph/sourcegraph/edit/main/dev/release/release-config.jsonc) after the auto-generated changes above if any.
 - [ ] Update the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) by opening and merging a PR into `main` (**not** the release branch), making the following changes:
   - [ ] Move the released changes into the $MAJOR.$MINOR.$PATCH version section
-  - [ ] Add a new section for the [upcoming patch release](https://handbook.sourcegraph.com/departments/engineering/dev/process/releases/#current-patch-schedule) if this is not the last planned patch release for version $MAJOR.$MINOR 
+  - [ ] Add a new section for the [upcoming patch release](https://handbook.sourcegraph.com/departments/engineering/dev/process/releases/#current-patch-schedule) if this is not the last planned patch release for version $MAJOR.$MINOR
 
-> **Note:** If another patch release is requested after the release, ask that a [patch request issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=team%2Fdistribution&template=request_patch_release.md) be filled out and approved first.
+> ![NOTE] 
+> If another patch release is requested after the release, ask that a [patch request issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=team%2Fdistribution&template=request_patch_release.md) be filled out and approved first.
