@@ -10,7 +10,11 @@ public class CancellationToken {
     this.cancelled.thenAccept(
         (cancelled) -> {
           if (cancelled) {
-            callback.run();
+            try {
+              callback.run();
+            } catch (Exception ignored) {
+              // Do nothing about exceptions in cancelation callbacks
+            }
           }
         });
   }
