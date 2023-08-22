@@ -174,7 +174,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.PullRequest:
 		// First, we set up core test operations that apply both to PRs and to other run
 		// types such as main.
-		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
+		ops.Merge(CoreTestOperations(buildOptions, c.Diff, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CreateBundleSizeDiff:      true,
@@ -261,7 +261,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			bazelBuildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), c.RunType),
 			trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
-		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
+		ops.Merge(CoreTestOperations(buildOptions, changed.All, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 		}))
 		// Publish images after everything is done
@@ -318,7 +318,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(imageBuildOps)
 
 		// Core tests
-		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
+		ops.Merge(CoreTestOperations(buildOptions, changed.All, CoreTestOperationsOptions{
 			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
