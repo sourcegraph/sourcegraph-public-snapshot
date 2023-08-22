@@ -2,8 +2,10 @@ package repo
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -23,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"google.golang.org/grpc"
 )
 
 type repoEmbeddingJob struct{}
@@ -53,15 +56,6 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err
-	}
-
-	qdrantInserter := vdb.NewNoopDB()
-	if qdrantAddr := conf.Get().ServiceConnections().Qdrant; qdrantAddr != "" {
-		conn, err := defaults.Dial(qdrantAddr, observationCtx.Logger)
-		if err != nil {
-			return nil, err
-		}
-		qdrantInserter = vdb.NewQdrantDBFromConn(conn)
 	}
 
 	workCtx := actor.WithInternalActor(context.Background())
@@ -106,4 +100,21 @@ func newRepoEmbeddingJobWorker(
 		HeartbeatInterval: 10 * time.Second,
 		Metrics:           workerutil.NewMetrics(observationCtx, "repo_embedding_job_worker"),
 	})
+}
+
+func newGetVectorDBFunc(logger log.Logger) func() (vdb.VectorDB, error) {
+	var err error
+	var ptr atomic.Pointer[grpc.ClientConn]
+
+	conf.Watch(func() {
+		if newAddr := conf.Get().ServiceConnections().Qdrant; newAddr != oldAddr {
+			conn, dialErr := defaults.Dial(newAddr, logger)
+			ptr.Store(conn)
+			err = dialErr
+		}
+	})
+
+	return func() (vdb.VectorDB, error) {
+		return *ptr.Load()
+	}
 }
