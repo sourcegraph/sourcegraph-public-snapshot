@@ -43,14 +43,19 @@ type CoreTestOperationsOptions struct {
 func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *operations.Set {
 	// Base set
 	ops := operations.NewSet()
-	ops.Append(BazelOperations(opts.IsMainBranch)...)
 
-	// Simple, fast-ish linter checks
-	linterOps := operations.NewNamedSet("Linters and static analysis")
-	if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
-		linterOps.Append(addSgLints(targets))
+	// If the only thing that has change is the Client Jetbrains, then we skip:
+	// - BazelOperations
+	// - Sg Lint
+	if !diff.Only(changed.ClientJetbrains) || opts.IsMainBranch {
+		// Simple, fast-ish linter checks
+		ops.Append(BazelOperations(opts.IsMainBranch)...)
+		linterOps := operations.NewNamedSet("Linters and static analysis")
+		if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
+			linterOps.Append(addSgLints(targets))
+		}
+		ops.Merge(linterOps)
 	}
-	ops.Merge(linterOps)
 
 	if diff.Has(changed.Client | changed.GraphQL) {
 		// If there are any Graphql changes, they are impacting the client as well.

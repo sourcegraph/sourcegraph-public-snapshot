@@ -1,6 +1,6 @@
 package com.sourcegraph.config;
 
-import com.sourcegraph.cody.autocomplete.AutoCompleteProviderType;
+import com.sourcegraph.cody.autocomplete.AutocompleteProviderType;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -18,7 +18,7 @@ public class UserLevelConfig {
    * the moment are 'anthropic' (default) or 'unstable-codegen'.
    */
   @NotNull
-  public static AutoCompleteProviderType getAutoCompleteProviderType() {
+  public static AutocompleteProviderType getAutocompleteProviderType() {
     Properties properties = readProperties();
     String currentKey = "cody.autocomplete.advanced.provider";
     @Deprecated(since = "3.0.4")
@@ -28,8 +28,8 @@ public class UserLevelConfig {
             () ->
                 Optional.ofNullable(
                     properties.getProperty(oldKey, null))) // fallback to the old key
-        .flatMap(AutoCompleteProviderType::optionalValueOf)
-        .orElse(AutoCompleteProviderType.DEFAULT_AUTOCOMPLETE_PROVIDER_TYPE); // or default
+        .flatMap(AutocompleteProviderType::optionalValueOf)
+        .orElse(AutocompleteProviderType.DEFAULT_AUTOCOMPLETE_PROVIDER_TYPE); // or default
   }
 
   public static boolean getAutocompleteAdvancedEmbeddings() {
@@ -43,7 +43,7 @@ public class UserLevelConfig {
    * supported with the `unstable-codegen` provider right now.
    */
   @Nullable
-  public static String getAutoCompleteServerEndpoint() {
+  public static String getAutocompleteServerEndpoint() {
     Properties properties = readProperties();
     String currentKey = "cody.autocomplete.advanced.serverEndpoint";
     @Deprecated(since = "3.0.4")
@@ -53,7 +53,7 @@ public class UserLevelConfig {
   }
 
   @Nullable
-  public static String getAutoCompleteAccessToken() {
+  public static String getAutocompleteAccessToken() {
     Properties properties = readProperties();
     return properties.getProperty("cody.autocomplete.advanced.accessToken", null);
   }
