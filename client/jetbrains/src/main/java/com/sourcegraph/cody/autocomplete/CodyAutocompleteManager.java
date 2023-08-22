@@ -44,9 +44,8 @@ public class CodyAutocompleteManager {
   private static final Logger logger = Logger.getInstance(CodyAutocompleteManager.class);
   private static final Key<Boolean> KEY_EDITOR_SUPPORTED = Key.create("cody.editorSupported");
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-  // TODO: figure out how to avoid the ugly nested `Future<CompletableFuture<T>>` type.
-  private final AtomicReference<Optional<Future<CompletableFuture<Void>>>> currentJob =
-      new AtomicReference<>(Optional.empty());
+  private final AtomicReference<CancellationToken> currentJob =
+      new AtomicReference<>(new CancellationToken());
   private @Nullable AutocompleteTelemetry currentAutocompleteTelemetry = null;
 
   public static @NotNull CodyAutocompleteManager getInstance() {
@@ -127,12 +126,17 @@ public class CodyAutocompleteManager {
     // and asynchronously trigger the auto-complete
     if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)
         || autoCompleteDocumentContext.isCompletionTriggerValid()) { // TODO: skip this condition
+      CancellationToken cancellationToken = new CancellationToken();
       Callable<CompletableFuture<Void>> callable =
-          () -> triggerAutocompleteAsync(project, editor, offset, textDocument, triggerKind);
+          () ->
+              triggerAutocompleteAsync(
+                  project, editor, offset, textDocument, triggerKind, cancellationToken);
+      ScheduledFuture<CompletableFuture<Void>> scheduledAutocomplete =
+          this.scheduler.schedule(callable, 20, TimeUnit.MILLISECONDS);
+      cancellationToken.onCancellationRequested(() -> scheduledAutocomplete.cancel(true));
       // debouncing the autocomplete trigger
       cancelCurrentJob();
-      this.currentJob.set(
-          Optional.of(this.scheduler.schedule(callable, 20, TimeUnit.MILLISECONDS)));
+      this.currentJob.set(cancellationToken);
     }
   }
 
@@ -142,7 +146,8 @@ public class CodyAutocompleteManager {
       @NotNull Editor editor,
       int offset,
       @NotNull TextDocument textDocument,
-      InlineCompletionTriggerKind triggerKind) {
+      InlineCompletionTriggerKind triggerKind,
+      CancellationToken cancellationToken) {
     CodyAgentServer server = CodyAgent.getServer(project);
     boolean isAgentAutocomplete = server != null;
     if (!isAgentAutocomplete) {
@@ -163,13 +168,24 @@ public class CodyAutocompleteManager {
                     .setCharacter(position.character));
 
     CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.AutocompleteInProgress);
-    return server
-        .autocompleteExecute(params)
+    CompletableFuture<InlineAutocompleteList> completions = server.autocompleteExecute(params);
+
+    // Important: we have to `.cancel()` the original `CompletableFuture<T>` from lsp4j. As soon as
+    // we use `thenAccept()` we get a new instance of `CompletableFuture<Void>` which does not
+    // correctly propagate the cancelation to the agent.
+    cancellationToken.onCancellationRequested(() -> completions.cancel(true));
+
+    return completions
         .thenAccept(
-            result -> processAutocompleteResult(project, editor, offset, triggerKind, result))
+            result ->
+                processAutocompleteResult(
+                    project, editor, offset, triggerKind, result, cancellationToken))
         .exceptionally(
             error -> {
-              logger.warn("failed autocomplete request " + params, error);
+              if (!(error instanceof CancellationException
+                  || error instanceof CompletionException)) {
+                logger.warn("failed autocomplete request " + params, error);
+              }
               return null;
             })
         .thenAccept(
@@ -182,10 +198,11 @@ public class CodyAutocompleteManager {
       @NotNull Editor editor,
       int offset,
       InlineCompletionTriggerKind triggerKind,
-      InlineAutocompleteList result) {
-    if (Thread.interrupted()) {
+      InlineAutocompleteList result,
+      CancellationToken cancellationToken) {
+    if (Thread.interrupted() || cancellationToken.isCancelled()) {
       if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)) {
-        logger.warn("canceled autocomplete due to thread interruption");
+        logger.warn("autocomplete canceled");
       }
       return;
     }
@@ -204,6 +221,10 @@ public class CodyAutocompleteManager {
     ApplicationManager.getApplication()
         .invokeLater(
             () -> {
+              if (cancellationToken.isCancelled()) {
+                return;
+              }
+              cancellationToken.dispose();
               this.clearAutocompleteSuggestions(editor);
 
               if (currentAutocompleteTelemetry != null) {
@@ -339,26 +360,7 @@ public class CodyAutocompleteManager {
   }
 
   private void cancelCurrentJob() {
-    // TODO: change this implementation when we avoid nested `Future<CompletableFuture<T>>`
-    this.currentJob
-        .get()
-        .ifPresent(
-            job -> {
-              if (job.isDone()) {
-                try {
-                  job.get().cancel(true);
-                } catch (ExecutionException
-                    | InterruptedException
-                    | CancellationException ignored) {
-                }
-              } else {
-                // Cancelling the toplevel `Future<>` appears to cancel the nested
-                // `CompletableFuture<>`.
-                // Feel free to reimplement this entire method if it's causing problems because this
-                // logic is not bulletproof.
-                job.cancel(true);
-              }
-            });
+    this.currentJob.get().abort();
     CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.Ready);
   }
 }
