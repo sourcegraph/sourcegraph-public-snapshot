@@ -1,6 +1,7 @@
 package completions
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -79,12 +81,37 @@ func NewFireworksHandler(
 					return 0
 				}
 
-				logger.Error("Not yet implemented")
-				return 0
+				// Otherwise, we have to parse the event stream.
+				dec := fireworks.NewDecoder(r)
+				var finalCompletion string
+				// Consume all the messages, but we only care about the last completion data.
+				for dec.Scan() {
+					data := dec.Data()
+
+					// Gracefully skip over any data that isn't JSON-like.
+					if !bytes.HasPrefix(data, []byte("{")) {
+						continue
+					}
+
+					var event fireworksResponse
+					if err := json.Unmarshal(data, &event); err != nil {
+						logger.Error("failed to decode event payload", log.Error(err), log.String("body", string(data)))
+						continue
+					}
+					if len(event.Choices) > 0 {
+						finalCompletion += event.Choices[0].Text
+					}
+				}
+
+				if err := dec.Err(); err != nil {
+					logger.Error("failed to decode Fireworks streaming response", log.Error(err))
+				}
+				fmt.Printf("Fireworks final completion: %s\n", finalCompletion)
+				return len(finalCompletion)
 			},
 		},
 
-		// @TODO(philipp-spiess): Find out what a good value is for this?
+		// TODO(philipp-spiess): Find out what a good value is for this?
 		30, // seconds
 	)
 }
@@ -102,7 +129,6 @@ type fireworksRequest struct {
 	Stop        []string `json:"stop,omitempty"`
 }
 
-// response for a non streaming request
 type fireworksResponse struct {
 	Choices []struct {
 		Text         string `json:"text"`

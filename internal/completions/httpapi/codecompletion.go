@@ -15,7 +15,6 @@ import (
 func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 	logger = logger.Scoped("code", "code completions handler")
 	rl := NewRateLimiter(db, redispool.Store, types.CompletionsFeatureCode)
-
 	return newCompletionsHandler(
 		logger,
 		types.CompletionsFeatureCode,
@@ -23,8 +22,9 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 		"code",
 		func(requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) string {
 			// No user defined models for now.
-			// TODO(eseliger): Look into reviving this, but it was unused so far.
-			return c.CompletionModel
+			// TODO(philipp-spiess): Allow the client to specify this but only on dotcom for some
+			//                       special cases
+			return "fireworks/accounts/fireworks/models/starcoder-7b-w8a16"
 		},
 	)
 }
