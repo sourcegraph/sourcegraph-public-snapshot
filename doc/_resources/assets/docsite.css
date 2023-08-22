@@ -538,6 +538,7 @@ body > #page > main > #content {
   line-height: 1.77;
   word-wrap: break-word;
   tab-size: 2;
+  max-width: 665px;
   margin-top: calc(2*var(--spacing));
   padding: 0 1rem;
 }
@@ -1462,12 +1463,14 @@ body > #sidebar .current > a  {
 
 @media (min-width: 1350px) {
     .markdown-body {
+        max-width: 665px;
         margin: unset;
     }
 }
 
 @media (max-width: 1350px) {
     .markdown-body {
+        max-width: 600px;
     }
 }
 
@@ -1512,6 +1515,10 @@ body > #sidebar .current > a  {
     }
 
     .markdown-body {
-        max-width: 1200px;
+        max-width: 1100px;
+    }
+
+    .markdown-body :is(img, picture, video, object, iframe) {
+        max-width: 665px;
     }
 }
