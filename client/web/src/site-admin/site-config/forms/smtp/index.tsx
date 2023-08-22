@@ -53,7 +53,7 @@ export const SMTPConfigForm: FC<Props> = ({ config, authenticatedUser, onConfigC
             ...initialConfig,
             ...result,
         })
-    }, [config])
+    }, [config, setForm])
 
     const isValid = useMemo(
         () =>
