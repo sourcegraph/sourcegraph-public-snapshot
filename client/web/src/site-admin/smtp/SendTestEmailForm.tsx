@@ -86,7 +86,7 @@ export const SendTestEmailForm: FC<SendTestEmailProps> = ({ authenticatedUser, c
                 name="authentication"
                 message={
                     <>
-                        Verify your configuration by choosing an email already{' '}
+                        Verify your configuration by choosing an email{' '}
                         <Link to={`${authenticatedUser.settingsURL}/emails`}>configured on your account</Link> to send a
                         test email.
                     </>
