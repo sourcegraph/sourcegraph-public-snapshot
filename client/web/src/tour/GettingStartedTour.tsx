@@ -84,7 +84,8 @@ export const TourAuth: FC<PropsWithChildren<Props>> = (props) => {
         <div>
             {!loading && <Tour
                 {...props}
-                tasks={JSON.parse(data?.onboardingTourContent.current?.value).tasks}
+                // tasks={JSON.parse(data?.onboardingTourContent.current?.value).tasks}
+                tasks={authenticatedTasks}
             />}
 
             {loading && <LoadingSpinner></LoadingSpinner>}

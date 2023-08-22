@@ -54,6 +54,9 @@ export interface TourTaskStepType {
         | {
               type: 'restart'
               value: string
+          }        | {
+              type: 'SearchDynamicContentResults'
+              snippets: string[]
           }
     /**
      * HTML string, which will be displayed in info box when navigating to a step link.

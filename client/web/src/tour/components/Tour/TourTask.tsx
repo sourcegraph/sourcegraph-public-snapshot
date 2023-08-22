@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useMemo, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 import { mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
@@ -14,9 +14,23 @@ import { ItemPicker } from '../ItemPicker'
 
 import { TourContext } from './context'
 import { TourNewTabLink } from './TourNewTabLink'
-import { isLanguageRequired, getTourTaskStepActionValue } from './utils'
+import { getTourTaskStepActionValue, isLanguageRequired } from './utils'
+import { fromEvent, Observable, of, Subscriber, Subscription } from 'rxjs'
 
 import styles from './Tour.module.scss'
+
+import {
+    AggregateStreamingSearchResults,
+    LATEST_VERSION,
+    messageHandlers,
+    MessageHandlers, observeMessages,
+    search,
+    SearchEvent, SearchMatch, StreamSearchOptions, switchAggregateSearchResults,
+} from '@sourcegraph/shared/src/search/stream'
+import { SearchPatternType } from "@sourcegraph/shared/src/graphql-operations";
+
+import { noop } from "lodash";
+import { map } from "rxjs/operators";
 
 type TourTaskProps = TourTaskType & {
     variant?: 'small'
@@ -182,6 +196,9 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                                     onToggle={isOpen => handleVideoToggle(isOpen, step)}
                                 />
                             )}
+                            {step.action.type === 'SearchDynamicContentResults' && (
+                                <SearchDynamicContentResultsTask snippets={step.action.snippets } />
+                            )}
                             {(isMultiStep || !title) && step.isCompleted && (
                                 <Icon
                                     size="md"
@@ -196,4 +213,103 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
             </div>
         </div>
     )
+}
+
+interface SDCRTProps {
+    step: TourTaskStepType
+    snippets: string[]
+}
+const SearchDynamicContentResultsTask: React.FunctionComponent<React.PropsWithChildren<SDCRTProps>> = (props) => {
+    const [selectedQuery, setSelectedQuery] = useState<string>('')
+
+    const [repo, setRepo] = useState<string>('^github\\.com/sourcegraph/sourcegraph$')
+    const [lang, setLang] = useState<string>('Go')
+
+    useEffect(() => {
+
+        let promises = []
+
+        for (let snip of props.snippets) {
+            promises.push(generateDynamicQueryPromise(snip, repo, lang))
+        }
+
+        Promise.any(promises).then(val => {
+            setSelectedQuery(val)
+        })
+    }, [])
+
+    return (
+        <div>
+            <Link
+                // className={classNames('flex-grow-1')}
+                to={buildSearchUri(buildBasicQuery(selectedQuery, repo, lang))}
+                // onClick={handleLinkClick}
+            >
+                {buildBasicQuery(selectedQuery, repo, lang)}
+            </Link>
+        </div>
+    )
+}
+
+function buildSearchUri(query: String): String {
+    return encodeURI(`/search?q=${query}`)
+}
+
+function buildBasicQuery(snippet: String, repo?: String, lang?: String): String {
+    let query = `${snippet}`
+    if (repo) {
+        query = `repo:${repo} ${query}`
+    }
+    if (lang) {
+        query = `lang:${lang} ${query}`
+    }
+    return query
+}
+
+function generateDynamicQueryPromise(snippet: String, repo?: String, lang?: String): Promise<String> {
+    let query = `${buildBasicQuery(snippet, repo, lang)} timeout:5s count:1 select:content`
+    console.log(`searching for ${query}`)
+
+    return fetchStreamSuggestions(query).toPromise().then(() => {
+        return snippet
+    })
+}
+
+
+const noopHandler = <T extends SearchEvent>(
+    type: T['type'],
+    eventSource: EventSource,
+    _observer: Subscriber<SearchEvent>
+): Subscription => fromEvent(eventSource, type).subscribe(noop)
+
+const firstMatchMessageHandlers: MessageHandlers = {
+    ...messageHandlers,
+    matches: (type, eventSource, observer) =>
+        observeMessages(type, eventSource).subscribe(data => {
+            observer.next(data)
+            // Once we observer the first `matches` event, complete the stream and close the event source.
+            observer.complete()
+            eventSource.close()
+        }),
+    progress: noopHandler,
+    filters: noopHandler,
+    alert: noopHandler,
+}
+
+/** Initiates a streaming search, stop at the first `matches` event, and aggregate the results. */
+function firstMatchStreamingSearch(
+    queryObservable: Observable<string>,
+    options: StreamSearchOptions
+): Observable<AggregateStreamingSearchResults> {
+    return search(queryObservable, options, firstMatchMessageHandlers).pipe(switchAggregateSearchResults)
+}
+
+function fetchStreamSuggestions(query: string, sourcegraphURL?: string): Observable<SearchMatch[]> {
+    return firstMatchStreamingSearch(of(query), {
+        version: LATEST_VERSION,
+        patternType: SearchPatternType.standard,
+        caseSensitive: false,
+        trace: undefined,
+        sourcegraphURL,
+    }).pipe(map(suggestions => suggestions.results))
 }

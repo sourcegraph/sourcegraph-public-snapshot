@@ -15,6 +15,7 @@ export type TourProps = TelemetryProps & {
     extraTask?: TourTaskType
 } & Pick<React.ComponentProps<typeof TourContent>, 'variant' | 'className' | 'height' | 'title' | 'keepCompletedTasks'>
 
+// noinspection TypeScriptValidateTypes
 export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> = React.memo(
     ({ id: tourId, tasks, extraTask, telemetryService, ...props }) => {
         const {

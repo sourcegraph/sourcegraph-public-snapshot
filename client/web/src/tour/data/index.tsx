@@ -439,6 +439,29 @@ export const authenticatedTasks: TourTaskType[] = [
             },
         ],
     },
+    {
+        title: 'Matching dynamically',
+        icon: <Icon svgPath={mdiCursorPointer} inline={false} aria-hidden={true} height="2.3rem" width="2.3rem" />,
+        steps: [
+            {
+                id: 'CodeSearchDynamic',
+                label: 'Find code in your repositories!',
+                action: {
+                    type: 'SearchDynamicContentResults',
+                    snippets: ["asdf", "insights"]
+                },
+                info: (
+                    <>
+                        <strong>Find References</strong>
+                        <br />
+                        Hover over a token in the highlighted line to open code intel, then click ‘Find References’ to
+                        locate all calls of this code.
+                    </>
+                ),
+                completeAfterEvents: ['findReferences'],
+            },
+        ],
+    },
 ]
 
 /**
