@@ -54,7 +54,7 @@ func (r *schemaResolver) SendTestEmail(ctx context.Context, args struct {
 
 	var config schema.SiteConfiguration
 	if args.Config != nil {
-		// normalize authenticatino based on site.schema.json values
+		// normalize authentication based on site.schema.json values
 		authentication := string(args.Config.Authentication)
 		if authentication == "CRAM_MD5" {
 			authentication = "CRAM-MD5"
