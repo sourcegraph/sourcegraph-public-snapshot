@@ -169,7 +169,12 @@ public class CodyAutocompleteManager {
 
     CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.AutocompleteInProgress);
     CompletableFuture<InlineAutocompleteList> completions = server.autocompleteExecute(params);
+
+    // Important: we have to `.cancel()` the original `CompletableFuture<T>` from lsp4j. As soon as
+    // we use `thenAccept()` we get a new instance of `CompletableFuture<Void>` which does not
+    // correctly propagate the cancelation to the agent.
     cancellationToken.onCancellationRequested(() -> completions.cancel(true));
+
     return completions
         .thenAccept(
             result ->
