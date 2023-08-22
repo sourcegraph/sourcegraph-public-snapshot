@@ -36,5 +36,5 @@ func (c *codeHostRateLimiter) SetCodeHostGitRateLimitConfig(ctx context.Context,
 }
 
 func (c *codeHostRateLimiter) setCodeHostRateLimitConfig(ctx context.Context, codeHostBucketName string, quota, replenishmentIntervalSeconds int32) error {
-	return c.rateLimiter.SetTokenBucketReplenishment(ctx, codeHostBucketName, quota, replenishmentIntervalSeconds)
+	return c.rateLimiter.SetTokenBucketConfig(ctx, codeHostBucketName, quota, replenishmentIntervalSeconds)
 }

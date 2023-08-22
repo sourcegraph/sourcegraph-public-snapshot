@@ -54,7 +54,7 @@ func NewStrictMockRateLimiter() *MockRateLimiter {
 		},
 		SetTokenBucketReplenishmentFunc: &RateLimiterSetTokenBucketReplenishmentFunc{
 			defaultHook: func(context.Context, string, int32, int32) error {
-				panic("unexpected invocation of MockRateLimiter.SetTokenBucketReplenishment")
+				panic("unexpected invocation of MockRateLimiter.SetTokenBucketConfig")
 			},
 		},
 	}
@@ -69,7 +69,7 @@ func NewMockRateLimiterFrom(i redispool.RateLimiter) *MockRateLimiter {
 			defaultHook: i.GetTokensFromBucket,
 		},
 		SetTokenBucketReplenishmentFunc: &RateLimiterSetTokenBucketReplenishmentFunc{
-			defaultHook: i.SetTokenBucketReplenishment,
+			defaultHook: i.SetTokenBucketConfig,
 		},
 	}
 }
@@ -191,7 +191,7 @@ func (c RateLimiterGetTokensFromBucketFuncCall) Results() []interface{} {
 }
 
 // RateLimiterSetTokenBucketReplenishmentFunc describes the behavior when
-// the SetTokenBucketReplenishment method of the parent MockRateLimiter
+// the SetTokenBucketConfig method of the parent MockRateLimiter
 // instance is invoked.
 type RateLimiterSetTokenBucketReplenishmentFunc struct {
 	defaultHook func(context.Context, string, int32, int32) error
@@ -209,14 +209,14 @@ func (m *MockRateLimiter) SetTokenBucketReplenishment(v0 context.Context, v1 str
 }
 
 // SetDefaultHook sets function that is called when the
-// SetTokenBucketReplenishment method of the parent MockRateLimiter instance
+// SetTokenBucketConfig method of the parent MockRateLimiter instance
 // is invoked and the hook queue is empty.
 func (f *RateLimiterSetTokenBucketReplenishmentFunc) SetDefaultHook(hook func(context.Context, string, int32, int32) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// SetTokenBucketReplenishment method of the parent MockRateLimiter instance
+// SetTokenBucketConfig method of the parent MockRateLimiter instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
@@ -273,7 +273,7 @@ func (f *RateLimiterSetTokenBucketReplenishmentFunc) History() []RateLimiterSetT
 }
 
 // RateLimiterSetTokenBucketReplenishmentFuncCall is an object that
-// describes an invocation of method SetTokenBucketReplenishment on an
+// describes an invocation of method SetTokenBucketConfig on an
 // instance of MockRateLimiter.
 type RateLimiterSetTokenBucketReplenishmentFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method

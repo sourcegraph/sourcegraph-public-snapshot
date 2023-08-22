@@ -17,6 +17,7 @@ func TestRateLimiter(t *testing.T) {
 		prefix:                 prefix,
 		getTokensScript:        *redis.NewScript(3, getTokensFromBucketLuaScript),
 		setReplenishmentScript: *redis.NewScript(3, setTokenBucketReplenishmentLuaScript),
+		timerFunc:              defaultRateLimitTimer,
 	}
 
 	// Set up the test by initializing the bucket with some initial capacity and replenishment rate
@@ -26,7 +27,7 @@ func TestRateLimiter(t *testing.T) {
 	bucketReplenishRateSeconds := int32(10)
 
 	// Try to get tokens before rate limiter config is set in Redis
-	_, _, err := rl.GetTokensFromBucket(ctx, bucketName, 1)
+	_, err := rl.GetToken(ctx, bucketName)
 	if err == nil {
 		t.Fatalf("Expected error getting tokens from bucket without config")
 	}
@@ -35,14 +36,14 @@ func TestRateLimiter(t *testing.T) {
 		t.Fatalf("Expected rate limiter config not created error, got: %+v", err)
 	}
 
-	err = rl.SetTokenBucketReplenishment(ctx, bucketName, bucketCapacity, bucketReplenishRateSeconds)
+	err = rl.SetTokenBucketConfig(ctx, bucketName, bucketCapacity, bucketReplenishRateSeconds)
 	if err != nil {
 		t.Fatalf("Error setting token bucket configuration: %v", err)
 	}
 
 	// Get tokens from the bucket
 	requestedTokens := 10
-	allowed, remTokens, err := rl.GetTokensFromBucket(ctx, bucketName, requestedTokens)
+	tokens, err := rl.GetToken(ctx, bucketName, requestedTokens)
 	if err != nil {
 		t.Fatalf("Error getting tokens from bucket: %v", err)
 	}
