@@ -122,7 +122,7 @@ func (f *FeatureBatchChanges) Check(info *Info) error {
 func (f FeatureBatchChanges) DisplayName() string {
 	text := "Batch Changes"
 	if f.Unrestricted {
-		text += " (Unlimited changesets)"
+		text += " (unlimited number of changesets)"
 	} else {
 		text += fmt.Sprintf(" (%d changesets)", f.MaxNumChangesets)
 	}
