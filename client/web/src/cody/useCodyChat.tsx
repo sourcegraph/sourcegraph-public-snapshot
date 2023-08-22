@@ -324,8 +324,9 @@ export const useCodyChat = ({
     )
 
     const initializeNewChat = useCallback((): Transcript | null => {
-        const isNewChat = !transcript?.getLastInteraction()
-        if (isNewChat) {
+        // If we already have a transcript, but it hasn't been interacted with yet, don't
+        // create a new one.
+        if (transcript && !transcript.getLastInteraction()) {
             return null
         }
 
