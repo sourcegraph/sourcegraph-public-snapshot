@@ -147,6 +147,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		OpenAIAccessToken:          config.OpenAI.AccessToken,
 		OpenAIOrgID:                config.OpenAI.OrgID,
 		OpenAIAllowedModels:        config.OpenAI.AllowedModels,
+		FireworksAccessToken:       config.Fireworks.AccessToken,
+		FireworksAllowedModels:     config.Fireworks.AllowedModels,
 		EmbeddingsAllowedModels:    config.AllowedEmbeddingsModels,
 	})
 	if err != nil {
