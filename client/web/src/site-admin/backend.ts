@@ -1088,7 +1088,7 @@ export const SITE_CONFIGURATION_CHANGE_CONNECTION_QUERY = gql`
 `
 
 export const SEND_TEST_EMAIL = gql`
-    mutation SendTestEmailTo($to: String!) {
-        sendTestEmail(to: $to)
+    mutation SendTestEmailTo($to: String!, $config: SMTPConfig) {
+        sendTestEmail(to: $to, config: $config)
     }
 `

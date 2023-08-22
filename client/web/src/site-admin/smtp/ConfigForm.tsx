@@ -20,16 +20,16 @@ interface Props {
     error?: ApolloError
 }
 
-interface FormData extends SMTPServerConfig {
-    email?: SiteConfiguration['email.address']
-    senderName?: SiteConfiguration['email.senderName']
+export interface FormData extends SMTPServerConfig {
+    emailAddress?: SiteConfiguration['email.address']
+    emailSenderName?: SiteConfiguration['email.senderName']
 
     [key: string]: any
 }
 
 const initialConfig: FormData = {
-    email: '',
-    senderName: '',
+    emailAddress: '',
+    emailSenderName: '',
     host: '',
     username: '',
     password: '',
@@ -58,8 +58,8 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
         }
 
         const result = {
-            email: siteConfig['email.address'] ?? '',
-            senderName: siteConfig['email.senderName'] ?? '',
+            emailAddress: siteConfig['email.address'] ?? '',
+            emailSenderName: siteConfig['email.senderName'] ?? '',
             ...siteConfig['email.smtp'],
             noVerifyTLS: !!siteConfig['email.smtp']?.noVerifyTLS,
             authentication: siteConfig['email.smtp']?.authentication ?? 'PLAIN',
@@ -75,7 +75,7 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
 
     const isValid = useMemo(
         () =>
-            form.email &&
+            form.emailAddress &&
             form.host &&
             form.port &&
             (form.authentication === 'none' || (form.username && form.password)),
@@ -129,11 +129,11 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
 
         let newConfig = applyEdits(
             config!,
-            modify(config!, ['email.address'], normalizedConfig.email, defaultModificationOptions)
+            modify(config!, ['email.address'], normalizedConfig.emailAddress, defaultModificationOptions)
         )
         newConfig = applyEdits(
             newConfig,
-            modify(newConfig!, ['email.senderName'], normalizedConfig.senderName, defaultModificationOptions)
+            modify(newConfig!, ['email.senderName'], normalizedConfig.emailSenderName, defaultModificationOptions)
         )
         newConfig = applyEdits(
             newConfig,
@@ -178,10 +178,10 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
                         name="email"
                         type="email"
                         message="The 'from' address for emails sent by this server."
-                        value={form.email}
+                        value={form.emailAddress}
                         onChange={fieldChanged}
                         placeholder="noreply@sourcegraph.example.com"
-                        error={fieldRequired('email')}
+                        error={fieldRequired('emailAddress')}
                     />
                 </Label>
                 <Label className="w-100 mt-2">
@@ -189,7 +189,7 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
                     <Input
                         name="senderName"
                         message="The name to use in the 'from' address for emails sent by this server."
-                        value={form.senderName}
+                        value={form.emailSenderName}
                         onChange={fieldChanged}
                     />
                 </Label>
@@ -276,7 +276,7 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
                     />
                 </div>
             </Form>
-            <SendTestEmailForm authenticatedUser={authenticatedUser} className="mt-4" />
+            <SendTestEmailForm authenticatedUser={authenticatedUser} className="mt-4" formData={form} />
         </>
     )
 }
