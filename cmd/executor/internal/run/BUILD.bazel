@@ -1,0 +1,1 @@
+load("//dev:go_defs.bzl", "go_test")
