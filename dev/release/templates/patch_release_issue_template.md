@@ -32,7 +32,8 @@ pnpm run release release:activate-release
 
 Create and test the first release candidate:
 
-> **Note**: Ensure that you've pulled both main and release branches before running this command.
+> ![NOTE]
+> Ensure that you've pulled both main and release branches before running this command.
 - [ ] Push a new release candidate tag. This command will automatically detect the appropriate release candidate number. This command can be executed as many times as required, and will increment the release candidate number for each subsequent build: :
   ```sh
   pnpm run release release:create-candidate
