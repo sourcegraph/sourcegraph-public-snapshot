@@ -4,16 +4,16 @@ import java.util.Arrays;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
-public enum AutoCompleteProviderType {
+public enum AutocompleteProviderType {
   ANTHROPIC,
   UNSTABLE_CODEGEN,
   UNSTABLE_AZURE_OPENAI;
 
-  public static final AutoCompleteProviderType DEFAULT_AUTOCOMPLETE_PROVIDER_TYPE = ANTHROPIC;
+  public static final AutocompleteProviderType DEFAULT_AUTOCOMPLETE_PROVIDER_TYPE = ANTHROPIC;
 
   @NotNull
-  public static Optional<AutoCompleteProviderType> optionalValueOf(@NotNull String name) {
-    return Arrays.stream(AutoCompleteProviderType.values())
+  public static Optional<AutocompleteProviderType> optionalValueOf(@NotNull String name) {
+    return Arrays.stream(AutocompleteProviderType.values())
         .filter(providerType -> providerType.vscodeSettingString().equals(name))
         .findFirst();
   }

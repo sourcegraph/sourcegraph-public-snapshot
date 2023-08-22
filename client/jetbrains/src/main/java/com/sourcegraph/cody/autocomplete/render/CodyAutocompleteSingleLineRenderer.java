@@ -3,17 +3,17 @@ package com.sourcegraph.cody.autocomplete.render;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.Inlay;
 import com.intellij.openapi.editor.markup.TextAttributes;
-import com.sourcegraph.cody.vscode.InlineAutoCompleteItem;
+import com.sourcegraph.cody.vscode.InlineAutocompleteItem;
 import java.awt.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class CodyAutoCompleteSingleLineRenderer extends CodyAutoCompleteElementRenderer {
-  public CodyAutoCompleteSingleLineRenderer(
+public class CodyAutocompleteSingleLineRenderer extends CodyAutocompleteElementRenderer {
+  public CodyAutocompleteSingleLineRenderer(
       String text,
-      @Nullable InlineAutoCompleteItem completionItem,
+      @Nullable InlineAutocompleteItem completionItem,
       Editor editor,
-      AutoCompleteRendererType type) {
+      AutocompleteRendererType type) {
     super(text, completionItem, editor, type);
   }
 
@@ -32,6 +32,6 @@ public class CodyAutoCompleteSingleLineRenderer extends CodyAutoCompleteElementR
 
   @Override
   public String toString() {
-    return "CodyAutoCompleteSingleLineRenderer{" + "text='" + text + '\'' + '}';
+    return "CodyAutocompleteSingleLineRenderer{" + "text='" + text + '\'' + '}';
   }
 }

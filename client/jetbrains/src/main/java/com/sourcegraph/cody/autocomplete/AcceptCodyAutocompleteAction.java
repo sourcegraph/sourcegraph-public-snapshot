@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
-import com.sourcegraph.cody.vscode.InlineAutoCompleteItem;
+import com.sourcegraph.cody.vscode.InlineAutocompleteItem;
 import com.sourcegraph.common.EditorUtils;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import java.util.List;
@@ -22,12 +22,12 @@ import org.jetbrains.annotations.Nullable;
  * <p>The action works by reading the Inlay at the caret position and inserting the completion text
  * into the editor.
  */
-public class AcceptCodyAutoCompleteAction extends EditorAction {
-  public AcceptCodyAutoCompleteAction() {
+public class AcceptCodyAutocompleteAction extends EditorAction {
+  public AcceptCodyAutocompleteAction() {
     super(new AcceptCompletionActionHandler());
   }
 
-  private static class AcceptCompletionActionHandler extends AutoCompleteActionHandler {
+  private static class AcceptCompletionActionHandler extends AutocompleteActionHandler {
 
     /**
      * Applies the autocomplete to the document at a caret: 1. Replaces the string between the caret
@@ -52,13 +52,13 @@ public class AcceptCodyAutoCompleteAction extends EditorAction {
       } else {
         Optional.ofNullable(maybeCaret)
             .or(() -> getCaret(editor))
-            .flatMap(AutoCompleteText::atCaret)
+            .flatMap(AutocompleteText::atCaret)
             .ifPresent(
                 autoComplete -> {
                   /* Log the event */
                   GraphQlLogger.logCodyEvent(project, "completion", "accepted");
 
-                  WriteAction.run(() -> applyAutoComplete(editor.getDocument(), autoComplete));
+                  WriteAction.run(() -> applyAutocomplete(editor.getDocument(), autoComplete));
                 });
       }
     }
@@ -68,7 +68,7 @@ public class AcceptCodyAutoCompleteAction extends EditorAction {
       if (caret == null) {
         return;
       }
-      InlineAutoCompleteItem completionItem = getAgentAutocompleteItem(caret);
+      InlineAutocompleteItem completionItem = getAgentAutocompleteItem(caret);
       if (completionItem == null) {
         return;
       }
@@ -88,7 +88,7 @@ public class AcceptCodyAutoCompleteAction extends EditorAction {
     private static void applyInsertText(
         @NotNull Editor editor,
         @NotNull Caret caret,
-        @NotNull InlineAutoCompleteItem completionItem) {
+        @NotNull InlineAutocompleteItem completionItem) {
       Document document = editor.getDocument();
       TextRange range = EditorUtils.getTextRange(document, completionItem.range);
       document.replaceString(
@@ -106,8 +106,8 @@ public class AcceptCodyAutoCompleteAction extends EditorAction {
    * @param document the document to apply the autocomplete to
    * @param autoComplete the actual autocomplete text along with the corresponding caret
    */
-  private static void applyAutoComplete(
-      @NotNull Document document, @NotNull AutoCompleteTextAtCaret autoComplete) {
+  private static void applyAutocomplete(
+      @NotNull Document document, @NotNull AutocompleteTextAtCaret autoComplete) {
     // Calculate the end of the line to replace
     int lineEndOffset =
         document.getLineEndOffset(document.getLineNumber(autoComplete.caret.getOffset()));

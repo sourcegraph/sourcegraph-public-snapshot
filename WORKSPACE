@@ -70,8 +70,8 @@ http_archive(
 
 http_archive(
     name = "rules_rust",
-    sha256 = "dc8d79fe9a5beb79d93e482eb807266a0e066e97a7b8c48d43ecf91f32a3a8f3",
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.19.0/rules_rust-v0.19.0.tar.gz"],
+    sha256 = "9d04e658878d23f4b00163a72da3db03ddb451273eb347df7d7c50838d698f49",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.26.0/rules_rust-v0.26.0.tar.gz"],
 )
 
 # Container rules
@@ -101,8 +101,20 @@ http_archive(
 # hermetic_cc_toolchain setup ================================
 HERMETIC_CC_TOOLCHAIN_VERSION = "v2.0.0"
 
+# Please note that we only use hermetic-cc for local development purpose and Nix, at it eases the path to cross-compile
+# so we can produce container images locally on Mac laptops.
+#
+# @jhchabran See https://github.com/sourcegraph/sourcegraph/pull/55969, there is an ongoing issue with UBSAN
+# and treesitter, that breaks the compilation of syntax-highlighter. Since we only use
+# hermetic_cc for local development purposes, while it's a bit heavy handed for a --copt, it's acceptable
+# at this point. Passing --copt=-fno-sanitize=undefined sadly doesn't fix the problem, which is why
+# we have to patch to inject the flag.
 http_archive(
     name = "hermetic_cc_toolchain",
+    patches = [
+        "//third_party/hermetic_cc:disable_ubsan.patch",
+    ],
+    patch_args = ["-p1"],
     sha256 = "57f03a6c29793e8add7bd64186fc8066d23b5ffd06fe9cc6b0b8c499914d3a65",
     urls = [
         "https://mirror.bazel.build/github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
@@ -290,17 +302,29 @@ load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 protobuf_deps()
 
 # rust toolchain setup
-load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains", "rust_repository_set")
 
 rules_rust_dependencies()
+
+rust_version = "1.68.0"
 
 rust_register_toolchains(
     edition = "2021",
     # Keep in sync with docker-images/syntax-highlighter/Dockerfile
     # and docker-images/syntax-highlighter/rust-toolchain.toml
     versions = [
-        "1.68.0",
+        rust_version,
     ],
+)
+
+# Needed for locally cross-compiling rust binaries to linux/amd64 on a Mac laptop, when seeking to
+# create container images in local for testing purposes.
+rust_repository_set(
+    name = "macos_arm_64",
+    edition = "2021",
+    exec_triple = "aarch64-apple-darwin",
+    extra_target_triples = ["x86_64-unknown-linux-gnu"],
+    versions = [rust_version],
 )
 
 load("@rules_rust//crate_universe:defs.bzl", "crates_repository")

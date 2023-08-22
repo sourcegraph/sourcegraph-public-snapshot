@@ -3,20 +3,20 @@ package com.sourcegraph.cody.autocomplete;
 import com.intellij.openapi.editor.Caret;
 import org.jetbrains.annotations.NotNull;
 
-public class AutoCompleteTextAtCaret {
-  @NotNull public final AutoCompleteText autoCompleteText;
+public class AutocompleteTextAtCaret {
+  @NotNull public final AutocompleteText autoCompleteText;
   @NotNull public final Caret caret;
 
-  public AutoCompleteTextAtCaret(@NotNull Caret caret, @NotNull AutoCompleteText autoCompleteText) {
+  public AutocompleteTextAtCaret(@NotNull Caret caret, @NotNull AutocompleteText autoCompleteText) {
     this.caret = caret;
     this.autoCompleteText = autoCompleteText;
   }
 
-  public AutoCompleteTextAtCaret(
+  public AutocompleteTextAtCaret(
       @NotNull Caret caret,
       @NotNull String sameLineBeforeSuffixText,
       @NotNull String sameLineAfterSuffixText,
       @NotNull String blockText) {
-    this(caret, new AutoCompleteText(sameLineBeforeSuffixText, sameLineAfterSuffixText, blockText));
+    this(caret, new AutocompleteText(sameLineBeforeSuffixText, sameLineAfterSuffixText, blockText));
   }
 }

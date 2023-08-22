@@ -376,6 +376,8 @@ go_library(
         "@com_github_throttled_throttled_v2//:throttled",
         "@io_opentelemetry_go_otel//:otel",
         "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_x_text//cases",
+        "@org_golang_x_text//language",
     ],
 )
 
