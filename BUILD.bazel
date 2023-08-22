@@ -290,8 +290,8 @@ go_proto_compiler(
 #
 # To be able to run e2e tests locally, we need to simultaneously be able to build linux/amd64 container images
 # and to build go test runners targeting the local machine architecture and OS. Unless you're working on a linux machine
-# these two won't be the same. So we use that flag to indicate those particular runner to target darwin/arm64 if we see
-# have this build setting enabled.
+# these two won't be the same. So we use this flag to indicate that this particular runner should target darwin/arm64 if we see
+# that we have this build setting enabled.
 #
 # This is part of the `--config darwin-docker` configuration alias, that you can find in .bazelrc.
 bool_flag(

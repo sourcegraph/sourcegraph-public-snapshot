@@ -167,7 +167,7 @@ server_integration_test(
     ],
 )
 
-# This one is bit peculiar, when running the codeintel-qa locally, we need to disable the sandbox
+# This one is bit perculiar, when running the codeintel-qa locally, we need to disable the sandbox
 # so the runner can access the gcloud creds which are living in the users HOME, under
 # .config/gcloud/application_default_credentials.json.
 #
