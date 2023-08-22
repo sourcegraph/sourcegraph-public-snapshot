@@ -43,11 +43,8 @@ func TestSchemaResolver_SetCodeHostRateLimits_InvalidConfigs(t *testing.T) {
 			name: "Negative APIQuota",
 			args: SetCodeHostRateLimitsArgs{
 				Input: SetCodeHostRateLimitsInput{
-					CodeHostID:                      "Q29kZUhvc3Q6MQ==",
-					APIQuota:                        -1,
-					APIReplenishmentIntervalSeconds: 1,
-					GitQuota:                        1,
-					GitReplenishmentIntervalSeconds: 1,
+					CodeHostID: "Q29kZUhvc3Q6MQ==",
+					APIQuota:   -1,
 				},
 			},
 			wantErr: wantErr,
@@ -57,10 +54,7 @@ func TestSchemaResolver_SetCodeHostRateLimits_InvalidConfigs(t *testing.T) {
 			args: SetCodeHostRateLimitsArgs{
 				Input: SetCodeHostRateLimitsInput{
 					CodeHostID:                      "Q29kZUhvc3Q6MQ==",
-					APIQuota:                        1,
 					APIReplenishmentIntervalSeconds: -1,
-					GitQuota:                        1,
-					GitReplenishmentIntervalSeconds: 1,
 				},
 			},
 			wantErr: wantErr,
@@ -69,11 +63,8 @@ func TestSchemaResolver_SetCodeHostRateLimits_InvalidConfigs(t *testing.T) {
 			name: "Negative GitQuota",
 			args: SetCodeHostRateLimitsArgs{
 				Input: SetCodeHostRateLimitsInput{
-					CodeHostID:                      "Q29kZUhvc3Q6MQ==",
-					APIQuota:                        1,
-					APIReplenishmentIntervalSeconds: 1,
-					GitQuota:                        -1,
-					GitReplenishmentIntervalSeconds: 1,
+					CodeHostID: "Q29kZUhvc3Q6MQ==",
+					GitQuota:   -1,
 				},
 			},
 			wantErr: wantErr,
@@ -83,9 +74,6 @@ func TestSchemaResolver_SetCodeHostRateLimits_InvalidConfigs(t *testing.T) {
 			args: SetCodeHostRateLimitsArgs{
 				Input: SetCodeHostRateLimitsInput{
 					CodeHostID:                      "Q29kZUhvc3Q6MQ==",
-					APIQuota:                        1,
-					APIReplenishmentIntervalSeconds: 1,
-					GitQuota:                        1,
 					GitReplenishmentIntervalSeconds: -1,
 				},
 			},
@@ -180,9 +168,7 @@ func TestSchemaResolver_SetCodeHostRateLimits_UpdateCodeHostError(t *testing.T) 
 }
 
 func TestSchemaResolver_SetCodeHostRateLimits_Success(t *testing.T) {
-	logger := logtest.Scoped(t)
 	db := dbmocks.NewMockDB()
-	r := &schemaResolver{logger: logger, db: db}
 	ctx := context.Background()
 	setCodeHostRateLimitsInput := SetCodeHostRateLimitsInput{
 		CodeHostID:                      "Q29kZUhvc3Q6MQ==",
@@ -212,7 +198,7 @@ func TestSchemaResolver_SetCodeHostRateLimits_Success(t *testing.T) {
 
 	variables := map[string]any{
 		"input": map[string]any{
-			"codeHostID":                      "Q29kZUhvc3Q6MQ==",
+			"codeHostID":                      string(setCodeHostRateLimitsInput.CodeHostID),
 			"apiQuota":                        setCodeHostRateLimitsInput.APIQuota,
 			"apiReplenishmentIntervalSeconds": setCodeHostRateLimitsInput.APIReplenishmentIntervalSeconds,
 			"gitQuota":                        setCodeHostRateLimitsInput.GitQuota,
@@ -223,7 +209,6 @@ func TestSchemaResolver_SetCodeHostRateLimits_Success(t *testing.T) {
 		Context:   ctx,
 		Schema:    mustParseGraphQLSchema(t, db),
 		Variables: variables,
-
 		Query: `mutation setCodeHostRateLimits($input:SetCodeHostRateLimitsInput!) {
 		  setCodeHostRateLimits(input:$input) {
 			alwaysNil
@@ -235,8 +220,4 @@ func TestSchemaResolver_SetCodeHostRateLimits_Success(t *testing.T) {
 			}
 		}`,
 	})
-	_, err := r.SetCodeHostRateLimits(ctx, SetCodeHostRateLimitsArgs{
-		Input: setCodeHostRateLimitsInput,
-	})
-	assert.Nil(t, err)
 }
