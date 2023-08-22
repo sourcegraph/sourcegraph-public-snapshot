@@ -22,7 +22,7 @@ import com.sourcegraph.cody.autocomplete.render.*;
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus;
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService;
 import com.sourcegraph.cody.vscode.*;
-import com.sourcegraph.cody.vscode.InlineAutoCompleteList;
+import com.sourcegraph.cody.vscode.InlineAutocompleteList;
 import com.sourcegraph.common.EditorUtils;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.UserLevelConfig;
@@ -40,21 +40,20 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Responsible for triggering and clearing inline code completions (the autocomplete feature). */
-public class CodyAutoCompleteManager {
-  private static final Logger logger = Logger.getInstance(CodyAutoCompleteManager.class);
+public class CodyAutocompleteManager {
+  private static final Logger logger = Logger.getInstance(CodyAutocompleteManager.class);
   private static final Key<Boolean> KEY_EDITOR_SUPPORTED = Key.create("cody.editorSupported");
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-  // TODO: figure out how to avoid the ugly nested `Future<CompletableFuture<T>>` type.
-  private final AtomicReference<Optional<Future<CompletableFuture<Void>>>> currentJob =
-      new AtomicReference<>(Optional.empty());
+  private final AtomicReference<CancellationToken> currentJob =
+      new AtomicReference<>(new CancellationToken());
   private @Nullable AutocompleteTelemetry currentAutocompleteTelemetry = null;
 
-  public static @NotNull CodyAutoCompleteManager getInstance() {
-    return ApplicationManager.getApplication().getService(CodyAutoCompleteManager.class);
+  public static @NotNull CodyAutocompleteManager getInstance() {
+    return ApplicationManager.getApplication().getService(CodyAutocompleteManager.class);
   }
 
   @RequiresEdt
-  public void clearAutoCompleteSuggestions(@NotNull Editor editor) {
+  public void clearAutocompleteSuggestions(@NotNull Editor editor) {
     // Log "suggested" event and clear current autocompletion
     Optional.ofNullable(editor.getProject())
         .ifPresent(
@@ -84,14 +83,14 @@ public class CodyAutoCompleteManager {
       return;
     }
     InlayModelUtils.getAllInlaysForEditor(editor).stream()
-        .filter(inlay -> inlay.getRenderer() instanceof CodyAutoCompleteElementRenderer)
+        .filter(inlay -> inlay.getRenderer() instanceof CodyAutocompleteElementRenderer)
         .forEach(Disposer::dispose);
   }
 
   @RequiresEdt
   public boolean isEnabledForEditor(Editor editor) {
     return ConfigUtil.isCodyEnabled()
-        && ConfigUtil.isCodyAutoCompleteEnabled()
+        && ConfigUtil.isCodyAutocompleteEnabled()
         && editor != null
         && isProjectAvailable(editor.getProject())
         && isEditorSupported(editor);
@@ -103,7 +102,7 @@ public class CodyAutoCompleteManager {
    * @param editor The editor instance to provide autocomplete for.
    * @param offset The character offset in the editor to trigger auto-complete at.
    */
-  public void triggerAutoComplete(
+  public void triggerAutocomplete(
       @NotNull Editor editor, int offset, InlineCompletionTriggerKind triggerKind) {
     if (!isEnabledForEditor(editor)) {
       if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)) {
@@ -121,28 +120,34 @@ public class CodyAutoCompleteManager {
     GraphQlLogger.logCodyEvent(project, "completion", "started");
 
     TextDocument textDocument = new IntelliJTextDocument(editor, project);
-    AutoCompleteDocumentContext autoCompleteDocumentContext =
-        textDocument.getAutoCompleteContext(offset);
+    AutocompleteDocumentContext autoCompleteDocumentContext =
+        textDocument.getAutocompleteContext(offset);
     // If the context has a valid completion trigger, cancel any running job
     // and asynchronously trigger the auto-complete
     if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)
         || autoCompleteDocumentContext.isCompletionTriggerValid()) { // TODO: skip this condition
+      CancellationToken cancellationToken = new CancellationToken();
       Callable<CompletableFuture<Void>> callable =
-          () -> triggerAutoCompleteAsync(project, editor, offset, textDocument, triggerKind);
+          () ->
+              triggerAutocompleteAsync(
+                  project, editor, offset, textDocument, triggerKind, cancellationToken);
+      ScheduledFuture<CompletableFuture<Void>> scheduledAutocomplete =
+          this.scheduler.schedule(callable, 20, TimeUnit.MILLISECONDS);
+      cancellationToken.onCancellationRequested(() -> scheduledAutocomplete.cancel(true));
       // debouncing the autocomplete trigger
       cancelCurrentJob();
-      this.currentJob.set(
-          Optional.of(this.scheduler.schedule(callable, 20, TimeUnit.MILLISECONDS)));
+      this.currentJob.set(cancellationToken);
     }
   }
 
   /** Asynchronously triggers auto-complete for the given editor and offset. */
-  private CompletableFuture<Void> triggerAutoCompleteAsync(
+  private CompletableFuture<Void> triggerAutocompleteAsync(
       @NotNull Project project,
       @NotNull Editor editor,
       int offset,
       @NotNull TextDocument textDocument,
-      InlineCompletionTriggerKind triggerKind) {
+      InlineCompletionTriggerKind triggerKind,
+      CancellationToken cancellationToken) {
     CodyAgentServer server = CodyAgent.getServer(project);
     boolean isAgentAutocomplete = server != null;
     if (!isAgentAutocomplete) {
@@ -163,13 +168,24 @@ public class CodyAutoCompleteManager {
                     .setCharacter(position.character));
 
     CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.AutocompleteInProgress);
-    return server
-        .autocompleteExecute(params)
+    CompletableFuture<InlineAutocompleteList> completions = server.autocompleteExecute(params);
+
+    // Important: we have to `.cancel()` the original `CompletableFuture<T>` from lsp4j. As soon as
+    // we use `thenAccept()` we get a new instance of `CompletableFuture<Void>` which does not
+    // correctly propagate the cancelation to the agent.
+    cancellationToken.onCancellationRequested(() -> completions.cancel(true));
+
+    return completions
         .thenAccept(
-            result -> processAutocompleteResult(project, editor, offset, triggerKind, result))
+            result ->
+                processAutocompleteResult(
+                    project, editor, offset, triggerKind, result, cancellationToken))
         .exceptionally(
             error -> {
-              logger.warn("failed autocomplete request " + params, error);
+              if (!(error instanceof CancellationException
+                  || error instanceof CompletionException)) {
+                logger.warn("failed autocomplete request " + params, error);
+              }
               return null;
             })
         .thenAccept(
@@ -182,15 +198,16 @@ public class CodyAutoCompleteManager {
       @NotNull Editor editor,
       int offset,
       InlineCompletionTriggerKind triggerKind,
-      InlineAutoCompleteList result) {
-    if (Thread.interrupted()) {
+      InlineAutocompleteList result,
+      CancellationToken cancellationToken) {
+    if (Thread.interrupted() || cancellationToken.isCancelled()) {
       if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)) {
-        logger.warn("canceled autocomplete due to thread interruption");
+        logger.warn("autocomplete canceled");
       }
       return;
     }
     InlayModel inlayModel = editor.getInlayModel();
-    Optional<InlineAutoCompleteItem> maybeItem = result.items.stream().findFirst();
+    Optional<InlineAutocompleteItem> maybeItem = result.items.stream().findFirst();
     if (maybeItem.isEmpty()) {
       if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)) {
         logger.warn("explicit autocomplete returned empty suggestions");
@@ -200,11 +217,15 @@ public class CodyAutoCompleteManager {
       }
       return;
     }
-    final InlineAutoCompleteItem item = maybeItem.get();
+    final InlineAutocompleteItem item = maybeItem.get();
     ApplicationManager.getApplication()
         .invokeLater(
             () -> {
-              this.clearAutoCompleteSuggestions(editor);
+              if (cancellationToken.isCancelled()) {
+                return;
+              }
+              cancellationToken.dispose();
+              this.clearAutocompleteSuggestions(editor);
 
               if (currentAutocompleteTelemetry != null) {
                 currentAutocompleteTelemetry.markCompletionDisplayed();
@@ -234,7 +255,7 @@ public class CodyAutoCompleteManager {
   private void displayAgentAutocomplete(
       @NotNull Editor editor,
       int offset,
-      InlineAutoCompleteItem item,
+      InlineAutocompleteItem item,
       InlayModel inlayModel,
       InlineCompletionTriggerKind triggerKind) {
     TextRange range = EditorUtils.getTextRange(editor.getDocument(), item.range);
@@ -247,7 +268,7 @@ public class CodyAutoCompleteManager {
     // `insertText` that is returned from the agent.
     // The diff algorithm returns a list of "deltas" that give us the minimal number of additions we
     // need to make to the document.
-    Patch<String> patch = CodyAutoCompleteManager.diff(originalText, insertTextFirstLine);
+    Patch<String> patch = CodyAutocompleteManager.diff(originalText, insertTextFirstLine);
     if (!patch.getDeltas().stream().allMatch(delta -> delta.getType() == Delta.TYPE.INSERT)) {
       if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)
           || UserLevelConfig.isVerboseLoggingEnabled()) {
@@ -264,8 +285,8 @@ public class CodyAutoCompleteManager {
       inlayModel.addInlineElement(
           range.getStartOffset() + delta.getOriginal().getPosition(),
           true,
-          new CodyAutoCompleteSingleLineRenderer(
-              text, item, editor, AutoCompleteRendererType.INLINE));
+          new CodyAutocompleteSingleLineRenderer(
+              text, item, editor, AutocompleteRendererType.INLINE));
     }
 
     // Insert remaining lines of multiline completions as a single block element under the
@@ -278,7 +299,7 @@ public class CodyAutoCompleteManager {
           true,
           false,
           Integer.MAX_VALUE,
-          new CodyAutoCompleteBlockElementRenderer(multilineInsertText, item, editor));
+          new CodyAutocompleteBlockElementRenderer(multilineInsertText, item, editor));
     }
   }
 
@@ -291,8 +312,8 @@ public class CodyAutoCompleteManager {
   }
 
   // TODO: handle tabs in multiline autocomplete suggestions when we add them
-  public static @NotNull InlineAutoCompleteItem normalizeIndentation(
-      @NotNull InlineAutoCompleteItem item,
+  public static @NotNull InlineAutocompleteItem normalizeIndentation(
+      @NotNull InlineAutocompleteItem item,
       @NotNull CommonCodeStyleSettings.IndentOptions indentOptions) {
     if (item.insertText.matches("^[\t ]*.+")) {
       String withoutLeadingWhitespace = item.insertText.stripLeading();
@@ -339,26 +360,7 @@ public class CodyAutoCompleteManager {
   }
 
   private void cancelCurrentJob() {
-    // TODO: change this implementation when we avoid nested `Future<CompletableFuture<T>>`
-    this.currentJob
-        .get()
-        .ifPresent(
-            job -> {
-              if (job.isDone()) {
-                try {
-                  job.get().cancel(true);
-                } catch (ExecutionException
-                    | InterruptedException
-                    | CancellationException ignored) {
-                }
-              } else {
-                // Cancelling the toplevel `Future<>` appears to cancel the nested
-                // `CompletableFuture<>`.
-                // Feel free to reimplement this entire method if it's causing problems because this
-                // logic is not bulletproof.
-                job.cancel(true);
-              }
-            });
+    this.currentJob.get().abort();
     CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.Ready);
   }
 }

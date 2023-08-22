@@ -1,6 +1,6 @@
 package com.sourcegraph.cody.autocomplete.render;
 
-public enum AutoCompleteRendererType {
+public enum AutocompleteRendererType {
   INLINE,
   BLOCK,
   AFTER_LINE_END
