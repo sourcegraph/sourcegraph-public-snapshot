@@ -25,6 +25,7 @@ func NewDBFromConfFunc(logger log.Logger, def VectorDB) func() (VectorDB, error)
 	conf.Watch(func() {
 		if newAddr := conf.Get().ServiceConnections().Qdrant; newAddr != oldAddr {
 			newConn, dialErr := defaults.Dial(newAddr, logger)
+			oldAddr = newAddr
 			err = dialErr
 			oldConn := ptr.Swap(newConn)
 			if oldConn != nil {
