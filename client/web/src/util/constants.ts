@@ -1,3 +1,4 @@
+// NOTE(naman): Remember to add events to allow list: https://docs.sourcegraph.com/dev/background-information/data-usage-pipeline#allow-list
 export const enum EventName {
     CODY_CHAT_PAGE_VIEWED = 'web:codyChat:pageViewed',
     CODY_CHAT_SUBMIT = 'web:codyChat:submit',
@@ -21,6 +22,7 @@ export const enum EventName {
     CODY_SIGNUP = 'CodySignup',
     CODY_CHAT_DOWNLOAD_VSCODE = 'web:codyChat:downloadVSCodeCTA',
     CODY_CHAT_TRY_ON_PUBLIC_CODE = 'web:codyChat:tryOnPublicCodeCTA',
+    CODY_CTA = 'ClickedOnCodyCTA',
     VIEW_EDITOR_EXTENSIONS = 'CodyClickViewEditorExtensions',
     TRY_CODY_VSCODE = 'VSCodeInstall',
     TRY_CODY_MARKETPLACE = 'VSCodeMarketplace',
@@ -33,4 +35,9 @@ export const enum EventName {
     JOIN_IDE_WAITLIST = 'JoinIDEWaitlist',
     DOWNLOAD_IDE = 'DownloadIDE',
     DOWNLOAD_APP = 'DownloadApp',
+}
+
+export const enum EventLocation {
+    NAV_BAR = 'NavBar',
+    CHAT_RESPONSE = 'ChatResponse',
 }

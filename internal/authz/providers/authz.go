@@ -193,9 +193,9 @@ func PermissionSyncingDisabled() bool {
 }
 
 var ValidateExternalServiceConfig = database.MakeValidateExternalServiceConfigFunc(
-	[]func(*types.GitHubConnection) error{github.ValidateAuthz},
-	[]func(*schema.GitLabConnection, []schema.AuthProviders) error{gitlab.ValidateAuthz},
-	[]func(*schema.BitbucketServerConnection) error{bitbucketserver.ValidateAuthz},
-	[]func(*schema.PerforceConnection) error{perforce.ValidateAuthz},
-	[]func(*schema.AzureDevOpsConnection) error{func(_ *schema.AzureDevOpsConnection) error { return nil }},
+	[]database.GitHubValidatorFunc{github.ValidateAuthz},
+	[]database.GitLabValidatorFunc{gitlab.ValidateAuthz},
+	[]database.BitbucketServerValidatorFunc{bitbucketserver.ValidateAuthz},
+	[]database.PerforceValidatorFunc{perforce.ValidateAuthz},
+	[]database.AzureDevOpsValidatorFunc{func(_ *schema.AzureDevOpsConnection) error { return nil }},
 ) // TODO: @varsanojidan switch this with actual authz once its implemented.

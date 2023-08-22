@@ -4,7 +4,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "authz",
     srcs = [
-        "doc.go",
         "metrics.go",
         "perms_syncer.go",
         "perms_syncer_worker.go",

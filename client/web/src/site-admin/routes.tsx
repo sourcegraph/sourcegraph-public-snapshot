@@ -30,10 +30,14 @@ const AnalyticsNotebooksPage = lazyComponent(
     'AnalyticsNotebooksPage'
 )
 const SiteAdminConfigurationPage = lazyComponent(
-    () => import('./SiteAdminConfigurationPage'),
+    () => import('./site-config/SiteAdminConfigurationPage'),
     'SiteAdminConfigurationPage'
 )
 const SiteAdminSettingsPage = lazyComponent(() => import('./SiteAdminSettingsPage'), 'SiteAdminSettingsPage')
+const SiteAdminOnboardingTourPage = lazyComponent(
+    () => import('./SiteAdminOnboardingTourPage'),
+    'SiteAdminOnboardingTourPage'
+)
 const SiteAdminExternalServicesArea = lazyComponent(
     () => import('./SiteAdminExternalServicesArea'),
     'SiteAdminExternalServicesArea'
@@ -131,12 +135,17 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
         render: () => <AnalyticsNotebooksPage />,
     },
     {
-        path: '/configuration',
+        path: '/configuration/:tab?',
         render: props => <SiteAdminConfigurationPage {...props} />,
     },
     {
         path: '/global-settings',
         render: props => <SiteAdminSettingsPage {...props} />,
+    },
+    {
+        path: '/end-user-onboarding',
+        render: props => <SiteAdminOnboardingTourPage {...props} />,
+        condition: ({ endUserOnboardingEnabled }) => endUserOnboardingEnabled,
     },
     {
         path: '/github-apps/*',

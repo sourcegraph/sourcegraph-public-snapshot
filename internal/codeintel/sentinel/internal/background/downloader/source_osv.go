@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 
 	gocvss20 "github.com/pandatix/go-cvss/20"
 	gocvss30 "github.com/pandatix/go-cvss/30"
@@ -194,35 +193,38 @@ func (parser *CVEParser) osvToVuln(o OSV, dataSourceHandler DataSourceHandler) (
 	return v, nil
 }
 
-var cvssTrailingSlash = lazyregexp.New(`/$`)
-
 func parseCVSS(cvssVector string) (score string, severity string, err error) {
 	// Some data sources include trailing slashes
-	cleanCvssVector := string(cvssTrailingSlash.ReplaceAll([]byte(cvssVector), []byte{}))
+	cleanCvssVector := strings.TrimRight(cvssVector, "/")
 
 	var baseScore float64
-	switch strings.Split(cvssVector, "/")[0] {
-	case "CVSS:2.0":
-		cvss, err := gocvss20.ParseVector(cleanCvssVector)
-		if err != nil {
-			return "", "", err
-		}
-		baseScore = cvss.BaseScore()
-	case "CVSS:3.0":
+	switch {
+	case strings.HasPrefix(cvssVector, "CVSS:3.0"):
 		cvss, err := gocvss30.ParseVector(cleanCvssVector)
 		if err != nil {
 			return "", "", err
 		}
 		baseScore = cvss.BaseScore()
-	case "CVSS:3.1":
+
+	case strings.HasPrefix(cvssVector, "CVSS:3.1"):
 		cvss, err := gocvss31.ParseVector(cleanCvssVector)
+		if err != nil {
+			return "", "", err
+		}
+		baseScore = cvss.BaseScore()
+
+	// CVSS v2 does not have prefix, falls into this condition.
+	default:
+		cvss, err := gocvss20.ParseVector(cleanCvssVector)
 		if err != nil {
 			return "", "", err
 		}
 		baseScore = cvss.BaseScore()
 	}
 
-	// Implementation of rating is the same across all CVSS versions
+	// Implementation of rating is the same across all CVSS versions.
+	// Notice CVSS v2.0 does not have a "rating" in its specification,
+	// but has been used when CVSS v3 was published.
 	severity, err = gocvss31.Rating(baseScore)
 	if err != nil {
 		return "", "", err
