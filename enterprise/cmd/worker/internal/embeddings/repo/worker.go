@@ -2,15 +2,12 @@ package repo
 
 import (
 	"context"
-	"sync/atomic"
 	"time"
 
-	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	repoembeddingsbg "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
@@ -19,13 +16,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"google.golang.org/grpc"
 )
 
 type repoEmbeddingJob struct{}
@@ -58,6 +53,9 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 		return nil, err
 	}
 
+	getQdrantDB := vdb.NewDBFromConfFunc(observationCtx.Logger, vdb.NewNoopDB())
+	getQdrantInserter := func() (vdb.VectorInserter, error) { return getQdrantDB() }
+
 	workCtx := actor.WithInternalActor(context.Background())
 	return []goroutine.BackgroundRoutine{
 		newRepoEmbeddingJobWorker(
@@ -67,7 +65,7 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 			db,
 			uploadStore,
 			gitserver.NewClient(db),
-			getQdrantInserterFunc(observationCtx.Logger),
+			getQdrantInserter,
 			services.ContextService,
 			repoembeddingsbg.NewRepoEmbeddingJobsStore(db),
 		),
@@ -100,34 +98,4 @@ func newRepoEmbeddingJobWorker(
 		HeartbeatInterval: 10 * time.Second,
 		Metrics:           workerutil.NewMetrics(observationCtx, "repo_embedding_job_worker"),
 	})
-}
-
-func getQdrantInserterFunc(logger log.Logger) func() (vdb.VectorInserter, error) {
-	var (
-		oldAddr string
-		err     error
-		ptr     atomic.Pointer[grpc.ClientConn]
-	)
-
-	conf.Watch(func() {
-		if newAddr := conf.Get().ServiceConnections().Qdrant; newAddr != oldAddr {
-			newConn, dialErr := defaults.Dial(newAddr, logger)
-			err = dialErr
-			oldConn := ptr.Swap(newConn)
-			oldConn.Close()
-		}
-	})
-
-	return func() (vdb.VectorInserter, error) {
-		if err != nil {
-			return nil, err
-		}
-
-		conn := ptr.Load()
-		if conn == nil {
-			return vdb.NewNoopDB(), nil
-		}
-
-		return vdb.NewQdrantDBFromConn(conn), nil
-	}
 }
