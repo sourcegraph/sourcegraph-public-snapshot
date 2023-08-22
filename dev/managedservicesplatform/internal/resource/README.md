@@ -8,18 +8,20 @@ Each resource package must declare the following interface:
 ```go
 import (
   "github.com/aws/constructs-go/constructs/v10"
+  
+
 )
 
 type Output struct {}
 
 type Config struct {}
 
-func New(scope constructs.Construct, id string, config Config) (*Output, error) {
+func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
   // ...
 }
 ```
 
 In each resource, apply the following conventions to all CDKTF resources created:
 
-- Use IDs *prefixed* with the resource's `id`, to avoid collisions. Within each scope/[stack](../stack/README.md), IDs must be unique.
+- Use IDs *prefixed* with the resource's `id` using `(resourceid.ID).TerraformID(...)`, to avoid collisions. Within each scope/[stack](../stack/README.md), IDs must be unique.
 - Set *display* names to the resource's `id`, as these do not have uniqueness constraints.

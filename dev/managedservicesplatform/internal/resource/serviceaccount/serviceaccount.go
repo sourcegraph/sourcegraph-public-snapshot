@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiammember"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/serviceaccount"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/internal/pointer"
 )
 
@@ -29,9 +30,9 @@ type Output struct {
 }
 
 // New provisions a service account, including roles for it to inherit.
-func New(scope constructs.Construct, id string, config Config) *Output {
+func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 	serviceAccount := serviceaccount.NewServiceAccount(scope,
-		pointer.Stringf("%s-sa", id),
+		id.ResourceID("account"),
 		&serviceaccount.ServiceAccountConfig{
 			Project: config.Project.ProjectId(),
 
@@ -40,7 +41,7 @@ func New(scope constructs.Construct, id string, config Config) *Output {
 		})
 	for _, role := range config.Roles {
 		_ = projectiammember.NewProjectIamMember(scope,
-			pointer.Stringf("%s_sa_%s", id, role.ID),
+			id.ResourceID("member_%s", role.ID),
 			&projectiammember.ProjectIamMemberConfig{
 				Project: config.Project.ProjectId(),
 

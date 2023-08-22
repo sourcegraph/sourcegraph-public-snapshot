@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/redis"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/serviceaccount"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/cloudflareprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
@@ -108,13 +109,13 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 		vars.Service.EnvVarPrefix,
 		makeServiceEnvVarPrefix(vars.Service.ID))
 
-	diagnosticsSecret := random.New(stack, "diagnostics-secret", random.Config{
+	diagnosticsSecret := random.New(stack, resourceid.New("diagnostics-secret"), random.Config{
 		ByteLength: 8,
 	})
 
 	// Set up configuration for the core Cloud Run service
 	cloudRun := &cloudRunServiceBuilder{
-		ServiceAccount: serviceaccount.New(stack, "cloudrun-sa", serviceaccount.Config{
+		ServiceAccount: serviceaccount.New(stack, resourceid.New("cloudrun"), serviceaccount.Config{
 			Project:   vars.Project,
 			AccountID: vars.Service.ID,
 			DisplayName: fmt.Sprintf("%s Service Account",
@@ -150,12 +151,14 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	// redisInstance is only created and non-nil if Redis is configured for the
 	// environment.
 	if vars.Environment.Resources.Redis != nil {
-		redisInstance, err := redis.New(stack, "redis", redis.Config{
-			Project: vars.Project,
-			Network: cloudRun.PrivateNetwork.network,
-			Region:  gcpRegion,
-			Spec:    *vars.Environment.Resources.Redis,
-		})
+		redisInstance, err := redis.New(stack,
+			resourceid.New("redis"),
+			redis.Config{
+				Project: vars.Project,
+				Network: cloudRun.PrivateNetwork.network,
+				Region:  gcpRegion,
+				Spec:    *vars.Environment.Resources.Redis,
+			})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render Redis instance")
 		}
@@ -220,7 +223,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	}
 
 	// Now we add a load balancer
-	lb := loadbalancer.New(stack, "lb", loadbalancer.Config{
+	lb := loadbalancer.New(stack, resourceid.New("lb"), loadbalancer.Config{
 		Project:       vars.Project,
 		Region:        gcpRegion,
 		TargetService: service,
@@ -229,7 +232,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	// Then whatever the user requested to expose the service publicly
 	switch vars.Environment.Domain.Type {
 	case "cloudflare":
-		if _, err := cloudflare.New(stack, "cf", cloudflare.Config{
+		if _, err := cloudflare.New(stack, resourceid.New("cf"), cloudflare.Config{
 			Project:                vars.Project,
 			SharedSecretsProjectID: vars.SharedSecretsProjectID,
 			Spec:                   *vars.Environment.Domain.Cloudflare,

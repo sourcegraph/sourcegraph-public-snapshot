@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/secretmanagersecret"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/secretmanagersecretversion"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/internal/pointer"
 )
 
@@ -22,9 +23,9 @@ type Config struct {
 	Value string
 }
 
-func New(scope constructs.Construct, id string, config Config) *Output {
+func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 	secret := secretmanagersecret.NewSecretManagerSecret(scope,
-		pointer.Stringf("%s-secret", id),
+		id.ResourceID("secret"),
 		&secretmanagersecret.SecretManagerSecretConfig{
 			Project:  config.Project.ProjectId(),
 			SecretId: &config.ID,
@@ -34,7 +35,7 @@ func New(scope constructs.Construct, id string, config Config) *Output {
 		})
 
 	version := secretmanagersecretversion.NewSecretManagerSecretVersion(scope,
-		pointer.Stringf("%s-version", id),
+		id.ResourceID("secret_version"),
 		&secretmanagersecretversion.SecretManagerSecretVersionConfig{
 			Secret:     secret.Id(),
 			SecretData: &config.Value,
@@ -55,9 +56,9 @@ type DataConfig struct {
 	ProjectID string
 }
 
-func Get(scope constructs.Construct, id string, config DataConfig) *Data {
+func Get(scope constructs.Construct, id resourceid.ID, config DataConfig) *Data {
 	data := datagooglesecretmanagersecretversion.NewDataGoogleSecretManagerSecretVersion(scope,
-		&id,
+		id.ResourceID("version_data"),
 		&datagooglesecretmanagersecretversion.DataGoogleSecretManagerSecretVersionConfig{
 			Secret:  &config.Secret,
 			Project: &config.ProjectID,

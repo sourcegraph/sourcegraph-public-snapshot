@@ -4,6 +4,7 @@ import (
 	"github.com/aws/constructs-go/constructs/v10"
 	randomid "github.com/sourcegraph/managed-services-platform-cdktf/gen/random/id"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/internal/pointer"
 )
 
@@ -18,10 +19,10 @@ type Output struct {
 // New creates a randomized value.
 //
 // Requires stack to be created with randomprovider.With().
-func New(scope constructs.Construct, id string, config Config) *Output {
+func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 	rid := randomid.NewId(
 		scope,
-		pointer.Value("name"),
+		id.ResourceID("random"),
 		&randomid.IdConfig{
 			ByteLength: pointer.Float64(config.ByteLength),
 		},

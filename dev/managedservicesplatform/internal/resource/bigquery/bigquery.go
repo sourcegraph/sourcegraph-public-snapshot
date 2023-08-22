@@ -4,6 +4,7 @@ import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 )
 
@@ -22,6 +23,6 @@ type Config struct {
 	Spec spec.EnvironmentResourceBigQueryTableSpec
 }
 
-func New(scope constructs.Construct, name string, config Config) (*Output, error) {
+func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
 	return nil, nil // TODO
 }

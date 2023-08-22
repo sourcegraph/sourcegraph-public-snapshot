@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/redisinstance"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/internal/pointer"
 )
@@ -29,28 +30,30 @@ type Config struct {
 }
 
 // TODO: Add validation
-func New(scope constructs.Construct, id string, config Config) (*Output, error) {
-	redis := redisinstance.NewRedisInstance(scope, &id, &redisinstance.RedisInstanceConfig{
-		Project: config.Project.ProjectId(),
-		Region:  &config.Region,
-		Name:    pointer.Value(id),
+func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
+	redis := redisinstance.NewRedisInstance(scope,
+		id.ResourceID("instance"),
+		&redisinstance.RedisInstanceConfig{
+			Project: config.Project.ProjectId(),
+			Region:  &config.Region,
+			Name:    pointer.Value(id.DisplayName()),
 
-		Tier:         pointer.Value(pointer.IfNil(config.Spec.Tier, "STANDARD_HA")),
-		MemorySizeGb: pointer.Float64(pointer.IfNil(config.Spec.MemoryGB, 1)),
+			Tier:         pointer.Value(pointer.IfNil(config.Spec.Tier, "STANDARD_HA")),
+			MemorySizeGb: pointer.Float64(pointer.IfNil(config.Spec.MemoryGB, 1)),
 
-		AuthEnabled:           true,
-		TransitEncryptionMode: pointer.Value("SERVER_AUTHENTICATION"),
-		PersistenceConfig: &redisinstance.RedisInstancePersistenceConfig{
-			PersistenceMode: pointer.Value("RDB"),
-		},
+			AuthEnabled:           true,
+			TransitEncryptionMode: pointer.Value("SERVER_AUTHENTICATION"),
+			PersistenceConfig: &redisinstance.RedisInstancePersistenceConfig{
+				PersistenceMode: pointer.Value("RDB"),
+			},
 
-		AuthorizedNetwork: config.Network.SelfLink(),
-	})
+			AuthorizedNetwork: config.Network.SelfLink(),
+		})
 
 	// Share CA certificate for connecting to Redis over TLS as a GSM secret
-	redisCACert := gsmsecret.New(scope, fmt.Sprintf("%s-ca-cert", id), gsmsecret.Config{
+	redisCACert := gsmsecret.New(scope, id.SubID("ca-cert"), gsmsecret.Config{
 		Project: config.Project,
-		ID:      strings.ToUpper(id) + "_CA_CERT",
+		ID:      strings.ToUpper(id.DisplayName()) + "_CA_CERT",
 		Value:   *redis.ServerCaCerts().Get(pointer.Float64(0)).Cert(),
 	})
 

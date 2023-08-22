@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeurlmap"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/internal/pointer"
 )
 
@@ -25,12 +26,12 @@ type Config struct {
 
 // New instantiates a set of resources for a load-balancer frontend for a Cloud
 // Run service.
-func New(scope constructs.Construct, id string, config Config) *Output {
+func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 	// Endpoint represents the Cloud Run service.
 	endpoint := computeregionnetworkendpointgroup.NewComputeRegionNetworkEndpointGroup(scope,
-		pointer.Stringf("%s-endpoint", id),
+		id.ResourceID("endpoint_group"),
 		&computeregionnetworkendpointgroup.ComputeRegionNetworkEndpointGroupConfig{
-			Name:    pointer.Value(id),
+			Name:    pointer.Value(id.DisplayName()),
 			Project: config.Project.ProjectId(),
 			Region:  pointer.Value(config.Region),
 
@@ -42,9 +43,9 @@ func New(scope constructs.Construct, id string, config Config) *Output {
 
 	// Set up a group of virtual machines that will serve traffic for load balancing
 	backendService := computebackendservice.NewComputeBackendService(scope,
-		pointer.Stringf("%s-backend-service", id),
+		id.ResourceID("backend_service"),
 		&computebackendservice.ComputeBackendServiceConfig{
-			Name:    pointer.Value(id),
+			Name:    pointer.Value(id.DisplayName()),
 			Project: config.Project.ProjectId(),
 
 			Protocol: pointer.Value("HTTP"),
@@ -61,9 +62,9 @@ func New(scope constructs.Construct, id string, config Config) *Output {
 	// Enable routing requests to the backend service working serving traffic
 	// for load balancing
 	urlMap := computeurlmap.NewComputeUrlMap(scope,
-		pointer.Stringf("%s-urlmap", id),
+		id.ResourceID("url_map"),
 		&computeurlmap.ComputeUrlMapConfig{
-			Name:           pointer.Value(id),
+			Name:           pointer.Value(id.DisplayName()),
 			Project:        config.Project.ProjectId(),
 			DefaultService: backendService.Id(),
 		})
