@@ -73,9 +73,10 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 			}),
 	}
 
-	for i, service := range gcpServices {
+	for _, service := range gcpServices {
 		projectservice.NewProjectService(stack,
-			pointer.Stringf("%s-project-service-%d", vars.ProjectID, i),
+			pointer.Stringf("%s-service-%s",
+				vars.ProjectID, strings.ReplaceAll(service, ".", "-")),
 			&projectservice.ProjectServiceConfig{
 				Project:                  output.Project.ProjectId(),
 				Service:                  pointer.Value(service),
