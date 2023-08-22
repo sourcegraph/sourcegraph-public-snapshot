@@ -5,13 +5,6 @@ contents:
     # Included by existing SG base image
     - tini
     - mailcap
-    # good: https://buildkite.com/sourcegraph/sourcegraph/builds/238954#_
-    # - terraform
-    # - helm
-    # - kustomize
-    # - nodejs-18
-    # TODO: pinned versions work locally
-    # but it's broken in CI?
     - terraform=1.3.9-r2
     - helm=3.11.3-r1
     - kustomize=4.5.7-r0
@@ -26,4 +19,3 @@ accounts:
     - username: sourcegraph
       uid: 100
       gid: 101
-# MANUAL REBUILD: Thu Jun 22 13:43:35 BST 2023
