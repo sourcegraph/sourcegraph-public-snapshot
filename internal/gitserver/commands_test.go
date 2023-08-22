@@ -3296,3 +3296,27 @@ func Test_CommitLog(t *testing.T) {
 		})
 	}
 }
+
+func TestErrorMessageTruncateOutput(t *testing.T) {
+	cmd := []string{"git", "ls-files"}
+
+	t.Run("short output", func(t *testing.T) {
+		shortOutput := "aaaaaaaaaab"
+		message := errorMessageTruncatedOutput(cmd, []byte(shortOutput))
+		want := fmt.Sprintf("git command [git ls-files] failed (output: %q)", shortOutput)
+
+		if diff := cmp.Diff(want, message); diff != "" {
+			t.Fatalf("wrong message. diff: %s", diff)
+		}
+	})
+
+	t.Run("truncating output", func(t *testing.T) {
+		longOutput := strings.Repeat("a", 5000) + "b"
+		message := errorMessageTruncatedOutput(cmd, []byte(longOutput))
+		want := fmt.Sprintf("git command [git ls-files] failed (truncated output: %q, 1 more)", longOutput[:5000])
+
+		if diff := cmp.Diff(want, message); diff != "" {
+			t.Fatalf("wrong message. diff: %s", diff)
+		}
+	})
+}
