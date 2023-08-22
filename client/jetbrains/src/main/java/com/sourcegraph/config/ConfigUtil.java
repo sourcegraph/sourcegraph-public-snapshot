@@ -29,8 +29,9 @@ public class ConfigUtil {
         .setAutocompleteAdvancedProvider("unstable-codegen")
         .setAutocompleteAdvancedServerEndpoint("$CUSTOMER_ENDPOINT")
         .setAutocompleteAdvancedAccessToken(UserLevelConfig.getAutoCompleteAccessToken())
-        .setAutocompleteAdvancedEmbeddings(true)g
+        .setAutocompleteAdvancedEmbeddings(true)
         .setDebug(isCodyDebugEnabled())
+        .setCodebase(getApplicationLevelConfig().getCodyCodebase())
         .setVerboseDebug(isCodyVerboseDebugEnabled());
   }
 
