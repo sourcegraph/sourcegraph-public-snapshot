@@ -10,13 +10,17 @@ tag="5.1.0"
 function restore_current_commit() {
   git checkout --force $current_commit
 }
+
+EXIT_CODE=0
+git diff --quiet --exit-code || EXIT_CODE=$? # do not fail on non-zero exit
+if [[ $EXIT_CODE -ne 0 ]]; then
+  echo "🚨 WARNING: Backcompat tests does destructive operations on the repository. Please make sure your changes are commited"
+fi
+
 if [[ ${CI:-} == "true" ]]; then
   bazelrcs=(--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
 else
-  EXIT_CODE=0
-  git diff --quiet --exit-code || EXIT_CODE=$? # do not fail on non-zero exit
   if [[ $EXIT_CODE -ne 0 ]]; then
-    echo "🚨 WARNING: Backcompat tests does destructive operations on the repository. Please make sure your changes are commited"
     echo "The following files have changes:"
     git diff --name-only --exit-code
   else
