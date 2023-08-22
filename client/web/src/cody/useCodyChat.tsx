@@ -15,6 +15,7 @@ import {
     type CodyClientEvent,
 } from '@sourcegraph/cody-shared/dist/chat/useClient'
 import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../tracking/eventLogger'
@@ -81,6 +82,7 @@ export const codyChatStoreMock: CodyChatStore = {
 }
 
 interface CodyChatProps {
+    userID?: Scalars['ID']
     scope?: CodyClientScope
     config?: CodyClientConfig
     onEvent?: (event: CodyClientEvent) => void
@@ -97,6 +99,7 @@ const CODY_TRANSCRIPT_HISTORY_KEY = 'cody.chat.history'
 const SAVE_MAX_TRANSCRIPT_HISTORY = 20
 
 export const useCodyChat = ({
+    userID = 'anonymous',
     scope: initialScope,
     config: initialConfig,
     onEvent,
@@ -105,8 +108,13 @@ export const useCodyChat = ({
     autoLoadScopeWithRepositories = false,
 }: CodyChatProps): CodyChatStore => {
     const [loadedTranscriptFromHistory, setLoadedTranscriptFromHistory] = useState(false)
+    // Read old transcript history from local storage, if any exists. We will use this to
+    // preserve the history as we migrate to a new key that is differentiated by user.
+    const oldJSON = window.localStorage.getItem(CODY_TRANSCRIPT_HISTORY_KEY)
+    // eslint-disable-next-line no-restricted-syntax
     const [transcriptHistoryInternal, setTranscriptHistoryState] = useLocalStorage<TranscriptJSON[]>(
-        CODY_TRANSCRIPT_HISTORY_KEY,
+        // Users have distinct transcript histories, so we use the user ID as a key.
+        `${CODY_TRANSCRIPT_HISTORY_KEY}:${userID}`,
         []
     )
     const transcriptHistory = useMemo(() => transcriptHistoryInternal || [], [transcriptHistoryInternal])
@@ -390,6 +398,18 @@ export const useCodyChat = ({
     // Autoload the latest transcript from history once it is loaded. Initially the transcript is null.
     useEffect(() => {
         if (!loadedTranscriptFromHistory && transcript === null) {
+            // User transcript history entries were previously stored in a single array in
+            // local storage under the generic key `cody.chat.history`, which is not
+            // differentiated by user. The first time we run this effect, we take any old
+            // entries and write them to the new user-differentiated key, and then delete
+            // the old key. When the effect runs again in the future, it will thus only
+            // run the code that comes after this block.
+            if (oldJSON) {
+                setTranscriptHistoryState(JSON.parse(oldJSON))
+                window.localStorage.removeItem(CODY_TRANSCRIPT_HISTORY_KEY)
+                return
+            }
+
             const history = sortSliceTranscriptHistory([...transcriptHistory])
 
             if (autoLoadTranscriptFromHistory) {
@@ -416,6 +436,7 @@ export const useCodyChat = ({
         }
     }, [
         transcriptHistory,
+        oldJSON,
         loadedTranscriptFromHistory,
         transcript,
         autoLoadTranscriptFromHistory,

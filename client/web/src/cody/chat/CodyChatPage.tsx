@@ -99,6 +99,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     const navigate = useNavigate()
 
     const codyChatStore = useCodyChat({
+        userID: authenticatedUser?.id,
         onTranscriptHistoryLoad,
         autoLoadTranscriptFromHistory: false,
         autoLoadScopeWithRepositories: isSourcegraphApp,
