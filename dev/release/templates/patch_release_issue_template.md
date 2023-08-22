@@ -46,7 +46,7 @@ Create and test the first release candidate:
   - [ ] [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.1)
 - [ ] File any failures and regressions in the pipelines as `release-blocker` issues and assign the appropriate teams.
 
-> ![NOTE] 
+> ![NOTE]
 > You will need to re-check the above pipelines for any subsequent release candidates. You can see the Buildkite logs by tweaking the "branch" query parameter in the URLs to point to the desired release candidate. In general, the URL scheme looks like the following (replacing `N` in the URL): `https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.N`
 
 Once there is a release candidate available:
@@ -105,5 +105,5 @@ Once there is a release candidate available:
   - [ ] Move the released changes into the $MAJOR.$MINOR.$PATCH version section
   - [ ] Add a new section for the [upcoming patch release](https://handbook.sourcegraph.com/departments/engineering/dev/process/releases/#current-patch-schedule) if this is not the last planned patch release for version $MAJOR.$MINOR
 
-> ![NOTE] 
+> ![NOTE]
 > If another patch release is requested after the release, ask that a [patch request issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=team%2Fdistribution&template=request_patch_release.md) be filled out and approved first.
