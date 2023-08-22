@@ -32,10 +32,12 @@ type smtpConfig struct {
 
 var randomUUID = uuid.NewRandom
 
-func (r *schemaResolver) SendTestEmail(ctx context.Context, args struct {
+type SendTestEmailArgs struct {
 	To     string
 	Config *smtpConfig
-}) (string, error) {
+}
+
+func (r *schemaResolver) SendTestEmail(ctx context.Context, args SendTestEmailArgs) (string, error) {
 	// 🚨 SECURITY: Only site admins can send test emails.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return "", err
