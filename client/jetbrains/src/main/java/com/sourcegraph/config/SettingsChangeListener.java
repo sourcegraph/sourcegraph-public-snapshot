@@ -23,6 +23,8 @@ import com.sourcegraph.cody.CodyToolWindowFactory;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.autocomplete.CodyAutoCompleteManager;
+import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus;
+import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService;
 import com.sourcegraph.find.browser.JavaToJSBridge;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import java.awt.event.InputEvent;
@@ -138,6 +140,14 @@ public class SettingsChangeListener implements Disposable {
               if (toolWindow != null) {
                 toolWindow.setAvailable(true, null);
               }
+            }
+            if (!context.newCodyEnabled) {
+              CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.CodyDisabled);
+            } else if (!context.newCodyAutoCompleteEnabled) {
+              CodyAutocompleteStatusService.notifyApplication(
+                  CodyAutocompleteStatus.AutocompleteDisabled);
+            } else {
+              CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.Ready);
             }
           }
         });

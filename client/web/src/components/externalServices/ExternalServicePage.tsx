@@ -75,6 +75,14 @@ export const ExternalServicePage: FC<Props> = props => {
     const [externalService, setExternalService] = useState<ExternalServiceFieldsWithConfig>()
 
     const { error: fetchError, loading: fetchLoading } = useFetchExternalService(externalServiceID!, setExternalService)
+    const { error: fetchGHAppError, data: ghAppData } = useFetchGithubAppForES(externalService)
+    const ghApp = useMemo(() => ghAppData?.gitHubAppByAppID, [ghAppData])
+
+    const [numberOfRepos, setNumberOfRepos] = useState<number>(externalService?.repoCount ?? 0)
+    // Callback used in ExternalServiceSyncJobsList to update the number of repos in current component.
+    const updateNumberOfRepos = useCallback((updatedNumberOfRepos: number) => {
+        setNumberOfRepos(updatedNumberOfRepos)
+    }, [])
 
     const [syncExternalService, { error: syncExternalServiceError, loading: syncExternalServiceLoading }] =
         useSyncExternalService()
@@ -121,19 +129,9 @@ export const ExternalServicePage: FC<Props> = props => {
 
     const path = useMemo(() => getBreadCrumbs(externalService), [externalService])
 
-    const ExternalServiceContainer: FC<{ externalService: ExternalServiceFieldsWithConfig }> = ({
-        externalService,
-    }) => {
-        const { error: fetchGHAppError, data: ghAppData } = useFetchGithubAppForES(externalService)
+    const mergedError = fetchError || fetchGHAppError
 
-        const ghApp = useMemo(() => ghAppData?.gitHubAppByAppID, [ghAppData])
-
-        const [numberOfRepos, setNumberOfRepos] = useState<number>(externalService?.repoCount ?? 0)
-        // Callback used in ExternalServiceSyncJobsList to update the number of repos in current component.
-        const updateNumberOfRepos = useCallback((updatedNumberOfRepos: number) => {
-            setNumberOfRepos(updatedNumberOfRepos)
-        }, [])
-
+    const renderExternalService = (externalService: ExternalServiceFieldsWithConfig): JSX.Element => {
         let externalServiceAvailabilityStatus
         if (loading) {
             externalServiceAvailabilityStatus = (
@@ -166,10 +164,7 @@ export const ExternalServicePage: FC<Props> = props => {
                 />
             )
         }
-        const externalServiceCategory = useMemo(
-            () => resolveExternalServiceCategory(externalService, ghApp),
-            [externalService, ghApp]
-        )
+        const externalServiceCategory = resolveExternalServiceCategory(externalService)
         return (
             <Container className="mb-3">
                 <PageHeader
@@ -249,7 +244,6 @@ export const ExternalServicePage: FC<Props> = props => {
                     }
                 />
                 {isErrorLike(isDeleting) && <ErrorAlert className="mt-2" error={isDeleting} />}
-                {fetchGHAppError && <ErrorAlert className="mb-3" error={fetchGHAppError} />}
                 {externalServiceAvailabilityStatus}
                 <H2>Information</H2>
                 {externalServiceCategory && (
@@ -305,9 +299,9 @@ export const ExternalServicePage: FC<Props> = props => {
             ) : (
                 <PageTitle title="Code host" />
             )}
-            {fetchError && <ErrorAlert className="mb-3" error={fetchError} />}
+            {mergedError && <ErrorAlert className="mb-3" error={fetchError} />}
             {!fetchLoading && !externalService && !fetchError && <NotFoundPage />}
-            {externalService && <ExternalServiceContainer externalService={externalService} />}
+            {externalService && renderExternalService(externalService)}
         </div>
     )
 }
