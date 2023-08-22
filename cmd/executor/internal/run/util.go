@@ -160,6 +160,12 @@ func filesOptions(c *config.Config) apiclient.BaseClientOptions {
 	}
 }
 
+func testOptions(c *config.Config) apiclient.BaseClientOptions {
+	return apiclient.BaseClientOptions{
+		EndpointOptions: endpointOptions(c, "/.executors/test"),
+	}
+}
+
 func baseClientOptions(c *config.Config, pathPrefix string) apiclient.BaseClientOptions {
 	return apiclient.BaseClientOptions{
 		ExecutorName:    c.WorkerHostname,
