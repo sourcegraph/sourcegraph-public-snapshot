@@ -4,7 +4,7 @@ import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.Inlay;
 import com.intellij.openapi.editor.InlayModel;
-import com.sourcegraph.cody.autocomplete.render.CodyAutoCompleteElementRenderer;
+import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,11 +19,11 @@ public class InlayModelUtils {
     // we work around it by just looking at a range (potentially containing a single point)
     return Stream.of(
             inlayModel.getInlineElementsInRange(
-                startOffset, endOffset, CodyAutoCompleteElementRenderer.class),
+                startOffset, endOffset, CodyAutocompleteElementRenderer.class),
             inlayModel.getBlockElementsInRange(
-                startOffset, endOffset, CodyAutoCompleteElementRenderer.class),
+                startOffset, endOffset, CodyAutocompleteElementRenderer.class),
             inlayModel.getAfterLineEndElementsInRange(
-                startOffset, endOffset, CodyAutoCompleteElementRenderer.class))
+                startOffset, endOffset, CodyAutocompleteElementRenderer.class))
         .flatMap(Collection::stream)
         .collect(Collectors.toList());
   }

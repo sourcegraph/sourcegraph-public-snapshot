@@ -156,6 +156,10 @@ This job starts the periodic license check that ensures the Sourcegraph instance
 
 **Scaling notes**: There must always be just a *single instance* of `license-check` worker. Scaling this worker horizontally would result in unexpected behavior. See [the horizontal scaling second](#2-scale-horizontally) below for additional details.
 
+#### `rate-limit-config`
+
+This job periodically takes the rate limit configurations in the database, and copies them into Redis, where our rate limiters will start using them.
+
 ## Deploying workers
 
 By default, all of the jobs listed above are registered to a single instance of the `worker` service. For Sourcegraph instances operating over large data (e.g., a high number of repositories, large monorepos, high commit frequency, or regular code graph data uploads), a single `worker` instance may experience low throughput or stability issues.

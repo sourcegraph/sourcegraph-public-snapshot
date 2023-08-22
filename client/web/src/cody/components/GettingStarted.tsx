@@ -20,7 +20,12 @@ const DEFAULT_VERTICAL_OFFSET = '1rem'
 export const GettingStarted: React.FC<
     Pick<
         CodyChatStore,
-        'scope' | 'setScope' | 'toggleIncludeInferredRepository' | 'toggleIncludeInferredFile' | 'fetchRepositoryNames'
+        | 'scope'
+        | 'logTranscriptEvent'
+        | 'setScope'
+        | 'toggleIncludeInferredRepository'
+        | 'toggleIncludeInferredFile'
+        | 'fetchRepositoryNames'
     > & {
         isSourcegraphApp?: boolean
         isCodyChatPage?: boolean

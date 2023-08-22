@@ -172,6 +172,12 @@ const ExternalServicesPrivacyAlert: FC<ExternalServicesPrivacyAlertProps> = ({ d
             This Sourcegraph installation will never send your code, repository names, file names, or any other specific
             code data to Sourcegraph.com or any other destination. Your code is kept private on this installation.
         </Text>
+        <Text>
+            When <Link to="/help/cody/overview">Cody AI</Link> is enabled, some of your data, including code, repository
+            names, file names, and other specific code details, might be shared temporarily with our trusted LLM
+            partner. We have established a zero retention policy agreement with the LLM company, to ensure the highest
+            levels of data protection and confidentiality.
+        </Text>
         <H3>This Sourcegraph installation will access your code host by:</H3>
         <ul>
             <li>

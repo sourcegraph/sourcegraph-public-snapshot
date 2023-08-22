@@ -7,7 +7,6 @@ import { useLazyQuery } from '@sourcegraph/http-client'
 import { Text } from '@sourcegraph/wildcard'
 
 import type { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { EventName } from '../../../util/constants'
 
 import { ReposStatusQuery } from './backend'
@@ -22,6 +21,7 @@ export interface ScopeSelectorProps {
     toggleIncludeInferredFile: () => void
     fetchRepositoryNames: (count: number) => Promise<string[]>
     isSourcegraphApp?: boolean
+    logTranscriptEvent: (eventLabel: string, eventProperties?: { [key: string]: any }) => void
     className?: string
     renderHint?: (repos: IRepo[]) => React.ReactNode
 }
@@ -33,6 +33,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     toggleIncludeInferredFile,
     fetchRepositoryNames,
     isSourcegraphApp,
+    logTranscriptEvent,
     className,
     renderHint,
 }) {
@@ -88,30 +89,30 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     const addRepository = useCallback(
         (repoName: string) => {
             if (!scope.repositories.includes(repoName)) {
-                eventLogger.log(EventName.CODY_CHAT_SCOPE_REPO_ADDED)
+                logTranscriptEvent(EventName.CODY_CHAT_SCOPE_REPO_ADDED)
                 setScope({ ...scope, repositories: [...scope.repositories, repoName] })
             }
         },
-        [scope, setScope]
+        [scope, setScope, logTranscriptEvent]
     )
 
     const removeRepository = useCallback(
         (repoName: string) => {
-            eventLogger.log(EventName.CODY_CHAT_SCOPE_REPO_REMOVED)
+            logTranscriptEvent(EventName.CODY_CHAT_SCOPE_REPO_REMOVED)
             setScope({ ...scope, repositories: scope.repositories.filter(repo => repo !== repoName) })
         },
-        [scope, setScope]
+        [scope, setScope, logTranscriptEvent]
     )
 
     const resetScope = useCallback(async (): Promise<void> => {
-        eventLogger.log(EventName.CODY_CHAT_SCOPE_RESET)
+        logTranscriptEvent(EventName.CODY_CHAT_SCOPE_RESET)
         if (!isSourcegraphApp) {
             return setScope({ ...scope, repositories: [], includeInferredRepository: true, includeInferredFile: true })
         }
 
         const repositories = await fetchRepositoryNames(10)
         return setScope({ ...scope, repositories, includeInferredRepository: true, includeInferredFile: true })
-    }, [scope, setScope, fetchRepositoryNames, isSourcegraphApp])
+    }, [scope, setScope, fetchRepositoryNames, isSourcegraphApp, logTranscriptEvent])
 
     return (
         <>

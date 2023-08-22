@@ -180,7 +180,7 @@ func (s *repoPathStore) AggregateFileCount(ctx context.Context, opts TreeLocatio
 		qs = append(qs, sqlf.Sprintf("AND p.repo_id = %s", repoID))
 	}
 	var count int32
-	if err := s.Store.QueryRow(ctx, sqlf.Join(qs, "\n")).Scan(&dbutil.NullInt32{&count}); err != nil {
+	if err := s.Store.QueryRow(ctx, sqlf.Join(qs, "\n")).Scan(&dbutil.NullInt32{N: &count}); err != nil {
 		return 0, err
 	}
 	return count, nil

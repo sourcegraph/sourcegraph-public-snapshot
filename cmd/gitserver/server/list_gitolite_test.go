@@ -127,7 +127,8 @@ func TestCheckSSRFHeader(t *testing.T) {
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
-		DB: db,
+		DB:     db,
+		Locker: NewRepositoryLocker(),
 	}
 	h := s.Handler()
 

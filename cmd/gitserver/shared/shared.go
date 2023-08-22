@@ -115,6 +115,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// Setup our server megastruct.
 	recordingCommandFactory := wrexec.NewRecordingCommandFactory(nil, 0)
 	cloneQueue := server.NewCloneQueue(observationCtx, list.New())
+	locker := server.NewRepositoryLocker()
 	gitserver := server.Server{
 		Logger:         logger,
 		ObservationCtx: observationCtx,
@@ -140,6 +141,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
 		RecordingCommandFactory: recordingCommandFactory,
 		DeduplicatedForksSet:    types.NewRepoURICache(conf.GetDeduplicatedForksIndex()),
+		Locker:                  locker,
 	}
 
 	// Make sure we watch for config updates that affect DeduplicatedForksSet or
@@ -183,7 +185,17 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		}),
 		gitserver.NewClonePipeline(logger, cloneQueue),
 		newRateLimitSyncer(ctx, db, config.RateLimitSyncerLimitPerSecond),
-		gitserver.NewRepoStateSyncer(ctx, config.SyncRepoStateInterval, config.SyncRepoStateBatchSize, config.SyncRepoStateUpdatePerSecond),
+		server.NewRepoStateSyncer(
+			ctx,
+			logger,
+			db,
+			locker,
+			gitserver.Hostname,
+			config.ReposDir,
+			config.SyncRepoStateInterval,
+			config.SyncRepoStateBatchSize,
+			config.SyncRepoStateUpdatePerSecond,
+		),
 	}
 
 	if runtime.GOOS == "windows" {

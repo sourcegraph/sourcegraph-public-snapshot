@@ -68,11 +68,12 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wre
 var sgMaintenanceScript string
 
 const (
+	day = 24 * time.Hour
 	// repoTTL is how often we should re-clone a repository.
-	repoTTL = time.Hour * 24 * 45
+	repoTTL = 45 * day
 	// repoTTLGC is how often we should re-clone a repository once it is
 	// reporting git gc issues.
-	repoTTLGC = time.Hour * 24 * 2
+	repoTTLGC = 2 * day
 	// gitConfigMaybeCorrupt is a key we add to git config to signal that a repo may be
 	// corrupt on disk.
 	gitConfigMaybeCorrupt = "sourcegraph.maybeCorruptRepo"
@@ -577,9 +578,11 @@ func cleanupRepos(
 		logger.Error("failed to write periodic stats", log.Error(err))
 	}
 
-	err = setRepoSizes(ctx, logger, db, shardID, repoToSize)
-	if err != nil {
-		logger.Error("setting repo sizes", log.Error(err))
+	if len(repoToSize) > 0 {
+		_, err := db.GitserverRepos().UpdateRepoSizes(ctx, shardID, repoToSize)
+		if err != nil {
+			logger.Error("setting repo sizes", log.Error(err))
+		}
 	}
 
 	if diskSizer == nil {
@@ -614,32 +617,6 @@ func checkRepoDirCorrupt(rcf *wrexec.RecordingCommandFactory, reposDir string, d
 	}
 
 	return false, "", nil
-}
-
-// setRepoSizes uses calculated sizes of repos to update database entries of repos
-// with actual sizes, but only up to 10,000 in one run.
-func setRepoSizes(ctx context.Context, logger log.Logger, db database.DB, shardID string, repoToSize map[api.RepoName]int64) error {
-	logger = logger.Scoped("setRepoSizes", "setRepoSizes does cleanup of database entries")
-
-	reposNumber := len(repoToSize)
-	if reposNumber == 0 {
-		logger.Info("file system walk didn't yield any directory sizes")
-		return nil
-	}
-
-	logger.Debug("directory sizes calculated during file system walk",
-		log.Int("repoToSize", reposNumber))
-
-	// updating repos
-	updatedRepos, err := db.GitserverRepos().UpdateRepoSizes(ctx, shardID, repoToSize)
-	if err != nil {
-		return err
-	}
-	if updatedRepos > 0 {
-		logger.Info("repos had their sizes updated", log.Int("updatedRepos", updatedRepos))
-	}
-
-	return nil
 }
 
 // DiskSizer gets information about disk size and free space.
@@ -895,9 +872,10 @@ func removeRepoDirectory(ctx context.Context, logger log.Logger, db database.DB,
 // and would be purged by `git gc --prune=now`, but `git gc` is
 // very slow. Removing these files while they're in use will cause
 // an operation to fail, but not damage the repository.
-func (s *Server) cleanTmpFiles(dir common.GitDir) {
+func cleanTmpFiles(logger log.Logger, dir common.GitDir) {
+	logger = logger.Scoped("cleanup.cleanTmpFiles", "tries to remove tmp_pack_* files from .git/objects/pack")
+
 	now := time.Now()
-	logger := s.Logger.Scoped("cleanup.cleanTmpFiles", "tries to remove tmp_pack_* files from .git/objects/pack")
 	packdir := dir.Path("objects", "pack")
 	err := bestEffortWalk(packdir, func(path string, d fs.DirEntry) error {
 		if path != packdir && d.IsDir() {
@@ -941,7 +919,9 @@ func getRepositoryType(rcf *wrexec.RecordingCommandFactory, reposDir string, dir
 func setRecloneTime(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir, now time.Time) error {
 	err := gitConfigSet(rcf, reposDir, dir, "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
 	if err != nil {
-		ensureHEAD(dir)
+		if err2 := ensureHEAD(dir); err2 != nil {
+			err = errors.Append(err, err2)
+		}
 		return errors.Wrap(err, "failed to update recloneTimestamp")
 	}
 	return nil
@@ -1381,14 +1361,14 @@ func gitConfigUnset(rcf *wrexec.RecordingCommandFactory, reposDir string, dir co
 	cmd := exec.Command("git", "config", "--unset-all", key)
 	dir.Set(cmd)
 	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), repoNameFromDir(reposDir, dir), cmd)
-	err := wrappedCmd.Run()
+	out, err := wrappedCmd.CombinedOutput()
 	if err != nil {
 		// Exit code 5 means the key is not set.
 		var e *exec.ExitError
 		if errors.As(err, &e) && e.Sys().(syscall.WaitStatus).ExitStatus() == 5 {
 			return nil
 		}
-		return errors.Wrapf(wrapCmdError(cmd, err), "failed to unset git config %s", key)
+		return errors.Wrapf(wrapCmdError(cmd, err), "failed to unset git config %s: %s", key, string(out))
 	}
 	return nil
 }

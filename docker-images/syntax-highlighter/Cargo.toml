@@ -32,6 +32,8 @@ futures = { version = "^0.3.27", features = ["std"], default-features = false }
 futures-util = { version = "^0.3.27", features = ["std"], default-features = false }
 futures-task = { version = "^0.3.27", features = ["std"], default-features = false }
 
+# Prior version do not build when cross-compiling. It's needed by transitive deps
+# and this forces to bump it.
 rustix = { version = "0.38.8", features = ["std", "use-libc"] }
 
 [workspace]
@@ -50,6 +52,7 @@ anyhow = "1"
 clap = { version = "4.1.11", features = [ "derive" ] }
 itertools = "0.10.5"
 rocket = { version = "0.5.0-rc.1", features = ["json"] }
+# See https://stackoverflow.com/questions/76905691/bazel-unable-to-build-external-rust-dependency-with-feature-serde1
 serde = { version = "=1.0.164", features = ["derive"] }
 serde_json = "1.0"
 # Since there is no version tag, we pin the dependency to a specific revision

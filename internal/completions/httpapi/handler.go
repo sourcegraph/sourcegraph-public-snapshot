@@ -8,11 +8,15 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // maxRequestDuration is the maximum amount of time a request can take before
@@ -20,11 +24,14 @@ import (
 const maxRequestDuration = time.Minute
 
 func newCompletionsHandler(
+	logger log.Logger,
+	feature types.CompletionsFeature,
 	rl RateLimiter,
 	traceFamily string,
 	getModel func(types.CodyCompletionRequestParameters, *conftypes.CompletionsConfig) string,
-	handle func(context.Context, types.CompletionRequestParameters, types.CompletionsClient, http.ResponseWriter),
 ) http.Handler {
+	responseHandler := newSwitchingResponseHandler(logger, feature)
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusMethodNotAllowed)
@@ -81,7 +88,7 @@ func newCompletionsHandler(
 			return
 		}
 
-		handle(ctx, requestParams.CompletionRequestParameters, completionClient, w)
+		responseHandler(ctx, requestParams.CompletionRequestParameters, completionClient, w)
 	})
 }
 
@@ -98,4 +105,97 @@ func max(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// newSwitchingResponseHandler handles requests to an LLM provider, and wraps the correct
+// handler based on the requestParams.Stream flag.
+func newSwitchingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
+	nonStreamer := newNonStreamingResponseHandler(logger, feature)
+	streamer := newStreamingResponseHandler(logger, feature)
+	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
+		if requestParams.IsStream(feature) {
+			streamer(ctx, requestParams, cc, w)
+		} else {
+			nonStreamer(ctx, requestParams, cc, w)
+		}
+	}
+}
+
+// newStreamingResponseHandler handles streaming requests to an LLM provider,
+// It writes events to an SSE stream as they come in.
+func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
+	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
+		eventWriter, err := streamhttp.NewWriter(w)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Always send a final done event so clients know the stream is shutting down.
+		defer func() {
+			_ = eventWriter.Event("done", map[string]any{})
+		}()
+
+		err = cc.Stream(ctx, feature, requestParams,
+			func(event types.CompletionResponse) error {
+				return eventWriter.Event("completion", event)
+			})
+		if err != nil {
+			l := trace.Logger(ctx, logger)
+
+			logFields := []log.Field{log.Error(err)}
+			if errNotOK, ok := types.IsErrStatusNotOK(err); ok {
+				if tc := errNotOK.SourceTraceContext; tc != nil {
+					logFields = append(logFields,
+						log.String("sourceTraceContext.traceID", tc.TraceID),
+						log.String("sourceTraceContext.spanID", tc.SpanID))
+				}
+			}
+			l.Error("error while streaming completions", logFields...)
+
+			// Note that we do NOT attempt to forward the status code to the
+			// client here, since we are using streamhttp.Writer - see
+			// streamhttp.NewWriter for more details. Instead, we send an error
+			// event, which clients should check as appropriate.
+			if err := eventWriter.Event("error", map[string]string{"error": err.Error()}); err != nil {
+				l.Error("error reporting streaming completion error", log.Error(err))
+			}
+			return
+		}
+	}
+}
+
+// newNonStreamingResponseHandler handles non-streaming requests to an LLM provider,
+// awaiting the complete response before writing it back in a structured JSON response
+// to the client.
+func newNonStreamingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
+	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
+		completion, err := cc.Complete(ctx, feature, requestParams)
+		if err != nil {
+			logFields := []log.Field{log.Error(err)}
+
+			// Propagate the upstream headers to the client if available.
+			if errNotOK, ok := types.IsErrStatusNotOK(err); ok {
+				errNotOK.WriteHeader(w)
+				if tc := errNotOK.SourceTraceContext; tc != nil {
+					logFields = append(logFields,
+						log.String("sourceTraceContext.traceID", tc.TraceID),
+						log.String("sourceTraceContext.spanID", tc.SpanID))
+				}
+			} else {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+			_, _ = w.Write([]byte(err.Error()))
+
+			trace.Logger(ctx, logger).Error("error on completion", logFields...)
+			return
+		}
+
+		completionBytes, err := json.Marshal(completion)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_, _ = w.Write(completionBytes)
+	}
 }

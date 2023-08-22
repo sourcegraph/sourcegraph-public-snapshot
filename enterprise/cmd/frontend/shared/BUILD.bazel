@@ -21,6 +21,7 @@ go_library(
         "//enterprise/cmd/frontend/internal/codemonitors",
         "//enterprise/cmd/frontend/internal/completions",
         "//enterprise/cmd/frontend/internal/compute",
+        "//enterprise/cmd/frontend/internal/contentlibrary",
         "//enterprise/cmd/frontend/internal/context",
         "//enterprise/cmd/frontend/internal/dotcom",
         "//enterprise/cmd/frontend/internal/embeddings",

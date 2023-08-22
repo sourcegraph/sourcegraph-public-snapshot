@@ -22,6 +22,7 @@ describe('displayRepoName', () => {
         { originalRepoName: 'sourcegraph', repoDisplayName: 'sourcegraph' },
         { originalRepoName: 'sourcegraph/sourcegraph', repoDisplayName: 'sourcegraph/sourcegraph' },
         { originalRepoName: 'sg.exe/sourcegraph', repoDisplayName: 'sourcegraph' },
+        { originalRepoName: 'org.scala-sbt:collections_2.12', repoDisplayName: 'org.scala-sbt:collections_2.12' },
     ]
 
     for (const { originalRepoName, repoDisplayName } of testCases) {
