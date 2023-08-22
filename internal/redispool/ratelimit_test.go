@@ -59,7 +59,12 @@ func Test_GetToken_TimeToWaitExceedsLimit(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Setting the max capacity to -10 means that the first token requester will have to wait 10s before using it.
+	oldBucketMaxCapacity := bucketMaxCapacity
 	bucketMaxCapacity = -10
+	t.Cleanup(func() {
+		bucketMaxCapacity = oldBucketMaxCapacity
+	})
+
 	// Ser a context with a deadline of 5s from now so that it can't wait the 10s to use the token.
 	ctxWithDeadline, _ := context.WithDeadline(ctx, time.Now().Add(5*time.Second))
 
@@ -139,13 +144,13 @@ func Test_getToken_WaitTimes(t *testing.T) {
 	assert.Nil(t, err)
 	// We want to assert here that the time we are told to wait is 10000 since
 	// 10000 is our replenishment interval, and there is -1 tokens in the bucket.
-	assert.Less(t, bucketReplenishIntervalSeconds, int32(waitTime.Seconds()))
+	assert.Equal(t, bucketReplenishIntervalSeconds, int32(waitTime.Seconds()))
 
 	waitTime, err = rl.getToken(ctx, bucketName, now, maxTimeToWait)
 	assert.Nil(t, err)
 	// We want to assert here that the time we are told to wait is 20000 since
 	// 10000 is our replenishment interval, and there are now -2 tokens in the bucket.
-	assert.Less(t, (2 * bucketReplenishIntervalSeconds), int32(waitTime.Seconds()))
+	assert.Equal(t, 2*bucketReplenishIntervalSeconds, int32(waitTime.Seconds()))
 }
 
 // Mostly copy-pasta from rache. Will clean up later as the relationship

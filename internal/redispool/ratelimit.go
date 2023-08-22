@@ -69,7 +69,7 @@ func NewTestRateLimiterWithPoolAndPrefix(pool *redis.Pool, prefix string) (RateL
 		pool:      pool,
 		timerFunc: defaultRateLimitTimer,
 		// 3 is the key count, keys are arguments passed to the lua script that will be used to get values from Redis KV.
-		getTokensScript:        *redis.NewScript(3, getTokensFromBucketLuaScript),
+		getTokensScript:        *redis.NewScript(4, getTokensFromBucketLuaScript),
 		setReplenishmentScript: *redis.NewScript(3, setTokenBucketReplenishmentLuaScript),
 	}, nil
 }

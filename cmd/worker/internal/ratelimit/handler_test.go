@@ -92,9 +92,9 @@ func TestHandler_Handle(t *testing.T) {
 	}
 	err = h.Handle(ctx)
 	assert.NoError(t, err)
-	apiCapKey := fmt.Sprintf("%s:%s:%s:config:bucket_capacity", prefix, url, "api_tokens")
+	apiCapKey := fmt.Sprintf("%s:%s:%s:config:bucket_quota", prefix, url, "api_tokens")
 	apiReplenishmentKey := fmt.Sprintf("%s:%s:%s:config:bucket_replenishment_interval_seconds", prefix, url, "api_tokens")
-	gitCapKey := fmt.Sprintf("%s:%s:%s:config:bucket_capacity", prefix, url, "git_tokens")
+	gitCapKey := fmt.Sprintf("%s:%s:%s:config:bucket_quota", prefix, url, "git_tokens")
 	gitReplenishmentKey := fmt.Sprintf("%s:%s:%s:config:bucket_replenishment_interval_seconds", prefix, url, "git_tokens")
 	assertValFromRedis(kv, apiCapKey, rateLimitConfigValues)
 	assertValFromRedis(kv, apiReplenishmentKey, rateLimitConfigValues)
