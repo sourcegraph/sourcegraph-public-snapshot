@@ -22,6 +22,7 @@ export const enum EventName {
     CODY_SIGNUP = 'CodySignup',
     CODY_CHAT_DOWNLOAD_VSCODE = 'web:codyChat:downloadVSCodeCTA',
     CODY_CHAT_TRY_ON_PUBLIC_CODE = 'web:codyChat:tryOnPublicCodeCTA',
+    CODY_CTA = 'ClickedOnCodyCTA',
     VIEW_EDITOR_EXTENSIONS = 'CodyClickViewEditorExtensions',
     TRY_CODY_VSCODE = 'VSCodeInstall',
     TRY_CODY_MARKETPLACE = 'VSCodeMarketplace',
@@ -34,4 +35,9 @@ export const enum EventName {
     JOIN_IDE_WAITLIST = 'JoinIDEWaitlist',
     DOWNLOAD_IDE = 'DownloadIDE',
     DOWNLOAD_APP = 'DownloadApp',
+}
+
+export const enum EventLocation {
+    NAV_BAR = 'NavBar',
+    CHAT_RESPONSE = 'ChatResponse',
 }
