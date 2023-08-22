@@ -165,7 +165,7 @@ func (f *FeaturePrivateRepositories) Check(info *Info) error {
 func (f FeaturePrivateRepositories) DisplayName() string {
 	text := "Private repositories"
 	if f.Unrestricted {
-		text += " (Unlimited repositories)"
+		text += " (unlimited number of repositories)"
 	} else {
 		text += fmt.Sprintf(" (%d repositories)", f.MaxNumPrivateRepos)
 	}
