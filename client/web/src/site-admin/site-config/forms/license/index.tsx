@@ -29,10 +29,7 @@ export const LicenseKeyForm: FC<LicenseKeyFormProps> = ({ className, licenseKey 
 
     return (
         <div className={className}>
-            <Text>
-                A valid license key from your Sourcegraph contact enables many Enterprise-specific features. See{' '}
-                <Link to="/help/todo:">documentation</Link> for more information.
-            </Text>
+            <Text>A valid license key from your Sourcegraph contact enables many Enterprise-specific features.</Text>
             {loading && <LoadingSpinner />}
             {!debouncedLicenseKey && (
                 <Alert variant="warning">
