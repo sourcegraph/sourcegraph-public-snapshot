@@ -360,6 +360,7 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = React
                     required={true}
                     onKeyDown={handleKeyDown}
                     onInput={onInput}
+                    onPaste={() => eventLogger.log(EventName.CODY_CHAT_PASTE)}
                     disabled={disabled}
                 />
             </Tooltip>

@@ -2,6 +2,7 @@
 export const enum EventName {
     CODY_CHAT_PAGE_VIEWED = 'web:codyChat:pageViewed',
     CODY_CHAT_SUBMIT = 'web:codyChat:submit',
+    CODY_CHAT_PASTE = 'web:codyChat:paste',
     CODY_CHAT_EDIT = 'web:codyChat:edit',
     CODY_CHAT_INITIALIZED = 'web:codyChat:initialized',
     CODY_CHAT_EDITOR_WIDGET_VIEWED = 'web:codyChat:editorWidgetViewed',
