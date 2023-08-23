@@ -38,7 +38,7 @@ echo "--- :broom: remove client/ because we do not need it"
 rm -rf client/
 
 if [[ -d "dev/backcompat/patches/${tag}" ]]; then
-  echo "--- :adhesive_bandage: apply patches"
+  echo "--- :adhesive_bandage: apply patches from dev/backcompat/patches/${tag}"
   git apply dev/backcompat/patches/${tag}/*.patch
 fi
 
