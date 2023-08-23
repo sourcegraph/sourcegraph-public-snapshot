@@ -5,10 +5,12 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSchemaResolver_SetCodeHostRateLimits_NotASiteAdmin(t *testing.T) {
@@ -23,8 +25,8 @@ func TestSchemaResolver_SetCodeHostRateLimits_NotASiteAdmin(t *testing.T) {
 	_, err := r.SetCodeHostRateLimits(context.Background(), SetCodeHostRateLimitsArgs{
 		Input: SetCodeHostRateLimitsInput{},
 	})
-	assert.NotNil(t, err)
-	assert.Equal(t, "must be site admin", err.Error())
+	require.NotNil(t, err)
+	require.Equal(t, auth.ErrMustBeSiteAdmin, err)
 }
 
 func TestSchemaResolver_SetCodeHostRateLimits_InvalidConfigs(t *testing.T) {
@@ -88,8 +90,8 @@ func TestSchemaResolver_SetCodeHostRateLimits_InvalidConfigs(t *testing.T) {
 			db.UsersFunc.SetDefaultReturn(usersStore)
 
 			_, err := r.SetCodeHostRateLimits(ctx, test.args)
-			assert.NotNil(t, err)
-			assert.Equal(t, "rate limit settings must be positive integers", err.Error())
+			require.NotNil(t, err)
+			require.Equal(t, errCodeHostRateLimitsMustBePositiveIntegers, err)
 		})
 	}
 }
@@ -99,6 +101,10 @@ func TestSchemaResolver_SetCodeHostRateLimits_InvalidCodeHostID(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	r := &schemaResolver{logger: logger, db: db}
 	wantErr := errors.New("test error")
+
+	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+		return f(db)
+	})
 
 	usersStore := dbmocks.NewMockUserStore()
 	usersStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
@@ -113,8 +119,8 @@ func TestSchemaResolver_SetCodeHostRateLimits_InvalidCodeHostID(t *testing.T) {
 	_, err := r.SetCodeHostRateLimits(context.Background(), SetCodeHostRateLimitsArgs{
 		Input: SetCodeHostRateLimitsInput{CodeHostID: ""},
 	})
-	assert.NotNil(t, err)
-	assert.Equal(t, "invalid code host id: invalid graphql.ID", err.Error())
+	require.NotNil(t, err)
+	require.Equal(t, "invalid code host id: invalid graphql.ID", err.Error())
 }
 
 func TestSchemaResolver_SetCodeHostRateLimits_GetCodeHostByIDError(t *testing.T) {
@@ -122,6 +128,10 @@ func TestSchemaResolver_SetCodeHostRateLimits_GetCodeHostByIDError(t *testing.T)
 	db := dbmocks.NewMockDB()
 	r := &schemaResolver{logger: logger, db: db}
 	wantErr := errors.New("test error")
+
+	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+		return f(db)
+	})
 
 	usersStore := dbmocks.NewMockUserStore()
 	usersStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
@@ -136,8 +146,8 @@ func TestSchemaResolver_SetCodeHostRateLimits_GetCodeHostByIDError(t *testing.T)
 	_, err := r.SetCodeHostRateLimits(context.Background(), SetCodeHostRateLimitsArgs{
 		Input: SetCodeHostRateLimitsInput{CodeHostID: "Q29kZUhvc3Q6MQ=="},
 	})
-	assert.NotNil(t, err)
-	assert.Equal(t, wantErr.Error(), err.Error())
+	require.NotNil(t, err)
+	require.Equal(t, wantErr.Error(), err.Error())
 }
 
 func TestSchemaResolver_SetCodeHostRateLimits_UpdateCodeHostError(t *testing.T) {
@@ -146,13 +156,17 @@ func TestSchemaResolver_SetCodeHostRateLimits_UpdateCodeHostError(t *testing.T) 
 	r := &schemaResolver{logger: logger, db: db}
 	wantErr := errors.New("test error")
 
+	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+		return f(db)
+	})
+
 	usersStore := dbmocks.NewMockUserStore()
 	usersStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 	db.UsersFunc.SetDefaultReturn(usersStore)
 
 	codeHostStore := dbmocks.NewMockCodeHostStore()
 	codeHostStore.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.CodeHost, error) {
-		assert.Equal(t, int32(1), id)
+		require.Equal(t, int32(1), id)
 		return &types.CodeHost{ID: 1}, nil
 	})
 	codeHostStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, host *types.CodeHost) error {
@@ -163,8 +177,8 @@ func TestSchemaResolver_SetCodeHostRateLimits_UpdateCodeHostError(t *testing.T) 
 	_, err := r.SetCodeHostRateLimits(context.Background(), SetCodeHostRateLimitsArgs{
 		Input: SetCodeHostRateLimitsInput{CodeHostID: "Q29kZUhvc3Q6MQ=="},
 	})
-	assert.NotNil(t, err)
-	assert.Equal(t, wantErr.Error(), err.Error())
+	require.NotNil(t, err)
+	require.Equal(t, wantErr.Error(), err.Error())
 }
 
 func TestSchemaResolver_SetCodeHostRateLimits_Success(t *testing.T) {
@@ -178,20 +192,24 @@ func TestSchemaResolver_SetCodeHostRateLimits_Success(t *testing.T) {
 		GitReplenishmentIntervalSeconds: 4,
 	}
 
+	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+		return f(db)
+	})
+
 	usersStore := dbmocks.NewMockUserStore()
 	usersStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 	db.UsersFunc.SetDefaultReturn(usersStore)
 
 	codeHostStore := dbmocks.NewMockCodeHostStore()
 	codeHostStore.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.CodeHost, error) {
-		assert.Equal(t, int32(1), id)
+		require.Equal(t, int32(1), id)
 		return &types.CodeHost{ID: 1}, nil
 	})
 	codeHostStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, host *types.CodeHost) error {
-		assert.Equal(t, setCodeHostRateLimitsInput.APIQuota, *(host.APIRateLimitQuota))
-		assert.Equal(t, setCodeHostRateLimitsInput.APIReplenishmentIntervalSeconds, *(host.APIRateLimitIntervalSeconds))
-		assert.Equal(t, setCodeHostRateLimitsInput.GitQuota, *(host.GitRateLimitQuota))
-		assert.Equal(t, setCodeHostRateLimitsInput.GitReplenishmentIntervalSeconds, *(host.GitRateLimitIntervalSeconds))
+		require.Equal(t, setCodeHostRateLimitsInput.APIQuota, *(host.APIRateLimitQuota))
+		require.Equal(t, setCodeHostRateLimitsInput.APIReplenishmentIntervalSeconds, *(host.APIRateLimitIntervalSeconds))
+		require.Equal(t, setCodeHostRateLimitsInput.GitQuota, *(host.GitRateLimitQuota))
+		require.Equal(t, setCodeHostRateLimitsInput.GitReplenishmentIntervalSeconds, *(host.GitRateLimitIntervalSeconds))
 		return nil
 	})
 	db.CodeHostsFunc.SetDefaultReturn(codeHostStore)

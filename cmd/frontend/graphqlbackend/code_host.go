@@ -10,6 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var errCodeHostRateLimitsMustBePositiveIntegers = errors.New("rate limit settings must be positive integers")
+
 type codeHostResolver struct {
 	ch *types.CodeHost
 	db database.DB
@@ -88,8 +90,9 @@ func (r *schemaResolver) SetCodeHostRateLimits(ctx context.Context, args SetCode
 		return nil, err
 	}
 
-	if args.Input.APIQuota < 0 || args.Input.GitQuota < 0 || args.Input.APIReplenishmentIntervalSeconds < 0 || args.Input.GitReplenishmentIntervalSeconds < 0 {
-		return nil, errors.New("rate limit settings must be positive integers")
+	input := args.Input
+	if input.APIQuota < 0 || input.GitQuota < 0 || input.APIReplenishmentIntervalSeconds < 0 || input.GitReplenishmentIntervalSeconds < 0 {
+		return nil, errCodeHostRateLimitsMustBePositiveIntegers
 	}
 
 	codeHostID, err := UnmarshalCodeHostID(args.Input.CodeHostID)
@@ -97,18 +100,22 @@ func (r *schemaResolver) SetCodeHostRateLimits(ctx context.Context, args SetCode
 		return nil, errors.Wrap(err, "invalid code host id")
 	}
 
-	codeHost, err := r.db.CodeHosts().GetByID(ctx, codeHostID)
-	if err != nil {
-		return nil, err
-	}
-	codeHost.APIRateLimitQuota = &args.Input.APIQuota
-	codeHost.APIRateLimitIntervalSeconds = &args.Input.APIReplenishmentIntervalSeconds
-	codeHost.GitRateLimitQuota = &args.Input.GitQuota
-	codeHost.GitRateLimitIntervalSeconds = &args.Input.GitReplenishmentIntervalSeconds
+	err = r.db.WithTransact(ctx, func(tx database.DB) (err error) {
+		codeHost, err := tx.CodeHosts().GetByID(ctx, codeHostID)
+		if err != nil {
+			return err
+		}
+		codeHost.APIRateLimitQuota = &input.APIQuota
+		codeHost.APIRateLimitIntervalSeconds = &input.APIReplenishmentIntervalSeconds
+		codeHost.GitRateLimitQuota = &input.GitQuota
+		codeHost.GitRateLimitIntervalSeconds = &input.GitReplenishmentIntervalSeconds
 
-	err = r.db.CodeHosts().Update(ctx, codeHost)
-	if err != nil {
-		return nil, err
-	}
+		err = tx.CodeHosts().Update(ctx, codeHost)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
 	return &EmptyResponse{}, err
 }
