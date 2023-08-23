@@ -105,8 +105,7 @@ const UserNode: React.FunctionComponent<UserNodeProps> = ({
                     </div>
                 </div>
                 <div className="flex-1 d-flex align-items-center justify-content-between">
-                    <span className="text-muted flex-1">{node.siteAdmin ? 'Admin' : 'Member'}</span>
-                    <div>
+                    <div className="flex-1">
                         {authenticatedUser && org.viewerCanAdminister && (
                             <Button
                                 className="site-admin-detail-list__action test-remove-org-member"
@@ -252,7 +251,6 @@ export const OrgSettingsMembersPage: React.FunctionComponent<Props> = ({
                                 } organization`}
                             </strong>
                             <div className="flex-1 d-flex align-items-center justify-content-between">
-                                <strong>Role</strong>
                                 <strong>Action</strong>
                             </div>
                         </li>
