@@ -3,7 +3,6 @@ package completions
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -61,8 +60,6 @@ func NewFireworksHandler(
 			},
 			transformRequest: func(r *http.Request) {
 				r.Header.Set("Content-Type", "application/json")
-				// fmt print access token
-				fmt.Printf("Fireworks access token: %s\n", "Bearer "+accessToken)
 				r.Header.Set("Authorization", "Bearer "+accessToken)
 			},
 			parseResponse: func(reqBody fireworksRequest, r io.Reader) int {
@@ -106,12 +103,12 @@ func NewFireworksHandler(
 				if err := dec.Err(); err != nil {
 					logger.Error("failed to decode Fireworks streaming response", log.Error(err))
 				}
-				fmt.Printf("Fireworks final completion: %s\n", finalCompletion)
 				return len(finalCompletion)
 			},
 		},
 
-		// TODO(philipp-spiess): Find out what a good value is for this?
+		// Setting to a valuer higher than SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
+		// do any retries
 		30, // seconds
 	)
 }

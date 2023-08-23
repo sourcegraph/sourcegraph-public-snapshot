@@ -43,6 +43,7 @@ var (
 	attributesAnthropicCompletions = newMetricAttributes("anthropic", "completions")
 	attributesOpenAICompletions    = newMetricAttributes("openai", "completions")
 	attributesOpenAIEmbeddings     = newMetricAttributes("openai", "embeddings")
+	attributesFireworksCompletions = newMetricAttributes("fireworks", "completions")
 )
 
 func NewHandler(
@@ -165,7 +166,7 @@ func NewHandler(
 			instrumentation.HTTPMiddleware("v1.completions.fireworks",
 				gaugeHandler(
 					counter,
-					attributesAnthropicCompletions,
+					attributesFireworksCompletions,
 					authr.Middleware(
 						requestlogger.Middleware(
 							logger,

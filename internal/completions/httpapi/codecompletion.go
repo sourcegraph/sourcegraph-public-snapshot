@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -21,10 +22,29 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 		rl,
 		"code",
 		func(requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) string {
-			if requestParams.Model == "" {
+			customModel := allowedCustomModel(requestParams.Model)
+			if customModel == "" {
 				return c.CompletionModel
 			}
-			return requestParams.Model
+			return customModel
 		},
 	)
+}
+
+// We only allow dotcom clients to select a custom code model and maintain an allowlist for which
+// custom values we support
+func allowedCustomModel(model string) string {
+	if !envvar.SourcegraphDotComMode() {
+		return ""
+	}
+
+	switch model {
+	case "fireworks/accounts/fireworks/models/starcoder-16b-w8a16":
+	case "fireworks/accounts/fireworks/models/starcoder-7b-w8a16":
+	case "fireworks/accounts/fireworks/models/starcoder-3b-w8a16":
+	case "fireworks/accounts/fireworks/models/starcoder-1b-w8a16":
+		return model
+	}
+
+	return ""
 }
