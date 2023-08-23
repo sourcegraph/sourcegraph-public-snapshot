@@ -8,19 +8,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-func ensureModelCollectionWithDefaultConfig(ctx context.Context, cc qdrant.CollectionsClient, modelID string, modelDims uint64) error {
+func ensureModelCollectionWithDefaultConfig(ctx context.Context, db *qdrantDB, modelID string, modelDims uint64) error {
 	// Make the actual collection end with `.default` so we can switch between
 	// configurations with aliases.
 	name := CollectionName(modelID)
 	realName := name + ".default"
 
-	err := ensureCollection(ctx, cc, realName, defaultConfig(modelDims))
+	err := ensureCollection(ctx, db.collectionsClient, realName, defaultConfig(modelDims))
 	if err != nil {
 		return err
 	}
 
 	// Update the alias atomically to point to the new collection
-	_, err = cc.UpdateAliases(ctx, &qdrant.ChangeAliases{
+	_, err = db.collectionsClient.UpdateAliases(ctx, &qdrant.ChangeAliases{
 		Actions: []*qdrant.AliasOperations{{
 			Action: &qdrant.AliasOperations_CreateAlias{
 				CreateAlias: &qdrant.CreateAlias{
@@ -32,6 +32,11 @@ func ensureModelCollectionWithDefaultConfig(ctx context.Context, cc qdrant.Colle
 	})
 	if err != nil {
 		return errors.Wrap(err, "update aliases")
+	}
+
+	err = ensureRepoIDIndex(ctx, db.pointsClient, realName)
+	if err != nil {
+		return errors.Wrap(err, "add repo index")
 	}
 
 	return nil
@@ -64,10 +69,27 @@ func ensureCollection(ctx context.Context, cc qdrant.CollectionsClient, name str
 		InitFromCollection:     nil,
 		QuantizationConfig:     config.QuantizationConfig,
 	})
+
 	return err
 }
 
-// TODO: loudly document that changing this will cause a rebuild of the vector indexes
+func ensureRepoIDIndex(ctx context.Context, cc qdrant.PointsClient, name string) error {
+	// This is idempotent, so no need to check if it exists first
+	_, err := cc.CreateFieldIndex(ctx, &qdrant.CreateFieldIndexCollection{
+		CollectionName:   name,
+		Wait:             pointers.Ptr(true),
+		FieldName:        fieldRepoID,
+		FieldType:        pointers.Ptr(qdrant.FieldType_FieldTypeKeyword),
+		FieldIndexParams: nil,
+		Ordering:         nil,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func defaultConfig(dims uint64) *qdrant.CollectionConfig {
 	return &qdrant.CollectionConfig{
 		Params: &qdrant.CollectionParams{

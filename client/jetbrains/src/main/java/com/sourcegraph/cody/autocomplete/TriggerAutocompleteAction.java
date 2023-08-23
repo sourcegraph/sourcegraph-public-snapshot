@@ -21,7 +21,7 @@ public class TriggerAutocompleteAction extends EditorAction {
     @Override
     protected boolean isEnabledForCaret(
         @NotNull Editor editor, @NotNull Caret caret, DataContext dataContext) {
-      return CodyAutoCompleteManager.isEditorInstanceSupported(editor);
+      return CodyAutocompleteManager.isEditorInstanceSupported(editor);
     }
 
     @Override
@@ -30,8 +30,8 @@ public class TriggerAutocompleteAction extends EditorAction {
 
       int offset =
           caret == null ? editor.getCaretModel().getCurrentCaret().getOffset() : caret.getOffset();
-      CodyAutoCompleteManager.getInstance()
-          .triggerAutoComplete(editor, offset, InlineCompletionTriggerKind.INVOKE);
+      CodyAutocompleteManager.getInstance()
+          .triggerAutocomplete(editor, offset, InlineCompletionTriggerKind.INVOKE);
     }
   }
 }

@@ -24,6 +24,9 @@ export interface ScopeSelectorProps {
     logTranscriptEvent: (eventLabel: string, eventProperties?: { [key: string]: any }) => void
     className?: string
     renderHint?: (repos: IRepo[]) => React.ReactNode
+    // Whether to encourage the selector popover to overlap its trigger if necessary,
+    // rather than collapsing or flipping position.
+    encourageOverlap?: boolean
 }
 
 export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function ScopeSelectorComponent({
@@ -36,6 +39,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     logTranscriptEvent,
     className,
     renderHint,
+    encourageOverlap,
 }) {
     const [loadReposStatus, { data: newReposStatusData, previousData: previousReposStatusData }] = useLazyQuery<
         ReposStatusResult,
@@ -129,6 +133,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
                         removeRepository={removeRepository}
                         toggleIncludeInferredRepository={toggleIncludeInferredRepository}
                         toggleIncludeInferredFile={toggleIncludeInferredFile}
+                        encourageOverlap={encourageOverlap}
                     />
                     {scope.includeInferredFile && activeEditor?.filePath && (
                         <Text size="small" className="ml-2 mb-0 align-self-center">
