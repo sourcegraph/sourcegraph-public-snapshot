@@ -1596,6 +1596,7 @@ ts_project(
         "src/site-admin/sidebaritems.ts",
         "src/site-admin/site-config/ConfigPanel.tsx",
         "src/site-admin/site-config/SiteAdminConfigurationPage.tsx",
+        "src/site-admin/site-config/forms/external-url/index.tsx",
         "src/site-admin/site-config/forms/license/index.tsx",
         "src/site-admin/site-config/forms/smtp/SendTestEmailForm.tsx",
         "src/site-admin/site-config/forms/smtp/index.tsx",
