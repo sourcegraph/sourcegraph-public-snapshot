@@ -211,6 +211,10 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					DockerVolumeWorkspaceImage,
 					"sh", "-c", "touch /work/*; chown -R 0:0 /work",
 				),
+				expect.NewGlob(
+					expect.Behaviour{ExitCode: 0},
+					"docker", "volume", "rm", volumeID,
+				),
 			},
 			steps: []batcheslib.Step{
 				{},
@@ -253,6 +257,10 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					DockerVolumeWorkspaceImage,
 					"sh", "/run.sh",
 				),
+				expect.NewGlob(
+					expect.Behaviour{ExitCode: 0},
+					"docker", "volume", "rm", volumeID,
+				),
 			},
 			steps: []batcheslib.Step{
 				{},
@@ -285,6 +293,10 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"--mount", "type=volume,source="+volumeID+",target=/work",
 					DockerVolumeWorkspaceImage,
 					"sh", "-c", "unzip /tmp/zip; rm /work/*",
+				),
+				expect.NewGlob(
+					expect.Behaviour{ExitCode: 0},
+					"docker", "volume", "rm", volumeID,
 				),
 			},
 			steps: []batcheslib.Step{

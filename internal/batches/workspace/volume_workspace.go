@@ -30,16 +30,22 @@ type dockerVolumeWorkspaceCreator struct {
 
 var _ Creator = &dockerVolumeWorkspaceCreator{}
 
-func (wc *dockerVolumeWorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository, steps []batcheslib.Step, archive repozip.Archive) (Workspace, error) {
+func (wc *dockerVolumeWorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository,
+	steps []batcheslib.Step, archive repozip.Archive) (ws Workspace, err error) {
 	volume, err := wc.createVolume(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating Docker volume")
 	}
 
+	defer func() {
+		if err != nil {
+			deleteVolume(ctx, volume)
+		}
+	}()
+
 	// Figure out the user that containers will be run as.
 	ug := docker.UIDGID{}
 	if len(steps) > 0 {
-		var err error
 		img, err := wc.EnsureImage(ctx, steps[0].Container)
 		if err != nil {
 			return nil, err
@@ -72,6 +78,10 @@ func (*dockerVolumeWorkspaceCreator) createVolume(ctx context.Context) (string, 
 	}
 
 	return string(bytes.TrimSpace(out)), nil
+}
+
+func deleteVolume(ctx context.Context, volume string) error {
+	return exec.CommandContext(ctx, "docker", "volume", "rm", volume).Run()
 }
 
 func (*dockerVolumeWorkspaceCreator) prepareGitRepo(ctx context.Context, w *dockerVolumeWorkspace) error {
@@ -219,7 +229,7 @@ var _ Workspace = &dockerVolumeWorkspace{}
 
 func (w *dockerVolumeWorkspace) Close(ctx context.Context) error {
 	// Cleanup here is easy: we just get rid of the Docker volume.
-	return exec.CommandContext(ctx, "docker", "volume", "rm", w.volume).Run()
+	return deleteVolume(ctx, w.volume)
 }
 
 func (w *dockerVolumeWorkspace) DockerRunOpts(ctx context.Context, target string) ([]string, error) {
