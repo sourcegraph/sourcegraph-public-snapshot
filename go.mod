@@ -247,6 +247,8 @@ require (
 	golang.org/x/sync v0.3.0
 	golang.org/x/sys v0.11.0
 	golang.org/x/time v0.3.0
+	// golang.org/x/tools should not be upgraded until https://github.com/bazelbuild/bazel-gazelle/issues/1579
+	// is resolved.
 	golang.org/x/tools v0.10.0
 	gonum.org/v1/gonum v0.13.0
 	google.golang.org/api v0.132.0
@@ -266,11 +268,11 @@ require (
 
 require (
 	github.com/aws/constructs-go/constructs/v10 v10.2.69
-	github.com/aws/jsii-runtime-go v1.79.0
+	github.com/aws/jsii-runtime-go v1.84.0
 	github.com/edsrzf/mmap-go v1.1.0
 	github.com/go-redsync/redsync/v4 v4.8.1
 	github.com/hashicorp/cronexpr v1.1.1
-	github.com/hashicorp/terraform-cdk-go/cdktf v0.18.0
+	github.com/hashicorp/terraform-cdk-go/cdktf v0.17.3
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mroth/weightedrand/v2 v2.0.1
