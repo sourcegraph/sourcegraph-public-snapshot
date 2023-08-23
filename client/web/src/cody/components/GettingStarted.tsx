@@ -172,7 +172,7 @@ export const GettingStarted: React.FC<
                                         </Text>
                                     }
                                     value="general"
-                                    wrapperClassName="d-flex align-items-baseline"
+                                    wrapperClassName="d-flex align-items-center"
                                     checked={conversationScope === 'general'}
                                     onChange={event => setConversationScope(event.target.value as ConversationScope)}
                                 />
@@ -187,7 +187,7 @@ export const GettingStarted: React.FC<
                                         </Text>
                                     }
                                     value="repo"
-                                    wrapperClassName="d-flex align-items-baseline mb-1"
+                                    wrapperClassName="d-flex align-items-center mb-1"
                                     checked={conversationScope === 'repo'}
                                     onChange={event => setConversationScope(event.target.value as ConversationScope)}
                                 />
