@@ -2553,6 +2553,83 @@
             "pointer": true
           },
           "default": true
+        },
+        "qdrantConfig": {
+          "description": "Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.",
+          "type": "object",
+          "properties": {
+            "hsnw": {
+              "description": "Overrides for the HNSW index config. Must unmarshal into the HnswConfigDiff type."
+              "type": "object",
+              "properties": {
+                "m": {
+                  "description": "Number of edges per node in the index graph. Larger the value - more accurate the search, more space required.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "default": 16,
+                  "!go": {
+                    "pointer": true
+                  },
+                },
+                "efConstruct": {
+                  "description": "Number of neighbours to consider during the index building. Larger the value, more accurate the search, more time required to build the index.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "default": 100,
+                  "!go": {
+                    "pointer": true
+                  },
+                },
+                "fullScanThreshold": {
+                  "description": "Minimal size (in KiloBytes) of vectors for additional payload-based indexing.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                },
+                "onDisk": {
+                  "description": "Store HNSW index on disk.",
+                  "type": "boolean",
+                  "default": true,
+                  "!go": {
+                    "pointer": true
+                  },
+                },
+                "payloadM": {
+                  "description": "Number of edges per node in the index graph. Larger the value, more accurate the search, more space required. If not set, regular M parameter will be used.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                },
+                "$comment": "Skipped fields from HnswConfigDiff: MaxIndexingThreads"
+              }
+            },
+            "optimizers": {
+              "type": "object",
+              "properties": {
+                "indexingThreshold": {
+                  "description": "Maximum size (in kilobytes) of vectors allowed for plain index, exceeding this threshold will enable vector indexing. Set to 0 to disable indexing",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                },
+                "memmapThreshold": {
+                  "description": "Maximum size (in kilobytes) of vectors to store in-memory per segment.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                },
+                "$comment": "Skipped fields from OptimizersConfigDiff: DeletedThreshold, VacuumMinVectorNumber, DefaultSegmentNumber, MaxSegmentSize, FlushIntervalSec, MaxOptimizationThreads"
+              }
+            }
+          }
         }
       },
       "examples": [

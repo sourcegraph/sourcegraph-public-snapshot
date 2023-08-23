@@ -110,7 +110,9 @@ func defaultConfig(dims uint64) *qdrant.CollectionConfig {
 			WriteConsistencyFactor: nil, // default
 		},
 		OptimizerConfig: &qdrant.OptimizersConfigDiff{
-			IndexingThreshold: pointers.Ptr(uint64(0)), // disable indexing
+			IndexingThreshold:      nil, // default
+			MemmapThreshold:        pointers.Ptr(uint64(1024)),
+			MaxOptimizationThreads: pointers.Ptr(uint64(0)),
 		},
 		WalConfig: nil, // default
 		QuantizationConfig: &qdrant.QuantizationConfig{
@@ -120,9 +122,17 @@ func defaultConfig(dims uint64) *qdrant.CollectionConfig {
 					Type: qdrant.QuantizationType_Int8,
 					// Truncate outliers for better compression
 					Quantile:  pointers.Ptr(float32(0.98)),
-					AlwaysRam: nil, // default false
+					AlwaysRam: pointers.Ptr(false),
 				},
 			},
+		},
+		HnswConfig: &qdrant.HnswConfigDiff{
+			M:                  pointers.Ptr(uint64(16)),
+			EfConstruct:        pointers.Ptr(uint64(100)),
+			FullScanThreshold:  pointers.Ptr(uint64(10000)),
+			MaxIndexingThreads: pointers.Ptr(uint64(0)), // automatic
+			OnDisk:             pointers.Ptr(true),
+			PayloadM:           pointers.Ptr(uint64(16)),
 		},
 	}
 }

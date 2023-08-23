@@ -680,6 +680,8 @@ type Embeddings struct {
 	PolicyRepositoryMatchLimit *int `json:"policyRepositoryMatchLimit,omitempty"`
 	// Provider description: The provider to use for generating embeddings. Defaults to sourcegraph.
 	Provider string `json:"provider,omitempty"`
+	// QdrantConfigOverrides description: Overrides for the default qdrant config
+	QdrantConfigOverrides *QdrantConfigOverrides `json:"qdrantConfigOverrides,omitempty"`
 	// Url description: The url to the external embedding API service. Deprecated, use endpoint instead.
 	Url string `json:"url,omitempty"`
 }
@@ -1905,6 +1907,12 @@ type PythonRateLimit struct {
 	Enabled bool `json:"enabled"`
 	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
 	RequestsPerHour float64 `json:"requestsPerHour"`
+}
+
+// QdrantConfigOverrides description: Overrides for the default qdrant config
+type QdrantConfigOverrides struct {
+	// Hsnw description: Overrides for the HNSW index config. Must unmarshal into the HnswConfigDiff type.
+	Hsnw any `json:"hsnw,omitempty"`
 }
 type QuickLink struct {
 	// Description description: A description for this quick link
