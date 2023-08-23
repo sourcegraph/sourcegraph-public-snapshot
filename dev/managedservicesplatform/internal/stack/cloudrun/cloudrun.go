@@ -34,8 +34,6 @@ type Variables struct {
 	Image       string
 	Environment spec.EnvironmentSpec
 
-	EnvVarPrefix string
-
 	// SharedSecretsProjectID is the project that holds shared secrets
 	SharedSecretsProjectID string
 }
@@ -67,6 +65,10 @@ var (
 var (
 	// defaultMaxInstances is the default Scaling.MaxCount
 	defaultMaxInstances = 5
+	// defaultMaxConcurrentRequests is the default scaling.MaxRequestConcurrency
+	// It is set very high to prefer fewer instances, as Go services can generally
+	// handle very high load without issue.
+	defaultMaxConcurrentRequests = 1000
 )
 
 // makeServiceEnvVarPrefix returns the env var prefix for service-specific
@@ -305,7 +307,8 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 			Timeout: pointers.Ptr("300s"),
 
 			// Scaling configuration
-			MaxInstanceRequestConcurrency: pointers.Float64(vars.Environment.Instances.Scaling.MaxRequestConcurrency),
+			MaxInstanceRequestConcurrency: pointers.Float64(
+				pointers.Deref(vars.Environment.Instances.Scaling.MaxRequestConcurrency, defaultMaxConcurrentRequests)),
 			Scaling: &cloudrunv2service.CloudRunV2ServiceTemplateScaling{
 				MinInstanceCount: pointers.Float64(vars.Environment.Instances.Scaling.MinCount),
 				MaxInstanceCount: pointers.Float64(
@@ -349,7 +352,7 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 				},
 
 				LivenessProbe: func() *cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbe {
-					if vars.Environment.Healthcheck.LivenessProbeInterval == nil {
+					if vars.Environment.Healthcheck == nil || vars.Environment.Healthcheck.LivenessProbeInterval == nil {
 						return nil
 					}
 					return &cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbe{

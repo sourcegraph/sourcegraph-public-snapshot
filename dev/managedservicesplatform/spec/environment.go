@@ -7,11 +7,12 @@ type EnvironmentSpec struct {
 	// environment, e.g. "prod" or "dev".
 	ID string `json:"id"`
 
-	Deploy      EnvironmentDeploySpec      `json:"deploy"`
-	Domain      EnvironmentDomainSpec      `json:"domain"`
-	Instances   EnvironmentInstancesSpec   `json:"instances"`
-	Resources   EnvironmentResourcesSpec   `json:"resources"`
-	Healthcheck EnvironmentHealthcheckSpec `json:"healtcheck"`
+	Deploy    EnvironmentDeploySpec    `json:"deploy"`
+	Domain    EnvironmentDomainSpec    `json:"domain"`
+	Instances EnvironmentInstancesSpec `json:"instances"`
+	Resources EnvironmentResourcesSpec `json:"resources"`
+
+	Healthcheck *EnvironmentHealthcheckSpec `json:"healtcheck,omitempty"`
 
 	Env       map[string]string `json:"env"`
 	SecretEnv map[string]string `json:"secretEnv"`
@@ -19,7 +20,7 @@ type EnvironmentSpec struct {
 
 type EnvironmentDeploySpec struct {
 	Type   EnvironmentDeployType        `json:"type"`
-	Manual *EnvironmentDeployManualSpec `json:"manual"`
+	Manual *EnvironmentDeployManualSpec `json:"manual,omitempty"`
 }
 
 type EnvironmentDeployType string
@@ -45,12 +46,12 @@ func (d EnvironmentDeploySpec) ResolveTag() (string, error) {
 }
 
 type EnvironmentDeployManualSpec struct {
-	Tag string `json:"tag"`
+	Tag string `json:"tag,omitempty"`
 }
 
 type EnvironmentDomainSpec struct {
 	Type       string                           `json:"type"`
-	Cloudflare *EnvironmentDomainCloudflareSpec `json:"cloudflare"`
+	Cloudflare *EnvironmentDomainCloudflareSpec `json:"cloudflare,omitempty"`
 }
 
 type EnvironmentDomainCloudflareSpec struct {
@@ -78,7 +79,9 @@ type EnvironmentInstancesScalingSpec struct {
 	// MaxRequestConcurrency is the maximum number of concurrent requests that
 	// each instance is allowed to serve. Before this concurrency is reached,
 	// Cloud Run will begin scaling up additional instances, up to MaxCount.
-	MaxRequestConcurrency int `json:"maxRequestConcurrency"`
+	//
+	// If not provided, the defualt is defaultMaxConcurrentRequests
+	MaxRequestConcurrency *int `json:"maxRequestConcurrency"`
 	// MinCount is the minimum number of instances that will be running at all
 	// times. Set this to >0 to avoid service warm-up delays.
 	MinCount int `json:"minCount"`
@@ -92,7 +95,7 @@ type EnvironmentInstancesScalingSpec struct {
 type EnvironmentHealthcheckSpec struct {
 	// LivenessProbeInterval configures the interval, in seconds, at which to
 	// probe the deployed service. If nil, no liveness probe is configured.
-	LivenessProbeInterval *int `json:"livenessProbeInterval"`
+	LivenessProbeInterval *int `json:"livenessProbeInterval,omitempty"`
 }
 
 type EnvironmentResourcesSpec struct {
@@ -103,7 +106,7 @@ type EnvironmentResourcesSpec struct {
 	//
 	// Sourcegraph Redis libraries (i.e. internal/redispool) will automatically
 	// use the given configuration.
-	Redis *EnvironmentResourceRedisSpec `json:"redis"`
+	Redis *EnvironmentResourceRedisSpec `json:"redis,omitempty"`
 	// BigQueryTable, if provided, provisions a table for the service to write
 	// to. Details for writing to the table are automatically provided in
 	// environment variables:
@@ -117,14 +120,14 @@ type EnvironmentResourcesSpec struct {
 	// ID.
 	//
 	// Only one table is allowed per MSP service.
-	BigQueryTable *EnvironmentResourceBigQueryTableSpec `json:"bigQueryTable"`
+	BigQueryTable *EnvironmentResourceBigQueryTableSpec `json:"bigQueryTable,omitempty"`
 }
 
 type EnvironmentResourceRedisSpec struct {
 	// Defaults to STANDARD_HA.
-	Tier *string `json:"tier"`
+	Tier *string `json:"tier,omitempty"`
 	// Defaults to 1.
-	MemoryGB *int `json:"memoryGB"`
+	MemoryGB *int `json:"memoryGB,omitempty"`
 }
 
 type EnvironmentResourceBigQueryTableSpec struct {

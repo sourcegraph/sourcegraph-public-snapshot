@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/msp/schema"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -114,7 +115,7 @@ func init() {
 				}
 				output := filepath.Join(
 					c.String("output"), fmt.Sprintf("%s.service.yaml", c.Args().First()))
-				if err := os.WriteFile(output, exampleSpec, os.ModePerm); err != nil {
+				if err := os.WriteFile(output, exampleSpec, 0644); err != nil {
 					return err
 				}
 
@@ -188,6 +189,33 @@ func init() {
 					return err
 				}
 				return cdktf.Synthesize()
+			},
+		},
+		{
+			Name:        "schema",
+			Description: "Generate JSON schema definition for service specification",
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:    "output",
+					Aliases: []string{"o"},
+					Usage:   "Output path for generated schema",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				jsonSchema, err := schema.Render()
+				if err != nil {
+					return err
+				}
+				if output := c.String("output"); output != "" {
+					_ = os.Remove(output)
+					if err := os.WriteFile(output, jsonSchema, 0644); err != nil {
+						return err
+					}
+					std.Out.WriteSuccessf("Rendered service spec JSON schema in %s", output)
+					return nil
+				}
+				// Otherwise render it for reader
+				return std.Out.WriteCode("json", string(jsonSchema))
 			},
 		},
 	}

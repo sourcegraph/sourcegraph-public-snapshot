@@ -13,5 +13,5 @@ type ServiceSpec struct {
 	// EnvVarPrefix is an optional prefix for env vars exposed specifically for
 	// the service, e.g. "CODY_GATEWAY_". If empty, default the an capitalized,
 	// lowercase-delimited version of the service ID.
-	EnvVarPrefix *string
+	EnvVarPrefix *string `json:"envVarPrefix,omitempty"`
 }
