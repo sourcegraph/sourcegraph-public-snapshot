@@ -1,4 +1,4 @@
-import { type FC } from 'react'
+import { useMemo, type FC } from 'react'
 
 import { Alert, Text, Input, useDebounce, Link } from '@sourcegraph/wildcard'
 
@@ -10,6 +10,8 @@ interface ExternalUrlFormProps {
 export const ExternalUrlForm: FC<ExternalUrlFormProps> = ({ className, url = '', onChange }) => {
     const debouncedUrl = useDebounce(url, 500)
 
+    const isSameUrl = useMemo(() => window.location.href.startsWith(debouncedUrl), [debouncedUrl])
+
     return (
         <div className={className}>
             <Text>
@@ -18,6 +20,11 @@ export const ExternalUrlForm: FC<ExternalUrlFormProps> = ({ className, url = '',
                 for more information.
             </Text>
             {!debouncedUrl && <Alert variant="danger">You have not yet configured an external URL.</Alert>}
+            {!isSameUrl && (
+                <Alert variant="warning">
+                    The configured URL does not match the current URL. You may need to update your DNS records.
+                </Alert>
+            )}
 
             <Input
                 placeholder="https://sourcegraph.example.com"
