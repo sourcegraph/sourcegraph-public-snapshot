@@ -210,22 +210,26 @@ export const GettingStarted: React.FC<
                                         authenticatedUser={authenticatedUser}
                                     />
                                 </div>
-                                <hr className={styles.divider} />
 
-                                <Text size="small" className={classNames('text-muted', styles.hintTitle)}>
-                                    Why is context important?
-                                </Text>
-                                <Text size="small" className={classNames('text-muted', styles.hintText)}>
-                                    Without providing relevant repo(s) for context, Cody won't be able to answer
-                                    questions specific to your project.
-                                </Text>
+                                {scopeSelectorProps.scope.repositories.length === 0 && (
+                                    <>
+                                        <hr className={styles.divider} />
+                                        <Text size="small" className={classNames('text-muted', styles.hintTitle)}>
+                                            Why is context important?
+                                        </Text>
+                                        <Text size="small" className={classNames('text-muted', styles.hintText)}>
+                                            Without providing relevant repo(s) for context, Cody won't be able to answer
+                                            questions specific to your project.
+                                        </Text>
 
-                                <Text size="small" className="mb-0 text-muted">
-                                    <Text as="span" weight="bold">
-                                        Tip:
-                                    </Text>{' '}
-                                    The context selector is always available at the bottom of the screen
-                                </Text>
+                                        <Text size="small" className="mb-0 text-muted">
+                                            <Text as="span" weight="bold">
+                                                Tip:
+                                            </Text>{' '}
+                                            The context selector is always available at the bottom of the screen
+                                        </Text>
+                                    </>
+                                )}
                             </div>
                         </fieldset>
                     </div>
