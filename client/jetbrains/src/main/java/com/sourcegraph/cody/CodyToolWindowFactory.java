@@ -49,8 +49,8 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
 
   @Override
   public boolean shouldBeAvailable(@NotNull Project project) {
-    // TODO: return false here to disable chat?
-    return false;
-    // return ConfigUtil.isCodyEnabled();
+    // // TODO: return false here to disable chat?
+    // return false;
+    return ConfigUtil.isCodyEnabled();
   }
 }

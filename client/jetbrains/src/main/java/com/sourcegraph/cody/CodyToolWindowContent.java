@@ -127,6 +127,9 @@ public class CodyToolWindowContent implements UpdatableChat {
           }
         };
     sendMessageAction.registerCustomShortcutSet(DEFAULT_SUBMIT_ACTION_SHORTCUT, promptInput);
+    promptInput.setEditable(false);
+    promptInput.setText("Chat has been disabled by your Sourcegraph admin.");
+    sendButton.setEnabled(false);
 
     // Enable/disable the send button based on whether promptInput is empty
     promptInput
