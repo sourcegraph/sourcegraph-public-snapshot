@@ -8,7 +8,7 @@ current_commit=$(git rev-parse HEAD)
 tag="5.0.0" # check this version exists in flakes.json
 
 function restore_current_commit() {
-  git checkout --force "${current_commit}"
+  git checkout --force --no-overlay "${current_commit}"
 }
 
 EXIT_CODE=0
@@ -34,15 +34,12 @@ git checkout --force "v${tag}"
 echo "--- :git: checkout migrations, patches and scripts at ${current_commit}"
 git checkout --force --no-overlay "${current_commit}" -- migrations/ dev/backcompat/patch_flakes.sh dev/backcompat/patches dev/backcompat/flakes.json
 
-if [[ ${CI:-} == "true" ]]; then
-  # we don't need to test client
-  echo "--- :broom: removing client/"
-  rm -rf "client/"
-fi
+echo "--- :broom: tell bazel to ignore client/"
+echo "client/**/*" >> .bazelignore
 
 if [[ -d "dev/backcompat/patches/${tag}" ]]; then
   echo "--- :bandaid: apply patches"
-  git apply -p0 dev/backcompat/patches/${tag}/*.patch
+  git apply dev/backcompat/patches/${tag}/*.patch
 fi
 
 echo "--- :snowflake: patch flake for tag ${tag}"
