@@ -61,20 +61,20 @@ func newServerHandler(logger log.Logger, config *Config) (http.Handler, error) {
 		status := make(map[string]string)
 		if err := pubsubClient.Ping(context.Background()); err != nil {
 			failed = true
-			status["Pub/Sub client"] = err.Error()
+			status["pubsubClient"] = err.Error()
 		} else {
-			status["Pub/Sub client"] = "OK"
+			status["pubsubClient"] = "OK"
 		}
 
 		if hubspotutil.HasAPIKey() {
 			if err := hubspotutil.Client().Ping(30 * time.Second); err != nil {
 				failed = true
-				status["HubSpot client"] = err.Error()
+				status["hubspotClient"] = err.Error()
 			} else {
-				status["HubSpot client"] = "OK"
+				status["hubspotClient"] = "OK"
 			}
 		} else {
-			status["HubSpot client"] = "Not configured"
+			status["hubspotClient"] = "Not configured"
 		}
 
 		if failed {
