@@ -22,6 +22,7 @@ public class Chat {
       @NotNull CodyAgentClient client,
       @NotNull CompletableFuture<CodyAgentServer> codyAgentServer,
       @NotNull ChatMessage humanMessage,
+      @NotNull String recipeId,
       @NotNull UpdatableChat chat,
       @NotNull CancellationToken cancellationToken)
       throws ExecutionException, InterruptedException {
@@ -61,7 +62,7 @@ public class Chat {
               try {
                 server.recipesExecute(
                     new ExecuteRecipeParams()
-                        .setId("chat-question")
+                        .setId(recipeId)
                         .setHumanChatInput(humanMessage.getText()));
               } catch (Exception ignored) {
                 // Ignore bugs in the agent when executing recipes

@@ -49,7 +49,7 @@ public class RecipeRunner {
     ChatMessage humanMessage =
         ChatMessage.createHumanMessage(promptContext.getPrompt(), promptContext.getDisplayText());
 
-    chat.respondToMessage(humanMessage, promptContext.getResponsePrefix());
+    //chat.respondToMessage(humanMessage, promptContext.getResponsePrefix());
   }
 
   // TODO: Implement or remove it

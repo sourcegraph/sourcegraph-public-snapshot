@@ -1,5 +1,6 @@
 package com.sourcegraph.cody;
 
+import static com.intellij.ui.SimpleTextAttributes.STYLE_PLAIN;
 import static java.awt.event.KeyEvent.VK_ENTER;
 import static javax.swing.KeyStroke.getKeyStroke;
 
@@ -16,17 +17,21 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.VerticalFlowLayout;
-import com.intellij.openapi.vcs.ProjectLevelVcsManager;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ColorUtil;
+import com.intellij.ui.DocumentAdapter;
+import com.intellij.ui.SimpleTextAttributes;
+import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.util.IconUtil;
 import com.intellij.util.concurrency.annotations.RequiresEdt;
-import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.StatusText;
 import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.agent.CodyAgent;
+import com.sourcegraph.cody.agent.CodyAgentServer;
+import com.sourcegraph.cody.agent.protocol.ExecuteRecipeParams;
+import com.sourcegraph.cody.agent.protocol.RecipeInfo;
 import com.sourcegraph.cody.chat.AssistantMessageWithSettingsButton;
 import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatMessage;
@@ -37,17 +42,7 @@ import com.sourcegraph.cody.chat.MessagePanel;
 import com.sourcegraph.cody.chat.Transcript;
 import com.sourcegraph.cody.context.ContextMessage;
 import com.sourcegraph.cody.context.EmbeddingStatusView;
-import com.sourcegraph.cody.editor.EditorUtil;
 import com.sourcegraph.cody.localapp.LocalAppManager;
-import com.sourcegraph.cody.recipes.ExplainCodeDetailedAction;
-import com.sourcegraph.cody.recipes.ExplainCodeHighLevelAction;
-import com.sourcegraph.cody.recipes.FindCodeSmellsAction;
-import com.sourcegraph.cody.recipes.GenerateDocStringAction;
-import com.sourcegraph.cody.recipes.GenerateUnitTestAction;
-import com.sourcegraph.cody.recipes.ImproveVariableNamesAction;
-import com.sourcegraph.cody.recipes.RecipeRunner;
-import com.sourcegraph.cody.recipes.SummarizeRecentChangesRecipe;
-import com.sourcegraph.cody.recipes.TranslateToLanguageAction;
 import com.sourcegraph.cody.ui.AutoGrowingTextArea;
 import com.sourcegraph.cody.ui.HtmlViewer;
 import com.sourcegraph.cody.vscode.CancellationToken;
@@ -55,8 +50,13 @@ import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
 import com.sourcegraph.config.SettingsComponent.InstanceType;
 import com.sourcegraph.telemetry.GraphQlLogger;
-import com.sourcegraph.vcs.RepoUtil;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.util.List;
 import java.util.Optional;
 import javax.swing.BorderFactory;
@@ -67,6 +67,7 @@ import javax.swing.JEditorPane;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
 import javax.swing.plaf.ButtonUI;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -84,6 +85,7 @@ public class CodyToolWindowContent implements UpdatableChat {
   private final @NotNull Project project;
   private final JButton stopGeneratingButton =
       new JButton("Stop generating", IconUtil.desaturate(AllIcons.Actions.Suspend));
+  private final @NotNull JBPanelWithEmptyText recipesPanel;
   private @NotNull volatile CancellationToken cancellationToken = new CancellationToken();
   private @NotNull Transcript transcript = new Transcript();
   private boolean isChatVisible = false;
@@ -93,46 +95,12 @@ public class CodyToolWindowContent implements UpdatableChat {
     // Tabs
     @NotNull JPanel contentPanel = new JPanel();
     tabbedPane.insertTab("Chat", null, contentPanel, null, CHAT_TAB_INDEX);
-    @NotNull JPanel recipesPanel = new JPanel(new GridLayout(0, 1));
+    recipesPanel = new JBPanelWithEmptyText(new GridLayout(0, 1));
     recipesPanel.setLayout(new BoxLayout(recipesPanel, BoxLayout.Y_AXIS));
     tabbedPane.insertTab("Recipes", null, recipesPanel, null, RECIPES_TAB_INDEX);
 
-    // Recipes panel
-    RecipeRunner recipeRunner = new RecipeRunner(this.project, this);
-    JButton explainCodeDetailedButton = createRecipeButton("Explain selected code (detailed)");
-    explainCodeDetailedButton.addActionListener(
-        e -> new ExplainCodeDetailedAction().executeRecipeWithPromptProvider(this, project));
-    JButton explainCodeHighLevelButton = createRecipeButton("Explain selected code (high level)");
-    explainCodeHighLevelButton.addActionListener(
-        e -> new ExplainCodeHighLevelAction().executeRecipeWithPromptProvider(this, project));
-    JButton generateUnitTestButton = createRecipeButton("Generate a unit test");
-    generateUnitTestButton.addActionListener(
-        e -> new GenerateUnitTestAction().executeRecipeWithPromptProvider(this, project));
-    JButton generateDocstringButton = createRecipeButton("Generate a docstring");
-    generateDocstringButton.addActionListener(
-        e -> new GenerateDocStringAction().executeRecipeWithPromptProvider(this, project));
-    JButton improveVariableNamesButton = createRecipeButton("Improve variable names");
-    improveVariableNamesButton.addActionListener(
-        e -> new ImproveVariableNamesAction().executeRecipeWithPromptProvider(this, project));
-    JButton translateToLanguageButton = createRecipeButton("Translate to different language");
-    translateToLanguageButton.addActionListener(
-        e -> new TranslateToLanguageAction().executeAction(project));
-    JButton gitHistoryButton = createRecipeButton("Summarize recent code changes");
-    gitHistoryButton.addActionListener(
-        e ->
-            new SummarizeRecentChangesRecipe(project, this, recipeRunner).summarizeRecentChanges());
-    JButton findCodeSmellsButton = createRecipeButton("Smell code");
-    findCodeSmellsButton.addActionListener(
-        e -> new FindCodeSmellsAction().executeRecipeWithPromptProvider(this, project));
-    recipesPanel.add(explainCodeDetailedButton);
-    recipesPanel.add(explainCodeHighLevelButton);
-    recipesPanel.add(generateUnitTestButton);
-    recipesPanel.add(generateDocstringButton);
-    recipesPanel.add(improveVariableNamesButton);
-    recipesPanel.add(translateToLanguageButton);
-    recipesPanel.add(gitHistoryButton);
-    recipesPanel.add(findCodeSmellsButton);
-    enableAutoUpdateAvailabilityOfSummarizeRecentCodeChangesRecipe(project, gitHistoryButton);
+    // Initiate filling recipes panel in the background
+    refreshRecipes();
 
     // Chat panel
     messagesPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, true));
@@ -153,10 +121,20 @@ public class CodyToolWindowContent implements UpdatableChat {
         new DumbAwareAction() {
           @Override
           public void actionPerformed(@NotNull AnActionEvent e) {
-            sendMessage(project);
+            sendChatMessage(project);
           }
         };
     sendMessageAction.registerCustomShortcutSet(DEFAULT_SUBMIT_ACTION_SHORTCUT, promptInput);
+
+    // Enable/disable the send button based on whether promptInput is empty
+    promptInput.getDocument()
+        .addDocumentListener(
+            new DocumentAdapter() {
+              @Override
+              protected void textChanged(@NotNull DocumentEvent e) {
+                sendButton.setEnabled(!promptInput.getText().isEmpty());
+              }
+            });
 
     promptPanel.add(autoGrowingTextArea.getScrollPane(), BorderLayout.CENTER);
     promptPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
@@ -207,40 +185,62 @@ public class CodyToolWindowContent implements UpdatableChat {
     addWelcomeMessage();
   }
 
+  @RequiresEdt
+  public void refreshRecipes() {
+    recipesPanel.removeAll();
+    recipesPanel.getEmptyText().setText("Loading recipes...");
+    recipesPanel.revalidate();
+    recipesPanel.repaint();
+
+    CodyAgentServer server = CodyAgent.getServer(project);
+    if (server == null) {
+      setRecipesPanelError();
+      return;
+    }
+
+    ApplicationManager.getApplication().executeOnPooledThread( // Non-blocking data fetch
+        () -> {
+          try {
+            // Fetch recipes from agent
+            server.recipesList().thenAccept(
+                (List<RecipeInfo> recipes) -> ApplicationManager.getApplication()
+                    .invokeLater(() -> fillRecipesPanel(recipes))); // Update on EDT
+          } catch (Exception e) {
+            logger.warn("Error fetching recipes from agent", e);
+            // Update on EDT
+            ApplicationManager.getApplication().invokeLater(this::setRecipesPanelError);
+          }
+        }
+    );
+  }
+
+  @RequiresEdt
+  private void setRecipesPanelError() {
+    StatusText emptyText = recipesPanel.getEmptyText();
+
+    emptyText.setText("Error fetching recipes. Check your connection. If the problem persists, please contact support.");
+    emptyText.appendLine(
+        "Retry",
+        new SimpleTextAttributes(STYLE_PLAIN, JBUI.CurrentTheme.Link.Foreground.ENABLED),
+        __ -> refreshRecipes());
+  }
+
+  @RequiresEdt
+  private void fillRecipesPanel(@NotNull List<RecipeInfo> recipes) {
+    // Loop on recipes and add a button for each item
+    for (RecipeInfo recipe : recipes) {
+      JButton recipeButton = createRecipeButton(recipe.title);
+      recipeButton.addActionListener(
+          e -> {
+            GraphQlLogger.logCodyEvent(this.project, "recipe:" + recipe.id, "clicked");
+            sendMessage(this.project, recipe.title, recipe.id);
+          });
+      recipesPanel.add(recipeButton);
+    }
+  }
+
   public static @NotNull CodyToolWindowContent getInstance(@NotNull Project project) {
     return project.getService(CodyToolWindowContent.class);
-  }
-
-  private static void enableAutoUpdateAvailabilityOfSummarizeRecentCodeChangesRecipe(
-      @NotNull Project project, @NotNull JButton gitHistoryButton) {
-    updateAvailabilityOfTheSummarizeRecentCodeChangesRecipe(project, gitHistoryButton);
-    MessageBusConnection messageBusConnection = project.getMessageBus().connect();
-    messageBusConnection.subscribe(
-        ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED,
-        () -> updateAvailabilityOfTheSummarizeRecentCodeChangesRecipe(project, gitHistoryButton));
-  }
-
-  private static void updateAvailabilityOfTheSummarizeRecentCodeChangesRecipe(
-      @NotNull Project project, @NotNull JButton gitHistoryButton) {
-    ApplicationManager.getApplication()
-        .invokeLater(
-            () -> {
-              VirtualFile currentFile = EditorUtil.getCurrentFile(project);
-
-              ApplicationManager.getApplication()
-                  .executeOnPooledThread(
-                      () -> {
-                        boolean noVersionControlSystem =
-                            RepoUtil.findRepositoryName(project, currentFile) == null;
-                        if (noVersionControlSystem) {
-                          gitHistoryButton.setEnabled(false);
-                          gitHistoryButton.setToolTipText("No version control system found");
-                        } else {
-                          gitHistoryButton.setEnabled(true);
-                          gitHistoryButton.setToolTipText(null);
-                        }
-                      });
-            });
   }
 
   @RequiresEdt
@@ -346,7 +346,7 @@ public class CodyToolWindowContent implements UpdatableChat {
     sendButton.addActionListener(
         e -> {
           GraphQlLogger.logCodyEvent(this.project, "recipe:chat-question", "clicked");
-          sendMessage(project);
+          sendChatMessage(project);
         });
     return sendButton;
   }
@@ -380,12 +380,6 @@ public class CodyToolWindowContent implements UpdatableChat {
   @Override
   public void activateChatTab() {
     this.tabbedPane.setSelectedIndex(CHAT_TAB_INDEX);
-  }
-
-  @Override
-  public void respondToMessage(@NotNull ChatMessage message, @NotNull String responsePrefix) {
-    activateChatTab();
-    sendMessage(this.project, message, responsePrefix);
   }
 
   @Override
@@ -484,42 +478,44 @@ public class CodyToolWindowContent implements UpdatableChat {
     return this.isChatVisible;
   }
 
-  private void sendMessage(@NotNull Project project) {
+  @RequiresEdt
+  private void sendChatMessage(@NotNull Project project) {
     String text = promptInput.getText();
+    sendMessage(project, text, "chat-question");
     promptInput.setText("");
-    sendMessage(project, ChatMessage.createHumanMessage(text, text), "");
   }
 
-  private void sendMessage(
-      @NotNull Project project, @NotNull ChatMessage message, @NotNull String responsePrefix) {
+  @RequiresEdt
+  private void sendMessage(@NotNull Project project, @NotNull String message, @NotNull String recipeId) {
     if (!sendButton.isEnabled()) {
       return;
     }
     startMessageProcessing();
     // Build message
-    String truncatedPrompt =
-        TruncationUtils.truncateText(message.prompt(), TruncationUtils.MAX_HUMAN_INPUT_TOKENS);
-    ChatMessage humanMessage =
-        ChatMessage.createHumanMessage(truncatedPrompt, message.getDisplayText());
+
+    ChatMessage humanMessage = ChatMessage.createHumanMessage(message, message);
     addMessageToChat(humanMessage);
-    VirtualFile currentFile = EditorUtil.getCurrentFile(project);
     // This cannot run on EDT (Event Dispatch Thread) because it may block for a long time.
     // Also, if we did the back-end call in the main thread and then waited, we wouldn't see the
     // messages streamed back to us.
     ApplicationManager.getApplication()
         .executeOnPooledThread(
             () -> {
-              String accessToken = ConfigUtil.getProjectAccessToken(project);
               Chat chat = new Chat();
-              try {
-                chat.sendMessageViaAgent(
-                    CodyAgent.getClient(project),
-                    CodyAgent.getInitializedServer(project),
-                    humanMessage,
-                    this,
-                    cancellationToken);
-              } catch (Exception e) {
-                logger.warn("Error sending message '" + humanMessage + "' to chat", e);
+              if (CodyAgent.isConnected(project)) {
+                try {
+                  chat.sendMessageViaAgent(
+                      CodyAgent.getClient(project),
+                      CodyAgent.getInitializedServer(project),
+                      humanMessage,
+                      recipeId,
+                      this,
+                      cancellationToken);
+                } catch (Exception e) {
+                  logger.warn("Error sending message '" + humanMessage + "' to chat", e);
+                }
+              } else {
+                logger.warn("Agent is disabled, can't use chat.");
               }
               GraphQlLogger.logCodyEvent(this.project, "recipe:chat-question", "executed");
             });
