@@ -76,7 +76,7 @@ You can run a command in 3 ways:
 
 ![Cody Commands in VS Code](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-commands.png)
 
-### Custom Commands
+### Custom Commands <span class="badge badge-experimental">Experimental</span>
 
 The **Custom Commands** feature lets you customize Cody's abilities for your projects without writing code. This provides a flexible way to create reusable "commands" that give Cody targeted instructions and context from your project to enhance productivity.
 
