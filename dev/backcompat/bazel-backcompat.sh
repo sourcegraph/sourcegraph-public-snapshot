@@ -8,7 +8,7 @@ current_commit=$(git rev-parse HEAD)
 tag="5.1.0"
 
 function restore_current_commit() {
-  git checkout --force --no-overlay "${current_commit}"
+  git checkout --force "${current_commit}"
 }
 
 EXIT_CODE=0
@@ -30,7 +30,7 @@ fi
 
 echo "--- :git::rewind: checkout v${tag}"
 # --no-overlay makes so that git ensures the files match what is in the tree exactly, removing files that do not match
-git checkout --force --no-overlay "v${tag}"
+git checkout --force "v${tag}"
 
 echo "--- :git: checkout migrations, patches and scripts at ${current_commit}"
 # --no-overlay makes so that git ensures the files match what is in the tree exactly, removing files that do not match
