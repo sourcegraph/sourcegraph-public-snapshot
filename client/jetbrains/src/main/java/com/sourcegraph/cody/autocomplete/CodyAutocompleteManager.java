@@ -12,6 +12,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.TextRange;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings;
 import com.intellij.util.concurrency.annotations.RequiresEdt;
 import com.sourcegraph.cody.CodyCompatibility;
@@ -262,7 +263,7 @@ public class CodyAutocompleteManager {
     String originalText = editor.getDocument().getText(range);
     String insertTextFirstLine = item.insertText.lines().findFirst().orElse("");
     String multilineInsertText =
-        item.insertText.lines().skip(1).collect(Collectors.joining(System.lineSeparator()));
+        item.insertText.lines().skip(1).collect(Collectors.joining(inferLineSeparator(editor)));
 
     // Run Myer's diff between the existing text in the document and the first line of the
     // `insertText` that is returned from the agent.
@@ -300,6 +301,16 @@ public class CodyAutocompleteManager {
           false,
           Integer.MAX_VALUE,
           new CodyAutocompleteBlockElementRenderer(multilineInsertText, item, editor));
+    }
+  }
+
+  private @NotNull String inferLineSeparator(@NotNull Editor editor) {
+    VirtualFile virtualFile = FileDocumentManager.getInstance().getFile(editor.getDocument());
+
+    if (virtualFile != null) {
+      return virtualFile.getDetectedLineSeparator();
+    } else {
+      return System.lineSeparator();
     }
   }
 
