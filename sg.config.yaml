@@ -276,9 +276,13 @@ commands:
   qdrant:
     cmd: |
       docker run -p 6333:6333 -p 6334:6334 \
-        -v $HOME/.sourcegraph-dev/data/qdrant_data:/qdrant/storage \
+        -v $HOME/.sourcegraph-dev/data/qdrant_data:/data \
         -e QDRANT__SERVICE__GRPC_PORT="6334" \
-        qdrant/qdrant
+        -e QDRANT__LOG_LEVEL=INFO \
+        -e QDRANT__STORAGE__STORAGE_PATH=/data \
+        -e QDRANT__STORAGE__SNAPSHOTS_PATH=/data \
+        --entrypoint /usr/local/bin/qdrant \
+        sourcegraph/qdrant:insiders
   worker:
     cmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
