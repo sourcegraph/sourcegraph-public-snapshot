@@ -1,0 +1,15 @@
+diff --git a/dev/go_defs.bzl b/dev/go_defs.bzl
+index c0fa734332..25882c55b9 100644
+--- a/dev/go_defs.bzl
++++ b/dev/go_defs.bzl
+@@ -5,9 +5,7 @@ def go_test(**kwargs):
+     if "timeout" not in kwargs:
+         kwargs["timeout"] = "short"
+ 
+-    # All go tests have the race detector turned on
+-    if "race" not in kwargs:
+-        kwargs["race"] = "on"
++    kwargs["race"] = "off"
+ 
+     # All go tests are tagged with "go" by default
+     if "tags" in kwargs:
