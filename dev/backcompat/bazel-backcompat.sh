@@ -32,7 +32,7 @@ echo "--- :git::rewind: checkout v${tag}"
 git checkout --force "v${tag}"
 
 echo "--- :git: checkout migrations, patches and scripts at ${current_commit}"
-git checkout --force "${current_commit}" -- migrations/ dev/backcompat/patch_flakes.sh dev/backcompat/patches dev/backcompat/flakes.json
+git checkout --force --no-overlay "${current_commit}" -- migrations/ dev/backcompat/patch_flakes.sh dev/backcompat/patches dev/backcompat/flakes.json
 
 if [[ ${CI:-} == "true" ]]; then
   # we don't need to test client
