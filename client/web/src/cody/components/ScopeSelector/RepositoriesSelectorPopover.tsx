@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 
 import {
     mdiChevronUp,
@@ -15,7 +15,6 @@ import {
 import classNames from 'classnames'
 
 import type { TranscriptJSON } from '@sourcegraph/cody-shared/dist/chat/transcript'
-import { useLazyQuery } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import {
@@ -29,17 +28,16 @@ import {
     Input,
     Tooltip,
     Link,
-    useDebounce,
     Position,
     Flipping,
     Overlapping,
+    LoadingSpinner,
 } from '@sourcegraph/wildcard'
 
-import type { ReposSelectorSearchResult, ReposSelectorSearchVariables } from '../../../graphql-operations'
 import { ExternalRepositoryIcon } from '../../../site-admin/components/ExternalRepositoryIcon'
 
-import { ReposSelectorSearchQuery } from './backend'
 import { Callout } from './Callout'
+import { useRepoSearch } from './useRepoSearch'
 import { useRepoSuggestions } from './useRepoSuggestions'
 
 import styles from './ScopeSelector.module.scss'
@@ -94,42 +92,25 @@ export const RepositoriesSelectorPopover: React.FC<{
     authenticatedUser,
 }) {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
-    const [searchText, setSearchText] = useState('')
-    const searchTextDebounced = useDebounce(searchText, 300)
-
-    const [searchRepositories, { data: searchResultsData, loading: loadingSearchResults, stopPolling }] = useLazyQuery<
-        ReposSelectorSearchResult,
-        ReposSelectorSearchVariables
-    >(ReposSelectorSearchQuery, {})
 
     const suggestions = useRepoSuggestions(transcriptHistory, authenticatedUser, {
         omitSuggestions: additionalRepositories,
     })
 
-    const searchResults = useMemo(() => searchResultsData?.repositories.nodes || [], [searchResultsData])
+    const {
+        searchText,
+        setSearchText,
+        clearSearchText,
+        loading: searchLoading,
+        results: searchResults,
+    } = useRepoSearch(transcriptHistory, authenticatedUser)
 
-    const onSearch = useCallback(
+    const onSearchChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
             setSearchText(event.target.value.trim())
         },
         [setSearchText]
     )
-
-    const clearSearchText = useCallback(() => {
-        setSearchText('')
-        stopPolling()
-    }, [setSearchText, stopPolling])
-
-    useEffect(() => {
-        if (searchTextDebounced) {
-            /* eslint-disable no-console */
-            searchRepositories({
-                variables: { query: searchTextDebounced, includeJobs: !!authenticatedUser?.siteAdmin },
-                pollInterval: 5000,
-            }).catch(console.error)
-            /* eslint-enable no-console */
-        }
-    }, [searchTextDebounced, searchRepositories, authenticatedUser?.siteAdmin])
 
     const [isCalloutDismissed = true, setIsCalloutDismissed] = useTemporarySetting(
         'cody.contextCallout.dismissed',
@@ -140,15 +121,14 @@ export const RepositoriesSelectorPopover: React.FC<{
         (event: { isOpen: boolean }) => {
             setIsPopoverOpen(event.isOpen)
             if (!event.isOpen) {
-                setSearchText('')
-                stopPolling()
+                clearSearchText()
             }
 
             if (!isCalloutDismissed) {
                 setIsCalloutDismissed(true)
             }
         },
-        [setIsPopoverOpen, setSearchText, isCalloutDismissed, setIsCalloutDismissed, stopPolling]
+        [setIsPopoverOpen, clearSearchText, isCalloutDismissed, setIsCalloutDismissed]
     )
 
     const netRepositories: IRepo[] = useMemo(() => {
@@ -376,12 +356,13 @@ export const RepositoriesSelectorPopover: React.FC<{
                             )}
                             {searchText && (
                                 <>
-                                    <div className="d-flex justify-content-between p-2 border-bottom mb-1">
+                                    <div className="d-flex justify-content-between align-items-center p-2 border-bottom mb-1">
                                         <Text className={classNames('m-0', styles.header)}>
                                             {additionalRepositoriesLeft
                                                 ? `Add up to ${additionalRepositoriesLeft} additional repositories`
                                                 : 'Maximum additional repositories added'}
                                         </Text>
+                                        {searchLoading && <LoadingSpinner className={styles.spinner} />}
                                     </div>
                                     <div className={classNames('d-flex flex-column', styles.contextItemsContainer)}>
                                         {searchResults.length ? (
@@ -396,7 +377,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                     authenticatedUser={authenticatedUser}
                                                 />
                                             ))
-                                        ) : !loadingSearchResults ? (
+                                        ) : !searchLoading ? (
                                             <div className="d-flex align-items-center justify-content-center flex-column p-4 mt-4">
                                                 <Text size="small" className="m-0 d-flex text-center">
                                                     No matching repositories found
@@ -423,7 +404,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                 variant="small"
                                 disabled={!searchText && !additionalRepositoriesLeft}
                                 value={searchText}
-                                onChange={onSearch}
+                                onChange={onSearchChange}
                             />
                             {!!searchText && (
                                 <Button

@@ -76,6 +76,11 @@
     text-transform: uppercase;
 }
 
+.spinner {
+    max-height: 0.75rem;
+    max-width: 0.75rem;
+}
+
 .repository-list-item {
     all: unset;
     font-size: 0.8rem;
