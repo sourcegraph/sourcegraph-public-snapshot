@@ -70,7 +70,7 @@ public class Chat {
             CodyAgent.executorService)
         .get();
     // TODO we need to move this finishMessageProcessing to be executed when the whole message
-    // processing is finished to make "stop generating" works. Ideally we need a signal from agent
+    // processing is finished to make "stop generating" work. Ideally we need a signal from agent
     // that it finished processing the message so we can call this method.
     chat.finishMessageProcessing();
   }
