@@ -44,12 +44,10 @@ import type {
     CloseChangesetsVariables,
     PublishChangesetsResult,
     PublishChangesetsVariables,
-    ExportChangesetsResult,
     ExportChangesetsVariables,
     AvailableBulkOperationsVariables,
     AvailableBulkOperationsResult,
     BulkOperationType,
-    ExternalChangesetFields,
 } from '../../../graphql-operations'
 import { VIEWER_BATCH_CHANGES_CODE_HOST_FRAGMENT } from '../MissingCredentialsAlert'
 

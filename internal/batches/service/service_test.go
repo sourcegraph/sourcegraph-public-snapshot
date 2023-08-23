@@ -2837,7 +2837,7 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"REENQUEUE", "PUBLISH"}
+			expectedBulkOperations := []string{"REENQUEUE", "PUBLISH", "EXPORT"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -2864,7 +2864,7 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"DETACH"}
+			expectedBulkOperations := []string{"DETACH", "EXPORT"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -2888,7 +2888,7 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"PUBLISH"}
+			expectedBulkOperations := []string{"PUBLISH", "EXPORT"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -2913,7 +2913,7 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"CLOSE", "COMMENT", "PUBLISH"}
+			expectedBulkOperations := []string{"CLOSE", "COMMENT", "PUBLISH", "EXPORT"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -2938,7 +2938,7 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"CLOSE", "COMMENT", "MERGE", "PUBLISH"}
+			expectedBulkOperations := []string{"CLOSE", "COMMENT", "MERGE", "PUBLISH", "EXPORT"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -2963,7 +2963,7 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"COMMENT", "PUBLISH"}
+			expectedBulkOperations := []string{"COMMENT", "PUBLISH", "EXPORT"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -2988,7 +2988,7 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"COMMENT", "PUBLISH"}
+			expectedBulkOperations := []string{"COMMENT", "PUBLISH", "EXPORT"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -3030,7 +3030,7 @@ changesetTemplate:
 			})
 
 			assert.NoError(t, err)
-			expectedBulkOperations := []string{"COMMENT", "CLOSE", "MERGE"}
+			expectedBulkOperations := []string{"COMMENT", "CLOSE", "MERGE", "EXPORT"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
