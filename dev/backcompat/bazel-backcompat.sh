@@ -8,7 +8,7 @@ current_commit=$(git rev-parse HEAD)
 tag="5.0.0" # check this version exists in flakes.json
 
 function restore_current_commit() {
-  git checkout --force --no-overlay "${current_commit}"
+  git checkout --force "${current_commit}"
 }
 
 EXIT_CODE=0
