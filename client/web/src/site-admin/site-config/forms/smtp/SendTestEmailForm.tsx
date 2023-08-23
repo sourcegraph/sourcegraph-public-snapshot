@@ -7,14 +7,22 @@ import { Link, Alert, Button, Select, Label } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { LoaderButton } from '../../../../components/LoaderButton'
-import { SendTestEmailToResult, SendTestEmailToVariables } from '../../../../graphql-operations'
+import {
+    SendTestEmailToResult,
+    SendTestEmailToVariables,
+    SMTPAuthType,
+    SMTPConfig,
+} from '../../../../graphql-operations'
 import { SEND_TEST_EMAIL } from '../../../backend'
+
+import { FormData } from './index'
 
 interface SendTestEmailProps {
     className?: string
     authenticatedUser: AuthenticatedUser
+    formData: FormData
 }
-export const SendTestEmailForm: FC<SendTestEmailProps> = ({ authenticatedUser, className }) => {
+export const SendTestEmailForm: FC<SendTestEmailProps> = ({ authenticatedUser, className, formData }) => {
     const [email, setEmail] = useState('')
 
     const controller = useMemo(() => new AbortController(), [])
@@ -43,15 +51,24 @@ export const SendTestEmailForm: FC<SendTestEmailProps> = ({ authenticatedUser, c
         [setEmail]
     )
 
-    const onSendTestEmail = useCallback(
-        (): Promise<FetchResult<SendTestEmailToResult>> =>
-            sendTestEmail({
-                variables: {
-                    to: email,
-                },
-            }),
-        [sendTestEmail, email]
-    )
+    const onSendTestEmail = useCallback((): Promise<FetchResult<SendTestEmailToResult>> => {
+        let authentication = SMTPAuthType.NONE
+        if (formData.authentication === 'PLAIN') {
+            authentication = SMTPAuthType.PLAIN
+        }
+        if (formData.authentication === 'CRAM-MD5') {
+            authentication = SMTPAuthType.CRAM_MD5
+        }
+        return sendTestEmail({
+            variables: {
+                to: email,
+                config: {
+                    ...formData,
+                    authentication,
+                } as SMTPConfig,
+            },
+        })
+    }, [sendTestEmail, email, formData])
 
     const cancel = useCallback(() => {
         controller.abort()
@@ -74,7 +91,7 @@ export const SendTestEmailForm: FC<SendTestEmailProps> = ({ authenticatedUser, c
                 name="authentication"
                 message={
                     <>
-                        Verify saved configuration by choosing an email already{' '}
+                        Verify your configuration by choosing an email{' '}
                         <Link to={`${authenticatedUser.settingsURL}/emails`}>configured on your account</Link> to send a
                         test email.
                     </>

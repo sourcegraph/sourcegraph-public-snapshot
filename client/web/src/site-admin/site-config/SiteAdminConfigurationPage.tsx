@@ -1,8 +1,9 @@
-import { type FC, useState, useEffect, useCallback } from 'react'
+import { type FC, useState, useEffect, useCallback, useMemo } from 'react'
 
 import { FetchResult, useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import * as jsonc from 'jsonc-parser'
+import { debounce } from 'lodash'
 import { useParams, useNavigate } from 'react-router-dom'
 import StickyBox from 'react-sticky-box'
 
@@ -335,9 +336,18 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
         },
         [client, data, setEnabledCompletions, updateSiteConfig]
     )
-    const contents = data?.site?.configuration?.effectiveContents
+    const contents = useMemo(() => data?.site?.configuration?.effectiveContents, [data])
 
-    const { json, rawJson, update, reset, error: jsonError } = useJsoncParser<SiteConfiguration>(contents || '')
+    const {
+        json,
+        rawJson,
+        update,
+        updateRaw,
+        reset,
+        error: jsonError,
+    } = useJsoncParser<SiteConfiguration>(contents || '')
+
+    const updateRawDebounced = useMemo(() => debounce(updateRaw, 500), [updateRaw])
 
     let effectiveError: Error | undefined = error || reloadError
     if (updateError) {
@@ -491,6 +501,7 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
                                             for more information.
                                         </Text>
                                         <DynamicallyImportedMonacoSettingsEditor
+                                            controlled={true}
                                             value={rawJson || ''}
                                             jsonSchema={siteSchemaJSON}
                                             canEdit={true}
@@ -499,6 +510,7 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
                                             height={600}
                                             isLightTheme={isLightTheme}
                                             onSave={onSave}
+                                            onChange={updateRawDebounced}
                                             actions={
                                                 isSourcegraphApp || isSetupChecklistEnabled ? [] : quickConfigureActions
                                             }
