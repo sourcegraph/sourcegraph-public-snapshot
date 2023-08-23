@@ -9,6 +9,7 @@ package ratelimit
 import (
 	"context"
 	"sync"
+	"time"
 
 	redispool "github.com/sourcegraph/sourcegraph/internal/redispool"
 )
@@ -35,7 +36,7 @@ func NewMockRateLimiter() *MockRateLimiter {
 			},
 		},
 		SetTokenBucketConfigFunc: &RateLimiterSetTokenBucketConfigFunc{
-			defaultHook: func(context.Context, string, int32, int32) (r0 error) {
+			defaultHook: func(context.Context, string, int32, time.Duration) (r0 error) {
 				return
 			},
 		},
@@ -52,7 +53,7 @@ func NewStrictMockRateLimiter() *MockRateLimiter {
 			},
 		},
 		SetTokenBucketConfigFunc: &RateLimiterSetTokenBucketConfigFunc{
-			defaultHook: func(context.Context, string, int32, int32) error {
+			defaultHook: func(context.Context, string, int32, time.Duration) error {
 				panic("unexpected invocation of MockRateLimiter.SetTokenBucketConfig")
 			},
 		},
@@ -182,15 +183,15 @@ func (c RateLimiterGetTokenFuncCall) Results() []interface{} {
 // SetTokenBucketConfig method of the parent MockRateLimiter instance is
 // invoked.
 type RateLimiterSetTokenBucketConfigFunc struct {
-	defaultHook func(context.Context, string, int32, int32) error
-	hooks       []func(context.Context, string, int32, int32) error
+	defaultHook func(context.Context, string, int32, time.Duration) error
+	hooks       []func(context.Context, string, int32, time.Duration) error
 	history     []RateLimiterSetTokenBucketConfigFuncCall
 	mutex       sync.Mutex
 }
 
 // SetTokenBucketConfig delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockRateLimiter) SetTokenBucketConfig(v0 context.Context, v1 string, v2 int32, v3 int32) error {
+func (m *MockRateLimiter) SetTokenBucketConfig(v0 context.Context, v1 string, v2 int32, v3 time.Duration) error {
 	r0 := m.SetTokenBucketConfigFunc.nextHook()(v0, v1, v2, v3)
 	m.SetTokenBucketConfigFunc.appendCall(RateLimiterSetTokenBucketConfigFuncCall{v0, v1, v2, v3, r0})
 	return r0
@@ -199,7 +200,7 @@ func (m *MockRateLimiter) SetTokenBucketConfig(v0 context.Context, v1 string, v2
 // SetDefaultHook sets function that is called when the SetTokenBucketConfig
 // method of the parent MockRateLimiter instance is invoked and the hook
 // queue is empty.
-func (f *RateLimiterSetTokenBucketConfigFunc) SetDefaultHook(hook func(context.Context, string, int32, int32) error) {
+func (f *RateLimiterSetTokenBucketConfigFunc) SetDefaultHook(hook func(context.Context, string, int32, time.Duration) error) {
 	f.defaultHook = hook
 }
 
@@ -208,7 +209,7 @@ func (f *RateLimiterSetTokenBucketConfigFunc) SetDefaultHook(hook func(context.C
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *RateLimiterSetTokenBucketConfigFunc) PushHook(hook func(context.Context, string, int32, int32) error) {
+func (f *RateLimiterSetTokenBucketConfigFunc) PushHook(hook func(context.Context, string, int32, time.Duration) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -217,19 +218,19 @@ func (f *RateLimiterSetTokenBucketConfigFunc) PushHook(hook func(context.Context
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *RateLimiterSetTokenBucketConfigFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, int32, int32) error {
+	f.SetDefaultHook(func(context.Context, string, int32, time.Duration) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *RateLimiterSetTokenBucketConfigFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, int32, int32) error {
+	f.PushHook(func(context.Context, string, int32, time.Duration) error {
 		return r0
 	})
 }
 
-func (f *RateLimiterSetTokenBucketConfigFunc) nextHook() func(context.Context, string, int32, int32) error {
+func (f *RateLimiterSetTokenBucketConfigFunc) nextHook() func(context.Context, string, int32, time.Duration) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -274,7 +275,7 @@ type RateLimiterSetTokenBucketConfigFuncCall struct {
 	Arg2 int32
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 int32
+	Arg3 time.Duration
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error

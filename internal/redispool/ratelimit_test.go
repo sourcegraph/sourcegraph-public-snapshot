@@ -22,8 +22,8 @@ func Test_RateLimiter_BasicFunctionality(t *testing.T) {
 	ctx := context.Background()
 	bucketName := "github.com:api_tokens"
 	bucketQuota := int32(100)
-	bucketReplenishIntervalSeconds := int32(100)
-	err := rl.SetTokenBucketConfig(ctx, bucketName, bucketQuota, bucketReplenishIntervalSeconds)
+	bucketReplenishInterval := time.Duration(100) * time.Second
+	err := rl.SetTokenBucketConfig(ctx, bucketName, bucketQuota, bucketReplenishInterval)
 	assert.Nil(t, err)
 
 	// Get a token from the bucket
@@ -42,7 +42,7 @@ func Test_GetToken_TimeToWaitExceedsLimit(t *testing.T) {
 	ctx := context.Background()
 	bucketName := "github.com:api_tokens"
 	bucketQuota := int32(100)
-	bucketReplenishIntervalSeconds := int32(100)
+	bucketReplenishIntervalSeconds := time.Duration(100) * time.Second
 	err := rl.SetTokenBucketConfig(ctx, bucketName, bucketQuota, bucketReplenishIntervalSeconds)
 	assert.Nil(t, err)
 
@@ -103,8 +103,8 @@ func Test_getToken_WaitTimes(t *testing.T) {
 	bucketName := "github.com:api_tokens"
 	bucketQuota := int32(1)
 	// Setting the bucket replenishment to be really low so that we don't replenish any tokens during the test.
-	bucketReplenishIntervalSeconds := int32(10000)
-	err := rl.SetTokenBucketConfig(ctx, bucketName, bucketQuota, bucketReplenishIntervalSeconds)
+	bucketReplenishInterval := time.Duration(10000) * time.Second
+	err := rl.SetTokenBucketConfig(ctx, bucketName, bucketQuota, bucketReplenishInterval)
 	assert.Nil(t, err)
 
 	maxTimeToWait := time.Duration(math.MaxInt32) * time.Second
@@ -122,13 +122,13 @@ func Test_getToken_WaitTimes(t *testing.T) {
 	assert.Nil(t, err)
 	// We want to assert here that the time we are told to wait is 10000 since
 	// 10000 is our replenishment interval, and there is -1 tokens in the bucket.
-	assert.Equal(t, bucketReplenishIntervalSeconds, int32(waitTime.Seconds()))
+	assert.Equal(t, bucketReplenishInterval.Seconds(), waitTime.Seconds())
 
 	waitTime, err = rl.getToken(ctx, bucketName, now, maxTimeToWait)
 	assert.Nil(t, err)
 	// We want to assert here that the time we are told to wait is 20000 since
 	// 10000 is our replenishment interval, and there are now -2 tokens in the bucket.
-	assert.Equal(t, 2*bucketReplenishIntervalSeconds, int32(waitTime.Seconds()))
+	assert.Equal(t, 2*bucketReplenishInterval.Seconds(), waitTime.Seconds())
 }
 
 func Test_getToken_Replenishment(t *testing.T) {
@@ -144,8 +144,8 @@ func Test_getToken_Replenishment(t *testing.T) {
 	bucketName := "github.com:api_tokens"
 	bucketQuota := int32(1)
 	// Setting the bucket replenishment to be really low so that we don't replenish any tokens during the test.
-	bucketReplenishIntervalSeconds := int32(1)
-	err := rl.SetTokenBucketConfig(ctx, bucketName, bucketQuota, bucketReplenishIntervalSeconds)
+	bucketReplenishInterval := time.Duration(1) * time.Second
+	err := rl.SetTokenBucketConfig(ctx, bucketName, bucketQuota, bucketReplenishInterval)
 	assert.Nil(t, err)
 
 	maxTimeToWait := time.Duration(math.MaxInt32) * time.Second

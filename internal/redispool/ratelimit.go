@@ -31,7 +31,7 @@ type RateLimiter interface {
 	// bucketName: the name of the bucket where the tokens are, e.g. github.com:api_tokens
 	// bucketQuota: the number of tokens to replenish over a bucketReplenishIntervalSeconds interval of time.
 	// bucketReplenishIntervalSeconds: how often (in seconds) the bucket should replenish bucketQuota tokens.
-	SetTokenBucketConfig(ctx context.Context, bucketName string, bucketQuota, bucketReplenishIntervalSeconds int32) error
+	SetTokenBucketConfig(ctx context.Context, bucketName string, bucketQuota int32, bucketReplenishInterval time.Duration) error
 }
 
 type rateLimiter struct {
@@ -158,12 +158,12 @@ func defaultRateLimitTimer(d time.Duration) (<-chan time.Time, func() bool) {
 	return timer.C, timer.Stop
 }
 
-func (r *rateLimiter) SetTokenBucketConfig(ctx context.Context, bucketName string, bucketQuota, bucketReplenishIntervalSeconds int32) error {
+func (r *rateLimiter) SetTokenBucketConfig(ctx context.Context, bucketName string, bucketQuota int32, bucketReplenishInterval time.Duration) error {
 	keys := r.getRateLimiterKeys(bucketName)
 	connection := r.pool.Get()
 	defer connection.Close()
 
-	_, err := r.setReplenishmentScript.DoContext(ctx, connection, keys.QuotaKey, keys.ReplenishmentIntervalSecondsKey, bucketQuota, bucketReplenishIntervalSeconds)
+	_, err := r.setReplenishmentScript.DoContext(ctx, connection, keys.QuotaKey, keys.ReplenishmentIntervalSecondsKey, bucketQuota, bucketReplenishInterval.Seconds())
 	return errors.Wrapf(err, "error while setting token bucket replenishment for bucket %s", bucketName)
 }
 
@@ -268,10 +268,10 @@ return {1, time_to_wait_for_token}`
 const setTokenBucketReplenishmentLuaScript = `local bucket_quota_key = KEYS[1]
 local replenish_interval_seconds_key = KEYS[2]
 local bucket_quota = tonumber(ARGV[1])
-local bucket_replenish_rate_seconds = tonumber(ARGV[2])
+local bucket_replenish_interval = tonumber(ARGV[2])
 
 redis.call('SET', bucket_quota_key, bucket_quota)
-redis.call('SET', replenish_interval_seconds_key, bucket_replenish_rate_seconds)`
+redis.call('SET', replenish_interval_seconds_key, bucket_replenish_interval)`
 
 type getTokenGrantType int64
 
