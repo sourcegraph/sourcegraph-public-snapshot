@@ -5,7 +5,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 bazelrcs=(--bazelrc=.bazelrc)
 current_commit=$(git rev-parse HEAD)
-tag="dt/5.0"
+tag="5.0"
 
 function restore_current_commit() {
   git checkout --force "${current_commit}"
@@ -31,8 +31,13 @@ fi
 echo "--- :git::rewind: checkout v${tag}"
 git checkout --force "${tag}"
 
-echo "--- :git: checkout migrations and scripts at ${current_commit}"
-git checkout --force "${current_commit}" -- migrations/ dev/backcompat/patch_flakes.sh dev/backcompat/flakes.json
+echo "--- :git: checkout migrations, patches and scripts at ${current_commit}"
+git checkout --force "${current_commit}" -- migrations/ dev/backcompat/patch_flakes.sh dev/backcompat/patches dev/backcompat/flakes.json
+
+if [[ -d "dev/backcompat/patches" ]]; then
+  echo "--- :bandaid: apply patches"
+  git apply dev/backcompat/patches/*.patch
+fi
 
 echo "--- :snowflake: patch flake for tag ${tag}"
 ./dev/backcompat/patch_flakes.sh ${tag}
