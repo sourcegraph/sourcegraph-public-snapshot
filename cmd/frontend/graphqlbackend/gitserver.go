@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 )
 
-const gitserverIDKind = "Gitserver"
+const gitserverIDKind = "GitserverInstance"
 
 func marshalGitserverID(id string) graphql.ID { return relay.MarshalID(gitserverIDKind, id) }
 
