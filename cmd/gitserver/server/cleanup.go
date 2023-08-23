@@ -53,7 +53,7 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wre
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			gitserverAddrs := gitserver.NewGitserverAddresses(db, conf.Get())
+			gitserverAddrs := gitserver.NewGitserverAddresses(conf.Get())
 			// TODO: Should this return an error?
 			cleanupRepos(ctx, logger, db, rcf, nil, cfg.DesiredPercentFree, cfg.ShardID, cfg.ReposDir, cloneRepo, gitserverAddrs)
 			return nil
@@ -265,7 +265,7 @@ func cleanupRepos(
 
 		// Record the number and disk usage used of repos that should
 		// not belong on this instance and remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
-		addr := addrForRepo(ctx, logger, name, gitServerAddrs)
+		addr := addrForRepo(ctx, name, gitServerAddrs)
 
 		if !hostnameMatch(shardID, addr) {
 			wrongShardRepoCount++

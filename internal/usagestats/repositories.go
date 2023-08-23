@@ -38,11 +38,11 @@ type Repositories struct {
 	OtherBranchesNewLinesCount uint64
 }
 
-func GetRepositories(ctx context.Context, db database.DB) (*Repositories, error) {
+func GetRepositories(ctx context.Context) (*Repositories, error) {
 	var total Repositories
 
 	// Since this hits gitserver, we should use an internal actor.
-	stats, err := gitserver.NewClient(db).ReposStats(actor.WithInternalActor(ctx))
+	stats, err := gitserver.NewClient().ReposStats(actor.WithInternalActor(ctx))
 	if err != nil {
 		return nil, err
 	}

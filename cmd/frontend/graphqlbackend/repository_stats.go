@@ -47,7 +47,7 @@ func (r *repositoryStatsResolver) GitDirBytes(ctx context.Context) (BigInt, erro
 
 func (r *repositoryStatsResolver) computeGitDirBytes(ctx context.Context) (int64, error) {
 	r.gitDirBytesOnce.Do(func() {
-		stats, err := gitserver.NewClient(r.db).ReposStats(ctx)
+		stats, err := gitserver.NewClient().ReposStats(ctx)
 		if err != nil {
 			r.gitDirBytesErr = err
 			return

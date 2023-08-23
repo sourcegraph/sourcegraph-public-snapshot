@@ -8,11 +8,13 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 
 	logger "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -25,7 +27,7 @@ func handleRecentContributors(ctx context.Context, lgr logger.Logger, repoId api
 	// to see all repos and files
 	internalCtx := actor.WithInternalActor(ctx)
 
-	indexer := newRecentContributorsIndexer(gitserver.NewClient(db), db, lgr, subRepoPermsCache)
+	indexer := newRecentContributorsIndexer(gitserver.NewClient(), db, lgr, subRepoPermsCache)
 	return indexer.indexRepo(internalCtx, repoId, authz.DefaultSubRepoPermsChecker)
 }
 

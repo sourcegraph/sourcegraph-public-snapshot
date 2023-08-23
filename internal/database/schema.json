@@ -14474,19 +14474,6 @@
           "Comment": ""
         },
         {
-          "Name": "pool_repo_id",
-          "Index": 13,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": "This is used to refer to the pool repository for deduplicated repos"
-        },
-        {
           "Name": "repo_id",
           "Index": 1,
           "TypeName": "integer",
@@ -14632,13 +14619,6 @@
         }
       ],
       "Constraints": [
-        {
-          "Name": "gitserver_repos_pool_repo_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "repo",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (pool_repo_id) REFERENCES repo(id)"
-        },
         {
           "Name": "gitserver_repos_repo_id_fkey",
           "ConstraintType": "f",

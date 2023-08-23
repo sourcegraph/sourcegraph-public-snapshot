@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox"
@@ -26,14 +25,14 @@ type gitService struct {
 	client  gitserver.Client
 }
 
-func NewDefaultGitService(db database.DB, checker authz.SubRepoPermissionChecker) GitService {
+func NewDefaultGitService(checker authz.SubRepoPermissionChecker) GitService {
 	if checker == nil {
 		checker = authz.DefaultSubRepoPermsChecker
 	}
 
 	return &gitService{
 		checker: checker,
-		client:  gitserver.NewClient(db),
+		client:  gitserver.NewClient(),
 	}
 }
 

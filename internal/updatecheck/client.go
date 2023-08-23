@@ -190,10 +190,10 @@ func getAndMarshalHomepagePanelsJSON(ctx context.Context, db database.DB) (_ jso
 	return json.Marshal(homepagePanels)
 }
 
-func getAndMarshalRepositoriesJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+func getAndMarshalRepositoriesJSON(ctx context.Context) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalRepositoriesJSON")(&err)
 
-	repos, err := usagestats.GetRepositories(ctx, db)
+	repos, err := usagestats.GetRepositories(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -610,7 +610,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		logFunc("getAndMarshalSearchOnboardingJSON failed", log.Error(err))
 	}
 
-	r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db)
+	r.Repositories, err = getAndMarshalRepositoriesJSON(ctx)
 	if err != nil {
 		logFunc("getAndMarshalRepositoriesJSON failed", log.Error(err))
 	}

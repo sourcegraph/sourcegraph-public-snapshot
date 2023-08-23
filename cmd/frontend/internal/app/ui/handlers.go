@@ -466,7 +466,7 @@ func serveTree(db database.DB, title func(c *Common, r *http.Request) string) ha
 			w.Header().Set("X-Robots-Tag", "noindex")
 		}
 
-		handled, err := redirectTreeOrBlob(routeTree, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient(db))
+		handled, err := redirectTreeOrBlob(routeTree, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient())
 		if handled {
 			return nil
 		}
@@ -497,7 +497,7 @@ func serveRepoOrBlob(db database.DB, routeName string, title func(c *Common, r *
 			w.Header().Set("X-Robots-Tag", "noindex")
 		}
 
-		handled, err := redirectTreeOrBlob(routeName, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient(db))
+		handled, err := redirectTreeOrBlob(routeName, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient())
 		if handled {
 			return nil
 		}

@@ -32,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -70,9 +69,9 @@ var initConnsOnce sync.Once
 // initialised correctly.
 var conns *atomicGitServerConns
 
-func getAtomicGitserverConns(logger sglog.Logger, db database.DB) *atomicGitServerConns {
+func getAtomicGitserverConns() *atomicGitServerConns {
 	initConnsOnce.Do(func() {
-		conns = &atomicGitServerConns{db: db, logger: logger}
+		conns = &atomicGitServerConns{}
 	})
 
 	return conns
@@ -98,7 +97,7 @@ type ClientSource interface {
 }
 
 // NewClient returns a new gitserver.Client.
-func NewClient(db database.DB) Client {
+func NewClient() Client {
 	logger := sglog.Scoped("GitserverClient", "Client to talk from other services to Gitserver")
 	return &clientImplementor{
 		logger:      logger,
@@ -109,7 +108,7 @@ func NewClient(db database.DB) Client {
 		// frontend internal API)
 		userAgent:    filepath.Base(os.Args[0]),
 		operations:   getOperations(),
-		clientSource: getAtomicGitserverConns(logger, db),
+		clientSource: getAtomicGitserverConns(),
 	}
 }
 
