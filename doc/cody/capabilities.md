@@ -71,7 +71,7 @@ Cody supports executing reusable prompts known as **Cody Commands** from within 
 There are three ways to run a Cody Command:
 
 1. Type `/` in the chat bar. Cody will then suggest a list of available commands
-2. Right click > Cody > Select a command
+2. Right click and select `"Cody"` > Choose a command from the list
 3. Press the command hotkey (`⌥` + `C` / `Alt` + `C`)
 
 ![Cody Commands in VS Code](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-commands.png)
