@@ -573,7 +573,7 @@ const getEmbeddingStatus = ({
     if (embeddingExists) {
         return {
             status: RepoEmbeddingStatus.INDEXED,
-            tooltip: 'Repository is indexed',
+            tooltip: 'Repository is indexed.',
             icon: mdiDatabaseCheckOutline,
             className: 'text-success',
         }
@@ -582,7 +582,7 @@ const getEmbeddingStatus = ({
     if (!embeddingJobs?.nodes.length) {
         return {
             status: RepoEmbeddingStatus.NOT_INDEXED,
-            tooltip: 'Repository is not indexed',
+            tooltip: 'Repository is not indexed.',
             icon: mdiDatabaseRemoveOutline,
             className: 'text-warning',
         }
@@ -593,21 +593,21 @@ const getEmbeddingStatus = ({
         case 'QUEUED':
             return {
                 status: RepoEmbeddingStatus.QUEUED,
-                tooltip: 'Repository is queued for indexing',
+                tooltip: 'Repository is queued for indexing.',
                 icon: mdiDatabaseClockOutline,
                 className: 'text-warning',
             }
         case 'PROCESSING':
             return {
                 status: RepoEmbeddingStatus.INDEXING,
-                tooltip: 'Repository is being indexed',
+                tooltip: 'Repository is being indexed.',
                 icon: mdiDatabaseRefreshOutline,
                 className: 'text-warning',
             }
         case 'COMPLETED':
             return {
                 status: RepoEmbeddingStatus.INDEXED,
-                tooltip: 'Repository is indexed',
+                tooltip: 'Repository is indexed.',
                 icon: mdiDatabaseCheckOutline,
                 className: 'text-success',
             }
@@ -628,7 +628,7 @@ const getEmbeddingStatus = ({
         default:
             return {
                 status: RepoEmbeddingStatus.NOT_INDEXED,
-                tooltip: 'Repository is not indexed',
+                tooltip: 'Repository is not indexed.',
                 icon: mdiDatabaseRemoveOutline,
                 className: 'text-warning',
             }
@@ -642,16 +642,22 @@ const EmbeddingExistsIcon: React.FC<{
     authenticatedUser: AuthenticatedUser | null
 }> = React.memo(function EmbeddingExistsIconContent({ repo, authenticatedUser }) {
     const { tooltip, icon, className } = getEmbeddingStatus(repo)
+    const tooltipContent = (
+        <>
+            {tooltip}
+            {authenticatedUser?.siteAdmin && (
+                <Text className="mt-1 mb-0">
+                    <Link to="/site-admin/embeddings" onClick={() => console.log('hello??')}>
+                        Manage embeddings
+                    </Link>
+                </Text>
+            )}
+        </>
+    )
 
     return (
-        <Tooltip content={tooltip}>
-            {authenticatedUser?.siteAdmin ? (
-                <Link to="/site-admin/embeddings" className="text-body" onClick={event => event.stopPropagation()}>
-                    <Icon aria-hidden={true} className={classNames(styles.icon, className)} svgPath={icon} />
-                </Link>
-            ) : (
-                <Icon aria-hidden={true} className={classNames(styles.icon, className)} svgPath={icon} />
-            )}
+        <Tooltip content={tooltipContent}>
+            <Icon aria-label={tooltip} className={classNames(styles.icon, className)} svgPath={icon} />
         </Tooltip>
     )
 })
