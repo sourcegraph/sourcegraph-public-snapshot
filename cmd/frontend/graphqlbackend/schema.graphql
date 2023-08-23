@@ -2184,8 +2184,27 @@ type Query {
 
     Site-admin only.
     """
-    gitservers: [GitserverInstance!]!
+    gitservers: GitserverInstanceConnection!
 }
+
+"""
+A list of gitserver instances.
+"""
+type GitserverInstanceConnection {
+    """
+    A list of gitserver instances.
+    """
+    nodes: [GitserverInstance!]!
+    """
+    The total count of gitserver instances in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
 """
 GitserverInfo contains information about a gitserver instance.
 """

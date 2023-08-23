@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 )
 
@@ -48,7 +49,7 @@ func (r *schemaResolver) gitserverByID(ctx context.Context, id graphql.ID) (*git
 	return nil, nil
 }
 
-func (r *schemaResolver) Gitservers(ctx context.Context) ([]*gitserverResolver, error) {
+func (r *schemaResolver) Gitservers(ctx context.Context) (graphqlutil.SliceConnectionResolver[*gitserverResolver], error) {
 	// 🚨 SECURITY: Only site admins can query gitserver information.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -67,7 +68,8 @@ func (r *schemaResolver) Gitservers(ctx context.Context) ([]*gitserverResolver, 
 			totalDiskSpaceBytes: info.TotalSpace,
 		})
 	}
-	return resolvers, nil
+	noOfResolvers := len(resolvers)
+	return graphqlutil.NewSliceConnectionResolver(resolvers, noOfResolvers, noOfResolvers), nil
 }
 
 type gitserverResolver struct {
