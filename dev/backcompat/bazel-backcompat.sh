@@ -30,6 +30,7 @@ fi
 
 echo "--- :git::rewind: checkout v${tag}"
 git checkout --force "v${tag}"
+git clean -fd
 
 echo "--- :git: checkout migrations, patches and scripts at ${current_commit}"
 git checkout --force --no-overlay "${current_commit}" -- migrations/ dev/backcompat/patch_flakes.sh dev/backcompat/patches dev/backcompat/flakes.json
