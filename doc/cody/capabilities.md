@@ -70,7 +70,7 @@ Cody supports executing reusable prompts known as **Cody Commands** from within 
 
 You can run a command in 3 ways:
 
-1. Type `/` in the chat bar. Cody will then suggest a list of commands
+1. Type `/` in the chat bar. Cody will then suggest a list of available commands
 2. Right click > Cody > Select a command
 3. Press the command hotkey (`⌥` + `C` / `Alt` + `C`)
 
