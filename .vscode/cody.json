@@ -10,7 +10,7 @@
         "selection": true
       }
     },
-    "(example) Commit Message Suggestion": {
+    "Commit Message Suggestion": {
       "slashCommand": "commit",
       "prompt": "Suggest a informative commit message by summarizing code changes from the shared command output. The commit message should follow the conventional commit format and provide meaningful context for future readers.",
       "context": {
