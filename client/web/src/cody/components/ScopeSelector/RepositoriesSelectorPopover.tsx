@@ -310,7 +310,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                             <div className="d-flex flex-column mb-1">
                                                 <Text
                                                     className={classNames(
-                                                        'm-0 pl-2 pr-3 py-1 text-muted d-flex justify-content-between',
+                                                        'm-0 pl-2 pr-3 pb-1 pt-2 text-muted d-flex justify-content-between',
                                                         styles.subHeader
                                                     )}
                                                 >
@@ -345,7 +345,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                             <div className="d-flex flex-column">
                                                 <Text
                                                     className={classNames(
-                                                        'mb-0 pl-2 pr-3 py-1 text-muted d-flex justify-content-between border-top',
+                                                        'mb-0 pl-2 pr-3 pb-1 pt-2 text-muted d-flex justify-content-between border-top',
                                                         styles.subHeader
                                                     )}
                                                 >
