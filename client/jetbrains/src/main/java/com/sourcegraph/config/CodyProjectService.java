@@ -24,6 +24,7 @@ public class CodyProjectService implements PersistentStateComponent<CodyProjectS
   @Nullable public String enterpriseAccessToken;
   @Nullable public String customRequestHeaders;
   @Nullable public String defaultBranch;
+  @Nullable public String codyCodebase;
   @Nullable public String remoteUrlReplacements;
   @Nullable public String lastSearchQuery;
   public boolean lastSearchCaseSensitive;
@@ -53,6 +54,11 @@ public class CodyProjectService implements PersistentStateComponent<CodyProjectS
   @Nullable
   public String getDefaultBranchName() {
     return defaultBranch;
+  }
+
+  @Nullable
+  public String getCodyCodebase() {
+    return codyCodebase;
   }
 
   @Nullable

@@ -33,6 +33,7 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
   public boolean isEnterpriseAccessTokenSet;
   @Nullable public String customRequestHeaders;
   @Nullable public String defaultBranch;
+  @Nullable public String codyCodebase;
   @Nullable public String remoteUrlReplacements;
   @Nullable public String anonymousUserId;
   public boolean isInstallEventLogged;
@@ -84,6 +85,11 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
   @Nullable
   public String getDefaultBranchName() {
     return defaultBranch;
+  }
+
+  @Nullable
+  public String getCodyCodebase() {
+    return codyCodebase;
   }
 
   @Nullable
@@ -167,6 +173,7 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
         loadedIsEnterpriseAccessTokenSet || StringUtils.isNotEmpty(settings.enterpriseAccessToken);
     this.customRequestHeaders = settings.customRequestHeaders;
     this.defaultBranch = settings.defaultBranch;
+    this.codyCodebase = settings.codyCodebase;
     this.remoteUrlReplacements = settings.remoteUrlReplacements;
     this.anonymousUserId = settings.anonymousUserId;
     this.isUrlNotificationDismissed = settings.isUrlNotificationDismissed;

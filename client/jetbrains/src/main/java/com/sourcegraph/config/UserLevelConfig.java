@@ -65,6 +65,12 @@ public class UserLevelConfig {
   }
 
   @Nullable
+  public static String getCodyCodebase() {
+    Properties properties = readProperties();
+    return properties.getProperty("codyCodebase", null);
+  }
+
+  @Nullable
   public static String getRemoteUrlReplacements() {
     Properties properties = readProperties();
     return properties.getProperty("remoteUrlReplacements", null);

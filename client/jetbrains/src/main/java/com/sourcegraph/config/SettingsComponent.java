@@ -52,6 +52,7 @@ public class SettingsComponent implements Disposable {
   private JBLabel enterpriseAccessTokenLinkComment;
   private JBTextField customRequestHeadersTextField;
   private JBTextField defaultBranchNameTextField;
+  private JBTextField codyCodebaseTextField;
   private JBTextField remoteUrlReplacementsTextField;
   private JBCheckBox isUrlNotificationDismissedCheckBox;
   private JBCheckBox isCodyEnabledCheckBox;
@@ -420,6 +421,15 @@ public class SettingsComponent implements Disposable {
   }
 
   @NotNull
+  public String getCodyCodebase() {
+    return codyCodebaseTextField.getText();
+  }
+
+  public void setCodyCodebase(@NotNull String value) {
+    codyCodebaseTextField.setText(value);
+  }
+
+  @NotNull
   public String getRemoteUrlReplacements() {
     return remoteUrlReplacementsTextField.getText();
   }
@@ -606,6 +616,13 @@ public class SettingsComponent implements Disposable {
     isCodyAutocompleteEnabledCheckBox = new JBCheckBox("Enable Cody autocomplete");
     isCodyDebugEnabledCheckBox = new JBCheckBox("Enable debug");
     isCodyVerboseDebugEnabledCheckBox = new JBCheckBox("Verbose debug");
+
+    JBLabel codyCodebaseLabel = new JBLabel("Codebase:");
+    codyCodebaseTextField = new JBTextField();
+    codyCodebaseTextField.getEmptyText().setText("");
+    codyCodebaseTextField.setToolTipText(
+        "Sourcegraph repository that maps to this codebase");
+
     JPanel codySettingsPanel =
         FormBuilder.createFormBuilder()
             .addComponent(isCodyEnabledCheckBox, 10)
@@ -615,6 +632,8 @@ public class SettingsComponent implements Disposable {
             .addComponent(isCodyDebugEnabledCheckBox)
             .addTooltip("Enables debug output visible in the idea.log")
             .addComponent(isCodyVerboseDebugEnabledCheckBox)
+            .addLabeledComponent(codyCodebaseLabel, codyCodebaseTextField)
+            .addTooltip("If set, overrides the Sourcegraph repository that the project maps to")
             .getPanel();
     codySettingsPanel.setBorder(
         IdeBorderFactory.createTitledBorder("Cody AI", true, JBUI.insetsTop(8)));
