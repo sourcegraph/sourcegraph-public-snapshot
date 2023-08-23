@@ -37,7 +37,6 @@ type RateLimiter interface {
 type rateLimiter struct {
 	prefix                 string
 	pool                   *redis.Pool
-	timerFunc              func(d time.Duration) (<-chan time.Time, func() bool)
 	getTokensScript        redis.Script
 	setReplenishmentScript redis.Script
 }
@@ -49,9 +48,8 @@ func NewRateLimiter() (RateLimiter, error) {
 	}
 
 	return &rateLimiter{
-		prefix:    tokenBucketGlobalPrefix,
-		pool:      pool,
-		timerFunc: defaultRateLimitTimer,
+		prefix: tokenBucketGlobalPrefix,
+		pool:   pool,
 		// 3 is the key count, keys are arguments passed to the lua script that will be used to get values from Redis KV.
 		getTokensScript:        *redis.NewScript(4, getTokensFromBucketLuaScript),
 		setReplenishmentScript: *redis.NewScript(3, setTokenBucketReplenishmentLuaScript),
@@ -65,9 +63,8 @@ func NewTestRateLimiterWithPoolAndPrefix(pool *redis.Pool, prefix string) (RateL
 	}
 
 	return &rateLimiter{
-		prefix:    prefix,
-		pool:      pool,
-		timerFunc: defaultRateLimitTimer,
+		prefix: prefix,
+		pool:   pool,
 		// 3 is the key count, keys are arguments passed to the lua script that will be used to get values from Redis KV.
 		getTokensScript:        *redis.NewScript(4, getTokensFromBucketLuaScript),
 		setReplenishmentScript: *redis.NewScript(3, setTokenBucketReplenishmentLuaScript),
@@ -96,7 +93,7 @@ func (r *rateLimiter) GetToken(ctx context.Context, bucketName string) error {
 	}
 
 	// Wait for the required time before the token can be used.
-	ch, stop := r.timerFunc(timeToWait)
+	ch, stop := defaultRateLimitTimer(timeToWait)
 	defer stop()
 	select {
 	case <-ch:
