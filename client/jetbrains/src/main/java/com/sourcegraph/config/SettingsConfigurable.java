@@ -52,6 +52,9 @@ public class SettingsConfigurable implements Configurable {
             .getDefaultBranchName()
             .equals(ConfigUtil.getDefaultBranchName(project))
         || !mySettingsComponent
+            .getCodyCodebase()
+            .equals(ConfigUtil.getCodyCodebase(project))
+        || !mySettingsComponent
             .getRemoteUrlReplacements()
             .equals(ConfigUtil.getRemoteUrlReplacements(project))
         || mySettingsComponent.isUrlNotificationDismissed()
@@ -144,6 +147,11 @@ public class SettingsConfigurable implements Configurable {
     } else {
       aSettings.defaultBranch = mySettingsComponent.getDefaultBranchName();
     }
+    if (pSettings.codyCodebase != null) {
+      pSettings.codyCodebase = mySettingsComponent.getCodyCodebase();
+    } else {
+      aSettings.codyCodebase = mySettingsComponent.getCodyCodebase();
+    }
     if (pSettings.remoteUrlReplacements != null) {
       pSettings.remoteUrlReplacements = mySettingsComponent.getRemoteUrlReplacements();
     } else {
@@ -167,6 +175,8 @@ public class SettingsConfigurable implements Configurable {
     mySettingsComponent.setCustomRequestHeaders(ConfigUtil.getCustomRequestHeaders(project));
     String defaultBranchName = ConfigUtil.getDefaultBranchName(project);
     mySettingsComponent.setDefaultBranchName(defaultBranchName);
+    String codyCodebase = ConfigUtil.getCodyCodebase(project);
+    mySettingsComponent.setCodyCodebase(codyCodebase);
     String remoteUrlReplacements = ConfigUtil.getRemoteUrlReplacements(project);
     mySettingsComponent.setRemoteUrlReplacements(remoteUrlReplacements);
     mySettingsComponent.setUrlNotificationDismissedEnabled(ConfigUtil.isUrlNotificationDismissed());

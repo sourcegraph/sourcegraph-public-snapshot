@@ -25,7 +25,7 @@ public class CodyAgentCodebase {
                       () -> {
                         if (!Objects.equals(this.currentCodebase, repositoryName)) {
                           ExtensionConfiguration config =
-                              ConfigUtil.getAgentConfiguration(project).setCodebase(repositoryName);
+                              ConfigUtil.updateAgentConfigurationWithDetectedCodebase(project, repositoryName);
                           this.currentCodebase = repositoryName;
                           underlying.configurationDidChange(config);
                         }

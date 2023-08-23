@@ -31,7 +31,21 @@ public class ConfigUtil {
         .setAutocompleteAdvancedAccessToken(UserLevelConfig.getAutocompleteAccessToken())
         .setAutocompleteAdvancedEmbeddings(true)
         .setDebug(isCodyDebugEnabled())
+        .setCodebase(getCodyCodebase(project))
         .setVerboseDebug(isCodyVerboseDebugEnabled());
+  }
+
+  @NotNull
+  public static ExtensionConfiguration updateAgentConfigurationWithDetectedCodebase(
+    @NotNull Project project,
+    String detectedCodebase) {
+        ExtensionConfiguration config = getAgentConfiguration(project);
+        if (!getCodyCodebase(project).isEmpty()) {
+            // Codebase override is configured
+            return config;
+        }
+        config.setCodebase(detectedCodebase);
+        return config;
   }
 
   @NotNull
@@ -150,6 +164,25 @@ public class ConfigUtil {
     // User level or default
     String userLevelDefaultBranchName = UserLevelConfig.getDefaultBranchName();
     return userLevelDefaultBranchName != null ? userLevelDefaultBranchName : "main";
+  }
+
+  @NotNull
+  public static String getCodyCodebase(@NotNull Project project) {
+    // Project level
+    String projectLevelCodyCodebase = getProjectLevelConfig(project).getCodyCodebase();
+    if (projectLevelCodyCodebase != null && !projectLevelCodyCodebase.isEmpty()) {
+      return projectLevelCodyCodebase;
+    }
+
+    // Application level
+    String applicationLevelCodyCodebase = getApplicationLevelConfig().getCodyCodebase();
+    if (applicationLevelCodyCodebase != null && !applicationLevelCodyCodebase.isEmpty()) {
+      return applicationLevelCodyCodebase;
+    }
+
+    // User level or default
+    String userLevelCodyCodebase = UserLevelConfig.getCodyCodebase();
+    return userLevelCodyCodebase != null ? userLevelCodyCodebase : "";
   }
 
   @NotNull
