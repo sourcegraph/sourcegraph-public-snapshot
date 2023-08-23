@@ -41,7 +41,7 @@ public class EmbeddingStatusView extends JPanel {
     innerPanel.add(Box.createHorizontalStrut(5));
     innerPanel.add(openedFileContent);
     innerPanel.setBorder(new EmptyBorder(JBUI.insets(TEXT_MARGIN, TEXT_MARGIN, 0, TEXT_MARGIN)));
-    this.add(innerPanel);
+    // this.add(innerPanel);
 
     this.setEmbeddingStatus(new NoGitRepositoryEmbeddingStatus());
     project
