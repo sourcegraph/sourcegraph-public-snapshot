@@ -627,7 +627,7 @@ public class SettingsComponent implements Disposable {
         FormBuilder.createFormBuilder()
             .addComponent(isCodyEnabledCheckBox, 10)
             .addTooltip(
-                "Disable this to turn off all AI-based functionality of the plugin, including the Cody chat sidebar and autocomplete")
+                "Disable this to turn off all Cody functionality")
             .addComponent(isCodyAutocompleteEnabledCheckBox, 5)
             .addComponent(isCodyDebugEnabledCheckBox)
             .addTooltip("Enables debug output visible in the idea.log")
