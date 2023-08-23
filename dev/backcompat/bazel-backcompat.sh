@@ -34,11 +34,11 @@ git checkout --force "v${tag}"
 echo "--- :git: checkout migrations, patches and scripts at ${current_commit}"
 git checkout --force --no-overlay "${current_commit}" -- migrations/ dev/backcompat/patch_flakes.sh dev/backcompat/patches dev/backcompat/flakes.json
 
-echo "--- :broom: tell bazel to ignore client/"
-cat .bazelignore
+echo "--- :broom: remove client/ because we do not need it"
+rm -rf client/
 
 if [[ -d "dev/backcompat/patches/${tag}" ]]; then
-  echo "--- :bandaid: apply patches"
+  echo "--- :adhesive_bandage: apply patches"
   git apply dev/backcompat/patches/${tag}/*.patch
 fi
 
