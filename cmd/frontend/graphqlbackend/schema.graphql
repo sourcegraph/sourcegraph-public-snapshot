@@ -9993,6 +9993,13 @@ input TeamMemberInput {
     externalAccountLogin: String
 }
 
+"""
+Defines the available SMTP authentication mechanisms.
+
+NONE: No authentication.
+PLAIN: Plain authentication using username and password.
+CRAM_MD5: CRAM-MD5 authentication using username and secret.
+"""
 enum SMTPAuthType {
     """
     No authentication.
