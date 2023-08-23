@@ -102,6 +102,7 @@ export const RepositoriesSelectorPopover: React.FC<{
         setSearchText,
         clearSearchText,
         loading: searchLoading,
+        error: searchError,
         results: searchResults,
     } = useRepoSearch(transcriptHistory, authenticatedUser)
 
@@ -362,7 +363,17 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                 ? `Add up to ${additionalRepositoriesLeft} additional repositories`
                                                 : 'Maximum additional repositories added'}
                                         </Text>
-                                        {searchLoading && <LoadingSpinner className={styles.spinner} />}
+                                        {searchError ? (
+                                            <Tooltip content={`Could not search repos: ${searchError.message}`}>
+                                                <Icon
+                                                    aria-label={`Could not search repos ${searchError.message}`}
+                                                    className="text-danger"
+                                                    svgPath={mdiCloseCircle}
+                                                />
+                                            </Tooltip>
+                                        ) : searchLoading ? (
+                                            <LoadingSpinner className={styles.spinner} />
+                                        ) : null}
                                     </div>
                                     <div className={classNames('d-flex flex-column', styles.contextItemsContainer)}>
                                         {searchResults.length ? (
@@ -378,11 +389,9 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                 />
                                             ))
                                         ) : !searchLoading ? (
-                                            <div className="d-flex align-items-center justify-content-center flex-column p-4 mt-4">
-                                                <Text size="small" className="m-0 d-flex text-center">
-                                                    No matching repositories found
-                                                </Text>
-                                            </div>
+                                            <Text size="small" className="px-4 py-2 my-1 text-center text-muted">
+                                                No matching repositories found
+                                            </Text>
                                         ) : null}
                                     </div>
                                 </>

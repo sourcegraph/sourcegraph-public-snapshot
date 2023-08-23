@@ -21,6 +21,7 @@ interface UseRepoSearchResult {
     setSearchText: (text: string) => void
     clearSearchText: () => void
     loading: boolean
+    error: Error | undefined
     results: ContextSelectorRepoFields[]
 }
 
@@ -42,7 +43,7 @@ export const useRepoSearch = (
     const [searchText, _setSearchText] = useState('')
     const [debouncedSearchText, setDebouncedSearchText] = useState('')
 
-    const [search, { data, loading: queryLoading, stopPolling }] = useLazyQuery<
+    const [search, { data, loading: queryLoading, error, stopPolling }] = useLazyQuery<
         ReposSelectorSearchResult,
         ReposSelectorSearchVariables
     >(ReposSelectorSearchQuery, {})
@@ -114,6 +115,7 @@ export const useRepoSearch = (
         setSearchText,
         clearSearchText,
         loading,
+        error,
         results: searchResults,
     }
 }
