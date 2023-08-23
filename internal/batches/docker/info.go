@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/src-cli/internal/exec"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // CurrentContext returns the name of the current Docker context (not to be
