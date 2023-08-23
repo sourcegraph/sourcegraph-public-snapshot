@@ -9,13 +9,13 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2service"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
-	"github.com/sourcegraph/sourcegraph/internal/pointer"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func makeContainerResourceLimits(r spec.EnvironmentInstancesResourcesSpec) *map[string]*string {
 	return &map[string]*string{
-		"cpu":    pointer.Value(strconv.Itoa(r.CPU)),
-		"memory": pointer.Value(r.Memory),
+		"cpu":    pointers.Ptr(strconv.Itoa(r.CPU)),
+		"memory": pointers.Ptr(r.Memory),
 	}
 }
 
@@ -31,8 +31,8 @@ func makeContainerEnvVars(
 	slices.Sort(envKeys)
 	for _, k := range envKeys {
 		vars = append(vars, &cloudrunv2service.CloudRunV2ServiceTemplateContainersEnv{
-			Name:  pointer.Value(k),
-			Value: pointer.Value(env[k]),
+			Name:  pointers.Ptr(k),
+			Value: pointers.Ptr(env[k]),
 		})
 	}
 
@@ -41,10 +41,10 @@ func makeContainerEnvVars(
 	slices.Sort(secretEnvKeys)
 	for _, k := range secretEnvKeys {
 		vars = append(vars, &cloudrunv2service.CloudRunV2ServiceTemplateContainersEnv{
-			Name: pointer.Value(k),
+			Name: pointers.Ptr(k),
 			ValueSource: &cloudrunv2service.CloudRunV2ServiceTemplateContainersEnvValueSource{
 				SecretKeyRef: &cloudrunv2service.CloudRunV2ServiceTemplateContainersEnvValueSourceSecretKeyRef{
-					Secret: pointer.Value(secretEnv[k]),
+					Secret: pointers.Ptr(secretEnv[k]),
 				},
 			},
 		})

@@ -5,8 +5,8 @@ package managedservicesplatform
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/pointer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/cloudrun"
@@ -79,14 +79,14 @@ func (r *Renderer) RenderEnvironment(
 	}
 
 	var (
-		projectID = pointer.IfNil(r.GCP.ProjectID, fmt.Sprintf("%s-%s", svc.ID, env.ID))
+		projectID = pointers.Deref(r.GCP.ProjectID, fmt.Sprintf("%s-%s", svc.ID, env.ID))
 		stacks    = stack.NewSet(r.OutputDir, stackSetOptions...)
 	)
 
 	// Render all required CDKTF stacks for this environment
 	projectOutput, err := project.NewStack(stacks, project.Variables{
 		ProjectID:        projectID,
-		Name:             pointer.IfNil(svc.Name, svc.ID),
+		Name:             pointers.Deref(svc.Name, svc.ID),
 		ParentFolderID:   r.GCP.ParentFolderID,
 		BillingAccountID: r.GCP.BillingAccountID,
 		Labels: map[string]string{

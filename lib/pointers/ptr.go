@@ -24,3 +24,14 @@ func Deref[T any](v *T, defaultValue T) T {
 
 	return defaultValue
 }
+
+type numberType interface {
+	~float32 | ~float64 |
+		~int | ~int8 | ~int16 | ~int32 | ~int64 |
+		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
+}
+
+// Float64 returns a pointer to the provided numeric value as a float64.
+func Float64[T numberType](v T) *float64 {
+	return Ptr(float64(v))
+}

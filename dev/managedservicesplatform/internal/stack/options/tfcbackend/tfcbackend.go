@@ -4,7 +4,7 @@ import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
-	"github.com/sourcegraph/sourcegraph/internal/pointer"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type Config struct {
@@ -17,8 +17,8 @@ func With(config Config) stack.NewStackOption {
 	return func(s stack.Stack) {
 		workspace := config.Workspace(s.Name)
 		_ = cdktf.NewCloudBackend(s.Stack, &cdktf.CloudBackendConfig{
-			Hostname:     pointer.Value("app.terraform.io"),
-			Organization: pointer.Value("sourcegraph"),
+			Hostname:     pointers.Ptr("app.terraform.io"),
+			Organization: pointers.Ptr("sourcegraph"),
 			Workspaces:   cdktf.NewNamedCloudWorkspace(&workspace),
 		})
 	}

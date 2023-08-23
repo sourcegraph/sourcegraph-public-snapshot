@@ -3,7 +3,7 @@ package stack
 import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
-	"github.com/sourcegraph/sourcegraph/internal/pointer"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // Stack encapsulates a CDKTF stack and the name the stack was originally
@@ -37,7 +37,7 @@ type NewStackOption func(s Stack)
 func NewSet(renderDir string, opts ...NewStackOption) *Set {
 	return &Set{
 		app: cdktf.NewApp(&cdktf.AppConfig{
-			Outdir: pointer.Value(renderDir),
+			Outdir: pointers.Ptr(renderDir),
 		}),
 		opts:   opts,
 		stacks: []Stack{},

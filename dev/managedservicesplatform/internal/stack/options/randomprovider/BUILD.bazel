@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "randomprovider",
+    srcs = ["randomprovider.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/randomprovider",
+    visibility = ["//dev/managedservicesplatform:__subpackages__"],
+    deps = [
+        "//dev/managedservicesplatform/internal/stack",
+        "//lib/pointers",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_random//provider",
+    ],
+)

@@ -5,7 +5,7 @@ import (
 	randomid "github.com/sourcegraph/managed-services-platform-cdktf/gen/random/id"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
-	"github.com/sourcegraph/sourcegraph/internal/pointer"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type Config struct {
@@ -24,7 +24,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 		scope,
 		id.ResourceID("random"),
 		&randomid.IdConfig{
-			ByteLength: pointer.Float64(config.ByteLength),
+			ByteLength: pointers.Float64(config.ByteLength),
 		},
 	)
 	return &Output{HexValue: *rid.Hex()}

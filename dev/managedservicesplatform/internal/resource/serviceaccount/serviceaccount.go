@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/serviceaccount"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
-	"github.com/sourcegraph/sourcegraph/internal/pointer"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type Role struct {
@@ -36,8 +36,8 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 		&serviceaccount.ServiceAccountConfig{
 			Project: config.Project.ProjectId(),
 
-			AccountId:   pointer.Value(config.AccountID),
-			DisplayName: pointer.Value(config.DisplayName),
+			AccountId:   pointers.Ptr(config.AccountID),
+			DisplayName: pointers.Ptr(config.DisplayName),
 		})
 	for _, role := range config.Roles {
 		_ = projectiammember.NewProjectIamMember(scope,
@@ -45,7 +45,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 			&projectiammember.ProjectIamMemberConfig{
 				Project: config.Project.ProjectId(),
 
-				Role:   pointer.Value(role.Role),
+				Role:   pointers.Ptr(role.Role),
 				Member: serviceAccount.Member(),
 			})
 	}

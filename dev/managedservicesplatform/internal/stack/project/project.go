@@ -9,9 +9,10 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectservice"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
-	"github.com/sourcegraph/sourcegraph/internal/pointer"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 var gcpServices = []string{
@@ -54,19 +55,22 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	stack := stacks.New(StackName,
 		googleprovider.WithProjectID(vars.ProjectID))
 
+	// Name all stack resources after the desired project ID
+	id := resourceid.New(vars.ProjectID)
+
 	output := &Output{
 		Project: project.NewProject(stack,
-			pointer.Stringf("%s-project", vars.ProjectID),
+			id.ResourceID("project"),
 			&project.ProjectConfig{
-				Name:              pointer.Value(vars.Name),
-				ProjectId:         pointer.Value(vars.ProjectID),
+				Name:              pointers.Ptr(vars.Name),
+				ProjectId:         pointers.Ptr(vars.ProjectID),
 				AutoCreateNetwork: false,
-				BillingAccount:    pointer.Value(vars.BillingAccountID),
-				FolderId:          pointer.Value(vars.ParentFolderID),
+				BillingAccount:    pointers.Ptr(vars.BillingAccountID),
+				FolderId:          pointers.Ptr(vars.ParentFolderID),
 				Labels: func(input map[string]string) *map[string]*string {
 					labels := make(map[string]*string)
 					for k, v := range input {
-						labels[sanitizeName(k)] = pointer.Value(v)
+						labels[sanitizeName(k)] = pointers.Ptr(v)
 					}
 					return &labels
 				}(vars.Labels),
@@ -75,11 +79,10 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 
 	for _, service := range gcpServices {
 		projectservice.NewProjectService(stack,
-			pointer.Stringf("%s-service-%s",
-				vars.ProjectID, strings.ReplaceAll(service, ".", "-")),
+			id.ResourceID("project-service-%s", strings.ReplaceAll(service, ".", "-")),
 			&projectservice.ProjectServiceConfig{
 				Project:                  output.Project.ProjectId(),
-				Service:                  pointer.Value(service),
+				Service:                  pointers.Ptr(service),
 				DisableDependentServices: jsii.Bool(false),
 				// prevent accidental deletion of services
 				DisableOnDestroy: jsii.Bool(false),

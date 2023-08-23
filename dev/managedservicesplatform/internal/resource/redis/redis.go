@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
-	"github.com/sourcegraph/sourcegraph/internal/pointer"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type Output struct {
@@ -36,15 +36,15 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		&redisinstance.RedisInstanceConfig{
 			Project: config.Project.ProjectId(),
 			Region:  &config.Region,
-			Name:    pointer.Value(id.DisplayName()),
+			Name:    pointers.Ptr(id.DisplayName()),
 
-			Tier:         pointer.Value(pointer.IfNil(config.Spec.Tier, "STANDARD_HA")),
-			MemorySizeGb: pointer.Float64(pointer.IfNil(config.Spec.MemoryGB, 1)),
+			Tier:         pointers.Ptr(pointers.Deref(config.Spec.Tier, "STANDARD_HA")),
+			MemorySizeGb: pointers.Float64(pointers.Deref(config.Spec.MemoryGB, 1)),
 
 			AuthEnabled:           true,
-			TransitEncryptionMode: pointer.Value("SERVER_AUTHENTICATION"),
+			TransitEncryptionMode: pointers.Ptr("SERVER_AUTHENTICATION"),
 			PersistenceConfig: &redisinstance.RedisInstancePersistenceConfig{
-				PersistenceMode: pointer.Value("RDB"),
+				PersistenceMode: pointers.Ptr("RDB"),
 			},
 
 			AuthorizedNetwork: config.Network.SelfLink(),
@@ -54,7 +54,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	redisCACert := gsmsecret.New(scope, id.SubID("ca-cert"), gsmsecret.Config{
 		Project: config.Project,
 		ID:      strings.ToUpper(id.DisplayName()) + "_CA_CERT",
-		Value:   *redis.ServerCaCerts().Get(pointer.Float64(0)).Cert(),
+		Value:   *redis.ServerCaCerts().Get(pointers.Float64(0)).Cert(),
 	})
 
 	return &Output{

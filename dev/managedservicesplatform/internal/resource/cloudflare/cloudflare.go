@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/loadbalancer"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
-	"github.com/sourcegraph/sourcegraph/internal/pointer"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type Output struct {
@@ -46,7 +46,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	sslCert := computesslcertificate.NewComputeSslCertificate(scope,
 		id.ResourceID("origin-cert"),
 		&computesslcertificate.ComputeSslCertificateConfig{
-			Name:    pointer.Value(id.DisplayName()),
+			Name:    pointers.Ptr(id.DisplayName()),
 			Project: config.Project.ProjectId(),
 
 			PrivateKey: &gsmsecret.Get(scope, id.SubID("secret-origin-private-key"), gsmsecret.DataConfig{
@@ -58,10 +58,10 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 				ProjectID: config.SharedSecretsProjectID,
 			}).Value,
 
-			Count: pointer.Float64(1),
+			Count: pointers.Float64(1),
 
 			Lifecycle: &cdktf.TerraformResourceLifecycle{
-				CreateBeforeDestroy: pointer.Value(true),
+				CreateBeforeDestroy: pointers.Ptr(true),
 			},
 		})
 
@@ -70,21 +70,21 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	targetHTTPSProxy := computetargethttpsproxy.NewComputeTargetHttpsProxy(scope,
 		id.ResourceID("https-proxy"),
 		&computetargethttpsproxy.ComputeTargetHttpsProxyConfig{
-			Name:    pointer.Value(id.DisplayName()),
+			Name:    pointers.Ptr(id.DisplayName()),
 			Project: config.Project.ProjectId(),
 			UrlMap:  config.Target.URLMap.Id(),
-			SslCertificates: pointer.Value([]*string{
+			SslCertificates: pointers.Ptr([]*string{
 				sslCert.Id(),
 			}),
 			SslPolicy: computesslpolicy.NewComputeSslPolicy(
 				scope,
-				pointer.Stringf("%s-ssl-policy", id),
+				id.ResourceID("ssl-policy"),
 				&computesslpolicy.ComputeSslPolicyConfig{
-					Name:    pointer.Value(id.DisplayName()),
+					Name:    pointers.Ptr(id.DisplayName()),
 					Project: config.Project.ProjectId(),
 
-					Profile:       pointer.Stringf("MODERN"),
-					MinTlsVersion: pointer.Stringf("TLS_1_2"),
+					Profile:       pointers.Ptr("MODERN"),
+					MinTlsVersion: pointers.Ptr("TLS_1_2"),
 				},
 			).Id(),
 		})
@@ -94,10 +94,10 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		scope,
 		id.ResourceID("external-address"),
 		&computeglobaladdress.ComputeGlobalAddressConfig{
-			Name:        pointer.Value(id.DisplayName()),
+			Name:        pointers.Ptr(id.DisplayName()),
 			Project:     config.Project.ProjectId(),
-			AddressType: pointer.Value("EXTERNAL"),
-			IpVersion:   pointer.Value("IPV4"),
+			AddressType: pointers.Ptr("EXTERNAL"),
+			IpVersion:   pointers.Ptr("IPV4"),
 		},
 	)
 
@@ -107,18 +107,18 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		id.ResourceID("domain"),
 		&datacloudflarezones.DataCloudflareZonesConfig{
 			Filter: &datacloudflarezones.DataCloudflareZonesFilter{
-				Name: pointer.Value(config.Spec.Zone),
+				Name: pointers.Ptr(config.Spec.Zone),
 			},
 		})
 	_ = record.NewRecord(scope,
 		id.ResourceID("record"),
 		&record.RecordConfig{
-			ZoneId: cfZone.Zones().Get(pointer.Float64(0)).Id(),
+			ZoneId: cfZone.Zones().Get(pointers.Float64(0)).Id(),
 			Name:   &config.Spec.Subdomain,
-			Type:   pointer.Value("A"),
+			Type:   pointers.Ptr("A"),
 			Value:  externalAddress.Address(),
 			// Enable proxying to get WAF rules
-			Proxied: pointer.Value(true),
+			Proxied: pointers.Ptr(true),
 		})
 
 	// Forward traffic from the external address to the HTTPS proxy that then
@@ -126,14 +126,14 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	_ = computeforwardingrule.NewComputeForwardingRule(scope,
 		id.ResourceID("forwarding-rule"),
 		&computeforwardingrule.ComputeForwardingRuleConfig{
-			Name:    pointer.Value(id.DisplayName()),
+			Name:    pointers.Ptr(id.DisplayName()),
 			Project: config.Project.ProjectId(),
 
 			IpAddress: externalAddress.Address(),
-			PortRange: pointer.Stringf("443"),
+			PortRange: pointers.Ptr("443"),
 
 			Target:              targetHTTPSProxy.Id(),
-			LoadBalancingScheme: pointer.Value("EXTERNAL"),
+			LoadBalancingScheme: pointers.Ptr("EXTERNAL"),
 		})
 
 	return &Output{}, nil

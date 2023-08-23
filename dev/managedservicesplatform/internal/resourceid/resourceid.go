@@ -3,7 +3,7 @@ package resourceid
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/pointer"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // ID represents a resource. All terraform resources that comprise a resource
@@ -18,7 +18,7 @@ func New(id string) ID { return ID{id: id} }
 // ID.
 func (id ID) ResourceID(format string, args ...any) *string {
 	subID := fmt.Sprintf(format, args...)
-	return pointer.Stringf("%s-%s", id, subID)
+	return pointers.Ptr(fmt.Sprintf("%s-%s", id, subID))
 }
 
 // SubID can be used by resource groups that use other resource groups to safely

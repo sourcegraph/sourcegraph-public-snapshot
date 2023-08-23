@@ -21,8 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/randomprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
-	"github.com/sourcegraph/sourcegraph/internal/pointer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type Output struct{}
@@ -105,7 +105,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 		randomprovider.With())
 
 	// Set up a service-specific env var prefix to avoid conflicts where relevant
-	serviceEnvVarPrefix := pointer.IfNil(
+	serviceEnvVarPrefix := pointers.Deref(
 		vars.Service.EnvVarPrefix,
 		makeServiceEnvVarPrefix(vars.Service.ID))
 
@@ -119,7 +119,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 			Project:   vars.Project,
 			AccountID: vars.Service.ID,
 			DisplayName: fmt.Sprintf("%s Service Account",
-				pointer.IfNil(vars.Service.Name, vars.Service.ID)),
+				pointers.Deref(vars.Service.Name, vars.Service.ID)),
 			Roles: serviceAccountRoles,
 		}),
 		PrivateNetwork: newCloudRunPrivateNetwork(stack, cloudRunPrivateNetworkConfig{
@@ -136,13 +136,13 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 				//
 				// We don't use serviceEnvVarPrefix here because this is a
 				// convention to indicate the environment's project.
-				Name:  pointer.Value("GOOGLE_CLOUD_PROJECT"),
+				Name:  pointers.Ptr("GOOGLE_CLOUD_PROJECT"),
 				Value: vars.Project.ProjectId(),
 			},
 			{
 				// Set up secret that service should accept for diagnostics
 				// endpoints
-				Name:  pointer.Value(serviceEnvVarPrefix + "DIAGNOSTICS_SECRET"),
+				Name:  pointers.Ptr(serviceEnvVarPrefix + "DIAGNOSTICS_SECRET"),
 				Value: &diagnosticsSecret.HexValue,
 			},
 		},
@@ -166,29 +166,29 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 			&cloudrunv2service.CloudRunV2ServiceTemplateContainersEnv{
 				// We don't use serviceEnvVarPrefix here because this is a
 				// Sourcegraph-wide convention.
-				Name:  pointer.Value("REDIS_ENDPOINT"),
-				Value: pointer.Value(redisInstance.Endpoint),
+				Name:  pointers.Ptr("REDIS_ENDPOINT"),
+				Value: pointers.Ptr(redisInstance.Endpoint),
 			})
 
 		caCertVolumeName := "redis-ca-cert"
 		cloudRun.AdditionalVolumes = append(cloudRun.AdditionalVolumes,
 			&cloudrunv2service.CloudRunV2ServiceTemplateVolumes{
-				Name: pointer.Value(caCertVolumeName),
+				Name: pointers.Ptr(caCertVolumeName),
 				Secret: &cloudrunv2service.CloudRunV2ServiceTemplateVolumesSecret{
 					Secret: &redisInstance.Certificate.ID,
 					Items: []*cloudrunv2service.CloudRunV2ServiceTemplateVolumesSecretItems{{
 						Version: &redisInstance.Certificate.Version,
-						Path:    pointer.Value("redis-ca-cert.pem"),
-						Mode:    pointer.Float64(292), // 0444 read-only
+						Path:    pointers.Ptr("redis-ca-cert.pem"),
+						Mode:    pointers.Float64(292), // 0444 read-only
 					}},
 				},
 			})
 		cloudRun.AdditionalVolumeMounts = append(cloudRun.AdditionalVolumeMounts,
 			&cloudrunv2service.CloudRunV2ServiceTemplateContainersVolumeMounts{
-				Name: pointer.Value(caCertVolumeName),
+				Name: pointers.Ptr(caCertVolumeName),
 				// TODO: Use subpath if google_cloud_run_v2_service adds support for it:
 				// https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/cloud_run_v2_service#mount_path
-				MountPath: pointer.Value("/etc/ssl/custom-certs"),
+				MountPath: pointers.Ptr("/etc/ssl/custom-certs"),
 			})
 	}
 
@@ -204,14 +204,14 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 		}
 		cloudRun.AdditionalEnv = append(cloudRun.AdditionalEnv,
 			&cloudrunv2service.CloudRunV2ServiceTemplateContainersEnv{
-				Name:  pointer.Value(serviceEnvVarPrefix + "BIGQUERY_PROJECT_ID"),
-				Value: pointer.Value(bigqueryDataset.ProjectID),
+				Name:  pointers.Ptr(serviceEnvVarPrefix + "BIGQUERY_PROJECT_ID"),
+				Value: pointers.Ptr(bigqueryDataset.ProjectID),
 			}, &cloudrunv2service.CloudRunV2ServiceTemplateContainersEnv{
-				Name:  pointer.Value(serviceEnvVarPrefix + "BIGQUERY_DATASET"),
-				Value: pointer.Value(bigqueryDataset.Dataset),
+				Name:  pointers.Ptr(serviceEnvVarPrefix + "BIGQUERY_DATASET"),
+				Value: pointers.Ptr(bigqueryDataset.Dataset),
 			}, &cloudrunv2service.CloudRunV2ServiceTemplateContainersEnv{
-				Name:  pointer.Value(serviceEnvVarPrefix + "BIGQUERY_TABLE"),
-				Value: pointer.Value(bigqueryDataset.Table),
+				Name:  pointers.Ptr(serviceEnvVarPrefix + "BIGQUERY_TABLE"),
+				Value: pointers.Ptr(bigqueryDataset.Table),
 			})
 	}
 
@@ -268,21 +268,21 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 	if err != nil {
 		return nil, err
 	}
-	return cloudrunv2service.NewCloudRunV2Service(stack, pointer.Value("cloudrun"), &cloudrunv2service.CloudRunV2ServiceConfig{
-		Name:     pointer.Value(vars.Service.ID),
-		Location: pointer.Value(gcpRegion),
+	return cloudrunv2service.NewCloudRunV2Service(stack, pointers.Ptr("cloudrun"), &cloudrunv2service.CloudRunV2ServiceConfig{
+		Name:     pointers.Ptr(vars.Service.ID),
+		Location: pointers.Ptr(gcpRegion),
 
 		//  Disallows direct traffic from public internet, we have a LB set up for that.
-		Ingress: pointer.Value("INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"),
+		Ingress: pointers.Ptr("INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"),
 
 		Template: &cloudrunv2service.CloudRunV2ServiceTemplate{
 			// Act under our provisioned service account
-			ServiceAccount: pointer.Value(c.ServiceAccount.Email),
+			ServiceAccount: pointers.Ptr(c.ServiceAccount.Email),
 
 			// Connect to VPC connector for talking to other GCP services.
 			VpcAccess: &cloudrunv2service.CloudRunV2ServiceTemplateVpcAccess{
 				Connector: c.PrivateNetwork.connector.SelfLink(),
-				Egress:    pointer.Value("PRIVATE_RANGES_ONLY"),
+				Egress:    pointers.Ptr("PRIVATE_RANGES_ONLY"),
 			},
 
 			// Set a high limit that matches our default Cloudflare zone's
@@ -302,20 +302,20 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 			//   }
 			//
 			// The service should implement tighter timeouts on its own if desired.
-			Timeout: pointer.Value("300s"),
+			Timeout: pointers.Ptr("300s"),
 
 			// Scaling configuration
-			MaxInstanceRequestConcurrency: pointer.Float64(vars.Environment.Instances.Scaling.MaxRequestConcurrency),
+			MaxInstanceRequestConcurrency: pointers.Float64(vars.Environment.Instances.Scaling.MaxRequestConcurrency),
 			Scaling: &cloudrunv2service.CloudRunV2ServiceTemplateScaling{
-				MinInstanceCount: pointer.Float64(vars.Environment.Instances.Scaling.MinCount),
-				MaxInstanceCount: pointer.Float64(
-					pointer.IfNil(vars.Environment.Instances.Scaling.MaxCount, defaultMaxInstances)),
+				MinInstanceCount: pointers.Float64(vars.Environment.Instances.Scaling.MinCount),
+				MaxInstanceCount: pointers.Float64(
+					pointers.Deref(vars.Environment.Instances.Scaling.MaxCount, defaultMaxInstances)),
 			},
 
 			// Configuration for the single service container.
 			Containers: []*cloudrunv2service.CloudRunV2ServiceTemplateContainers{{
-				Name:  pointer.Value(vars.Service.ID),
-				Image: pointer.Value(fmt.Sprintf("%s:%s", vars.Image, serviceImageTag)),
+				Name:  pointers.Ptr(vars.Service.ID),
+				Image: pointers.Ptr(fmt.Sprintf("%s:%s", vars.Image, serviceImageTag)),
 
 				Resources: &cloudrunv2service.CloudRunV2ServiceTemplateContainersResources{
 					Limits: makeContainerResourceLimits(vars.Environment.Instances.Resources),
@@ -323,7 +323,7 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 
 				Ports: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersPorts{{
 					// ContainerPort is provided to the container as $PORT in Cloud Run
-					ContainerPort: pointer.Float64(servicePort),
+					ContainerPort: pointers.Float64(servicePort),
 				}},
 
 				Env: append(
@@ -336,16 +336,16 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 				// Do healthchecks with authorization based on MSP convention.
 				StartupProbe: &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbe{
 					HttpGet: &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGet{
-						Path: pointer.Value(healthCheckEndpoint),
+						Path: pointers.Ptr(healthCheckEndpoint),
 						HttpHeaders: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGetHttpHeaders{{
-							Name:  pointer.Value("Bearer"),
-							Value: pointer.Value(fmt.Sprintf("Authorization %s", c.DiagnosticsSecret.HexValue)),
+							Name:  pointers.Ptr("Bearer"),
+							Value: pointers.Ptr(fmt.Sprintf("Authorization %s", c.DiagnosticsSecret.HexValue)),
 						}},
 					},
-					InitialDelaySeconds: pointer.Float64(0),
-					TimeoutSeconds:      pointer.Float64(1),
-					PeriodSeconds:       pointer.Float64(2),
-					FailureThreshold:    pointer.Float64(3),
+					InitialDelaySeconds: pointers.Float64(0),
+					TimeoutSeconds:      pointers.Float64(1),
+					PeriodSeconds:       pointers.Float64(2),
+					FailureThreshold:    pointers.Float64(3),
 				},
 
 				LivenessProbe: func() *cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbe {
@@ -354,15 +354,15 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 					}
 					return &cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbe{
 						HttpGet: &cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbeHttpGet{
-							Path: pointer.Value(healthCheckEndpoint),
+							Path: pointers.Ptr(healthCheckEndpoint),
 							HttpHeaders: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbeHttpGetHttpHeaders{{
-								Name:  pointer.Value("Bearer"),
-								Value: pointer.Value(fmt.Sprintf("Authorization %s", c.DiagnosticsSecret.HexValue)),
+								Name:  pointers.Ptr("Bearer"),
+								Value: pointers.Ptr(fmt.Sprintf("Authorization %s", c.DiagnosticsSecret.HexValue)),
 							}},
 						},
-						TimeoutSeconds:   pointer.Float64(3),
-						PeriodSeconds:    pointer.Float64(*vars.Environment.Healthcheck.LivenessProbeInterval),
-						FailureThreshold: pointer.Float64(2),
+						TimeoutSeconds:   pointers.Float64(3),
+						PeriodSeconds:    pointers.Float64(*vars.Environment.Healthcheck.LivenessProbeInterval),
+						FailureThreshold: pointers.Float64(2),
 					}
 				}(),
 

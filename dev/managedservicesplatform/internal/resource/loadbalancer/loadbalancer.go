@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
-	"github.com/sourcegraph/sourcegraph/internal/pointer"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type Output struct {
@@ -35,11 +35,11 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 	endpointGroup := computeregionnetworkendpointgroup.NewComputeRegionNetworkEndpointGroup(scope,
 		id.ResourceID("endpoint_group"),
 		&computeregionnetworkendpointgroup.ComputeRegionNetworkEndpointGroupConfig{
-			Name:    pointer.Value(id.DisplayName()),
+			Name:    pointers.Ptr(id.DisplayName()),
 			Project: config.Project.ProjectId(),
-			Region:  pointer.Value(config.Region),
+			Region:  pointers.Ptr(config.Region),
 
-			NetworkEndpointType: pointer.Value("SERVERLESS"),
+			NetworkEndpointType: pointers.Ptr("SERVERLESS"),
 			CloudRun: &computeregionnetworkendpointgroup.ComputeRegionNetworkEndpointGroupCloudRun{
 				Service: config.TargetService.Name(),
 			},
@@ -49,11 +49,11 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 	backendService := computebackendservice.NewComputeBackendService(scope,
 		id.ResourceID("backend_service"),
 		&computebackendservice.ComputeBackendServiceConfig{
-			Name:    pointer.Value(id.DisplayName()),
+			Name:    pointers.Ptr(id.DisplayName()),
 			Project: config.Project.ProjectId(),
 
-			Protocol: pointer.Value("HTTP"),
-			PortName: pointer.Value("http"),
+			Protocol: pointers.Ptr("HTTP"),
+			PortName: pointers.Ptr("http"),
 
 			// TODO: Parameterize
 			SecurityPolicy: nil,
@@ -68,7 +68,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 	urlMap := computeurlmap.NewComputeUrlMap(scope,
 		id.ResourceID("url_map"),
 		&computeurlmap.ComputeUrlMapConfig{
-			Name:           pointer.Value(id.DisplayName()),
+			Name:           pointers.Ptr(id.DisplayName()),
 			Project:        config.Project.ProjectId(),
 			DefaultService: backendService.Id(),
 		})

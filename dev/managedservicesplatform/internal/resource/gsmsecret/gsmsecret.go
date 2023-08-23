@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/secretmanagersecretversion"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
-	"github.com/sourcegraph/sourcegraph/internal/pointer"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type Output struct {
@@ -30,7 +30,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 			Project:  config.Project.ProjectId(),
 			SecretId: &config.ID,
 			Replication: &secretmanagersecret.SecretManagerSecretReplication{
-				Automatic: pointer.Value(true),
+				Automatic: pointers.Ptr(true),
 			},
 		})
 

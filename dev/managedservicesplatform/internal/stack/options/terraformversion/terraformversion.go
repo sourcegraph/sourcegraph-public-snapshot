@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
-	"github.com/sourcegraph/sourcegraph/internal/pointer"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // With applies an aspect enforcing the given Terraform version on a new stack.
@@ -36,7 +36,7 @@ func (e *enforceTerraformVersion) Visit(node constructs.IConstruct) {
 	// It is not possible to check the type because the type is not exported.
 	case "*cdktf.jsiiProxy_TerraformStack":
 		s := node.(cdktf.TerraformStack)
-		s.AddOverride(pointer.Value("terraform.required_version"),
+		s.AddOverride(pointers.Ptr("terraform.required_version"),
 			fmt.Sprintf("~> %s", e.TerraformVersion))
 	}
 }
