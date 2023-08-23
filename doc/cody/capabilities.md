@@ -80,7 +80,7 @@ You can run a command in 3 ways:
 
 The **Custom Commands** feature lets you customize Cody's abilities for your projects without writing code. This provides a flexible way to create reusable "commands" that give Cody targeted instructions and context from your project to enhance productivity.
 
-You can define customized prompts using `JSON` files that can be invoked simply by typing a `/` in the chat box or using keyboard shortcuts `Shift+Cmd+V` without opening the chat sidebar.
+You can define customized prompts using `JSON` files that can be invoked simply by typing a `/` in the chat box or using keyboard shortcuts `⌥` + `C` / `Alt` + `C` without opening the chat sidebar.
 
 Right-click on the selected code to open the Cody context menu and select the **Custom Commands (Experimental)** option.
 
