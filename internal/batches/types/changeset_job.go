@@ -69,6 +69,8 @@ type ChangesetJobPublishPayload struct {
 	Draft bool `json:"draft"`
 }
 
+type ChangesetJobExportPayload struct{}
+
 // ChangesetJob describes a one-time action to be taken on a changeset.
 type ChangesetJob struct {
 	ID int64
