@@ -13,8 +13,8 @@ export const ExternalUrlForm: FC<ExternalUrlFormProps> = ({ className, url = '',
     return (
         <div className={className}>
             <Text>
-                Customize the URL your organization will use to access this Sourcegraph instance. Configuration is
-                required in order for Sourcegraph to work correctly. See <Link to="/help/admin/url">documentation</Link>{' '}
+                Configure the URL your organization will use to access this Sourcegraph instance. An external URL is
+                required in order for certain features on Sourcegraph to work correctly. See <Link to="/help/admin/url">documentation</Link>{' '}
                 for more information.
             </Text>
             {!debouncedUrl && <Alert variant="danger">You have not yet configured an external URL.</Alert>}
