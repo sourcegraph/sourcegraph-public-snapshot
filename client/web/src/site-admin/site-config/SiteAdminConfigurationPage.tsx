@@ -49,6 +49,7 @@ import { RELOAD_SITE, SITE_CONFIG_QUERY, UPDATE_SITE_CONFIG } from '../backend'
 import { SiteConfigurationChangeList } from '../SiteConfigurationChangeList'
 
 import { ConfigPanel } from './ConfigPanel'
+import { ExternalUrlForm } from './forms/external-url'
 import { LicenseKeyForm } from './forms/license'
 import { SMTPConfigForm } from './forms/smtp'
 import { useJsoncParser } from './hooks/useJsoncParser'
@@ -465,6 +466,12 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
                                     <LicenseKeyForm
                                         onLicenseKeyChange={newKey => update({ licenseKey: newKey })}
                                         licenseKey={json?.licenseKey}
+                                    />
+                                </ConfigPanel>
+                                <ConfigPanel id="external-url" title="External URL" className="mt-3">
+                                    <ExternalUrlForm
+                                        onChange={url => update({ externalURL: url })}
+                                        url={json?.externalURL}
                                     />
                                 </ConfigPanel>
                                 <ConfigPanel id="smtp" title="SMTP" className="mt-3">
