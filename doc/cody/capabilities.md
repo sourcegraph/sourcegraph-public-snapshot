@@ -68,7 +68,7 @@ VS Code logs can be accessed via the **Outputs** view. To access autocomplete lo
 
 Cody supports executing reusable prompts known as **Cody Commands** from within the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai). They allow you to run predefined actions (like `Explain Selected Code` and `Generate Unit Tests` for example) with smart context-fetching anywhere in the editor.
 
-You can run a command in 3 ways:
+There are three ways to run a Cody Command:
 
 1. Type `/` in the chat bar. Cody will then suggest a list of available commands
 2. Right click > Cody > Select a command
