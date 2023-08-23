@@ -7,7 +7,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const gitserverIDKind = "Gitserver"
@@ -46,7 +45,7 @@ func (r *schemaResolver) gitserverByID(ctx context.Context, id graphql.ID) (*git
 		}
 	}
 
-	return nil, errors.New("gitserver instance not found")
+	return nil, nil
 }
 
 func (r *schemaResolver) Gitservers(ctx context.Context) ([]*gitserverResolver, error) {
