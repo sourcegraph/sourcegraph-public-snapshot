@@ -347,7 +347,7 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
         error: jsonError,
     } = useJsoncParser<SiteConfiguration>(contents || '')
 
-    const updateRawDebounced = useCallback(debounce(updateRaw, 500), [updateRaw])
+    const updateRawDebounced = useMemo(() => debounce(updateRaw, 500), [updateRaw])
 
     let effectiveError: Error | undefined = error || reloadError
     if (updateError) {

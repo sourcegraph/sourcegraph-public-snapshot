@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { FC, useCallback, useEffect, useState } from 'react'
 
 import { SiteConfiguration, SMTPServerConfig } from '@sourcegraph/shared/src/schema/site.schema'
 import { Checkbox, Form, Input, Label, Link, Select, Text } from '@sourcegraph/wildcard'
@@ -33,6 +33,14 @@ const initialConfig: FormData = {
     noVerifyTLS: false,
 }
 
+const isFormValid = (form: FormData): boolean =>
+    !!(
+        form.emailAddress &&
+        form.host &&
+        form.port &&
+        (form.authentication === 'none' || (form.username && form.password))
+    )
+
 export const SMTPConfigForm: FC<Props> = ({ config, authenticatedUser, onConfigChange }) => {
     const [form, setForm] = useState<FormData>({ ...initialConfig })
 
@@ -57,15 +65,6 @@ export const SMTPConfigForm: FC<Props> = ({ config, authenticatedUser, onConfigC
         setForm(newForm)
     }, [config, setForm])
 
-    const isValid = useMemo(
-        () =>
-            form.emailAddress &&
-            form.host &&
-            form.port &&
-            (form.authentication === 'none' || (form.username && form.password)),
-        [form]
-    )
-
     const fieldRequired = useCallback(
         (field: string) => {
             if (!form[field]) {
@@ -78,7 +77,7 @@ export const SMTPConfigForm: FC<Props> = ({ config, authenticatedUser, onConfigC
 
     const applyChanges = useCallback(
         (newValue: FormData) => {
-            if (!isValid) {
+            if (!isFormValid(newValue)) {
                 return
             }
 
@@ -107,7 +106,7 @@ export const SMTPConfigForm: FC<Props> = ({ config, authenticatedUser, onConfigC
                 },
             })
         },
-        [form, isValid, onConfigChange]
+        [onConfigChange]
     )
 
     const fieldChanged = useCallback(
@@ -127,7 +126,7 @@ export const SMTPConfigForm: FC<Props> = ({ config, authenticatedUser, onConfigC
 
             applyChanges(newValue)
         },
-        [form, setForm, applyChanges]
+        [form, applyChanges]
     )
 
     return (
