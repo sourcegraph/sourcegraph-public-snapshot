@@ -5,7 +5,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 bazelrcs=(--bazelrc=.bazelrc)
 current_commit=$(git rev-parse HEAD)
-tag="5.0.0" # check this version exists in flakes.json
+tag="5.0.6" # check this version exists in flakes.json
 
 function restore_current_commit() {
   git checkout --force "${current_commit}"
@@ -30,7 +30,6 @@ fi
 
 echo "--- :git::rewind: checkout v${tag}"
 git checkout --force "v${tag}"
-git clean -fd
 
 echo "--- :git: checkout migrations, patches and scripts at ${current_commit}"
 git checkout --force --no-overlay "${current_commit}" -- migrations/ dev/backcompat/patch_flakes.sh dev/backcompat/patches dev/backcompat/flakes.json
