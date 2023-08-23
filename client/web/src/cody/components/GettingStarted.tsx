@@ -80,7 +80,7 @@ export const GettingStarted: React.FC<
     const content: { title: string; examples: { label?: string; text: string }[] } = useMemo(() => {
         if (conversationScope === 'repo') {
             return {
-                title: `Great examples to start with${
+                title: `Examples to start with${
                     scopeSelectorProps.scope.repositories.length === 1
                         ? ` for ${scopeSelectorProps.scope.repositories[0].split('/').slice(-2).join('/')}`
                         : ''
