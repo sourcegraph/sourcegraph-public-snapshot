@@ -22,7 +22,7 @@ const EMBEDDING_JOB_FIELDS = gql`
 
 export const ReposSelectorSearchQuery = gql`
     query ReposSelectorSearch($query: String!, $includeJobs: Boolean!) {
-        repositories(query: $query, first: 15) {
+        repositories(query: $query, first: 20) {
             nodes {
                 ...ContextSelectorRepoFields
                 embeddingJobs(first: 1) @include(if: $includeJobs) {

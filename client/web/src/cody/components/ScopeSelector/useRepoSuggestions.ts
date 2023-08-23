@@ -4,7 +4,7 @@ import type { TranscriptJSON } from '@sourcegraph/cody-shared/dist/chat/transcri
 import { useQuery } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 
-import { useUserHistory } from '../../../components/useUserHistory'
+import { type UserHistoryEntry, useUserHistory } from '../../../components/useUserHistory'
 import type {
     ContextSelectorRepoFields,
     SuggestedReposResult,
@@ -74,58 +74,12 @@ export const useRepoSuggestions = (
     const { numSuggestions, fallbackSuggestions, omitSuggestions } = { ...DEFAULT_OPTS, ...opts }
 
     const userHistory = useUserHistory(authenticatedUser?.id, false)
-    const suggestedRepoNames: string[] = useMemo(() => {
-        const flattenedTranscriptHistoryEntries = transcriptHistory
-            .map(item => {
-                const { scope, lastInteractionTimestamp } = item
-                return (
-                    // Return a new item for each repository in the scope.
-                    scope?.repositories.map(name => ({
-                        // Parse a date from the last interaction timestamp.
-                        lastAccessed: new Date(lastInteractionTimestamp),
-                        name,
-                    })) || []
-                )
-            })
-            .flat()
-            // Remove duplicates.
-            .filter(removeDupes)
-            // We only need up to the first numSuggestions.
-            .slice(0, numSuggestions)
-
-        const userHistoryEntries =
-            userHistory
-                .loadEntries()
-                .map(item => ({
-                    name: item.repoName,
-                    // Parse a date from the last acessed timestamp.
-                    lastAccessed: new Date(item.lastAccessed),
-                }))
-                // We only need up to the first numSuggestions.
-                .slice(0, numSuggestions) || []
-
-        // We also can take a list of up to numSuggestions fallback repos to
-        // fill in if we have fewer than numSuggestions to actually suggest.
-        const fallbackRepos = fallbackSuggestions
-            .map(name => ({
-                name,
-                // We order by most recently accessed; these should always be ranked last.
-                lastAccessed: new Date(0),
-            }))
-            .slice(0, numSuggestions)
-
-        // Merge the lists.
-        const merged = [...flattenedTranscriptHistoryEntries, ...userHistoryEntries, ...fallbackRepos]
-            // Sort by most recently accessed.
-            .sort((a, b) => b.lastAccessed.getTime() - a.lastAccessed.getTime())
-            // Remove duplicates.
-            .filter(removeDupes)
-            // Take the most recent numSuggestions.
-            .slice(0, numSuggestions)
-
-        // Return just the names.
-        return merged.map(({ name }) => name)
-    }, [transcriptHistory, userHistory, numSuggestions, fallbackSuggestions])
+    // Build and order a set of repository names to query for.
+    const suggestedRepoNames: string[] = useMemo(
+        () =>
+            extractAndOrderRepoNames(transcriptHistory, userHistory.loadEntries(), numSuggestions, fallbackSuggestions),
+        [transcriptHistory, userHistory, numSuggestions, fallbackSuggestions]
+    )
 
     // Query for the suggested repositories.
     const { data: suggestedReposData } = useQuery<SuggestedReposResult, SuggestedReposVariables>(SuggestedReposQuery, {
@@ -177,3 +131,71 @@ export const useRepoSuggestions = (
  */
 const removeDupes = (first: { name: string }, index: number, self: { name: string }[]): boolean =>
     index === self.findIndex(entry => entry.name === first.name)
+
+/**
+ * extractAndOrderRepoNames is a utility function that extracts the first `max` unique
+ * repository names from the current user's chat transcript history and search browsing
+ * history, and orders them by most recently accessed.
+ *
+ * @param transcriptHistory the current user's chat transcript history from the store
+ * @param userHistory the current user's search browsing history
+ * @param max the maximum number of repositories to return, defaults to 100
+ * @param fallbacks a list of fallback repositories to fill in if we have fewer than max
+ * @returns a list of repository names ordered by most recently accessed
+ */
+export const extractAndOrderRepoNames = (
+    transcriptHistory: TranscriptJSON[],
+    userHistory: UserHistoryEntry[],
+    max: number = 100,
+    fallbacks: string[] = []
+): string[] => {
+    const flattenedTranscriptHistoryEntries = transcriptHistory
+        .map(item => {
+            const { scope, lastInteractionTimestamp } = item
+            return (
+                // Return a new item for each repository in the scope.
+                scope?.repositories.map(name => ({
+                    // Parse a date from the last interaction timestamp.
+                    lastAccessed: new Date(lastInteractionTimestamp),
+                    name,
+                })) || []
+            )
+        })
+        .flat()
+        // Remove duplicates.
+        .filter(removeDupes)
+        // We only need up to `max`.
+        .slice(0, max)
+
+    const userHistoryEntries =
+        userHistory
+            .map(item => ({
+                name: item.repoName,
+                // Parse a date from the last acessed timestamp.
+                lastAccessed: new Date(item.lastAccessed),
+            }))
+            // We only need up to `max`.
+            .slice(0, max) || []
+
+    // We also can take a list of up to `max` fallback repos to fill in if we have fewer
+    // than `max` to actually suggest.
+    const fallbackRepos = fallbacks
+        .map(name => ({
+            name,
+            // We order by most recently accessed; these should always be ranked last.
+            lastAccessed: new Date(0),
+        }))
+        .slice(0, max)
+
+    // Merge the lists.
+    const merged = [...flattenedTranscriptHistoryEntries, ...userHistoryEntries, ...fallbackRepos]
+        // Sort by most recently accessed.
+        .sort((a, b) => b.lastAccessed.getTime() - a.lastAccessed.getTime())
+        // Remove duplicates.
+        .filter(removeDupes)
+        // Take the most recent `max`.
+        .slice(0, max)
+
+    // Return just the names.
+    return merged.map(({ name }) => name)
+}
