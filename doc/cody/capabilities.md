@@ -34,27 +34,6 @@ Examples of questions Cody can handle:
   <a class="demo text-center" target="_blank" href="https://twitter.com/beyang/status/1647744307045228544">View Demo</a>
 </div>
 
-## Fix code inline
-
-Cody can help you make interactive edits and refactor code by following natural-language instructions. To do so, select the relevant code snippet, and ask Cody a question or request inline fix with `/fix` or `/touch` commands.
-
-Cody will take it from there and figure out what edits to make.
-
-![Example of Cody inline code fix ](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody_inline_June23-sm.gif)
-
-Examples of fix-up instructions Cody can handle:
-
-- Factor out any common helper functions (when multiple functions are selected)
-- Use the imported CSS module's class `n`
-- Extract the list item to a separate React component
-- Handle errors better
-- Add helpful debug log statements
-- Make this work (and yes, it often does work—give it a try!)
-
-<div class="getting-started">
-  <a class="demo text-center" target="_blank" href="https://twitter.com/sqs/status/1647673013343780864">View Demo</a>
-</div>
-
 ## Code Autocomplete
 
 Cody provides real-time code auto-completion as you type, based on the context around your open files and file history. This predictive feature tells what you are trying to implement for a smoother coding experience.
@@ -84,3 +63,52 @@ VS Code logs can be accessed via the **Outputs** view. To access autocomplete lo
 - Select **Cody by Sourcegraph** from the dropdown list
 
 ![View Cody's autocomplete logs from the Output View in VS Code](https://storage.googleapis.com/sourcegraph-assets/Docs/view-autocomplete-logs.png)
+
+## Commands
+
+Cody supports executing reusable prompts known as **Cody Commands** from within the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai). They allow you to run predefined actions (like `Explain Selected Code` and `Generate Unit Tests` for example) with smart context-fetching anywhere in the editor.
+
+There are three ways to run a Cody Command:
+
+1. Type `/` in the chat bar. Cody will then suggest a list of available commands
+2. Right click and select `"Cody"` > Choose a command from the list
+3. Use the predefined command hotkey: `⌥` + `C` / `Alt` + `C`
+
+![Cody Commands in VS Code](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-commands.png)
+
+### Custom Commands <span class="badge badge-experimental">Experimental</span>
+
+The **Custom Commands** feature allows you to customize Cody's abilities for your specific projects and workflow without writing code. They are defined in JSON format and let you call CLI tools, write custom prompts, and configure context sent to Cody. This provides a flexible way to create reusable "commands" tailored to your needs.
+
+You can define customized prompts using `JSON` files that can be invoked simply by typing a `/` in the chat box or using keyboard shortcuts `⌥` + `C` / `Alt` + `C` without opening the chat sidebar.
+
+Right-click on the selected code to open the Cody context menu and select the **Custom Commands (Experimental)** option.
+
+![Cody Custom Commands in VS Code](https://storage.googleapis.com/sourcegraph-assets/Docs/create-custom-commands.png)
+
+### `cody.json` file
+
+You can define custom commands for Cody in a `cody.json` file. To make commands only available for a specific project, create the `cody.json` file in the `.vscode` directory of that project. These workspace-specific custom commands will be available to you when you work on that project.
+
+To make custom commands globally available across multiple projects, create a new `cody.json` file in the `.vscode` folder of your home directory. These global custom commands will be available for you in Cody in any workspace.
+
+## Fix code inline
+
+Cody can help you make interactive edits and refactor code by following natural-language instructions. To do so, select the relevant code snippet, and ask Cody a question or request inline fix with `/fix` or `/touch` commands.
+
+Cody will take it from there and figure out what edits to make.
+
+![Example of Cody inline code fix ](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody_inline_June23-sm.gif)
+
+Examples of fix-up instructions Cody can handle:
+
+- Factor out any common helper functions (when multiple functions are selected)
+- Use the imported CSS module's class `n`
+- Extract the list item to a separate React component
+- Handle errors better
+- Add helpful debug log statements
+- Make this work (and yes, it often does work—give it a try!)
+
+<div class="getting-started">
+  <a class="demo text-center" target="_blank" href="https://twitter.com/sqs/status/1647673013343780864">View Demo</a>
+</div>
