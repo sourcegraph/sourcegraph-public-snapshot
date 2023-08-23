@@ -24,8 +24,13 @@
 
 ### Fixed
 
-- Await on agent server before submitting telemetry events [56007](https://github.com/sourcegraph/sourcegraph/pull/56007)
-- Bug causing exceptions to get thrown on editor events [55999](https://github.com/sourcegraph/sourcegraph/pull/55999)
+- Handle uncaught exception [#56048](https://github.com/sourcegraph/sourcegraph/pull/56048)
+- Start the agent process on Windows [#56055](https://github.com/sourcegraph/sourcegraph/pull/56055)
+- Internal: use `Autocomplete` instead of `AutoComplete` [#56106](https://github.com/sourcegraph/sourcegraph/pull/56106)
+- Start the agent process on installation events [#56116](https://github.com/sourcegraph/sourcegraph/pull/56116)
+- Cancel outdated autocomplete requests [#56119](https://github.com/sourcegraph/sourcegraph/pull/56119) [sourcegraph/cody#787](https://github.com/sourcegraph/cody/pull/787)
+- Await on agent server before submitting telemetry events [#56007](https://github.com/sourcegraph/sourcegraph/pull/56007)
+- Bug causing exceptions to get thrown on editor events [#55999](https://github.com/sourcegraph/sourcegraph/pull/55999)
 - Use inferred codebase for autocomplete [#55900](https://github.com/sourcegraph/sourcegraph/pull/55900)
 - Make sure caret is visible after accepting multiline completion [#55924](https://github.com/sourcegraph/sourcegraph/pull/55924)
 - Suppress duplicate telemetry when using agent [cody#689](https://github.com/sourcegraph/cody/pull/689)
