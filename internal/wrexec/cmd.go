@@ -120,13 +120,13 @@ func (c *Cmd) CombinedOutput() ([]byte, error) {
 	}
 	defer c.runAfterHooks()
 	output, err := c.Cmd.CombinedOutput()
-	c.SetExecutionOutput(output)
+	c.setExecutionOutput(output)
 	return output, err
 }
 
 // This is used to save the output of the command execution for later retrieval.
 // We truncate the output at 5000 characters so we don't store too much data.
-func (c *Cmd) SetExecutionOutput(output []byte) {
+func (c *Cmd) setExecutionOutput(output []byte) {
 	c.output = make([]byte, 0, maxRecordedOutput)
 	if len(c.output) > maxRecordedOutput {
 		c.output = output[:maxRecordedOutput]
@@ -154,7 +154,7 @@ func (c *Cmd) Output() ([]byte, error) {
 	}
 	defer c.runAfterHooks()
 	output, err := c.Cmd.Output()
-	c.SetExecutionOutput(output)
+	c.setExecutionOutput(output)
 	return output, err
 }
 
