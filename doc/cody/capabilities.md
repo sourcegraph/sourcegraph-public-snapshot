@@ -88,7 +88,7 @@ Right-click on the selected code to open the Cody context menu and select the **
 
 ### `cody.json` file
 
-You can define custom commands for Cody in the `cody.json` file. To make commands accessible only in a specific project, create the `cody.json` file in the `.vscode` directory of your project. Cody will execute these workspace-specific custom commands when working in that project.
+You can define custom commands for Cody in a `cody.json` file. To make commands only available for a specific project, create the `cody.json` file in the `.vscode` directory of that project. These workspace-specific custom commands will be available to you when you work on that project.
 
 To make commands accessible across multiple projects, create a new `cody.json` file in the `.vscode` directory of your home directory. Cody will execute these global custom commands in any workspace.
 
