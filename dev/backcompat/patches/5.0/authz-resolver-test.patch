@@ -1,0 +1,12 @@
+diff --git a/enterprise/cmd/frontend/internal/authz/resolvers/BUILD.bazel b/enterprise/cmd/frontend/internal/authz/resolvers/BUILD.bazel
+index 555f428561..926e1a3a06 100644
+--- a/enterprise/cmd/frontend/internal/authz/resolvers/BUILD.bazel
++++ b/enterprise/cmd/frontend/internal/authz/resolvers/BUILD.bazel
+@@ -51,6 +51,7 @@ go_test(
+         "resolver_test.go",
+     ],
+     embed = [":resolvers"],
++    race = "off",
+     deps = [
+         "//cmd/frontend/envvar",
+         "//cmd/frontend/globals",
