@@ -30,7 +30,6 @@ import com.intellij.util.ui.StatusText;
 import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
-import com.sourcegraph.cody.agent.protocol.ExecuteRecipeParams;
 import com.sourcegraph.cody.agent.protocol.RecipeInfo;
 import com.sourcegraph.cody.chat.AssistantMessageWithSettingsButton;
 import com.sourcegraph.cody.chat.Chat;
@@ -127,7 +126,8 @@ public class CodyToolWindowContent implements UpdatableChat {
     sendMessageAction.registerCustomShortcutSet(DEFAULT_SUBMIT_ACTION_SHORTCUT, promptInput);
 
     // Enable/disable the send button based on whether promptInput is empty
-    promptInput.getDocument()
+    promptInput
+        .getDocument()
         .addDocumentListener(
             new DocumentAdapter() {
               @Override
@@ -198,27 +198,31 @@ public class CodyToolWindowContent implements UpdatableChat {
       return;
     }
 
-    ApplicationManager.getApplication().executeOnPooledThread( // Non-blocking data fetch
-        () -> {
-          try {
-            // Fetch recipes from agent
-            server.recipesList().thenAccept(
-                (List<RecipeInfo> recipes) -> ApplicationManager.getApplication()
-                    .invokeLater(() -> fillRecipesPanel(recipes))); // Update on EDT
-          } catch (Exception e) {
-            logger.warn("Error fetching recipes from agent", e);
-            // Update on EDT
-            ApplicationManager.getApplication().invokeLater(this::setRecipesPanelError);
-          }
-        }
-    );
+    ApplicationManager.getApplication()
+        .executeOnPooledThread( // Non-blocking data fetch
+            () -> {
+              try {
+                // Fetch recipes from agent
+                server
+                    .recipesList()
+                    .thenAccept(
+                        (List<RecipeInfo> recipes) ->
+                            ApplicationManager.getApplication()
+                                .invokeLater(() -> fillRecipesPanel(recipes))); // Update on EDT
+              } catch (Exception e) {
+                logger.warn("Error fetching recipes from agent", e);
+                // Update on EDT
+                ApplicationManager.getApplication().invokeLater(this::setRecipesPanelError);
+              }
+            });
   }
 
   @RequiresEdt
   private void setRecipesPanelError() {
     StatusText emptyText = recipesPanel.getEmptyText();
 
-    emptyText.setText("Error fetching recipes. Check your connection. If the problem persists, please contact support.");
+    emptyText.setText(
+        "Error fetching recipes. Check your connection. If the problem persists, please contact support.");
     emptyText.appendLine(
         "Retry",
         new SimpleTextAttributes(STYLE_PLAIN, JBUI.CurrentTheme.Link.Foreground.ENABLED),
@@ -486,7 +490,8 @@ public class CodyToolWindowContent implements UpdatableChat {
   }
 
   @RequiresEdt
-  private void sendMessage(@NotNull Project project, @NotNull String message, @NotNull String recipeId) {
+  private void sendMessage(
+      @NotNull Project project, @NotNull String message, @NotNull String recipeId) {
     if (!sendButton.isEnabled()) {
       return;
     }
