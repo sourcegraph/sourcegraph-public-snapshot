@@ -124,11 +124,22 @@ export const GettingStarted: React.FC<
                 return null
             }
 
+            const unindexedCount = repos.filter(repo => !isRepoIndexed(repo)).length
+            const warningText =
+                repos.length === 1
+                    ? 'The selected repository is not indexed for Cody and is missing embeddings.'
+                    : `${unindexedCount} of ${repos.length} selected repositories are not indexed for Cody and are missing embeddings.`
+
             return (
                 <Text size="small" className={styles.scopeSelectorWarning}>
-                    {repos.length === 1 ? 'This repo is' : 'Some repos are'} not indexed for Cody. This may affect the
-                    quality of the answers. Learn more about this{' '}
-                    <Link to="/help/cody/explanations/code_graph_context#embeddings">in the docs</Link>.
+                    {warningText} This may affect the quality of the answers. To enable indexing, see the{' '}
+                    <Link
+                        className={styles.scopeSelectorWarningLink}
+                        to="/help/cody/explanations/code_graph_context#embeddings"
+                    >
+                        embeddings documentation
+                    </Link>
+                    .
                 </Text>
             )
         },

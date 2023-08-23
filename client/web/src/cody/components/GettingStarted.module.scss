@@ -62,9 +62,18 @@
         padding-left: var(--form-check-input-gutter);
     }
 
-    &-warning {
+    &-warning,
+    &-warning-link {
         margin-top: 0.75rem;
         color: var(--warning-3);
+    }
+
+    &-warning-link {
+        text-decoration: underline;
+    }
+
+    &-warning-link:hover {
+        color: var(--warning);
     }
 }
 
