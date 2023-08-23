@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var testBucketName = "github.com:api_tokens"
+
 func Test_RateLimiter_BasicFunctionality(t *testing.T) {
 	// This test is verifying the basic functionality of the rate limiter.
 	// We should be able to get a token once the token bucket config is set.
@@ -20,14 +22,13 @@ func Test_RateLimiter_BasicFunctionality(t *testing.T) {
 
 	// Set up the test by initializing the bucket with some initial quota and replenishment interval
 	ctx := context.Background()
-	bucketName := "github.com:api_tokens"
 	bucketQuota := int32(100)
 	bucketReplenishInterval := time.Duration(100) * time.Second
-	err := rl.SetTokenBucketConfig(ctx, bucketName, bucketQuota, bucketReplenishInterval)
+	err := rl.SetTokenBucketConfig(ctx, testBucketName, bucketQuota, bucketReplenishInterval)
 	assert.Nil(t, err)
 
 	// Get a token from the bucket
-	err = rl.GetToken(ctx, bucketName)
+	err = rl.GetToken(ctx, testBucketName)
 	assert.Nil(t, err)
 }
 
@@ -40,10 +41,9 @@ func Test_GetToken_TimeToWaitExceedsLimit(t *testing.T) {
 
 	// Set up the test by initializing the bucket with some initial quota and replenishment interval
 	ctx := context.Background()
-	bucketName := "github.com:api_tokens"
 	bucketQuota := int32(100)
-	bucketReplenishIntervalSeconds := time.Duration(100) * time.Second
-	err := rl.SetTokenBucketConfig(ctx, bucketName, bucketQuota, bucketReplenishIntervalSeconds)
+	bucketReplenishInterval := time.Duration(100) * time.Second
+	err := rl.SetTokenBucketConfig(ctx, testBucketName, bucketQuota, bucketReplenishInterval)
 	assert.Nil(t, err)
 
 	// Setting the max capacity to -10 means that the first token requester will have to wait 10s before using it.
@@ -57,7 +57,7 @@ func Test_GetToken_TimeToWaitExceedsLimit(t *testing.T) {
 	ctxWithDeadline, _ := context.WithDeadline(ctx, time.Now().Add(5*time.Second))
 
 	// Get a token from the bucket
-	err = rl.GetToken(ctxWithDeadline, bucketName)
+	err = rl.GetToken(ctxWithDeadline, testBucketName)
 	var expectedErr TokenGrantExceedsLimitError
 	assert.NotNil(t, err)
 	assert.True(t, errors.As(err, &expectedErr))
@@ -71,11 +71,10 @@ func Test_GetToken_BucketConfigDoesntExist(t *testing.T) {
 	rl := getTestRateLimiter(prefix, pool)
 
 	ctx := context.Background()
-	bucketName := "github.com:api_tokens"
 
 	// Try to get a token before rate limiter config is set in Redis, should return an error.
 	var expectedErr TokenBucketConfigsDontExistError
-	err := rl.GetToken(ctx, bucketName)
+	err := rl.GetToken(ctx, testBucketName)
 	assert.NotNil(t, err)
 	assert.True(t, errors.As(err, &expectedErr))
 }
@@ -100,31 +99,29 @@ func Test_getToken_WaitTimes(t *testing.T) {
 
 	// Set up the test by initializing the bucket with some initial quota and replenishment interval
 	ctx := context.Background()
-	bucketName := "github.com:api_tokens"
 	bucketQuota := int32(1)
 	// Setting the bucket replenishment to be really low so that we don't replenish any tokens during the test.
 	bucketReplenishInterval := time.Duration(10000) * time.Second
-	err := rl.SetTokenBucketConfig(ctx, bucketName, bucketQuota, bucketReplenishInterval)
+	err := rl.SetTokenBucketConfig(ctx, testBucketName, bucketQuota, bucketReplenishInterval)
 	assert.Nil(t, err)
 
 	maxTimeToWait := time.Duration(math.MaxInt32) * time.Second
 	now := time.Now()
 
 	// bucketMaxCapacity is 10, so the first 10 requests shouldn't need to wait any time
-	// before using the token, and the 11th request should need to wait a near infinite amount of
-	// time since our bucketReplenishIntervalSeconds is so high.
+	// before using the token.
 	for i := 0; i < 10; i++ {
-		waitTime, err := rl.getToken(ctx, bucketName, now, maxTimeToWait)
+		waitTime, err := rl.getToken(ctx, testBucketName, now, maxTimeToWait)
 		assert.Nil(t, err)
 		assert.Equal(t, 0, int(waitTime.Seconds()))
 	}
-	waitTime, err := rl.getToken(ctx, bucketName, now, maxTimeToWait)
+	waitTime, err := rl.getToken(ctx, testBucketName, now, maxTimeToWait)
 	assert.Nil(t, err)
 	// We want to assert here that the time we are told to wait is 10000 since
 	// 10000 is our replenishment interval, and there is -1 tokens in the bucket.
 	assert.Equal(t, bucketReplenishInterval.Seconds(), waitTime.Seconds())
 
-	waitTime, err = rl.getToken(ctx, bucketName, now, maxTimeToWait)
+	waitTime, err = rl.getToken(ctx, testBucketName, now, maxTimeToWait)
 	assert.Nil(t, err)
 	// We want to assert here that the time we are told to wait is 20000 since
 	// 10000 is our replenishment interval, and there are now -2 tokens in the bucket.
@@ -141,11 +138,10 @@ func Test_getToken_Replenishment(t *testing.T) {
 
 	// Set up the test by initializing the bucket with some initial quota and replenishment interval
 	ctx := context.Background()
-	bucketName := "github.com:api_tokens"
 	bucketQuota := int32(1)
 	// Setting the bucket replenishment to be really low so that we don't replenish any tokens during the test.
 	bucketReplenishInterval := time.Duration(1) * time.Second
-	err := rl.SetTokenBucketConfig(ctx, bucketName, bucketQuota, bucketReplenishInterval)
+	err := rl.SetTokenBucketConfig(ctx, testBucketName, bucketQuota, bucketReplenishInterval)
 	assert.Nil(t, err)
 
 	maxTimeToWait := time.Duration(math.MaxInt32) * time.Second
@@ -158,10 +154,10 @@ func Test_getToken_Replenishment(t *testing.T) {
 		bucketMaxCapacity = oldBucketMaxCapacity
 	})
 
-	// bucketMaxCapacity is 3, and replenishment is 1 token/seconds so the first 3 requests shouldn't need to wait any time
+	// bucketMaxCapacity is 3, and replenishment is 1 token/s so the first 3 requests shouldn't need to wait any time
 	// before using the token.
 	for i := 0; i < 3; i++ {
-		waitTime, err := rl.getToken(ctx, bucketName, now, maxTimeToWait)
+		waitTime, err := rl.getToken(ctx, testBucketName, now, maxTimeToWait)
 		assert.Nil(t, err)
 		assert.Equal(t, 0, int(waitTime.Seconds()))
 	}
@@ -169,13 +165,13 @@ func Test_getToken_Replenishment(t *testing.T) {
 	// assert that after 2s the bucket has replenished 2 tokens, no need to wait to use them.
 	twoSecondFromNow := now.Add(2 * time.Second)
 	for i := 0; i < 2; i++ {
-		waitTime, err := rl.getToken(ctx, bucketName, twoSecondFromNow, maxTimeToWait)
+		waitTime, err := rl.getToken(ctx, testBucketName, twoSecondFromNow, maxTimeToWait)
 		assert.Nil(t, err)
 		assert.Equal(t, 0, int(waitTime.Seconds()))
 	}
 
 	// assert that after claiming the 2 replenished tokens, the third token requires a wait of 1s.
-	waitTime, err := rl.getToken(ctx, bucketName, twoSecondFromNow, maxTimeToWait)
+	waitTime, err := rl.getToken(ctx, testBucketName, twoSecondFromNow, maxTimeToWait)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, int(waitTime.Seconds()))
 }
