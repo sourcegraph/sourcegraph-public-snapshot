@@ -1,6 +1,14 @@
 import React from 'react'
 
-import { mdiCommentOutline, mdiLinkVariantRemove, mdiSync, mdiSourceBranch, mdiUpload, mdiOpenInNew } from '@mdi/js'
+import {
+    mdiCommentOutline,
+    mdiLinkVariantRemove,
+    mdiSync,
+    mdiSourceBranch,
+    mdiUpload,
+    mdiOpenInNew,
+    mdiDownload,
+} from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -42,6 +50,11 @@ const OPERATION_TITLES: Record<BulkOperationType, JSX.Element> = {
     PUBLISH: (
         <>
             <Icon aria-hidden={true} className="text-muted" svgPath={mdiUpload} /> Publish changesets
+        </>
+    ),
+    EXPORT: (
+        <>
+            <Icon aria-hidden={true} className="text-muted" svgPath={mdiDownload} /> Export changesets
         </>
     ),
 }
