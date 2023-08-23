@@ -132,6 +132,9 @@ func Test_getToken_WaitTimes(t *testing.T) {
 }
 
 func Test_getToken_Replenishment(t *testing.T) {
+	// This test is verifying that with a token replenishment of 1 token/s
+	// the bucket replenishes the correct amount of tokens after a given period of time
+	// and therefore there is no wait time to use those tokens.
 	prefix := "__test__" + t.Name()
 	pool := redisPoolForTest(t, prefix)
 	rl := getTestRateLimiter(prefix, pool)
