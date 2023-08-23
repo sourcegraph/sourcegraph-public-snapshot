@@ -223,7 +223,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	}
 
 	// Now we add a load balancer
-	lb := loadbalancer.New(stack, resourceid.New("lb"), loadbalancer.Config{
+	lb := loadbalancer.New(stack, resourceid.New("lb-backend"), loadbalancer.Config{
 		Project:       vars.Project,
 		Region:        gcpRegion,
 		TargetService: service,

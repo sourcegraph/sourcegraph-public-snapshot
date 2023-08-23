@@ -5,4 +5,5 @@ go_library(
     srcs = ["resourceid.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid",
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
+    deps = ["//lib/pointers"],
 )

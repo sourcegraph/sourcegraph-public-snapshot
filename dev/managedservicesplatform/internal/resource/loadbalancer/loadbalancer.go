@@ -2,23 +2,32 @@ package loadbalancer
 
 import (
 	"github.com/aws/constructs-go/constructs/v10"
+	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2service"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computebackendservice"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeforwardingrule"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeglobaladdress"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeregionnetworkendpointgroup"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesslcertificate"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesslpolicy"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computetargethttpsproxy"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeurlmap"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type Output struct {
-	URLMap computeurlmap.ComputeUrlMap
+	ExternalAddress computeglobaladdress.ComputeGlobalAddress
 }
 
 type Config struct {
 	Project project.Project
 	Region  string
+
+	SharedSecretsProjectID string
 
 	TargetService cloudrunv2service.CloudRunV2Service
 }
@@ -26,7 +35,13 @@ type Config struct {
 // New instantiates a set of resources for a load-balancer backend that routes
 // requests to a Cloud Run service:
 //
-//	URLMap -> BackendService -> NetworkEndpointGroup -> CloudRun
+//	ExternalAddress (Output)
+//	  -> ForwardingRule
+//	    -> HTTPSProxy
+//	      -> URLMap
+//	        -> BackendService
+//	          -> NetworkEndpointGroup
+//	            -> CloudRun (TargetService)
 //
 // Typically some other frontend will then be placed in front of URLMap, e.g.
 // resource/cloudflare.
@@ -73,7 +88,86 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 			DefaultService: backendService.Id(),
 		})
 
+	// Create an SSL certificate from a secret in the shared secrets project
+	//
+	// TODO(@bobheadxi): Provision our own certificates with
+	// computesslcertificate.NewComputeSslCertificate, see sourcegraph/controller
+	sslCert := computesslcertificate.NewComputeSslCertificate(scope,
+		id.ResourceID("origin-cert"),
+		&computesslcertificate.ComputeSslCertificateConfig{
+			Name:    pointers.Ptr(id.DisplayName()),
+			Project: config.Project.ProjectId(),
+
+			PrivateKey: &gsmsecret.Get(scope, id.SubID("secret-origin-private-key"), gsmsecret.DataConfig{
+				Secret:    "SOURCEGRAPH_WILDCARD_KEY",
+				ProjectID: config.SharedSecretsProjectID,
+			}).Value,
+			Certificate: &gsmsecret.Get(scope, id.SubID("secret-origin-cert"), gsmsecret.DataConfig{
+				Secret:    "SOURCEGRAPH_WILDCARD_CERT",
+				ProjectID: config.SharedSecretsProjectID,
+			}).Value,
+
+			Count: pointers.Float64(1),
+
+			Lifecycle: &cdktf.TerraformResourceLifecycle{
+				CreateBeforeDestroy: pointers.Ptr(true),
+			},
+		})
+
+	// Set up an HTTPS proxy to route incoming HTTPS requests to our target's
+	// URL map, which handles load balancing for a service.
+	httpsProxy := computetargethttpsproxy.NewComputeTargetHttpsProxy(scope,
+		id.ResourceID("https-proxy"),
+		&computetargethttpsproxy.ComputeTargetHttpsProxyConfig{
+			Name:    pointers.Ptr(id.DisplayName()),
+			Project: config.Project.ProjectId(),
+			// target the URL map
+			UrlMap: urlMap.Id(),
+			// via our SSL configuration
+			SslCertificates: pointers.Ptr([]*string{
+				sslCert.Id(),
+			}),
+			SslPolicy: computesslpolicy.NewComputeSslPolicy(
+				scope,
+				id.ResourceID("ssl-policy"),
+				&computesslpolicy.ComputeSslPolicyConfig{
+					Name:    pointers.Ptr(id.DisplayName()),
+					Project: config.Project.ProjectId(),
+
+					Profile:       pointers.Ptr("MODERN"),
+					MinTlsVersion: pointers.Ptr("TLS_1_2"),
+				},
+			).Id(),
+		})
+
+	// Set up an external address to receive traffic
+	externalAddress := computeglobaladdress.NewComputeGlobalAddress(
+		scope,
+		id.ResourceID("external-address"),
+		&computeglobaladdress.ComputeGlobalAddressConfig{
+			Name:        pointers.Ptr(id.DisplayName()),
+			Project:     config.Project.ProjectId(),
+			AddressType: pointers.Ptr("EXTERNAL"),
+			IpVersion:   pointers.Ptr("IPV4"),
+		},
+	)
+
+	// Forward traffic from the external address to the HTTPS proxy that then
+	// routes request to our target
+	_ = computeforwardingrule.NewComputeForwardingRule(scope,
+		id.ResourceID("forwarding-rule"),
+		&computeforwardingrule.ComputeForwardingRuleConfig{
+			Name:    pointers.Ptr(id.DisplayName()),
+			Project: config.Project.ProjectId(),
+
+			IpAddress: externalAddress.Address(),
+			PortRange: pointers.Ptr("443"),
+
+			Target:              httpsProxy.Id(),
+			LoadBalancingScheme: pointers.Ptr("EXTERNAL"),
+		})
+
 	return &Output{
-		URLMap: urlMap,
+		ExternalAddress: externalAddress,
 	}
 }

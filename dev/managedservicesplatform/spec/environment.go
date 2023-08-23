@@ -57,6 +57,10 @@ type EnvironmentDomainCloudflareSpec struct {
 	Subdomain string `json:"subdomain"`
 	Zone      string `json:"zone"`
 
+	// Proxied configures whether Cloudflare should proxy all traffic to get
+	// WAF protection instead of only DNS resolution.
+	Proxied bool `json:"proxied"`
+	// Required configures whether traffic can only be allowed through Cloudflare.
 	Required bool `json:"required"`
 }
 
