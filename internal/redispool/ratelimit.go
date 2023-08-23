@@ -18,7 +18,7 @@ var (
 	bucketMaxCapacity                         = 10
 )
 
-// RateLimiter is a Redis-backed rate limiter that utilizes lua scripts to manage rate limit token fetching and token bucket resetting.
+// RateLimiter is a Redis-backed rate limiter that utilizes lua scripts to manage rate limit token grants and token bucket replenishment.
 // NOTE: This limiter needs to be backed by a syncer that will dump its configurations into Redis.
 // See cmd/worker/internal/ratelimit/job.go for an example.
 type RateLimiter interface {
@@ -29,8 +29,8 @@ type RateLimiter interface {
 
 	// SetTokenBucketConfig sets the configuration for the specified token bucket.
 	// bucketName: the name of the bucket where the tokens are, e.g. github.com:api_tokens
-	// bucketQuota: the number of tokens the bucket can hold.
-	// bucketReplenishIntervalSeconds: how often (in seconds) the bucket should be completely replenished.
+	// bucketQuota: the number of tokens to replenish over a bucketReplenishIntervalSeconds interval of time.
+	// bucketReplenishIntervalSeconds: how often (in seconds) the bucket should replenish bucketQuota tokens.
 	SetTokenBucketConfig(ctx context.Context, bucketName string, bucketQuota, bucketReplenishIntervalSeconds int32) error
 }
 
@@ -52,7 +52,7 @@ func NewRateLimiter() (RateLimiter, error) {
 		pool:   pool,
 		// 3 is the key count, keys are arguments passed to the lua script that will be used to get values from Redis KV.
 		getTokensScript:        *redis.NewScript(4, getTokensFromBucketLuaScript),
-		setReplenishmentScript: *redis.NewScript(3, setTokenBucketReplenishmentLuaScript),
+		setReplenishmentScript: *redis.NewScript(2, setTokenBucketReplenishmentLuaScript),
 	}, nil
 }
 
@@ -67,7 +67,7 @@ func NewTestRateLimiterWithPoolAndPrefix(pool *redis.Pool, prefix string) (RateL
 		pool:   pool,
 		// 3 is the key count, keys are arguments passed to the lua script that will be used to get values from Redis KV.
 		getTokensScript:        *redis.NewScript(4, getTokensFromBucketLuaScript),
-		setReplenishmentScript: *redis.NewScript(3, setTokenBucketReplenishmentLuaScript),
+		setReplenishmentScript: *redis.NewScript(2, setTokenBucketReplenishmentLuaScript),
 	}, nil
 }
 
@@ -109,7 +109,6 @@ func (r *rateLimiter) getToken(ctx context.Context, bucketName string, requestTi
 	connection := r.pool.Get()
 	defer connection.Close()
 
-	//maxTimeToWaitInt32 := int32(maxTimeToWait.Seconds())
 	result, err := r.getTokensScript.DoContext(ctx, connection, keys.BucketKey, keys.LastReplenishmentTimestampKey, keys.QuotaKey, keys.ReplenishmentIntervalSecondsKey, bucketMaxCapacity, requestTime.Unix(), maxTimeToWait.Seconds())
 	if err != nil {
 		return 0, errors.Wrapf(err, "error while getting tokens from bucket %s", keys.BucketKey)
@@ -164,7 +163,7 @@ func (r *rateLimiter) SetTokenBucketConfig(ctx context.Context, bucketName strin
 	connection := r.pool.Get()
 	defer connection.Close()
 
-	_, err := r.setReplenishmentScript.DoContext(ctx, connection, keys.BucketKey, keys.QuotaKey, keys.ReplenishmentIntervalSecondsKey, bucketQuota, bucketReplenishIntervalSeconds)
+	_, err := r.setReplenishmentScript.DoContext(ctx, connection, keys.QuotaKey, keys.ReplenishmentIntervalSecondsKey, bucketQuota, bucketReplenishIntervalSeconds)
 	return errors.Wrapf(err, "error while setting token bucket replenishment for bucket %s", bucketName)
 }
 
@@ -266,21 +265,12 @@ redis.call('DECRBY', bucket_key, 1)
 
 return {1, time_to_wait_for_token}`
 
-const setTokenBucketReplenishmentLuaScript = `local bucket_key = KEYS[1]
-local bucket_capacity_key = KEYS[2]
-local replenish_interval_seconds_key = KEYS[3]
-local bucket_capacity = tonumber(ARGV[1])
+const setTokenBucketReplenishmentLuaScript = `local bucket_quota_key = KEYS[1]
+local replenish_interval_seconds_key = KEYS[2]
+local bucket_quota = tonumber(ARGV[1])
 local bucket_replenish_rate_seconds = tonumber(ARGV[2])
 
--- Get the current number of tokens in the bucket.
-local current_tokens = tonumber(redis.call('GET', bucket_key) or 0)
-
--- Set bucket capacity if the current # of tokens is > the new capacity.
-if current_tokens > bucket_capacity then
-	redis.call('SET', bucket_key, bucket_capacity)
-end
-
-redis.call('SET', bucket_capacity_key, bucket_capacity)
+redis.call('SET', bucket_quota_key, bucket_quota)
 redis.call('SET', replenish_interval_seconds_key, bucket_replenish_rate_seconds)`
 
 type getTokenGrantType int64

@@ -185,7 +185,7 @@ func getTestRateLimiter(prefix string, pool *redis.Pool) rateLimiter {
 		pool:                   pool,
 		prefix:                 prefix,
 		getTokensScript:        *redis.NewScript(4, getTokensFromBucketLuaScript),
-		setReplenishmentScript: *redis.NewScript(3, setTokenBucketReplenishmentLuaScript),
+		setReplenishmentScript: *redis.NewScript(2, setTokenBucketReplenishmentLuaScript),
 	}
 }
 
