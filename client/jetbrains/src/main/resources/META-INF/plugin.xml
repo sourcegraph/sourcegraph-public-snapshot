@@ -1,4 +1,4 @@
-<idea-plugin>
+<idea-plugin require-restart="true">
     <id>com.sourcegraph.jetbrains</id>
     <name>Cody AI by Sourcegraph</name>
     <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
