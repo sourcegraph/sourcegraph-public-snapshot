@@ -193,8 +193,8 @@ commands:
     install: |
       config=""
       [[ $(uname) == "Darwin" ]] && config="--config darwin-docker"
-      bazel build //enterprise/cmd/gitserver:image_tarball ${config} && \
-      docker load --input $(bazel cquery //enterprise/cmd/gitserver:image_tarball ${config} --output=files)
+      bazel build //cmd/gitserver:image_tarball ${config} && \
+      docker load --input $(bazel cquery //cmd/gitserver:image_tarball ${config} --output=files)
   gitserver-0:
     cmd: |
       docker inspect gitserver-${GITSERVER_INDEX} >/dev/null 2>&1 && docker stop gitserver-${GITSERVER_INDEX}
