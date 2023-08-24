@@ -526,11 +526,13 @@ public class CodyToolWindowContent implements UpdatableChat {
     if (!sendButton.isEnabled()) {
       return;
     }
+
     startMessageProcessing();
-    // Build message
 
     ChatMessage humanMessage = ChatMessage.createHumanMessage(message, message);
     addMessageToChat(humanMessage);
+    activateChatTab();
+
     // This cannot run on EDT (Event Dispatch Thread) because it may block for a long time.
     // Also, if we did the back-end call in the main thread and then waited, we wouldn't see the
     // messages streamed back to us.
