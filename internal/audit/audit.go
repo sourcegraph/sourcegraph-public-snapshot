@@ -43,6 +43,7 @@ func Log(ctx context.Context, logger log.Logger, record Record) {
 
 	fields = append(fields, log.Object("audit",
 		log.String("auditId", auditId),
+		log.String("action", record.Action),
 		log.String("entity", record.Entity),
 		log.Object("actor",
 			log.String("actorUID", actorId(act)),

@@ -23,26 +23,30 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 		ownerUserID            *int32
 		serviceAccountCanWrite bool
 
-		wantErr autogold.Value
+		wantGrantReason string
+		wantErr         autogold.Value
 	}{
 		{
 			name: "reader service account",
 			featureFlags: map[string]bool{
 				featureFlagProductSubscriptionsReaderServiceAccount: true,
 			},
-			wantErr: nil,
+			wantErr:         nil,
+			wantGrantReason: "reader_service_account",
 		},
 		{
 			name: "service account",
 			featureFlags: map[string]bool{
 				featureFlagProductSubscriptionsServiceAccount: true,
 			},
-			wantErr: nil,
+			wantErr:         nil,
+			wantGrantReason: "writer_service_account",
 		},
 		{
-			name:        "same user",
-			ownerUserID: &actorID,
-			wantErr:     nil,
+			name:            "same user",
+			ownerUserID:     &actorID,
+			wantErr:         nil,
+			wantGrantReason: "same_user_or_site_admin",
 		},
 		{
 			name:        "different user",
@@ -50,15 +54,17 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 			wantErr:     autogold.Expect("must be authenticated as the authorized user or site admin"),
 		},
 		{
-			name:           "site admin",
-			actorSiteAdmin: true,
-			wantErr:        nil,
+			name:            "site admin",
+			actorSiteAdmin:  true,
+			wantErr:         nil,
+			wantGrantReason: "site_admin",
 		},
 		{
-			name:           "site admin can access another user",
-			actorSiteAdmin: true,
-			ownerUserID:    &anotherID,
-			wantErr:        nil,
+			name:            "site admin can access another user",
+			actorSiteAdmin:  true,
+			ownerUserID:     &anotherID,
+			wantErr:         nil,
+			wantGrantReason: "same_user_or_site_admin",
 		},
 		{
 			name:    "not a site admin, not accessing a user-specific resource",
@@ -79,6 +85,7 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 			},
 			serviceAccountCanWrite: true,
 			wantErr:                nil,
+			wantGrantReason:        "writer_service_account",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -106,7 +113,7 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 					featureFlagProductSubscriptionsServiceAccount:       true,
 				}, nil, nil))
 
-			err := serviceAccountOrOwnerOrSiteAdmin(
+			grantReason, err := serviceAccountOrOwnerOrSiteAdmin(
 				actor.WithActor(ctx, &actor.Actor{UID: actorID}),
 				db,
 				tc.ownerUserID,
@@ -117,6 +124,7 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 				tc.wantErr.Equal(t, err.Error())
 			} else {
 				require.NoError(t, err)
+				require.Equal(t, tc.wantGrantReason, grantReason)
 			}
 		})
 	}
