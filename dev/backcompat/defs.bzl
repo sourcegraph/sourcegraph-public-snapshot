@@ -127,6 +127,14 @@ def back_compat_defs():
         version = "v0.0.0-20230620185637-63241cb1b17a",
     )
 
+    go_repository(
+        name = "back_compat_com_github_throttled_throttled_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/throttled/throttled/v2",
+        sum = "h1:IezKE1uHlYC/0Al05oZV6Ar+uN/znw3cy9J8banxhEY=",
+        version = "v2.12.0",
+    )
+
     # Now that we have declared a replacement for the two problematic go packages that
     # @sourcegraph_back_compat depends on, we can define the repository itself. Because it
     # comes with its Bazel rules (logical, that's just the current repository but with a different
