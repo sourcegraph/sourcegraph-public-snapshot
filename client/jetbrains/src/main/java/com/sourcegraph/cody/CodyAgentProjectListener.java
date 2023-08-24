@@ -21,6 +21,9 @@ public class CodyAgentProjectListener implements ProjectManagerListener {
   }
 
   public static void stopAgent(@NotNull Project project) {
+    if (project.isDisposed()) {
+      return;
+    }
     CodyAgent service = project.getService(CodyAgent.class);
     if (service == null) {
       return;
@@ -29,6 +32,9 @@ public class CodyAgentProjectListener implements ProjectManagerListener {
   }
 
   public static void startAgent(@NotNull Project project) {
+    if (project.isDisposed()) {
+      return;
+    }
     CodyAgent service = project.getService(CodyAgent.class);
     if (service == null) {
       return;
