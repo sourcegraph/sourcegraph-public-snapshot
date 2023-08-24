@@ -27,8 +27,9 @@ const auditEntityProductSubscriptions = "dotcom-productsubscriptions"
 // productSubscription implements the GraphQL type ProductSubscription.
 // It must not be copied.
 type productSubscription struct {
-	db database.DB
-	v  *dbSubscription
+	logger log.Logger
+	db     database.DB
+	v      *dbSubscription
 
 	activeLicense     *dbLicense
 	activeLicenseErr  error
