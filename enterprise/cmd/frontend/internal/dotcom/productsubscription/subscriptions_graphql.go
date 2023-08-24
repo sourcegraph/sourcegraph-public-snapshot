@@ -27,8 +27,9 @@ const auditEntityProductSubscriptions = "dotcom-productsubscriptions"
 // productSubscription implements the GraphQL type ProductSubscription.
 // It must not be copied.
 type productSubscription struct {
-	db database.DB
-	v  *dbSubscription
+	logger log.Logger
+	db     database.DB
+	v      *dbSubscription
 
 	activeLicense     *dbLicense
 	activeLicenseErr  error
@@ -77,7 +78,7 @@ func productSubscriptionByDBID(ctx context.Context, logger log.Logger, db databa
 		Action: action,
 		Fields: []log.Field{log.String("grant_reason", grantReason)},
 	})
-	return &productSubscription{v: v, db: db}, nil
+	return &productSubscription{logger: logger, v: v, db: db}, nil
 }
 
 func (r *productSubscription) ID() graphql.ID {
@@ -123,7 +124,7 @@ func (r *productSubscription) ActiveLicense(ctx context.Context) (graphqlbackend
 	if activeLicense == nil {
 		return nil, nil
 	}
-	return &productLicense{db: r.db, v: activeLicense}, nil
+	return &productLicense{logger: r.logger, db: r.db, v: activeLicense}, nil
 }
 
 // computeActiveLicense populates r.activeLicense and r.activeLicenseErr once,
@@ -145,7 +146,7 @@ func (r *productSubscription) ProductLicenses(ctx context.Context, args *graphql
 
 	opt := dbLicensesListOptions{ProductSubscriptionID: r.v.ID}
 	args.Set(&opt.LimitOffset)
-	return &productLicenseConnection{db: r.db, opt: opt}, nil
+	return &productLicenseConnection{logger: r.logger, db: r.db, opt: opt}, nil
 }
 
 func (r *productSubscription) CodyGatewayAccess() graphqlbackend.CodyGatewayAccess {
@@ -363,7 +364,7 @@ func (r *productSubscriptionConnection) Nodes(ctx context.Context) ([]graphqlbac
 
 	var l []graphqlbackend.ProductSubscription
 	for _, result := range results {
-		l = append(l, &productSubscription{db: r.db, v: result})
+		l = append(l, &productSubscription{logger: r.logger, db: r.db, v: result})
 	}
 	return l, nil
 }

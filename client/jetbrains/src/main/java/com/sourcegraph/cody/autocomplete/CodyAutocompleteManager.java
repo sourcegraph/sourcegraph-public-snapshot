@@ -47,6 +47,11 @@ public class CodyAutocompleteManager {
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   private final AtomicReference<CancellationToken> currentJob =
       new AtomicReference<>(new CancellationToken());
+
+  public @Nullable AutocompleteTelemetry getCurrentAutocompleteTelemetry() {
+    return currentAutocompleteTelemetry;
+  }
+
   private @Nullable AutocompleteTelemetry currentAutocompleteTelemetry = null;
 
   public static @NotNull CodyAutocompleteManager getInstance() {
@@ -66,7 +71,8 @@ public class CodyAutocompleteManager {
                 GraphQlLogger.logAutocompleteSuggestedEvent(
                     p,
                     currentAutocompleteTelemetry.getLatencyMs(),
-                    currentAutocompleteTelemetry.getDisplayDurationMs());
+                    currentAutocompleteTelemetry.getDisplayDurationMs(),
+                    currentAutocompleteTelemetry.contextSummary());
                 currentAutocompleteTelemetry = null;
               }
             });
@@ -201,6 +207,10 @@ public class CodyAutocompleteManager {
       InlineCompletionTriggerKind triggerKind,
       InlineAutocompleteList result,
       CancellationToken cancellationToken) {
+    if (currentAutocompleteTelemetry != null) {
+      currentAutocompleteTelemetry.markCompletionEvent(result.completionEvent);
+    }
+
     if (Thread.interrupted() || cancellationToken.isCancelled()) {
       if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)) {
         logger.warn("autocomplete canceled");
