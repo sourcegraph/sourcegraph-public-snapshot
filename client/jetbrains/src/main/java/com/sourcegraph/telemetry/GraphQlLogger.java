@@ -1,13 +1,16 @@
 package com.sourcegraph.telemetry;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.cody.PluginUtil;
 import com.sourcegraph.cody.agent.CodyAgent;
+import com.sourcegraph.cody.agent.protocol.CompletionEvent;
 import com.sourcegraph.cody.agent.protocol.Event;
 import com.sourcegraph.config.ConfigUtil;
 import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class GraphQlLogger {
 
@@ -27,11 +30,17 @@ public class GraphQlLogger {
   }
 
   public static void logAutocompleteSuggestedEvent(
-      @NotNull Project project, long latencyMs, long displayDurationMs) {
+      @NotNull Project project,
+      long latencyMs,
+      long displayDurationMs,
+      CompletionEvent.@Nullable ContextSummary contextSummary) {
     String eventName = "CodyJetBrainsPlugin:completion:suggested";
     JsonObject eventParameters = new JsonObject();
     eventParameters.addProperty("latency", latencyMs);
     eventParameters.addProperty("displayDuration", displayDurationMs);
+    if (contextSummary != null) {
+      eventParameters.add("contextSummary", new Gson().toJsonTree(contextSummary));
+    }
     eventParameters.addProperty("isAnyKnownPluginEnabled", PluginUtil.isAnyKnownPluginEnabled());
     logEvent(project, createEvent(project, eventName, eventParameters));
   }
