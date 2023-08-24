@@ -2034,8 +2034,6 @@ github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare v0.0.0-202
 github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare v0.0.0-20230822024612-edb48c530722/go.mod h1:Djd6jHBZqe4/+MEpiBxKvzPS24NqYxNBbAYv/0074JI=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20230822024612-edb48c530722 h1:oc+BUJi+WYypX8i7vnxz4D4z/99b/H0u5Oc+b1rA5fI=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20230822024612-edb48c530722/go.mod h1:P1liUcPEczidOp1kyPvi2eqil4243IuPJ+tCOASCHEk=
-github.com/sourcegraph/managed-services-platform-cdktf/gen/projects_iam v0.0.0-20230822024612-edb48c530722 h1:TTNJcpxro3gmk04AsaahJrW9q/q1svL0AXpUs0E0zFM=
-github.com/sourcegraph/managed-services-platform-cdktf/gen/projects_iam v0.0.0-20230822024612-edb48c530722/go.mod h1:URSbp4NRizcalZTzNIBnChmA4tp9H5J/8Y5aCPm5tAg=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/random v0.0.0-20230822024612-edb48c530722 h1:N0OxHqeujHxvVU666KQY9whauLyw4s3BJGBLxx6gKR0=
 github.com/sourcegraph/managed-services-platform-cdktf/gen/random v0.0.0-20230822024612-edb48c530722/go.mod h1:TiUqRvYs/Gah8bGw/toyVWCaP3dnCB4tBh3jf5HGdo0=
 github.com/sourcegraph/mountinfo v0.0.0-20230106004439-7026e28cef67 h1:NSYSPQOE7yyyytLbKQHjxSkPnBagaGQblgVMQrQ1je0=
