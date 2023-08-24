@@ -165,6 +165,14 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     const codySidebarSize = useMemo(() => sidebarSize, [isCodySidebarOpen])
     /* eslint-enable react-hooks/exhaustive-deps */
 
+    // Set cody sidebar size to 0 when closed
+    // This ensures notepad widget displays on right side
+    useEffect(() => {
+        if (!isCodySidebarOpen) {
+            setCodySidebarSize(0)
+        }
+    }, [isCodySidebarOpen, setCodySidebarSize])
+
     useEffect(() => {
         const activeEditor = scope.editor.getActiveTextEditor()
 
