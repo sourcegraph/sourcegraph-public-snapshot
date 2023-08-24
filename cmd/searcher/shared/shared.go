@@ -4,7 +4,6 @@ package shared
 
 import (
 	"context"
-	"database/sql"
 	"io"
 	"net"
 	"net/http"
@@ -23,9 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -105,23 +101,8 @@ func setupTmpDir() error {
 	return nil
 }
 
-func initDB(observationCtx *observation.Context) (*sql.DB, error) {
-	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
-		return serviceConnections.PostgresDSN
-	})
-	db, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "searcher")
-	return db, errors.Wrap(err, "searcher: failed to connect to frontend database")
-}
-
 func Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc) error {
 	logger := observationCtx.Logger
-
-	rawDB, err := initDB(observationCtx)
-	if err != nil {
-		return err
-	}
-
-	db := database.NewDB(observationCtx.Logger, rawDB)
 
 	// Ready as soon as the database connection has been established.
 	ready()
@@ -145,7 +126,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	// Explicitly don't scope Store logger under the parent logger
 	storeObservationCtx := observation.NewContext(log.Scoped("Store", "searcher archives store"))
 
-	git := gitserver.NewClient(db)
+	git := gitserver.NewClient()
 
 	sService := &search.Service{
 		Store: &search.Store{

@@ -395,7 +395,7 @@ func initRouter(db database.DB, router *mux.Router) {
 	})))
 
 	// raw
-	router.Get(routeRaw).Handler(handler(db, serveRaw(db, gitserver.NewClient(db))))
+	router.Get(routeRaw).Handler(handler(db, serveRaw(db, gitserver.NewClient())))
 
 	// All other routes that are not found.
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

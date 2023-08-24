@@ -12,15 +12,18 @@ public class CodyAgentProjectListener implements ProjectManagerListener {
     if (!ConfigUtil.isCodyEnabled()) {
       return;
     }
-    this.startAgent(project);
+    startAgent(project);
   }
 
   @Override
   public void projectClosed(@NotNull Project project) {
-    this.stopAgent(project);
+    stopAgent(project);
   }
 
-  public void stopAgent(@NotNull Project project) {
+  public static void stopAgent(@NotNull Project project) {
+    if (project.isDisposed()) {
+      return;
+    }
     CodyAgent service = project.getService(CodyAgent.class);
     if (service == null) {
       return;
@@ -28,7 +31,10 @@ public class CodyAgentProjectListener implements ProjectManagerListener {
     service.shutdown();
   }
 
-  public void startAgent(@NotNull Project project) {
+  public static void startAgent(@NotNull Project project) {
+    if (project.isDisposed()) {
+      return;
+    }
     CodyAgent service = project.getService(CodyAgent.class);
     if (service == null) {
       return;

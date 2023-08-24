@@ -32,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -70,9 +69,9 @@ var initConnsOnce sync.Once
 // initialised correctly.
 var conns *atomicGitServerConns
 
-func getAtomicGitserverConns(logger sglog.Logger, db database.DB) *atomicGitServerConns {
+func getAtomicGitserverConns() *atomicGitServerConns {
 	initConnsOnce.Do(func() {
-		conns = &atomicGitServerConns{db: db, logger: logger}
+		conns = &atomicGitServerConns{}
 	})
 
 	return conns
@@ -98,7 +97,7 @@ type ClientSource interface {
 }
 
 // NewClient returns a new gitserver.Client.
-func NewClient(db database.DB) Client {
+func NewClient() Client {
 	logger := sglog.Scoped("GitserverClient", "Client to talk from other services to Gitserver")
 	return &clientImplementor{
 		logger:      logger,
@@ -109,7 +108,7 @@ func NewClient(db database.DB) Client {
 		// frontend internal API)
 		userAgent:    filepath.Base(os.Args[0]),
 		operations:   getOperations(),
-		clientSource: getAtomicGitserverConns(logger, db),
+		clientSource: getAtomicGitserverConns(),
 	}
 }
 
@@ -611,7 +610,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 		req := &proto.ExecRequest{
 			Repo:           string(repoName),
 			EnsureRevision: c.EnsureRevision(),
-			Args:           c.args[1:],
+			Args:           stringsToByteSlices(c.args[1:]),
 			Stdin:          c.stdin,
 			NoTimeout:      c.noTimeout,
 		}
@@ -1714,4 +1713,12 @@ func readResponseBody(body io.Reader) string {
 	// strings.TrimSpace, see attached screenshots in this pull request:
 	// https://github.com/sourcegraph/sourcegraph/pull/39358.
 	return strings.TrimSpace(string(content))
+}
+
+func stringsToByteSlices(in []string) [][]byte {
+	res := make([][]byte, len(in))
+	for i, s := range in {
+		res[i] = []byte(s)
+	}
+	return res
 }

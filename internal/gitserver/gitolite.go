@@ -8,10 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -24,9 +21,8 @@ type GitoliteLister struct {
 	userAgent  string
 }
 
-func NewGitoliteLister(db database.DB, cli httpcli.Doer) *GitoliteLister {
-	logger := log.Scoped("GitoliteLister", "logger scoped to a GitoliteLister")
-	atomicConns := getAtomicGitserverConns(logger, db)
+func NewGitoliteLister(cli httpcli.Doer) *GitoliteLister {
+	atomicConns := getAtomicGitserverConns()
 
 	return &GitoliteLister{
 		httpClient: cli,

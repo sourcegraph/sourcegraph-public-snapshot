@@ -136,9 +136,11 @@ type BatchLogRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// repo_commits is the list of repositories and commits to run the git log command on.
+	// repo_commits is the list of repositories and commits to run the git log
+	// command on.
 	RepoCommits []*RepoCommit `protobuf:"bytes,1,rep,name=repo_commits,json=repoCommits,proto3" json:"repo_commits,omitempty"`
-	// format is the entire `--format=<format>` argument to git log. This value is expected to be non-empty.
+	// format is the entire `--format=<format>` argument to git log. This value is
+	// expected to be non-empty.
 	Format string `protobuf:"bytes,2,opt,name=format,proto3" json:"format,omitempty"`
 }
 
@@ -194,7 +196,8 @@ type BatchLogResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// results is the list of results for each repository and commit pair from the input of a BatchLog request.
+	// results is the list of results for each repository and commit pair from the
+	// input of a BatchLog request.
 	Results []*BatchLogResult `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
 }
 
@@ -237,18 +240,21 @@ func (x *BatchLogResponse) GetResults() []*BatchLogResult {
 	return nil
 }
 
-// BatchLogResult is the result that associates a repository and commit pair from the input of a BatchLog
-// request with the result of the associated git log command.
+// BatchLogResult is the result that associates a repository and commit pair
+// from the input of a BatchLog request with the result of the associated git
+// log command.
 type BatchLogResult struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// repo_commit is the repository and commit pair from the input of a BatchLog request.
+	// repo_commit is the repository and commit pair from the input of a BatchLog
+	// request.
 	RepoCommit *RepoCommit `protobuf:"bytes,1,opt,name=repo_commit,json=repoCommit,proto3" json:"repo_commit,omitempty"`
 	// command_output is the output of the git log command.
 	CommandOutput string `protobuf:"bytes,2,opt,name=command_output,json=commandOutput,proto3" json:"command_output,omitempty"`
-	// command_error is an optional error message if the git log command encountered an error.
+	// command_error is an optional error message if the git log command
+	// encountered an error.
 	CommandError *string `protobuf:"bytes,3,opt,name=command_error,json=commandError,proto3,oneof" json:"command_error,omitempty"`
 }
 
@@ -525,8 +531,8 @@ func (x *PushConfig) GetPassphrase() string {
 	return ""
 }
 
-// CreateCommitFromPatchBinaryRequest is the request information needed for creating
-// the simulated staging area git object for a repo.
+// CreateCommitFromPatchBinaryRequest is the request information needed for
+// creating the simulated staging area git object for a repo.
 type CreateCommitFromPatchBinaryRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -540,7 +546,8 @@ type CreateCommitFromPatchBinaryRequest struct {
 	Patch []byte `protobuf:"bytes,3,opt,name=patch,proto3" json:"patch,omitempty"`
 	// target_ref is the ref that will be created for this patch
 	TargetRef string `protobuf:"bytes,4,opt,name=target_ref,json=targetRef,proto3" json:"target_ref,omitempty"`
-	// unique_ref is a boolean that indicates whether a unique number will be appended to the end (ie TargetRef-{#}). The generated ref will be returned.
+	// unique_ref is a boolean that indicates whether a unique number will be
+	// appended to the end (ie TargetRef-{#}). The generated ref will be returned.
 	UniqueRef bool `protobuf:"varint,5,opt,name=unique_ref,json=uniqueRef,proto3" json:"unique_ref,omitempty"`
 	// commit_info is the information to be used for the commit
 	CommitInfo *PatchCommitInfo `protobuf:"bytes,6,opt,name=commit_info,json=commitInfo,proto3" json:"commit_info,omitempty"`
@@ -722,8 +729,8 @@ func (x *CreateCommitFromPatchError) GetCombinedOutput() string {
 	return ""
 }
 
-// CreateCommitFromPatchBinaryResponse is the response type returned after creating
-// a commit from a patch
+// CreateCommitFromPatchBinaryResponse is the response type returned after
+// creating a commit from a patch
 type CreateCommitFromPatchBinaryResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -797,7 +804,7 @@ type ExecRequest struct {
 
 	Repo           string   `protobuf:"bytes,1,opt,name=repo,proto3" json:"repo,omitempty"`
 	EnsureRevision string   `protobuf:"bytes,2,opt,name=ensure_revision,json=ensureRevision,proto3" json:"ensure_revision,omitempty"`
-	Args           []string `protobuf:"bytes,3,rep,name=args,proto3" json:"args,omitempty"`
+	Args           [][]byte `protobuf:"bytes,3,rep,name=args,proto3" json:"args,omitempty"`
 	Stdin          []byte   `protobuf:"bytes,4,opt,name=stdin,proto3" json:"stdin,omitempty"`
 	NoTimeout      bool     `protobuf:"varint,5,opt,name=no_timeout,json=noTimeout,proto3" json:"no_timeout,omitempty"`
 }
@@ -848,7 +855,7 @@ func (x *ExecRequest) GetEnsureRevision() string {
 	return ""
 }
 
-func (x *ExecRequest) GetArgs() []string {
+func (x *ExecRequest) GetArgs() [][]byte {
 	if x != nil {
 		return x.Args
 	}
@@ -1048,8 +1055,8 @@ type SearchRequest struct {
 	// limit is a limit on the number of search results returned. Additional
 	// results will be ignored.
 	Limit int64 `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
-	// include_diff specifies whether the full diff should be included on the result messages.
-	// This can be expensive, so is disabled by default.
+	// include_diff specifies whether the full diff should be included on the
+	// result messages. This can be expensive, so is disabled by default.
 	IncludeDiff bool `protobuf:"varint,4,opt,name=include_diff,json=includeDiff,proto3" json:"include_diff,omitempty"`
 	// include_modified specifies whether to include the list of modified files
 	// in the search results. This can be expensive, so is disabled by default.
@@ -1201,8 +1208,8 @@ func (x *RevisionSpecifier) GetExcludeRefGlob() string {
 	return ""
 }
 
-// AuthorMatchesNode is a predicate that matches if the author's name or email address
-// matches the regex pattern.
+// AuthorMatchesNode is a predicate that matches if the author's name or email
+// address matches the regex pattern.
 type AuthorMatchesNode struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1258,8 +1265,8 @@ func (x *AuthorMatchesNode) GetIgnoreCase() bool {
 	return false
 }
 
-// CommitterMatchesNode is a predicate that matches if the author's name or email address
-// matches the regex pattern.
+// CommitterMatchesNode is a predicate that matches if the author's name or
+// email address matches the regex pattern.
 type CommitterMatchesNode struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1315,7 +1322,8 @@ func (x *CommitterMatchesNode) GetIgnoreCase() bool {
 	return false
 }
 
-// CommitBeforeNode is a predicate that matches if the commit is before the given date
+// CommitBeforeNode is a predicate that matches if the commit is before the
+// given date
 type CommitBeforeNode struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1363,7 +1371,8 @@ func (x *CommitBeforeNode) GetTimestamp() *timestamppb.Timestamp {
 	return nil
 }
 
-// CommitAfterNode is a predicate that matches if the commit is after the given date
+// CommitAfterNode is a predicate that matches if the commit is after the given
+// date
 type CommitAfterNode struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1525,8 +1534,8 @@ func (x *DiffMatchesNode) GetIgnoreCase() bool {
 	return false
 }
 
-// DiffModifiesFileNode is a predicate that matches if the commit modifies any files
-// that match the given regex pattern.
+// DiffModifiesFileNode is a predicate that matches if the commit modifies any
+// files that match the given regex pattern.
 type DiffModifiesFileNode struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2077,7 +2086,8 @@ type ArchiveRequest struct {
 	Treeish string `protobuf:"bytes,2,opt,name=treeish,proto3" json:"treeish,omitempty"`
 	// format is the format of the resulting archive (usually "tar" or "zip")
 	Format string `protobuf:"bytes,3,opt,name=format,proto3" json:"format,omitempty"`
-	// pathspecs is the list of pathspecs to include in the archive. If empty, all pathspecs are included.
+	// pathspecs is the list of pathspecs to include in the archive. If empty, all
+	// pathspecs are included.
 	Pathspecs []string `protobuf:"bytes,4,rep,name=pathspecs,proto3" json:"pathspecs,omitempty"`
 }
 
@@ -2141,7 +2151,8 @@ func (x *ArchiveRequest) GetPathspecs() []string {
 	return nil
 }
 
-// ArchiveResponse is the response from the Archive RPC that returns a chunk of the archive.
+// ArchiveResponse is the response from the Archive RPC that returns a chunk of
+// the archive.
 type ArchiveResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2402,8 +2413,8 @@ func (x *RepoCloneResponse) GetError() string {
 	return ""
 }
 
-// RepoCloneProgressRequest is a request for information about the clone progress of multiple
-// repositories on gitserver.
+// RepoCloneProgressRequest is a request for information about the clone
+// progress of multiple repositories on gitserver.
 type RepoCloneProgressRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2518,8 +2529,8 @@ func (x *RepoCloneProgress) GetCloned() bool {
 	return false
 }
 
-// RepoCloneProgressResponse is the response to a repository clone progress request
-// for multiple repositories at the same time.
+// RepoCloneProgressResponse is the response to a repository clone progress
+// request for multiple repositories at the same time.
 type RepoCloneProgressResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2664,7 +2675,8 @@ type RepoUpdateRequest struct {
 
 	// repo is the name of the repo to update.
 	Repo string `protobuf:"bytes,1,opt,name=repo,proto3" json:"repo,omitempty"`
-	// since is the debounce interval for queries, used only with request-repo-update
+	// since is the debounce interval for queries, used only with
+	// request-repo-update
 	Since *durationpb.Duration `protobuf:"bytes,2,opt,name=since,proto3" json:"since,omitempty"`
 }
 
@@ -2888,7 +2900,7 @@ type P4ExecRequest struct {
 	P4Port   string   `protobuf:"bytes,1,opt,name=p4port,proto3" json:"p4port,omitempty"`
 	P4User   string   `protobuf:"bytes,2,opt,name=p4user,proto3" json:"p4user,omitempty"`
 	P4Passwd string   `protobuf:"bytes,3,opt,name=p4passwd,proto3" json:"p4passwd,omitempty"`
-	Args     []string `protobuf:"bytes,4,rep,name=args,proto3" json:"args,omitempty"`
+	Args     [][]byte `protobuf:"bytes,4,rep,name=args,proto3" json:"args,omitempty"`
 }
 
 func (x *P4ExecRequest) Reset() {
@@ -2944,7 +2956,7 @@ func (x *P4ExecRequest) GetP4Passwd() string {
 	return ""
 }
 
-func (x *P4ExecRequest) GetArgs() []string {
+func (x *P4ExecRequest) GetArgs() [][]byte {
 	if x != nil {
 		return x.Args
 	}
@@ -3662,7 +3674,7 @@ var file_gitserver_proto_rawDesc = []byte{
 	0x09, 0x52, 0x04, 0x72, 0x65, 0x70, 0x6f, 0x12, 0x27, 0x0a, 0x0f, 0x65, 0x6e, 0x73, 0x75, 0x72,
 	0x65, 0x5f, 0x72, 0x65, 0x76, 0x69, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
 	0x52, 0x0e, 0x65, 0x6e, 0x73, 0x75, 0x72, 0x65, 0x52, 0x65, 0x76, 0x69, 0x73, 0x69, 0x6f, 0x6e,
-	0x12, 0x12, 0x0a, 0x04, 0x61, 0x72, 0x67, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x09, 0x52, 0x04,
+	0x12, 0x12, 0x0a, 0x04, 0x61, 0x72, 0x67, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x04,
 	0x61, 0x72, 0x67, 0x73, 0x12, 0x14, 0x0a, 0x05, 0x73, 0x74, 0x64, 0x69, 0x6e, 0x18, 0x04, 0x20,
 	0x01, 0x28, 0x0c, 0x52, 0x05, 0x73, 0x74, 0x64, 0x69, 0x6e, 0x12, 0x1d, 0x0a, 0x0a, 0x6e, 0x6f,
 	0x5f, 0x74, 0x69, 0x6d, 0x65, 0x6f, 0x75, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x08, 0x52, 0x09,
@@ -3930,7 +3942,7 @@ var file_gitserver_proto_rawDesc = []byte{
 	0x75, 0x73, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x70, 0x34, 0x75, 0x73,
 	0x65, 0x72, 0x12, 0x1a, 0x0a, 0x08, 0x70, 0x34, 0x70, 0x61, 0x73, 0x73, 0x77, 0x64, 0x18, 0x03,
 	0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x70, 0x34, 0x70, 0x61, 0x73, 0x73, 0x77, 0x64, 0x12, 0x12,
-	0x0a, 0x04, 0x61, 0x72, 0x67, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x09, 0x52, 0x04, 0x61, 0x72,
+	0x0a, 0x04, 0x61, 0x72, 0x67, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0c, 0x52, 0x04, 0x61, 0x72,
 	0x67, 0x73, 0x22, 0x24, 0x0a, 0x0e, 0x50, 0x34, 0x45, 0x78, 0x65, 0x63, 0x52, 0x65, 0x73, 0x70,
 	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x0c, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x22, 0x3a, 0x0a, 0x13, 0x4c, 0x69, 0x73, 0x74,

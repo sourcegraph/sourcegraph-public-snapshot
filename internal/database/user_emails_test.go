@@ -426,6 +426,8 @@ func TestUserEmails_SetVerified(t *testing.T) {
 	ctx := context.Background()
 
 	const email = "a@example.com"
+	const email2 = "b@example.com"
+
 	user, err := db.Users().Create(ctx, NewUser{
 		Email:                 email,
 		Username:              "u2",
@@ -436,33 +438,68 @@ func TestUserEmails_SetVerified(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if verified, err := isUserEmailVerified(ctx, db, user.ID, email); err != nil {
-		t.Fatal(err)
-	} else if want := false; verified != want {
-		t.Fatalf("before SetVerified, got verified %v, want %v", verified, want)
-	}
+	t.Run("set email to verified", func(t *testing.T) {
+		if verified, err := isUserEmailVerified(ctx, db, user.ID, email); err != nil {
+			t.Fatal(err)
+		} else if want := false; verified != want {
+			t.Fatalf("before SetVerified, got verified %v, want %v", verified, want)
+		}
 
-	if err := db.UserEmails().SetVerified(ctx, user.ID, email, true); err != nil {
-		t.Fatal(err)
-	}
-	if verified, err := isUserEmailVerified(ctx, db, user.ID, email); err != nil {
-		t.Fatal(err)
-	} else if want := true; verified != want {
-		t.Fatalf("after SetVerified true, got verified %v, want %v", verified, want)
-	}
+		if err := db.UserEmails().SetVerified(ctx, user.ID, email, true); err != nil {
+			t.Fatal(err)
+		}
+		if verified, err := isUserEmailVerified(ctx, db, user.ID, email); err != nil {
+			t.Fatal(err)
+		} else if want := true; verified != want {
+			t.Fatalf("after SetVerified true, got verified %v, want %v", verified, want)
+		}
+	})
 
-	if err := db.UserEmails().SetVerified(ctx, user.ID, email, false); err != nil {
-		t.Fatal(err)
-	}
-	if verified, err := isUserEmailVerified(ctx, db, user.ID, email); err != nil {
-		t.Fatal(err)
-	} else if want := false; verified != want {
-		t.Fatalf("after SetVerified false, got verified %v, want %v", verified, want)
-	}
+	t.Run("check if only email has been set to primary", func(t *testing.T) {
+		if primary, err := isUserEmailPrimary(ctx, db, user.ID, email); err != nil {
+			t.Fatal(err)
+		} else if want := true; primary != want {
+			t.Fatalf("after SetVerified true, got primary %v, want %v", primary, want)
+		}
+	})
 
-	if err := db.UserEmails().SetVerified(ctx, user.ID, "otheremail@example.com", false); err == nil {
-		t.Fatal("got err == nil for SetVerified on bad email")
-	}
+	t.Run("check if second verified email replaces first as primary", func(t *testing.T) {
+		if err := db.UserEmails().Add(ctx, user.ID, email2, nil); err != nil {
+			t.Fatal(err)
+		}
+		if err := db.UserEmails().SetVerified(ctx, user.ID, email2, true); err != nil {
+			t.Fatal(err)
+		}
+
+		if verified, err := isUserEmailVerified(ctx, db, user.ID, email2); err != nil {
+			t.Fatal(err)
+		} else if want := true; verified != want {
+			t.Fatalf("after SetVerified true, got verified %v, want %v", verified, want)
+		}
+
+		if primary, err := isUserEmailPrimary(ctx, db, user.ID, email2); err != nil {
+			t.Fatal(err)
+		} else if want := false; primary != want {
+			t.Fatalf("after SetVerified true, got primary %v, want %v", primary, want)
+		}
+	})
+
+	t.Run("set email to unverified", func(t *testing.T) {
+		if err := db.UserEmails().SetVerified(ctx, user.ID, email, false); err != nil {
+			t.Fatal(err)
+		}
+		if verified, err := isUserEmailVerified(ctx, db, user.ID, email); err != nil {
+			t.Fatal(err)
+		} else if want := false; verified != want {
+			t.Fatalf("after SetVerified false, got verified %v, want %v", verified, want)
+		}
+	})
+
+	t.Run("set invalid email to verified", func(t *testing.T) {
+		if err := db.UserEmails().SetVerified(ctx, user.ID, "otheremail@example.com", false); err == nil {
+			t.Fatal("got err == nil for SetVerified on bad email")
+		}
+	})
 }
 
 func isUserEmailVerified(ctx context.Context, db DB, userID int32, email string) (bool, error) {

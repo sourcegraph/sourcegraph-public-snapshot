@@ -8,7 +8,6 @@ import (
 
 	"github.com/hashicorp/cronexpr"
 
-	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -571,18 +570,6 @@ func HashedLicenseKeyForAnalytics(licenseKey string) string {
 // HashedLicenseKeyWithPrefix provides a sha256 hashed license key with a prefix (to ensure unique hashed values by use case).
 func HashedLicenseKeyWithPrefix(licenseKey string, prefix string) string {
 	return hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(prefix + licenseKey)))
-}
-
-func GetDeduplicatedForksIndex() collections.Set[string] {
-	index := collections.NewSet[string]()
-
-	repoConf := Get().Repositories
-	if repoConf == nil {
-		return index
-	}
-
-	index.Add(repoConf.DeduplicateForks...)
-	return index
 }
 
 // GetCompletionsConfig evaluates a complete completions configuration based on

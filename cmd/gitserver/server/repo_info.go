@@ -25,7 +25,7 @@ func (s *Server) handleReposStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shardCount := len(gitserver.NewGitserverAddresses(s.DB, conf.Get()).Addresses)
+	shardCount := len(gitserver.NewGitserverAddresses(conf.Get()).Addresses)
 
 	resp := protocol.ReposStats{
 		UpdatedAt: time.Now(), // Unused value, to keep the API pretend the data is fresh.

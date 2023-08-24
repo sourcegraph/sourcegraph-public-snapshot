@@ -186,6 +186,8 @@ _[*OpenAI models supported](https://platform.openai.com/docs/models)_
 
 ### Azure OpenAI <span class="badge badge-experimental">Experimental</span>
 
+> NOTE: Azure OpenAI support is highly experimental. We do not recommend using it in a production setting. 
+
 First, make sure you created a project in the Azure OpenAI portal.
 
 From the project overview, go to **Keys and Endpoint** and grab **one of the keys** on that page, and the **endpoint**.

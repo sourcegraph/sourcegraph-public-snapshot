@@ -2,12 +2,14 @@ package shared
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -55,18 +57,36 @@ func newServerHandler(logger log.Logger, config *Config) (http.Handler, error) {
 		return nil, errors.Errorf("create Pub/Sub client: %v", err)
 	}
 	r.Path("/-/healthz").Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		var errs error
-		if err = pubsubClient.Ping(context.Background()); err != nil {
-			errs = errors.Append(errs, errors.Errorf("Pub/Sub client: %v", err))
-		}
-		if errs != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(errs.Error()))
-			return
+		failed := false
+		status := make(map[string]string)
+		if err := pubsubClient.Ping(context.Background()); err != nil {
+			failed = true
+			status["pubsubClient"] = err.Error()
+		} else {
+			status["pubsubClient"] = "OK"
 		}
 
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(http.StatusText(http.StatusOK)))
+		if hubspotutil.HasAPIKey() {
+			if err := hubspotutil.Client().Ping(30 * time.Second); err != nil {
+				failed = true
+				status["hubspotClient"] = err.Error()
+			} else {
+				status["hubspotClient"] = "OK"
+			}
+		} else {
+			status["hubspotClient"] = "Not configured"
+		}
+
+		if failed {
+			w.WriteHeader(http.StatusInternalServerError)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
+		err := json.NewEncoder(w).Encode(status)
+		if err != nil {
+			logger.Error("failed to encode health check status", log.Error(err))
+		}
+		return
 	})
 	r.Path("/updates").
 		Methods(http.MethodGet, http.MethodPost).
