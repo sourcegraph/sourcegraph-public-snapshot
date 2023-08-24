@@ -212,7 +212,7 @@ func uploadMultipartIndexParts(ctx context.Context, httpClient Client, opts Uplo
 	)
 	defer func() { complete(err) }()
 
-	pool := new(pool.ErrorPool).WithFirstError().WithContext(context.Background())
+	pool := new(pool.ErrorPool).WithFirstError().WithContext(ctx)
 	if opts.MaxConcurrency > 0 {
 		pool.WithMaxGoroutines(opts.MaxConcurrency)
 	}
