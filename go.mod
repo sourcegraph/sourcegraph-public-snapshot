@@ -273,6 +273,7 @@ require (
 	github.com/go-redsync/redsync/v4 v4.8.1
 	github.com/hashicorp/cronexpr v1.1.1
 	github.com/hashicorp/terraform-cdk-go/cdktf v0.17.3
+	github.com/invopop/jsonschema v0.7.0
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mroth/weightedrand/v2 v2.0.1
@@ -330,7 +331,6 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/iancoleman/orderedmap v0.0.0-20190318233801-ac98e3ecb4b0 // indirect
-	github.com/invopop/jsonschema v0.7.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.0 // indirect
 	github.com/klauspost/asmfmt v1.3.2 // indirect
 	github.com/knadh/koanf/v2 v2.0.1 // indirect

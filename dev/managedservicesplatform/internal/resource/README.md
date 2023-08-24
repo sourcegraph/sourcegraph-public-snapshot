@@ -8,8 +8,8 @@ Each resource package must declare the following interface:
 ```go
 import (
   "github.com/aws/constructs-go/constructs/v10"
-  
 
+  "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 )
 
 type Output struct {}
