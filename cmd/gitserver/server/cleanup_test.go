@@ -79,8 +79,6 @@ UPDATE gitserver_repos SET repo_size_bytes = 5 where repo_id = 3;
 		logger,
 		db,
 		wrexec.NewNoOpRecordingCommandFactory(),
-		&fakeDiskSizer{},
-		10,
 		"test-gitserver",
 		root,
 		func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
@@ -137,8 +135,6 @@ func TestCleanupInactive(t *testing.T) {
 		logtest.Scoped(t),
 		newMockedGitserverDB(),
 		wrexec.NewNoOpRecordingCommandFactory(),
-		&fakeDiskSizer{},
-		10,
 		"test-gitserver",
 		root,
 		func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
@@ -177,8 +173,6 @@ func TestCleanupWrongShard(t *testing.T) {
 			logtest.Scoped(t),
 			newMockedGitserverDB(),
 			wrexec.NewNoOpRecordingCommandFactory(),
-			&fakeDiskSizer{},
-			10,
 			"does-not-exist",
 			root,
 			func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
@@ -215,8 +209,6 @@ func TestCleanupWrongShard(t *testing.T) {
 			logtest.Scoped(t),
 			newMockedGitserverDB(),
 			wrexec.NewNoOpRecordingCommandFactory(),
-			&fakeDiskSizer{},
-			10,
 			"gitserver-0",
 			root,
 			func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
@@ -255,8 +247,6 @@ func TestCleanupWrongShard(t *testing.T) {
 			logtest.Scoped(t),
 			newMockedGitserverDB(),
 			wrexec.NewNoOpRecordingCommandFactory(),
-			&fakeDiskSizer{},
-			10,
 			"gitserver-0",
 			root,
 			func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
@@ -329,8 +319,6 @@ func TestGitGCAuto(t *testing.T) {
 		logtest.Scoped(t),
 		newMockedGitserverDB(),
 		wrexec.NewNoOpRecordingCommandFactory(),
-		&fakeDiskSizer{},
-		10,
 		"test-gitserver",
 		root,
 		func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
@@ -464,8 +452,6 @@ func TestCleanupExpired(t *testing.T) {
 		logtest.Scoped(t),
 		newMockedGitserverDB(),
 		wrexec.NewNoOpRecordingCommandFactory(),
-		&fakeDiskSizer{},
-		10,
 		"test-gitserver",
 		root,
 		s.CloneRepo,
@@ -552,8 +538,6 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 			logtest.Scoped(t),
 			mockDB,
 			wrexec.NewNoOpRecordingCommandFactory(),
-			&fakeDiskSizer{},
-			10,
 			"test-gitserver",
 			root,
 			func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
@@ -582,8 +566,6 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 			logtest.Scoped(t),
 			mockDB,
 			wrexec.NewNoOpRecordingCommandFactory(),
-			&fakeDiskSizer{},
-			10,
 			"test-gitserver",
 			root,
 			func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
@@ -735,8 +717,6 @@ func TestCleanupOldLocks(t *testing.T) {
 		logtest.Scoped(t),
 		newMockedGitserverDB(),
 		wrexec.NewNoOpRecordingCommandFactory(),
-		&fakeDiskSizer{},
-		10,
 		"test-gitserver",
 		root,
 		func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
