@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/schema"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -179,17 +180,32 @@ func init() {
 					return errors.Wrap(err, "load GCP config")
 				}
 
-				// Render assets
 				renderer := managedservicesplatform.Renderer{
-					OutputDir: filepath.Join(filepath.Dir(serviceSpecPath), c.String("output")),
+					OutputDir: filepath.Join(filepath.Dir(serviceSpecPath), c.String("output"), deployEnv.ID),
 					GCP:       *gcpOptions,
 					TFC:       *tfcOptions,
 				}
+
+				// CDKTF needs the output dir to exist ahead of time, even for
+				// rendering.
+				if err := os.MkdirAll(renderer.OutputDir, 0755); err != nil {
+					return errors.Wrap(err, "prepare output directory")
+				}
+
 				cdktf, err := renderer.RenderEnvironment(service.Service, service.Build, *deployEnv)
 				if err != nil {
 					return err
 				}
-				return cdktf.Synthesize()
+
+				pending := std.Out.Pending(output.Styledf(output.StylePending,
+					"Generating Terraform assets in %q...", renderer.OutputDir))
+				if err := cdktf.Synthesize(); err != nil {
+					pending.Destroy()
+					return err
+				}
+				pending.Complete(
+					output.Styledf(output.StyleSuccess, "Terraform assets generated in %q!", renderer.OutputDir))
+				return nil
 			},
 		},
 		{

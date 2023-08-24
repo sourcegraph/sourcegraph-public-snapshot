@@ -102,7 +102,8 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	stack := stacks.New(StackName,
 		googleprovider.With(vars.Project),
 		cloudflareprovider.With(gsmsecret.DataConfig{
-			// TODO
+			Secret:    "CLOUDFLARE_API_TOKEN",
+			ProjectID: vars.SharedSecretsProjectID,
 		}),
 		randomprovider.With())
 

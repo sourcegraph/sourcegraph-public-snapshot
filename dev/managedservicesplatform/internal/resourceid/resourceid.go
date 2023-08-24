@@ -18,14 +18,14 @@ func New(id string) ID { return ID{id: id} }
 // ID.
 func (id ID) ResourceID(format string, args ...any) *string {
 	subID := fmt.Sprintf(format, args...)
-	return pointers.Ptr(fmt.Sprintf("%s-%s", id, subID))
+	return pointers.Ptr(fmt.Sprintf("%s-%s", id.id, subID))
 }
 
 // SubID can be used by resource groups that use other resource groups to safely
 // create non-conflicting sub-IDs.
 func (id ID) SubID(format string, args ...any) ID {
 	subID := fmt.Sprintf(format, args...)
-	return ID{id: fmt.Sprintf("%s-%s", id, subID)}
+	return ID{id: fmt.Sprintf("%s-%s", id.id, subID)}
 }
 
 // DisplayName can be used for display name fields - it is the ID itself, as

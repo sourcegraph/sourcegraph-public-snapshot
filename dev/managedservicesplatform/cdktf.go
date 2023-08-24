@@ -7,6 +7,8 @@ import (
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/sourcegraph/conc/panics"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type CDKTF struct {
@@ -40,8 +42,8 @@ func (c CDKTF) Synthesize() error {
 	toolVersionsPath := filepath.Join(c.OutputDir(), ".tool-versions")
 	if err := os.WriteFile(toolVersionsPath,
 		[]byte(fmt.Sprintf("terraform %s", c.terraformVersion)),
-		os.ModePerm); err != nil {
-		return err
+		0644); err != nil {
+		return errors.Wrap(err, "generate .tool-versions")
 	}
 
 	return nil
