@@ -2,11 +2,10 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
-	"path/filepath"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -383,18 +383,23 @@ func (gs *GRPCServer) RepoUpdate(_ context.Context, req *proto.RepoUpdateRequest
 	return grpcResp.ToProto(), nil
 }
 
-func (gs *GRPCServer) ReposStats(_ context.Context, _ *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {
-	b, err := readReposStatsFile(filepath.Join(gs.Server.ReposDir, reposStatsName))
+// TODO: Remove this endpoint after 5.2, it is deprecated.
+func (gs *GRPCServer) ReposStats(ctx context.Context, _ *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {
+	size, err := gs.Server.DB.GitserverRepos().GetGitserverGitDirSize(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to read %s: %s", reposStatsName, err.Error())
+		return nil, err
 	}
 
-	var stats *protocol.ReposStats
-	if err := json.Unmarshal(b, &stats); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to unmarshal %s: %s", reposStatsName, err.Error())
+	shardCount := len(gitserver.NewGitserverAddresses(conf.Get()).Addresses)
+
+	resp := protocol.ReposStats{
+		UpdatedAt: time.Now(), // Unused value, to keep the API pretend the data is fresh.
+		// Divide the size by shard count so that the cumulative number on the client
+		// side is correct again.
+		GitDirBytes: size / int64(shardCount),
 	}
 
-	return stats.ToProto(), nil
+	return resp.ToProto(), nil
 }
 
 func (gs *GRPCServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoCloneableRequest) (*proto.IsRepoCloneableResponse, error) {

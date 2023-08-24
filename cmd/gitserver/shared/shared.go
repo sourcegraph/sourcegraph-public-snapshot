@@ -55,7 +55,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -91,6 +90,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		// create are on the faster RepoDir mount.
 		if err := os.Setenv("TMP_DIR", tmpDir); err != nil {
 			return errors.Wrap(err, "setting TMP_DIR")
+		}
+
+		// Delete the old reposStats file, which was used on gitserver prior to
+		// 2023-08-14.
+		if err := os.Remove(filepath.Join(config.ReposDir, "repos-stats.json")); err != nil && !os.IsNotExist(err) {
+			logger.Error("failed to remove old reposStats file", log.Error(err))
 		}
 	}
 
@@ -140,15 +145,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(config.BatchLogGlobalConcurrencyLimit)),
 		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
 		RecordingCommandFactory: recordingCommandFactory,
-		DeduplicatedForksSet:    types.NewRepoURICache(conf.GetDeduplicatedForksIndex()),
 		Locker:                  locker,
 	}
 
-	// Make sure we watch for config updates that affect DeduplicatedForksSet or
-	// the recordingCommandFactory.
+	// Make sure we watch for config updates that affect the recordingCommandFactory.
 	go conf.Watch(func() {
-		gitserver.DeduplicatedForksSet.Overwrite(conf.GetDeduplicatedForksIndex())
-
 		// We update the factory with a predicate func. Each subsequent recordable command will use this predicate
 		// to determine whether a command should be recorded or not.
 		recordingConf := conf.Get().SiteConfig().GitRecorder

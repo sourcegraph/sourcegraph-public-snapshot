@@ -48,7 +48,7 @@ public class CodyAgent implements Disposable {
   private String agentNotRunningExplanation = "";
   private @NotNull CompletableFuture<CodyAgentServer> initialized = new CompletableFuture<>();
   private AtomicBoolean firstConnection = new AtomicBoolean(true);
-  private Future<Void> listeningToJsonRpc;
+  @NotNull private Future<Void> listeningToJsonRpc = CompletableFuture.completedFuture(null);
   private Process process;
 
   public CodyAgent(@NotNull Project project) {
@@ -74,8 +74,6 @@ public class CodyAgent implements Disposable {
     return agent != null
         && agent.process != null
         && agent.process.isAlive()
-        && agent.agentNotRunningExplanation.isEmpty()
-        && agent.listeningToJsonRpc != null
         && !agent.listeningToJsonRpc.isDone()
         && !agent.listeningToJsonRpc.isCancelled()
         && agent.client.server != null;
@@ -113,6 +111,7 @@ public class CodyAgent implements Disposable {
         // the Cody agent server.
         this.initialized = new CompletableFuture<>();
       }
+      this.agentNotRunningExplanation = "";
       startListeningToAgent();
       executorService.submit(
           () -> {

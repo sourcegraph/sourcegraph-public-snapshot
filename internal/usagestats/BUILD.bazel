@@ -35,7 +35,6 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
-        "//internal/actor",
         "//internal/conf",
         "//internal/conf/deploy",
         "//internal/database",
@@ -43,7 +42,6 @@ go_library(
         "//internal/env",
         "//internal/eventlogger",
         "//internal/featureflag",
-        "//internal/gitserver",
         "//internal/pubsub",
         "//internal/redispool",
         "//internal/search",

@@ -26,9 +26,9 @@ Cody also supports `Commands` with VS Code. These are quick, ready-to-use prompt
 
 ## Working with the Cody extension
 
-Let's create a JavaScript function that converts a `given date` into a human-readable description of the time elapsed between the `given date` and the `current date`. This example uses the `cody-quickstart` repository which is configured for Cody in Sourcegraph. You can view the code in this repository to see how Cody can provide additional context.
+Let's create a JavaScript function that converts a `given date` into a human-readable description of the time elapsed between the `given date` and the `current date`. This example uses a starter boilerplate code that helps you set up and run three tasks with the Cody VS Code extension.
 
-Here's the code for the date elapsed function from the `date.js` file:
+Here's the code for the date elapsed function:
 
 ```js
 function getTimeAgoDescription(dateString) {

@@ -24,7 +24,6 @@ go_library(
         "//internal/authz",
         "//internal/byteutils",
         "//internal/conf",
-        "//internal/database",
         "//internal/extsvc/gitolite",
         "//internal/fileutil",
         "//internal/gitserver/gitdomain",

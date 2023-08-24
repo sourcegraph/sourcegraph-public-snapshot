@@ -48,11 +48,6 @@ type Syncer struct {
 	// Hooks for enterprise specific functionality. Ignored in OSS
 	EnterpriseCreateRepoHook func(context.Context, Store, *types.Repo) error
 	EnterpriseUpdateRepoHook func(context.Context, Store, *types.Repo, *types.Repo) error
-
-	// DeduplicatedForksSet is a set of all repos added to the deduplicateForks site config
-	// property. It exists only to aid in fast lookups instead of having to iterate through the list
-	// each time.
-	DeduplicatedForksSet *types.RepoURISet
 }
 
 // RunOptions contains options customizing Run behaviour.

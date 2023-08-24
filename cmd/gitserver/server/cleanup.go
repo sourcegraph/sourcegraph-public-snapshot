@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	_ "embed"
-	"encoding/json"
 	"fmt"
 	"hash/fnv"
 	"io"
@@ -32,7 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -53,7 +51,7 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wre
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			gitserverAddrs := gitserver.NewGitserverAddresses(db, conf.Get())
+			gitserverAddrs := gitserver.NewGitserverAddresses(conf.Get())
 			// TODO: Should this return an error?
 			cleanupRepos(ctx, logger, db, rcf, nil, cfg.DesiredPercentFree, cfg.ShardID, cfg.ReposDir, cloneRepo, gitserverAddrs)
 			return nil
@@ -186,8 +184,6 @@ var (
 	})
 )
 
-const reposStatsName = "repos-stats.json"
-
 type cloneRepoFunc func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error)
 
 // cleanupRepos walks the repos directory and performs maintenance tasks:
@@ -236,10 +232,6 @@ func cleanupRepos(
 		logger.Warn("current shard is not included in the list of known gitserver shards, will not delete repos", log.String("current-hostname", shardID), log.Strings("all-shards", gitServerAddrs.Addresses))
 	}
 
-	stats := protocol.ReposStats{
-		UpdatedAt: time.Now(),
-	}
-
 	repoToSize := make(map[api.RepoName]int64)
 	var wrongShardRepoCount int64
 	var wrongShardRepoSize int64
@@ -259,13 +251,12 @@ func cleanupRepos(
 
 	collectSizeAndMaybeDeleteWrongShardRepos := func(dir common.GitDir) (done bool, err error) {
 		size := dirSize(dir.Path("."))
-		stats.GitDirBytes += size
 		name := repoNameFromDir(reposDir, dir)
 		repoToSize[name] = size
 
 		// Record the number and disk usage used of repos that should
 		// not belong on this instance and remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
-		addr := addrForRepo(ctx, logger, name, gitServerAddrs)
+		addr := addrForRepo(ctx, name, gitServerAddrs)
 
 		if !hostnameMatch(shardID, addr) {
 			wrongShardRepoCount++
@@ -536,22 +527,7 @@ func cleanupRepos(
 		})
 	}
 
-	err := bestEffortWalk(reposDir, func(dir string, fi fs.DirEntry) error {
-		if ignorePath(reposDir, dir) {
-			if fi.IsDir() {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-
-		// Look for $GIT_DIR
-		if !fi.IsDir() || fi.Name() != ".git" {
-			return nil
-		}
-
-		// We are sure this is a GIT_DIR after the above check
-		gitDir := common.GitDir(dir)
-
+	err := iterateGitDirs(reposDir, func(gitDir common.GitDir) {
 		for _, cfn := range cleanups {
 			start := time.Now()
 			done, err := cfn.Do(gitDir)
@@ -566,16 +542,9 @@ func cleanupRepos(
 				break
 			}
 		}
-		return filepath.SkipDir
 	})
 	if err != nil {
 		logger.Error("error iterating over repositories", log.Error(err))
-	}
-
-	if b, err := json.Marshal(stats); err != nil {
-		logger.Error("failed to marshal periodic stats", log.Error(err))
-	} else if err = os.WriteFile(filepath.Join(reposDir, reposStatsName), b, 0666); err != nil {
-		logger.Error("failed to write periodic stats", log.Error(err))
 	}
 
 	if len(repoToSize) > 0 {
@@ -744,25 +713,37 @@ func gitDirModTime(d common.GitDir) (time.Time, error) {
 	return head.ModTime(), nil
 }
 
-func findGitDirs(reposDir string) ([]common.GitDir, error) {
-	var dirs []common.GitDir
-	err := bestEffortWalk(reposDir, func(path string, fi fs.DirEntry) error {
-		if ignorePath(reposDir, path) {
+// iterateGitDirs walks over the reposDir on disk and calls walkFn for each of the
+// git directories found on disk.
+func iterateGitDirs(reposDir string, walkFn func(common.GitDir)) error {
+	return bestEffortWalk(reposDir, func(dir string, fi fs.DirEntry) error {
+		if ignorePath(reposDir, dir) {
 			if fi.IsDir() {
 				return filepath.SkipDir
 			}
 			return nil
 		}
+
+		// Look for $GIT_DIR
 		if !fi.IsDir() || fi.Name() != ".git" {
 			return nil
 		}
-		dirs = append(dirs, common.GitDir(path))
+
+		// We are sure this is a GIT_DIR after the above check
+		gitDir := common.GitDir(dir)
+
+		walkFn(gitDir)
+
 		return filepath.SkipDir
 	})
-	if err != nil {
-		return nil, errors.Wrap(err, "findGitDirs")
-	}
-	return dirs, nil
+}
+
+// findGitDirs collects the GitDirs of all repos under reposDir.
+func findGitDirs(reposDir string) ([]common.GitDir, error) {
+	var dirs []common.GitDir
+	return dirs, iterateGitDirs(reposDir, func(dir common.GitDir) {
+		dirs = append(dirs, dir)
+	})
 }
 
 // dirSize returns the total size in bytes of all the files under d.

@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/audit/audittest"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -118,8 +119,10 @@ func TestCodyGatewayDotcomUserResolver(t *testing.T) {
 			// convert token into a gateway token
 			gatewayToken := makeGatewayToken(dotcomToken)
 
+			logger, exportLogs := logtest.Captured(t)
+
 			// Make request from the admin checking the test user's token
-			r := productsubscription.CodyGatewayDotcomUserResolver{DB: db}
+			r := productsubscription.CodyGatewayDotcomUserResolver{Logger: logger, DB: db}
 			userResolver, err := r.CodyGatewayDotcomUserByToken(adminContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: gatewayToken})
 			require.NoError(t, err)
 
@@ -140,6 +143,15 @@ func TestCodyGatewayDotcomUserResolver(t *testing.T) {
 			}
 
 			assert.Equal(t, test.wantEnabled, userResolver.CodyGatewayAccess().Enabled())
+
+			// A user was resolved in this test case, we should have an audit log
+			assert.True(t, exportLogs().Contains(func(l logtest.CapturedLog) bool {
+				fields, ok := audittest.ExtractAuditFields(l)
+				if !ok {
+					return ok
+				}
+				return fields.Entity == "dotcom-codygatewayuser" && fields.Action == "access"
+			}))
 		})
 	}
 }
@@ -155,7 +167,7 @@ func TestCodyGatewayDotcomUserResolverUserNotFound(t *testing.T) {
 	// Create an admin context to use for the request
 	adminContext := actor.WithActor(context.Background(), actor.FromActualUser(adminUser))
 
-	r := productsubscription.CodyGatewayDotcomUserResolver{DB: db}
+	r := productsubscription.CodyGatewayDotcomUserResolver{Logger: logtest.Scoped(t), DB: db}
 	_, err = r.CodyGatewayDotcomUserByToken(adminContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: "NOT_A_TOKEN"})
 
 	_, got := err.(productsubscription.ErrDotcomUserNotFound)
@@ -221,7 +233,7 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 			userContext := actor.WithActor(context.Background(), actor.FromActualUser(test.user))
 
 			// Make request from the test user
-			r := productsubscription.CodyGatewayDotcomUserResolver{DB: db}
+			r := productsubscription.CodyGatewayDotcomUserResolver{Logger: logtest.Scoped(t), DB: db}
 			_, err := r.CodyGatewayDotcomUserByToken(userContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: codyUserGatewayToken})
 
 			require.ErrorIs(t, err, test.wantErr)
