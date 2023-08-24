@@ -354,6 +354,7 @@ func (s *Server) Handler() http.Handler {
 	)))
 	mux.HandleFunc("/list-gitolite", trace.WithRouteName("list-gitolite", s.handleListGitolite))
 	mux.HandleFunc("/is-repo-cloneable", trace.WithRouteName("is-repo-cloneable", s.handleIsRepoCloneable))
+	// TODO: Remove this endpoint after 5.2, it is deprecated.
 	mux.HandleFunc("/repos-stats", trace.WithRouteName("repos-stats", s.handleReposStats))
 	mux.HandleFunc("/repo-clone-progress", trace.WithRouteName("repo-clone-progress", s.handleRepoCloneProgress))
 	mux.HandleFunc("/delete", trace.WithRouteName("delete", s.handleRepoDelete))

@@ -71,6 +71,9 @@ type GitserverRepoStore interface {
 	// GetLastSyncOutput returns the last stored output from a repo sync (clone or fetch), or ok: false if
 	// no log is found.
 	GetLastSyncOutput(ctx context.Context, name api.RepoName) (output string, ok bool, err error)
+	// GetGitserverGitDirSize returns the total size of all git directories of cloned
+	// repos across all gitservers.
+	GetGitserverGitDirSize(ctx context.Context) (sizeBytes int64, err error)
 }
 
 var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
@@ -535,6 +538,24 @@ FROM
 	gitserver_repos_sync_output
 WHERE
 	repo_id = (SELECT id FROM repo WHERE name = %s)
+`
+
+func (s *gitserverRepoStore) GetGitserverGitDirSize(ctx context.Context) (sizeBytes int64, err error) {
+	conds := []*sqlf.Query{
+		sqlf.Sprintf("gitserver_repos.clone_status = %s", types.CloneStatusCloned),
+	}
+	q := sqlf.Sprintf(getGitserverGitDirSizeQueryFmtstr, sqlf.Join(conds, "AND"))
+	sizeBytes, _, err = basestore.ScanFirstNullInt64(s.Query(ctx, q))
+	return sizeBytes, err
+}
+
+const getGitserverGitDirSizeQueryFmtstr = `
+SELECT
+	SUM(gitserver_repos.repo_size_bytes)
+FROM
+	gitserver_repos
+WHERE
+	%s
 `
 
 func (s *gitserverRepoStore) SetRepoSize(ctx context.Context, name api.RepoName, size int64, shardID string) error {

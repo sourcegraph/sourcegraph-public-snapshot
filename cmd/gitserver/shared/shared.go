@@ -91,6 +91,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		if err := os.Setenv("TMP_DIR", tmpDir); err != nil {
 			return errors.Wrap(err, "setting TMP_DIR")
 		}
+
+		// Delete the old reposStats file, which was used on gitserver prior to
+		// 2023-08-14.
+		if err := os.Remove(filepath.Join(config.ReposDir, "repos-stats.json")); err != nil && !os.IsNotExist(err) {
+			logger.Error("failed to remove old reposStats file", log.Error(err))
+		}
 	}
 
 	// Create a database connection.

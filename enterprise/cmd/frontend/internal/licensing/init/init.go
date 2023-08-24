@@ -69,7 +69,7 @@ func Init(
 			const codeScaleLimit = 100 * 1024 * 1024 * 1024
 			licenseInfo.CodeScaleLimit = "100GiB"
 
-			stats, err := usagestats.GetRepositories(ctx)
+			stats, err := usagestats.GetRepositories(ctx, db)
 			if err != nil {
 				logger.Error("Failed to get repository stats", log.Error(err))
 				return nil

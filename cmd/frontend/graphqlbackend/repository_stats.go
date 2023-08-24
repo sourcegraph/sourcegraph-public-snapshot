@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
@@ -23,10 +22,6 @@ type repositoryStatsResolver struct {
 	repoStatistics     database.RepoStatistics
 	repoStatisticsErr  error
 
-	gitDirBytesOnce sync.Once
-	gitDirBytes     int64
-	gitDirBytesErr  error
-
 	embeddedStatsOnce sync.Once
 	embeddedRepos     int32
 	embeddedStatsErr  error
@@ -37,30 +32,9 @@ func (r *repositoryStatsResolver) Embedded(ctx context.Context) (int32, error) {
 }
 
 func (r *repositoryStatsResolver) GitDirBytes(ctx context.Context) (BigInt, error) {
-	gitDirBytes, err := r.computeGitDirBytes(ctx)
-	if err != nil {
-		return 0, err
-	}
-	return BigInt(gitDirBytes), nil
+	gitDirBytes, err := r.db.GitserverRepos().GetGitserverGitDirSize(ctx)
+	return BigInt(gitDirBytes), err
 
-}
-
-func (r *repositoryStatsResolver) computeGitDirBytes(ctx context.Context) (int64, error) {
-	r.gitDirBytesOnce.Do(func() {
-		stats, err := gitserver.NewClient().ReposStats(ctx)
-		if err != nil {
-			r.gitDirBytesErr = err
-			return
-		}
-
-		var gitDirBytes int64
-		for _, stat := range stats {
-			gitDirBytes += stat.GitDirBytes
-		}
-		r.gitDirBytes = gitDirBytes
-	})
-
-	return r.gitDirBytes, r.gitDirBytesErr
 }
 
 func (r *repositoryStatsResolver) Indexed(ctx context.Context) (int32, error) {
