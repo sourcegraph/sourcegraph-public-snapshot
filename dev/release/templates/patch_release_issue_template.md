@@ -29,7 +29,7 @@ pnpm run release release:activate-release
 
 ## Prepare release
 
-- [ ] Ensure that all [backported PRs](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+label%3Abackported-to-$MAJOR.$MINOR+sort%3Aupdated-desc) have been merged
+- [ ] Ensure that all [backported PRs](https://github.com/sourcegraph/sourcegraph/pulls?q=is%3Apr+is%3Aopen+base%3A$MAJOR.MINOR) have been merged.
 
 Create and test the first release candidate:
 
