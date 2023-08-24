@@ -527,22 +527,7 @@ func cleanupRepos(
 		})
 	}
 
-	err := bestEffortWalk(reposDir, func(dir string, fi fs.DirEntry) error {
-		if ignorePath(reposDir, dir) {
-			if fi.IsDir() {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-
-		// Look for $GIT_DIR
-		if !fi.IsDir() || fi.Name() != ".git" {
-			return nil
-		}
-
-		// We are sure this is a GIT_DIR after the above check
-		gitDir := common.GitDir(dir)
-
+	err := iterateGitDirs(reposDir, func(gitDir common.GitDir) {
 		for _, cfn := range cleanups {
 			start := time.Now()
 			done, err := cfn.Do(gitDir)
@@ -557,7 +542,6 @@ func cleanupRepos(
 				break
 			}
 		}
-		return filepath.SkipDir
 	})
 	if err != nil {
 		logger.Error("error iterating over repositories", log.Error(err))
@@ -729,25 +713,37 @@ func gitDirModTime(d common.GitDir) (time.Time, error) {
 	return head.ModTime(), nil
 }
 
-func findGitDirs(reposDir string) ([]common.GitDir, error) {
-	var dirs []common.GitDir
-	err := bestEffortWalk(reposDir, func(path string, fi fs.DirEntry) error {
-		if ignorePath(reposDir, path) {
+// iterateGitDirs walks over the reposDir on disk and calls walkFn for each of the
+// git directories found on disk.
+func iterateGitDirs(reposDir string, walkFn func(common.GitDir)) error {
+	return bestEffortWalk(reposDir, func(dir string, fi fs.DirEntry) error {
+		if ignorePath(reposDir, dir) {
 			if fi.IsDir() {
 				return filepath.SkipDir
 			}
 			return nil
 		}
+
+		// Look for $GIT_DIR
 		if !fi.IsDir() || fi.Name() != ".git" {
 			return nil
 		}
-		dirs = append(dirs, common.GitDir(path))
+
+		// We are sure this is a GIT_DIR after the above check
+		gitDir := common.GitDir(dir)
+
+		walkFn(gitDir)
+
 		return filepath.SkipDir
 	})
-	if err != nil {
-		return nil, errors.Wrap(err, "findGitDirs")
-	}
-	return dirs, nil
+}
+
+// findGitDirs collects the GitDirs of all repos under reposDir.
+func findGitDirs(reposDir string) ([]common.GitDir, error) {
+	var dirs []common.GitDir
+	return dirs, iterateGitDirs(reposDir, func(dir common.GitDir) {
+		dirs = append(dirs, dir)
+	})
 }
 
 // dirSize returns the total size in bytes of all the files under d.
