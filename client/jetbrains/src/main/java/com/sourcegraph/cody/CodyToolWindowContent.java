@@ -60,6 +60,7 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -204,17 +205,9 @@ public class CodyToolWindowContent implements UpdatableChat {
         .executeOnPooledThread( // Non-blocking data fetch
             () -> {
               try {
-                // Fetch recipes from agent
-                server
-                    .recipesList()
-                    .thenAccept(
-                        (List<RecipeInfo> recipes) ->
-                            ApplicationManager.getApplication()
-                                .invokeLater(() -> {
-                                  fillRecipesPanel(recipes);
-
-                                  fillContextMenu(recipes);
-                                })); // Update on EDT
+                server.recipesList().thenAccept(
+                    (List<RecipeInfo> recipes) -> ApplicationManager.getApplication()
+                        .invokeLater(() -> updateUIWithRecipeList(recipes))); // Update on EDT
               } catch (Exception e) {
                 logger.warn("Error fetching recipes from agent", e);
                 // Update on EDT
@@ -233,6 +226,17 @@ public class CodyToolWindowContent implements UpdatableChat {
         "Retry",
         new SimpleTextAttributes(STYLE_PLAIN, JBUI.CurrentTheme.Link.Foreground.ENABLED),
         __ -> refreshRecipes());
+  }
+
+  @RequiresEdt
+  private void updateUIWithRecipeList(@NotNull List<RecipeInfo> recipes) {
+    // we don't want to display recipes with ID "chat-question" and "code-question"
+    var recipesToDisplay = recipes.stream()
+        .filter(recipe -> !recipe.id.equals("chat-question") && !recipe.id.equals("code-question"))
+        .collect(Collectors.toList());
+
+    fillRecipesPanel(recipesToDisplay);
+    fillContextMenu(recipesToDisplay);
   }
 
   @RequiresEdt
