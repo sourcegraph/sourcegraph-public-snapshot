@@ -34,25 +34,14 @@ The default run type.
   - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
-<<<<<<< HEAD
-  - BackCompat Tests
-  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
-=======
   - Async BackCompat Tests
-  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
-  - **Security Scanning**: Sonarcloud Scan
->>>>>>> 1d2d118353 (bazel: move backcompat tests to their own pipeline (#55489))
+  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
 
 - Pipeline for `DatabaseSchema` changes:
   - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
-<<<<<<< HEAD
-  - BackCompat Tests
-=======
   - Async BackCompat Tests
-  - **Security Scanning**: Sonarcloud Scan
->>>>>>> 1d2d118353 (bazel: move backcompat tests to their own pipeline (#55489))
 
 - Pipeline for `Docs` changes:
   - **Metadata**: Pipeline metadata
@@ -72,45 +61,25 @@ The default run type.
   - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
-<<<<<<< HEAD
-  - BackCompat Tests
-=======
   - Async BackCompat Tests
-  - **Security Scanning**: Sonarcloud Scan
->>>>>>> 1d2d118353 (bazel: move backcompat tests to their own pipeline (#55489))
 
 - Pipeline for `ExecutorDockerRegistryMirror` changes:
   - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
-<<<<<<< HEAD
-  - BackCompat Tests
-=======
   - Async BackCompat Tests
-  - **Security Scanning**: Sonarcloud Scan
->>>>>>> 1d2d118353 (bazel: move backcompat tests to their own pipeline (#55489))
 
 - Pipeline for `CIScripts` changes:
   - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
-<<<<<<< HEAD
-  - BackCompat Tests
-=======
   - Async BackCompat Tests
-  - **Security Scanning**: Sonarcloud Scan
->>>>>>> 1d2d118353 (bazel: move backcompat tests to their own pipeline (#55489))
 
 - Pipeline for `Terraform` changes:
   - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
-<<<<<<< HEAD
-  - BackCompat Tests
-=======
   - Async BackCompat Tests
-  - **Security Scanning**: Sonarcloud Scan
->>>>>>> 1d2d118353 (bazel: move backcompat tests to their own pipeline (#55489))
 
 - Pipeline for `SVG` changes:
   - **Metadata**: Pipeline metadata
@@ -130,35 +99,19 @@ The default run type.
   - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
-<<<<<<< HEAD
-  - BackCompat Tests
-=======
   - Async BackCompat Tests
-  - **Security Scanning**: Sonarcloud Scan
->>>>>>> 1d2d118353 (bazel: move backcompat tests to their own pipeline (#55489))
 
 - Pipeline for `WolfiPackages` changes:
   - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
-<<<<<<< HEAD
-  - BackCompat Tests
-=======
   - Async BackCompat Tests
-  - **Security Scanning**: Sonarcloud Scan
-  - **Dependency packages**: Build and sign repository index
->>>>>>> 1d2d118353 (bazel: move backcompat tests to their own pipeline (#55489))
 
 - Pipeline for `WolfiBaseImages` changes:
   - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
-<<<<<<< HEAD
-  - BackCompat Tests
-=======
   - Async BackCompat Tests
-  - **Security Scanning**: Sonarcloud Scan
->>>>>>> 1d2d118353 (bazel: move backcompat tests to their own pipeline (#55489))
 
 - Pipeline for `Protobuf` changes:
   - **Metadata**: Pipeline metadata
@@ -178,22 +131,8 @@ sg ci build wolfi
 
 Base pipeline (more steps might be included based on branch changes):
 
-<<<<<<< HEAD
 - **Metadata**: Pipeline metadata
 - **Wolfi image builds**: Build Wolfi-based batcheshelper, Build Wolfi-based blobstore, Build Wolfi-based bundled-executor, Build Wolfi-based cadvisor, Build Wolfi-based embeddings, Build Wolfi-based executor, Build Wolfi-based executor-kubernetes, Build Wolfi-based frontend, Build Wolfi-based github-proxy, Build Wolfi-based gitserver, Build Wolfi-based indexed-searcher, Build Wolfi-based jaeger-agent, Build Wolfi-based jaeger-all-in-one, Build Wolfi-based cody-gateway, Build Wolfi-based loadtest, Build Wolfi-based migrator, Build Wolfi-based node-exporter, Build Wolfi-based opentelemetry-collector, Build Wolfi-based postgres_exporter, Build Wolfi-based precise-code-intel-worker, Build Wolfi-based prometheus, Build Wolfi-based prometheus-gcp, Build Wolfi-based redis-cache, Build Wolfi-based redis-store, Build Wolfi-based redis_exporter, Build Wolfi-based repo-updater, Build Wolfi-based search-indexer, Build Wolfi-based searcher, Build Wolfi-based server, Build Wolfi-based sg, Build Wolfi-based symbols, Build Wolfi-based syntax-highlighter, Build Wolfi-based worker
-=======
-- **Pipeline setup**: Trigger async
-- **Image builds**: Build Docker images
-- Perform bazel prechecks
-- Tests
-- Async BackCompat Tests
-- **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
-- **Security Scanning**: Sonarcloud Scan
-- **Publish candidate images**: Push candidate Images
-- **End-to-end tests**: Executors E2E
-- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
->>>>>>> 1d2d118353 (bazel: move backcompat tests to their own pipeline (#55489))
 
 ### Release branch nightly healthcheck build
 
