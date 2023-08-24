@@ -1411,7 +1411,7 @@
     "executors.accessToken": {
       "description": "The shared secret between Sourcegraph and executors.",
       "type": "string",
-      "minLength": 20,
+      "pattern": "^(.{20,}|REDACTED)$",
       "examples": ["my-super-secret-access-token"]
     },
     "executors.multiqueue": {
