@@ -44,6 +44,7 @@ env:
   PROMETHEUS_URL: http://localhost:9090
   JAEGER_SERVER_URL: http://localhost:16686
 
+  SRC_GRPC_ENABLE_CONF: "true"
   SRC_DEVELOPMENT: "true"
   SRC_PROF_HTTP: ""
   SRC_PROF_SERVICES: |
@@ -328,7 +329,7 @@ commands:
     cmd: .bin/caddy_${CADDY_VERSION} run --watch --config=dev/Caddyfile
     install_func: installCaddy
     env:
-      CADDY_VERSION: 2.4.5
+      CADDY_VERSION: 2.7.3
 
   web:
     description: Enterprise version of the web app
