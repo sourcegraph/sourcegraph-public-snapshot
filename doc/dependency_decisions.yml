@@ -520,3 +520,33 @@
     :why:
     :versions: []
     :when: 2023-06-19 14:47:16.005983000 Z
+- - :license
+  - github.com/ricochet2200/go-disk-usage/du
+  - Unlicense
+  - :who:
+    :why:
+    :versions: []
+    :when: 2023-06-19 19:11:34.298774000 Z
+- - :license
+  - github.com/hashicorp/go-retryablehttp
+  - MPL-2.0
+  - :who:
+    :why:
+    :versions: []
+    :when: 2023-07-17 17:10:16.265371000 Z
+- - :approve
+  - github.com/hashicorp/go-retryablehttp
+  - &4
+    :who:
+    :why:
+    :versions: []
+    :when: 2023-07-17 18:09:46.313307000 Z
+- - :approve
+  - MPL-2.0
+  - *4
+- - :permit
+  - BlueOak-1.0.0
+  - :who:
+    :why: Approved permissive license (https://handbook.sourcegraph.com/departments/engineering/dev/process/licenses/#allowed-licenses-permissive-licenses)
+    :versions: []
+    :when: 2023-07-27 21:22:46.362043095 Z
