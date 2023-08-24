@@ -47,7 +47,7 @@ func init() {
 					Name:    "output",
 					Aliases: []string{"o"},
 					Usage:   "Output directory for generated spec file",
-					Value:   "terraform",
+					Value:   "services",
 				},
 			},
 			Action: func(c *cli.Context) error {
@@ -84,7 +84,7 @@ func init() {
 									MaxCount: pointers.Ptr(1),
 								},
 							},
-							Resources: spec.EnvironmentResourcesSpec{
+							Resources: &spec.EnvironmentResourcesSpec{
 								Redis: &spec.EnvironmentResourceRedisSpec{},
 								// TODO: Not implemented.
 								// BigQueryTable: &spec.EnvironmentResourceBigQueryTableSpec{
@@ -113,7 +113,8 @@ func init() {
 				if err != nil {
 					return err
 				}
-				output := filepath.Join(c.String("output"), c.Args().First(), "service.yaml")
+				output := filepath.Join(
+					c.String("output"), c.Args().First(), "service.yaml")
 				if err := os.WriteFile(output, exampleSpec, 0644); err != nil {
 					return err
 				}
@@ -128,10 +129,10 @@ func init() {
 			Description: "Generate Terraform assets for a Managed Services Platform service spec.",
 			Flags: []cli.Flag{
 				&cli.StringFlag{
-					Name:     "output",
-					Aliases:  []string{"o"},
-					Usage:    "Output directory for generated Terraform assets",
-					Required: true,
+					Name:    "output",
+					Aliases: []string{"o"},
+					Usage:   "Output directory for generated Terraform assets, relative to service spec",
+					Value:   "terraform",
 				},
 				&cli.BoolFlag{
 					Name:  "tfc",
@@ -150,15 +151,16 @@ func init() {
 				}
 
 				// Load specification
-				serviceSpecData, err := os.ReadFile(c.Args().First())
+				serviceSpecPath := c.Args().First()
+				serviceSpecData, err := os.ReadFile(serviceSpecPath)
 				if err != nil {
 					return err
 				}
-				serviceSpec, err := spec.Parse(serviceSpecData)
+				service, err := spec.Parse(serviceSpecData)
 				if err != nil {
 					return err
 				}
-				deployEnv := serviceSpec.GetEnvironment(c.Args().Get(1))
+				deployEnv := service.GetEnvironment(c.Args().Get(1))
 				if deployEnv == nil {
 					return errors.Newf("environment %q not found in service spec", c.Args().Get(1))
 				}
@@ -179,11 +181,11 @@ func init() {
 
 				// Render assets
 				renderer := managedservicesplatform.Renderer{
-					OutputDir: c.String("output"),
+					OutputDir: filepath.Join(filepath.Dir(serviceSpecPath), c.String("output")),
 					GCP:       *gcpOptions,
 					TFC:       *tfcOptions,
 				}
-				cdktf, err := renderer.RenderEnvironment(serviceSpec.Service, serviceSpec.Build, *deployEnv)
+				cdktf, err := renderer.RenderEnvironment(service.Service, service.Build, *deployEnv)
 				if err != nil {
 					return err
 				}
@@ -224,8 +226,9 @@ func init() {
 func mspLoadGCPConfig(ctx context.Context, s *secrets.Store, enabled bool) (*managedservicesplatform.GCPOptions, error) {
 	if !enabled {
 		return &managedservicesplatform.GCPOptions{
-			ParentFolderID:   "EXAMPLE",
-			BillingAccountID: "EXAMPLE",
+			ParentFolderID:         "EXAMPLE",
+			BillingAccountID:       "EXAMPLE",
+			SharedSecretsProjectID: "sourcegraph-secrets",
 		}, nil
 	}
 
@@ -248,8 +251,9 @@ func mspLoadGCPConfig(ctx context.Context, s *secrets.Store, enabled bool) (*man
 	}
 
 	return &managedservicesplatform.GCPOptions{
-		ParentFolderID:   parentFolderID,
-		BillingAccountID: billingAccountID,
+		ParentFolderID:         parentFolderID,
+		BillingAccountID:       billingAccountID,
+		SharedSecretsProjectID: "sourcegraph-secrets",
 	}, nil
 }
 

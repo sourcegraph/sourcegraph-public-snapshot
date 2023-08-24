@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/cloudrun"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/iam"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/terraformversion"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/tfcbackend"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/project"
@@ -43,6 +42,8 @@ type GCPOptions struct {
 
 	ParentFolderID   string
 	BillingAccountID string
+
+	SharedSecretsProjectID string
 }
 
 // Renderer takes MSP service specifications
@@ -98,16 +99,12 @@ func (r *Renderer) RenderEnvironment(
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create project stack")
 	}
-	if _, err := iam.NewStack(stacks, iam.Variables{
-		Project: projectOutput.Project,
-	}); err != nil {
-		return nil, errors.Wrap(err, "failed to create iam stack")
-	}
 	if _, err = cloudrun.NewStack(stacks, cloudrun.Variables{
-		Project:     projectOutput.Project,
-		Service:     svc,
-		Image:       build.Image,
-		Environment: env,
+		Project:                projectOutput.Project,
+		Service:                svc,
+		Image:                  build.Image,
+		Environment:            env,
+		SharedSecretsProjectID: r.GCP.SharedSecretsProjectID,
 	}); err != nil {
 		return nil, errors.Wrap(err, "failed to create cloudrun stack")
 	}

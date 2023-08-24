@@ -152,7 +152,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 
 	// redisInstance is only created and non-nil if Redis is configured for the
 	// environment.
-	if vars.Environment.Resources.Redis != nil {
+	if vars.Environment.Resources != nil && vars.Environment.Resources.Redis != nil {
 		redisInstance, err := redis.New(stack,
 			resourceid.New("redis"),
 			redis.Config{
@@ -196,7 +196,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 
 	// bigqueryDataset is only created and non-nil if BigQuery is configured for
 	// the environment.
-	if vars.Environment.Resources.BigQueryTable != nil {
+	if vars.Environment.Resources != nil && vars.Environment.Resources.BigQueryTable != nil {
 		bigqueryDataset, err := bigquery.New(stack, resourceid.New("bigquery"), bigquery.Config{
 			DefaultProject: vars.Project,
 			Spec:           *vars.Environment.Resources.BigQueryTable,
@@ -226,9 +226,10 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 
 	// Now we add a load balancer
 	lb := loadbalancer.New(stack, resourceid.New("lb-backend"), loadbalancer.Config{
-		Project:       vars.Project,
-		Region:        gcpRegion,
-		TargetService: service,
+		Project:                vars.Project,
+		Region:                 gcpRegion,
+		TargetService:          service,
+		SharedSecretsProjectID: vars.SharedSecretsProjectID,
 	})
 
 	// Then whatever the user requested to expose the service publicly

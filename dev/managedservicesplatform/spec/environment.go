@@ -10,12 +10,12 @@ type EnvironmentSpec struct {
 	Deploy    EnvironmentDeploySpec    `json:"deploy"`
 	Domain    EnvironmentDomainSpec    `json:"domain"`
 	Instances EnvironmentInstancesSpec `json:"instances"`
-	Resources EnvironmentResourcesSpec `json:"resources"`
 
+	Resources   *EnvironmentResourcesSpec   `json:"resources,omitempty"`
 	Healthcheck *EnvironmentHealthcheckSpec `json:"healtcheck,omitempty"`
 
-	Env       map[string]string `json:"env"`
-	SecretEnv map[string]string `json:"secretEnv"`
+	Env       map[string]string `json:"env,omitempty"`
+	SecretEnv map[string]string `json:"secretEnv,omitempty"`
 }
 
 type EnvironmentDeploySpec struct {
@@ -60,9 +60,9 @@ type EnvironmentDomainCloudflareSpec struct {
 
 	// Proxied configures whether Cloudflare should proxy all traffic to get
 	// WAF protection instead of only DNS resolution.
-	Proxied bool `json:"proxied"`
+	Proxied bool `json:"proxied,omitempty"`
 	// Required configures whether traffic can only be allowed through Cloudflare.
-	Required bool `json:"required"`
+	Required bool `json:"required,omitempty"`
 }
 
 type EnvironmentInstancesSpec struct {
@@ -81,7 +81,7 @@ type EnvironmentInstancesScalingSpec struct {
 	// Cloud Run will begin scaling up additional instances, up to MaxCount.
 	//
 	// If not provided, the defualt is defaultMaxConcurrentRequests
-	MaxRequestConcurrency *int `json:"maxRequestConcurrency"`
+	MaxRequestConcurrency *int `json:"maxRequestConcurrency,omitempty"`
 	// MinCount is the minimum number of instances that will be running at all
 	// times. Set this to >0 to avoid service warm-up delays.
 	MinCount int `json:"minCount"`
@@ -89,7 +89,7 @@ type EnvironmentInstancesScalingSpec struct {
 	// scale up to.
 	//
 	// If not provided, the default is 5.
-	MaxCount *int `json:"maxCount"`
+	MaxCount *int `json:"maxCount,omitempty"`
 }
 
 type EnvironmentHealthcheckSpec struct {
