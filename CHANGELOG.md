@@ -15,13 +15,19 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Changed
 
+### Fixed
+
+### Removed
+
+## 5.1.2
+
+### Changed
+
 - Replace `x11` clipboard library with `attoto/clipboard` to support more platforms. [#1022](https://github.com/sourcegraph/src-cli/pull/1022)
 
 ### Fixed
 
 - The temporary docker volume created during workspace preparation is now cleaned up when failure occurs. [#1021](https://github.com/sourcegraph/src-cli/pull/1021).
-
-### Removed
 
 ## 5.1.1
 
