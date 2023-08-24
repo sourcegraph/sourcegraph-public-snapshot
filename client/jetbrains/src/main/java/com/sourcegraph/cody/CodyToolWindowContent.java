@@ -205,9 +205,13 @@ public class CodyToolWindowContent implements UpdatableChat {
         .executeOnPooledThread( // Non-blocking data fetch
             () -> {
               try {
-                server.recipesList().thenAccept(
-                    (List<RecipeInfo> recipes) -> ApplicationManager.getApplication()
-                        .invokeLater(() -> updateUIWithRecipeList(recipes))); // Update on EDT
+                server
+                    .recipesList()
+                    .thenAccept(
+                        (List<RecipeInfo> recipes) ->
+                            ApplicationManager.getApplication()
+                                .invokeLater(
+                                    () -> updateUIWithRecipeList(recipes))); // Update on EDT
               } catch (Exception e) {
                 logger.warn("Error fetching recipes from agent", e);
                 // Update on EDT
@@ -231,9 +235,11 @@ public class CodyToolWindowContent implements UpdatableChat {
   @RequiresEdt
   private void updateUIWithRecipeList(@NotNull List<RecipeInfo> recipes) {
     // we don't want to display recipes with ID "chat-question" and "code-question"
-    var recipesToDisplay = recipes.stream()
-        .filter(recipe -> !recipe.id.equals("chat-question") && !recipe.id.equals("code-question"))
-        .collect(Collectors.toList());
+    var recipesToDisplay =
+        recipes.stream()
+            .filter(
+                recipe -> !recipe.id.equals("chat-question") && !recipe.id.equals("code-question"))
+            .collect(Collectors.toList());
 
     fillRecipesPanel(recipesToDisplay);
     fillContextMenu(recipesToDisplay);
@@ -266,13 +272,14 @@ public class CodyToolWindowContent implements UpdatableChat {
       if (existingAction != null) {
         continue;
       }
-      var action = new DumbAwareAction(recipe.title) {
-        @Override
-        public void actionPerformed(@NotNull AnActionEvent e) {
-          GraphQlLogger.logCodyEvent(project, "recipe:" + recipe.id, "clicked");
-          sendMessage(project, recipe.title, recipe.id);
-        }
-      };
+      var action =
+          new DumbAwareAction(recipe.title) {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+              GraphQlLogger.logCodyEvent(project, "recipe:" + recipe.id, "clicked");
+              sendMessage(project, recipe.title, recipe.id);
+            }
+          };
       actionManager.registerAction(actionId, action);
       group.addAction(action);
     }
