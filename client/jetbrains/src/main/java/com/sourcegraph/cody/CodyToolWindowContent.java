@@ -7,9 +7,11 @@ import static javax.swing.KeyStroke.getKeyStroke;
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI;
+import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CustomShortcutSet;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.KeyboardShortcut;
 import com.intellij.openapi.actionSystem.ShortcutSet;
 import com.intellij.openapi.application.ApplicationManager;
@@ -208,7 +210,11 @@ public class CodyToolWindowContent implements UpdatableChat {
                     .thenAccept(
                         (List<RecipeInfo> recipes) ->
                             ApplicationManager.getApplication()
-                                .invokeLater(() -> fillRecipesPanel(recipes))); // Update on EDT
+                                .invokeLater(() -> {
+                                  fillRecipesPanel(recipes);
+
+                                  fillContextMenu(recipes);
+                                })); // Update on EDT
               } catch (Exception e) {
                 logger.warn("Error fetching recipes from agent", e);
                 // Update on EDT
@@ -231,6 +237,8 @@ public class CodyToolWindowContent implements UpdatableChat {
 
   @RequiresEdt
   private void fillRecipesPanel(@NotNull List<RecipeInfo> recipes) {
+    recipesPanel.removeAll();
+
     // Loop on recipes and add a button for each item
     for (RecipeInfo recipe : recipes) {
       JButton recipeButton = createRecipeButton(recipe.title);
@@ -240,6 +248,29 @@ public class CodyToolWindowContent implements UpdatableChat {
             sendMessage(this.project, recipe.title, recipe.id);
           });
       recipesPanel.add(recipeButton);
+    }
+  }
+
+  private void fillContextMenu(@NotNull List<RecipeInfo> recipes) {
+    ActionManager actionManager = ActionManager.getInstance();
+    DefaultActionGroup group = (DefaultActionGroup) actionManager.getAction("CodyEditorActions");
+
+    // Loop on recipes and create an action for each new item
+    for (RecipeInfo recipe : recipes) {
+      String actionId = "cody.recipe." + recipe.id;
+      var existingAction = actionManager.getAction(actionId);
+      if (existingAction != null) {
+        continue;
+      }
+      var action = new DumbAwareAction(recipe.title) {
+        @Override
+        public void actionPerformed(@NotNull AnActionEvent e) {
+          GraphQlLogger.logCodyEvent(project, "recipe:" + recipe.id, "clicked");
+          sendMessage(project, recipe.title, recipe.id);
+        }
+      };
+      actionManager.registerAction(actionId, action);
+      group.addAction(action);
     }
   }
 
