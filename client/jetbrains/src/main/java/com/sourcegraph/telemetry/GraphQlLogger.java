@@ -46,8 +46,7 @@ public class GraphQlLogger {
   }
 
   public static void logAutocompleteAcceptedEvent(
-      @NotNull Project project,
-      @Nullable CompletionEvent.ContextSummary contextSummary) {
+      @NotNull Project project, @Nullable CompletionEvent.ContextSummary contextSummary) {
     String eventName = "CodyJetBrainsPlugin:completion:accepted";
     JsonObject eventParameters = new JsonObject();
     if (contextSummary != null) {
