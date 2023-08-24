@@ -95,8 +95,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	})
 	defer state.Unmock()
 
-	btypes.MockInternalClientExternalURL("https://sourcegraph.test")
-	t.Cleanup(btypes.ResetInternalClient)
+	mockExternalURL(t, "https://sourcegraph.test")
 
 	githubPR := buildGithubPR(clock(), btypes.ChangesetExternalStateOpen)
 	githubHeadRef := gitdomain.EnsureRefPrefix(githubPR.HeadRefName)
@@ -295,7 +294,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			wantChangeset: bt.ChangesetAssertions{
 				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 			},
-			wantErr: errors.New("pushing commit: creating commit from patch for repository \"\": \n```\n$ \narchived\n```"),
+			wantErr: errors.New("creating commit from patch for repository \"\": \n```\n$ \narchived\n```"),
 		},
 		"general push error": {
 			hasCurrentSpec: true,
@@ -1216,8 +1215,7 @@ func TestDecorateChangesetBody(t *testing.T) {
 		return &database.Namespace{Name: "my-user", User: user}, nil
 	})
 
-	btypes.MockInternalClientExternalURL("https://sourcegraph.test")
-	t.Cleanup(btypes.ResetInternalClient)
+	mockExternalURL(t, "https://sourcegraph.test")
 
 	fs := &FakeStore{
 		GetBatchChangeMock: func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {

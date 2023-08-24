@@ -50,6 +50,12 @@ PATCH_ALL_GO_TESTS_CMD = "\n".join(PATCH_GO_TEST_CMDS)
 # Replaces all occurences of @com_github_sourcegraph_(scip|conc) and zoekt by @back_compat_com_github_sourcegraph_(scip|conc).
 # We need to do this, because the backcompat share the same deps as the current HEAD, so we need to handle deviations manually here.
 # It's annoying, but that's how we get cached back compat tests.
+PATCH_BUILD_TARGETS = [
+    "com_github_sourcegraph_conc",
+    "com_github_sourcegraph_scip",
+    "com_github_sourcegraph_zoekt",
+    "com_github_throttled_throttled_v2",
+]
 PATCH_BUILD_FIXES_CMD = """_sed_binary="sed"
 if [ "$(uname)" == "Darwin" ]; then
     _sed_binary="gsed"
@@ -57,6 +63,7 @@ fi
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_conc|@back_compat_com_github_sourcegraph_conc|g' {} +
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_scip|@back_compat_com_github_sourcegraph_scip|g' {} +
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_zoekt|@back_compat_com_github_sourcegraph_zoekt|g' {} +
+find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_throttled_throttled_v2|@back_compat_com_github_throttled_throttled_v2|g' {} +
 """
 
 # https://github.com/sourcegraph/sourcegraph/pull/54000 changes dependencies to reflect otel package changes,
@@ -127,6 +134,14 @@ def back_compat_defs():
         version = "v0.0.0-20230620185637-63241cb1b17a",
     )
 
+    go_repository(
+        name = "back_compat_com_github_throttled_throttled_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/throttled/throttled/v2",
+        sum = "h1:DOkCb1el7NYzRoPb1pyeHVghsUoonVWEjmo34vrcp/8=",
+        version = "v2.9.0",
+    )
+
 
     # Now that we have declared a replacement for the two problematic go packages that
     # @sourcegraph_back_compat depends on, we can define the repository itself. Because it
@@ -138,7 +153,6 @@ def back_compat_defs():
         remote = "https://github.com/sourcegraph/sourcegraph.git",
         patches = [
             "//dev/backcompat/patches:back_compat_migrations.patch",
-            "//dev/backcompat/patches:ui_assets.patch",
             "//dev/backcompat/patches:back_compat_internal_instrumentation.patch",
             "//dev/backcompat/patches:back_compat_otlp_adapter.patch",
         ],
@@ -153,7 +167,7 @@ def back_compat_defs():
             # a backported fix  to make it buildable. That fix is merely about running `bazel configure`
             # and dropping the client folder.
             #
-            # "rm -Rf client",
+            "rm -Rf client",
             PATCH_ALL_GO_TESTS_CMD,
             PATCH_BUILD_FIXES_CMD,
             PATCH_OTEL_CMD,
