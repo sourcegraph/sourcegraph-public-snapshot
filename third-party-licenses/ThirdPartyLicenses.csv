@@ -1642,7 +1642,7 @@ Go,github.com/hashicorp/cronexpr,v1.1.1,Apache 2.0,github.com/hashicorp/cronexpr
 Go,github.com/hashicorp/errwrap,v1.1.0,Mozilla Public License 2.0,github.com/hashicorp/errwrap,Approved
 Go,github.com/hashicorp/go-cleanhttp,v0.5.2,Mozilla Public License 2.0,github.com/hashicorp/go-cleanhttp,Approved
 Go,github.com/hashicorp/go-multierror,v1.1.1,Mozilla Public License 2.0,github.com/hashicorp/go-multierror,Approved
-Go,github.com/hashicorp/go-retryablehttp,v0.7.4,unknown,github.com/hashicorp/go-retryablehttp,Not approved
+Go,github.com/hashicorp/go-retryablehttp,v0.7.4,Mozilla Public License 2.0,github.com/hashicorp/go-retryablehttp,Approved
 Go,github.com/hashicorp/go-version,v1.6.0,Mozilla Public License 2.0,github.com/hashicorp/go-version,Approved
 Go,github.com/hashicorp/golang-lru,v0.5.4,Mozilla Public License 2.0,github.com/hashicorp/golang-lru,Approved
 Go,github.com/hashicorp/golang-lru/v2,v2.0.2,New BSD,github.com/hashicorp/golang-lru,Approved
