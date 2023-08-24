@@ -47,6 +47,11 @@ public class CodyAutocompleteManager {
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   private final AtomicReference<CancellationToken> currentJob =
       new AtomicReference<>(new CancellationToken());
+
+  public @Nullable AutocompleteTelemetry getCurrentAutocompleteTelemetry() {
+    return currentAutocompleteTelemetry;
+  }
+
   private @Nullable AutocompleteTelemetry currentAutocompleteTelemetry = null;
 
   public static @NotNull CodyAutocompleteManager getInstance() {

@@ -45,6 +45,16 @@ public class GraphQlLogger {
     logEvent(project, createEvent(project, eventName, eventParameters));
   }
 
+  public static void logAutocompleteAcceptedEvent(
+      @NotNull Project project, @Nullable CompletionEvent.ContextSummary contextSummary) {
+    String eventName = "CodyJetBrainsPlugin:completion:accepted";
+    JsonObject eventParameters = new JsonObject();
+    if (contextSummary != null) {
+      eventParameters.add("contextSummary", new Gson().toJsonTree(contextSummary));
+    }
+    logEvent(project, createEvent(project, eventName, eventParameters));
+  }
+
   public static void logCodyEvent(
       @NotNull Project project, @NotNull String componentName, @NotNull String action) {
     var eventName = "CodyJetBrainsPlugin:" + componentName + ":" + action;
