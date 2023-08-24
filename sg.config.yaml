@@ -335,6 +335,9 @@ commands:
     checkBinary: .bin/pings
     env:
       SRC_LOG_LEVEL: info
+      PINGS_PUBSUB_PROJECT_ID: ''
+      PINGS_PUBSUB_TOPIC_ID: ''
+      HUBSPOT_ACCESS_TOKEN: ''
     watch:
       - lib
       - internal
