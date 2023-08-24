@@ -235,11 +235,10 @@ public class CodyToolWindowContent implements UpdatableChat {
   @RequiresEdt
   private void updateUIWithRecipeList(@NotNull List<RecipeInfo> recipes) {
     // we don't want to display recipes with ID "chat-question" and "code-question"
-    var recipesToDisplay =
-        recipes.stream()
-            .filter(
-                recipe -> !recipe.id.equals("chat-question") && !recipe.id.equals("code-question"))
-            .collect(Collectors.toList());
+    var excludedRecipeIds = List.of("chat-question", "code-question", "translate-to-language");
+    var recipesToDisplay =recipes.stream()
+        .filter(recipe -> !excludedRecipeIds.contains(recipe.id))
+        .collect(Collectors.toList());
 
     fillRecipesPanel(recipesToDisplay);
     fillContextMenu(recipesToDisplay);
