@@ -57,6 +57,7 @@ fi
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_conc|@back_compat_com_github_sourcegraph_conc|g' {} +
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_scip|@back_compat_com_github_sourcegraph_scip|g' {} +
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_zoekt|@back_compat_com_github_sourcegraph_zoekt|g' {} +
+find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_throttled_throttled_v2|@back_compat_com_github_throttled_throttled_v2|g' {} +
 """
 
 # https://github.com/sourcegraph/sourcegraph/pull/54000 changes dependencies to reflect otel package changes,
@@ -127,6 +128,14 @@ def back_compat_defs():
         version = "v0.0.0-20230620185637-63241cb1b17a",
     )
 
+    go_repository(
+        name = "back_compat_com_github_throttled_throttled_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/throttled/throttled/v2",
+        sum = "h1:IezKE1uHlYC/0Al05oZV6Ar+uN/znw3cy9J8banxhEY=",
+        version = "v2.12.0",
+    )
+
     # Now that we have declared a replacement for the two problematic go packages that
     # @sourcegraph_back_compat depends on, we can define the repository itself. Because it
     # comes with its Bazel rules (logical, that's just the current repository but with a different
@@ -139,6 +148,7 @@ def back_compat_defs():
             "//dev/backcompat/patches:back_compat_migrations.patch",
             "//dev/backcompat/patches:back_compat_internal_instrumentation.patch",
             "//dev/backcompat/patches:back_compat_otlp_adapter.patch",
+            "//dev/backcompat/patches:back_compat_throttled.patch", # See https://github.com/sourcegraph/sourcegraph/commit/9195b1fe8aaa379111d1be60813a14cdc8c58e5d
         ],
         patch_args = ["-p1"],
         commit = MINIMUM_UPGRADEABLE_VERSION_REF,
