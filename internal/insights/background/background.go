@@ -70,7 +70,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 		NewLicenseCheckJob(ctx, mainAppDB, insightsDB),
 	}
 
-	gitserverClient := internalGitserver.NewClient(mainAppDB)
+	gitserverClient := internalGitserver.NewClient()
 
 	// Register the background goroutine which discovers historical gaps in data and enqueues
 	// work to fill them - if not disabled.

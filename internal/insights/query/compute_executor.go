@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -62,7 +63,7 @@ func (c *ComputeExecutor) Execute(ctx context.Context, query, groupBy string, re
 		repoIds[repository] = repo.ID
 	}
 
-	gitserverClient := gitserver.NewClient(database.NewDBWith(c.logger, c.repoStore))
+	gitserverClient := gitserver.NewClient()
 
 	groupedValues := make(map[string]int)
 	for _, repository := range repositories {

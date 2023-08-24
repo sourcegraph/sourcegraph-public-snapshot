@@ -71,14 +71,6 @@ type GitserverRepoStore interface {
 	// GetLastSyncOutput returns the last stored output from a repo sync (clone or fetch), or ok: false if
 	// no log is found.
 	GetLastSyncOutput(ctx context.Context, name api.RepoName) (output string, ok bool, err error)
-
-	// UpdatePoolRepoID updates the pool_repo_id column of a gitserver_repo.
-	UpdatePoolRepoID(ctx context.Context, poolRepoName, repoName api.RepoName) (err error)
-
-	// GetPoolRepoName will return the PoolRepo name of a repository matching the input repo name if
-	// it exists. If it does not exist or an error occurs, then the reutrned poolRepoName will be an
-	// empty api.RepoName, ok will be false and the err will contain the error if any.
-	GetPoolRepoName(ctx context.Context, repoName api.RepoName) (poolRepoName api.RepoName, ok bool, err error)
 }
 
 var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
@@ -124,89 +116,6 @@ func (s *gitserverRepoStore) Update(ctx context.Context, repos ...*types.Gitserv
 	err := s.Exec(ctx, sqlf.Sprintf(updateGitserverReposQueryFmtstr, sqlf.Join(values, ",")))
 
 	return errors.Wrap(err, "updating GitserverRepo")
-}
-
-const updatePoolRepoIDQueryFmtStr = `
--- find the repo that matches the poolRepoName
-WITH pool AS (
-	SELECT
-		id
-	FROM
-		repo
-	WHERE
-		name = %s::citext
-),
--- find the repo that matches repoName
-repo AS (
-	SELECT
-		id
-	FROM
-		repo
-	WHERE
-		name = %s::citext
-)
--- now update the pool_repo_id of repo with the repo.id of the pool
-UPDATE
-	gitserver_repos
-SET
-	pool_repo_id = (SELECT id FROM pool)
-WHERE
-	repo_id = (SELECT id FROM repo)
-`
-
-// UpdatePoolRepoID updates the repo matching `repoName` with the repo ID of the repo matching
-// `poolRepoName`.
-func (s *gitserverRepoStore) UpdatePoolRepoID(ctx context.Context, poolRepoName, repoName api.RepoName) error {
-	err := s.Exec(ctx, sqlf.Sprintf(updatePoolRepoIDQueryFmtStr, poolRepoName, repoName))
-	return errors.Wrap(err, "UpdatePoolRepoID: failed to add pool_repo_id to gitserver_repos row")
-}
-
-// getPoolRepoQueryFmtStr looks up a repo by name and only returns a potential pool repo name if the
-// input repo is a fork and not deleted. Additionally it also checks if the parent repo (the repo
-// whose ID is used to establish the gitserver_repos.pool_repo_id relation) is deleted or not and
-// only returns the pool repo name if it is not deleted as well.
-//
-// Note: This means, to expect a non-null result the following conditions must be met:
-// 1. The input repo is a fork
-// 2. The input repo has not been deleted
-// 3. The input repo has a relationship established with a parent repo via a non-null gitserver_repos.pool_repo_id, indicating that deduplication is enabled for this repo
-// 4. The parent repo has not been deleted
-//
-// This means that at the moment for deleted repos we return an empty pool repo name and we have
-// tests that validate this behaviour. In the near future we very likely want to revisit this and
-// handle the scenario where once a repository has already been "enlisted" for deduplication and
-// either or both of the parent and the fork repositories have been deleted.
-const getPoolRepoQueryFmtStr = `
-WITH input_repo AS (
-	SELECT
-		id
-	FROM
-		repo
-	WHERE
-		name = %s::citext
-		AND fork = true
-		AND deleted_at IS null
-)
-SELECT
-	r.name
-FROM
-	repo r
-JOIN gitserver_repos gr ON gr.repo_id = r.id
-WHERE
-	r.id = (
-		SELECT
-			pool_repo_id
-		FROM
-			gitserver_repos
-		WHERE
-			repo_id = (SELECT id FROM input_repo)
-	)
-	AND r.deleted_at is NULL
-`
-
-func (s *gitserverRepoStore) GetPoolRepoName(ctx context.Context, repoName api.RepoName) (api.RepoName, bool, error) {
-	poolRepoName, ok, err := basestore.ScanFirstString(s.Query(ctx, sqlf.Sprintf(getPoolRepoQueryFmtStr, repoName)))
-	return api.RepoName(poolRepoName), ok, errors.Wrap(err, "GetPoolRepoName failed")
 }
 
 const updateGitserverReposQueryFmtstr = `
@@ -407,8 +316,7 @@ SELECT
 	gr.repo_size_bytes,
 	gr.updated_at,
 	gr.corrupted_at,
-	gr.corruption_logs,
-	gr.pool_repo_id
+	gr.corruption_logs
 FROM gitserver_repos gr
 JOIN repo ON gr.repo_id = repo.id
 WHERE %s
@@ -441,8 +349,7 @@ SELECT
 	gr.repo_size_bytes,
 	gr.updated_at,
 	gr.corrupted_at,
-	gr.corruption_logs,
-	gr.pool_repo_id
+	gr.corruption_logs
 FROM gitserver_repos gr
 WHERE gr.repo_id = %s
 `
@@ -472,8 +379,7 @@ SELECT
 	gr.repo_size_bytes,
 	gr.updated_at,
 	gr.corrupted_at,
-	gr.corruption_logs,
-	gr.pool_repo_id
+	gr.corruption_logs
 FROM gitserver_repos gr
 JOIN repo r ON r.id = gr.repo_id
 WHERE r.name = %s
@@ -497,8 +403,7 @@ SELECT
 	gr.repo_size_bytes,
 	gr.updated_at,
 	gr.corrupted_at,
-	gr.corruption_logs,
-	gr.pool_repo_id
+	gr.corruption_logs
 FROM gitserver_repos gr
 JOIN repo r on r.id = gr.repo_id
 WHERE r.name = ANY (%s)
@@ -529,7 +434,6 @@ func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoNa
 	var rawLogs []byte
 	var cloneStatus string
 	var repoName api.RepoName
-	var poolRepoID int32
 	err := scanner.Scan(
 		&gr.RepoID,
 		&repoName,
@@ -543,17 +447,12 @@ func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoNa
 		&gr.UpdatedAt,
 		&dbutil.NullTime{Time: &gr.CorruptedAt},
 		&rawLogs,
-		&dbutil.NullInt32{N: &poolRepoID},
 	)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "scanning GitserverRepo")
 	}
 
 	gr.CloneStatus = types.ParseCloneStatus(cloneStatus)
-
-	if poolRepoID != 0 {
-		gr.PoolRepoID = api.RepoID(poolRepoID)
-	}
 
 	err = json.Unmarshal(rawLogs, &gr.CorruptionLogs)
 	if err != nil {

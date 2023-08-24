@@ -208,11 +208,6 @@ type Server struct {
 
 	// Perforce is a plugin-like service attached to Server for all things Perforce.
 	Perforce *perforce.Service
-
-	// DeduplicatedForksSet is a set of all repos added to the deduplicateForks site config
-	// property. It exists only to aid in fast lookups instead of having to iterate through the list
-	// each time.
-	DeduplicatedForksSet *types.RepoURISet
 }
 
 type locks struct {
@@ -435,7 +430,7 @@ func NewRepoStateSyncer(
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			gitServerAddrs := gitserver.NewGitserverAddresses(db, conf.Get())
+			gitServerAddrs := gitserver.NewGitserverAddresses(conf.Get())
 			addrs := gitServerAddrs.Addresses
 			// We turn addrs into a string here for easy comparison and storage of previous
 			// addresses since we'd need to take a copy of the slice anyway.
@@ -466,8 +461,8 @@ func NewRepoStateSyncer(
 	)
 }
 
-func addrForRepo(ctx context.Context, logger log.Logger, repoName api.RepoName, gitServerAddrs gitserver.GitserverAddresses) string {
-	return gitServerAddrs.AddrForRepo(ctx, logger, filepath.Base(os.Args[0]), repoName)
+func addrForRepo(ctx context.Context, repoName api.RepoName, gitServerAddrs gitserver.GitserverAddresses) string {
+	return gitServerAddrs.AddrForRepo(ctx, filepath.Base(os.Args[0]), repoName)
 }
 
 // NewClonePipeline creates a new pipeline that clones repos asynchronously. It
@@ -696,7 +691,7 @@ func syncRepoState(
 			repo.Name = api.UndeletedRepoName(repo.Name)
 
 			// Ensure we're only dealing with repos we are responsible for.
-			addr := addrForRepo(ctx, logger, repo.Name, gitServerAddrs)
+			addr := addrForRepo(ctx, repo.Name, gitServerAddrs)
 			if !hostnameMatch(shardID, addr) {
 				repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 				continue
