@@ -132,10 +132,9 @@ def back_compat_defs():
         name = "back_compat_com_github_throttled_throttled_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/throttled/throttled/v2",
-        sum = "h1:DOkCb1el7NYzRoPb1pyeHVghsUoonVWEjmo34vrcp/8=",
-        version = "v2.9.0",
+        sum = "h1:IezKE1uHlYC/0Al05oZV6Ar+uN/znw3cy9J8banxhEY=",
+        version = "v2.12.0",
     )
-
 
     # Now that we have declared a replacement for the two problematic go packages that
     # @sourcegraph_back_compat depends on, we can define the repository itself. Because it
@@ -145,7 +144,12 @@ def back_compat_defs():
     git_repository(
         name = "sourcegraph_back_compat",
         remote = "https://github.com/sourcegraph/sourcegraph.git",
-        patches = ["//dev/backcompat/patches:back_compat_migrations.patch"],
+        patches = [
+            "//dev/backcompat/patches:back_compat_migrations.patch",
+            "//dev/backcompat/patches:back_compat_internal_instrumentation.patch",
+            "//dev/backcompat/patches:back_compat_otlp_adapter.patch",
+            "//dev/backcompat/patches:back_compat_throttled.patch", # See https://github.com/sourcegraph/sourcegraph/commit/9195b1fe8aaa379111d1be60813a14cdc8c58e5d
+        ],
         patch_args = ["-p1"],
         commit = MINIMUM_UPGRADEABLE_VERSION_REF,
         patch_cmds = [

@@ -2,10 +2,6 @@
   path: github.com/sourcegraph/sourcegraph/dev/team
   interfaces:
     - TeammateResolver
-- filename: docker-images/prometheus/cmd/prom-wrapper/mocks/mocks_temp.go
-  path: github.com/prometheus/client_golang/api/prometheus/v1
-  interfaces:
-    - API
 - filename: internal/insights/discovery/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/insights/discovery
   interfaces:
