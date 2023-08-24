@@ -127,15 +127,6 @@ def back_compat_defs():
         version = "v0.0.0-20230620185637-63241cb1b17a",
     )
 
-    go_repository(
-        name = "back_compat_com_github_sourcegraph_zoekt",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:zFLcZUQ74dCV/oIiQT3+db8kFPstAnvFDm7pd+tjZ+8=",
-        version = "v0.0.0-20230620185637-63241cb1b17a",
-    )
-
-
     # Now that we have declared a replacement for the two problematic go packages that
     # @sourcegraph_back_compat depends on, we can define the repository itself. Because it
     # comes with its Bazel rules (logical, that's just the current repository but with a different
