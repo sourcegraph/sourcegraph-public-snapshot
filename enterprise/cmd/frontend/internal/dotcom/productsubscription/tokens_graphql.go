@@ -47,5 +47,5 @@ func (r ProductSubscriptionLicensingResolver) ProductSubscriptionByAccessToken(c
 		}
 		return nil, err
 	}
-	return &productSubscription{v: v, db: r.DB}, nil
+	return &productSubscription{logger: r.Logger, v: v, db: r.DB}, nil
 }
