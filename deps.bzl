@@ -3778,6 +3778,14 @@ def go_dependencies():
         version = "v1.0.0",
     )
     go_repository(
+        name = "com_github_iancoleman_orderedmap",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/iancoleman/orderedmap",
+        sum = "h1:i462o439ZjprVSFSZLZxcsoAe592sZB1rci2Z8j4wdk=",
+        version = "v0.0.0-20190318233801-ac98e3ecb4b0",
+    )
+
+    go_repository(
         name = "com_github_iancoleman_strcase",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/iancoleman/strcase",
@@ -3828,6 +3836,13 @@ def go_dependencies():
         importpath = "github.com/intel/goresctrl",
         sum = "h1:JyZjdMQu9Kl/wLXe9xA6s1X+tF6BWsQPFGJMEeCfWzE=",
         version = "v0.2.0",
+    )
+    go_repository(
+        name = "com_github_invopop_jsonschema",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/invopop/jsonschema",
+        sum = "h1:2vgQcBz1n256N+FpX3Jq7Y17AjYt46Ig3zIWyy770So=",
+        version = "v0.7.0",
     )
 
     go_repository(
@@ -6274,13 +6289,7 @@ def go_dependencies():
         sum = "h1:oc+BUJi+WYypX8i7vnxz4D4z/99b/H0u5Oc+b1rA5fI=",
         version = "v0.0.0-20230822024612-edb48c530722",
     )
-    go_repository(
-        name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_projects_iam",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/projects_iam",
-        sum = "h1:TTNJcpxro3gmk04AsaahJrW9q/q1svL0AXpUs0E0zFM=",
-        version = "v0.0.0-20230822024612-edb48c530722",
-    )
+
     go_repository(
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_random",
         build_file_proto_mode = "disable_global",

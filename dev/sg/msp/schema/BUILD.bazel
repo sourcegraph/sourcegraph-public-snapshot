@@ -9,6 +9,6 @@ go_library(
         "//dev/managedservicesplatform/spec",
         "//dev/sg/root",
         "//lib/errors",
-        "@com_github_invopop_jsonschema//:go_default_library",
+        "@com_github_invopop_jsonschema//:jsonschema",
     ],
 )
