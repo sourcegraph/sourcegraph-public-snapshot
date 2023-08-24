@@ -1,9 +1,8 @@
 package com.sourcegraph.cody.vscode;
 
 import com.sourcegraph.cody.agent.protocol.CompletionEvent;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.List;
+import org.jetbrains.annotations.Nullable;
 
 public class InlineAutocompleteList {
   public final List<InlineAutocompleteItem> items;
