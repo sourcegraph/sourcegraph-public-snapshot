@@ -34,7 +34,6 @@ environments:
   secretEnv:
     SUPER_SEKRET_VAR: SUPER_SEKRET_VAR
 service:
-  EnvVarPrefix: null
   id: example-service
   name: null
   owners: null

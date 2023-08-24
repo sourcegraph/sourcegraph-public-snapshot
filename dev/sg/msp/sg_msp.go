@@ -5,7 +5,6 @@ package msp
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -48,6 +47,7 @@ func init() {
 					Name:    "output",
 					Aliases: []string{"o"},
 					Usage:   "Output directory for generated spec file",
+					Value:   "terraform",
 				},
 			},
 			Action: func(c *cli.Context) error {
@@ -113,8 +113,7 @@ func init() {
 				if err != nil {
 					return err
 				}
-				output := filepath.Join(
-					c.String("output"), fmt.Sprintf("%s.service.yaml", c.Args().First()))
+				output := filepath.Join(c.String("output"), c.Args().First(), "service.yaml")
 				if err := os.WriteFile(output, exampleSpec, 0644); err != nil {
 					return err
 				}
