@@ -66,7 +66,8 @@ public class CodyAutocompleteManager {
                 GraphQlLogger.logAutocompleteSuggestedEvent(
                     p,
                     currentAutocompleteTelemetry.getLatencyMs(),
-                    currentAutocompleteTelemetry.getDisplayDurationMs());
+                    currentAutocompleteTelemetry.getDisplayDurationMs(),
+                    currentAutocompleteTelemetry.contextSummary());
                 currentAutocompleteTelemetry = null;
               }
             });
@@ -201,6 +202,10 @@ public class CodyAutocompleteManager {
       InlineCompletionTriggerKind triggerKind,
       InlineAutocompleteList result,
       CancellationToken cancellationToken) {
+    if (currentAutocompleteTelemetry != null) {
+      currentAutocompleteTelemetry.markCompletionEvent(result.completionEvent);
+    }
+
     if (Thread.interrupted() || cancellationToken.isCancelled()) {
       if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)) {
         logger.warn("autocomplete canceled");

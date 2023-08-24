@@ -1,12 +1,15 @@
 package com.sourcegraph.cody.autocomplete;
 
+import com.sourcegraph.cody.agent.protocol.CompletionEvent;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** A class that stores the state and timing information of an autocompletion. */
 public class AutocompleteTelemetry {
   private long completionTriggeredTimestampMs;
   private long completionDisplayedTimestampMs;
   private long completionHiddenTimestampMs;
+  @Nullable private CompletionEvent completionEvent;
 
   public static @NotNull AutocompleteTelemetry createAndMarkTriggered() {
     var autocompletion = new AutocompleteTelemetry();
@@ -26,12 +29,23 @@ public class AutocompleteTelemetry {
     return completionDisplayedTimestampMs - completionTriggeredTimestampMs;
   }
 
+  public void markCompletionEvent(@Nullable CompletionEvent event) {
+    this.completionEvent = event;
+  }
+
   public void markCompletionHidden() {
     this.completionHiddenTimestampMs = System.currentTimeMillis();
   }
 
   public long getDisplayDurationMs() {
     return completionHiddenTimestampMs - completionDisplayedTimestampMs;
+  }
+
+  @Nullable
+  public CompletionEvent.ContextSummary contextSummary() {
+    return (completionEvent != null && completionEvent.params != null)
+        ? completionEvent.params.contextSummary
+        : null;
   }
 
   public @NotNull AutocompletionStatus getStatus() {
