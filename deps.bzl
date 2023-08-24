@@ -893,15 +893,15 @@ def go_dependencies():
         name = "com_github_bsm_ginkgo_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/bsm/ginkgo/v2",
-        sum = "h1:ItPMPH90RbmZJt5GtkcNvIRuGEdwlBItdNVoyzaNQao=",
-        version = "v2.7.0",
+        sum = "h1:aOAnND1T40wEdAtkGSkvSICWeQ8L3UASX7YVCqQx+eQ=",
+        version = "v2.5.0",
     )
     go_repository(
         name = "com_github_bsm_gomega",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/bsm/gomega",
-        sum = "h1:LhQm+AFcgV2M0WyKroMASzAzCAJVpAxQXv4SaI9a69Y=",
-        version = "v1.26.0",
+        sum = "h1:JhAwLmtRzXFTx2AkALSLa8ijZafntmhSoU63Ok18Uq8=",
+        version = "v1.20.0",
     )
 
     go_repository(
@@ -3890,8 +3890,8 @@ def go_dependencies():
         name = "com_github_jackc_pgproto3_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/jackc/pgproto3/v2",
-        sum = "h1:r7JypeP2D3onoQTCxWdTpCtJ4D+qpKr0TxvoyMhZ5ns=",
-        version = "v2.2.0",
+        sum = "h1:brH0pCGBDkBW07HWlN/oSBXrmo3WB0UvZd1pIuDcL8Y=",
+        version = "v2.3.0",
     )
     go_repository(
         name = "com_github_jackc_pgservicefile",
@@ -5716,8 +5716,8 @@ def go_dependencies():
         name = "com_github_redis_go_redis_v9",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/redis/go-redis/v9",
-        sum = "h1:CuQcn5HIEeK7BgElubPP8CGtE0KakrnbBSTLjathl5o=",
-        version = "v9.0.5",
+        sum = "h1:BA426Zqe/7r56kCcvxYLWe1mkaz71LKF77GwgFzSxfE=",
+        version = "v9.0.2",
     )
     go_repository(
         name = "com_github_remyoudompheng_bigfft",
@@ -5726,7 +5726,6 @@ def go_dependencies():
         sum = "h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=",
         version = "v0.0.0-20230129092748-24d4a6f8daec",
     )
-
     go_repository(
         name = "com_github_rhnvrm_simples3",
         build_file_proto_mode = "disable_global",
@@ -6434,8 +6433,8 @@ def go_dependencies():
         name = "com_github_throttled_throttled_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/throttled/throttled/v2",
-        sum = "h1:IezKE1uHlYC/0Al05oZV6Ar+uN/znw3cy9J8banxhEY=",
-        version = "v2.12.0",
+        sum = "h1:DOkCb1el7NYzRoPb1pyeHVghsUoonVWEjmo34vrcp/8=",
+        version = "v2.9.0",
     )
     go_repository(
         name = "com_github_tidwall_gjson",
@@ -7156,12 +7155,12 @@ def go_dependencies():
     )
     go_repository(
         name = "com_google_cloud_go_bigquery",
-        build_file_proto_mode = "disable_global",
-        importpath = "cloud.google.com/go/bigquery",
-        sum = "h1:JKLNdxI0N+TIUWD6t9KN646X27N5dQWq9dZbbTWZ8hc=",
         build_directives = [
             "gazelle:resolve go google.golang.org/genproto/googleapis/api/annotations @go_googleapis//google/api:annotations_go_proto",  # keep
         ],
+        build_file_proto_mode = "disable_global",
+        importpath = "cloud.google.com/go/bigquery",
+        sum = "h1:JKLNdxI0N+TIUWD6t9KN646X27N5dQWq9dZbbTWZ8hc=",
         version = "v1.52.0",
     )
     go_repository(
