@@ -105,7 +105,7 @@ interface StreamingProgressSkippedPopoverProps {
 export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopoverProps> = props => {
     const { query, progress, onSearchAgain } = props
 
-    const exhaustiveSearch = useExperimentalFeatures(settings => settings.exhaustiveSearch)
+    const exhaustiveSearch = useExperimentalFeatures(settings => settings.searchJobs)
     const [selectedSuggestedSearches, setSelectedSuggestedSearches] = useState(new Set<string>())
 
     const submitHandler = useCallback(

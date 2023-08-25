@@ -26,8 +26,8 @@
             "pointer": true
           }
         },
-        "exhaustiveSearch": {
-          "description": "Enables exhaustive search feature and its UI",
+        "searchJobs": {
+          "description": "Enables search jobs (long-running exhaustive) search feature and its UI",
           "type": "boolean",
           "default": false,
           "!go": {
