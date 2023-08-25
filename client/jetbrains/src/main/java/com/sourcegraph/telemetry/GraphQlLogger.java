@@ -1,6 +1,7 @@
 package com.sourcegraph.telemetry;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.cody.PluginUtil;
@@ -13,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class GraphQlLogger {
-
+  private static final Gson gson = new GsonBuilder().serializeNulls().create();
   public static CompletableFuture<Boolean> logInstallEvent(@NotNull Project project) {
     if (ConfigUtil.getAnonymousUserId() != null && project.isDisposed()) {
       var event = createEvent(project, "CodyInstalled", new JsonObject());
@@ -55,7 +56,7 @@ public class GraphQlLogger {
     var updatedEventParameters = eventParameters.deepCopy();
     if (params != null) {
       if (params.contextSummary != null) {
-        updatedEventParameters.add("contextSummary", new Gson().toJsonTree(params.contextSummary));
+        updatedEventParameters.add("contextSummary", gson.toJsonTree(params.contextSummary));
       }
       updatedEventParameters.addProperty("id", params.id);
       updatedEventParameters.addProperty("languageId", params.languageId);
