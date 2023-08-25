@@ -159,8 +159,8 @@ public class SettingsChangeListener implements Disposable {
     String altSShortcutText = KeymapUtil.getShortcutText(altSShortcut);
     Notification notification =
         new Notification(
-            "Cody AI by Sourcegraph: server access",
-            "Cody AI by Sourcegraph: auth success",
+            "Sourcegraph: server access",
+            "Sourcegraph: auth success",
             "Your Sourcegraph account has been connected to the Sourcegraph plugin. "
                 + "Open the Cody sidebar, or press "
                 + altSShortcutText

@@ -14,8 +14,8 @@ public class ErrorNotification {
   public static void show(Project project, String errorMessage) {
     Notification notification =
         new Notification(
-            "Cody AI by Sourcegraph errors",
-            "Cody AI by Sourcegraph",
+            "Sourcegraph errors",
+            "Sourcegraph",
             errorMessage,
             NotificationType.WARNING);
     AnAction dismissAction =

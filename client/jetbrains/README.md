@@ -1,6 +1,6 @@
 <!-- Plugin description -->
 
-# Cody AI by Sourcegraph
+# Sourcegraph Cody + Code Search
 
 Cody for JetBrains IDEs is an AI code assistant that can write code and answers questions across your entire codebase. It combines the power of large language models with Sourcegraph’s Code Graph API, generating deep knowledge of all of your code (and not just your open files). Large monorepos, multiple languages, and complex codebases are no problem for Cody.
 
