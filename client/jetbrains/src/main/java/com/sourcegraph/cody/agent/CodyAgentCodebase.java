@@ -23,12 +23,12 @@ public class CodyAgentCodebase {
               ApplicationManager.getApplication()
                   .invokeLater(
                       () -> {
-                        if (!Objects.equals(this.currentCodebase, autodetectedRepositoryName)) {
-                          ExtensionConfiguration config = ConfigUtil.getAgentConfiguration(project);
-                          if (config.codebase == null) {
-                            config.setCodebase(autodetectedRepositoryName);
-                          }
-                          this.currentCodebase = autodetectedRepositoryName;
+                        ExtensionConfiguration config = ConfigUtil.getAgentConfiguration(project);
+                        if (config.codebase == null || config.codebase.isEmpty()) {
+                          config.setCodebase(autodetectedRepositoryName);
+                        }
+                        if (config.codebase != null && !config.codebase.equals(this.currentCodebase)) {
+                          this.currentCodebase = config.codebase;
                           underlying.configurationDidChange(config);
                         }
                       });

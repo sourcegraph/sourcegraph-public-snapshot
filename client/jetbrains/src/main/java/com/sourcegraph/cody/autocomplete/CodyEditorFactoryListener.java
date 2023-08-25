@@ -18,6 +18,7 @@ import com.intellij.openapi.fileEditor.impl.FileEditorManagerImpl;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.testFramework.LightVirtualFile;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentClient;
 import com.sourcegraph.cody.agent.protocol.Position;
@@ -203,6 +204,20 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
     VirtualFile file = FileDocumentManager.getInstance().getFile(editor.getDocument());
     if (file == null) {
       return;
+    }
+    // Handle the case when the given file is a placeholder
+    if (file instanceof LightVirtualFile && file.getName().equals("Dummy.txt") && ((LightVirtualFile) file).getContent().equals("")) {
+      FileEditorManager fileEditorManager = FileEditorManager.getInstance(editor.getProject());
+      var selectedEditor = fileEditorManager.getSelectedEditor();
+      if (selectedEditor != null && selectedEditor.getFile() != null) { // Fall back to edited file
+        file = selectedEditor.getFile();
+      } else { // Fall back to the first open file
+        VirtualFile[] openFiles = fileEditorManager.getOpenFiles();
+
+        if (openFiles.length > 0) {
+          file = openFiles[0];
+        }
+      }
     }
     TextDocument document =
         new TextDocument()
