@@ -59,8 +59,12 @@ public class SettingsConfigurable implements Configurable {
         || mySettingsComponent.isCodyEnabled() != ConfigUtil.isCodyEnabled()
         || mySettingsComponent.isCodyAutocompleteEnabled() != ConfigUtil.isCodyAutocompleteEnabled()
         || mySettingsComponent.isCodyDebugEnabled() != ConfigUtil.isCodyDebugEnabled()
-        || mySettingsComponent.isCodyVerboseDebugEnabled()
-            != ConfigUtil.isCodyVerboseDebugEnabled();
+        || mySettingsComponent.isCodyVerboseDebugEnabled() != ConfigUtil.isCodyVerboseDebugEnabled()
+        || mySettingsComponent.isCustomAutocompleteColorEnabled()
+            != ConfigUtil.isCustomAutocompleteColorEnabled()
+        || !mySettingsComponent
+            .getCustomAutocompleteColorPanel()
+            .equals(ConfigUtil.getCustomAutocompleteColor());
   }
 
   @Override
@@ -103,7 +107,9 @@ public class SettingsConfigurable implements Configurable {
             mySettingsComponent.isCodyEnabled(),
             mySettingsComponent.isCodyAutocompleteEnabled(),
             mySettingsComponent.isCodyDebugEnabled(),
-            mySettingsComponent.isCodyVerboseDebugEnabled());
+            mySettingsComponent.isCodyVerboseDebugEnabled(),
+            mySettingsComponent.isCustomAutocompleteColorEnabled(),
+            mySettingsComponent.getCustomAutocompleteColorPanel());
 
     publisher.beforeAction(context);
 
@@ -154,6 +160,9 @@ public class SettingsConfigurable implements Configurable {
     aSettings.isCodyAutocompleteEnabled = mySettingsComponent.isCodyAutocompleteEnabled();
     aSettings.isCodyDebugEnabled = mySettingsComponent.isCodyDebugEnabled();
     aSettings.isCodyVerboseDebugEnabled = mySettingsComponent.isCodyVerboseDebugEnabled();
+    aSettings.isCustomAutocompleteColorEnabled =
+        mySettingsComponent.isCustomAutocompleteColorEnabled();
+    aSettings.customAutocompleteColor = mySettingsComponent.getCustomAutocompleteColorPanel();
 
     publisher.afterAction(context);
   }
@@ -174,6 +183,9 @@ public class SettingsConfigurable implements Configurable {
     mySettingsComponent.setCodyAutocompleteEnabled(ConfigUtil.isCodyAutocompleteEnabled());
     mySettingsComponent.setIsCodyDebugEnabled(ConfigUtil.isCodyDebugEnabled());
     mySettingsComponent.setIsCodyVerboseDebugEnabled(ConfigUtil.isCodyVerboseDebugEnabled());
+    mySettingsComponent.setIsCustomAutocompleteColorEnabled(
+        ConfigUtil.isCustomAutocompleteColorEnabled());
+    mySettingsComponent.setCustomAutocompleteColorPanel(ConfigUtil.getCustomAutocompleteColor());
     mySettingsComponent.getPanel().requestFocusInWindow();
   }
 
