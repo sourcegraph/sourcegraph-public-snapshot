@@ -8,7 +8,9 @@ import com.intellij.openapi.project.Project;
 import com.sourcegraph.cody.agent.ExtensionConfiguration;
 import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.find.Search;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -19,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class ConfigUtil {
   public static final String DOTCOM_URL = "https://sourcegraph.com/";
+  public static final String SERVICE_DISPLAY_NAME = "Cody AI by Sourcegraph";
 
   @NotNull
   public static ExtensionConfiguration getAgentConfiguration(@NotNull Project project) {
@@ -83,6 +86,36 @@ public class ConfigUtil {
       String enterpriseUrl = getEnterpriseUrl(project);
       return !enterpriseUrl.isEmpty() ? enterpriseUrl : DOTCOM_URL;
     }
+  }
+
+  @NotNull
+  public static List<UserAccount> getUserAccounts(@NotNull Project project) {
+    SettingsComponent.InstanceType instanceType = getInstanceType(project);
+    List<UserAccount> accountDetails = new ArrayList<>();
+    UserAccount dotComAccount =
+        new UserAccount(SettingsComponent.InstanceType.DOTCOM, DOTCOM_URL, false);
+    UserAccount localAppAccount = null;
+    if (LocalAppManager.isLocalAppInstalled()) {
+      new UserAccount(
+          SettingsComponent.InstanceType.LOCAL_APP, LocalAppManager.getLocalAppUrl(), false);
+    }
+    if (instanceType == SettingsComponent.InstanceType.DOTCOM) {
+      dotComAccount = dotComAccount.asSelected();
+    } else if (instanceType == SettingsComponent.InstanceType.LOCAL_APP) {
+      localAppAccount =
+          new UserAccount(
+              SettingsComponent.InstanceType.LOCAL_APP, LocalAppManager.getLocalAppUrl(), true);
+    }
+    accountDetails.add(dotComAccount);
+    if (localAppAccount != null) {
+      accountDetails.add(localAppAccount);
+    }
+    String enterpriseUrl = getEnterpriseUrl(project);
+    if (!enterpriseUrl.isEmpty()) {
+      accountDetails.add(
+          new UserAccount(SettingsComponent.InstanceType.ENTERPRISE, enterpriseUrl, true));
+    }
+    return accountDetails;
   }
 
   @NotNull
