@@ -206,7 +206,9 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
       return;
     }
     // Handle the case when the given file is a placeholder
-    if (file instanceof LightVirtualFile && file.getName().equals("Dummy.txt") && ((LightVirtualFile) file).getContent().equals("")) {
+    if (file instanceof LightVirtualFile
+        && file.getName().equals("Dummy.txt")
+        && ((LightVirtualFile) file).getContent().equals("")) {
       FileEditorManager fileEditorManager = FileEditorManager.getInstance(editor.getProject());
       var selectedEditor = fileEditorManager.getSelectedEditor();
       if (selectedEditor != null && selectedEditor.getFile() != null) { // Fall back to edited file

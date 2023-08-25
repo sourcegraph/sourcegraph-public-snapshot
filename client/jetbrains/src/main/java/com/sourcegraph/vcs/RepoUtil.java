@@ -24,8 +24,8 @@ public class RepoUtil {
   private static final Logger logger = Logger.getInstance(RepoUtil.class);
 
   /**
-   * Returns all repositories associated with the given project,
-   * in the format of "github.com/sourcegraph/sourcegraph".
+   * Returns all repositories associated with the given project, in the format of
+   * "github.com/sourcegraph/sourcegraph".
    */
   public static Collection<String> getAllRepoNames(Project project) {
     Collection<Repository> repos = VcsRepositoryManager.getInstance(project).getRepositories();
@@ -95,8 +95,8 @@ public class RepoUtil {
   }
 
   /**
-   * Returns strings like "github.com/sourcegraph/cody", or just "cody" if it finds
-   * no info about the remote.
+   * Returns strings like "github.com/sourcegraph/cody", or just "cody" if it finds no info about
+   * the remote.
    */
   public @Nullable static String findRepositoryName(
       @NotNull Project project, @Nullable VirtualFile currentFile) {
@@ -115,8 +115,8 @@ public class RepoUtil {
   }
 
   /**
-   * Returns just the repo name. Would return "cody" for "github.com/sourcegraph/cody"
-   * It doesn't care about remotes or anything, just returns the simple name.
+   * Returns just the repo name. Would return "cody" for "github.com/sourcegraph/cody" It doesn't
+   * care about remotes or anything, just returns the simple name.
    */
   private @Nullable static String getSimpleRepositoryName(
       @NotNull Project project, @NotNull VirtualFile file) {
