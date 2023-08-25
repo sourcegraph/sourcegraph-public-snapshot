@@ -1,9 +1,9 @@
-import { FC, useCallback, useMemo, useState } from 'react'
+import { FC, useCallback, useMemo } from 'react'
 
 import { FetchResult } from '@apollo/client'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { Link, Alert, Button, Select, Label } from '@sourcegraph/wildcard'
+import { Link, Alert, Text, Button, Code } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { LoaderButton } from '../../components/LoaderButton'
@@ -15,8 +15,6 @@ interface SendTestEmailProps {
     authenticatedUser: AuthenticatedUser
 }
 export const SendTestEmailForm: FC<SendTestEmailProps> = ({ authenticatedUser, className }) => {
-    const [email, setEmail] = useState('')
-
     const controller = useMemo(() => new AbortController(), [])
 
     const [sendTestEmail, { data, loading, error, reset }] = useMutation<
@@ -29,28 +27,18 @@ export const SendTestEmailForm: FC<SendTestEmailProps> = ({ authenticatedUser, c
             },
         },
     })
-    const emails = useMemo(() => {
-        if (authenticatedUser?.emails.length === 1) {
-            setEmail(authenticatedUser.emails[0].email)
-        }
-        return authenticatedUser?.emails ?? []
-    }, [authenticatedUser, setEmail])
-
-    const emailChanged = useCallback(
-        (event: React.ChangeEvent<HTMLSelectElement>) => {
-            setEmail(event.target.value)
-        },
-        [setEmail]
+    const primaryEmail = useMemo(
+        () => authenticatedUser?.emails.find(email => email.isPrimary)?.email,
+        [authenticatedUser]
     )
-
     const onSendTestEmail = useCallback(
         (): Promise<FetchResult<SendTestEmailToResult>> =>
             sendTestEmail({
                 variables: {
-                    to: email,
+                    to: primaryEmail!,
                 },
             }),
-        [sendTestEmail, email]
+        [sendTestEmail, primaryEmail]
     )
 
     const cancel = useCallback(() => {
@@ -66,39 +54,18 @@ export const SendTestEmailForm: FC<SendTestEmailProps> = ({ authenticatedUser, c
                     {data.sendTestEmail}
                 </Alert>
             )}
-            <Label className="w-100 mt-2" id="send-test-email-label">
-                Send test email
-            </Label>
-            <Select
-                aria-labelledby="send-test-email-label"
-                name="authentication"
-                message={
-                    <>
-                        Verify saved configuration by choosing an email already{' '}
-                        <Link to={`${authenticatedUser.settingsURL}/emails`}>configured on your account</Link> to send a
-                        test email.
-                    </>
-                }
-                value={email}
-                onChange={emailChanged}
-            >
-                <option key="empty" value="">
-                    Choose email address
-                </option>
-                {emails.map(email => (
-                    <option key={email.email} value={email.email}>
-                        {email.email}
-                        {email.isPrimary && ' (primary)'}
-                    </option>
-                ))}
-            </Select>
-            <div className="d-flex">
+            <Text>
+                Verify currently saved configuration by sending an email to your primary email address (
+                <Code>{primaryEmail}</Code>) configured on{' '}
+                <Link to={`${authenticatedUser.settingsURL}/emails`}>your Sourcegraph account</Link>.
+            </Text>
+            <div className="w-100 d-flex justify-content-end">
                 <LoaderButton
                     onClick={onSendTestEmail}
                     loading={loading}
-                    disabled={!email || loading}
+                    disabled={!primaryEmail || loading}
                     label="Send test email"
-                    variant="secondary"
+                    variant="primary"
                 />
                 <Button className="ml-2" onClick={cancel} variant="secondary">
                     Cancel

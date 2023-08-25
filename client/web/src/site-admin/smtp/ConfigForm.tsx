@@ -1,13 +1,29 @@
 import { FC, useCallback, useMemo, useState } from 'react'
 
 import { ApolloError } from '@apollo/client'
+import { mdiLink } from '@mdi/js'
 import { applyEdits, modify, parse, ParseError } from 'jsonc-parser'
 
 import { SiteConfiguration, SMTPServerConfig } from '@sourcegraph/shared/src/schema/site.schema'
-import { Checkbox, Form, Input, Label, Link, Alert, Select, Text, useDebounce } from '@sourcegraph/wildcard'
+import {
+    AnchorLink,
+    Button,
+    Checkbox,
+    Form,
+    H3,
+    Input,
+    Label,
+    Link,
+    Alert,
+    Select,
+    Text,
+    Container,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { defaultModificationOptions } from '../site-config/SiteAdminConfigurationPage'
+import { LoaderButton } from '../../components/LoaderButton'
+import { defaultModificationOptions } from '../SiteAdminConfigurationPage'
 
 import { SendTestEmailForm } from './SendTestEmailForm'
 
@@ -15,7 +31,7 @@ interface Props {
     className?: string
     config?: string
     authenticatedUser: AuthenticatedUser
-    configChanged: (newContents: string) => void
+    saveConfig: (newContents: string) => Promise<void>
     loading?: boolean
     error?: ApolloError
 }
@@ -39,12 +55,12 @@ const initialConfig: FormData = {
     noVerifyTLS: false,
 }
 
-export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser, configChanged, error, loading }) => {
+export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser, saveConfig, error, loading }) => {
     const [form, setForm] = useState<FormData>({ ...initialConfig })
 
-    const err = useMemo(() => {
+    const [parsedConfig, err] = useMemo((): [FormData | null, Error | null] => {
         if (!config) {
-            return null
+            return [null, null]
         }
         const errors: ParseError[] = []
         const siteConfig = parse(config, errors, {
@@ -54,7 +70,7 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
 
         if (errors?.length > 0) {
             const error = new Error('Cannot parse site config: ' + errors.join(', '))
-            return error
+            return [null, error]
         }
 
         const result = {
@@ -70,7 +86,7 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
             ...result,
         })
 
-        return null
+        return [result, null]
     }, [config])
 
     const isValid = useMemo(
@@ -111,11 +127,7 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
         [form, setForm]
     )
 
-    const applyChanges = useCallback(() => {
-        if (!isValid) {
-            return
-        }
-
+    const applyChanges = useCallback((): Promise<void> => {
         const normalizedConfig = { ...form } as FormData
         if (normalizedConfig.authentication === 'none') {
             delete normalizedConfig.username
@@ -153,15 +165,34 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
             )
         )
 
-        configChanged(newConfig)
-    }, [form, config, configChanged, isValid])
+        return saveConfig(newConfig)
+    }, [form, config, saveConfig])
 
-    const applyChangesDebounced = useDebounce(applyChanges, 300)
+    const reset = useCallback(() => {
+        setForm({
+            ...initialConfig,
+            ...parsedConfig,
+        })
+    }, [parsedConfig])
+
+    const handleSubmit = useCallback(
+        (evt: React.FormEvent<HTMLFormElement>): Promise<void> => {
+            evt.preventDefault()
+            return applyChanges()
+        },
+        [applyChanges]
+    )
 
     const effectiveError = err || error
 
     return (
-        <>
+        <div className={className}>
+            <H3 id="smtp">
+                SMTP Configuration{' '}
+                <AnchorLink to="#smtp">
+                    <Icon aria-label="link icon" svgPath={mdiLink} />
+                </AnchorLink>
+            </H3>
             <Text className="mt-2">
                 Sourcegraph uses an SMTP server of your choosing to send emails.{' '}
                 <Link to="/help/admin/config/email" target="_blank">
@@ -171,9 +202,9 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
             </Text>
 
             {effectiveError && <Alert variant="danger">{effectiveError.message}</Alert>}
-            <Form className="mt-2" onChange={applyChangesDebounced}>
+            <Form onSubmit={handleSubmit} className="mt-2">
                 <Label className="w-100 mt-2">
-                    <Text className="mb-2">Email</Text>
+                    Email
                     <Input
                         name="email"
                         type="email"
@@ -185,7 +216,7 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
                     />
                 </Label>
                 <Label className="w-100 mt-2">
-                    <Text className="mb-2">Sender name</Text>
+                    Sender name
                     <Input
                         name="senderName"
                         message="The name to use in the 'from' address for emails sent by this server."
@@ -194,7 +225,7 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
                     />
                 </Label>
                 <Label className="w-100 mt-2">
-                    <Text className="mb-2">Host</Text>
+                    Host
                     <Input
                         name="host"
                         message="The hostname of the SMTP server that sends the email."
@@ -205,7 +236,7 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
                     />
                 </Label>
                 <Label className="w-100 mt-2">
-                    <Text className="mb-2">Port</Text>
+                    Port
                     <Input
                         name="port"
                         type="number"
@@ -225,6 +256,7 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
                     message="Authentication mechanism used to talk to SMTP server."
                     value={form.authentication}
                     onChange={fieldChanged}
+                    className="mt-2"
                 >
                     <option value="none">None</option>
                     <option value="PLAIN">Plain</option>
@@ -233,7 +265,7 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
                 {form.authentication !== 'none' && (
                     <>
                         <Label className="w-100 mt-2">
-                            <Text className="mb-2">Username</Text>
+                            Username
                             <Input
                                 name="username"
                                 message="Username to authenticate with SMTP server."
@@ -243,7 +275,7 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
                             />
                         </Label>
                         <Label className="w-100 mt-2">
-                            <Text className="mb-2">{form.authentication === 'PLAIN' ? 'Password' : 'Secret'}</Text>
+                            {form.authentication === 'PLAIN' ? 'Password' : 'Secret'}
                             <Input
                                 name="password"
                                 type="password"
@@ -256,7 +288,7 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
                     </>
                 )}
                 <Label className="w-100 mt-2">
-                    <Text className="mb-2">Domain</Text>
+                    Domain
                     <Input
                         name="domain"
                         message="The HELO domain to provide to the SMTP server (if needed)."
@@ -275,8 +307,23 @@ export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser
                         id="no-verify-tls-checkbox"
                     />
                 </div>
+                <div className="mt-3 d-flex">
+                    <LoaderButton
+                        type="submit"
+                        variant="primary"
+                        label="Save"
+                        loading={loading}
+                        disabled={!isValid || JSON.stringify(form) === JSON.stringify(parsedConfig)}
+                    />
+                    <Button className="ml-2" type="button" variant="secondary" onClick={reset}>
+                        Discard changes
+                    </Button>
+                </div>
             </Form>
-            <SendTestEmailForm authenticatedUser={authenticatedUser} className="mt-4" />
-        </>
+            <Container className="mt-4">
+                <H3>Test email</H3>
+                <SendTestEmailForm authenticatedUser={authenticatedUser} />
+            </Container>
+        </div>
     )
 }

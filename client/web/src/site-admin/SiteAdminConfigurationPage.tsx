@@ -3,8 +3,7 @@ import { type FC, useState, useEffect, useCallback } from 'react'
 import { FetchResult, useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import * as jsonc from 'jsonc-parser'
-import { useParams, useNavigate } from 'react-router-dom'
-import StickyBox from 'react-sticky-box'
+import { useSearchParams } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
 import { useQuery, useMutation } from '@sourcegraph/http-client'
@@ -28,11 +27,10 @@ import {
     Tabs,
 } from '@sourcegraph/wildcard'
 
-import siteSchemaJSON from '../../../../../schema/site.schema.json'
-import { AuthenticatedUser } from '../../auth'
-import { LoaderButton } from '../../components/LoaderButton'
-import { PageTitle } from '../../components/PageTitle'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
+import siteSchemaJSON from '../../../../schema/site.schema.json'
+import { AuthenticatedUser } from '../auth'
+import { PageTitle } from '../components/PageTitle'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import {
     type ReloadSiteResult,
     type ReloadSiteVariables,
@@ -40,15 +38,14 @@ import {
     type SiteVariables,
     type UpdateSiteConfigurationResult,
     type UpdateSiteConfigurationVariables,
-} from '../../graphql-operations'
-import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
-import { refreshSiteFlags } from '../../site/backend'
-import { eventLogger } from '../../tracking/eventLogger'
-import { RELOAD_SITE, SITE_CONFIG_QUERY, UPDATE_SITE_CONFIG } from '../backend'
-import { SiteConfigurationChangeList } from '../SiteConfigurationChangeList'
-import { SMTPConfigForm } from '../smtp/ConfigForm'
+} from '../graphql-operations'
+import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
+import { refreshSiteFlags } from '../site/backend'
+import { eventLogger } from '../tracking/eventLogger'
 
-import { ConfigPanel } from './ConfigPanel'
+import { RELOAD_SITE, SITE_CONFIG_QUERY, UPDATE_SITE_CONFIG } from './backend'
+import { SiteConfigurationChangeList } from './SiteConfigurationChangeList'
+import { SMTPConfigForm } from './smtp/ConfigForm'
 
 import styles from './SiteAdminConfigurationPage.module.scss'
 
@@ -237,24 +234,15 @@ interface Props extends TelemetryProps {
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 const SITE_CONFIG_QUERY_NAME = 'Site'
 
-const tabs = {
-    basic: 0,
-    json: 1,
-}
-
-type TabKey = keyof typeof tabs
-
 /**
  * A page displaying the site configuration.
  */
 export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSourcegraphApp, telemetryService }) => {
     const client = useApolloClient()
-    const { tab } = useParams()
-    const navigate = useNavigate()
-    const [tabIndex, setTabIndex] = useState(tab ? tabs[tab as TabKey] : tabs.basic)
+    const [params, setSearchParams] = useSearchParams()
+    const [tabIndex, setTabIndex] = useState(Number(params.get('tab')) ?? 0)
     const [reloadStartedAt, setReloadStartedAt] = useState<Date>(new Date(0))
     const [enabledCompletions, setEnabledCompletions] = useState(false)
-    const [config, setConfig] = useState('')
     const isLightTheme = useIsLightTheme()
 
     useEffect(() => eventLogger.logViewEvent('SiteAdminConfiguration'))
@@ -262,11 +250,10 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
     const [isSetupChecklistEnabled] = useFeatureFlag('setup-checklist', false)
 
     useEffect(() => {
-        const newTab = tabIndex === 0 ? 'basic' : 'json'
-        if (isSetupChecklistEnabled && newTab !== tab) {
-            navigate(`/site-admin/configuration/${newTab}`)
+        if (isSetupChecklistEnabled && Number(params.get('tab')) !== tabIndex) {
+            setSearchParams({ tab: tabIndex.toString() })
         }
-    }, [tab, tabIndex, isSetupChecklistEnabled, navigate])
+    }, [tabIndex, isSetupChecklistEnabled, params, setSearchParams])
 
     const { data, loading, error } = useQuery<SiteResult, SiteVariables>(SITE_CONFIG_QUERY, {
         // fetchPolicy: 'cache-and-network',
@@ -450,79 +437,61 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
             <div>{alerts}</div>
             {loading && <LoadingSpinner />}
             {isSetupChecklistEnabled && data && (
-                <>
-                    <Tabs defaultIndex={tabIndex} onChange={setTabIndex} size="medium">
-                        <TabList>
-                            <Tab>Basic</Tab>
-                            <Tab>JSON</Tab>
-                        </TabList>
-                        <TabPanels>
-                            <TabPanel>
-                                <ConfigPanel id="smtp" title="SMTP" className="mt-3">
-                                    <SMTPConfigForm
-                                        authenticatedUser={authenticatedUser}
-                                        config={data?.site?.configuration?.effectiveContents}
-                                        configChanged={setConfig}
-                                        loading={loading || updateLoading}
-                                        error={updateError}
+                <Tabs defaultIndex={tabIndex} onChange={setTabIndex} size="medium">
+                    <TabList>
+                        <Tab>Basic</Tab>
+                        <Tab>JSON</Tab>
+                    </TabList>
+                    <TabPanels>
+                        <TabPanel>
+                            <Container className="mt-3">
+                                <SMTPConfigForm
+                                    authenticatedUser={authenticatedUser}
+                                    config={data?.site?.configuration?.effectiveContents}
+                                    saveConfig={onSave}
+                                    loading={loading || updateLoading}
+                                    error={updateError}
+                                />
+                            </Container>
+                        </TabPanel>
+                        <TabPanel>
+                            {data?.site?.configuration && (
+                                <Container className="mt-3">
+                                    <Text className="mb-3">
+                                        View and edit the Sourcegraph site configuration. See{' '}
+                                        <Link target="_blank" to="/help/admin/config/site_config">
+                                            documentation
+                                        </Link>{' '}
+                                        for more information.
+                                    </Text>
+                                    <DynamicallyImportedMonacoSettingsEditor
+                                        value={contents || ''}
+                                        jsonSchema={siteSchemaJSON}
+                                        canEdit={true}
+                                        saving={updateLoading}
+                                        loading={loading || reloadLoading || updateLoading}
+                                        height={600}
+                                        isLightTheme={isLightTheme}
+                                        onSave={onSave}
+                                        actions={
+                                            isSourcegraphApp || isSetupChecklistEnabled ? [] : quickConfigureActions
+                                        }
+                                        telemetryService={telemetryService}
+                                        explanation={
+                                            <Text className="form-text text-muted">
+                                                <small>
+                                                    Use Ctrl+Space for completion, and hover over JSON properties for
+                                                    documentation. For more information, see the{' '}
+                                                    <Link to="/help/admin/config/site_config">documentation</Link>.
+                                                </small>
+                                            </Text>
+                                        }
                                     />
-                                </ConfigPanel>
-                                <StickyBox offsetBottom={20} bottom={true}>
-                                    <Container className="mt-3 p-3">
-                                        <LoaderButton
-                                            type="submit"
-                                            variant="primary"
-                                            label="Update site configuration"
-                                            loading={loading}
-                                            onClick={event => onSave(config)}
-                                            disabled={config === contents}
-                                        />
-                                    </Container>
-                                </StickyBox>
-                            </TabPanel>
-                            <TabPanel>
-                                {data?.site?.configuration && (
-                                    <Container className="mt-3">
-                                        <Text className="mb-3">
-                                            View and edit the Sourcegraph site configuration. See{' '}
-                                            <Link target="_blank" to="/help/admin/config/site_config">
-                                                documentation
-                                            </Link>{' '}
-                                            for more information.
-                                        </Text>
-                                        <DynamicallyImportedMonacoSettingsEditor
-                                            value={contents || ''}
-                                            jsonSchema={siteSchemaJSON}
-                                            canEdit={true}
-                                            saving={updateLoading}
-                                            loading={loading || reloadLoading || updateLoading}
-                                            height={600}
-                                            isLightTheme={isLightTheme}
-                                            onSave={onSave}
-                                            actions={
-                                                isSourcegraphApp || isSetupChecklistEnabled ? [] : quickConfigureActions
-                                            }
-                                            telemetryService={telemetryService}
-                                            explanation={
-                                                <Text className="form-text text-muted">
-                                                    <small>
-                                                        Use Ctrl+Space for completion, and hover over JSON properties
-                                                        for documentation. For more information, see the{' '}
-                                                        <Link to="/help/admin/config/site_config">documentation</Link>.
-                                                    </small>
-                                                </Text>
-                                            }
-                                        />
-                                    </Container>
-                                )}
-                            </TabPanel>
-                        </TabPanels>
-                    </Tabs>
-                    {/* TODO: what to do about discard changes button
-                    <Button className="ml-2" type="button" variant="secondary" onClick={reset}>
-                        Discard changes
-                    </Button> */}
-                </>
+                                </Container>
+                            )}
+                        </TabPanel>
+                    </TabPanels>
+                </Tabs>
             )}
             {!isSetupChecklistEnabled && data?.site?.configuration && (
                 <Container className="mt-3">
@@ -556,9 +525,9 @@ export const SiteAdminConfigurationPage: FC<Props> = ({ authenticatedUser, isSou
                     />
                 </Container>
             )}
-            <ConfigPanel className="mt-3" id="history" title="Change History" defaultOpen={false}>
+            <div className="mt-3">
                 <SiteConfigurationChangeList />
-            </ConfigPanel>
+            </div>
         </div>
     )
 }
