@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class GraphQlLogger {
   private static final Gson gson = new GsonBuilder().serializeNulls().create();
+
   public static CompletableFuture<Boolean> logInstallEvent(@NotNull Project project) {
     if (ConfigUtil.getAnonymousUserId() != null && project.isDisposed()) {
       var event = createEvent(project, "CodyInstalled", new JsonObject());
