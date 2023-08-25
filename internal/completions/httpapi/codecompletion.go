@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/sourcegraph/log"
@@ -21,30 +22,39 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 		types.CompletionsFeatureCode,
 		rl,
 		"code",
-		func(requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) string {
-			customModel := allowedCustomModel(requestParams.Model)
-			if customModel == "" {
-				return c.CompletionModel
+		func(requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
+			if isAllowedCustomModel(requestParams.Model) {
+				return requestParams.Model, nil
 			}
-			return customModel
+			if requestParams.Model != "" {
+				return "", errors.New("Unsupported custom model")
+			}
+			return c.CompletionModel, nil
 		},
 	)
 }
 
 // We only allow dotcom clients to select a custom code model and maintain an allowlist for which
 // custom values we support
-func allowedCustomModel(model string) string {
-	if !envvar.SourcegraphDotComMode() {
-		return ""
+func isAllowedCustomModel(model string) bool {
+	if !(envvar.SourcegraphDotComMode()) {
+		return false
 	}
 
 	switch model {
 	case "fireworks/accounts/fireworks/models/starcoder-16b-w8a16":
+		fallthrough
 	case "fireworks/accounts/fireworks/models/starcoder-7b-w8a16":
+		fallthrough
 	case "fireworks/accounts/fireworks/models/starcoder-3b-w8a16":
+		fallthrough
 	case "fireworks/accounts/fireworks/models/starcoder-1b-w8a16":
-		return model
+		fallthrough
+	case "fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct":
+		fallthrough
+	case "fireworks/accounts/fireworks/models/wizardcoder-15b":
+		return true
 	}
 
-	return ""
+	return false
 }

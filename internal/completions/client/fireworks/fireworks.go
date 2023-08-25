@@ -108,6 +108,13 @@ func (c *fireworksClient) makeRequest(ctx context.Context, requestParams types.C
 		requestParams.TopP = 0
 	}
 
+	// For compatibility reasons with other models, we expect to find the prompt
+	// in the first and only message
+	prompt, err := getPrompt(requestParams.Messages)
+	if err != nil {
+		return nil, err
+	}
+
 	payload := fireworksRequest{
 		Model:       requestParams.Model,
 		Temperature: requestParams.Temperature,
@@ -117,7 +124,7 @@ func (c *fireworksClient) makeRequest(ctx context.Context, requestParams types.C
 		MaxTokens:   int32(requestParams.MaxTokensToSample),
 		Stop:        requestParams.StopSequences,
 		Echo:        false,
-		Prompt:      requestParams.Prompt,
+		Prompt:      prompt,
 	}
 
 	reqBody, err := json.Marshal(payload)

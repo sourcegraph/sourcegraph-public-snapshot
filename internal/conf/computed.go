@@ -727,7 +727,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 			completionsConfig.Endpoint = "https://api.fireworks.ai/inference/v1/completions"
 		}
 
-		// If not access token is set, we cannot talk to Azure OpenAI. Bail.
+		// If not access token is set, we cannot talk to Fireworks. Bail.
 		if completionsConfig.AccessToken == "" {
 			return nil
 		}
