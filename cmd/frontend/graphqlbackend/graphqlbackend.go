@@ -422,7 +422,7 @@ func NewSchemaWithCompletionsResolver(db database.DB, completionsResolver Comple
 }
 
 func NewSchemaWithSearchJobsResolver(db database.DB, searchJobsResolver SearchJobsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), []OptionalResolver{{SearchJobsResolver: searchJobsResolver}})
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{SearchJobsResolver: searchJobsResolver}})
 }
 
 func NewSchema(
