@@ -1592,6 +1592,7 @@ ts_project(
         "src/site-admin/permissions-center/PermissionsSyncStats.tsx",
         "src/site-admin/permissions-center/backend.ts",
         "src/site-admin/routes.tsx",
+        "src/site-admin/setup-checklist/hooks/useSetupChecklist.tsx",
         "src/site-admin/sidebaritems.ts",
         "src/site-admin/user-select/UserSelect.tsx",
         "src/site-admin/user-select/backend.ts",
