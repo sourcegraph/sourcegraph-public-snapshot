@@ -14,10 +14,7 @@ public class ErrorNotification {
   public static void show(Project project, String errorMessage) {
     Notification notification =
         new Notification(
-            "Sourcegraph errors",
-            "Sourcegraph",
-            errorMessage,
-            NotificationType.WARNING);
+            "Sourcegraph errors", "Sourcegraph", errorMessage, NotificationType.WARNING);
     AnAction dismissAction =
         new DumbAwareAction("Dismiss") {
           @Override

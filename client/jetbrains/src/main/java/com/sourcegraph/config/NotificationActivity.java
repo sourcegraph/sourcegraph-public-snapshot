@@ -122,10 +122,7 @@ public class NotificationActivity implements StartupActivity.DumbAware {
             + " It is not possible to use Sourcegraph API and Cody without it.";
     Notification notification =
         new Notification(
-            "Sourcegraph: server access",
-            "Sourcegraph",
-            content,
-            NotificationType.INFORMATION);
+            "Sourcegraph: server access", "Sourcegraph", content, NotificationType.INFORMATION);
     notification.setIcon(Icons.CodyLogo);
     notification.addAction(new OpenPluginSettingsAction("Set Access Token"));
     notification.addAction(dumbAwareAction("Do Not Set", notification::expire));
