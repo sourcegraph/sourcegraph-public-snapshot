@@ -51,7 +51,7 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
   @Nullable public Boolean isCodyDebugEnabled;
   @Nullable public Boolean isCodyVerboseDebugEnabled;
   @Nullable public Boolean isCustomAutocompleteColorEnabled;
-  @Nullable public Color customAutocompleteColor;
+  @Nullable public Integer customAutocompleteColor;
 
   @Nullable
   public String
@@ -145,8 +145,8 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     return Optional.ofNullable(isCustomAutocompleteColorEnabled).orElse(false);
   }
 
-  public Color getCustomAutocompleteColor() {
-    return Optional.ofNullable(customAutocompleteColor).orElse(Color.WHITE);
+  public Integer getCustomAutocompleteColor() {
+    return Optional.ofNullable(customAutocompleteColor).orElse(0);
   }
 
   @Nullable
@@ -190,6 +190,6 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     this.isCodyDebugEnabled = settings.isCodyDebugEnabled;
     this.isCodyVerboseDebugEnabled = settings.isCodyVerboseDebugEnabled;
     this.isCustomAutocompleteColorEnabled = settings.isCustomAutocompleteColorEnabled;
-    this.customAutocompleteColor = settings.getCustomAutocompleteColor();
+    this.customAutocompleteColor = settings.customAutocompleteColor;
   }
 }

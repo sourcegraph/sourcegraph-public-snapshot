@@ -242,7 +242,7 @@ public class ConfigUtil {
     return getApplicationLevelConfig().isCustomAutocompleteColorEnabled();
   }
 
-  public static Color getCustomAutocompleteColor() {
+  public static Integer getCustomAutocompleteColor() {
     return getApplicationLevelConfig().getCustomAutocompleteColor();
   }
 
