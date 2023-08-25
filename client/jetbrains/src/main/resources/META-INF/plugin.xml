@@ -178,6 +178,8 @@
             text="Run Cody App"
             icon="/icons/codyLogoSm.svg"/>
 
+
+
         <action
             id="cody.enableCodyAutocomplete"
             class="com.sourcegraph.cody.statusbar.CodyEnableAutocompleteAction"
@@ -217,8 +219,11 @@
         </group>
 
         <group id="Sourcegraph.Accounts.AddAccount">
-<!--            <action id="Sourcegraph.Accounts.AddSourcegraphAccount" text="Add Sourcegraph Account" class="com.sourcegraph.cody.config.AddSourcegraphAccountAction"/>-->
-            <action id="Sourcegraph.Accounts.AddSourcegraphAccountWithToken" text="Log In with Token to Sourcegraph" class="com.sourcegraph.cody.config.AddSourcegraphAccountWithTokenAction"/>
+            <!--            <action id="Sourcegraph.Accounts.AddSourcegraphAccount" text="Add Sourcegraph Account" class="com.sourcegraph.cody.config.AddSourcegraphAccountAction"/>-->
+            <action id="Sourcegraph.Accounts.AddSourcegraphAccountWithToken" text="Log In with Token to Sourcegraph"
+                    class="com.sourcegraph.cody.config.AddSourcegraphAccountWithTokenAction"/>
+            <action id="Sourcegraph.Accounts.AddCodyAccount" text="Log in to Local Cody App"
+                    class="com.sourcegraph.cody.config.AddCodyAccountAction"/>
             <separator/>
         </group>
     </actions>

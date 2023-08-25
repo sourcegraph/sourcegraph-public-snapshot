@@ -42,6 +42,10 @@ class SourcegraphAccountListModel(private val project: Project) :
 
   override fun addAccount(server: SourcegraphServerPath, login: String, token: String) {
     val account = SourcegraphAccount(login, server, id = UUID.randomUUID().toString())
+    addAccount(account, token)
+  }
+
+  override fun addAccount(account: SourcegraphAccount, token: String) {
     accountsListModel.add(account)
     newCredentials[account] = token
     notifyCredentialsChanged(account)

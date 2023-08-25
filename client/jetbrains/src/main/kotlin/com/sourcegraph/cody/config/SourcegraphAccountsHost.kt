@@ -10,6 +10,7 @@ import javax.swing.JButton
 
 interface SourcegraphAccountsHost {
   fun addAccount(server: SourcegraphServerPath, login: String, token: String)
+  fun addAccount(account: SourcegraphAccount, token: String)
   fun isAccountUnique(login: String, server: SourcegraphServerPath): Boolean
 
   companion object {
