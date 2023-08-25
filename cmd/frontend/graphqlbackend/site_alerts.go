@@ -41,7 +41,6 @@ var (
 	AlertGroupAuthentication AlertGroup = "AUTHENTICATION"
 	AlertGroupCodehost       AlertGroup = "CODEHOST"
 	AlertGroupCody           AlertGroup = "CODY"
-	AlertGroupExternalURL    AlertGroup = "EXTERNAL_URL"
 	AlertGroupLicense        AlertGroup = "LICENSE"
 	AlertGroupObservability  AlertGroup = "OBSERVABILITY"
 	AlertGroupSMTP           AlertGroup = "SMTP"
@@ -124,8 +123,7 @@ func init() {
 		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsApp() {
 			return nil
 		}
-		setupChecklistEnabled := featureflag.FromContext(context.Background()).GetBoolOr("setup-checklist", false)
-		if c.SiteConfig().ExternalURL == "" && !setupChecklistEnabled {
+		if c.SiteConfig().ExternalURL == "" {
 			problems = append(problems, conf.NewSiteProblem("`externalURL` is required to be set for many features of Sourcegraph to work correctly."))
 		}
 		return problems
@@ -142,8 +140,6 @@ func init() {
 	AlertFuncs = append(AlertFuncs, updateAvailableAlert)
 
 	AlertFuncs = append(AlertFuncs, storageLimitReachedAlert)
-
-	AlertFuncs = append(AlertFuncs, emptyExternalURLAlert)
 
 	AlertFuncs = append(AlertFuncs, freePlanAlert)
 
@@ -236,27 +232,6 @@ func init() {
 	AlertFuncs = append(AlertFuncs, gitlabVersionAlert)
 
 	AlertFuncs = append(AlertFuncs, codyGatewayUsageAlert)
-}
-
-func emptyExternalURLAlert(args AlertFuncArgs) []*Alert {
-	if !args.IsSiteAdmin {
-		return nil
-	}
-
-	if !featureflag.FromContext(args.Ctx).GetBoolOr("setup-checklist", false) {
-		log15.Warn("Setup checklist feature flag is disabled, skipping free plan alert.")
-		return nil
-	}
-
-	if conf.SiteConfig().ExternalURL == "" {
-		return []*Alert{{
-			GroupValue:   AlertGroupExternalURL,
-			TypeValue:    AlertTypeError,
-			MessageValue: "`externalURL` is required to be set for many features of Sourcegraph to work correctly.",
-		}}
-	}
-
-	return nil
 }
 
 func freePlanAlert(args AlertFuncArgs) []*Alert {
