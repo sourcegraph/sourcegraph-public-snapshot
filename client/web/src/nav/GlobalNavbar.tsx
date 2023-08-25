@@ -296,6 +296,13 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             name="feedback"
                         />
                     )}
+                    {isSourcegraphDotCom && (
+                        <NavItem>
+                            <NavLink variant={navLinkVariant} to="https://about.sourcegraph.com" external={true}>
+                                About Sourcegraph
+                            </NavLink>
+                        </NavItem>
+                    )}
                 </NavGroup>
                 <NavActions>
                     {isSourcegraphApp && <UpdateGlobalNav />}
