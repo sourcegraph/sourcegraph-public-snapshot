@@ -50,9 +50,7 @@ public class AutocompleteTelemetry {
 
   @Nullable
   public CompletionEvent.Params params() {
-    return (completionEvent != null )
-            ? completionEvent.params
-            : null;
+    return (completionEvent != null) ? completionEvent.params : null;
   }
 
   public @NotNull AutocompletionStatus getStatus() {

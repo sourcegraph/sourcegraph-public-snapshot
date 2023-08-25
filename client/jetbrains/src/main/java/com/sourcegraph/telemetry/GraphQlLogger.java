@@ -50,7 +50,8 @@ public class GraphQlLogger {
     logEvent(project, createEvent(project, eventName, eventParameters));
   }
 
-  private static JsonObject addCompletionEventParams(JsonObject eventParameters, CompletionEvent.@Nullable Params params) {
+  private static JsonObject addCompletionEventParams(
+      JsonObject eventParameters, CompletionEvent.@Nullable Params params) {
     var updatedEventParameters = eventParameters.deepCopy();
     if (params != null) {
       if (params.contextSummary != null) {

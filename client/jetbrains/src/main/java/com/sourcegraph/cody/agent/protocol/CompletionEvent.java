@@ -1,6 +1,5 @@
 package com.sourcegraph.cody.agent.protocol;
 
-import jnr.ffi.annotations.In;
 import org.jetbrains.annotations.Nullable;
 
 public class CompletionEvent {
@@ -15,7 +14,7 @@ public class CompletionEvent {
     @Nullable public String source;
     public String id;
     @Nullable public Integer lineCount;
-    @Nullable public Integer  charCount;
+    @Nullable public Integer charCount;
 
     @Override
     public String toString() {
