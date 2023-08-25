@@ -95,7 +95,7 @@ public class CodyToolWindowContent implements UpdatableChat {
     tabbedPane.insertTab("Chat", null, contentPanel, null, CHAT_TAB_INDEX);
     @NotNull JPanel recipesPanel = new JPanel(new GridLayout(0, 1));
     recipesPanel.setLayout(new BoxLayout(recipesPanel, BoxLayout.Y_AXIS));
-    tabbedPane.insertTab("Recipes", null, recipesPanel, null, RECIPES_TAB_INDEX);
+    tabbedPane.insertTab("Commands", null, recipesPanel, null, RECIPES_TAB_INDEX);
 
     // Recipes panel
     RecipeRunner recipeRunner = new RecipeRunner(this.project, this);

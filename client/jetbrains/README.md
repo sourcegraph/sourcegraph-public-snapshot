@@ -18,7 +18,7 @@ For example, you can ask Cody:
 
 ### 🤖 Ask Cody about anything in your codebase
 
-Cody understands your entire codebase — not just your open files. Ask questions, insert code, and use the built-in recipes such as "Summarize recent code changes" and "Improve variable names".
+Cody understands your entire codebase — not just your open files. Ask questions, insert code, and use the built-in commands such as "Generate unit test" and "Improve variable names".
 
 ![Example of chatting with Cody](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/Chat_IntelliJ_SS.jpg)
 
@@ -28,20 +28,17 @@ Cody can provide real-time code autocompletions as you're typing. As you start c
 
 ![Example of using code autocomplete](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/AutoCompletion_IntelliJ_SS.jpg)
 
-## 🍳 Built-in recipes
+## 🍳 Built-in commands
 
-Select the recipes tab or right-click on a selection of code and choose one of the `Ask Cody > ...` recipes, such as:
+Select the commands tab or right-click on a selection of code and choose one of the `Ask Cody > ...` commands, such as:
 
 - Explain code
 - Generate unit test
 - Generate docstring
 - Improve variable names
-- Translate to different language
-- Summarize recent code changes
-- Detect code smells
-- Generate release notes
+- Smell code
 
-_We also welcome also pull request contributions for new, useful recipes!_
+_We also welcome also pull request contributions for new, useful commands!_
 
 ## Feedback
 
