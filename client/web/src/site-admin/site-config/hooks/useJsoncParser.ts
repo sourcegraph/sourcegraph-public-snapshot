@@ -5,17 +5,15 @@ import { ParseError, applyEdits, modify, parse } from 'jsonc-parser'
 import { defaultModificationOptions } from '../SiteAdminConfigurationPage'
 
 interface UseJsoncParserReturnType<T extends object> {
-    /** parsed JSON */
+    /* parsed JSON */
     json?: T
-    /** raw JSON */
+    /* raw JSON */
     rawJson?: string
-    /** error if parsing failed */
+    /* error if parsing failed */
     error?: Error
-    /** applies edits to JSON */
+    /* applies edits to JSON */
     update: (partOfJson: Partial<T>) => void
-    /** updates raw JSON as a string */
-    updateRaw: React.Dispatch<React.SetStateAction<string | undefined>>
-    /** resets to the original JSON state before any updates */
+    /* resets to the original JSON state before any updates */
     reset: () => void
 }
 
@@ -52,29 +50,26 @@ export function useJsoncParser<T extends object>(originalRawJson?: string): UseJ
         setJson(parsedJson)
     }, [rawJson])
 
-    const update = useCallback(
-        (value: Partial<T>) => {
-            setRawJson(prevRawJson => {
-                if (!prevRawJson) {
-                    setError(new Error('No raw JSON to modify'))
-                    return
-                }
-                let newRawJson = prevRawJson
-                for (const [fieldKey, fieldValue] of Object.entries(value)) {
-                    newRawJson = applyEdits(
-                        newRawJson,
-                        modify(newRawJson, [fieldKey], fieldValue, defaultModificationOptions)
-                    )
-                }
-                return newRawJson
-            })
-        },
-        [setRawJson]
-    )
+    const update = useCallback((value: Partial<T>) => {
+        setRawJson(prevRawJson => {
+            if (!prevRawJson) {
+                setError(new Error('No raw JSON to modify'))
+                return
+            }
+            let newRawJson = prevRawJson
+            for (const [fieldKey, fieldValue] of Object.entries(value)) {
+                newRawJson = applyEdits(
+                    newRawJson,
+                    modify(newRawJson, [fieldKey], fieldValue, defaultModificationOptions)
+                )
+            }
+            return newRawJson
+        })
+    }, [])
 
     const reset = useCallback(() => {
         setRawJson(originalRawJson)
-    }, [setRawJson, originalRawJson])
+    }, [originalRawJson])
 
-    return { json, error, rawJson, update, updateRaw: setRawJson, reset }
+    return { json, error, rawJson, update, reset }
 }
