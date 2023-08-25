@@ -33,26 +33,38 @@ public class GraphQlLogger {
       @NotNull Project project,
       long latencyMs,
       long displayDurationMs,
-      CompletionEvent.@Nullable ContextSummary contextSummary) {
+      CompletionEvent.@Nullable Params params) {
     String eventName = "CodyJetBrainsPlugin:completion:suggested";
     JsonObject eventParameters = new JsonObject();
     eventParameters.addProperty("latency", latencyMs);
     eventParameters.addProperty("displayDuration", displayDurationMs);
-    if (contextSummary != null) {
-      eventParameters.add("contextSummary", new Gson().toJsonTree(contextSummary));
-    }
     eventParameters.addProperty("isAnyKnownPluginEnabled", PluginUtil.isAnyKnownPluginEnabled());
-    logEvent(project, createEvent(project, eventName, eventParameters));
+    JsonObject updatedEventParameters = addCompletionEventParams(eventParameters, params);
+    logEvent(project, createEvent(project, eventName, updatedEventParameters));
   }
 
   public static void logAutocompleteAcceptedEvent(
-      @NotNull Project project, @Nullable CompletionEvent.ContextSummary contextSummary) {
+      @NotNull Project project, @Nullable CompletionEvent.Params params) {
     String eventName = "CodyJetBrainsPlugin:completion:accepted";
-    JsonObject eventParameters = new JsonObject();
-    if (contextSummary != null) {
-      eventParameters.add("contextSummary", new Gson().toJsonTree(contextSummary));
-    }
+    JsonObject eventParameters = addCompletionEventParams(new JsonObject(), params);
     logEvent(project, createEvent(project, eventName, eventParameters));
+  }
+
+  private static JsonObject addCompletionEventParams(JsonObject eventParameters, CompletionEvent.@Nullable Params params) {
+    var updatedEventParameters = eventParameters.deepCopy();
+    if (params != null) {
+      if (params.contextSummary != null) {
+        updatedEventParameters.add("contextSummary", new Gson().toJsonTree(params.contextSummary));
+      }
+      updatedEventParameters.addProperty("id", params.id);
+      updatedEventParameters.addProperty("languageId", params.languageId);
+      updatedEventParameters.addProperty("source", params.source);
+      updatedEventParameters.addProperty("charCount", params.charCount);
+      updatedEventParameters.addProperty("lineCount", params.lineCount);
+      updatedEventParameters.addProperty("multilineMode", params.multilineMode);
+      updatedEventParameters.addProperty("providerIdentifier", params.providerIdentifier);
+    }
+    return updatedEventParameters;
   }
 
   public static void logCodyEvent(
