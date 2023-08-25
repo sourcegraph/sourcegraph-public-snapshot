@@ -215,4 +215,3 @@ type SearchJobConnection {
     """
     pageInfo: PageInfo!
 }
-
