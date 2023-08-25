@@ -134,15 +134,25 @@ func CreateSMTPClient(config schema.SiteConfiguration) (*smtp.Client, error) {
 // the email should be verified or not, and conduct the appropriate checks before sending.
 // This helps reduce the chance that we damage email sender reputations when attempting to
 // send emails to nonexistent email addresses.
-func Send(ctx context.Context, source string, message Message) (err error) {
+func Send(ctx context.Context, source string, message Message) error {
 	if MockSend != nil {
 		return MockSend(ctx, message)
 	}
+	return SendWithConfig(ctx, source, message, conf.SiteConfig())
+}
+
+// SendWithConfig same as Send, but with different signature.
+// Config is injected as one of the function parameters.
+// Useful for testing if the provided configuration is working correctly.
+func SendWithConfig(ctx context.Context, source string, message Message, config schema.SiteConfiguration) (err error) {
+	if MockSendWithConfig != nil {
+		return MockSendWithConfig(ctx, message, config)
+	}
+
 	if disableSilently {
 		return nil
 	}
 
-	config := conf.Get()
 	if config.EmailAddress == "" {
 		return errors.New("no \"From\" email address configured (in email.address)")
 	}
@@ -184,7 +194,7 @@ func Send(ctx context.Context, source string, message Message) (err error) {
 	}
 
 	// Create SMTP client
-	client, err := CreateSMTPClient(config.SiteConfiguration)
+	client, err := CreateSMTPClient(config)
 	if err != nil {
 		return err
 	}
@@ -222,6 +232,9 @@ func Send(ctx context.Context, source string, message Message) (err error) {
 
 // MockSend is used in tests to mock the Send func.
 var MockSend func(ctx context.Context, message Message) error
+
+// MockSendWithConfig is used in tests to mock the SendWithConfig func.
+var MockSendWithConfig func(ctx context.Context, message Message, config schema.SiteConfiguration) error
 
 var disableSilently bool
 

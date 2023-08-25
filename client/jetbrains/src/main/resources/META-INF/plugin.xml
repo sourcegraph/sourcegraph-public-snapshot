@@ -1,4 +1,4 @@
-<idea-plugin>
+<idea-plugin require-restart="true">
     <id>com.sourcegraph.jetbrains</id>
     <name>Cody AI by Sourcegraph</name>
     <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
@@ -44,17 +44,19 @@
             secondary="false"
             factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
         <projectService serviceImplementation="com.sourcegraph.cody.agent.CodyAgent"/>
-        <projectService serviceImplementation="com.sourcegraph.cody.api.CodyLLMConfiguration"/>
-
 
         <!-- autocomplete -->
-        <applicationService serviceImplementation="com.sourcegraph.cody.autocomplete.CodyAutoCompleteManager"/>
+        <applicationService serviceImplementation="com.sourcegraph.cody.autocomplete.CodyAutocompleteManager"/>
         <editorFactoryListener implementation="com.sourcegraph.cody.autocomplete.CodyEditorFactoryListener"/>
 
         <projectService serviceImplementation="com.sourcegraph.cody.CodyToolWindowContent"/>
 
         <projectService serviceImplementation="com.sourcegraph.cody.ui.SelectOptionManager"/>
 
+        <!-- status bar -->
+        <statusBarWidgetFactory order="first" id="cody.statusBarWidget"
+                                implementation="com.sourcegraph.cody.statusbar.CodyWidgetFactory"/>
+        <applicationService serviceImplementation="com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService"/>
     </extensions>
 
     <applicationListeners>
@@ -122,7 +124,7 @@
         </action>
 
         <!-- autocomplete -->
-        <action id="cody.acceptAutoCompleteAction" class="com.sourcegraph.cody.autocomplete.AcceptCodyAutoCompleteAction">
+        <action id="cody.acceptAutocompleteAction" class="com.sourcegraph.cody.autocomplete.AcceptCodyAutocompleteAction">
             <keyboard-shortcut first-keystroke="TAB" keymap="$default"/>
             <override-text place="MainMenu" text="Accept Autocomplete Suggestion"/>
         </action>
@@ -160,48 +162,6 @@
             text="Run Cody App"
             icon="/icons/codyLogoSm.svg" />
 
-        <action
-            id="cody.recipe.explainCodeHighLevel"
-            class="com.sourcegraph.cody.recipes.ExplainCodeHighLevelAction"
-            text="Explain Code at a High Level"
-            icon="/icons/codyLogoSm.svg" />
-
-        <action
-            id="cody.recipe.explainCodeDetailed"
-            class="com.sourcegraph.cody.recipes.ExplainCodeDetailedAction"
-            text="Explain Code in Detail"
-            icon="/icons/codyLogoSm.svg" />
-
-        <action
-            id="cody.recipe.findCodeSmells"
-            class="com.sourcegraph.cody.recipes.FindCodeSmellsAction"
-            text="Find Code Smells"
-            icon="/icons/codyLogoSm.svg" />
-
-        <action
-            id="cody.recipe.generateDocString"
-            class="com.sourcegraph.cody.recipes.GenerateDocStringAction"
-            text="Generate Docstring"
-            icon="/icons/codyLogoSm.svg" />
-
-        <action
-            id="cody.recipe.generateUnitTest"
-            class="com.sourcegraph.cody.recipes.GenerateUnitTestAction"
-            text="Generate Unit Test"
-            icon="/icons/codyLogoSm.svg" />
-
-        <action
-            id="cody.recipe.improveVariableNames"
-            class="com.sourcegraph.cody.recipes.ImproveVariableNamesAction"
-            text="Improve Variable Names"
-            icon="/icons/codyLogoSm.svg" />
-
-        <action
-            id="cody.recipe.translateToLanguage"
-            class="com.sourcegraph.cody.recipes.TranslateToLanguageAction"
-            text="Translate to Language"
-            icon="/icons/codyLogoSm.svg" />
-
         <group id="CodyChatActionsGroup">
             <reference ref="cody.resetCurrentConversation"/>
             <reference ref="cody.refreshCodyAppDetection"/>
@@ -211,13 +171,6 @@
                searchable="false" class="com.sourcegraph.cody.CodyActionGroup">
             <reference ref="cody.downloadAndInstallCodyAction"/>
             <reference ref="cody.runCodyAppAction"/>
-            <reference ref="cody.recipe.explainCodeDetailed"/>
-            <reference ref="cody.recipe.explainCodeHighLevel"/>
-            <reference ref="cody.recipe.findCodeSmells"/>
-            <reference ref="cody.recipe.generateDocString"/>
-            <reference ref="cody.recipe.generateUnitTest"/>
-            <reference ref="cody.recipe.improveVariableNames"/>
-            <reference ref="cody.recipe.translateToLanguage"/>
             <add-to-group anchor="last" group-id="EditorPopupMenu"/>
         </group>
 

@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"io/fs"
 	"log"
@@ -16,7 +15,6 @@ import (
 	"testing/quick"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
@@ -28,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
@@ -47,6 +44,7 @@ func newMockedGitserverDB() database.DB {
 	return db
 }
 
+// TODO: Only test the repo size part of the cleanup routine, not all of it.
 func TestCleanup_computeStats(t *testing.T) {
 	root := t.TempDir()
 
@@ -61,20 +59,16 @@ func TestCleanup_computeStats(t *testing.T) {
 		}
 	}
 
-	want := protocol.ReposStats{
-		UpdatedAt: time.Now(),
-
-		// This may be different in practice, but the way we setup the tests
-		// we only have .git dirs to measure so this is correct.
-		GitDirBytes: dirSize(root),
-	}
+	// This may be different in practice, but the way we setup the tests
+	// we only have .git dirs to measure so this is correct.
+	wantGitDirBytes := dirSize(root)
 
 	logger, capturedLogs := logtest.Captured(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	if _, err := db.ExecContext(context.Background(), `
 INSERT INTO repo(id, name, private) VALUES (1, 'a', false), (2, 'b/d', false), (3, 'c', true);
-UPDATE gitserver_repos SET shard_id = 1;
+UPDATE gitserver_repos SET shard_id = 1, clone_status = 'cloned';
 UPDATE gitserver_repos SET repo_size_bytes = 5 where repo_id = 3;
 `); err != nil {
 		t.Fatalf("unexpected error while inserting test data: %s", err)
@@ -106,29 +100,14 @@ UPDATE gitserver_repos SET repo_size_bytes = 5 where repo_id = 3;
 		}
 	}
 
-	// we hardcode the name here so the tests break if someone changes the
-	// value of reposStatsName. We don't want it to change without good reason
-	// since it will temporarily break the repo-stats endpoint.
-	b, err := os.ReadFile(filepath.Join(root, "repos-stats.json"))
+	// Check that the size in the DB is properly set.
+	haveGitDirBytes, err := db.GitserverRepos().GetGitserverGitDirSize(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	var got protocol.ReposStats
-	if err := json.Unmarshal(b, &got); err != nil {
-		t.Fatal(err)
-	}
-
-	if got.UpdatedAt.Before(want.UpdatedAt) {
-		t.Fatal("want should have been computed after we called cleanupRepos")
-	}
-	if got.UpdatedAt.After(time.Now()) {
-		t.Fatal("want.UpdatedAt is in the future")
-	}
-	got.UpdatedAt = want.UpdatedAt
-
-	if d := cmp.Diff(want, got); d != "" {
-		t.Fatalf("mismatch for (-want +got):\n%s", d)
+	if wantGitDirBytes != haveGitDirBytes {
+		t.Fatalf("git dir size in db does not match actual size. want=%d have=%d", wantGitDirBytes, haveGitDirBytes)
 	}
 
 	logs := capturedLogs()

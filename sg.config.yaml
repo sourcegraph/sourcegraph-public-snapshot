@@ -173,7 +173,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/gitserver github.com/sourcegraph/sourcegraph/enterprise/cmd/gitserver
+      go build -gcflags="$GCFLAGS" -o .bin/gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
     checkBinary: .bin/gitserver
     env: &gitserverenv
       HOSTNAME: 127.0.0.1:3178
@@ -181,7 +181,6 @@ commands:
       - lib
       - internal
       - cmd/gitserver
-      - enterprise/cmd/gitserver
 
   # This is only here to stay backwards-compatible with people's custom
   # `sg.config.overwrite.yaml` files
@@ -276,9 +275,13 @@ commands:
   qdrant:
     cmd: |
       docker run -p 6333:6333 -p 6334:6334 \
-        -v $HOME/.sourcegraph-dev/data/qdrant_data:/qdrant/storage \
+        -v $HOME/.sourcegraph-dev/data/qdrant_data:/data \
         -e QDRANT__SERVICE__GRPC_PORT="6334" \
-        qdrant/qdrant
+        -e QDRANT__LOG_LEVEL=INFO \
+        -e QDRANT__STORAGE__STORAGE_PATH=/data \
+        -e QDRANT__STORAGE__SNAPSHOTS_PATH=/data \
+        --entrypoint /usr/local/bin/qdrant \
+        sourcegraph/qdrant:insiders
   worker:
     cmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -331,6 +334,9 @@ commands:
     checkBinary: .bin/pings
     env:
       SRC_LOG_LEVEL: info
+      PINGS_PUBSUB_PROJECT_ID: ''
+      PINGS_PUBSUB_TOPIC_ID: ''
+      HUBSPOT_ACCESS_TOKEN: ''
     watch:
       - lib
       - internal
@@ -938,7 +944,7 @@ bazelCommands:
       CTAGS_PROCESSES: 2
       USE_ROCKSKIP: "false"
   gitserver-template: &gitserver_bazel_template
-    target: //enterprise/cmd/gitserver
+    target: //cmd/gitserver
     env: &gitserverenv
       HOSTNAME: 127.0.0.1:3178
   # This is only here to stay backwards-compatible with people's custom

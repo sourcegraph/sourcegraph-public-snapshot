@@ -55,7 +55,7 @@ public class SettingsComponent implements Disposable {
   private JBTextField remoteUrlReplacementsTextField;
   private JBCheckBox isUrlNotificationDismissedCheckBox;
   private JBCheckBox isCodyEnabledCheckBox;
-  private JBCheckBox isCodyAutoCompleteEnabledCheckBox;
+  private JBCheckBox isCodyAutocompleteEnabledCheckBox;
 
   private ActionLink installLocalAppLink;
   private JLabel installLocalAppComment;
@@ -444,16 +444,16 @@ public class SettingsComponent implements Disposable {
     isCodyEnabledCheckBox.setSelected(value);
     this.onDidCodyEnableSettingChange();
     if (!value) {
-      setCodyAutoCompleteEnabled(false);
+      setCodyAutocompleteEnabled(false);
     }
   }
 
-  public boolean isCodyAutoCompleteEnabled() {
-    return isCodyAutoCompleteEnabledCheckBox.isSelected();
+  public boolean isCodyAutocompleteEnabled() {
+    return isCodyAutocompleteEnabledCheckBox.isSelected();
   }
 
-  public void setCodyAutoCompleteEnabled(boolean value) {
-    isCodyAutoCompleteEnabledCheckBox.setSelected(value);
+  public void setCodyAutocompleteEnabled(boolean value) {
+    isCodyAutocompleteEnabledCheckBox.setSelected(value);
   }
 
   public boolean isCodyDebugEnabled() {
@@ -603,7 +603,7 @@ public class SettingsComponent implements Disposable {
   private JPanel createCodySettingsPanel() {
     //noinspection DialogTitleCapitalization
     isCodyEnabledCheckBox = new JBCheckBox("Enable Cody");
-    isCodyAutoCompleteEnabledCheckBox = new JBCheckBox("Enable Cody autocomplete");
+    isCodyAutocompleteEnabledCheckBox = new JBCheckBox("Enable Cody autocomplete");
     isCodyDebugEnabledCheckBox = new JBCheckBox("Enable debug");
     isCodyVerboseDebugEnabledCheckBox = new JBCheckBox("Verbose debug");
     JPanel codySettingsPanel =
@@ -611,7 +611,7 @@ public class SettingsComponent implements Disposable {
             .addComponent(isCodyEnabledCheckBox, 10)
             .addTooltip(
                 "Disable this to turn off all AI-based functionality of the plugin, including the Cody chat sidebar and autocomplete")
-            .addComponent(isCodyAutoCompleteEnabledCheckBox, 5)
+            .addComponent(isCodyAutocompleteEnabledCheckBox, 5)
             .addComponent(isCodyDebugEnabledCheckBox)
             .addTooltip("Enables debug output visible in the idea.log")
             .addComponent(isCodyVerboseDebugEnabledCheckBox)
@@ -619,7 +619,7 @@ public class SettingsComponent implements Disposable {
     codySettingsPanel.setBorder(
         IdeBorderFactory.createTitledBorder("Cody AI", true, JBUI.insetsTop(8)));
 
-    // Disable isCodyAutoCompleteEnabledCheckBox if isCodyEnabledCheckBox is not selected
+    // Disable isCodyAutocompleteEnabledCheckBox if isCodyEnabledCheckBox is not selected
     isCodyEnabledCheckBox.addActionListener(e -> this.onDidCodyEnableSettingChange());
     this.onDidCodyEnableSettingChange();
 
@@ -627,7 +627,7 @@ public class SettingsComponent implements Disposable {
   }
 
   private void onDidCodyEnableSettingChange() {
-    isCodyAutoCompleteEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
+    isCodyAutocompleteEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
     isCodyDebugEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
     isCodyVerboseDebugEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
   }

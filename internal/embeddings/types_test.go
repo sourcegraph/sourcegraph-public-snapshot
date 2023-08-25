@@ -103,6 +103,10 @@ func TestEmbeddingIndexFilter(t *testing.T) {
 			t.Fatalf("Expected rank %f, but got %f", newRanks.Paths[embeddings.RowMetadata[i].FileName], rank)
 		}
 	}
+
+	if err := embeddings.Validate(); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestAppend(t *testing.T) {
@@ -162,5 +166,46 @@ func TestAppend(t *testing.T) {
 
 	if !reflect.DeepEqual(index.RowMetadata, expectedRowMetadata) {
 		t.Errorf("Expected RowMetadata %v, but got %v", expectedRowMetadata, index.RowMetadata)
+	}
+
+	if err := index.Validate(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestValidate(t *testing.T) {
+	mk := func() EmbeddingIndex {
+		return EmbeddingIndex{
+			Embeddings:      []int8{1, 2, 3, 4},
+			ColumnDimension: 2,
+			RowMetadata: []RepoEmbeddingRowMetadata{
+				{FileName: "file1"},
+				{FileName: "file2"},
+			},
+			Ranks: []float32{0.1, 0.2},
+		}
+	}
+
+	index := mk()
+	if err := index.Validate(); err != nil {
+		t.Fatal(err)
+	}
+
+	index = mk()
+	index.ColumnDimension = 3
+	if err := index.Validate(); err == nil {
+		t.Fatal("expected validation to fail")
+	}
+
+	index = mk()
+	index.RowMetadata = append(index.RowMetadata, RepoEmbeddingRowMetadata{FileName: "file3"})
+	if err := index.Validate(); err == nil {
+		t.Fatal("expected validation to fail")
+	}
+
+	index = mk()
+	index.Embeddings = index.Embeddings[:len(index.Embeddings)-1]
+	if err := index.Validate(); err == nil {
+		t.Fatal("expected validation to fail")
 	}
 }

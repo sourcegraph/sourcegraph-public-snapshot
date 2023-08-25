@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -21,8 +20,7 @@ func TestGitoliteSource(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbmocks.NewMockDB()
-	_, err := NewGitoliteSource(ctx, db, svc, cf)
+	_, err := NewGitoliteSource(ctx, svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}
