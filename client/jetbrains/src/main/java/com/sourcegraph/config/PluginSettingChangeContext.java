@@ -1,5 +1,6 @@
 package com.sourcegraph.config;
 
+import java.awt.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,6 +20,8 @@ public class PluginSettingChangeContext {
   public final boolean newCodyAutocompleteEnabled;
   public final boolean newCodyDebugEnabled;
   public final boolean newCodyVerboseDebugEnabled;
+  public final boolean isCustomAutocompleteColorEnabled;
+  public final Color customAutocompleteColor;
 
   public PluginSettingChangeContext(
       boolean oldCodyEnabled,
@@ -33,7 +36,9 @@ public class PluginSettingChangeContext {
       boolean newCodyEnabled,
       boolean newCodyAutocompleteEnabled,
       boolean newCodyDebugEnabled,
-      boolean newCodyVerboseDebugEnabled) {
+      boolean newCodyVerboseDebugEnabled,
+      boolean isCustomAutocompleteColorEnabled,
+      @Nullable Color customAutocompleteColor) {
     this.oldCodyEnabled = oldCodyEnabled;
     this.oldCodyAutocompleteEnabled = oldCodyAutocompleteEnabled;
     this.oldUrl = oldUrl;
@@ -47,5 +52,7 @@ public class PluginSettingChangeContext {
     this.newCodyAutocompleteEnabled = newCodyAutocompleteEnabled;
     this.newCodyDebugEnabled = newCodyDebugEnabled;
     this.newCodyVerboseDebugEnabled = newCodyVerboseDebugEnabled;
+    this.isCustomAutocompleteColorEnabled = isCustomAutocompleteColorEnabled;
+    this.customAutocompleteColor = customAutocompleteColor;
   }
 }

@@ -31,4 +31,10 @@ public class AutocompleteRenderUtils {
           .getAttributes(DefaultLanguageHighlighterColors.INLINE_PARAMETER_HINT);
     }
   }
+
+  public static TextAttributes getCustomTextAttributes(Color fontColor) {
+    TextAttributes attrs = new TextAttributes();
+    attrs.setForegroundColor(fontColor);
+    return attrs;
+  }
 }

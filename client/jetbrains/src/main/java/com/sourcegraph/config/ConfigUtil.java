@@ -8,6 +8,7 @@ import com.intellij.openapi.project.Project;
 import com.sourcegraph.cody.agent.ExtensionConfiguration;
 import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.find.Search;
+import java.awt.Color;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -235,6 +236,14 @@ public class ConfigUtil {
 
   public static boolean isCodyAutocompleteEnabled() {
     return getApplicationLevelConfig().isCodyAutocompleteEnabled();
+  }
+
+  public static boolean isCustomAutocompleteColorEnabled() {
+    return getApplicationLevelConfig().isCustomAutocompleteColorEnabled();
+  }
+
+  public static Color getCustomAutocompleteColor() {
+    return getApplicationLevelConfig().getCustomAutocompleteColor();
   }
 
   public static boolean setCodyAutocompleteEnabled(boolean toggle) {
