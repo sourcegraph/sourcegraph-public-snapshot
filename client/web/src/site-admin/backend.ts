@@ -1092,18 +1092,3 @@ export const SEND_TEST_EMAIL = gql`
         sendTestEmail(to: $to)
     }
 `
-
-export const GET_LICENSE_INFO = gql`
-    query GetLicenseInfo($licenseKey: String) {
-        licenseInfo(licenseKey: $licenseKey) {
-            plan
-            userCount
-            userCountRestricted
-            expiresAt
-            features {
-                name
-                enabled
-            }
-        }
-    }
-`

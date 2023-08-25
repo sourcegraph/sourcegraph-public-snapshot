@@ -1,22 +1,28 @@
-import { FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { FC, useCallback, useMemo, useState } from 'react'
+
+import { ApolloError } from '@apollo/client'
+import { applyEdits, modify, parse, ParseError } from 'jsonc-parser'
 
 import { SiteConfiguration, SMTPServerConfig } from '@sourcegraph/shared/src/schema/site.schema'
-import { Checkbox, Form, Input, Label, Link, Select, Text, useDebounce } from '@sourcegraph/wildcard'
+import { Checkbox, Form, Input, Label, Link, Alert, Select, Text, useDebounce } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../auth'
+import { AuthenticatedUser } from '../../auth'
+import { defaultModificationOptions } from '../site-config/SiteAdminConfigurationPage'
 
 import { SendTestEmailForm } from './SendTestEmailForm'
 
-type EmailConfiguration = Pick<SiteConfiguration, 'email.address' | 'email.senderName' | 'email.smtp'>
 interface Props {
-    config?: EmailConfiguration
+    className?: string
+    config?: string
     authenticatedUser: AuthenticatedUser
-    onConfigChange: (newConfig: EmailConfiguration) => void
+    configChanged: (newContents: string) => void
+    loading?: boolean
+    error?: ApolloError
 }
 
 interface FormData extends SMTPServerConfig {
-    email?: EmailConfiguration['email.address']
-    senderName?: EmailConfiguration['email.senderName']
+    email?: SiteConfiguration['email.address']
+    senderName?: SiteConfiguration['email.senderName']
 
     [key: string]: any
 }
@@ -33,26 +39,38 @@ const initialConfig: FormData = {
     noVerifyTLS: false,
 }
 
-export const SMTPConfigForm: FC<Props> = ({ config, authenticatedUser, onConfigChange }) => {
+export const SMTPConfigForm: FC<Props> = ({ className, config, authenticatedUser, configChanged, error, loading }) => {
     const [form, setForm] = useState<FormData>({ ...initialConfig })
 
-    useEffect(() => {
+    const err = useMemo(() => {
         if (!config) {
-            return
+            return null
+        }
+        const errors: ParseError[] = []
+        const siteConfig = parse(config, errors, {
+            allowTrailingComma: true,
+            disallowComments: false,
+        }) as SiteConfiguration
+
+        if (errors?.length > 0) {
+            const error = new Error('Cannot parse site config: ' + errors.join(', '))
+            return error
         }
 
         const result = {
-            email: config['email.address'] ?? '',
-            senderName: config['email.senderName'] ?? '',
-            ...config['email.smtp'],
-            noVerifyTLS: !!config['email.smtp']?.noVerifyTLS,
-            authentication: config['email.smtp']?.authentication ?? 'PLAIN',
+            email: siteConfig['email.address'] ?? '',
+            senderName: siteConfig['email.senderName'] ?? '',
+            ...siteConfig['email.smtp'],
+            noVerifyTLS: !!siteConfig['email.smtp']?.noVerifyTLS,
+            authentication: siteConfig['email.smtp']?.authentication ?? 'PLAIN',
         } as FormData
 
         setForm({
             ...initialConfig,
             ...result,
         })
+
+        return null
     }, [config])
 
     const isValid = useMemo(
@@ -109,22 +127,38 @@ export const SMTPConfigForm: FC<Props> = ({ config, authenticatedUser, onConfigC
             }
         }
 
-        onConfigChange({
-            'email.address': normalizedConfig.email,
-            'email.senderName': normalizedConfig.senderName,
-            'email.smtp': {
-                host: normalizedConfig.host,
-                port: normalizedConfig.port,
-                authentication: normalizedConfig.authentication,
-                username: normalizedConfig.username,
-                password: normalizedConfig.password,
-                noVerifyTLS: normalizedConfig.noVerifyTLS,
-                domain: normalizedConfig.domain,
-            },
-        })
-    }, [form, onConfigChange, isValid])
+        let newConfig = applyEdits(
+            config!,
+            modify(config!, ['email.address'], normalizedConfig.email, defaultModificationOptions)
+        )
+        newConfig = applyEdits(
+            newConfig,
+            modify(newConfig!, ['email.senderName'], normalizedConfig.senderName, defaultModificationOptions)
+        )
+        newConfig = applyEdits(
+            newConfig,
+            modify(
+                newConfig!,
+                ['email.smtp'],
+                {
+                    host: normalizedConfig.host,
+                    port: normalizedConfig.port,
+                    authentication: normalizedConfig.authentication,
+                    username: normalizedConfig.username,
+                    password: normalizedConfig.password,
+                    noVerifyTLS: normalizedConfig.noVerifyTLS,
+                    domain: normalizedConfig.domain,
+                },
+                defaultModificationOptions
+            )
+        )
+
+        configChanged(newConfig)
+    }, [form, config, configChanged, isValid])
 
     const applyChangesDebounced = useDebounce(applyChanges, 300)
+
+    const effectiveError = err || error
 
     return (
         <>
@@ -136,6 +170,7 @@ export const SMTPConfigForm: FC<Props> = ({ config, authenticatedUser, onConfigC
                 for more information.
             </Text>
 
+            {effectiveError && <Alert variant="danger">{effectiveError.message}</Alert>}
             <Form className="mt-2" onChange={applyChangesDebounced}>
                 <Label className="w-100 mt-2">
                     <Text className="mb-2">Email</Text>
