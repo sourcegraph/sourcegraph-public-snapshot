@@ -24,6 +24,7 @@ public class CodyProjectService implements PersistentStateComponent<CodyProjectS
   @Nullable public String enterpriseAccessToken;
   @Nullable public String customRequestHeaders;
   @Nullable public String defaultBranch;
+  @Nullable public String codyCodebase;
   @Nullable public String remoteUrlReplacements;
   @Nullable public String lastSearchQuery;
   public boolean lastSearchCaseSensitive;
@@ -56,6 +57,11 @@ public class CodyProjectService implements PersistentStateComponent<CodyProjectS
   }
 
   @Nullable
+  public String getCodyCodebase() {
+    return codyCodebase;
+  }
+
+  @Nullable
   public String getRemoteUrlReplacements() {
     return remoteUrlReplacements;
   }
@@ -73,6 +79,7 @@ public class CodyProjectService implements PersistentStateComponent<CodyProjectS
     this.dotComAccessToken = settings.dotComAccessToken;
     this.enterpriseAccessToken = settings.enterpriseAccessToken;
     this.customRequestHeaders = settings.customRequestHeaders;
+    this.codyCodebase = settings.codyCodebase;
     this.defaultBranch = settings.defaultBranch;
     this.remoteUrlReplacements = settings.remoteUrlReplacements;
     this.lastSearchQuery = settings.lastSearchQuery != null ? settings.lastSearchQuery : "";
@@ -86,15 +93,5 @@ public class CodyProjectService implements PersistentStateComponent<CodyProjectS
   @Nullable
   public String getEnterpriseAccessToken() {
     return enterpriseAccessToken;
-  }
-
-  public boolean areChatPredictionsEnabled() {
-    // TODO: implement
-    return false;
-  }
-
-  public String getCodebase() {
-    // TODO: implement
-    return null;
   }
 }
