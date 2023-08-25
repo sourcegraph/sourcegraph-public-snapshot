@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -60,9 +61,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type EnterpriseInit func(db database.DB, keyring keyring.Ring)
-
-func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config *Config, enterpriseInit EnterpriseInit) error {
+func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config *Config) error {
 	logger := observationCtx.Logger
 
 	// Load and validate configuration.
@@ -112,9 +111,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return errors.Wrap(err, "initializing keyring")
 	}
 
-	// Possibly run enterprise hooks.
-	if enterpriseInit != nil {
-		enterpriseInit(db, keyring.Default())
+	authz.DefaultSubRepoPermsChecker, err = subrepoperms.NewSubRepoPermsClient(db.SubRepoPerms())
+	if err != nil {
+		return errors.Wrap(err, "failed to create sub-repo client")
 	}
 
 	// Setup our server megastruct.
