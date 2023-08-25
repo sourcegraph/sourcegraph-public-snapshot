@@ -92,7 +92,7 @@ public class CodyAgent implements Disposable {
     return getClient(project).server;
   }
 
-  public static CodyAgentCodebase getCodebase(@NotNull Project project) {
+  public static @Nullable CodyAgentCodebase getCodebase(@NotNull Project project) {
     if (!isConnected(project)) {
       return null;
     }
