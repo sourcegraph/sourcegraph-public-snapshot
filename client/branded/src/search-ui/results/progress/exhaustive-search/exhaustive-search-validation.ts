@@ -12,7 +12,7 @@ export function validateQueryForExhaustiveSearch(query: string): ValidationError
 
     if (tokens.type === 'error') {
         validationErrors.push({
-            reason: `The current query is invalid, problem is at ${tokens.at} column, probably you mean ${token.expected}`,
+            reason: `The current query is invalid, problem is at ${tokens.at} column, probably you mean ${tokens.expected}`,
         })
     }
 
