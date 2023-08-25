@@ -104,16 +104,16 @@ public class RepoUtil {
     if (fileFromTheRepository == null) {
       return null;
     }
-//    try {
-//      return RepoUtil.getRemoteRepoUrlWithoutScheme(project, fileFromTheRepository);
-//    } catch (Exception e) {
+    try {
+      return RepoUtil.getRemoteRepoUrlWithoutScheme(project, fileFromTheRepository);
+    } catch (Exception e) {
       return RepoUtil.getSimpleRepositoryName(project, fileFromTheRepository);
-//    }
+    }
   }
 
 
   /**
-   * Returns just the repo name. Would return "sourcegraph" for "github.com/sourcegraph/sourcegraph"
+   * Returns just the repo name. Would return "cody" for "github.com/sourcegraph/cody"
    * It doesn't care about remotes or anything, just returns the simple name.
    */
   private @Nullable static String getSimpleRepositoryName(

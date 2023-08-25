@@ -36,6 +36,7 @@ public class ConfigUtil {
         .setAccessToken(serverAuth.getAccessToken())
         .setCustomHeaders(getCustomRequestHeadersAsMap(serverAuth.getCustomRequestHeaders()))
         .setProxy(UserLevelConfig.getProxy())
+        .setCodebase(CodyProjectService.getInstance(project).codyCodebase)
         .setAutocompleteAdvancedProvider(
             UserLevelConfig.getAutocompleteProviderType().vscodeSettingString())
         .setAutocompleteAdvancedServerEndpoint(UserLevelConfig.getAutocompleteServerEndpoint())

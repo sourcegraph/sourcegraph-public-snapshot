@@ -19,14 +19,16 @@ public class CodyAgentCodebase {
     ApplicationManager.getApplication()
         .executeOnPooledThread(
             () -> {
-              String repositoryName = RepoUtil.findRepositoryName(project, file);
+              String autodetectedRepositoryName = RepoUtil.findRepositoryName(project, file);
               ApplicationManager.getApplication()
                   .invokeLater(
                       () -> {
-                        if (!Objects.equals(this.currentCodebase, repositoryName)) {
-                          ExtensionConfiguration config =
-                              ConfigUtil.getAgentConfiguration(project).setCodebase(repositoryName);
-                          this.currentCodebase = repositoryName;
+                        if (!Objects.equals(this.currentCodebase, autodetectedRepositoryName)) {
+                          ExtensionConfiguration config = ConfigUtil.getAgentConfiguration(project);
+                          if (config.codebase == null) {
+                            config.setCodebase(autodetectedRepositoryName);
+                          }
+                          this.currentCodebase = autodetectedRepositoryName;
                           underlying.configurationDidChange(config);
                         }
                       });
