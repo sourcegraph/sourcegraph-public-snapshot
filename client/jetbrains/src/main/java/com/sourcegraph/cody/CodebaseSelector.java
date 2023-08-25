@@ -19,6 +19,11 @@ public class CodebaseSelector extends TextFieldWithAutoCompletion<String> implem
         CodyProjectService.getInstance(project).getCodyCodebase());
     refreshRepos();
 
+    this.setPlaceholder("Codebase is inferred from open file");
+
+    // Set tooltip to something helpful
+    this.setToolTipText("Set the codebase to use, in the format of \"github.com/sourcegraph/cody\". If not set, the codebase is inferred from the currently open file.");
+
     // Note: This only works with Git, not with Perforce.
     MessageBusConnection connection = project.getMessageBus().connect();
     connection.subscribe(GitRepository.GIT_REPO_CHANGE, unused -> refreshRepos());
