@@ -48,6 +48,11 @@ public class AutocompleteTelemetry {
         : null;
   }
 
+  @Nullable
+  public CompletionEvent.Params params() {
+    return (completionEvent != null) ? completionEvent.params : null;
+  }
+
   public @NotNull AutocompletionStatus getStatus() {
     if (completionDisplayedTimestampMs == 0) {
       return AutocompletionStatus.TRIGGERED_NOT_DISPLAYED;

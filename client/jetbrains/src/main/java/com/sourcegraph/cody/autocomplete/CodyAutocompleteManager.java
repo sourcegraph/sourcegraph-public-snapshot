@@ -72,7 +72,7 @@ public class CodyAutocompleteManager {
                     p,
                     currentAutocompleteTelemetry.getLatencyMs(),
                     currentAutocompleteTelemetry.getDisplayDurationMs(),
-                    currentAutocompleteTelemetry.contextSummary());
+                    currentAutocompleteTelemetry.params());
                 currentAutocompleteTelemetry = null;
               }
             });
