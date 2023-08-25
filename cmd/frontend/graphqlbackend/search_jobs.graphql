@@ -167,9 +167,9 @@ type SearchJob implements Node {
     """
     finishedAt: DateTime
     """
-    The url to download the CSV of the search job results.
+    The url to download the search job results.
     """
-    csvURL: String
+    URL: String
     """
     The repository stats for the search job.
     """

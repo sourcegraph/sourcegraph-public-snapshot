@@ -10,21 +10,17 @@ type searchJobStatsResolver struct {
 }
 
 func (e *searchJobStatsResolver) Total() int32 {
-	//TODO implement me
-	panic("implement me")
+	return 0
 }
 
 func (e *searchJobStatsResolver) Completed() int32 {
-	//TODO implement me
-	panic("implement me")
+	return 0
 }
 
 func (e *searchJobStatsResolver) Failed() int32 {
-	//TODO implement me
-	panic("implement me")
+	return 0
 }
 
 func (e *searchJobStatsResolver) InProgress() int32 {
-	//TODO implement me
-	panic("implement me")
+	return 0
 }

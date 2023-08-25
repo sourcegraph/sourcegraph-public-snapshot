@@ -42,9 +42,9 @@ type SearchJobResolver interface {
 	State(ctx context.Context) string
 	Creator(ctx context.Context) (*UserResolver, error)
 	CreatedAt() gqlutil.DateTime
-	StartedAt(ctx context.Context) (*gqlutil.DateTime, error)
-	FinishedAt(ctx context.Context) (*gqlutil.DateTime, error)
-	CsvURL(ctx context.Context) (*string, error)
+	StartedAt(ctx context.Context) *gqlutil.DateTime
+	FinishedAt(ctx context.Context) *gqlutil.DateTime
+	URL(ctx context.Context) (*string, error)
 	RepoStats(ctx context.Context) (SearchJobStatsResolver, error)
 }
 

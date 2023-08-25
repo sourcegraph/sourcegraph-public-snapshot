@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const searchJobIDKind = "SearchJob"
@@ -22,47 +23,38 @@ var _ graphqlbackend.SearchJobResolver = &searchJobResolver{}
 type searchJobResolver struct {
 }
 
-func (e *searchJobResolver) ID() graphql.ID {
-	// TODO implement me
-	panic("implement me")
+func (s searchJobResolver) ID() graphql.ID {
+	return "not implemented"
 }
 
-func (e *searchJobResolver) Query() string {
-	// TODO implement me
-	panic("implement me")
+func (s searchJobResolver) Query() string {
+	return "not implemented"
 }
 
-func (e *searchJobResolver) State(ctx context.Context) string {
-	// TODO implement me
-	panic("implement me")
+func (s searchJobResolver) State(ctx context.Context) string {
+	return "QUEUED"
 }
 
-func (e *searchJobResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	// TODO implement me
-	panic("implement me")
+func (s searchJobResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+	return nil, errors.New("not implemented")
 }
 
-func (e *searchJobResolver) CreatedAt() gqlutil.DateTime {
-	// TODO implement me
-	panic("implement me")
+func (s searchJobResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{}
 }
 
-func (e *searchJobResolver) StartedAt(ctx context.Context) (*gqlutil.DateTime, error) {
-	// TODO implement me
-	panic("implement me")
+func (s searchJobResolver) StartedAt(ctx context.Context) *gqlutil.DateTime {
+	return nil
 }
 
-func (e *searchJobResolver) FinishedAt(ctx context.Context) (*gqlutil.DateTime, error) {
-	// TODO implement me
-	panic("implement me")
+func (s searchJobResolver) FinishedAt(ctx context.Context) *gqlutil.DateTime {
+	return nil
 }
 
-func (e *searchJobResolver) CsvURL(ctx context.Context) (*string, error) {
-	// TODO implement me
-	panic("implement me")
+func (s searchJobResolver) URL(ctx context.Context) (*string, error) {
+	return nil, errors.New("not implemented")
 }
 
-func (e *searchJobResolver) RepoStats(ctx context.Context) (graphqlbackend.SearchJobStatsResolver, error) {
-	// TODO implement me
-	panic("implement me")
+func (s searchJobResolver) RepoStats(ctx context.Context) (graphqlbackend.SearchJobStatsResolver, error) {
+	return nil, errors.New("not implemented")
 }

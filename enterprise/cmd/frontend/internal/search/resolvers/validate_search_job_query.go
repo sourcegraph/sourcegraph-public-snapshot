@@ -8,16 +8,13 @@ type validateSearchJobQueryResolver struct {
 }
 
 func (v *validateSearchJobQueryResolver) Query() string {
-	//TODO implement me
-	panic("implement me")
+	return "not implemented"
 }
 
 func (v *validateSearchJobQueryResolver) Valid() bool {
-	//TODO implement me
-	panic("implement me")
+	return true
 }
 
 func (v *validateSearchJobQueryResolver) Errors() *[]string {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }
