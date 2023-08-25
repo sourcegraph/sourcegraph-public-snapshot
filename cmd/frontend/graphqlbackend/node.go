@@ -381,13 +381,3 @@ func (r *NodeResolver) ToSearchJob() (SearchJobResolver, bool) {
 	n, ok := r.Node.(SearchJobResolver)
 	return n, ok
 }
-
-func (r *NodeResolver) ToSearchJobRepo() (SearchJobRepoResolver, bool) {
-	n, ok := r.Node.(SearchJobRepoResolver)
-	return n, ok
-}
-
-func (r *NodeResolver) ToSearchJobRepoRevision() (SearchJobRepoRevisionResolver, bool) {
-	n, ok := r.Node.(SearchJobRepoRevisionResolver)
-	return n, ok
-}

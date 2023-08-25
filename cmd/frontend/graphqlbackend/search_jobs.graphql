@@ -28,16 +28,6 @@ extend type Mutation {
         """
         id: ID!
     ): EmptyResponse!
-
-    """
-    Experimental: Retry a search job. This will retry all of the search's repositories and revisions.
-    """
-    retrySearchJob(
-        """
-        The ID of the search job to retry.
-        """
-        id: ID!
-    ): SearchJob!
 }
 
 extend type Query {
@@ -74,7 +64,7 @@ extend type Query {
         """
         The order by which to sort the results.
         """
-        orderBy: SearchJobesOrderBy = CREATED_DATE
+        orderBy: SearchJobsOrderBy = CREATED_DATE
         """
         The determines the order of the returned searches. Defaults to ascending.
         """
@@ -129,7 +119,7 @@ enum SearchJobState {
 """
 The order by which search jobs are sorted.
 """
-enum SearchJobesOrderBy {
+enum SearchJobsOrderBy {
     """
     Sort search jobs by their query.
     """
@@ -184,19 +174,6 @@ type SearchJob implements Node {
     The repository stats for the search job.
     """
     repoStats: SearchJobStats!
-    """
-    The repositories being searched.
-    """
-    repositories(
-        """
-        The number of results to return. Defaults to 50.
-        """
-        first: Int = 50
-        """
-        The cursor to start at.
-        """
-        after: String
-    ): SearchJobRepoConnection!
 }
 
 """
@@ -222,87 +199,6 @@ type SearchJobStats {
 }
 
 """
-A repository being searched by a search job.
-"""
-type SearchJobRepo implements Node {
-    """
-    The ID of the search job repository.
-    """
-    id: ID!
-    """
-    The state of the repository search.
-    """
-    state: SearchJobState!
-    """
-    The repository being searched.
-    """
-    repository: Repository!
-    """
-    The date and time the repository search was created.
-    """
-    createdAt: DateTime!
-    """
-    The date and time the repository search was started.
-    """
-    startedAt: DateTime
-    """
-    The date and time the repository search was finished.
-    """
-    finishedAt: DateTime
-    """
-    The failure message for the repository search.
-    """
-    failureMessage: String
-    """
-    The revisions being searched.
-    """
-    revisions(
-        """
-        The number of results to return. Defaults to 50.
-        """
-        first: Int = 50
-        """
-        The cursor to start at.
-        """
-        after: String
-    ): SearchJobRepoRevisionConnection!
-}
-
-"""
-A revision being searched by a search job.
-"""
-type SearchJobRepoRevision implements Node {
-    """
-    The ID of the search job repository revision.
-    """
-    id: ID!
-    """
-    The state of the repository revision search.
-    """
-    state: SearchJobState!
-    """
-    The repository revision being searched.
-    """
-    revision: String!
-    """
-    The date and time the repository revision search was created.
-    """
-    createdAt: DateTime!
-    """
-    The date and time the repository revision search was started.
-    """
-    startedAt: DateTime
-    """
-    The date and time the repository revision search was finished.
-    """
-    finishedAt: DateTime
-    """
-    The failure message for the repository revision search.
-    """
-    failureMessage: String
-}
-
-"""
 A connection that returns search jobs.
 """
 type SearchJobConnection {
@@ -320,38 +216,3 @@ type SearchJobConnection {
     pageInfo: PageInfo!
 }
 
-"""
-A connection that returns search job repositories.
-"""
-type SearchJobRepoConnection {
-    """
-    The list of repositories.
-    """
-    nodes: [SearchJobRepo!]!
-    """
-    The total count of repositories.
-    """
-    totalCount: Int!
-    """
-    Information to aid in pagination.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-A connection that returns search job repository revisions.
-"""
-type SearchJobRepoRevisionConnection {
-    """
-    The list of repository revisions.
-    """
-    nodes: [SearchJobRepoRevision!]!
-    """
-    The total count of repository revisions.
-    """
-    totalCount: Int!
-    """
-    Information to aid in pagination.
-    """
-    pageInfo: PageInfo!
-}

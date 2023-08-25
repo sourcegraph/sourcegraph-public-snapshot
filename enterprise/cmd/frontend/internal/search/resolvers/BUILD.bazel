@@ -1,15 +1,10 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
-load("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "resolvers",
     srcs = [
         "resolver.go",
         "search_job.go",
-        "search_job_repo.go",
-        "search_job_repo_connection.go",
-        "search_job_repo_revision.go",
-        "search_job_repo_revision_connection.go",
         "search_job_stats.go",
         "search_jobs_connection.go",
         "validate_search_job_query.go",
@@ -21,35 +16,9 @@ go_library(
         "//cmd/frontend/graphqlbackend/graphqlutil",
         "//internal/database",
         "//internal/gqlutil",
+        "//lib/errors",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_graph_gophers_graphql_go//relay",
         "@com_github_sourcegraph_log//:log",
-    ],
-)
-
-go_test(
-    name = "resolvers_test",
-    srcs = [
-        "resolver_test.go",
-        "resolvers_test.go",
-        "search_job_repo_revision_test.go",
-        "search_job_repo_test.go",
-        "search_job_test.go",
-        "validate_search_job_query_test.go",
-    ],
-    tags = [
-        # Test requires localhost database
-        "requires-network",
-    ],
-    deps = [
-        ":resolvers",
-        "//cmd/frontend/graphqlbackend",
-        "//internal/database",
-        "//internal/database/dbtest",
-        "@com_github_graph_gophers_graphql_go//:graphql-go",
-        "@com_github_graph_gophers_graphql_go//errors",
-        "@com_github_sourcegraph_log//logtest",
-        "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
     ],
 )
