@@ -56,6 +56,7 @@ pipeline:
   - uses: fetch
     with:
       uri: https://www.perforce.com/downloads/perforce/r22.1/bin.linux26x86_64/p4api-glibc2.3-openssl1.0.2.tgz
+      # Hash occasionally changes, available at https://filehost.perforce.com/perforce/r22.1/bin.linux26x86_64/SHA256SUMS (check version)
       expected-sha256: 7a7ca5b1b6c2401282a30c93065cd88f1bb47412246231c640ad3a6b7002c93b
       extract: false
   - runs: |
