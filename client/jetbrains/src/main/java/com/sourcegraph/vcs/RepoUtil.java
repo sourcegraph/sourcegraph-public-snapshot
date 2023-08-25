@@ -94,8 +94,11 @@ public class RepoUtil {
         relativePath);
   }
 
-  @Nullable
-  public static String findRepositoryName(
+  /**
+   * Returns strings like "github.com/sourcegraph/cody", or just "cody" if it finds
+   * no info about the remote.
+   */
+  public @Nullable static String findRepositoryName(
       @NotNull Project project, @Nullable VirtualFile currentFile) {
     VirtualFile fileFromTheRepository =
         currentFile != null
@@ -110,7 +113,6 @@ public class RepoUtil {
       return RepoUtil.getSimpleRepositoryName(project, fileFromTheRepository);
     }
   }
-
 
   /**
    * Returns just the repo name. Would return "cody" for "github.com/sourcegraph/cody"
