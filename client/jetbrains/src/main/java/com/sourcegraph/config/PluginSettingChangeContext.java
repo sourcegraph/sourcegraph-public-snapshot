@@ -21,7 +21,7 @@ public class PluginSettingChangeContext {
   public final boolean newCodyDebugEnabled;
   public final boolean newCodyVerboseDebugEnabled;
   public final boolean isCustomAutocompleteColorEnabled;
-  public final Color customAutocompleteColor;
+  @Nullable public final Integer customAutocompleteColor;
 
   public PluginSettingChangeContext(
       boolean oldCodyEnabled,
@@ -38,7 +38,7 @@ public class PluginSettingChangeContext {
       boolean newCodyDebugEnabled,
       boolean newCodyVerboseDebugEnabled,
       boolean isCustomAutocompleteColorEnabled,
-      @Nullable Color customAutocompleteColor) {
+      @Nullable Integer customAutocompleteColor) {
     this.oldCodyEnabled = oldCodyEnabled;
     this.oldCodyAutocompleteEnabled = oldCodyAutocompleteEnabled;
     this.oldUrl = oldUrl;

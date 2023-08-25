@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.util.messages.MessageBus;
 import com.sourcegraph.cody.localapp.LocalAppManager;
+import java.util.Objects;
 import javax.swing.*;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nls;
@@ -62,9 +63,9 @@ public class SettingsConfigurable implements Configurable {
         || mySettingsComponent.isCodyVerboseDebugEnabled() != ConfigUtil.isCodyVerboseDebugEnabled()
         || mySettingsComponent.isCustomAutocompleteColorEnabled()
             != ConfigUtil.isCustomAutocompleteColorEnabled()
-        || !mySettingsComponent
-            .getCustomAutocompleteColorPanel()
-            .equals(ConfigUtil.getCustomAutocompleteColor());
+        || !Objects.equals(
+            mySettingsComponent.getCustomAutocompleteColorPanel(),
+            ConfigUtil.getCustomAutocompleteColor());
   }
 
   @Override

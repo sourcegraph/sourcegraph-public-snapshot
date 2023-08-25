@@ -23,6 +23,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.Enumeration;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -479,12 +480,14 @@ public class SettingsComponent implements Disposable {
     isCustomAutocompleteColorEnabledCheckBox.setSelected(value);
   }
 
-  public Color getCustomAutocompleteColorPanel() {
-    return customAutocompleteColorPanel.getSelectedColor();
+  public Integer getCustomAutocompleteColorPanel() {
+    Color selectedColor = customAutocompleteColorPanel.getSelectedColor();
+    return Objects.requireNonNull(selectedColor).getRGB();
   }
 
-  public void setCustomAutocompleteColorPanel(Color value) {
-    customAutocompleteColorPanel.setSelectedColor(value);
+  public void setCustomAutocompleteColorPanel(Integer value) {
+    Color c = new Color(value);
+    customAutocompleteColorPanel.setSelectedColor(c);
   }
 
   private void setInstanceSettingsEnabled(@NotNull InstanceType instanceType) {

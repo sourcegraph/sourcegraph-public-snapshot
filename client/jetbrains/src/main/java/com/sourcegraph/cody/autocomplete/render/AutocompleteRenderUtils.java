@@ -32,9 +32,10 @@ public class AutocompleteRenderUtils {
     }
   }
 
-  public static TextAttributes getCustomTextAttributes(Color fontColor) {
+  public static TextAttributes getCustomTextAttributes(Integer fontColor) {
+    Color color = new Color(fontColor);
     TextAttributes attrs = new TextAttributes();
-    attrs.setForegroundColor(fontColor);
+    attrs.setForegroundColor(color);
     return attrs;
   }
 }
