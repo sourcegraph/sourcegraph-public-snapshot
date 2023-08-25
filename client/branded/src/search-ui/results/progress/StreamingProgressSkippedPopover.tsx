@@ -133,7 +133,7 @@ export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopover
 
     return (
         <>
-            <Text className="mx-3 mt-3">
+            <Text className={classNames('mx-3 mt-3', exhaustiveSearch && 'mb-0')}>
                 Found {limitHit(progress) ? 'more than ' : ''}
                 {progress.matchCount} {pluralize('result', progress.matchCount)}
                 {progress.repositoriesCount !== undefined
