@@ -13,6 +13,7 @@ import git4idea.repo.GitRepository;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collection;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,6 +22,24 @@ import org.jetbrains.idea.perforce.perforce.PerforceSettings;
 
 public class RepoUtil {
   private static final Logger logger = Logger.getInstance(RepoUtil.class);
+
+  /**
+   * Returns all repositories associated with the given project,
+   * in the format of "github.com/sourcegraph/sourcegraph".
+   */
+  public static Collection<String> getAllRepoNames(Project project) {
+    Collection<Repository> repos = VcsRepositoryManager.getInstance(project).getRepositories();
+    var repoNames = new java.util.HashSet<String>();
+    for (int i = 0; i < repos.size(); i++) {
+      try {
+        VirtualFile root = repos.toArray(new Repository[0])[i].getRoot();
+        repoNames.add(getRemoteRepoUrlWithoutScheme(project, root));
+      } catch (Exception e) {
+        // Just skip
+      }
+    }
+    return repoNames;
+  }
 
   // repoInfo returns the Sourcegraph repository URI, and the file path
   // relative to the repository root. If the repository URI cannot be
@@ -85,15 +104,19 @@ public class RepoUtil {
     if (fileFromTheRepository == null) {
       return null;
     }
-    try {
-      return RepoUtil.getRemoteRepoUrlWithoutScheme(project, fileFromTheRepository);
-    } catch (Exception e) {
+//    try {
+//      return RepoUtil.getRemoteRepoUrlWithoutScheme(project, fileFromTheRepository);
+//    } catch (Exception e) {
       return RepoUtil.getSimpleRepositoryName(project, fileFromTheRepository);
-    }
+//    }
   }
 
-  @Nullable
-  private static String getSimpleRepositoryName(
+
+  /**
+   * Returns just the repo name. Would return "sourcegraph" for "github.com/sourcegraph/sourcegraph"
+   * It doesn't care about remotes or anything, just returns the simple name.
+   */
+  private @Nullable static String getSimpleRepositoryName(
       @NotNull Project project, @NotNull VirtualFile file) {
     Repository repository = VcsRepositoryManager.getInstance(project).getRepositoryForFile(file);
     if (repository == null) {
