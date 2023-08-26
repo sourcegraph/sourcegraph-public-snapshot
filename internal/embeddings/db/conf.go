@@ -1,7 +1,6 @@
 package db
 
 import (
-	"fmt"
 	"sync/atomic"
 
 	qdrant "github.com/qdrant/go-client/qdrant"
