@@ -16,7 +16,7 @@ func ensureModelCollection(ctx context.Context, db *qdrantDB, modelID string, mo
 	name := CollectionName(modelID)
 	realName := name + ".default"
 
-	err := ensureCollectionWithConfig(ctx, db.collectionsClient, realName, modelDims, conf.Get().Embeddings.QdrantConfig)
+	err := ensureCollectionWithConfig(ctx, db.collectionsClient, realName, modelDims, conf.Get().Embeddings.Qdrant)
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func ensureModelCollection(ctx context.Context, db *qdrantDB, modelID string, mo
 	return nil
 }
 
-func ensureCollectionWithConfig(ctx context.Context, cc qdrant.CollectionsClient, name string, dims uint64, conf *schema.QdrantConfig) error {
+func ensureCollectionWithConfig(ctx context.Context, cc qdrant.CollectionsClient, name string, dims uint64, conf *schema.Qdrant) error {
 	resp, err := cc.List(ctx, &qdrant.ListCollectionsRequest{})
 	if err != nil {
 		return err

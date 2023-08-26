@@ -2554,7 +2554,7 @@
           },
           "default": true
         },
-        "qdrantConfig": {
+        "qdrant": {
           "description": "Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.",
           "type": "object",
           "$comment": "Skipped fields from HnswConfigDiff: MaxIndexingThreads",

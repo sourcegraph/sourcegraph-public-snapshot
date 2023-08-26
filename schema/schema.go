@@ -680,8 +680,8 @@ type Embeddings struct {
 	PolicyRepositoryMatchLimit *int `json:"policyRepositoryMatchLimit,omitempty"`
 	// Provider description: The provider to use for generating embeddings. Defaults to sourcegraph.
 	Provider string `json:"provider,omitempty"`
-	// QdrantConfig description: Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.
-	QdrantConfig *QdrantConfig `json:"qdrantConfig,omitempty"`
+	// Qdrant description: Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.
+	Qdrant *Qdrant `json:"qdrant,omitempty"`
 	// Url description: The url to the external embedding API service. Deprecated, use endpoint instead.
 	Url string `json:"url,omitempty"`
 }
@@ -1929,8 +1929,8 @@ type PythonRateLimit struct {
 	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 
-// QdrantConfig description: Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.
-type QdrantConfig struct {
+// Qdrant description: Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.
+type Qdrant struct {
 	Enabled *bool `json:"enabled,omitempty"`
 	// Hnsw description: Overrides for the HNSW index config.
 	Hnsw       *Hnsw       `json:"hnsw,omitempty"`
@@ -2587,7 +2587,7 @@ type SiteConfiguration struct {
 	Embeddings *Embeddings `json:"embeddings,omitempty"`
 	// EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
 	EncryptionKeys *EncryptionKeys `json:"encryption.keys,omitempty"`
-	// ExecutorsAccessToken description: The shared secret between Sourcegraph and executors.
+	// ExecutorsAccessToken description: The shared secret between Sourcegraph and executors. The value must contain at least 20 characters.
 	ExecutorsAccessToken string `json:"executors.accessToken,omitempty"`
 	// ExecutorsBatcheshelperImage description: The image to use for batch changes in executors. Use this value to pull from a custom image registry.
 	ExecutorsBatcheshelperImage string `json:"executors.batcheshelperImage,omitempty"`
