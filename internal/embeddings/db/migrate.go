@@ -52,50 +52,12 @@ func ensureCollectionWithConfig(ctx context.Context, cc qdrant.CollectionsClient
 
 	for _, collection := range resp.GetCollections() {
 		if collection.GetName() == name {
-			return updateCollectionConfig(ctx, cc, name, conf)
+			_, err = cc.Update(ctx, updateCollectionParams(name, conf))
+			return err
 		}
 	}
 
-	return createCollection(ctx, cc, name, dims, conf)
-}
-
-func updateCollectionConfig(ctx context.Context, cc qdrant.CollectionsClient, name string, conf *schema.QdrantConfig) error {
-	_, err := cc.Update(ctx, &qdrant.UpdateCollection{
-		CollectionName:     name,
-		HnswConfig:         getHnswConfigDiff(conf),
-		OptimizersConfig:   getOptimizersConfigDiff(conf),
-		QuantizationConfig: getQuantizationConfigDiff(conf),
-		Params:             nil, // do not update collection params
-		VectorsConfig:      nil, // do not update vectors config
-	})
-	return err
-}
-
-func createCollection(ctx context.Context, cc qdrant.CollectionsClient, name string, dims uint64, conf *schema.QdrantConfig) error {
-	// Create a new collection with the new config using the data of the old collection
-	_, err := cc.Create(ctx, &qdrant.CreateCollection{
-		CollectionName:     name,
-		HnswConfig:         getHnswConfigDiff(conf),
-		OptimizersConfig:   getOptimizersConfigDiff(conf),
-		QuantizationConfig: getQuantizationConfig(conf),
-		ShardNumber:        pointers.Ptr(uint32(1)),
-		OnDiskPayload:      pointers.Ptr(true),
-		VectorsConfig: &qdrant.VectorsConfig{
-			Config: &qdrant.VectorsConfig_Params{
-				Params: &qdrant.VectorParams{
-					Size:               dims,
-					Distance:           qdrant.Distance_Cosine,
-					HnswConfig:         nil, // use collection default
-					QuantizationConfig: nil, // use collection default
-					OnDisk:             pointers.Ptr(true),
-				},
-			},
-		},
-		WalConfig:              nil, // default
-		ReplicationFactor:      nil, // default
-		WriteConsistencyFactor: nil, // default
-		InitFromCollection:     nil, // default
-	})
+	_, err = cc.Create(ctx, createCollectionParams(name, dims, conf))
 	return err
 }
 
