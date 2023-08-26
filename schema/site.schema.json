@@ -2561,6 +2561,9 @@
           "properties": {
             "enabled": {
               "type": "boolean",
+              "!go": {
+                "pointer": true
+              },
               "default": false
             },
             "hnsw": {
@@ -2571,29 +2574,44 @@
                   "description": "Number of edges per node in the index graph. Larger the value - more accurate the search, more space required.",
                   "type": "integer",
                   "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
                   "default": 16
                 },
                 "efConstruct": {
                   "description": "Number of neighbours to consider during the index building. Larger the value, more accurate the search, more time required to build the index.",
                   "type": "integer",
                   "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
                   "default": 100
                 },
                 "fullScanThreshold": {
                   "description": "Minimal size (in KiloBytes) of vectors for additional payload-based indexing.",
                   "type": "integer",
                   "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
                   "default": 1000
                 },
                 "onDisk": {
                   "description": "Store HNSW index on disk.",
                   "type": "boolean",
+                  "!go": {
+                    "pointer": true
+                  },
                   "default": true
                 },
                 "payloadM": {
                   "description": "Number of edges per node in the index graph. Larger the value, more accurate the search, more space required.",
                   "type": "integer",
                   "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
                   "default": 16
                 }
               }
@@ -2606,6 +2624,9 @@
                 "enabled": {
                   "description": "Whether to enable int8 scalar quantization",
                   "type": "boolean",
+                  "!go": {
+                    "pointer": true
+                  },
                   "default": true
                 },
                 "quantile": {
@@ -2613,6 +2634,9 @@
                   "type": "number",
                   "minimum": 0,
                   "maximum": 1,
+                  "!go": {
+                    "pointer": true
+                  },
                   "default": 0.98
                 }
               }
@@ -2625,12 +2649,18 @@
                   "description": "Maximum size (in kilobytes) of vectors allowed for plain index, exceeding this threshold will enable vector indexing. Set to 0 to disable indexing",
                   "type": "integer",
                   "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
                   "default": 0
                 },
                 "memmapThreshold": {
                   "description": "Maximum size (in kilobytes) of vectors to store in-memory per segment.",
                   "type": "integer",
                   "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
                   "default": 100
                 }
               }
