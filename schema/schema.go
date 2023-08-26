@@ -680,8 +680,8 @@ type Embeddings struct {
 	PolicyRepositoryMatchLimit *int `json:"policyRepositoryMatchLimit,omitempty"`
 	// Provider description: The provider to use for generating embeddings. Defaults to sourcegraph.
 	Provider string `json:"provider,omitempty"`
-	// QdrantConfigOverrides description: Overrides for the default qdrant config
-	QdrantConfigOverrides *QdrantConfigOverrides `json:"qdrantConfigOverrides,omitempty"`
+	// QdrantConfig description: Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.
+	QdrantConfig *QdrantConfig `json:"qdrantConfig,omitempty"`
 	// Url description: The url to the external embedding API service. Deprecated, use endpoint instead.
 	Url string `json:"url,omitempty"`
 }
@@ -1385,6 +1385,20 @@ type Header struct {
 	Value     string `json:"value"`
 }
 
+// Hnsw description: Overrides for the HNSW index config.
+type Hnsw struct {
+	// EfConstruct description: Number of neighbours to consider during the index building. Larger the value, more accurate the search, more time required to build the index.
+	EfConstruct int `json:"efConstruct,omitempty"`
+	// FullScanThreshold description: Minimal size (in KiloBytes) of vectors for additional payload-based indexing.
+	FullScanThreshold int `json:"fullScanThreshold,omitempty"`
+	// M description: Number of edges per node in the index graph. Larger the value - more accurate the search, more space required.
+	M int `json:"m,omitempty"`
+	// OnDisk description: Store HNSW index on disk.
+	OnDisk bool `json:"onDisk,omitempty"`
+	// PayloadM description: Number of edges per node in the index graph. Larger the value, more accurate the search, more space required.
+	PayloadM int `json:"payloadM,omitempty"`
+}
+
 // IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the GitLab identity to use for a given Sourcegraph user.
 type IdentityProvider struct {
 	Oauth    *OAuthIdentity
@@ -1740,6 +1754,12 @@ type OpenTelemetry struct {
 	// Endpoint description: OpenTelemetry tracing collector endpoint. By default, Sourcegraph's "/-/debug/otlp" endpoint forwards data to the configured collector backend.
 	Endpoint string `json:"endpoint,omitempty"`
 }
+type Optimizers struct {
+	// IndexingThreshold description: Maximum size (in kilobytes) of vectors allowed for plain index, exceeding this threshold will enable vector indexing. Set to 0 to disable indexing
+	IndexingThreshold int `json:"indexingThreshold,omitempty"`
+	// MemmapThreshold description: Maximum size (in kilobytes) of vectors to store in-memory per segment.
+	MemmapThreshold int `json:"memmapThreshold,omitempty"`
+}
 
 // OrganizationInvitations description: Configuration for organization invitations.
 type OrganizationInvitations struct {
@@ -1909,10 +1929,22 @@ type PythonRateLimit struct {
 	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 
-// QdrantConfigOverrides description: Overrides for the default qdrant config
-type QdrantConfigOverrides struct {
-	// Hsnw description: Overrides for the HNSW index config. Must unmarshal into the HnswConfigDiff type.
-	Hsnw any `json:"hsnw,omitempty"`
+// QdrantConfig description: Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.
+type QdrantConfig struct {
+	Enabled bool `json:"enabled,omitempty"`
+	// Hnsw description: Overrides for the HNSW index config.
+	Hnsw       *Hnsw       `json:"hnsw,omitempty"`
+	Optimizers *Optimizers `json:"optimizers,omitempty"`
+	// Quantization description: Overrides for quantization config.
+	Quantization *Quantization `json:"quantization,omitempty"`
+}
+
+// Quantization description: Overrides for quantization config.
+type Quantization struct {
+	// Enabled description: Whether to enable int8 scalar quantization
+	Enabled bool `json:"enabled,omitempty"`
+	// Quantile description: Any values that lie outside the quantile range will be truncated
+	Quantile float64 `json:"quantile,omitempty"`
 }
 type QuickLink struct {
 	// Description description: A description for this quick link

@@ -4,17 +4,19 @@ import (
 	"context"
 
 	qdrant "github.com/qdrant/go-client/qdrant"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func ensureModelCollectionWithDefaultConfig(ctx context.Context, db *qdrantDB, modelID string, modelDims uint64) error {
+func ensureModelCollection(ctx context.Context, db *qdrantDB, modelID string, modelDims uint64) error {
 	// Make the actual collection end with `.default` so we can switch between
 	// configurations with aliases.
 	name := CollectionName(modelID)
 	realName := name + ".default"
 
-	err := ensureCollection(ctx, db.collectionsClient, realName, defaultConfig(modelDims))
+	err := ensureCollectionWithConfig(ctx, db.collectionsClient, realName, modelDims, conf.Get().Embeddings.QdrantConfig)
 	if err != nil {
 		return err
 	}
@@ -42,7 +44,7 @@ func ensureModelCollectionWithDefaultConfig(ctx context.Context, db *qdrantDB, m
 	return nil
 }
 
-func ensureCollection(ctx context.Context, cc qdrant.CollectionsClient, name string, config *qdrant.CollectionConfig) error {
+func ensureCollectionWithConfig(ctx context.Context, cc qdrant.CollectionsClient, name string, dims uint64, conf *schema.QdrantConfig) error {
 	resp, err := cc.List(ctx, &qdrant.ListCollectionsRequest{})
 	if err != nil {
 		return err
@@ -50,26 +52,50 @@ func ensureCollection(ctx context.Context, cc qdrant.CollectionsClient, name str
 
 	for _, collection := range resp.GetCollections() {
 		if collection.GetName() == name {
-			// Collection already exists
-			return nil
+			return updateCollectionConfig(ctx, cc, name, conf)
 		}
 	}
 
-	// Create a new collection with the new config using the data of the old collection
-	_, err = cc.Create(ctx, &qdrant.CreateCollection{
-		CollectionName:         name,
-		HnswConfig:             config.HnswConfig,
-		WalConfig:              config.WalConfig,
-		OptimizersConfig:       config.OptimizerConfig,
-		ShardNumber:            &config.Params.ShardNumber,
-		OnDiskPayload:          &config.Params.OnDiskPayload,
-		VectorsConfig:          config.Params.VectorsConfig,
-		ReplicationFactor:      config.Params.ReplicationFactor,
-		WriteConsistencyFactor: config.Params.WriteConsistencyFactor,
-		InitFromCollection:     nil,
-		QuantizationConfig:     config.QuantizationConfig,
-	})
+	return createCollection(ctx, cc, name, dims, conf)
+}
 
+func updateCollectionConfig(ctx context.Context, cc qdrant.CollectionsClient, name string, conf *schema.QdrantConfig) error {
+	_, err := cc.Update(ctx, &qdrant.UpdateCollection{
+		CollectionName:     name,
+		HnswConfig:         getHnswConfigDiff(conf),
+		OptimizersConfig:   getOptimizersConfigDiff(conf),
+		QuantizationConfig: getQuantizationConfigDiff(conf),
+		Params:             nil, // do not update collection params
+		VectorsConfig:      nil, // do not update vectors config
+	})
+	return err
+}
+
+func createCollection(ctx context.Context, cc qdrant.CollectionsClient, name string, dims uint64, conf *schema.QdrantConfig) error {
+	// Create a new collection with the new config using the data of the old collection
+	_, err := cc.Create(ctx, &qdrant.CreateCollection{
+		CollectionName:     name,
+		HnswConfig:         getHnswConfigDiff(conf),
+		OptimizersConfig:   getOptimizersConfigDiff(conf),
+		QuantizationConfig: getQuantizationConfig(conf),
+		ShardNumber:        pointers.Ptr(uint32(1)),
+		OnDiskPayload:      pointers.Ptr(true),
+		VectorsConfig: &qdrant.VectorsConfig{
+			Config: &qdrant.VectorsConfig_Params{
+				Params: &qdrant.VectorParams{
+					Size:               dims,
+					Distance:           qdrant.Distance_Cosine,
+					HnswConfig:         nil, // use collection default
+					QuantizationConfig: nil, // use collection default
+					OnDisk:             pointers.Ptr(true),
+				},
+			},
+		},
+		WalConfig:              nil, // default
+		ReplicationFactor:      nil, // default
+		WriteConsistencyFactor: nil, // default
+		InitFromCollection:     nil, // default
+	})
 	return err
 }
 
@@ -90,49 +116,51 @@ func ensureRepoIDIndex(ctx context.Context, cc qdrant.PointsClient, name string)
 	return nil
 }
 
-func defaultConfig(dims uint64) *qdrant.CollectionConfig {
-	return &qdrant.CollectionConfig{
-		Params: &qdrant.CollectionParams{
-			ShardNumber:   1,
-			OnDiskPayload: true,
-			VectorsConfig: &qdrant.VectorsConfig{
-				Config: &qdrant.VectorsConfig_Params{
-					Params: &qdrant.VectorParams{
-						Size:               dims,
-						Distance:           qdrant.Distance_Cosine,
-						HnswConfig:         nil,                // use collection default
-						QuantizationConfig: nil,                // use collection default
-						OnDisk:             pointers.Ptr(true), // use collection default
-					},
-				},
-			},
-			ReplicationFactor:      nil, // default
-			WriteConsistencyFactor: nil, // default
-		},
-		OptimizerConfig: &qdrant.OptimizersConfigDiff{
-			IndexingThreshold:      nil, // default
-			MemmapThreshold:        pointers.Ptr(uint64(1024)),
-			MaxOptimizationThreads: pointers.Ptr(uint64(0)),
-		},
-		WalConfig: nil, // default
-		QuantizationConfig: &qdrant.QuantizationConfig{
-			// scalar is faster than product, but doesn't compress as well
-			Quantization: &qdrant.QuantizationConfig_Scalar{
-				Scalar: &qdrant.ScalarQuantization{
-					Type: qdrant.QuantizationType_Int8,
-					// Truncate outliers for better compression
-					Quantile:  pointers.Ptr(float32(0.98)),
-					AlwaysRam: pointers.Ptr(false),
-				},
+func getHnswConfigDiff(conf *schema.QdrantConfig) *qdrant.HnswConfigDiff {
+	return &qdrant.HnswConfigDiff{
+		M:                 pointers.Ptr(uint64(conf.Hnsw.M)),
+		EfConstruct:       pointers.Ptr(uint64(conf.Hnsw.EfConstruct)),
+		FullScanThreshold: pointers.Ptr(uint64(conf.Hnsw.FullScanThreshold)),
+		OnDisk:            pointers.Ptr(conf.Hnsw.OnDisk),
+		PayloadM:          pointers.Ptr(uint64(conf.Hnsw.PayloadM)),
+	}
+}
+
+func getOptimizersConfigDiff(conf *schema.QdrantConfig) *qdrant.OptimizersConfigDiff {
+	return &qdrant.OptimizersConfigDiff{
+		IndexingThreshold: pointers.Ptr(uint64(conf.Optimizers.IndexingThreshold)),
+		MemmapThreshold:   pointers.Ptr(uint64(conf.Optimizers.MemmapThreshold)),
+	}
+}
+
+func getQuantizationConfigDiff(conf *schema.QdrantConfig) *qdrant.QuantizationConfigDiff {
+	if !conf.Quantization.Enabled {
+		return &qdrant.QuantizationConfigDiff{
+			Quantization: &qdrant.QuantizationConfigDiff_Disabled{},
+		}
+	}
+	return &qdrant.QuantizationConfigDiff{
+		Quantization: &qdrant.QuantizationConfigDiff_Scalar{
+			Scalar: &qdrant.ScalarQuantization{
+				Type:      qdrant.QuantizationType_Int8,
+				Quantile:  pointers.Ptr(float32(conf.Quantization.Quantile)),
+				AlwaysRam: pointers.Ptr(false),
 			},
 		},
-		HnswConfig: &qdrant.HnswConfigDiff{
-			M:                  pointers.Ptr(uint64(16)),
-			EfConstruct:        pointers.Ptr(uint64(100)),
-			FullScanThreshold:  pointers.Ptr(uint64(10000)),
-			MaxIndexingThreads: pointers.Ptr(uint64(0)), // automatic
-			OnDisk:             pointers.Ptr(true),
-			PayloadM:           pointers.Ptr(uint64(16)),
+	}
+}
+
+func getQuantizationConfig(conf *schema.QdrantConfig) *qdrant.QuantizationConfig {
+	if !conf.Quantization.Enabled {
+		return nil
+	}
+	return &qdrant.QuantizationConfig{
+		Quantization: &qdrant.QuantizationConfig_Scalar{
+			Scalar: &qdrant.ScalarQuantization{
+				Type:      qdrant.QuantizationType_Int8,
+				Quantile:  pointers.Ptr(float32(conf.Quantization.Quantile)),
+				AlwaysRam: pointers.Ptr(false),
+			},
 		},
 	}
 }
