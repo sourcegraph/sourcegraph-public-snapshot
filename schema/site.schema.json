@@ -2577,7 +2577,7 @@
                   "!go": {
                     "pointer": true
                   },
-                  "default": 16
+                  "default": 8
                 },
                 "efConstruct": {
                   "description": "Number of neighbours to consider during the index building. Larger the value, more accurate the search, more time required to build the index.",
@@ -2612,7 +2612,7 @@
                   "!go": {
                     "pointer": true
                   },
-                  "default": 16
+                  "default": 8
                 }
               }
             },

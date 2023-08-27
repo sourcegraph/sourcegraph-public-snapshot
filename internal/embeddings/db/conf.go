@@ -100,11 +100,12 @@ func getHnswConfigDiff(conf *schema.Qdrant) *qdrant.HnswConfigDiff {
 
 	// Default values should match the documented defaults in site.schema.json.
 	return &qdrant.HnswConfigDiff{
-		M:                 getUint64(overrides.M, 16),
-		PayloadM:          getUint64(overrides.PayloadM, 16),
-		EfConstruct:       getUint64(overrides.EfConstruct, 100),
-		FullScanThreshold: getUint64(overrides.FullScanThreshold, 1000),
-		OnDisk:            pointers.Ptr(pointers.Deref(overrides.OnDisk, true)),
+		M:                  getUint64(overrides.M, 8),
+		PayloadM:           getUint64(overrides.PayloadM, 8),
+		EfConstruct:        getUint64(overrides.EfConstruct, 100),
+		FullScanThreshold:  getUint64(overrides.FullScanThreshold, 1000),
+		OnDisk:             pointers.Ptr(pointers.Deref(overrides.OnDisk, true)),
+		MaxIndexingThreads: pointers.Ptr(uint64(2)),
 	}
 }
 
@@ -114,8 +115,9 @@ func getOptimizersConfigDiff(conf *schema.Qdrant) *qdrant.OptimizersConfigDiff {
 
 	// Default values should match the documented defaults in site.schema.json.
 	return &qdrant.OptimizersConfigDiff{
-		IndexingThreshold: getUint64(overrides.IndexingThreshold, 0),
-		MemmapThreshold:   getUint64(overrides.MemmapThreshold, 100),
+		IndexingThreshold:      getUint64(overrides.IndexingThreshold, 0),
+		MemmapThreshold:        getUint64(overrides.MemmapThreshold, 100),
+		MaxOptimizationThreads: pointers.Ptr(uint64(2)),
 	}
 }
 
