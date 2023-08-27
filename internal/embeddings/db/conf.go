@@ -57,9 +57,9 @@ func createCollectionParams(name string, dims uint64, conf *schema.Qdrant) *qdra
 		HnswConfig:             getHnswConfigDiff(conf),
 		OptimizersConfig:       getOptimizersConfigDiff(conf),
 		QuantizationConfig:     getQuantizationConfig(conf),
-		ShardNumber:            pointers.Ptr(uint32(1)),
 		OnDiskPayload:          pointers.Ptr(true),
 		VectorsConfig:          getVectorsConfig(dims),
+		ShardNumber:            nil, // default
 		WalConfig:              nil, // default
 		ReplicationFactor:      nil, // default
 		WriteConsistencyFactor: nil, // default
@@ -103,9 +103,9 @@ func getHnswConfigDiff(conf *schema.Qdrant) *qdrant.HnswConfigDiff {
 		M:                  getUint64(overrides.M, 8),
 		PayloadM:           getUint64(overrides.PayloadM, 8),
 		EfConstruct:        getUint64(overrides.EfConstruct, 100),
-		FullScanThreshold:  getUint64(overrides.FullScanThreshold, 1000),
+		FullScanThreshold:  getUint64(overrides.FullScanThreshold, 10),
 		OnDisk:             pointers.Ptr(pointers.Deref(overrides.OnDisk, true)),
-		MaxIndexingThreads: pointers.Ptr(uint64(2)),
+		MaxIndexingThreads: pointers.Ptr(uint64(4)),
 	}
 }
 
@@ -115,7 +115,9 @@ func getOptimizersConfigDiff(conf *schema.Qdrant) *qdrant.OptimizersConfigDiff {
 
 	// Default values should match the documented defaults in site.schema.json.
 	return &qdrant.OptimizersConfigDiff{
-		IndexingThreshold:      getUint64(overrides.IndexingThreshold, 0),
+		DefaultSegmentNumber:   pointers.Ptr(uint64(4)),
+		IndexingThreshold:      getUint64(overrides.IndexingThreshold, 100),
+		VacuumMinVectorNumber:  pointers.Ptr(uint64(100)),
 		MemmapThreshold:        getUint64(overrides.MemmapThreshold, 100),
 		MaxOptimizationThreads: pointers.Ptr(uint64(2)),
 	}
@@ -153,7 +155,7 @@ func getQuantizationConfig(conf *schema.Qdrant) *qdrant.QuantizationConfig {
 		Quantization: &qdrant.QuantizationConfig_Scalar{
 			Scalar: &qdrant.ScalarQuantization{
 				Type:      qdrant.QuantizationType_Int8,
-				Quantile:  getFloat32(overrides.Quantile, 0.98),
+				Quantile:  getFloat32(overrides.Quantile, 0.95),
 				AlwaysRam: pointers.Ptr(false),
 			},
 		},
