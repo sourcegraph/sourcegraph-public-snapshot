@@ -51,9 +51,9 @@ VS Code logs can be accessed via the **Outputs** view. To access autocomplete lo
 
 ## Chat
 
-Chat let's you ask Cody general programming questions or questions about your specific code. You can chat with Cody in the `Chat` panel of the editor extensions or with the `Ask Cody` button in the Sourcegrapn UI.
+Chat lets you ask Cody general programming questions or questions about your specific code. You can chat with Cody in the `Chat` panel of the editor extensions or with the `Ask Cody` button in the Sourcegraph UI.
 
-Cody uses several search methods (including keyword and semantic search) to find files in your codebase that are relevant to your chat questions. It then uses context from those files to provide an informed response based on how your codebase is structured and what it contains. Cody also tells you which code files it reads to generate its responses.
+Cody uses several search methods (including keyword and semantic search) to find files in your codebase that are relevant to your chat questions. It then uses context from those files to provide an informed response based on your codebase. Cody also tells you which code files it reads to generate its responses.
 
 Context retrieval isn't perfect, and Cody will occasionally use incorrect context or hallucinate answers. When Cody returns an incorrect response, it is often worth asking the question again in a slightly different way to see if Cody can find better context the second time around. 
 
@@ -76,18 +76,18 @@ More specifically, this means Cody can answer questions like:
 
 ### Inline chat and code fixes
 
-Cody can help you make interactive edits and refactor code by following natural-language instructions. To do so, select the relevant code snippet, and ask Cody a question or request inline fix with `/fix` or `/touch` commands.
+In VS Code, you can also open Cody chat inline using the `+` icon. This opens a chat box which can be used for general chat questions or for code fixes and refactors. To ask Cody for an inline code fix, select a code snippet, then type `/fix` plus your desired code change. Cody will generate edits, which you can accept or reject with the `Apply` button.
 
-Cody will take it from there and figure out what edits to make.
+You can also use the or `/touch` command in the inline chat box if you'd like Cody to place its output in a new file.
 
 ![Example of Cody inline code fix ](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody_inline_June23-sm.gif)
 
-Examples of fix-up instructions Cody can handle:
+Examples of `/fix` instructions Cody can handle:
 
 - Factor out any common helper functions (when multiple functions are selected)
 - Use the imported CSS module's class `n`
 - Extract the list item to a separate React component
-- Handle errors better
+- Handle errors in this code better
 - Add helpful debug log statements
 - Make this work (and yes, it often does work—give it a try!)
 

@@ -110,7 +110,7 @@ We value your feedback! You can <a href="https://about.sourcegraph.com/contact">
 
 Cody is a free and open-source AI coding assistant that can write, understand, and fix code. Cody is powered by Sourcegraph's <a href="https://docs.sourcegraph.com/cody/explanations/code_graph_context">code graph</a> and uses knowledge of your entire codebase to give more accurate answers and generate idiomatic code.
 
-Think of Cody as your personal dedicated AI coding assistant, equipped with a comprehensive understanding of three crucial elements:
+Think of Cody as your personal AI coding assistant, equipped with a comprehensive understanding of three crucial elements:
 
 1. Your entire codebase
 2. Vast knowledge of open source code
@@ -149,7 +149,7 @@ To start using Cody, pick one of the following:
 
 ## Main features
 
-Some of the main Cody features include:
+Cody's main features include:
 
 <!-- NOTE: These should stay roughly in sync with client/cody/README.md, although these need to be not specific to VS Code. -->
 
