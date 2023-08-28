@@ -172,6 +172,7 @@ func codeintelUploadOptions(out *output.Output, isSCIPAvailable bool) upload.Upl
 			RetryInterval:       time.Second,
 			Path:                path,
 			MaxPayloadSizeBytes: codeintelUploadFlags.maxPayloadSizeMb * 1000 * 1000,
+			MaxConcurrency:      codeintelUploadFlags.maxConcurrency,
 			GitHubToken:         codeintelUploadFlags.gitHubToken,
 			GitLabToken:         codeintelUploadFlags.gitLabToken,
 		},

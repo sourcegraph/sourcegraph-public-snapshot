@@ -36,6 +36,7 @@ var codeintelUploadFlags struct {
 	// SourcegraphInstanceOptions
 	uploadRoute      string
 	maxPayloadSizeMb int64
+	maxConcurrency   int
 
 	// Codehost authorization secrets
 	gitHubToken string
@@ -77,6 +78,7 @@ func init() {
 	// SourcegraphInstanceOptions
 	codeintelUploadFlagSet.StringVar(&codeintelUploadFlags.uploadRoute, "upload-route", "/.api/lsif/upload", "The path of the upload route. For internal use only.")
 	codeintelUploadFlagSet.Int64Var(&codeintelUploadFlags.maxPayloadSizeMb, "max-payload-size", 100, `The maximum upload size (in megabytes). Indexes exceeding this limit will be uploaded over multiple HTTP requests.`)
+	codeintelUploadFlagSet.IntVar(&codeintelUploadFlags.maxConcurrency, "max-concurrency", -1, "The maximum number of concurrent uploads. Only relevant for multipart uploads. Defaults to all parts concurrently.")
 
 	// Codehost authorization secrets
 	codeintelUploadFlagSet.StringVar(&codeintelUploadFlags.gitHubToken, "github-token", "", `A GitHub access token with 'public_repo' scope that Sourcegraph uses to verify you have access to the repository.`)
