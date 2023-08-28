@@ -88,7 +88,7 @@ func (g *gitserverResolver) ID() graphql.ID {
 }
 
 // Shard returns the address of the gitserver instance.
-func (g *gitserverResolver) Shard() string {
+func (g *gitserverResolver) Address() string {
 	return g.address
 }
 

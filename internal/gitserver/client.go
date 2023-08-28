@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/sourcegraph/conc"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/go-diff/diff"
 	sglog "github.com/sourcegraph/log"
@@ -463,18 +464,26 @@ type SystemInfo struct {
 func (c *clientImplementor) SystemInfo(ctx context.Context) ([]SystemInfo, error) {
 	addresses := c.clientSource.Addresses()
 	infos := make([]SystemInfo, 0, len(addresses))
+	wg := conc.NewWaitGroup()
+	var errs errors.MultiError
 	for _, addr := range addresses {
-		response, err := c.getDiskInfo(ctx, addr)
-		if err != nil {
-			return nil, err
-		}
-		infos = append(infos, SystemInfo{
-			Address:    addr.Address(),
-			FreeSpace:  response.FreeSpace,
-			TotalSpace: response.TotalSpace,
+		addr := addr // capture addr
+		wg.Go(func() {
+			response, err := c.getDiskInfo(ctx, addr)
+			if err != nil {
+				errs = errors.Append(errs, err)
+				return
+			}
+			infos = append(infos, SystemInfo{
+				Address:    addr.Address(),
+				FreeSpace:  response.FreeSpace,
+				TotalSpace: response.TotalSpace,
+			})
 		})
+
 	}
-	return infos, nil
+	wg.Wait()
+	return infos, errs
 }
 
 func (c *clientImplementor) getDiskInfo(ctx context.Context, addr AddressWithClient) (*protocol.DiskInfoResponse, error) {

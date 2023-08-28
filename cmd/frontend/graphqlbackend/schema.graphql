@@ -2211,14 +2211,13 @@ GitserverInfo contains information about a gitserver instance.
 type GitserverInstance implements Node {
     """
     The unique identifier of the gitserver instance.
-    This is equivalent to the ShardID.
     """
     id: ID!
 
     """
     The address of the Git server instance.
     """
-    shard: String!
+    address: String!
 
     """
     The amount of free space available on the Git server, in bytes.
