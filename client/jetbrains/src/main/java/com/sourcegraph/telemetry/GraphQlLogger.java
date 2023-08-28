@@ -82,10 +82,7 @@ public class GraphQlLogger {
     var updatedEventParameters = addGlobalEventParameters(eventParameters, project);
     String anonymousUserId = ConfigUtil.getAnonymousUserId();
     return new Event(
-        eventName,
-        anonymousUserId != null ? anonymousUserId : "",
-        "",
-        updatedEventParameters);
+        eventName, anonymousUserId != null ? anonymousUserId : "", "", updatedEventParameters);
   }
 
   @NotNull
@@ -96,9 +93,9 @@ public class GraphQlLogger {
     updatedEventParameters.addProperty("serverEndpoint", ConfigUtil.getSourcegraphUrl(project));
     // Extension specific properties
     JsonObject extensionDetails = new JsonObject();
-    extensionDetails.addProperty("ide","JetBrains");
-    extensionDetails.addProperty("ideExtensionType","Cody");
-    extensionDetails.addProperty("version",ConfigUtil.getPluginVersion());
+    extensionDetails.addProperty("ide", "JetBrains");
+    extensionDetails.addProperty("ideExtensionType", "Cody");
+    extensionDetails.addProperty("version", ConfigUtil.getPluginVersion());
     updatedEventParameters.add("extensionDetails", extensionDetails);
     return updatedEventParameters;
   }

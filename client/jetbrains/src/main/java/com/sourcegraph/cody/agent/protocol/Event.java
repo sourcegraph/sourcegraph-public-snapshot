@@ -10,12 +10,13 @@ public class Event {
   @NotNull public String url;
   @NotNull public String source;
   @NotNull public String referrer;
+
   /**
-   * @deprecated
-   * This property is no longer used for events.
-   * <p> Use {@link #publicArgument} instead.
+   * @deprecated This property is no longer used for events.
+   *     <p>Use {@link #publicArgument} instead.
    */
   @NotNull public Object argument;
+
   @Nullable public Object publicArgument;
   @NotNull public String client;
   @Nullable public String connectedSiteID;
