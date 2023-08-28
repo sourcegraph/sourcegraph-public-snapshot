@@ -60,7 +60,13 @@ type EmptyResponse struct {
 }
 
 type GitserverInstance struct {
-	Shard               string
+	Address             string
 	FreeDiskSpaceBytes  string
 	TotalDiskSpaceBytes string
+}
+
+type GitserverInstanceConnection struct {
+	Nodes      []GitserverInstance
+	TotalCount int
+	PageInfo   PageInfo
 }

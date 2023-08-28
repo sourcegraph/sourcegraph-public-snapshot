@@ -71,7 +71,9 @@ func TestGitserverResolver(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				var response struct{ Gitservers []apitest.GitserverInstance }
+				var response struct {
+					Gitservers apitest.GitserverInstanceConnection
+				}
 				errs := apitest.Exec(tc.ctx, t, s, nil, &response, queryGitservers)
 
 				calls := mockGitserverClient.SystemsInfoFunc.History()
@@ -82,10 +84,12 @@ func TestGitserverResolver(t *testing.T) {
 					require.ErrorIs(t, errs[0], tc.err)
 				} else {
 					require.Len(t, errs, 0)
-					require.Len(t, response.Gitservers, len(gitserverInstances))
+					require.Equal(t, response.Gitservers.TotalCount, len(gitserverInstances))
+					require.False(t, response.Gitservers.PageInfo.HasNextPage)
+					require.Nil(t, response.Gitservers.PageInfo.EndCursor)
 
-					for idx, gs := range response.Gitservers {
-						require.Equal(t, gs.Shard, gitserverInstances[idx].Address)
+					for idx, gs := range response.Gitservers.Nodes {
+						require.Equal(t, gs.Address, gitserverInstances[idx].Address)
 						require.Equal(t, gs.FreeDiskSpaceBytes, fmt.Sprint(gitserverInstances[idx].FreeSpace))
 						require.Equal(t, gs.TotalDiskSpaceBytes, fmt.Sprint(gitserverInstances[idx].TotalSpace))
 					}
@@ -96,7 +100,7 @@ func TestGitserverResolver(t *testing.T) {
 
 	t.Run("node", func(t *testing.T) {
 		mockGitserverClient := gitserver.NewMockClient()
-		mockGitserverClient.SystemsInfoFunc.SetDefaultReturn(gitserverInstances, nil)
+		mockGitserverClient.SystemInfoFunc.SetDefaultReturn(gitserverInstances[0], nil)
 
 		s, err := NewSchemaWithGitserverClient(db, mockGitserverClient)
 		require.NoError(t, err)
@@ -104,10 +108,10 @@ func TestGitserverResolver(t *testing.T) {
 		id := marshalGitserverID(gitserverInstances[0].Address)
 
 		testCases := []struct {
-			name                 string
-			ctx                  context.Context
-			err                  error
-			noOfSystemsInfoCalls int
+			name                string
+			ctx                 context.Context
+			err                 error
+			noOfSystemInfoCalls int
 		}{
 			{
 				name: "as regular user",
@@ -115,9 +119,9 @@ func TestGitserverResolver(t *testing.T) {
 				err:  auth.ErrMustBeSiteAdmin,
 			},
 			{
-				name:                 "as site-admin",
-				ctx:                  adminCtx,
-				noOfSystemsInfoCalls: 1,
+				name:                "as site-admin",
+				ctx:                 adminCtx,
+				noOfSystemInfoCalls: 1,
 			},
 		}
 
@@ -127,15 +131,15 @@ func TestGitserverResolver(t *testing.T) {
 				var response struct{ Node apitest.GitserverInstance }
 				errs := apitest.Exec(tc.ctx, t, s, input, &response, queryGitserverNode)
 
-				calls := mockGitserverClient.SystemsInfoFunc.History()
-				require.Len(t, calls, tc.noOfSystemsInfoCalls)
+				calls := mockGitserverClient.SystemInfoFunc.History()
+				require.Len(t, calls, tc.noOfSystemInfoCalls)
 
 				if tc.err != nil {
 					require.Len(t, errs, 1)
 					require.ErrorIs(t, errs[0], tc.err)
 				} else {
 					require.Len(t, errs, 0)
-					require.Equal(t, response.Node.Shard, gitserverInstances[0].Address)
+					require.Equal(t, response.Node.Address, gitserverInstances[0].Address)
 					require.Equal(t, response.Node.FreeDiskSpaceBytes, fmt.Sprint(gitserverInstances[0].FreeSpace))
 					require.Equal(t, response.Node.TotalDiskSpaceBytes, fmt.Sprint(gitserverInstances[0].TotalSpace))
 				}
@@ -147,10 +151,17 @@ func TestGitserverResolver(t *testing.T) {
 const queryGitservers = `
 query Gitservers {
 	gitservers {
-		id
-		shard
-		freeDiskSpaceBytes
-		totalDiskSpaceBytes
+		nodes {
+			id
+			address
+			freeDiskSpaceBytes
+			totalDiskSpaceBytes
+		}
+		totalCount
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
 	}
 }
 `
@@ -158,9 +169,10 @@ query Gitservers {
 const queryGitserverNode = `
 query GitserverNode ($node: ID!) {
 	node(id: $node) {
+		id
+
 		... on GitserverInstance {
-			id
-			shard
+			address
 			freeDiskSpaceBytes
 			totalDiskSpaceBytes
 		}
