@@ -112,11 +112,11 @@ There are three ways to run a command in VS Code:
 2. Right click and select `"Cody"` > Choose a command from the list
 3. Use the predefined command hotkey: `⌥` + `C` / `Alt` + `C`
 
-> NOTE: This functionality is also available in the JetBrains extension, under the name `Recipes`. To access it, navigate to the `Recipes` panel (next to the `Chat` panel), and you can find each available recipe as a button within the UI.
+> NOTE: This functionality is also available in the JetBrains extension under the name `Recipes`. To access it, navigate to the `Recipes` panel (next to the `Chat` panel), and you can find each available recipe as a button within the UI.
 
 ![Cody Commands in VS Code](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-commands.png)
 
-### Custom Commands <span class="badge badge-experimental">Experimental</span>
+### Custom commands <span class="badge badge-experimental">Experimental</span>
 
 **Custom commands** let you to save your own quick actions and prompts for Cody based on your common workflows. They are defined in JSON format and let you call CLI tools, write custom prompts, and select context to be sent to Cody. This provides a flexible way to tailor Cody to your needs.
 
@@ -132,6 +132,6 @@ To make custom commands globally available across multiple projects, create a ne
 
 ## Language support
 
-Cody uses LLMs trained on broad code, and we've found it to effectively support all programming languages. However, the quality of autocompletions and other features may vary based on how well the underlying LLM model was trained on a given language.
+Cody uses LLMs trained on broad code, and we've found it to effectively support all common programming languages. However, the quality of autocompletions and other features may vary based on how well the underlying LLM model was trained on a given language.
 
 We've found Cody to work especially well with Python, Go, JavaScript, and TypeScript code.
