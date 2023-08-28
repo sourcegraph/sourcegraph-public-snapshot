@@ -26,6 +26,16 @@ func NewDBFromConfFunc(logger log.Logger, def VectorDB) func() (VectorDB, error)
 	)
 
 	conf.Watch(func() {
+		c := conf.Get()
+		if c.Embeddings == nil || c.Embeddings.Qdrant == nil || !c.Embeddings.Qdrant.Enabled {
+			// Embeddings is disabled. Clear any errors and close any previous connection.
+			err = nil
+			oldConn := ptr.Swap(nil)
+			if oldConn != nil {
+				oldConn.Close()
+			}
+			return
+		}
 		if newAddr := conf.Get().ServiceConnections().Qdrant; newAddr != oldAddr {
 			newConn, dialErr := defaults.Dial(newAddr, logger)
 			oldAddr = newAddr

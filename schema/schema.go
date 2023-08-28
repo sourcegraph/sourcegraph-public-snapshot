@@ -1931,7 +1931,7 @@ type PythonRateLimit struct {
 
 // Qdrant description: Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.
 type Qdrant struct {
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
 	// Hnsw description: Overrides for the HNSW index config.
 	Hnsw       *Hnsw       `json:"hnsw,omitempty"`
 	Optimizers *Optimizers `json:"optimizers,omitempty"`

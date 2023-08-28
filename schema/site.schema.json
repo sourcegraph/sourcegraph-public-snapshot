@@ -2561,9 +2561,6 @@
           "properties": {
             "enabled": {
               "type": "boolean",
-              "!go": {
-                "pointer": true
-              },
               "default": false
             },
             "hnsw": {
