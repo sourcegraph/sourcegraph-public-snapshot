@@ -145,8 +145,9 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     return Optional.ofNullable(isCustomAutocompleteColorEnabled).orElse(false);
   }
 
+  @Nullable
   public Integer getCustomAutocompleteColor() {
-    return Optional.ofNullable(customAutocompleteColor).orElse(0);
+    return customAutocompleteColor;
   }
 
   @Nullable
