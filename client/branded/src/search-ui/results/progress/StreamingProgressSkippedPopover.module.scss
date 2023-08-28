@@ -79,12 +79,13 @@
     &-header {
         display: flex;
         flex-wrap: wrap;
-        gap: 1rem;
+        gap: 0.5rem;
         margin-bottom: 0.75rem;
     }
 
     &-text {
         margin-left: 1.25rem;
+        margin-bottom: 0.5rem;
     }
 
     &-warning-list {

@@ -154,6 +154,7 @@ export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopover
 
             {sortedSkippedItems.some(skipped => skipped.suggested) && (
                 <SkippedItemsSearch
+                    slim={exhaustiveSearch}
                     items={sortedSkippedItems}
                     disabled={selectedSuggestedSearches.size === 0}
                     onSearchSettingsChange={checkboxHandler}
@@ -244,6 +245,7 @@ const SlimSkippedReasons: FC<SkippedReasonsProps> = props => {
 }
 
 interface SkippedItemsSearchProps {
+    slim: boolean
     items: Skipped[]
     disabled: boolean
     onSearchSettingsChange: (event: React.FormEvent<HTMLInputElement>) => void
@@ -251,7 +253,7 @@ interface SkippedItemsSearchProps {
 }
 
 const SkippedItemsSearch: FC<SkippedItemsSearchProps> = props => {
-    const { items, disabled, onSearchSettingsChange, onSubmit } = props
+    const { slim, items, disabled, onSearchSettingsChange, onSubmit } = props
 
     return (
         <Form className="pb-3 px-3" onSubmit={onSubmit} data-testid="popover-form">
@@ -281,12 +283,13 @@ const SkippedItemsSearch: FC<SkippedItemsSearchProps> = props => {
             <Button
                 type="submit"
                 className="mt-2"
-                variant="primary"
+                variant={slim ? 'secondary' : 'primary'}
                 disabled={disabled}
+                size={slim ? 'sm' : 'lg'}
                 data-testid="skipped-popover-form-submit-btn"
             >
                 <Icon aria-hidden={true} className="mr-1" svgPath={mdiMagnify} />
-                Search again
+                {slim ? <>Modify and re-run</> : <>Search again</>}
             </Button>
         </Form>
     )
@@ -321,7 +324,7 @@ export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props =
             <Text className={classNames(validationErrors.length > 0 && 'text-muted', styles.exhaustiveSearchText)}>
                 Search jobs exhaustively return all matches of a query. Results can be downloaded via CSV.
             </Text>
-            <Button variant="primary" disabled={validationErrors.length > 0} className="mt-2">
+            <Button variant="secondary" size="sm" disabled={validationErrors.length > 0} className="mt-2">
                 <Icon aria-hidden={true} className="mr-1" svgPath={mdiMagnify} />
                 Create a search job
             </Button>
