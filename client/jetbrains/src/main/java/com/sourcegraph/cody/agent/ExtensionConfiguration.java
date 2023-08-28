@@ -9,6 +9,7 @@ public class ExtensionConfiguration {
   public Map<String, String> customHeaders;
   public String autocompleteAdvancedProvider;
   public String autocompleteAdvancedServerEndpoint;
+  public String autocompleteAdvancedServerSocksProxy;
   public String autocompleteAdvancedAccessToken;
   public boolean autocompleteAdvancedEmbeddings;
   public boolean debug;
@@ -39,6 +40,12 @@ public class ExtensionConfiguration {
   public ExtensionConfiguration setAutocompleteAdvancedServerEndpoint(
       String autocompleteAdvancedServerEndpoint) {
     this.autocompleteAdvancedServerEndpoint = autocompleteAdvancedServerEndpoint;
+    return this;
+  }
+
+  public ExtensionConfiguration setAutocompleteAdvancedServerSocksProxy(
+      String autocompleteAdvancedServerSocksProxy) {
+    this.autocompleteAdvancedServerSocksProxy = autocompleteAdvancedServerSocksProxy;
     return this;
   }
 
@@ -85,6 +92,9 @@ public class ExtensionConfiguration {
         + '\''
         + ", autocompleteAdvancedServerEndpoint='"
         + autocompleteAdvancedServerEndpoint
+        + '\''
+        + ", autocompleteAdvancedServerSocksProxy='"
+        + autocompleteAdvancedServerSocksProxy
         + '\''
         + ", autocompleteAdvancedAccessToken='"
         + autocompleteAdvancedAccessToken

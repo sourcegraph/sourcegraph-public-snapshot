@@ -29,6 +29,8 @@ public class ConfigUtil {
         .setAutocompleteAdvancedProvider(
             UserLevelConfig.getAutocompleteProviderType().vscodeSettingString())
         .setAutocompleteAdvancedServerEndpoint(UserLevelConfig.getAutocompleteServerEndpoint())
+        .setAutocompleteAdvancedServerSocksProxy(
+            UserLevelConfig.getAutocompleteServerEndpointProxy())
         .setAutocompleteAdvancedAccessToken(UserLevelConfig.getAutocompleteAccessToken())
         .setAutocompleteAdvancedEmbeddings(UserLevelConfig.getAutocompleteAdvancedEmbeddings())
         .setDebug(isCodyDebugEnabled())
