@@ -25,28 +25,21 @@ func (r *schemaResolver) gitserverByID(ctx context.Context, id graphql.ID) (*git
 		return nil, err
 	}
 
-	address, err := unmarshalGitserverID(id)
+	addr, err := unmarshalGitserverID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	infos, err := r.gitserverClient.SystemInfo(ctx)
+	si, err := r.gitserverClient.SystemInfo(ctx, addr)
 	if err != nil {
 		return nil, err
 	}
 
-	// Naive implemention that just returns the first gitserver matching the address
-	for _, info := range infos {
-		if info.Address == address {
-			return &gitserverResolver{
-				address:             address,
-				freeDiskSpaceBytes:  info.FreeSpace,
-				totalDiskSpaceBytes: info.TotalSpace,
-			}, nil
-		}
-	}
-
-	return nil, nil
+	return &gitserverResolver{
+		address:             si.Address,
+		freeDiskSpaceBytes:  si.FreeSpace,
+		totalDiskSpaceBytes: si.TotalSpace,
+	}, nil
 }
 
 func (r *schemaResolver) Gitservers(ctx context.Context) (graphqlutil.SliceConnectionResolver[*gitserverResolver], error) {
@@ -55,7 +48,7 @@ func (r *schemaResolver) Gitservers(ctx context.Context) (graphqlutil.SliceConne
 		return nil, err
 	}
 
-	infos, err := r.gitserverClient.SystemInfo(ctx)
+	infos, err := r.gitserverClient.SystemsInfo(ctx)
 	if err != nil {
 		return nil, err
 	}

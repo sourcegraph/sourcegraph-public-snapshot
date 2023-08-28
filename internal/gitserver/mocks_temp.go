@@ -178,6 +178,9 @@ type MockClient struct {
 	// SystemInfoFunc is an instance of a mock function object controlling
 	// the behavior of the method SystemInfo.
 	SystemInfoFunc *ClientSystemInfoFunc
+	// SystemsInfoFunc is an instance of a mock function object controlling
+	// the behavior of the method SystemsInfo.
+	SystemsInfoFunc *ClientSystemsInfoFunc
 }
 
 // NewMockClient creates a new mock of the Client interface. All methods
@@ -435,6 +438,11 @@ func NewMockClient() *MockClient {
 			},
 		},
 		SystemInfoFunc: &ClientSystemInfoFunc{
+			defaultHook: func(context.Context, string) (r0 SystemInfo, r1 error) {
+				return
+			},
+		},
+		SystemsInfoFunc: &ClientSystemsInfoFunc{
 			defaultHook: func(context.Context) (r0 []SystemInfo, r1 error) {
 				return
 			},
@@ -697,8 +705,13 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		SystemInfoFunc: &ClientSystemInfoFunc{
-			defaultHook: func(context.Context) ([]SystemInfo, error) {
+			defaultHook: func(context.Context, string) (SystemInfo, error) {
 				panic("unexpected invocation of MockClient.SystemInfo")
+			},
+		},
+		SystemsInfoFunc: &ClientSystemsInfoFunc{
+			defaultHook: func(context.Context) ([]SystemInfo, error) {
+				panic("unexpected invocation of MockClient.SystemsInfo")
 			},
 		},
 	}
@@ -860,6 +873,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		SystemInfoFunc: &ClientSystemInfoFunc{
 			defaultHook: i.SystemInfo,
+		},
+		SystemsInfoFunc: &ClientSystemsInfoFunc{
+			defaultHook: i.SystemsInfo,
 		},
 	}
 }
@@ -6517,23 +6533,23 @@ func (c ClientStreamBlameFileFuncCall) Results() []interface{} {
 // ClientSystemInfoFunc describes the behavior when the SystemInfo method of
 // the parent MockClient instance is invoked.
 type ClientSystemInfoFunc struct {
-	defaultHook func(context.Context) ([]SystemInfo, error)
-	hooks       []func(context.Context) ([]SystemInfo, error)
+	defaultHook func(context.Context, string) (SystemInfo, error)
+	hooks       []func(context.Context, string) (SystemInfo, error)
 	history     []ClientSystemInfoFuncCall
 	mutex       sync.Mutex
 }
 
 // SystemInfo delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockClient) SystemInfo(v0 context.Context) ([]SystemInfo, error) {
-	r0, r1 := m.SystemInfoFunc.nextHook()(v0)
-	m.SystemInfoFunc.appendCall(ClientSystemInfoFuncCall{v0, r0, r1})
+func (m *MockClient) SystemInfo(v0 context.Context, v1 string) (SystemInfo, error) {
+	r0, r1 := m.SystemInfoFunc.nextHook()(v0, v1)
+	m.SystemInfoFunc.appendCall(ClientSystemInfoFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the SystemInfo method of
 // the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientSystemInfoFunc) SetDefaultHook(hook func(context.Context) ([]SystemInfo, error)) {
+func (f *ClientSystemInfoFunc) SetDefaultHook(hook func(context.Context, string) (SystemInfo, error)) {
 	f.defaultHook = hook
 }
 
@@ -6541,7 +6557,7 @@ func (f *ClientSystemInfoFunc) SetDefaultHook(hook func(context.Context) ([]Syst
 // SystemInfo method of the parent MockClient instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientSystemInfoFunc) PushHook(hook func(context.Context) ([]SystemInfo, error)) {
+func (f *ClientSystemInfoFunc) PushHook(hook func(context.Context, string) (SystemInfo, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -6549,20 +6565,20 @@ func (f *ClientSystemInfoFunc) PushHook(hook func(context.Context) ([]SystemInfo
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ClientSystemInfoFunc) SetDefaultReturn(r0 []SystemInfo, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]SystemInfo, error) {
+func (f *ClientSystemInfoFunc) SetDefaultReturn(r0 SystemInfo, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (SystemInfo, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientSystemInfoFunc) PushReturn(r0 []SystemInfo, r1 error) {
-	f.PushHook(func(context.Context) ([]SystemInfo, error) {
+func (f *ClientSystemInfoFunc) PushReturn(r0 SystemInfo, r1 error) {
+	f.PushHook(func(context.Context, string) (SystemInfo, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientSystemInfoFunc) nextHook() func(context.Context) ([]SystemInfo, error) {
+func (f *ClientSystemInfoFunc) nextHook() func(context.Context, string) (SystemInfo, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -6598,6 +6614,113 @@ type ClientSystemInfoFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 SystemInfo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientSystemInfoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientSystemInfoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientSystemsInfoFunc describes the behavior when the SystemsInfo method
+// of the parent MockClient instance is invoked.
+type ClientSystemsInfoFunc struct {
+	defaultHook func(context.Context) ([]SystemInfo, error)
+	hooks       []func(context.Context) ([]SystemInfo, error)
+	history     []ClientSystemsInfoFuncCall
+	mutex       sync.Mutex
+}
+
+// SystemsInfo delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockClient) SystemsInfo(v0 context.Context) ([]SystemInfo, error) {
+	r0, r1 := m.SystemsInfoFunc.nextHook()(v0)
+	m.SystemsInfoFunc.appendCall(ClientSystemsInfoFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the SystemsInfo method
+// of the parent MockClient instance is invoked and the hook queue is empty.
+func (f *ClientSystemsInfoFunc) SetDefaultHook(hook func(context.Context) ([]SystemInfo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SystemsInfo method of the parent MockClient instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ClientSystemsInfoFunc) PushHook(hook func(context.Context) ([]SystemInfo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientSystemsInfoFunc) SetDefaultReturn(r0 []SystemInfo, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]SystemInfo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientSystemsInfoFunc) PushReturn(r0 []SystemInfo, r1 error) {
+	f.PushHook(func(context.Context) ([]SystemInfo, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientSystemsInfoFunc) nextHook() func(context.Context) ([]SystemInfo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientSystemsInfoFunc) appendCall(r0 ClientSystemsInfoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientSystemsInfoFuncCall objects
+// describing the invocations of this function.
+func (f *ClientSystemsInfoFunc) History() []ClientSystemsInfoFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientSystemsInfoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientSystemsInfoFuncCall is an object that describes an invocation of
+// method SystemsInfo on an instance of MockClient.
+type ClientSystemsInfoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []SystemInfo
@@ -6608,12 +6731,12 @@ type ClientSystemInfoFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c ClientSystemInfoFuncCall) Args() []interface{} {
+func (c ClientSystemsInfoFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c ClientSystemInfoFuncCall) Results() []interface{} {
+func (c ClientSystemsInfoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }

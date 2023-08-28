@@ -95,6 +95,9 @@ type ClientSource interface {
 	AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName) string
 	// Address the current list of gitserver addresses.
 	Addresses() []AddressWithClient
+	// GetAddressWithClient returns the address and client for a gitserver instance.
+	// It returns nil if there's no server with that address
+	GetAddressWithClient(addr string) AddressWithClient
 }
 
 // NewClient returns a new gitserver.Client.
@@ -451,8 +454,11 @@ type Client interface {
 	// Addrs returns a list of gitserver addresses associated with the Sourcegraph instance.
 	Addrs() []string
 
-	// SystemInfo returns information about the gitserver instances.
-	SystemInfo(ctx context.Context) ([]SystemInfo, error)
+	// SystemsInfo returns information about all gitserver instances associated with a Sourcegraph instance.
+	SystemsInfo(ctx context.Context) ([]SystemInfo, error)
+
+	// SystemInfo returns information about the gitserver instance at the given address.
+	SystemInfo(ctx context.Context, addr string) (SystemInfo, error)
 }
 
 type SystemInfo struct {
@@ -461,7 +467,7 @@ type SystemInfo struct {
 	TotalSpace uint64
 }
 
-func (c *clientImplementor) SystemInfo(ctx context.Context) ([]SystemInfo, error) {
+func (c *clientImplementor) SystemsInfo(ctx context.Context) ([]SystemInfo, error) {
 	addresses := c.clientSource.Addresses()
 	infos := make([]SystemInfo, 0, len(addresses))
 	wg := conc.NewWaitGroup()
@@ -480,10 +486,25 @@ func (c *clientImplementor) SystemInfo(ctx context.Context) ([]SystemInfo, error
 				TotalSpace: response.TotalSpace,
 			})
 		})
-
 	}
 	wg.Wait()
 	return infos, errs
+}
+
+func (c *clientImplementor) SystemInfo(ctx context.Context, addr string) (SystemInfo, error) {
+	ac := c.clientSource.GetAddressWithClient(addr)
+	if ac == nil {
+		return SystemInfo{}, errors.Newf("no client for address: %s", addr)
+	}
+	response, err := c.getDiskInfo(ctx, ac)
+	if err != nil {
+		return SystemInfo{}, nil
+	}
+	return SystemInfo{
+		Address:    ac.Address(),
+		FreeSpace:  response.FreeSpace,
+		TotalSpace: response.TotalSpace,
+	}, nil
 }
 
 func (c *clientImplementor) getDiskInfo(ctx context.Context, addr AddressWithClient) (*protocol.DiskInfoResponse, error) {

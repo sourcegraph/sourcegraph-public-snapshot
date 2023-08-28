@@ -1484,7 +1484,7 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 	})
 }
 
-func TestClient_SystemInfo(t *testing.T) {
+func TestClient_SystemsInfo(t *testing.T) {
 	const gitserverAddr = "172.16.8.1:8080"
 	var mockResponse = &protocol.DiskInfoResponse{
 		FreeSpace:  102400,
@@ -1493,7 +1493,7 @@ func TestClient_SystemInfo(t *testing.T) {
 
 	runTest := func(t *testing.T, client gitserver.Client) {
 		ctx := context.Background()
-		info, err := client.SystemInfo(ctx)
+		info, err := client.SystemsInfo(ctx)
 		require.NoError(t, err, "unexpected error")
 		require.Len(t, info, 1, "expected 1 disk info")
 		require.Equal(t, gitserverAddr, info[0].Address)
@@ -1514,8 +1514,7 @@ func TestClient_SystemInfo(t *testing.T) {
 		})
 
 		called := false
-		db := dbmocks.NewMockDB()
-		source := gitserver.NewTestClientSource(t, db, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
+		source := gitserver.NewTestClientSource(t, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
 			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 				mockDiskInfo := func(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error) {
 					called = true
@@ -1547,8 +1546,7 @@ func TestClient_SystemInfo(t *testing.T) {
 		expected := fmt.Sprintf("http://%s", gitserverAddr)
 
 		called := false
-		db := dbmocks.NewMockDB()
-		source := gitserver.NewTestClientSource(t, db, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
+		source := gitserver.NewTestClientSource(t, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
 			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 				mockDiskInfo := func(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error) {
 					called = true

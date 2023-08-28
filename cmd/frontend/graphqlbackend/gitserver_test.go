@@ -46,16 +46,16 @@ func TestGitserverResolver(t *testing.T) {
 
 	t.Run("query", func(t *testing.T) {
 		mockGitserverClient := gitserver.NewMockClient()
-		mockGitserverClient.SystemInfoFunc.SetDefaultReturn(gitserverInstances, nil)
+		mockGitserverClient.SystemsInfoFunc.SetDefaultReturn(gitserverInstances, nil)
 
 		s, err := NewSchemaWithGitserverClient(db, mockGitserverClient)
 		require.NoError(t, err)
 
 		testCases := []struct {
-			name                string
-			ctx                 context.Context
-			err                 error
-			noOfSystemInfoCalls int
+			name                 string
+			ctx                  context.Context
+			err                  error
+			noOfSystemsInfoCalls int
 		}{
 			{
 				name: "as regular user",
@@ -63,9 +63,9 @@ func TestGitserverResolver(t *testing.T) {
 				err:  auth.ErrMustBeSiteAdmin,
 			},
 			{
-				name:                "as site-admin",
-				ctx:                 adminCtx,
-				noOfSystemInfoCalls: 1,
+				name:                 "as site-admin",
+				ctx:                  adminCtx,
+				noOfSystemsInfoCalls: 1,
 			},
 		}
 
@@ -74,8 +74,8 @@ func TestGitserverResolver(t *testing.T) {
 				var response struct{ Gitservers []apitest.GitserverInstance }
 				errs := apitest.Exec(tc.ctx, t, s, nil, &response, queryGitservers)
 
-				calls := mockGitserverClient.SystemInfoFunc.History()
-				require.Len(t, calls, tc.noOfSystemInfoCalls)
+				calls := mockGitserverClient.SystemsInfoFunc.History()
+				require.Len(t, calls, tc.noOfSystemsInfoCalls)
 
 				if tc.err != nil {
 					require.Len(t, errs, 1)
@@ -96,7 +96,7 @@ func TestGitserverResolver(t *testing.T) {
 
 	t.Run("node", func(t *testing.T) {
 		mockGitserverClient := gitserver.NewMockClient()
-		mockGitserverClient.SystemInfoFunc.SetDefaultReturn(gitserverInstances, nil)
+		mockGitserverClient.SystemsInfoFunc.SetDefaultReturn(gitserverInstances, nil)
 
 		s, err := NewSchemaWithGitserverClient(db, mockGitserverClient)
 		require.NoError(t, err)
@@ -104,10 +104,10 @@ func TestGitserverResolver(t *testing.T) {
 		id := marshalGitserverID(gitserverInstances[0].Address)
 
 		testCases := []struct {
-			name                string
-			ctx                 context.Context
-			err                 error
-			noOfSystemInfoCalls int
+			name                 string
+			ctx                  context.Context
+			err                  error
+			noOfSystemsInfoCalls int
 		}{
 			{
 				name: "as regular user",
@@ -115,9 +115,9 @@ func TestGitserverResolver(t *testing.T) {
 				err:  auth.ErrMustBeSiteAdmin,
 			},
 			{
-				name:                "as site-admin",
-				ctx:                 adminCtx,
-				noOfSystemInfoCalls: 1,
+				name:                 "as site-admin",
+				ctx:                  adminCtx,
+				noOfSystemsInfoCalls: 1,
 			},
 		}
 
@@ -127,8 +127,8 @@ func TestGitserverResolver(t *testing.T) {
 				var response struct{ Node apitest.GitserverInstance }
 				errs := apitest.Exec(tc.ctx, t, s, input, &response, queryGitserverNode)
 
-				calls := mockGitserverClient.SystemInfoFunc.History()
-				require.Len(t, calls, tc.noOfSystemInfoCalls)
+				calls := mockGitserverClient.SystemsInfoFunc.History()
+				require.Len(t, calls, tc.noOfSystemsInfoCalls)
 
 				if tc.err != nil {
 					require.Len(t, errs, 1)
