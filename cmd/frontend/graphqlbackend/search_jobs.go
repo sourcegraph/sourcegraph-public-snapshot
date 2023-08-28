@@ -47,13 +47,6 @@ type SearchJobResolver interface {
 	RepoStats(ctx context.Context) (SearchJobStatsResolver, error)
 }
 
-type SearchJobStatsResolver interface {
-	Total() int32
-	Completed() int32
-	Failed() int32
-	InProgress() int32
-}
-
 type SearchJobRepositoriesArgs struct {
 	First int32
 	After *string
@@ -93,4 +86,11 @@ type SearchJobsConnectionResolver interface {
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 	Nodes(ctx context.Context) ([]SearchJobResolver, error)
+}
+
+type SearchJobStatsResolver struct {
+	Total      int32
+	Completed  int32
+	Failed     int32
+	InProgress int32
 }

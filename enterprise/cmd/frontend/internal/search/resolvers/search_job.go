@@ -18,8 +18,6 @@ func MarshalSearchJobID(id int64) graphql.ID {
 	return relay.MarshalID(searchJobIDKind, id)
 }
 
-var _ graphqlbackend.SearchJobResolver = &searchJobResolver{}
-
 type searchJobResolver struct {
 }
 
@@ -56,5 +54,5 @@ func (s searchJobResolver) URL(ctx context.Context) (*string, error) {
 }
 
 func (s searchJobResolver) RepoStats(ctx context.Context) (graphqlbackend.SearchJobStatsResolver, error) {
-	return nil, errors.New("not implemented")
+	return graphqlbackend.SearchJobStatsResolver{}, errors.New("not implemented")
 }

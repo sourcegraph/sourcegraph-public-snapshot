@@ -626,6 +626,7 @@ func NewSchema(
 			logger: logger,
 		}),
 		graphql.UseStringDescriptions(),
+		graphql.UseFieldResolvers(),
 	}
 	opts = append(opts, graphqlOpts...)
 	return graphql.ParseSchema(

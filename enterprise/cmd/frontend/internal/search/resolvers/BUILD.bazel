@@ -5,7 +5,6 @@ go_library(
     srcs = [
         "resolver.go",
         "search_job.go",
-        "search_job_stats.go",
         "search_jobs_connection.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/search/resolvers",
