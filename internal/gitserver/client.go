@@ -500,7 +500,7 @@ func (c *clientImplementor) getDiskInfo(ctx context.Context, addr AddressWithCli
 		resp.FromProto(rs)
 	} else {
 		uri := fmt.Sprintf("http://%s/disk-info", addr.Address())
-		rs, err := c.do(ctx, "", "POST", uri, nil)
+		rs, err := c.do(ctx, "", uri, nil)
 		if err != nil {
 			return nil, err
 		}
