@@ -100,8 +100,6 @@ go_library(
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
         "@org_golang_google_protobuf//encoding/protojson",
-        "@org_golang_x_crypto//ssh",
-        "@org_golang_x_crypto//ssh/agent",
         "@org_golang_x_mod//module",
         "@org_golang_x_mod//zip",
         "@org_golang_x_sync//errgroup",
