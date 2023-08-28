@@ -14,8 +14,8 @@ import (
 // It calculates the total and free disk space for the gitserver's repo
 // directory using du.DiskUsage. The results are returned as a
 // protocol.DiskInfoResponse struct.
-func (s *Server) getDiskInfo() (*protocol.DiskInfoResponse, error) {
-	usage, err := diskusage.New(s.ReposDir)
+func getDiskInfo(dir string) (*protocol.DiskInfoResponse, error) {
+	usage, err := diskusage.New(dir)
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +26,7 @@ func (s *Server) getDiskInfo() (*protocol.DiskInfoResponse, error) {
 }
 
 func (s *Server) handleDiskInfo(w http.ResponseWriter, r *http.Request) {
-	resp, err := s.getDiskInfo()
+	resp, err := getDiskInfo(s.ReposDir)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
