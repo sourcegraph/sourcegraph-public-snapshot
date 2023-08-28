@@ -19,6 +19,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/ricochet2200/go-disk-usage/du"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -621,9 +622,15 @@ func setRepoSizes(ctx context.Context, logger log.Logger, db database.DB, shardI
 	return nil
 }
 
+// DiskSizer gets information about disk size and free space.
+type DiskSizer interface {
+	BytesFreeOnDisk(mountPoint string) (uint64, error)
+	DiskSizeBytes(mountPoint string) (uint64, error)
+}
+
 // howManyBytesToFree returns the number of bytes that should be freed to make sure
 // there is sufficient disk space free to satisfy s.DesiredPercentFree.
-func howManyBytesToFree(logger log.Logger, reposDir string, diskSizer gitserver.DiskSizer, desiredPercentFree int) (int64, error) {
+func howManyBytesToFree(logger log.Logger, reposDir string, diskSizer DiskSizer, desiredPercentFree int) (int64, error) {
 	actualFreeBytes, err := diskSizer.BytesFreeOnDisk(reposDir)
 	if err != nil {
 		return 0, errors.Wrap(err, "finding the amount of space free on disk")
@@ -651,9 +658,21 @@ func howManyBytesToFree(logger log.Logger, reposDir string, diskSizer gitserver.
 	return howManyBytesToFree, nil
 }
 
+type StatDiskSizer struct{}
+
+func (s *StatDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
+	usage := du.NewDiskUsage(mountPoint)
+	return usage.Available(), nil
+}
+
+func (s *StatDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
+	usage := du.NewDiskUsage(mountPoint)
+	return usage.Size(), nil
+}
+
 // freeUpSpace removes git directories under ReposDir, in order from least
 // recently to most recently used, until it has freed howManyBytesToFree.
-func freeUpSpace(ctx context.Context, logger log.Logger, db database.DB, shardID string, reposDir string, diskSizer gitserver.DiskSizer, desiredPercentFree int, howManyBytesToFree int64) error {
+func freeUpSpace(ctx context.Context, logger log.Logger, db database.DB, shardID string, reposDir string, diskSizer DiskSizer, desiredPercentFree int, howManyBytesToFree int64) error {
 	if howManyBytesToFree <= 0 {
 		return nil
 	}
