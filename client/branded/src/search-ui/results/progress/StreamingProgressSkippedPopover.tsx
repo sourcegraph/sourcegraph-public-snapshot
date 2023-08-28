@@ -154,7 +154,7 @@ export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopover
 
             {sortedSkippedItems.some(skipped => skipped.suggested) && (
                 <SkippedItemsSearch
-                    slim={exhaustiveSearch}
+                    slim={exhaustiveSearch ?? false}
                     items={sortedSkippedItems}
                     disabled={selectedSuggestedSearches.size === 0}
                     onSearchSettingsChange={checkboxHandler}
