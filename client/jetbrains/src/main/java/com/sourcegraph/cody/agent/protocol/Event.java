@@ -10,6 +10,11 @@ public class Event {
   @NotNull public String url;
   @NotNull public String source;
   @NotNull public String referrer;
+  /**
+   * @deprecated
+   * This property is no longer used for events.
+   * <p> Use {@link #publicArgument} instead.
+   */
   @NotNull public Object argument;
   @Nullable public Object publicArgument;
   @NotNull public String client;
@@ -21,16 +26,13 @@ public class Event {
       @NotNull String eventName,
       @NotNull String anonymousUserId,
       @NotNull String url,
-      @Nullable JsonObject eventProperties,
       @Nullable JsonObject publicArgument) {
     this.event = eventName;
     this.userCookieID = anonymousUserId;
     this.url = url;
     this.source = "IDEEXTENSION";
     this.referrer = "JETBRAINS";
-    if (eventProperties != null) {
-      this.argument = eventProperties;
-    }
+    this.argument = new JsonObject();
     if (publicArgument != null) {
       this.publicArgument = publicArgument;
     }
