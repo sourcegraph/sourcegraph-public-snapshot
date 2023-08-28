@@ -285,7 +285,7 @@ const SkippedItemsSearch: FC<SkippedItemsSearchProps> = props => {
                 className="mt-2"
                 variant={slim ? 'secondary' : 'primary'}
                 disabled={disabled}
-                size={slim ? 'sm' : 'lg'}
+                size={slim ? 'sm' : undefined}
                 data-testid="skipped-popover-form-submit-btn"
             >
                 <Icon aria-hidden={true} className="mr-1" svgPath={mdiMagnify} />

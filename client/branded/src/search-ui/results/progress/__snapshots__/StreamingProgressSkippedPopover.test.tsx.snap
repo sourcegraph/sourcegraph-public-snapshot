@@ -478,7 +478,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     </div>
     <button
       aria-disabled="true"
-      class="btn btnPrimary btnLg mt-2"
+      class="btn btnPrimary mt-2"
       data-testid="skipped-popover-form-submit-btn"
       type="submit"
     >
