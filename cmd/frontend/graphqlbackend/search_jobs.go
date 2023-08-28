@@ -16,7 +16,6 @@ type SearchJobsResolver interface {
 	DeleteSearchJob(ctx context.Context, args *DeleteSearchJobArgs) (*EmptyResponse, error)
 
 	// Queries
-	ValidateSearchJobQuery(ctx context.Context, args *ValidateSearchJobQueryArgs) (ValidateSearchJobQueryResolver, error)
 	SearchJobs(ctx context.Context, args *SearchJobsArgs) (SearchJobsConnectionResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc

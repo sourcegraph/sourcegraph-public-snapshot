@@ -7,7 +7,6 @@ go_library(
         "search_job.go",
         "search_job_stats.go",
         "search_jobs_connection.go",
-        "validate_search_job_query.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/search/resolvers",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],

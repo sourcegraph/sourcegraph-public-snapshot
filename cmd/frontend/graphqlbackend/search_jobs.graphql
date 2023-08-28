@@ -1,6 +1,6 @@
 extend type Mutation {
     """
-    Experimental: Create a new search job. The query will be validated before the search is created.
+    EXPERIMENTAL: Create a new search job. The query will be validated before the search is created.
     """
     createSearchJob(
         """
@@ -10,7 +10,7 @@ extend type Mutation {
     ): SearchJob!
 
     """
-    Experimental: Cancel a search job. This will cancel all of the search's repositories and revisions.
+    EXPERIMENTAL: Cancel a search job. This will cancel all of the search's repositories and revisions.
     """
     cancelSearchJob(
         """
@@ -20,7 +20,7 @@ extend type Mutation {
     ): EmptyResponse
 
     """
-    Experimental: Delete a search job. This will delete all of the search's repositories and revisions.
+    EXPERIMENTAL: Delete a search job. This will delete all of the search's repositories and revisions.
     """
     deleteSearchJob(
         """
@@ -32,17 +32,7 @@ extend type Mutation {
 
 extend type Query {
     """
-    Experimental: Validate a search job query. This will return a list of errors if the query is invalid.
-    """
-    validateSearchJobQuery(
-        """
-        The query to validate.
-        """
-        query: String!
-    ): SearchJobQueryValidation
-
-    """
-    Experimental: Get a list of search jobs.
+    EXPERIMENTAL: Get a list of search jobs.
     """
     searchJobs(
         """
@@ -70,24 +60,6 @@ extend type Query {
         """
         descending: Boolean = false
     ): SearchJobConnection!
-}
-
-"""
-An search job is a search that can run against every repository and revision in Sourcegraph.
-"""
-type SearchJobQueryValidation {
-    """
-    The query that was validated.
-    """
-    query: String!
-    """
-    Whether or not the query is valid.
-    """
-    valid: Boolean!
-    """
-    The errors that were found in the query.
-    """
-    errors: [String!]
 }
 
 """

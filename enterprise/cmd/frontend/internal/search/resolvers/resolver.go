@@ -36,10 +36,6 @@ func (r *Resolver) DeleteSearchJob(ctx context.Context, args *graphqlbackend.Del
 	return nil, errors.New("not implemented")
 }
 
-func (r *Resolver) ValidateSearchJobQuery(ctx context.Context, args *graphqlbackend.ValidateSearchJobQueryArgs) (graphqlbackend.ValidateSearchJobQueryResolver, error) {
-	return nil, errors.New("not implemented")
-}
-
 func (r *Resolver) SearchJobs(ctx context.Context, args *graphqlbackend.SearchJobsArgs) (graphqlbackend.SearchJobsConnectionResolver, error) {
 	return nil, errors.New("not implemented")
 }
