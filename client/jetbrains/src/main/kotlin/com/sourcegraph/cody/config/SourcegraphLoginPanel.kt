@@ -29,7 +29,6 @@ internal class SourcegraphLoginPanel(
   private lateinit var currentUi: SourcegraphCredentialsUi
   private var tokenUi =
       SourcegraphTokenCredentialsUi(serverTextField, executorFactory, isAccountUnique)
-  private var oauthUi = SourcegraphOAuthCredentialsUi(executorFactory, isAccountUnique)
 
   private val progressIcon = AnimatedIcon.Default()
   private val progressExtension = ExtendableTextComponent.Extension { progressIcon }
@@ -38,7 +37,6 @@ internal class SourcegraphLoginPanel(
     get() = tokenUi.footer
     set(value) {
       tokenUi.footer = value
-      oauthUi.footer = value
       applyUi(currentUi)
     }
 
@@ -59,8 +57,7 @@ internal class SourcegraphLoginPanel(
 
   fun doValidateAll(): List<ValidationInfo> {
     val uiError =
-        DialogValidationUtils.notBlank(
-            serverTextField, "Server url cannot be empty")
+        DialogValidationUtils.notBlank(serverTextField, "Server url cannot be empty")
             ?: validateServerPath(serverTextField) ?: currentUi.getValidator().invoke()
 
     return listOfNotNull(uiError, tokenAcquisitionError)
@@ -83,7 +80,9 @@ internal class SourcegraphLoginPanel(
     currentUi.setBusy(busy)
   }
 
-  fun acquireLoginAndToken(progressIndicator: ProgressIndicator): CompletableFuture<Pair<String, String>> {
+  fun acquireLoginAndToken(
+      progressIndicator: ProgressIndicator
+  ): CompletableFuture<Pair<String, String>> {
     setBusy(true)
     tokenAcquisitionError = null
 
@@ -113,6 +112,5 @@ internal class SourcegraphLoginPanel(
     tokenAcquisitionError = exception?.let { currentUi.handleAcquireError(it) }
   }
 
-  fun setOAuthUi() = applyUi(oauthUi)
   fun setTokenUi() = applyUi(tokenUi)
 }

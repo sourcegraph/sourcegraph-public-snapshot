@@ -13,10 +13,6 @@ import com.intellij.openapi.util.Disposer
 import java.awt.Component
 import javax.swing.JComponent
 
-internal fun JComponent.setPaddingCompensated(): JComponent = apply {
-  putClientProperty(DialogWrapper.IS_VISUAL_PADDING_COMPENSATED_ON_COMPONENT_LEVEL_KEY, false)
-}
-
 internal abstract class BaseLoginDialog(
     project: Project?,
     parent: Component?,

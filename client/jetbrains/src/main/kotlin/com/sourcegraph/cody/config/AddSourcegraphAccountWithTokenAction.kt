@@ -62,12 +62,11 @@ internal class SourcegraphTokenLoginDialog(
         title = "Login to Sourcegraph"
         setLoginButtonText("Login")
         loginPanel.setTokenUi()
-
         init()
     }
 
     internal fun setLoginButtonText(@NlsContexts.Button text: String) = setOKButtonText(text)
 
-    override fun createCenterPanel(): JComponent = loginPanel.setPaddingCompensated()
+    override fun createCenterPanel(): JComponent = loginPanel
 }
 
