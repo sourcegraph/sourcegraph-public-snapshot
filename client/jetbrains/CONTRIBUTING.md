@@ -63,6 +63,40 @@ New issues and feature requests can be filed through our [issue tracker](https:/
   Use the `-PenableAgent=true` property to enable the Cody agent. For example, `./gradlew :runIde -PenableAgent=true`.
   When the agent is disabled, the plugin falls back to the non-agent-based implementation.
 
+### Developing JetBrains plugin with the Agent
+
+- Assume [cody](https://sourcegraph.com/github.com/sourcegraph/cody) and [sourcegraph](https://sourcegraph.com/github.com/sourcegraph/sourcegraph) repositories are checked out in current users `$HOME` directory.
+- Build the agent:
+  ```
+  cd $HOME/cody/agent
+  AGENT_EXECUTABLE_TARGET_DIRECTORY="$HOME/sourcegraph/client/jetbrains/build/sourcegraph/agent" pnpm run build-agent-binaries
+  ```
+- Run development JetBrains with the Agent:
+  ```
+  cd $HOME/sourcegraph/clients/jetbrains
+  ./gradlew -PforceAgentBuild=true :runIDE
+  ```
+
+### Wiring unstable-codegen via SOCKS proxy
+
+**INTERNAL ONLY** This section is only relevant for Sourcegraph engineers.
+Take the steps below _before_ [running JetBrains plugin with agent](#developing-jetbrains-plugin-with-the-agent).
+
+- Point IntelliJ provider/endpoint at the desired LLM endpoint by editing `$HOME/.sourcegraph-jetbrains.properties`:
+  ```
+  cody.autocomplete.advanced.provider: unstable-codegen
+  cody.autocomplete.advanced.serverEndpoint: https://backend.example.com/complete_batch
+  ```
+- Run `gcloud` SOCKS proxy to access the LLM backend:
+  - Make sure to authorize with GCP: `gcloud auth login`
+  - Request Sourcegraph GCP access through Entitle.
+  - Bring up the proxy:
+    ```
+    gcloud --verbosity "debug" compute ssh --zone "us-central1-a" "codegen-access-test" --project "sourcegraph-dogfood" --ssh-flag="-D" --ssh-flag="9999" --ssh-flag="-N"
+    ```
+  - Patch in [sg/socks-proxy](https://github.com/sourcegraph/cody/compare/sg/socks-proxy?expand=1).
+    Note: After [#56254](https://github.com/sourcegraph/sourcegraph/issues/56254) is resolved this step is not needed anymore.
+
 ## Publishing a new version
 
 The publishing process is based on the [intellij-platform-plugin-template](https://github.com/JetBrains/intellij-platform-plugin-template).
