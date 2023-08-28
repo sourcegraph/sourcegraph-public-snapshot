@@ -114,3 +114,8 @@ var guardrailsSchema string
 //
 //go:embed content_library.graphql
 var contentLibrary string
+
+// searchJobSchema is the Sourcegraph Search Job raw graphql schema.
+//
+//go:embed search_jobs.graphql
+var searchJobSchema string
