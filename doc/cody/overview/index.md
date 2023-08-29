@@ -155,8 +155,8 @@ Cody's main features include:
 
 |     Feature     |                                                                                         Description                                                                                         |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Autocomplete](./../capabilities.md#autocomplete)    | Cody makes context-based code autocompletions. Cody can autocomplete single lines, or whole functions, in any programming language, configuration file, or documentation.
-| [Chat](./../capabilities.md#chat)    | Ask Cody questions in the chat view, or inline with code, and it will use Sourcegraph’s code graph to answer using knowledge of your codebase. |
+| [Autocomplete](./../capabilities.md#autocomplete)    | Cody makes context-based code autocompletions. Cody can autocomplete single lines or whole functions in any programming language, configuration file, or documentation.
+| [Chat](./../capabilities.md#chat)    | Ask Cody questions in the chat view or inline with code, and it will use Sourcegraph’s code graph to answer using knowledge of your codebase. |
 | [Commands](./../capabilities.md#commands)    | Cody has quick commands for common actions, such as adding code documentation, generating unit tests, and detecting code smells. |
 
 ## Join our community

@@ -21,7 +21,7 @@
 
 Cody suggests completions as you type using context from your code, such as your open files and file history. It’s powered by the latest instant LLM models for accuracy and performance.
 
-Autocomplete supports any programming language because it uses LLMs trained on broad data. We've found that it works especially well with Python, Go, JavaScript, and TypeScript code.
+Autocomplete supports any programming language because it uses LLMs trained on broad data. We've found that it works exceptionally well with JavaScript, TypeScript, Python, and Go code.
 
 ![Example of Cody autocomplete. You see a code snippet starting with async function getWeather(city: string) { and Cody response with a multi-line suggestion using a public weather API to return the current weather ](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-completions-may2023-optim.gif)
 
@@ -55,15 +55,15 @@ Chat lets you ask Cody general programming questions or questions about your spe
 
 Cody uses several search methods (including keyword and semantic search) to find files in your codebase that are relevant to your chat questions. It then uses context from those files to provide an informed response based on your codebase. Cody also tells you which code files it reads to generate its responses.
 
-Context retrieval isn't perfect, and Cody will occasionally use incorrect context or hallucinate answers. When Cody returns an incorrect response, it is often worth asking the question again in a slightly different way to see if Cody can find better context the second time around. 
+Context retrieval isn't perfect, and Cody occasionally uses incorrect context or hallucinates answers. When Cody returns an incorrect response, it is often worth asking the question again slightly differently to see if Cody can find better context the second time. 
 
 Cody's chat function is able to handle use cases like these:
 
-- Ask Cody to generate an API call. Cody can gather context on your API schema to inform the code it writes.
-- Ask Cody to find where within your codebase a specific component is defined. Cody can retrieve and describe the files where that component is written.
+- Ask Cody to generate an API call. Cody can gather context on your API schema to inform the code it writes
+- Ask Cody where a specific component is defined within your codebase. Cody can retrieve and describe the files where that component is written
 - Ask Cody questions that require an understanding of multiple files, such as how data is populated in a React app. Cody can find the React component definitions to understand what data is being passed and where it originates
 
-More specifically, this means Cody can answer questions like:
+More specifically, Cody can answer questions like:
 
 - How is our app's secret storage implemented on Linux?
 - Where is the CI config for the web integration tests?
@@ -76,7 +76,7 @@ More specifically, this means Cody can answer questions like:
 
 ### Inline chat and code fixes
 
-In VS Code, you can also open Cody chat inline using the `+` icon. This opens a chat box which can be used for general chat questions or for code fixes and refactors. To ask Cody for an inline code fix, select a code snippet, then type `/fix` plus your desired code change. Cody will generate edits, which you can accept or reject with the `Apply` button.
+You can also open Cody's chat inline in VS Code using the `+` icon. This opens a chat box that can be used for general chat questions, code fixes, and refactors. Select a code snippet to ask Cody for an inline code fix, then type `/fix` plus your desired code change. Cody will generate edits, which you can accept or reject with the `Apply` button.
 
 You can also use the or `/touch` command in the inline chat box if you'd like Cody to place its output in a new file.
 
@@ -97,7 +97,7 @@ Examples of `/fix` instructions Cody can handle:
 
 ## Commands
 
-**Commands** allow you to quickly run common actions. Commands are predefined, reusable prompts accessible by hotkey from within the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai). Like autocomplete and chat, commands will search for context in your codebase to provide more contextually-aware and informed answers (or to generate more idiomatic code snippets).
+**Commands** allow you to run common actions quickly. Commands are predefined, reusable prompts accessible by hotkey from within the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai). Like autocomplete and chat, commands will search for context in your codebase to provide more contextually aware and informed answers (or to generate more idiomatic code snippets).
 
 The commands available in VS Code include:
 
@@ -118,20 +118,19 @@ There are three ways to run a command in VS Code:
 
 ### Custom commands <span class="badge badge-experimental">Experimental</span>
 
-**Custom commands** let you to save your own quick actions and prompts for Cody based on your common workflows. They are defined in JSON format and let you call CLI tools, write custom prompts, and select context to be sent to Cody. This provides a flexible way to tailor Cody to your needs.
+**Custom commands** let you save your quick actions and prompts for Cody based on your common workflows. They are defined in JSON format and allow you to call CLI tools, write custom prompts, and select context to be sent to Cody. This provides a flexible way to tailor Cody to your needs.
 
-You can invoke custom comamnds with the same hotkey as predefined commands. Alternatively, you can right-click on selected code, open the Cody context menu and select the `Custom Commands (Experimental)` option.
+You can invoke custom commands with the same hotkey as predefined commands. Alternatively, you can right-click the selected code, open the Cody context menu, and select the `Custom Commands (Experimental)` option.
 
 ![Cody Custom Commands in VS Code](https://storage.googleapis.com/sourcegraph-assets/Docs/create-custom-commands.png)
 
 ### Defining commands in the `cody.json` file
 
-You can define custom commands for Cody in the `cody.json` file. To make commands only available for a specific project, create the `cody.json` file in the `.vscode` directory of that project. These workspace-specific custom commands will be available to you when you work on that project.
+You can define custom commands for Cody in the `cody.json` file. To make commands only available for a specific project, create the `cody.json` file in that project's `.vscode` directory. When you work on that project, these workspace-specific custom commands will be available.
 
-To make custom commands globally available across multiple projects, create a new `cody.json` file in the `.vscode` folder of your home directory. These global custom commands will be available for you in Cody in any workspace.
+To make custom commands globally available across multiple projects, create a new `cody.json` file in your home directory's `.vscode` folder. These global custom commands will be available in Cody in any workspace.
 
 ## Language support
 
-Cody uses LLMs trained on broad code, and we've found it to effectively support all common programming languages. However, the quality of autocompletions and other features may vary based on how well the underlying LLM model was trained on a given language.
+Cody uses LLMs trained on broad code, and we've found it to support all common programming languages effectively. However, the quality of autocompletion and other features may vary based on how well the underlying LLM model was trained in a given language.
 
-We've found Cody to work especially well with Python, Go, JavaScript, and TypeScript code.
