@@ -14,8 +14,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/security"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
@@ -181,6 +183,10 @@ func unsafeSignUp(
 			return errors.New(defaultErrorMessage), http.StatusInternalServerError, nil
 		}
 		newUserData.EmailVerificationCode = code
+	}
+
+	if envvar.SourcegraphDotComMode() && security.IsEmailBanned(creds.Email) {
+		return errors.New("this email address is not allowed to register"), http.StatusUnauthorized, nil
 	}
 
 	// Prevent abuse (users adding emails of other people whom they want to annoy) with the

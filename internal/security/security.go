@@ -3,20 +3,57 @@
 package security
 
 import (
+	"bufio"
 	"fmt"
 	"net"
+	"net/mail"
+	"os"
 	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var userRegex = lazyregexp.New("^[a-zA-Z0-9]+$")
+var (
+	userRegex          = lazyregexp.New("^[a-zA-Z0-9]+$")
+	bannedEmailDomains = make(map[string]struct{})
+)
+
+func loadBannedEmailDomains(filePath string) error {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		domain := strings.TrimSpace(scanner.Text())
+		bannedEmailDomains[domain] = struct{}{}
+	}
+
+	return scanner.Err()
+
+}
+
+func IsEmailBanned(email string) bool {
+	addr, err := mail.ParseAddress(email)
+	if err != nil {
+		return false
+	}
+
+	domain := addr.Address[strings.Index(addr.Address, "@")+1:]
+	_, banned := bannedEmailDomains[domain]
+
+	return banned
+}
 
 // ValidateRemoteAddr validates if the input is a valid IP or a valid hostname.
 // It validates the hostname by attempting to resolve it.
@@ -162,4 +199,21 @@ func validatePasswordUsingPolicy(passwd string) error {
 
 	// All good return
 	return nil
+}
+
+func init() {
+
+	if envvar.SourcegraphDotComMode() {
+
+		denyList := env.Get("EMAIL_DOMAIN_DENY_LIST", "", "A list of disposable email domains to block")
+
+		if denyList != "" {
+			err := loadBannedEmailDomains(denyList)
+
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+
 }
