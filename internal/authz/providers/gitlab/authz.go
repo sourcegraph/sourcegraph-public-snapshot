@@ -62,6 +62,8 @@ func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization,
 	case idp.Oauth != nil:
 		// Check that there is a GitLab authn provider corresponding to this GitLab instance
 		foundAuthProvider := false
+		var clientID string
+		var clientSecret string
 		for _, authnProvider := range ps {
 			if authnProvider.Gitlab == nil {
 				continue
@@ -77,6 +79,8 @@ func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization,
 			}
 			if authProviderURL.Hostname() == glURL.Hostname() {
 				foundAuthProvider = true
+				clientID = authnProvider.Gitlab.ClientID
+				clientSecret = authnProvider.Gitlab.ClientSecret
 				break
 			}
 		}
@@ -85,11 +89,13 @@ func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization,
 		}
 
 		return NewOAuthProvider(OAuthProviderOp{
-			URN:       urn,
-			BaseURL:   glURL,
-			Token:     token,
-			TokenType: tokenType,
-			DB:        db,
+			URN:          urn,
+			BaseURL:      glURL,
+			Token:        token,
+			TokenType:    tokenType,
+			DB:           db,
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
 		}), nil
 	case idp.Username != nil:
 		return NewSudoProvider(SudoProviderOp{

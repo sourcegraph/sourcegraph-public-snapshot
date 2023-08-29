@@ -11,7 +11,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -19,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -107,19 +105,6 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 			},
 		)
 
-		gitlab.MockGetOAuthContext = func() *oauthutil.OAuthContext {
-			return &oauthutil.OAuthContext{
-				ClientID:     "client",
-				ClientSecret: "client_sec",
-				Endpoint: oauth2.Endpoint{
-					AuthURL:  "url/oauth/authorize",
-					TokenURL: "url/oauth/token",
-				},
-				Scopes: []string{"read_user"},
-			}
-		}
-		defer func() { gitlab.MockGetOAuthContext = nil }()
-
 		authData := json.RawMessage(`{"access_token": "my_access_token"}`)
 		repoIDs, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
@@ -187,19 +172,6 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 				},
 			},
 		)
-
-		gitlab.MockGetOAuthContext = func() *oauthutil.OAuthContext {
-			return &oauthutil.OAuthContext{
-				ClientID:     "client",
-				ClientSecret: "client_sec",
-				Endpoint: oauth2.Endpoint{
-					AuthURL:  "url/oauth/authorize",
-					TokenURL: "url/oauth/token",
-				},
-				Scopes: []string{"read_user"},
-			}
-		}
-		defer func() { gitlab.MockGetOAuthContext = nil }()
 
 		authData := json.RawMessage(`{"access_token": "my_access_token"}`)
 		repoIDs, err := p.FetchUserPerms(ctx,

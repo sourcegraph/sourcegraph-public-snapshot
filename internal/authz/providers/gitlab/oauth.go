@@ -3,7 +3,7 @@ package gitlab
 import (
 	"context"
 	"net/url"
-	"strings"
+	"path"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -12,8 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/oauthtoken"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"golang.org/x/oauth2"
 )
 
 var _ authz.Provider = (*OAuthProvider)(nil)
@@ -27,6 +29,8 @@ type OAuthProvider struct {
 	urn            string
 	clientProvider *gitlab.ClientProvider
 	clientURL      *url.URL
+	clientID       string
+	clientSecret   string
 	codeHost       *extsvc.CodeHost
 	db             database.DB
 }
@@ -47,6 +51,9 @@ type OAuthProviderOp struct {
 	TokenType gitlab.TokenType
 
 	DB database.DB
+
+	ClientID     string
+	ClientSecret string
 }
 
 func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
@@ -59,6 +66,19 @@ func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
 		clientURL:      op.BaseURL,
 		codeHost:       extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
 		db:             op.DB,
+		clientID:       op.ClientID,
+		clientSecret:   op.ClientSecret,
+	}
+}
+
+func (p *OAuthProvider) OAuthContext() *oauthutil.OAuthContext {
+	return &oauthutil.OAuthContext{
+		ClientID:     p.clientID,
+		ClientSecret: p.clientSecret,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  path.Join(p.ServiceID(), "/oauth/authorize"),
+			TokenURL: path.Join(p.ServiceID(), "/oauth/token"),
+		},
 	}
 }
 
@@ -112,7 +132,7 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 		Token:              tok.AccessToken,
 		RefreshToken:       tok.RefreshToken,
 		Expiry:             tok.Expiry,
-		RefreshFunc:        oauthtoken.GetAccountRefreshAndStoreOAuthTokenFunc(p.db.UserExternalAccounts(), account.ID, gitlab.GetOAuthContext(strings.TrimSuffix(p.ServiceID(), "/"))),
+		RefreshFunc:        oauthtoken.GetAccountRefreshAndStoreOAuthTokenFunc(p.db.UserExternalAccounts(), account.ID, p.OAuthContext()),
 		NeedsRefreshBuffer: 5,
 	}
 	client := p.clientProvider.NewClient(token)

@@ -14,10 +14,8 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -28,10 +26,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	// The metric generated here will be named as "src_gitlab_requests_total".
-	requestCounter = metrics.NewRequestMeter("gitlab", "Total number of requests sent to the GitLab API.")
-)
+// The metric generated here will be named as "src_gitlab_requests_total".
+var requestCounter = metrics.NewRequestMeter("gitlab", "Total number of requests sent to the GitLab API.")
 
 // TokenType is the type of an access token.
 type TokenType string
@@ -416,37 +412,6 @@ func (e ProjectNotFoundError) Error() string {
 }
 
 func (e ProjectNotFoundError) NotFound() bool { return true }
-
-var MockGetOAuthContext func() *oauthutil.OAuthContext
-
-// GetOAuthContext matches the corresponding auth provider using the given
-// baseURL and returns the oauthutil.OAuthContext of it.
-func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
-	if MockGetOAuthContext != nil {
-		return MockGetOAuthContext()
-	}
-
-	for _, authProvider := range conf.SiteConfig().AuthProviders {
-		if authProvider.Gitlab != nil {
-			p := authProvider.Gitlab
-			glURL := strings.TrimSuffix(p.Url, "/")
-			if !strings.HasPrefix(baseURL, glURL) {
-				continue
-			}
-
-			return &oauthutil.OAuthContext{
-				ClientID:     p.ClientID,
-				ClientSecret: p.ClientSecret,
-				Endpoint: oauth2.Endpoint{
-					AuthURL:  glURL + "/oauth/authorize",
-					TokenURL: glURL + "/oauth/token",
-				},
-				Scopes: RequestedOAuthScopes(p.ApiScope),
-			}
-		}
-	}
-	return nil
-}
 
 // ProjectArchivedError is returned when a request cannot be performed due to the
 // GitLab project being archived.
