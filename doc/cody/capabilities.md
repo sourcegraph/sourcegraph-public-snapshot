@@ -15,7 +15,7 @@
 
 # Cody capabilities
 
-<p class="subtitle">Learn more about Cody's features.</p>
+<p class="subtitle">Learn and understand more about Cody's features and core AI functionality.</p>
 
 ## Autocomplete
 
