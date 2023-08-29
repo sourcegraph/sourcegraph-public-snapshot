@@ -81,6 +81,8 @@ public class SettingsConfigurable implements Configurable {
     boolean oldCodyAutocompleteEnabled = ConfigUtil.isCodyAutocompleteEnabled();
     boolean oldCodyDebugEnabled = ConfigUtil.isCodyDebugEnabled();
     boolean oldCodyVerboseDebugEnabled = ConfigUtil.isCodyVerboseDebugEnabled();
+    boolean oldIsCustomAutocompleteColorEnabled = ConfigUtil.isCustomAutocompleteColorEnabled();
+    Integer oldCustomAutocompleteColor = ConfigUtil.getCustomAutocompleteColor();
     String oldUrl = ConfigUtil.getSourcegraphUrl(project);
     String newDotComAccessToken = mySettingsComponent.getDotComAccessToken();
     String newEnterpriseAccessToken = mySettingsComponent.getEnterpriseAccessToken();
@@ -101,6 +103,8 @@ public class SettingsConfigurable implements Configurable {
             oldUrl,
             oldCodyDebugEnabled,
             oldCodyVerboseDebugEnabled,
+            oldCustomAutocompleteColor,
+            oldIsCustomAutocompleteColorEnabled,
             newUrl,
             mySettingsComponent.isDotComAccessTokenChanged(),
             mySettingsComponent.isEnterpriseAccessTokenChanged(),
