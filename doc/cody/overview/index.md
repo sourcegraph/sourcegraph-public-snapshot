@@ -108,7 +108,7 @@ We value your feedback! You can <a href="https://about.sourcegraph.com/contact">
 
 ## What is Cody?
 
-Cody is a free and open-source AI coding assistant that can write, understand, and fix code. Cody is powered by Sourcegraph's <a href="https://docs.sourcegraph.com/cody/explanations/code_graph_context">code graph</a> and uses knowledge of your entire codebase to give more accurate answers and generate idiomatic code.
+Cody is a free, open-source AI coding assistant that writes, understands, and fixes code. Cody is powered by Sourcegraph's <a href="https://docs.sourcegraph.com/cody/explanations/code_graph_context">code graph</a> and uses knowledge of your entire codebase to give more accurate answers and generate idiomatic code.
 
 Think of Cody as your personal AI coding assistant, equipped with a comprehensive understanding of three crucial elements:
 

@@ -57,7 +57,7 @@ Cody uses several search methods (including keyword and semantic search) to find
 
 Context retrieval isn't perfect, and Cody occasionally uses incorrect context or hallucinates answers. When Cody returns an incorrect response, it is often worth asking the question again slightly differently to see if Cody can find better context the second time. 
 
-Cody's chat function is able to handle use cases like these:
+Cody's chat function can handle use cases like:
 
 - Ask Cody to generate an API call. Cody can gather context on your API schema to inform the code it writes
 - Ask Cody where a specific component is defined within your codebase. Cody can retrieve and describe the files where that component is written
