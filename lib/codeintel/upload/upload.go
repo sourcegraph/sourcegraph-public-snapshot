@@ -7,8 +7,6 @@ import (
 	"os"
 	"sync"
 
-	"github.com/sourcegraph/conc/pool"
-
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -212,15 +210,18 @@ func uploadMultipartIndexParts(ctx context.Context, httpClient Client, opts Uplo
 	)
 	defer func() { complete(err) }()
 
-	pool := new(pool.ErrorPool).WithFirstError().WithContext(ctx)
-	if opts.MaxConcurrency > 0 {
-		pool.WithMaxGoroutines(opts.MaxConcurrency)
-	}
+	var wg sync.WaitGroup
+	errs := make(chan error, len(readers))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	for i, reader := range readers {
-		i, reader := i, reader
+		wg.Add(1)
 
-		pool.Go(func(ctx context.Context) error {
+		go func(i int, reader io.ReadSeeker) {
+			defer wg.Done()
+
 			// Determine size of this reader. If we're not the last reader in the slice,
 			// then we're the maximum payload size. Otherwise, we're whatever is left.
 			partReaderLen := opts.MaxPayloadSizeBytes
@@ -235,16 +236,25 @@ func uploadMultipartIndexParts(ctx context.Context, httpClient Client, opts Uplo
 			}
 
 			if err := uploadIndexFile(ctx, httpClient, opts, reader, partReaderLen, requestOptions, progress, retry, i, len(readers)); err != nil {
-				return err
+				errs <- err
+				cancel()
 			} else if progress != nil {
 				// Mark complete in case we debounced our last updates
 				progress.SetValue(i, 1)
 			}
-			return nil
-		})
+		}(i, reader)
 	}
 
-	return pool.Wait()
+	wg.Wait()
+	close(errs)
+
+	for err := range errs {
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // uploadMultipartIndexFinalize performs the request to stitch the uploaded parts together and

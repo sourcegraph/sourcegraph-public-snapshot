@@ -23,7 +23,6 @@ require (
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
 	github.com/muesli/termenv v0.12.0
-	github.com/sourcegraph/conc v0.3.0
 	github.com/sourcegraph/go-diff v0.6.2-0.20221123165719-f8cd299c40f3
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/sourcegraph/log v0.0.0-20221206163500-7d93c6ad7037
@@ -114,7 +113,7 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/goleak v1.2.0 // indirect
-	go.uber.org/multierr v1.9.0 // indirect
+	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/mod v0.8.0 // indirect
