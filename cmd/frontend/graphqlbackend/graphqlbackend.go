@@ -604,6 +604,16 @@ func NewSchema(
 			resolver.ContentLibraryResolver = contentLibraryResolver
 			schemas = append(schemas, contentLibrary)
 		}
+
+		if searchJobsResolver := optional.SearchJobsResolver; searchJobsResolver != nil {
+			EnterpriseResolvers.searchJobsResolver = searchJobsResolver
+			resolver.SearchJobsResolver = searchJobsResolver
+			schemas = append(schemas, searchJobSchema)
+			// Register NodeByID handlers.
+			for kind, res := range searchJobsResolver.NodeResolvers() {
+				resolver.nodeByIDFns[kind] = res
+			}
+		}
 	}
 
 	logger := log.Scoped("GraphQL", "general GraphQL logging")
@@ -652,6 +662,7 @@ type OptionalResolver struct {
 	CodyContextResolver
 	DotcomRootResolver
 	EmbeddingsResolver
+	SearchJobsResolver
 	GitHubAppsResolver
 	GuardrailsResolver
 	InsightsAggregationResolver
@@ -767,6 +778,7 @@ var EnterpriseResolvers = struct {
 	contextResolver             CodyContextResolver
 	dotcomResolver              DotcomRootResolver
 	embeddingsResolver          EmbeddingsResolver
+	searchJobsResolver          SearchJobsResolver
 	gitHubAppsResolver          GitHubAppsResolver
 	guardrailsResolver          GuardrailsResolver
 	insightsAggregationResolver InsightsAggregationResolver

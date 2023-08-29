@@ -721,6 +721,31 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		if completionsConfig.CompletionModel == "" {
 			return nil
 		}
+	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameFireworks) {
+		// If no endpoint is configured, use a default value.
+		if completionsConfig.Endpoint == "" {
+			completionsConfig.Endpoint = "https://api.fireworks.ai/inference/v1/completions"
+		}
+
+		// If not access token is set, we cannot talk to Fireworks. Bail.
+		if completionsConfig.AccessToken == "" {
+			return nil
+		}
+
+		// Set a default chat model.
+		if completionsConfig.ChatModel == "" {
+			completionsConfig.ChatModel = "accounts/fireworks/models/llama-v2-7b"
+		}
+
+		// Set a default fast chat model.
+		if completionsConfig.FastChatModel == "" {
+			completionsConfig.FastChatModel = "accounts/fireworks/models/llama-v2-7b"
+		}
+
+		// Set a default completions model.
+		if completionsConfig.CompletionModel == "" {
+			completionsConfig.CompletionModel = "accounts/fireworks/models/starcoder-7b-w8a16"
+		}
 	}
 
 	// Make sure models are always treated case-insensitive.
@@ -997,6 +1022,8 @@ func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model st
 		return anthropicDefaultMaxPromptTokens(model)
 	case conftypes.CompletionsProviderNameOpenAI:
 		return openaiDefaultMaxPromptTokens(model)
+	case conftypes.CompletionsProviderNameFireworks:
+		return fireworksDefaultMaxPromptTokens(model)
 	case conftypes.CompletionsProviderNameAzureOpenAI:
 		// We cannot know based on the model name what model is actually used,
 		// this is a sane default for GPT in general.
@@ -1034,4 +1061,18 @@ func openaiDefaultMaxPromptTokens(model string) int {
 	default:
 		return 4_000
 	}
+}
+
+func fireworksDefaultMaxPromptTokens(model string) int {
+	if strings.HasPrefix(model, "accounts/fireworks/models/llama-v2") {
+		// Llama 2 has a context window of 4000 tokens
+		return 3_000
+	}
+
+	if strings.HasPrefix(model, "accounts/fireworks/models/starcoder-") {
+		// StarCoder has a context window of 8192 tokens
+		return 6_000
+	}
+
+	return 4_000
 }

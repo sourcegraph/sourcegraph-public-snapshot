@@ -50,7 +50,7 @@ public class AcceptCodyAutocompleteAction extends EditorAction {
         AutocompleteTelemetry telemetry =
             CodyAutocompleteManager.getInstance().getCurrentAutocompleteTelemetry();
         GraphQlLogger.logAutocompleteAcceptedEvent(
-            project, telemetry != null ? telemetry.contextSummary() : null);
+            project, telemetry != null ? telemetry.params() : null);
         acceptAgentAutocomplete(editor, maybeCaret);
       } else {
         Optional.ofNullable(maybeCaret)

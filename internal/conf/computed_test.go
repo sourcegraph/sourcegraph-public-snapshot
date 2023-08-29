@@ -502,6 +502,28 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 		},
 		{
+			name: "Fireworks completions completions",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider:    "fireworks",
+					AccessToken: "asdf",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:                "accounts/fireworks/models/llama-v2-7b",
+				ChatModelMaxTokens:       3000,
+				FastChatModel:            "accounts/fireworks/models/llama-v2-7b",
+				FastChatModelMaxTokens:   3000,
+				CompletionModel:          "accounts/fireworks/models/starcoder-7b-w8a16",
+				CompletionModelMaxTokens: 6000,
+				AccessToken:              "asdf",
+				Provider:                 "fireworks",
+				Endpoint:                 "https://api.fireworks.ai/inference/v1/completions",
+			},
+		},
+		{
 			name: "zero-config cody gateway completions without license key",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),

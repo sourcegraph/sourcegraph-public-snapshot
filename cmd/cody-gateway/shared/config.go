@@ -39,6 +39,11 @@ type Config struct {
 		OrgID         string
 	}
 
+	Fireworks struct {
+		AllowedModels []string
+		AccessToken   string
+	}
+
 	AllowedEmbeddingsModels []string
 
 	AllowAnonymous bool
@@ -114,6 +119,21 @@ func (c *Config) Load() {
 	)
 	if c.OpenAI.AccessToken != "" && len(c.OpenAI.AllowedModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for OpenAI"))
+	}
+
+	c.Fireworks.AccessToken = c.Get("CODY_GATEWAY_FIREWORKS_ACCESS_TOKEN", "", "The Fireworks access token to be used.")
+	c.Fireworks.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_FIREWORKS_ALLOWED_MODELS",
+		strings.Join([]string{
+			"accounts/fireworks/models/starcoder-16b-w8a16",
+			"accounts/fireworks/models/starcoder-7b-w8a16",
+			"accounts/fireworks/models/starcoder-3b-w8a16",
+			"accounts/fireworks/models/starcoder-1b-w8a16",
+			"accounts/fireworks/models/llama-v2-13b-code-instruct",
+			"accounts/fireworks/models/wizardcoder-15b",
+		}, ","),
+		"Fireworks models that can be used."))
+	if c.Fireworks.AccessToken != "" && len(c.Fireworks.AllowedModels) == 0 {
+		c.AddError(errors.New("must provide allowed models for Fireworks"))
 	}
 
 	c.AllowedEmbeddingsModels = splitMaybe(c.Get("CODY_GATEWAY_ALLOWED_EMBEDDINGS_MODELS", strings.Join([]string{"openai/text-embedding-ada-002"}, ","), "The models allowed for embeddings generation."))
