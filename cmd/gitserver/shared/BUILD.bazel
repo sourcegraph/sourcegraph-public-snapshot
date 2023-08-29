@@ -18,6 +18,7 @@ go_library(
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
+        "//internal/authz/subrepoperms",
         "//internal/codeintel/dependencies",
         "//internal/collections",
         "//internal/conf",

@@ -83,10 +83,8 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
     const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
-
-    const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
-
     const [rankingEnabled] = useFeatureFlag('search-ranking')
+    const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
 
     // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
@@ -440,6 +438,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         setSidebarCollapsed={setSidebarCollapsed}
                         stats={
                             <StreamingProgress
+                                query={`${submittedURLQuery} patterntype:${patternType}`}
                                 progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
                                 state={results?.state || 'loading'}
                                 onSearchAgain={onSearchAgain}

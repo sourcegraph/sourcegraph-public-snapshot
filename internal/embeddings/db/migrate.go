@@ -79,7 +79,7 @@ func ensureRepoIDIndex(ctx context.Context, cc qdrant.PointsClient, name string)
 		CollectionName:   name,
 		Wait:             pointers.Ptr(true),
 		FieldName:        fieldRepoID,
-		FieldType:        pointers.Ptr(qdrant.FieldType_FieldTypeKeyword),
+		FieldType:        pointers.Ptr(qdrant.FieldType_FieldTypeInteger),
 		FieldIndexParams: nil,
 		Ordering:         nil,
 	})

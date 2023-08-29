@@ -22,6 +22,7 @@ import (
 	"github.com/ricochet2200/go-disk-usage/du"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -53,7 +54,27 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wre
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			gitserverAddrs := gitserver.NewGitserverAddresses(conf.Get())
 			// TODO: Should this return an error?
-			cleanupRepos(ctx, logger, db, rcf, nil, cfg.DesiredPercentFree, cfg.ShardID, cfg.ReposDir, cloneRepo, gitserverAddrs)
+			cleanupRepos(ctx, logger, db, rcf, cfg.ShardID, cfg.ReposDir, cloneRepo, gitserverAddrs)
+
+			// On Sourcegraph.com, we clone repos lazily, meaning whatever github.com
+			// repo is visited will be cloned eventually. So over time, we would always
+			// accumulate terabytes of repos, of which many are probably not visited
+			// often. Thus, we have this special cleanup worker for Sourcegraph.com that
+			// will remove repos that have not been changed in a long time (thats the
+			// best metric we have here today) once our disks are running full.
+			// On customer instances, this worker is useless, because repos are always
+			// managed by an external service connection and they will be recloned
+			// ASAP.
+			if envvar.SourcegraphDotComMode() {
+				diskSizer := &StatDiskSizer{}
+				logger := logger.Scoped("dotcom-repo-cleaner", "The background janitor process to clean up repos on Sourcegraph.com that haven't been changed in a long time")
+				toFree, err := howManyBytesToFree(logger, cfg.ReposDir, diskSizer, cfg.DesiredPercentFree)
+				if err != nil {
+					logger.Error("ensuring free disk space", log.Error(err))
+				} else if err := freeUpSpace(ctx, logger, db, cfg.ShardID, cfg.ReposDir, diskSizer, cfg.DesiredPercentFree, toFree); err != nil {
+					logger.Error("error freeing up space", log.Error(err))
+				}
+			}
 			return nil
 		}),
 		goroutine.WithName("gitserver.janitor"),
@@ -204,8 +225,6 @@ func cleanupRepos(
 	logger log.Logger,
 	db database.DB,
 	rcf *wrexec.RecordingCommandFactory,
-	diskSizer DiskSizer,
-	desiredPercentFree int,
 	shardID string,
 	reposDir string,
 	cloneRepo cloneRepoFunc,
@@ -527,22 +546,7 @@ func cleanupRepos(
 		})
 	}
 
-	err := bestEffortWalk(reposDir, func(dir string, fi fs.DirEntry) error {
-		if ignorePath(reposDir, dir) {
-			if fi.IsDir() {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-
-		// Look for $GIT_DIR
-		if !fi.IsDir() || fi.Name() != ".git" {
-			return nil
-		}
-
-		// We are sure this is a GIT_DIR after the above check
-		gitDir := common.GitDir(dir)
-
+	err := iterateGitDirs(reposDir, func(gitDir common.GitDir) {
 		for _, cfn := range cleanups {
 			start := time.Now()
 			done, err := cfn.Do(gitDir)
@@ -557,7 +561,6 @@ func cleanupRepos(
 				break
 			}
 		}
-		return filepath.SkipDir
 	})
 	if err != nil {
 		logger.Error("error iterating over repositories", log.Error(err))
@@ -568,17 +571,6 @@ func cleanupRepos(
 		if err != nil {
 			logger.Error("setting repo sizes", log.Error(err))
 		}
-	}
-
-	if diskSizer == nil {
-		diskSizer = &StatDiskSizer{}
-	}
-	toFree, err := howManyBytesToFree(logger, reposDir, diskSizer, desiredPercentFree)
-	if err != nil {
-		logger.Error("ensuring free disk space", log.Error(err))
-	}
-	if err := freeUpSpace(ctx, logger, db, shardID, reposDir, diskSizer, desiredPercentFree, toFree); err != nil {
-		logger.Error("error freeing up space", log.Error(err))
 	}
 }
 
@@ -729,25 +721,37 @@ func gitDirModTime(d common.GitDir) (time.Time, error) {
 	return head.ModTime(), nil
 }
 
-func findGitDirs(reposDir string) ([]common.GitDir, error) {
-	var dirs []common.GitDir
-	err := bestEffortWalk(reposDir, func(path string, fi fs.DirEntry) error {
-		if ignorePath(reposDir, path) {
+// iterateGitDirs walks over the reposDir on disk and calls walkFn for each of the
+// git directories found on disk.
+func iterateGitDirs(reposDir string, walkFn func(common.GitDir)) error {
+	return bestEffortWalk(reposDir, func(dir string, fi fs.DirEntry) error {
+		if ignorePath(reposDir, dir) {
 			if fi.IsDir() {
 				return filepath.SkipDir
 			}
 			return nil
 		}
+
+		// Look for $GIT_DIR
 		if !fi.IsDir() || fi.Name() != ".git" {
 			return nil
 		}
-		dirs = append(dirs, common.GitDir(path))
+
+		// We are sure this is a GIT_DIR after the above check
+		gitDir := common.GitDir(dir)
+
+		walkFn(gitDir)
+
 		return filepath.SkipDir
 	})
-	if err != nil {
-		return nil, errors.Wrap(err, "findGitDirs")
-	}
-	return dirs, nil
+}
+
+// findGitDirs collects the GitDirs of all repos under reposDir.
+func findGitDirs(reposDir string) ([]common.GitDir, error) {
+	var dirs []common.GitDir
+	return dirs, iterateGitDirs(reposDir, func(dir common.GitDir) {
+		dirs = append(dirs, dir)
+	})
 }
 
 // dirSize returns the total size in bytes of all the files under d.

@@ -80,7 +80,8 @@ public class SettingsChangeListener implements Disposable {
             }
 
             // Log install events
-            if (!Objects.equals(context.oldUrl, context.newUrl)) {
+            boolean urlChanged = !Objects.equals(context.oldUrl, context.newUrl);
+            if (urlChanged) {
               GraphQlLogger.logInstallEvent(project).thenAccept(ConfigUtil::setInstallEventLogged);
             } else if ((context.isDotComAccessTokenChanged
                     || context.isEnterpriseAccessTokenChanged)
@@ -88,7 +89,6 @@ public class SettingsChangeListener implements Disposable {
               GraphQlLogger.logInstallEvent(project).thenAccept(ConfigUtil::setInstallEventLogged);
             }
 
-            boolean urlChanged = !Objects.equals(context.oldUrl, context.newUrl);
             SettingsComponent.InstanceType instanceType = ConfigUtil.getInstanceType(project);
             boolean accessTokenChanged =
                 (instanceType == SettingsComponent.InstanceType.DOTCOM

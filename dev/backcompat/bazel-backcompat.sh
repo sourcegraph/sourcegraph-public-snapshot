@@ -29,10 +29,17 @@ else
 fi
 
 echo "--- :git::rewind: checkout v${tag}"
+# --no-overlay makes so that git ensures the files match what is in the tree exactly, removing files that do not match
 git checkout --force "v${tag}"
 
-echo "--- :git: checkout migrations and scripts at ${current_commit}"
-git checkout --force "${current_commit}" -- migrations/ dev/backcompat/patch_flakes.sh dev/backcompat/flakes.json
+echo "--- :git: checkout migrations, patches and scripts at ${current_commit}"
+# --no-overlay makes so that git ensures the files match what is in the tree exactly, removing files that do not match
+git checkout --force --no-overlay "${current_commit}" -- migrations/ dev/backcompat/patch_flakes.sh dev/backcompat/patches dev/backcompat/flakes.json
+
+if [[ -d "dev/backcompat/patches/${tag}" ]]; then
+  echo "--- :adhesive_bandage: apply patches from dev/backcompat/patches/${tag}"
+  git apply dev/backcompat/patches/${tag}/*.patch
+fi
 
 echo "--- :snowflake: patch flake for tag ${tag}"
 ./dev/backcompat/patch_flakes.sh ${tag}

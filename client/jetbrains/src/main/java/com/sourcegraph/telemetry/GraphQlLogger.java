@@ -1,6 +1,7 @@
 package com.sourcegraph.telemetry;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.cody.PluginUtil;
@@ -13,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class GraphQlLogger {
+  private static final Gson gson = new GsonBuilder().serializeNulls().create();
 
   public static CompletableFuture<Boolean> logInstallEvent(@NotNull Project project) {
     if (ConfigUtil.getAnonymousUserId() != null && project.isDisposed()) {
@@ -33,26 +35,39 @@ public class GraphQlLogger {
       @NotNull Project project,
       long latencyMs,
       long displayDurationMs,
-      CompletionEvent.@Nullable ContextSummary contextSummary) {
+      CompletionEvent.@Nullable Params params) {
     String eventName = "CodyJetBrainsPlugin:completion:suggested";
     JsonObject eventParameters = new JsonObject();
     eventParameters.addProperty("latency", latencyMs);
     eventParameters.addProperty("displayDuration", displayDurationMs);
-    if (contextSummary != null) {
-      eventParameters.add("contextSummary", new Gson().toJsonTree(contextSummary));
-    }
     eventParameters.addProperty("isAnyKnownPluginEnabled", PluginUtil.isAnyKnownPluginEnabled());
-    logEvent(project, createEvent(project, eventName, eventParameters));
+    JsonObject updatedEventParameters = addCompletionEventParams(eventParameters, params);
+    logEvent(project, createEvent(project, eventName, updatedEventParameters));
   }
 
   public static void logAutocompleteAcceptedEvent(
-      @NotNull Project project, @Nullable CompletionEvent.ContextSummary contextSummary) {
+      @NotNull Project project, @Nullable CompletionEvent.Params params) {
     String eventName = "CodyJetBrainsPlugin:completion:accepted";
-    JsonObject eventParameters = new JsonObject();
-    if (contextSummary != null) {
-      eventParameters.add("contextSummary", new Gson().toJsonTree(contextSummary));
-    }
+    JsonObject eventParameters = addCompletionEventParams(new JsonObject(), params);
     logEvent(project, createEvent(project, eventName, eventParameters));
+  }
+
+  private static JsonObject addCompletionEventParams(
+      JsonObject eventParameters, CompletionEvent.@Nullable Params params) {
+    var updatedEventParameters = eventParameters.deepCopy();
+    if (params != null) {
+      if (params.contextSummary != null) {
+        updatedEventParameters.add("contextSummary", gson.toJsonTree(params.contextSummary));
+      }
+      updatedEventParameters.addProperty("id", params.id);
+      updatedEventParameters.addProperty("languageId", params.languageId);
+      updatedEventParameters.addProperty("source", params.source);
+      updatedEventParameters.addProperty("charCount", params.charCount);
+      updatedEventParameters.addProperty("lineCount", params.lineCount);
+      updatedEventParameters.addProperty("multilineMode", params.multilineMode);
+      updatedEventParameters.addProperty("providerIdentifier", params.providerIdentifier);
+    }
+    return updatedEventParameters;
   }
 
   public static void logCodyEvent(

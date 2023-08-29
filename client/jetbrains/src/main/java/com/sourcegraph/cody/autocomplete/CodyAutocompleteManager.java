@@ -72,7 +72,7 @@ public class CodyAutocompleteManager {
                     p,
                     currentAutocompleteTelemetry.getLatencyMs(),
                     currentAutocompleteTelemetry.getDisplayDurationMs(),
-                    currentAutocompleteTelemetry.contextSummary());
+                    currentAutocompleteTelemetry.params());
                 currentAutocompleteTelemetry = null;
               }
             });
@@ -99,6 +99,7 @@ public class CodyAutocompleteManager {
     return ConfigUtil.isCodyEnabled()
         && ConfigUtil.isCodyAutocompleteEnabled()
         && editor != null
+        && editor.getDocument().isWritable()
         && isProjectAvailable(editor.getProject())
         && isEditorSupported(editor);
   }
