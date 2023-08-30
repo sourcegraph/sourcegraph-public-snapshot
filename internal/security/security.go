@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -35,7 +34,7 @@ func ensureBannedEmailDomainsLoaded() error {
 			return
 		}
 
-		denyListPath := env.Get("SRC_EMAIL_DOMAIN_DENY_LIST", "", "A list of email domains to block")
+		denyListPath := os.Getenv("SRC_EMAIL_DOMAIN_DENY_LIST")
 		if denyListPath == "" {
 			return
 		}
