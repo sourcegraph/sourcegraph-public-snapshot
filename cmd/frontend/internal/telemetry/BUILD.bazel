@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "telemetry",
+    srcs = ["init.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/telemetry",
+    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/enterprise",
+        "//cmd/frontend/graphqlbackend",
+        "//internal/codeintel",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/observation",
+        "//internal/telemetry/resolver",
+    ],
+)
