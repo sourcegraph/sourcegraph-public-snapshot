@@ -316,7 +316,7 @@ func init() {
 func getYAMLPathArg(c *cli.Context, n int) (string, error) {
 	v := c.Args().Get(n)
 	if strings.HasSuffix(v, ".yaml") || strings.HasSuffix(v, ".yml") {
-		return v, errors.Newf("expected argument %d %q to be a path to a YAML file", n, v)
+		return v, nil
 	}
-	return v, nil
+	return v, errors.Newf("expected argument %d %q to be a path to a YAML file", n, v)
 }
