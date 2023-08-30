@@ -324,6 +324,7 @@ ts_project(
         "src/symbols/SymbolTag.tsx",
         "src/symbols/symbolIcons.ts",
         "src/telemetry/telemetryService.ts",
+        "src/telemetry/telemetryServiceV2.ts",
         "src/theme.ts",
         "src/tracking/event-log-creators.ts",
         "src/tracking/utm.ts",
