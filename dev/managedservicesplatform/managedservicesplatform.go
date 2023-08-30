@@ -66,7 +66,7 @@ func (r *Renderer) RenderEnvironment(
 	}
 
 	var (
-		projectIDPrefix = fmt.Sprintf("%s-%s-", svc.ID, env.ID)
+		projectIDPrefix = fmt.Sprintf("%s-%s", svc.ID, env.ID)
 		stacks          = stack.NewSet(r.OutputDir, stackSetOptions...)
 	)
 
