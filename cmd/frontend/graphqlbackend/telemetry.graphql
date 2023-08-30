@@ -1,0 +1,174 @@
+extend type Mutation {
+    """
+    Telemetry mutations for "Event Logging Everywhere", aka a version 2 of
+    existing event-logging/event-recording APIs.
+    """
+    telemetry: TelemetryMutation
+}
+
+"""
+Mutations for recording events from clients.
+"""
+type TelemetryMutation {
+    """
+    Record a single telemetry event.
+    """
+    recordEvent(event: TelemetryEventInput!): EmptyResponse
+    """
+    Record a batch of telemetry events.
+    """
+    recordEvents(events: [TelemetryEventInput!]!): EmptyResponse
+}
+
+"""
+Properties comprising a telemetry V2 event that can be reported by a client.
+"""
+input TelemetryEventInput {
+    """
+    Name of the event.
+    """
+    name: String!
+
+    """
+    Information about where this event came from.
+    """
+    source: TelemetryEventSourceInput!
+
+    """
+    Parameters of the event.
+    """
+    parameters: TelemetryEventParametersInput!
+
+    """
+    Optional user associated with the event.
+    """
+    user: TelemetryEventUserInput
+
+    """
+    Optional marketing campaign tracking parameters.
+    """
+    marketingTracking: TelemetryEventMarketingTrackingInput
+}
+
+"""
+Properties comprising the source of a telemetry V2 event reported by a client.
+"""
+input TelemetryEventSourceInput {
+    """
+    Source client of the event. Clients must come from a static set of predefined
+    metadata keys in libraries - it is left as a string in the API to allow some
+    backwards/forwards flexibility.
+    """
+    client: String!
+    """
+    Version of the source client of the event.
+    """
+    clientVersion: String
+}
+
+"""
+Properties of a telemetry V2 event.
+"""
+input TelemetryEventParametersInput {
+    """
+    Version of the event parameters, used for indicating the "shape" of this
+    event's metadata.
+    """
+    version: Int!
+    """
+    Strictly typed metadata.
+    """
+    metadata: [TelemetryEventMetadataInput!]
+    """
+    Private metadata in JSON format. All keys and values must be strings.
+
+    By default, this metadata is assumed to be unsafe for export from an instance.
+    """
+    privateMetadata: JSONValue
+    """
+    Billing-related metadata.
+    """
+    billingMetadata: TelemetryEventBillingMetadataInput
+}
+
+"""
+A single, PII-free metadata item for telemetry V2 events.
+"""
+input TelemetryEventMetadataInput {
+    """
+    Metadata keys must come from a static set of predefined metadata keys in
+    libraries - it is left as a string in the API to allow some flexibility.
+    """
+    key: String!
+    """
+    Numeric value associated with the key.
+    """
+    value: Int!
+}
+
+"""
+User associated with a telemetry V2 event.
+"""
+input TelemetryEventUserInput {
+    """
+    Database user ID of signed in user.
+    """
+    userID: Int
+    """
+    Randomized unique identifier for client (i.e. stored in localstorage in web
+    client).
+    """
+    anonymousUserID: String
+}
+
+"""
+Billing-related metadata for a telemetry event.
+"""
+input TelemetryEventBillingMetadataInput {
+    """
+    Billing product ID associated with the event.
+    """
+    product: Int
+    """
+    Billing category ID the event falls into.
+    """
+    category: Int
+}
+
+"""
+Marketing campaign tracking parameters for a telemetry V2 event.
+"""
+input TelemetryEventMarketingTrackingInput {
+    """
+    URL the event occurred on.
+    """
+    url: String
+    """
+    Initial URL the user landed on.
+    """
+    firstSourceURL: String
+    """
+    Cohort ID to identify the user as part of a specific A/B test.
+    """
+    cohortID: String
+    """
+    Referrer URL that refers the user to Sourcegraph.
+    """
+    referrer: String
+    """
+    Last source URL visited by the user.
+    """
+    lastSourceURL: String
+    """
+    Device session ID to identify the user's session.
+    """
+    deviceSessionID: String
+    """
+    Session referrer URL for the user.
+    """
+    sessionReferrer: String
+    """
+    First URL the user visited in their current session.
+    """
+    sessionFirstURL: String
+}
