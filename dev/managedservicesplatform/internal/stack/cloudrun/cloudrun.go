@@ -125,11 +125,6 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 				pointers.Deref(vars.Service.Name, vars.Service.ID)),
 			Roles: serviceAccountRoles,
 		}),
-		PrivateNetwork: newCloudRunPrivateNetwork(stack, cloudRunPrivateNetworkConfig{
-			ProjectID: *vars.Project.Id(),
-			ServiceID: vars.Service.ID,
-			Region:    gcpRegion,
-		}),
 
 		DiagnosticsSecret: diagnosticsSecret,
 		// Set up some base env vars
@@ -149,6 +144,13 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 				Value: &diagnosticsSecret.HexValue,
 			},
 		},
+	}
+	if vars.Environment.Resources.NeedsCloudRunConnector() {
+		cloudRun.PrivateNetwork = newCloudRunPrivateNetwork(stack, cloudRunPrivateNetworkConfig{
+			ProjectID: *vars.Project.Id(),
+			ServiceID: vars.Service.ID,
+			Region:    gcpRegion,
+		})
 	}
 
 	// redisInstance is only created and non-nil if Redis is configured for the
@@ -257,8 +259,8 @@ type cloudRunServiceBuilder struct {
 	ServiceAccount *serviceaccount.Output
 	// DiagnosticsSecret is the secret for healthcheck endpoints
 	DiagnosticsSecret *random.Output
-	// Set up internal network for the Cloud Run service to talk to other GCP
-	// services
+	// PrivateNetwork is configured if required as an Iinternal network for the
+	// Cloud Run service to talk to other GCP resources.
 	PrivateNetwork *cloudRunPrivateNetworkOutput
 
 	AdditionalEnv          []*cloudrunv2service.CloudRunV2ServiceTemplateContainersEnv
@@ -272,6 +274,15 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 	if err != nil {
 		return nil, err
 	}
+
+	var vpcAccess *cloudrunv2service.CloudRunV2ServiceTemplateVpcAccess
+	if c.PrivateNetwork != nil {
+		vpcAccess = &cloudrunv2service.CloudRunV2ServiceTemplateVpcAccess{
+			Connector: c.PrivateNetwork.connector.SelfLink(),
+			Egress:    pointers.Ptr("PRIVATE_RANGES_ONLY"),
+		}
+	}
+
 	return cloudrunv2service.NewCloudRunV2Service(stack, pointers.Ptr("cloudrun"), &cloudrunv2service.CloudRunV2ServiceConfig{
 		Name:     pointers.Ptr(vars.Service.ID),
 		Location: pointers.Ptr(gcpRegion),
@@ -284,10 +295,7 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 			ServiceAccount: pointers.Ptr(c.ServiceAccount.Email),
 
 			// Connect to VPC connector for talking to other GCP services.
-			VpcAccess: &cloudrunv2service.CloudRunV2ServiceTemplateVpcAccess{
-				Connector: c.PrivateNetwork.connector.SelfLink(),
-				Egress:    pointers.Ptr("PRIVATE_RANGES_ONLY"),
-			},
+			VpcAccess: vpcAccess,
 
 			// Set a high limit that matches our default Cloudflare zone's
 			// timeout:

@@ -123,6 +123,18 @@ type EnvironmentResourcesSpec struct {
 	BigQueryTable *EnvironmentResourceBigQueryTableSpec `json:"bigQueryTable,omitempty"`
 }
 
+// NeedsCloudRunConnector indicates if there are any resources that require a
+// connector network for Cloud Run to talk to provisioned resources.
+func (s *EnvironmentResourcesSpec) NeedsCloudRunConnector() bool {
+	if s == nil {
+		return false
+	}
+	if s.Redis != nil {
+		return true
+	}
+	return false
+}
+
 type EnvironmentResourceRedisSpec struct {
 	// Defaults to STANDARD_HA.
 	Tier *string `json:"tier,omitempty"`
