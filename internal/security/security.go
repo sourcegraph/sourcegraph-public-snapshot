@@ -205,7 +205,7 @@ func init() {
 
 	if envvar.SourcegraphDotComMode() {
 
-		denyList := env.Get("EMAIL_DOMAIN_DENY_LIST", "", "A list of disposable email domains to block")
+		denyList := env.Get("EMAIL_DOMAIN_DENY_LIST", "", "A list of email domains to block")
 
 		if denyList != "" {
 			err := loadBannedEmailDomains(denyList)
