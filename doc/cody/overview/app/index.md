@@ -20,11 +20,60 @@
   width: 100%;
   height: 100%;
 }
+
+.limg {
+  list-style: none;
+  margin: 3rem 0 !important;
+  padding: 0 !important;
+}
+.limg li {
+  margin-bottom: 1rem;
+  padding: 0 !important;
+}
+
+.limg li:last {
+  margin-bottom: 0;
+}
+
+.limg a {
+    display: flex;
+    flex-direction: column;
+    transition-property: all;
+   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+     transition-duration: 350ms;
+     border-radius: 0.75rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+
+}
+
+.limg a:hover {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  background: rgb(113 220 232 / 19%);
+}
+
+.limg p {
+  margin: 0rem;
+}
+.limg a img {
+  width: 1.5rem;
+}
+
+.limg h3 {
+  display:flex;
+  gap: 0.6rem;
+  margin-top: 0;
+  margin-bottom: .25rem
+
+}
 </style>
 
 # Cody App
 
-The Cody app is a free, lightweight, native desktop application that connects your local code to our AI coding assistant, Cody. You can ask Cody questions about all the code you connect to your app in both the app interface and, if you connect the VS code extension, in your editor.
+<p class="subtitle">Learn how to use Cody and its features with the native Cody app.</p>
+
+The Cody app is a free, lightweight, native desktop application that connects your local code to our AI coding assistant, Cody. You can ask Cody questions about your code using the app's interface. However, Cody will be available directly inside your code editor if it's also connected to the VS Code extension.
 
 <div class="socials">
   <a href="https://discord.com/invite/s2qDtYGnAE"><img alt="Discord" src="discord.svg"></img></a>
@@ -34,11 +83,30 @@ The Cody app is a free, lightweight, native desktop application that connects yo
 
 ## Installation
 
-Download the app:
-- [MacOS (Apple Silicon)](https://sourcegraph.com/.api/app/latest?arch=aarch64&target=darwin)
-- [MacOS (Intel)](https://sourcegraph.com/.api/app/latest?arch=x86_64&target=darwin)
-- [Linux](https://sourcegraph.com/.api/app/latest?arch=x86_64&target=linux)
-- Windows coming in October 2023
+You can download and install the Cody desktop app for the following:
+
+<ul class="limg">
+  <li>
+    <a class="card text-left" target="_blank" href="https://sourcegraph.com/.api/app/latest?arch=aarch64&target=darwin">
+    <h3><img alt="macOS (Apple Silicon)" src="https://storage.googleapis.com/sourcegraph-assets/Docs/mac-logo.png"/> macOS (Apple Silicon)</h3>
+    <p>Install Cody app for your Apple Silicon computers.</p>
+    </a>
+  </li>
+  <li>
+    <a class="card text-left" target="_blank" href="https://sourcegraph.com/.api/app/latest?arch=x86_64&target=darwin">
+      <h3><img alt="macOS(Intel)" src="https://storage.googleapis.com/sourcegraph-assets/Docs/mac-logo.png" />macOS (Intel)</h3>
+      <p>Install Cody app for your Apple Intel-based computers.</p>
+    </a>
+  </li>
+  <li>
+     <a class="card text-left" target="_blank" href="https://sourcegraph.com/.api/app/latest?arch=x86_64&target=linux">
+      <h3><img alt="Linux" src="https://storage.googleapis.com/sourcegraph-assets/Docs/linux-icon.png"/>Linux</h3>
+      <p>Install Cody app for your Linux-based computers.</p>
+      </a>
+  </li>
+</ul>
+
+> NOTE: The Cody app is not yet available for Windows. However, you can use the [Cody extension for VS Code](./../install-vscode.md) on Windows.
 
 ## Setup
 
