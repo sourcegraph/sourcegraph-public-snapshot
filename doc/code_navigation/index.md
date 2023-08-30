@@ -26,7 +26,7 @@
 
 # Code navigation
 
-<p class="subtitle">Quickly navigate your code with high precision</p>
+<p class="subtitle">Quickly navigate your code with high precision.</p>
 
 <div>
 
