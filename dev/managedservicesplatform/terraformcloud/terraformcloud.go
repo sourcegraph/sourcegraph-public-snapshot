@@ -137,7 +137,7 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 
 	for _, s := range stacks {
 		workspaceName := WorkspaceName(svc, env, s)
-
+		workspaceDir := fmt.Sprintf("services/%s/terraform/%s/stacks/%s/", svc.ID, env.ID, s)
 		wantWorkspaceOptions := workspaceOptions{
 			Name:    &workspaceName,
 			Project: tfcProject,
@@ -147,9 +147,8 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 				Branch:       pointers.Ptr("main"),
 			},
 
-			// TODO
-			WorkingDirectory: pointers.Ptr("services/pings/terraform/prod/stacks/cloudrun"),
-			TriggerPrefixes:  []string{"services/pings/terraform/prod/stacks/cloudrun"},
+			WorkingDirectory: pointers.Ptr(workspaceDir),
+			TriggerPrefixes:  []string{workspaceDir},
 
 			ExecutionMode:    pointers.Ptr("remote"),
 			TerraformVersion: pointers.Ptr(terraform.Version),
