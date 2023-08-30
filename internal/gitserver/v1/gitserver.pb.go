@@ -698,8 +698,6 @@ type CreateCommitFromPatchBinaryResponse struct {
 
 	// rev is the tag that the staging object can be found at
 	Rev string `protobuf:"bytes,1,opt,name=rev,proto3" json:"rev,omitempty"`
-	// error is populated only on error
-	Error *CreateCommitFromPatchError `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
 	// changelistid is the Perforce changelist id
 	ChangelistId string `protobuf:"bytes,3,opt,name=changelist_id,json=changelistId,proto3" json:"changelist_id,omitempty"`
 }
@@ -741,13 +739,6 @@ func (x *CreateCommitFromPatchBinaryResponse) GetRev() string {
 		return x.Rev
 	}
 	return ""
-}
-
-func (x *CreateCommitFromPatchBinaryResponse) GetError() *CreateCommitFromPatchError {
-	if x != nil {
-		return x.Error
-	}
-	return nil
 }
 
 func (x *CreateCommitFromPatchBinaryResponse) GetChangelistId() string {
