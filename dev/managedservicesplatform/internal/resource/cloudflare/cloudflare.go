@@ -4,7 +4,6 @@ import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare/datacloudflarezones"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare/record"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/loadbalancer"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
@@ -16,11 +15,6 @@ type Output struct {
 }
 
 type Config struct {
-	Project project.Project
-
-	// SharedSecretsProjectID to source Cloudflare configuration
-	SharedSecretsProjectID string
-
 	Spec spec.EnvironmentDomainCloudflareSpec
 
 	// Target load balancer setup for Cloudflare to route requests to

@@ -4,15 +4,18 @@
 package msp
 
 import (
-	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/schema"
@@ -35,10 +38,7 @@ import (
 //     "build.buildFlags": ["-tags=msp"]
 //  }
 
-const (
-	// TODO: Should we provision a separate project for this?
-	mspSecretsGCPProject = "sourcegraph-secrets"
-)
+const ()
 
 func init() {
 	// Override no-op implementation with our real implementation.
@@ -146,11 +146,6 @@ func init() {
 					Usage: "Generate infrastructure stacks with Terraform Cloud backends",
 					Value: true,
 				},
-				&cli.BoolFlag{
-					Name:  "gcp",
-					Usage: "Generate infrastructure stacks on real GCP configuration",
-					Value: true,
-				},
 			},
 			Action: func(c *cli.Context) error {
 				if c.Args().Len() != 2 {
@@ -175,24 +170,12 @@ func init() {
 					return errors.Newf("environment %q not found in service spec", c.Args().Get(1))
 				}
 
-				// Collect shared configuration
-				secretStore, err := secrets.FromContext(c.Context)
-				if err != nil {
-					return err
-				}
-				tfcOptions, err := mspLoadTFCConfig(c.Context, secretStore, c.Bool("tfc"))
-				if err != nil {
-					return errors.Wrap(err, "load TFC config")
-				}
-				gcpOptions, err := mspLoadGCPConfig(c.Context, secretStore, c.Bool("gcp"))
-				if err != nil {
-					return errors.Wrap(err, "load GCP config")
-				}
-
 				renderer := managedservicesplatform.Renderer{
 					OutputDir: filepath.Join(filepath.Dir(serviceSpecPath), c.String("output"), deployEnv.ID),
-					GCP:       *gcpOptions,
-					TFC:       *tfcOptions,
+					GCP:       managedservicesplatform.GCPOptions{},
+					TFC: managedservicesplatform.TerraformCloudOptions{
+						Enabled: c.Bool("tfc"),
+					},
 				}
 
 				// CDKTF needs the output dir to exist ahead of time, even for
@@ -251,29 +234,47 @@ func init() {
 						if err != nil {
 							return err
 						}
-						tfcOptions, err := mspLoadTFCConfig(c.Context, secretStore, true)
+						tfcAccessToken, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
+							Name:    googlesecretsmanager.SecretTFCAccessToken,
+							Project: googlesecretsmanager.ProjectID,
+						})
+						if err != nil {
+							return errors.Wrap(err, "get AccessToken")
+						}
+						tfcOAuthClient, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
+							Project: googlesecretsmanager.ProjectID,
+							Name:    googlesecretsmanager.SecretTFCOAuthClientID,
+						})
 						if err != nil {
 							return err
 						}
-						// gcpOptions is not needed, so we load as if it were disabled
-						gcpOptions, err := mspLoadGCPConfig(c.Context, secretStore, false)
+
+						tfcClient, err := terraformcloud.NewClient(tfcAccessToken, tfcOAuthClient)
 						if err != nil {
-							return errors.Wrap(err, "load GCP config")
+							return errors.Wrap(err, "init Terraform Cloud client")
 						}
 
-						// tfcClient := terraformcloud.New("")
-
 						for _, deployEnv := range service.Environments {
-							cdktf, err := (&managedservicesplatform.Renderer{
-								OutputDir: "",
-								GCP:       *gcpOptions,
-								TFC:       *tfcOptions,
-							}).RenderEnvironment(service.Service, service.Build, deployEnv)
+							if os.TempDir() == "" {
+								return errors.New("no temp dir available")
+							}
+							renderer := &managedservicesplatform.Renderer{
+								// Even though we're not synthesizing we still
+								// need an output dir or CDKTF will not work
+								OutputDir: filepath.Join(os.TempDir(), fmt.Sprintf("msp-tfc-%s-%s-%d",
+									service.Service.ID, deployEnv.ID, time.Now().Unix())),
+								GCP: managedservicesplatform.GCPOptions{},
+								TFC: managedservicesplatform.TerraformCloudOptions{},
+							}
+							defer os.RemoveAll(renderer.OutputDir)
+
+							cdktf, err := renderer.RenderEnvironment(service.Service, service.Build, deployEnv)
 							if err != nil {
 								return err
 							}
-							for stack := range cdktf.Stacks() {
 
+							if err := tfcClient.SyncWorkspaces(c.Context, service.Service, deployEnv, cdktf.Stacks()); err != nil {
+								return errors.Wrapf(err, "env %q: sync Terraform Cloud workspace", deployEnv.ID)
 							}
 						}
 
@@ -310,61 +311,6 @@ func init() {
 			},
 		},
 	}
-}
-
-// mspLoadGCPConfig retrieves secret GCP configuration for Managed Services Platform.
-func mspLoadGCPConfig(ctx context.Context, s *secrets.Store, enabled bool) (*managedservicesplatform.GCPOptions, error) {
-	if !enabled {
-		return &managedservicesplatform.GCPOptions{
-			ParentFolderID:         "EXAMPLE",
-			BillingAccountID:       "EXAMPLE",
-			SharedSecretsProjectID: "EXAMPLE",
-		}, nil
-	}
-
-	parentFolderID, err := s.GetExternal(ctx, secrets.ExternalSecret{
-		Project: mspSecretsGCPProject,
-		Name:    "MSP_PARENT_FOLDER_ID",
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "get ParentFolderID")
-	}
-
-	billingAccountID, err := s.GetExternal(ctx, secrets.ExternalSecret{
-		Project: mspSecretsGCPProject,
-		Name:    "MSP_BILLING_ACCOUNT_ID",
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "get BillingAccountID")
-	}
-
-	return &managedservicesplatform.GCPOptions{
-		ParentFolderID:         parentFolderID,
-		BillingAccountID:       billingAccountID,
-		SharedSecretsProjectID: mspSecretsGCPProject,
-	}, nil
-}
-
-// mspLoadTFCConfig retrieves secret TFC configuration for Managed Services Platform.
-func mspLoadTFCConfig(ctx context.Context, s *secrets.Store, enabled bool) (*managedservicesplatform.TerraformCloudOptions, error) {
-	if !enabled {
-		return &managedservicesplatform.TerraformCloudOptions{
-			Enabled: false,
-		}, nil
-	}
-
-	accessToken, err := s.GetExternal(ctx, secrets.ExternalSecret{
-		Name:    "MSP_TFC_ACCESS_TOKEN",
-		Project: mspSecretsGCPProject,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "get AccessToken")
-	}
-
-	return &managedservicesplatform.TerraformCloudOptions{
-		Enabled:     true,
-		AccessToken: accessToken,
-	}, nil
 }
 
 func getYAMLPathArg(c *cli.Context, n int) (string, error) {

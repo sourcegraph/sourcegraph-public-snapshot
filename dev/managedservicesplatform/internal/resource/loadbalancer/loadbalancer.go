@@ -12,8 +12,8 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesslpolicy"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computetargethttpsproxy"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeurlmap"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -24,10 +24,8 @@ type Output struct {
 }
 
 type Config struct {
-	Project project.Project
-	Region  string
-
-	SharedSecretsProjectID string
+	ProjectID string
+	Region    string
 
 	TargetService cloudrunv2service.CloudRunV2Service
 }
@@ -51,7 +49,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 		id.ResourceID("endpoint_group"),
 		&computeregionnetworkendpointgroup.ComputeRegionNetworkEndpointGroupConfig{
 			Name:    pointers.Ptr(id.DisplayName()),
-			Project: config.Project.ProjectId(),
+			Project: pointers.Ptr(config.ProjectID),
 			Region:  pointers.Ptr(config.Region),
 
 			NetworkEndpointType: pointers.Ptr("SERVERLESS"),
@@ -65,7 +63,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 		id.ResourceID("backend_service"),
 		&computebackendservice.ComputeBackendServiceConfig{
 			Name:    pointers.Ptr(id.DisplayName()),
-			Project: config.Project.ProjectId(),
+			Project: pointers.Ptr(config.ProjectID),
 
 			Protocol: pointers.Ptr("HTTP"),
 			PortName: pointers.Ptr("http"),
@@ -84,7 +82,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 		id.ResourceID("url_map"),
 		&computeurlmap.ComputeUrlMapConfig{
 			Name:           pointers.Ptr(id.DisplayName()),
-			Project:        config.Project.ProjectId(),
+			Project:        pointers.Ptr(config.ProjectID),
 			DefaultService: backendService.Id(),
 		})
 
@@ -96,15 +94,15 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 		id.ResourceID("origin-cert"),
 		&computesslcertificate.ComputeSslCertificateConfig{
 			Name:    pointers.Ptr(id.DisplayName()),
-			Project: config.Project.ProjectId(),
+			Project: pointers.Ptr(config.ProjectID),
 
 			PrivateKey: &gsmsecret.Get(scope, id.SubID("secret-origin-private-key"), gsmsecret.DataConfig{
-				Secret:    "SOURCEGRAPH_WILDCARD_KEY",
-				ProjectID: config.SharedSecretsProjectID,
+				Secret:    googlesecretsmanager.SecretSourcegraphWildcardKey,
+				ProjectID: googlesecretsmanager.ProjectID,
 			}).Value,
 			Certificate: &gsmsecret.Get(scope, id.SubID("secret-origin-cert"), gsmsecret.DataConfig{
-				Secret:    "SOURCEGRAPH_WILDCARD_CERT",
-				ProjectID: config.SharedSecretsProjectID,
+				Secret:    googlesecretsmanager.SecretSourcegraphWildcardCert,
+				ProjectID: googlesecretsmanager.ProjectID,
 			}).Value,
 
 			Count: pointers.Float64(1),
@@ -120,7 +118,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 		id.ResourceID("https-proxy"),
 		&computetargethttpsproxy.ComputeTargetHttpsProxyConfig{
 			Name:    pointers.Ptr(id.DisplayName()),
-			Project: config.Project.ProjectId(),
+			Project: pointers.Ptr(config.ProjectID),
 			// target the URL map
 			UrlMap: urlMap.Id(),
 			// via our SSL configuration
@@ -132,7 +130,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 				id.ResourceID("ssl-policy"),
 				&computesslpolicy.ComputeSslPolicyConfig{
 					Name:    pointers.Ptr(id.DisplayName()),
-					Project: config.Project.ProjectId(),
+					Project: pointers.Ptr(config.ProjectID),
 
 					Profile:       pointers.Ptr("MODERN"),
 					MinTlsVersion: pointers.Ptr("TLS_1_2"),
@@ -146,7 +144,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 		id.ResourceID("external-address"),
 		&computeglobaladdress.ComputeGlobalAddressConfig{
 			Name:        pointers.Ptr(id.DisplayName()),
-			Project:     config.Project.ProjectId(),
+			Project:     pointers.Ptr(config.ProjectID),
 			AddressType: pointers.Ptr("EXTERNAL"),
 			IpVersion:   pointers.Ptr("IPV4"),
 		},
@@ -158,7 +156,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 		id.ResourceID("forwarding-rule"),
 		&computeforwardingrule.ComputeForwardingRuleConfig{
 			Name:    pointers.Ptr(id.DisplayName()),
-			Project: config.Project.ProjectId(),
+			Project: pointers.Ptr(config.ProjectID),
 
 			IpAddress: externalAddress.Address(),
 			PortRange: pointers.Ptr("443"),

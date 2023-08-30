@@ -3,7 +3,6 @@ package gsmsecret
 import (
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/datagooglesecretmanagersecretversion"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/secretmanagersecret"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/secretmanagersecretversion"
 
@@ -17,7 +16,7 @@ type Output struct {
 }
 
 type Config struct {
-	Project project.Project
+	ProjectID string
 
 	ID    string
 	Value string
@@ -27,7 +26,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 	secret := secretmanagersecret.NewSecretManagerSecret(scope,
 		id.ResourceID("secret"),
 		&secretmanagersecret.SecretManagerSecretConfig{
-			Project:  config.Project.ProjectId(),
+			Project:  &config.ProjectID,
 			SecretId: &config.ID,
 			Replication: &secretmanagersecret.SecretManagerSecretReplication{
 				Automatic: pointers.Ptr(true),

@@ -2,7 +2,6 @@ package bigquery
 
 import (
 	"github.com/aws/constructs-go/constructs/v10"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
@@ -18,7 +17,7 @@ type Output struct {
 }
 
 type Config struct {
-	DefaultProject project.Project
+	DefaultProjectID string
 
 	Spec spec.EnvironmentResourceBigQueryTableSpec
 }

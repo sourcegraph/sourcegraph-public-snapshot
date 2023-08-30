@@ -28,8 +28,6 @@ type TerraformCloudOptions struct {
 	//
 	// If false, a local backend will be used.
 	Enabled bool
-
-	AccessToken string
 }
 
 type GCPOptions struct {
@@ -40,11 +38,6 @@ type GCPOptions struct {
 	//
 	// This is useful when importing projects.
 	ProjectID *string
-
-	ParentFolderID   string
-	BillingAccountID string
-
-	SharedSecretsProjectID string
 }
 
 // Renderer takes MSP service specifications
@@ -87,10 +80,8 @@ func (r *Renderer) RenderEnvironment(
 
 	// Render all required CDKTF stacks for this environment
 	projectOutput, err := project.NewStack(stacks, project.Variables{
-		ProjectID:        projectID,
-		Name:             pointers.Deref(svc.Name, svc.ID),
-		ParentFolderID:   r.GCP.ParentFolderID,
-		BillingAccountID: r.GCP.BillingAccountID,
+		ProjectID: projectID,
+		Name:      pointers.Deref(svc.Name, svc.ID),
 		Labels: map[string]string{
 			"service":     svc.ID,
 			"environment": env.ID,
@@ -101,11 +92,11 @@ func (r *Renderer) RenderEnvironment(
 		return nil, errors.Wrap(err, "failed to create project stack")
 	}
 	if _, err = cloudrun.NewStack(stacks, cloudrun.Variables{
-		Project:                projectOutput.Project,
-		Service:                svc,
-		Image:                  build.Image,
-		Environment:            env,
-		SharedSecretsProjectID: r.GCP.SharedSecretsProjectID,
+		// TODO: Variable, or fixed?
+		ProjectID:   *projectOutput.Project.ProjectId(),
+		Service:     svc,
+		Image:       build.Image,
+		Environment: env,
 	}); err != nil {
 		return nil, errors.Wrap(err, "failed to create cloudrun stack")
 	}

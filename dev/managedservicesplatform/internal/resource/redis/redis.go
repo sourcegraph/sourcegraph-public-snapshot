@@ -6,7 +6,6 @@ import (
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computenetwork"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/redisinstance"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
@@ -21,7 +20,7 @@ type Output struct {
 }
 
 type Config struct {
-	Project project.Project
+	ProjectID string
 
 	Region  string
 	Network computenetwork.ComputeNetwork
@@ -34,7 +33,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	redis := redisinstance.NewRedisInstance(scope,
 		id.ResourceID("instance"),
 		&redisinstance.RedisInstanceConfig{
-			Project: config.Project.ProjectId(),
+			Project: pointers.Ptr(config.ProjectID),
 			Region:  &config.Region,
 			Name:    pointers.Ptr(id.DisplayName()),
 
@@ -52,9 +51,9 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 
 	// Share CA certificate for connecting to Redis over TLS as a GSM secret
 	redisCACert := gsmsecret.New(scope, id.SubID("ca-cert"), gsmsecret.Config{
-		Project: config.Project,
-		ID:      strings.ToUpper(id.DisplayName()) + "_CA_CERT",
-		Value:   *redis.ServerCaCerts().Get(pointers.Float64(0)).Cert(),
+		ProjectID: config.ProjectID,
+		ID:        strings.ToUpper(id.DisplayName()) + "_CA_CERT",
+		Value:     *redis.ServerCaCerts().Get(pointers.Float64(0)).Cert(),
 	})
 
 	return &Output{

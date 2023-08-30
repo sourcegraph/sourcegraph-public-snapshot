@@ -2,7 +2,6 @@ package serviceaccount
 
 import (
 	"github.com/aws/constructs-go/constructs/v10"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiammember"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/serviceaccount"
 
@@ -18,7 +17,7 @@ type Role struct {
 }
 
 type Config struct {
-	Project project.Project
+	ProjectID string
 
 	AccountID   string
 	DisplayName string
@@ -34,7 +33,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 	serviceAccount := serviceaccount.NewServiceAccount(scope,
 		id.ResourceID("account"),
 		&serviceaccount.ServiceAccountConfig{
-			Project: config.Project.ProjectId(),
+			Project: pointers.Ptr(config.ProjectID),
 
 			AccountId:   pointers.Ptr(config.AccountID),
 			DisplayName: pointers.Ptr(config.DisplayName),
@@ -43,7 +42,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 		_ = projectiammember.NewProjectIamMember(scope,
 			id.ResourceID("member_%s", role.ID),
 			&projectiammember.ProjectIamMemberConfig{
-				Project: config.Project.ProjectId(),
+				Project: pointers.Ptr(config.ProjectID),
 
 				Role:   pointers.Ptr(role.Role),
 				Member: serviceAccount.Member(),

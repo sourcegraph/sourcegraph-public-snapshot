@@ -6,8 +6,8 @@ import (
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2service"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/bigquery"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudflare"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
@@ -28,14 +28,11 @@ import (
 type Output struct{}
 
 type Variables struct {
-	Project project.Project
+	ProjectID string
 
 	Service     spec.ServiceSpec
 	Image       string
 	Environment spec.EnvironmentSpec
-
-	// SharedSecretsProjectID is the project that holds shared secrets
-	SharedSecretsProjectID string
 }
 
 const StackName = "cloudrun"
@@ -100,10 +97,10 @@ func makeServiceEnvVarPrefix(serviceID string) string {
 // including networking and dependencies like Redis.
 func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	stack := stacks.New(StackName,
-		googleprovider.With(vars.Project),
+		googleprovider.With(vars.ProjectID),
 		cloudflareprovider.With(gsmsecret.DataConfig{
-			Secret:    "CLOUDFLARE_API_TOKEN",
-			ProjectID: vars.SharedSecretsProjectID,
+			Secret:    googlesecretsmanager.SecretCloudflareAPIToken,
+			ProjectID: googlesecretsmanager.ProjectID,
 		}),
 		randomprovider.With())
 
@@ -119,7 +116,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	// Set up configuration for the core Cloud Run service
 	cloudRun := &cloudRunServiceBuilder{
 		ServiceAccount: serviceaccount.New(stack, resourceid.New("cloudrun"), serviceaccount.Config{
-			Project:   vars.Project,
+			ProjectID: vars.ProjectID,
 			AccountID: vars.Service.ID,
 			DisplayName: fmt.Sprintf("%s Service Account",
 				pointers.Deref(vars.Service.Name, vars.Service.ID)),
@@ -135,7 +132,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 				// We don't use serviceEnvVarPrefix here because this is a
 				// convention to indicate the environment's project.
 				Name:  pointers.Ptr("GOOGLE_CLOUD_PROJECT"),
-				Value: vars.Project.ProjectId(),
+				Value: &vars.ProjectID,
 			},
 			{
 				// Set up secret that service should accept for diagnostics
@@ -147,7 +144,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	}
 	if vars.Environment.Resources.NeedsCloudRunConnector() {
 		cloudRun.PrivateNetwork = newCloudRunPrivateNetwork(stack, cloudRunPrivateNetworkConfig{
-			ProjectID: *vars.Project.Id(),
+			ProjectID: vars.ProjectID,
 			ServiceID: vars.Service.ID,
 			Region:    gcpRegion,
 		})
@@ -159,10 +156,10 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 		redisInstance, err := redis.New(stack,
 			resourceid.New("redis"),
 			redis.Config{
-				Project: vars.Project,
-				Network: cloudRun.PrivateNetwork.network,
-				Region:  gcpRegion,
-				Spec:    *vars.Environment.Resources.Redis,
+				ProjectID: vars.ProjectID,
+				Network:   cloudRun.PrivateNetwork.network,
+				Region:    gcpRegion,
+				Spec:      *vars.Environment.Resources.Redis,
 			})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render Redis instance")
@@ -201,8 +198,8 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	// the environment.
 	if vars.Environment.Resources != nil && vars.Environment.Resources.BigQueryTable != nil {
 		bigqueryDataset, err := bigquery.New(stack, resourceid.New("bigquery"), bigquery.Config{
-			DefaultProject: vars.Project,
-			Spec:           *vars.Environment.Resources.BigQueryTable,
+			DefaultProjectID: vars.ProjectID,
+			Spec:             *vars.Environment.Resources.BigQueryTable,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render BigQuery dataset")
@@ -229,20 +226,17 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 
 	// Now we add a load balancer
 	lb := loadbalancer.New(stack, resourceid.New("lb-backend"), loadbalancer.Config{
-		Project:                vars.Project,
-		Region:                 gcpRegion,
-		TargetService:          service,
-		SharedSecretsProjectID: vars.SharedSecretsProjectID,
+		ProjectID:     vars.ProjectID,
+		Region:        gcpRegion,
+		TargetService: service,
 	})
 
 	// Then whatever the user requested to expose the service publicly
 	switch vars.Environment.Domain.Type {
 	case "cloudflare":
 		if _, err := cloudflare.New(stack, resourceid.New("cf"), cloudflare.Config{
-			Project:                vars.Project,
-			SharedSecretsProjectID: vars.SharedSecretsProjectID,
-			Spec:                   *vars.Environment.Domain.Cloudflare,
-			Target:                 *lb,
+			Spec:   *vars.Environment.Domain.Cloudflare,
+			Target: *lb,
 		}); err != nil {
 			return nil, err
 		}
