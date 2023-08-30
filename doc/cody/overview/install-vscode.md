@@ -50,7 +50,15 @@ Alternatively, you can also [download and install the extension from the VS Code
 
 ## Connect the extension to Sourcegraph
 
-Next, open the VS Code extension and configure it to connect to a Sourcegraph instance (either an enterprise instance or Sourcegraph.com).
+After a successful installation, Cody's icon appears in the side bar. When you click it, you're asked to either "Download the Cody App" or use "Other Sign In Options…" to connect to a Sourcegraph instance.
+
+You can connect either an enterprise instance or Sourcegraph.com via the following ways:
+
+- Sign in to Sourcegraph Enterprise instance
+- Sign in to Sourcegraph Enterprise instance via Access Token
+- Sign in to Sourcegraph.com
+- Sign in with URL and Access Token
+- Sourcegraph.com
 
 ### For Sourcegraph enterprise users
 
