@@ -20,10 +20,7 @@ import com.sourcegraph.cody.CodyToolWindowFactory;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager;
-import com.sourcegraph.cody.autocomplete.InlayModelUtils;
-import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteBlockElementRenderer;
-import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer;
-import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteSingleLineRenderer;
+import com.sourcegraph.cody.autocomplete.render.AutocompleteRenderUtils;
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus;
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService;
 import com.sourcegraph.find.browser.JavaToJSBridge;
@@ -143,49 +140,11 @@ public class SettingsChangeListener implements Disposable {
 
             // Rerender autocompletions when custom autocomplete color changed
             // or when checkbox state changed
-            if (!context.oldCustomAutocompleteColor.equals(context.customAutocompleteColor)
+            if (!Objects.equals(context.oldCustomAutocompleteColor, context.customAutocompleteColor)
                 || (context.oldIsCustomAutocompleteColorEnabled
                     != context.isCustomAutocompleteColorEnabled)) {
-              Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
-              CodyAutocompleteManager.getInstance();
-              Arrays.stream(openProjects)
-                  .flatMap(
-                      project ->
-                          Arrays.stream(FileEditorManager.getInstance(project).getAllEditors()))
-                  .filter(fileEditor -> fileEditor instanceof TextEditor)
-                  .map(fileEditor -> ((TextEditor) fileEditor).getEditor())
-                  .forEach(
-                      e ->
-                          InlayModelUtils.getAllInlaysForEditor(e).stream()
-                              .filter(
-                                  inlay ->
-                                      inlay.getRenderer()
-                                          instanceof CodyAutocompleteElementRenderer)
-                              .forEach(
-                                  inlayAutocomplete -> {
-                                    CodyAutocompleteElementRenderer renderer =
-                                        (CodyAutocompleteElementRenderer)
-                                            inlayAutocomplete.getRenderer();
-                                    if (renderer instanceof CodyAutocompleteSingleLineRenderer) {
-                                      e.getInlayModel()
-                                          .addInlineElement(
-                                              inlayAutocomplete.getOffset(),
-                                              new CodyAutocompleteSingleLineRenderer(
-                                                  renderer.getText(),
-                                                  renderer.completionItem,
-                                                  e,
-                                                  renderer.getType()));
-                                      inlayAutocomplete.dispose();
-                                    } else if (renderer
-                                        instanceof CodyAutocompleteBlockElementRenderer) {
-                                      e.getInlayModel()
-                                          .addInlineElement(
-                                              inlayAutocomplete.getOffset(),
-                                              new CodyAutocompleteBlockElementRenderer(
-                                                  renderer.getText(), renderer.completionItem, e));
-                                      inlayAutocomplete.dispose();
-                                    }
-                                  }));
+              ConfigUtil.getAllEditors()
+                  .forEach(AutocompleteRenderUtils::rerenderAllAutocompleteInlays);
             }
           }
         });
