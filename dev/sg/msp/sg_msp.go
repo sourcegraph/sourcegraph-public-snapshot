@@ -211,11 +211,11 @@ func init() {
 		{
 			Name:        "tfc",
 			Description: "Manage Terraform Cloud workspaces for a service",
-			ArgsUsage:   "<service spec file>",
 			Subcommands: []*cli.Command{
 				{
 					Name:        "sync",
 					Description: "Create or update all required Terraform Cloud workspaces for a service",
+					ArgsUsage:   "<service spec file>",
 					Action: func(c *cli.Context) error {
 						serviceSpecPath, err := getYAMLPathArg(c, 0)
 						if err != nil {

@@ -6,6 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/loadbalancer",
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
     deps = [
+        "//dev/managedservicesplatform/googlesecretsmanager",
         "//dev/managedservicesplatform/internal/resource/gsmsecret",
         "//dev/managedservicesplatform/internal/resourceid",
         "//lib/pointers",
@@ -20,6 +21,5 @@ go_library(
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computesslpolicy",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computetargethttpsproxy",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computeurlmap",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//project",
     ],
 )

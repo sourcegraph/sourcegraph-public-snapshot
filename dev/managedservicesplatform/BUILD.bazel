@@ -16,6 +16,7 @@ go_library(
         "//dev/managedservicesplatform/internal/stack/project",
         "//dev/managedservicesplatform/internal/terraform",
         "//dev/managedservicesplatform/spec",
+        "//dev/managedservicesplatform/terraformcloud",
         "//lib/errors",
         "//lib/pointers",
         "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",

@@ -8,7 +8,6 @@ go_library(
     deps = [
         "//dev/managedservicesplatform/internal/stack",
         "//lib/pointers",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//project",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//provider",
     ],
 )

@@ -10,6 +10,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/cloudrun",
     visibility = ["//dev/managedservicesplatform:__subpackages__"],
     deps = [
+        "//dev/managedservicesplatform/googlesecretsmanager",
         "//dev/managedservicesplatform/internal/resource/bigquery",
         "//dev/managedservicesplatform/internal/resource/cloudflare",
         "//dev/managedservicesplatform/internal/resource/gsmsecret",
@@ -30,7 +31,6 @@ go_library(
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//cloudrunv2service",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computenetwork",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computesubnetwork",
-        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//project",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//vpcaccessconnector",
         "@org_golang_x_exp//maps",
         "@org_golang_x_exp//slices",
