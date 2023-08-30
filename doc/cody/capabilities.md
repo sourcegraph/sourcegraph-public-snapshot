@@ -25,7 +25,7 @@ Autocomplete supports any programming language because it uses LLMs trained on b
 
 ![Example of Cody autocomplete. You see a code snippet starting with async function getWeather(city: string) { and Cody response with a multi-line suggestion using a public weather API to return the current weather ](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-completions-may2023-optim.gif)
 
-### Configure autocomplete on Sourcegraph Enterprise
+### Configure autocomplete on an enterprise Sourcegraph instance
 
 By default, a fully configured Sourcegraph instance picks a default LLM to generate code autocomplete. Custom models can be used for Cody autocomplete via the `completionModel` option inside the `completions` site config.
 
