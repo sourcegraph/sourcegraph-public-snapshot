@@ -3,6 +3,17 @@
 set -eu
 source ./testing/tools/integration_runner.sh || exit 1
 
+if [ "$(uname)" = "Darwin" ] && [ "$__LOCAL__" != "true" ]; then
+  echo -e "⚠️  It seems you're running this test target on a MacOs machine.\n👉 This target only works in CI, and you should instead use //testing:codeintel_integration_test_local."
+  exit 1
+fi
+
+if [ "$__LOCAL__" = "true" ] && [ "${GOOGLE_APPLICATION_CREDENTIALS:-}" = "" ]; then
+  echo -e "⚠️  This targets requires \$GOOGLE_APPLICATION_CREDENTIALS to be set to where your gcloud creds are stored. Usually, this is \$HOME/.config/gcloud/application_default_credentials.json."
+  echo -e "👉 Set this var with\n\texport GOOGLE_APPLICATION_CREDENTIALS=\$HOME/.config/gcloud/application_default_credentials.json\nand run this target again."
+  exit 1
+fi
+
 tarball="$1"
 image_name="$2"
 

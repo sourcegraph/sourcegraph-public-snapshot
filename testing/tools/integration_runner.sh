@@ -112,6 +112,7 @@ function _run_server_image() {
     -d \
     --name "$container_name" \
     --publish "$server_port":7080 \
+    --platform linux/amd64 \
     -e BAZEL_SKIP_OOB_INFER_VERSION=true \
     -e ALLOW_SINGLE_DOCKER_CODE_INSIGHTS="$ALLOW_SINGLE_DOCKER_CODE_INSIGHTS" \
     -e SOURCEGRAPH_LICENSE_GENERATION_KEY="$SOURCEGRAPH_LICENSE_GENERATION_KEY" \
@@ -163,11 +164,7 @@ function run_server_image() {
   local server_port
   server_port="$4"
 
-  must_be_CI
   must_not_be_running "$url"
-  # This causes flakes on the container tests, because it catches other docker jobs
-  # TODO move this to a agent
-  # ensure_clean_slate
 
   local container_name
   container_name=$(generate_unique_container_name "server-integration")
