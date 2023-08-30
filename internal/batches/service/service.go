@@ -1699,7 +1699,10 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 	}
 
 	for _, changeset := range changesets {
+		// The asumption here is that all changesets should be exportable. That's why we always increment
+		// this for all changesets. The other operations depend on the changeset state.
 		bulkOperationsCounter[btypes.ChangesetJobTypeExport]++
+
 		isChangesetArchived := changeset.ArchivedIn(opts.BatchChange)
 		isChangesetDraft := changeset.ExternalState == btypes.ChangesetExternalStateDraft
 		isChangesetOpen := changeset.ExternalState == btypes.ChangesetExternalStateOpen
@@ -1722,32 +1725,32 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 
 		// DETACH
 		if isChangesetArchived {
-			bulkOperationsCounter[btypes.ChangesetJobTypeDetach]++
+			bulkOperationsCounter[btypes.ChangesetJobTypeDetach] += 1
 		}
 
 		// REENQUEUE
 		if !isChangesetArchived && isChangesetJobFailed {
-			bulkOperationsCounter[btypes.ChangesetJobTypeReenqueue]++
+			bulkOperationsCounter[btypes.ChangesetJobTypeReenqueue] += 1
 		}
 
 		// PUBLISH
 		if !isChangesetArchived && !changeset.IsImported() {
-			bulkOperationsCounter[btypes.ChangesetJobTypePublish]++
+			bulkOperationsCounter[btypes.ChangesetJobTypePublish] += 1
 		}
 
 		// CLOSE
 		if !isChangesetArchived && isChangesetClosable {
-			bulkOperationsCounter[btypes.ChangesetJobTypeClose]++
+			bulkOperationsCounter[btypes.ChangesetJobTypeClose] += 1
 		}
 
 		// MERGE
 		if !isChangesetArchived && !isChangesetJobFailed && isChangesetOpen {
-			bulkOperationsCounter[btypes.ChangesetJobTypeMerge]++
+			bulkOperationsCounter[btypes.ChangesetJobTypeMerge] += 1
 		}
 
 		// COMMENT
 		if isChangesetCommentable {
-			bulkOperationsCounter[btypes.ChangesetJobTypeComment]++
+			bulkOperationsCounter[btypes.ChangesetJobTypeComment] += 1
 		}
 	}
 
