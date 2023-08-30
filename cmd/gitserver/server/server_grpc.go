@@ -53,17 +53,45 @@ func (gs *GRPCServer) BatchLog(ctx context.Context, req *proto.BatchLogRequest) 
 	return resp.ToProto(), nil
 }
 
-func (gs *GRPCServer) CreateCommitFromPatchBinary(ctx context.Context, req *proto.CreateCommitFromPatchBinaryRequest) (*proto.CreateCommitFromPatchBinaryResponse, error) {
+func (gs *GRPCServer) CreateCommitFromPatchBinary(s proto.GitserverService_CreateCommitFromPatchBinaryServer) error {
 	var r protocol.CreateCommitFromPatchRequest
-	r.FromProto(req)
-	_, resp := gs.Server.createCommitFromPatch(ctx, r)
+	receivedMetadata := false
 
-	if resp.Error != nil {
-		return resp.ToProto(), resp.Error
+	for {
+		msg, err := s.Recv()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		switch msg.Payload.(type) {
+		case *proto.CreateCommitFromPatchBinaryRequest_Metadata_:
+			if receivedMetadata {
+				return status.Errorf(codes.InvalidArgument, "received metadata more than once")
+			}
+			r.WithMetadataFromProto(msg.GetMetadata())
+			receivedMetadata = true
+
+		case *proto.CreateCommitFromPatchBinaryRequest_Patch_:
+			m := msg.GetPatch()
+			r.Patch = append(r.Patch, m.GetData()...)
+
+		case nil:
+			continue
+
+		default:
+			return status.Errorf(codes.InvalidArgument, "got malformed message %T", msg.Payload)
+		}
 	}
 
-	return resp.ToProto(), nil
+	_, resp := gs.Server.createCommitFromPatch(s.Context(), r)
+	if resp.Error != nil {
+		return resp.Error
+	}
 
+	return s.SendAndClose(resp.ToProto())
 }
 
 func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_ExecServer) error {

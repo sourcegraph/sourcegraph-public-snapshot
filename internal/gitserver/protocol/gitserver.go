@@ -661,7 +661,7 @@ func (c *CreateCommitFromPatchRequest) ToProto() *proto.CreateCommitFromPatchBin
 	return cc
 }
 
-func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchBinaryRequest) {
+func (c *CreateCommitFromPatchRequest) WithMetadataFromProto(p *proto.CreateCommitFromPatchBinaryRequest_Metadata) {
 	gp := p.GetPush()
 	var pushConfig *PushConfig
 	if gp != nil {
@@ -672,7 +672,6 @@ func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchB
 	*c = CreateCommitFromPatchRequest{
 		Repo:         api.RepoName(p.GetRepo()),
 		BaseCommit:   api.CommitID(p.GetBaseCommit()),
-		Patch:        p.GetPatch(),
 		TargetRef:    p.GetTargetRef(),
 		UniqueRef:    p.GetUniqueRef(),
 		CommitInfo:   PatchCommitInfoFromProto(p.GetCommitInfo()),

@@ -1552,19 +1552,48 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 		if err != nil {
 			return nil, err
 		}
-		resp, err := client.CreateCommitFromPatchBinary(ctx, req.ToProto())
+		cc, err := client.CreateCommitFromPatchBinary(ctx)
 		if err != nil {
+			return nil, err
+		}
+
+		if err := cc.Send(&proto.CreateCommitFromPatchBinaryRequest{Payload: &proto.CreateCommitFromPatchBinaryRequest_Metadata_{
+			Metadata: req.ToProto().GetMetadata(),
+		}}); err != nil {
+			return nil, errors.Wrap(err, "sending metadata")
+		}
+
+		w := streamio.NewWriter(func(p []byte) error {
+			req := &proto.CreateCommitFromPatchBinaryRequest{
+				Payload: &proto.CreateCommitFromPatchBinaryRequest_Patch_{
+					Patch: &proto.CreateCommitFromPatchBinaryRequest_Patch{
+						Data: p,
+					},
+				},
+			}
+			return cc.Send(req)
+		})
+
+		if _, err := w.Write(req.Patch); err != nil {
+			return nil, errors.Wrap(err, "writing chunk of patch")
+		}
+
+		resp, err := cc.CloseAndRecv()
+		if err != nil {
+			// TODO: Unwrap custom error type.
 			return nil, err
 		}
 
 		var res protocol.CreateCommitFromPatchResponse
 		res.FromProto(resp)
 
-		if resp.GetError() != nil {
-			return &res, errors.New(resp.GetError().String())
-		}
-
 		return &res, nil
+
+		// if resp.GetError() != nil {
+		// 	return &res, errors.New(resp.GetError().String())
+		// }
+
+		// return &res, nil
 	} else {
 		resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
 		if err != nil {
