@@ -54,7 +54,10 @@ func (gs *GRPCServer) BatchLog(ctx context.Context, req *proto.BatchLogRequest) 
 }
 
 func (gs *GRPCServer) CreateCommitFromPatchBinary(s proto.GitserverService_CreateCommitFromPatchBinaryServer) error {
-	var r protocol.CreateCommitFromPatchRequest
+	var (
+		metadata *proto.CreateCommitFromPatchBinaryRequest_Metadata
+		patch    []byte
+	)
 	receivedMetadata := false
 
 	for {
@@ -71,12 +74,12 @@ func (gs *GRPCServer) CreateCommitFromPatchBinary(s proto.GitserverService_Creat
 			if receivedMetadata {
 				return status.Errorf(codes.InvalidArgument, "received metadata more than once")
 			}
-			r.WithMetadataFromProto(msg.GetMetadata())
+			metadata = msg.GetMetadata()
 			receivedMetadata = true
 
 		case *proto.CreateCommitFromPatchBinaryRequest_Patch_:
 			m := msg.GetPatch()
-			r.Patch = append(r.Patch, m.GetData()...)
+			patch = append(patch, m.GetData()...)
 
 		case nil:
 			continue
@@ -86,6 +89,8 @@ func (gs *GRPCServer) CreateCommitFromPatchBinary(s proto.GitserverService_Creat
 		}
 	}
 
+	var r protocol.CreateCommitFromPatchRequest
+	r.FromProto(metadata, patch)
 	_, resp := gs.Server.createCommitFromPatch(s.Context(), r)
 	res, err := resp.ToProto()
 	if err != nil {
@@ -304,12 +309,26 @@ func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService
 
 func (gs *GRPCServer) doP4Exec(ctx context.Context, logger log.Logger, req *protocol.P4ExecRequest, userAgent string, w io.Writer) error {
 	execStatus := gs.Server.p4Exec(ctx, logger, req, userAgent, w)
-	if execStatus.Err != nil {
+
+	if execStatus.ExitStatus != 0 || execStatus.Err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return status.FromContextError(ctxErr).Err()
 		}
 
-		return execStatus.Err
+		gRPCStatus := codes.Unknown
+		if strings.Contains(execStatus.Err.Error(), "signal: killed") {
+			gRPCStatus = codes.Aborted
+		}
+
+		s, err := status.New(gRPCStatus, execStatus.Err.Error()).WithDetails(&proto.ExecStatusPayload{
+			StatusCode: int32(execStatus.ExitStatus),
+			Stderr:     execStatus.Stderr,
+		})
+		if err != nil {
+			gs.Server.Logger.Error("failed to marshal status", log.Error(err))
+			return err
+		}
+		return s.Err()
 	}
 
 	return nil

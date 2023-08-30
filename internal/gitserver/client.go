@@ -1552,28 +1552,21 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 		if err != nil {
 			return nil, err
 		}
+
 		cc, err := client.CreateCommitFromPatchBinary(ctx)
 		if err != nil {
-			st, ok := status.FromError(err)
-			if ok {
-				for _, detail := range st.Details() {
-					switch dt := detail.(type) {
-					case *proto.CreateCommitFromPatchError:
-						var e protocol.CreateCommitFromPatchError
-						e.FromProto(dt)
-						return nil, &e
-					}
-				}
-			}
 			return nil, err
 		}
 
+		// Send the metadata event first.
 		if err := cc.Send(&proto.CreateCommitFromPatchBinaryRequest{Payload: &proto.CreateCommitFromPatchBinaryRequest_Metadata_{
-			Metadata: req.ToProto().GetMetadata(),
+			Metadata: req.ToMetadataProto(),
 		}}); err != nil {
 			return nil, errors.Wrap(err, "sending metadata")
 		}
 
+		// Then create a writer that sends data in chunks that won't exceed the maximum
+		// message size of gRPC of the patch in separate events.
 		w := streamio.NewWriter(func(p []byte) error {
 			req := &proto.CreateCommitFromPatchBinaryRequest{
 				Payload: &proto.CreateCommitFromPatchBinaryRequest_Patch_{
@@ -1591,7 +1584,20 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 
 		resp, err := cc.CloseAndRecv()
 		if err != nil {
-			// TODO: Unwrap custom error type.
+			st, ok := status.FromError(err)
+			if !ok {
+				return nil, err
+			}
+
+			for _, detail := range st.Details() {
+				switch dt := detail.(type) {
+				case *proto.CreateCommitFromPatchError:
+					var e protocol.CreateCommitFromPatchError
+					e.FromProto(dt)
+					return nil, &e
+				}
+			}
+
 			return nil, err
 		}
 
@@ -1599,38 +1605,32 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 		res.FromProto(resp, nil)
 
 		return &res, nil
-
-		// if resp.GetError() != nil {
-		// 	return &res, errors.New(resp.GetError().String())
-		// }
-
-		// return &res, nil
-	} else {
-		resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read response body")
-		}
-		var res protocol.CreateCommitFromPatchResponse
-		if err := json.Unmarshal(body, &res); err != nil {
-			c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
-			return nil, &url.Error{
-				URL: resp.Request.URL.String(),
-				Op:  "CreateCommitFromPatch",
-				Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.StatusCode, string(body)),
-			}
-		}
-
-		if res.Error != nil {
-			return &res, res.Error
-		}
-		return &res, nil
 	}
+
+	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+	var res protocol.CreateCommitFromPatchResponse
+	if err := json.Unmarshal(body, &res); err != nil {
+		c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "CreateCommitFromPatch",
+			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.StatusCode, string(body)),
+		}
+	}
+
+	if res.Error != nil {
+		return &res, res.Error
+	}
+	return &res, nil
 }
 
 func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {

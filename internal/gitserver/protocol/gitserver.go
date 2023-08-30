@@ -642,11 +642,10 @@ type CreateCommitFromPatchRequest struct {
 	PushRef *string
 }
 
-func (c *CreateCommitFromPatchRequest) ToProto() *proto.CreateCommitFromPatchBinaryRequest {
-	cc := &proto.CreateCommitFromPatchBinaryRequest{
+func (c *CreateCommitFromPatchRequest) ToMetadataProto() *proto.CreateCommitFromPatchBinaryRequest_Metadata {
+	cc := &proto.CreateCommitFromPatchBinaryRequest_Metadata{
 		Repo:         string(c.Repo),
 		BaseCommit:   string(c.BaseCommit),
-		Patch:        c.Patch,
 		TargetRef:    c.TargetRef,
 		UniqueRef:    c.UniqueRef,
 		CommitInfo:   c.CommitInfo.ToProto(),
@@ -661,7 +660,7 @@ func (c *CreateCommitFromPatchRequest) ToProto() *proto.CreateCommitFromPatchBin
 	return cc
 }
 
-func (c *CreateCommitFromPatchRequest) WithMetadataFromProto(p *proto.CreateCommitFromPatchBinaryRequest_Metadata) {
+func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchBinaryRequest_Metadata, patch []byte) {
 	gp := p.GetPush()
 	var pushConfig *PushConfig
 	if gp != nil {
@@ -674,6 +673,7 @@ func (c *CreateCommitFromPatchRequest) WithMetadataFromProto(p *proto.CreateComm
 		BaseCommit:   api.CommitID(p.GetBaseCommit()),
 		TargetRef:    p.GetTargetRef(),
 		UniqueRef:    p.GetUniqueRef(),
+		Patch:        patch,
 		CommitInfo:   PatchCommitInfoFromProto(p.GetCommitInfo()),
 		Push:         pushConfig,
 		GitApplyArgs: p.GetGitApplyArgs(),
