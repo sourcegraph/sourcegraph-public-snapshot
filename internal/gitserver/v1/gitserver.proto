@@ -130,10 +130,11 @@ message CreateCommitFromPatchError {
 // CreateCommitFromPatchBinaryResponse is the response type returned after
 // creating a commit from a patch
 message CreateCommitFromPatchBinaryResponse {
+  reserved 2;
+  reserved "error";
+
   // rev is the tag that the staging object can be found at
   string rev = 1;
-  // error is populated only on error
-  CreateCommitFromPatchError error = 2;
   // changelistid is the Perforce changelist id
   string changelist_id = 3;
 }

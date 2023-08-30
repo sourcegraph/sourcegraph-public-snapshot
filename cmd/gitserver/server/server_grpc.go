@@ -58,12 +58,12 @@ func (gs *GRPCServer) CreateCommitFromPatchBinary(ctx context.Context, req *prot
 	r.FromProto(req)
 	_, resp := gs.Server.createCommitFromPatch(ctx, r)
 
-	if resp.Error != nil {
-		return resp.ToProto(), resp.Error
+	res, err := resp.ToProto()
+	if err != nil {
+		return nil, err.ToStatus().Err()
 	}
 
-	return resp.ToProto(), nil
-
+	return res, nil
 }
 
 func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_ExecServer) error {
