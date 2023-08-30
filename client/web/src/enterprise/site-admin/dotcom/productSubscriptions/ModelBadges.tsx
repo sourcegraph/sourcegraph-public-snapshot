@@ -48,6 +48,7 @@ function modelBadgeVariant(model: string, mode: 'completions' | 'embeddings'): '
             case 'fireworks/accounts/fireworks/models/starcoder-7b-w8a16':
             case 'fireworks/accounts/fireworks/models/starcoder-3b-w8a16':
             case 'fireworks/accounts/fireworks/models/starcoder-1b-w8a16':
+            case 'fireworks/accounts/fireworks/models/llama-v2-13b-code':
             case 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct':
             case 'fireworks/accounts/fireworks/models/wizardcoder-15b':
                 return 'secondary'

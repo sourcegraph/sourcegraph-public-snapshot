@@ -50,6 +50,8 @@ func isAllowedCustomModel(model string) bool {
 		fallthrough
 	case "fireworks/accounts/fireworks/models/starcoder-1b-w8a16":
 		fallthrough
+	case "fireworks/accounts/fireworks/models/llama-v2-13b-code":
+		fallthrough
 	case "fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct":
 		fallthrough
 	case "fireworks/accounts/fireworks/models/wizardcoder-15b":
