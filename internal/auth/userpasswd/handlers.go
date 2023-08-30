@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/security"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
@@ -185,8 +184,12 @@ func unsafeSignUp(
 		newUserData.EmailVerificationCode = code
 	}
 
-	if envvar.SourcegraphDotComMode() && security.IsEmailBanned(creds.Email) {
-		return errors.New("this email address is not allowed to register"), http.StatusUnauthorized, nil
+	if banned, err := security.IsEmailBanned(creds.Email); err != nil {
+		logger.Error("failed to check if email is banned", log.Error(err))
+		return errors.New("could not determine if email address is banned"), http.StatusInternalServerError, nil
+	} else if banned {
+		logger.Error("user tried to register with banned email address", log.String("email", creds.Email))
+		return errors.New("this email address is not allowed to register"), http.StatusBadRequest, nil
 	}
 
 	// Prevent abuse (users adding emails of other people whom they want to annoy) with the

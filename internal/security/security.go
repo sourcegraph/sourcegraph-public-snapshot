@@ -3,17 +3,18 @@
 package security
 
 import (
-	"bufio"
 	"fmt"
 	"net"
 	"net/mail"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"unicode"
 	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -22,37 +23,60 @@ import (
 )
 
 var (
-	userRegex          = lazyregexp.New("^[a-zA-Z0-9]+$")
-	bannedEmailDomains = make(map[string]struct{})
+	userRegex              = lazyregexp.New("^[a-zA-Z0-9]+$")
+	bannedEmailDomainsOnce sync.Once
+	bannedEmailDomains     = collections.NewSet[string]()
+	bannedEmailDomainsErr  error
 )
 
-func loadBannedEmailDomains(filePath string) error {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
+func ensureBannedEmailDomainsLoaded() error {
+	bannedEmailDomainsOnce.Do(func() {
+		if !envvar.SourcegraphDotComMode() {
+			return
+		}
 
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		domain := strings.TrimSpace(scanner.Text())
-		bannedEmailDomains[domain] = struct{}{}
-	}
+		denyListPath := env.Get("SRC_EMAIL_DOMAIN_DENY_LIST", "", "A list of email domains to block")
+		if denyListPath == "" {
+			return
+		}
 
-	return scanner.Err()
+		b, err := os.ReadFile(denyListPath)
+		if err != nil {
+			bannedEmailDomainsErr = err
+			return
+		}
 
+		bannedEmailDomains = collections.NewSet(strings.Fields(string(b))...)
+	})
+	return bannedEmailDomainsErr
 }
 
-func IsEmailBanned(email string) bool {
-	addr, err := mail.ParseAddress(email)
-	if err != nil {
-		return false
+func IsEmailBanned(email string) (bool, error) {
+	if err := ensureBannedEmailDomainsLoaded(); err != nil {
+		return false, err
+	}
+	if bannedEmailDomains.IsEmpty() {
+		return false, nil
 	}
 
-	domain := addr.Address[strings.Index(addr.Address, "@")+1:]
-	_, banned := bannedEmailDomains[strings.ToLower(domain)]
+	addr, err := mail.ParseAddress(email)
+	if err != nil {
+		return false, err
+	}
 
-	return banned
+	if len(addr.Address) == 0 {
+		return true, nil
+	}
+
+	parts := strings.SplitN(addr.Address, "@", 2)
+
+	if len(parts) != 2 {
+		return true, nil
+	}
+
+	_, banned := bannedEmailDomains[strings.ToLower(parts[1])]
+
+	return banned, nil
 }
 
 // ValidateRemoteAddr validates if the input is a valid IP or a valid hostname.
@@ -199,21 +223,4 @@ func validatePasswordUsingPolicy(passwd string) error {
 
 	// All good return
 	return nil
-}
-
-func init() {
-
-	if envvar.SourcegraphDotComMode() {
-
-		denyList := env.Get("EMAIL_DOMAIN_DENY_LIST", "", "A list of email domains to block")
-
-		if denyList != "" {
-			err := loadBannedEmailDomains(denyList)
-
-			if err != nil {
-				panic(err)
-			}
-		}
-	}
-
 }

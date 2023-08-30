@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -163,22 +164,20 @@ func TestAddrValidation(t *testing.T) {
 }
 
 func TestIsEmailBanned(t *testing.T) {
+	bannedEmailDomains.Add("blocked.com")
 
-	bannedEmailDomains["blocked.com"] = struct{}{}
+	banned, err := IsEmailBanned("user@blocked.com")
+	require.NoError(t, err)
+	require.True(t, banned, "Expected blocked domain to be detected")
 
-	if !IsEmailBanned("user@blocked.com") {
-		t.Error("Expected blocked domain to be detected")
-	}
+	banned, err = IsEmailBanned("user@BlOCked.com")
+	require.NoError(t, err)
+	require.True(t, banned, "Expected blocked domain with uppercase characters to be detected")
 
-	if !IsEmailBanned("user@BlOCked.com") {
-		t.Error("Expected blocked domain with uppercase characters to be detected")
-	}
+	banned, err = IsEmailBanned("user@allowed.com")
+	require.NoError(t, err)
+	require.False(t, banned, "Expected allowed domain to not be blocked")
 
-	if IsEmailBanned("user@allowed.com") {
-		t.Error("Expected allowed domain to not be blocked")
-	}
-
-	if IsEmailBanned("invalid") {
-		t.Error("Expected invalid email to return false")
-	}
+	banned, err = IsEmailBanned("invalid")
+	require.Error(t, err)
 }

@@ -8,6 +8,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
+        "//internal/collections",
         "//internal/conf",
         "//internal/env",
         "//internal/errcode",
@@ -52,5 +53,6 @@ go_test(
         "//internal/conf",
         "//schema",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )
