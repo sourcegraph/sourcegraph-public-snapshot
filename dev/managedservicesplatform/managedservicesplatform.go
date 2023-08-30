@@ -79,7 +79,7 @@ func (r *Renderer) RenderEnvironment(
 	)
 
 	// Render all required CDKTF stacks for this environment
-	projectOutput, err := project.NewStack(stacks, project.Variables{
+	_, err := project.NewStack(stacks, project.Variables{
 		ProjectID: projectID,
 		Name:      pointers.Deref(svc.Name, svc.ID),
 		Labels: map[string]string{
@@ -92,8 +92,7 @@ func (r *Renderer) RenderEnvironment(
 		return nil, errors.Wrap(err, "failed to create project stack")
 	}
 	if _, err = cloudrun.NewStack(stacks, cloudrun.Variables{
-		// TODO: Variable, or fixed?
-		ProjectID:   *projectOutput.Project.ProjectId(),
+		ProjectID:   projectID,
 		Service:     svc,
 		Image:       build.Image,
 		Environment: env,

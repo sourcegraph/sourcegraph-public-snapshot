@@ -9,8 +9,6 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectservice"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
@@ -35,6 +33,11 @@ var gcpServices = []string{
 	"bigquery.googleapis.com",
 }
 
+const (
+	BillingAccountID = "017005-C370B2-0E3030"
+	ProjectFolderID  = "26336759932"
+)
+
 type Output struct {
 	Project project.Project
 }
@@ -58,15 +61,6 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	// Name all stack resources after the desired project ID
 	id := resourceid.New(vars.ProjectID)
 
-	billingAccount := gsmsecret.Get(stack, id.SubID("billing-account"), gsmsecret.DataConfig{
-		Secret:    googlesecretsmanager.SecretGCPBillingAccount,
-		ProjectID: googlesecretsmanager.ProjectID,
-	})
-	projectFolder := gsmsecret.Get(stack, id.SubID("project-folder"), gsmsecret.DataConfig{
-		Secret:    googlesecretsmanager.SecretGCPProjectFolderID,
-		ProjectID: googlesecretsmanager.ProjectID,
-	})
-
 	output := &Output{
 		Project: project.NewProject(stack,
 			id.ResourceID("project"),
@@ -74,8 +68,8 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 				Name:              pointers.Ptr(vars.Name),
 				ProjectId:         pointers.Ptr(vars.ProjectID),
 				AutoCreateNetwork: false,
-				BillingAccount:    &billingAccount.Value,
-				FolderId:          &projectFolder.Value,
+				BillingAccount:    pointers.Ptr(BillingAccountID),
+				FolderId:          pointers.Ptr(ProjectFolderID),
 				Labels: func(input map[string]string) *map[string]*string {
 					labels := make(map[string]*string)
 					for k, v := range input {
