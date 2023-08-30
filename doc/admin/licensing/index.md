@@ -12,9 +12,9 @@ License keys also need to be unique to a single instance of Sourcegraph. If the 
 
 ## How to update your license key
 
-Any current Site Admin can update your license key by going to Site Admin -> [Site configuration](config/site_config.md) 
+Any current Site Admin can update your license key by going to Site Admin -> [Site configuration](../config/site_config.md) 
 
-These settings live in the JSON object, and you will need to navigate to the the _licenseKey_ section of that object.  
+These settings live in the JSON object, and you will need to navigate to the _licenseKey_ section of that object.  
 
 Update the value of this with your new license key and click Save to apply your changes.
 
