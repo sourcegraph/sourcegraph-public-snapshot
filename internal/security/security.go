@@ -68,13 +68,13 @@ func IsEmailBanned(email string) (bool, error) {
 		return true, nil
 	}
 
-	parts := strings.SplitN(addr.Address, "@", 2)
+	parts := strings.Split(addr.Address, "@")
 
-	if len(parts) != 2 {
+	if len(parts) < 2 {
 		return true, nil
 	}
 
-	_, banned := bannedEmailDomains[strings.ToLower(parts[1])]
+	_, banned := bannedEmailDomains[strings.ToLower(parts[len(parts)-1])]
 
 	return banned, nil
 }
