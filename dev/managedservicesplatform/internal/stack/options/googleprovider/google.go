@@ -14,8 +14,12 @@ import (
 // configure ProjectID individually.
 func With(projectID string) stack.NewStackOption {
 	return func(s stack.Stack) {
+		var project *string
+		if projectID != "" {
+			project = pointers.Ptr(projectID)
+		}
 		_ = google.NewGoogleProvider(s.Stack, pointers.Ptr("google"), &google.GoogleProviderConfig{
-			Project: pointers.Ptr(projectID),
+			Project: project,
 		})
 	}
 }

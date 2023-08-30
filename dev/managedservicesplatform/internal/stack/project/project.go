@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/randomprovider"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -63,7 +64,9 @@ const StackName = "project"
 // NewStack creates a stack that provisions a GCP project.
 func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	stack := stacks.New(StackName,
-		randomprovider.With())
+		randomprovider.With(),
+		// ID is not known ahead of time, we can omit it
+		googleprovider.With(""))
 
 	// Name all stack resources after the desired project ID
 	id := resourceid.New(vars.ProjectIDPrefix)
