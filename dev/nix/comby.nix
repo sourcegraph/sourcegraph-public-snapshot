@@ -20,7 +20,7 @@ let
     });
 in
 if hostPlatform.isMacOS then
-  unNixifyDylibs pkgs (combyBuilder pkgs)
+  unNixifyDylibs { inherit pkgs; } (combyBuilder pkgs)
 else
 # ocaml in pkgsStatic is problematic, so we use it from pkgsMusl instead and just
 # supply pkgsStatic system libraries such as openssl etc

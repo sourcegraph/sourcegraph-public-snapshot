@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func BazelOperations(isMain bool) []operations.Operation {
+func BazelOperations(buildOpts bk.BuildOptions, isMain bool) []operations.Operation {
 	ops := []operations.Operation{}
 	ops = append(ops, bazelPrechecks())
 	if isMain {
@@ -23,15 +23,8 @@ func BazelOperations(isMain bool) []operations.Operation {
 	} else {
 		ops = append(ops, bazelTest("//...", "//client/web:test"))
 	}
-	ops = append(ops, bazelBackCompatTest(
-		"@sourcegraph_back_compat//cmd/...",
-		"@sourcegraph_back_compat//lib/...",
-		"@sourcegraph_back_compat//internal/...",
-		"@sourcegraph_back_compat//enterprise/cmd/...",
-		"@sourcegraph_back_compat//enterprise/internal/...",
-		"-@sourcegraph_back_compat//cmd/migrator/...",
-		"-@sourcegraph_back_compat//enterprise/cmd/migrator/...",
-	))
+
+	ops = append(ops, triggerBackCompatTest(buildOpts))
 	return ops
 }
 
@@ -182,25 +175,12 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 	}
 }
 
-func bazelBackCompatTest(targets ...string) func(*bk.Pipeline) {
-	cmds := []bk.StepOpt{
-		bk.DependsOn("bazel-prechecks"),
-		bk.Agent("queue", "bazel"),
-
-		// Generate a patch that backports the migration from the new code into the old one.
-		// Ignore space is because of https://github.com/bazelbuild/bazel/issues/17376
-		bk.Cmd("git diff --ignore-space-at-eol v5.1.0..HEAD -- migrations/ > dev/backcompat/patches/back_compat_migrations.patch"),
-	}
-
-	bazelCmd := bazelCmd(fmt.Sprintf("test --test_tag_filters=go -- %s ", strings.Join(targets, " ")))
-	cmds = append(
-		cmds,
-		bk.Cmd(bazelCmd),
-	)
-
+func triggerBackCompatTest(buildOpts bk.BuildOptions) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":bazel: BackCompat Tests",
-			cmds...,
+		pipeline.AddTrigger(":bazel::snail: Async BackCompat Tests", "sourcegraph-backcompat",
+			bk.Key("trigger-backcompat"),
+			bk.DependsOn("bazel-prechecks"),
+			bk.Build(buildOpts),
 		)
 	}
 }

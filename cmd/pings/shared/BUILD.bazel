@@ -10,6 +10,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/pings/shared",
     visibility = ["//visibility:public"],
     deps = [
+        "//cmd/frontend/hubspot/hubspotutil",
         "//internal/debugserver",
         "//internal/env",
         "//internal/goroutine",

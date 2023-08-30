@@ -485,7 +485,6 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 		return err
 	}
 
-	db := s.syncStore.DatabaseDB()
 	srcer := sources.NewSourcer(s.httpFactory)
 	source, err := srcer.ForChangeset(ctx, s.syncStore, cs, sources.AuthenticationStrategyUserCredential)
 	if err != nil {
@@ -496,7 +495,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 		return err
 	}
 
-	return SyncChangeset(ctx, s.syncStore, gitserver.NewClient(db), source, repo, cs)
+	return SyncChangeset(ctx, s.syncStore, gitserver.NewClient(), source, repo, cs)
 }
 
 // SyncChangeset refreshes the metadata of the given changeset and

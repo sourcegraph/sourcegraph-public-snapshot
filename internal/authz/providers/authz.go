@@ -164,7 +164,7 @@ func ProvidersFromConfig(
 	initResult := github.NewAuthzProviders(ctx, db, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
 	initResult.Append(gitlab.NewAuthzProviders(db, cfg.SiteConfig(), gitLabConns))
 	initResult.Append(bitbucketserver.NewAuthzProviders(bitbucketServerConns))
-	initResult.Append(perforce.NewAuthzProviders(db, perforceConns))
+	initResult.Append(perforce.NewAuthzProviders(perforceConns))
 	initResult.Append(bitbucketcloud.NewAuthzProviders(db, bitbucketCloudConns, cfg.SiteConfig().AuthProviders))
 	initResult.Append(gerrit.NewAuthzProviders(gerritConns, cfg.SiteConfig().AuthProviders))
 	initResult.Append(azuredevops.NewAuthzProviders(db, azuredevopsConns))
@@ -193,9 +193,9 @@ func PermissionSyncingDisabled() bool {
 }
 
 var ValidateExternalServiceConfig = database.MakeValidateExternalServiceConfigFunc(
-	[]func(*types.GitHubConnection) error{github.ValidateAuthz},
-	[]func(*schema.GitLabConnection, []schema.AuthProviders) error{gitlab.ValidateAuthz},
-	[]func(*schema.BitbucketServerConnection) error{bitbucketserver.ValidateAuthz},
-	[]func(*schema.PerforceConnection) error{perforce.ValidateAuthz},
-	[]func(*schema.AzureDevOpsConnection) error{func(_ *schema.AzureDevOpsConnection) error { return nil }},
+	[]database.GitHubValidatorFunc{github.ValidateAuthz},
+	[]database.GitLabValidatorFunc{gitlab.ValidateAuthz},
+	[]database.BitbucketServerValidatorFunc{bitbucketserver.ValidateAuthz},
+	[]database.PerforceValidatorFunc{perforce.ValidateAuthz},
+	[]database.AzureDevOpsValidatorFunc{func(_ *schema.AzureDevOpsConnection) error { return nil }},
 ) // TODO: @varsanojidan switch this with actual authz once its implemented.

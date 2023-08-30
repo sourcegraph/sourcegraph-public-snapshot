@@ -343,7 +343,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 			t.Cleanup(closeFunc)
 
 			stream, err := client.P4Exec(context.Background(), &proto.P4ExecRequest{
-				Args: []string{"users"},
+				Args: [][]byte{[]byte("users")},
 			})
 			if err != nil {
 				t.Fatalf("failed to call P4Exec: %v", err)
@@ -386,7 +386,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 			t.Cleanup(closeFunc)
 
 			stream, err := client.P4Exec(context.Background(), &proto.P4ExecRequest{
-				Args: []string{"bad_command"},
+				Args: [][]byte{[]byte("bad_command")},
 			})
 			if err != nil {
 				t.Fatalf("failed to call P4Exec: %v", err)
@@ -412,7 +412,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 			t.Cleanup(closeFunc)
 
 			stream, err := client.P4Exec(ctx, &proto.P4ExecRequest{
-				Args: []string{"users"},
+				Args: [][]byte{[]byte("users")},
 			})
 			if err != nil {
 				t.Fatalf("failed to call P4Exec: %v", err)
@@ -737,7 +737,6 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		rpsLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 		RecordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
 		Perforce:                perforce.NewService(ctx, obctx, logger, db, list.New()),
-		DeduplicatedForksSet:    types.NewRepoURICache(nil),
 	}
 
 	p := s.NewClonePipeline(logtest.Scoped(t), cloneQueue)

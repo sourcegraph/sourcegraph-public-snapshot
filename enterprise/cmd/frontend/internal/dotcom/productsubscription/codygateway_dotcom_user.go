@@ -8,7 +8,10 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -19,6 +22,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
+
+const auditEntityDotcomCodyGatewayUser = "dotcom-codygatewayuser"
 
 type ErrDotcomUserNotFound struct {
 	err error
@@ -37,14 +42,22 @@ func (e ErrDotcomUserNotFound) Extensions() map[string]any {
 
 // CodyGatewayDotcomUserResolver implements the GraphQL Query and Mutation fields related to Cody gateway users.
 type CodyGatewayDotcomUserResolver struct {
-	DB database.DB
+	Logger log.Logger
+	DB     database.DB
 }
 
 func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.Context, args *graphqlbackend.CodyGatewayUsersByAccessTokenArgs) (graphqlbackend.CodyGatewayUser, error) {
 	// 🚨 SECURITY: Only site admins or the service accounts may check users.
-	if err := serviceAccountOrSiteAdmin(ctx, r.DB, false); err != nil {
+	grantReason, err := serviceAccountOrSiteAdmin(ctx, r.DB, false)
+	if err != nil {
 		return nil, err
 	}
+	audit.Log(ctx, r.Logger, audit.Record{
+		Entity: auditEntityDotcomCodyGatewayUser,
+		Action: "access",
+		Fields: []log.Field{log.String("grant_reason", grantReason)},
+	})
+
 	dbTokens := newDBTokens(r.DB)
 	userID, err := dbTokens.LookupDotcomUserIDByAccessToken(ctx, args.Token)
 	if err != nil {

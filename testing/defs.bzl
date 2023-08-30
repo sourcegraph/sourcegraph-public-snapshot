@@ -9,9 +9,6 @@ def server_integration_test(name, port, runner_src, **kwargs):
     tags = kwargs.pop("tags", [])
     deps = kwargs.pop("deps", [])
 
-    # We need the server image for the script to spawn it.
-    data.append("//enterprise/cmd/server:image_tarball")
-
     # First two arguments are always the server image and the image name
     args = ["$(location //enterprise/cmd/server:image_tarball)", "server:candidate"] + args
 

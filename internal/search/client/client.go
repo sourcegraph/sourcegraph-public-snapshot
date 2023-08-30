@@ -174,7 +174,7 @@ func (s *searchClient) JobClients() job.RuntimeClients {
 		Zoekt:                       s.zoekt,
 		SearcherURLs:                s.searcherURLs,
 		SearcherGRPCConnectionCache: s.searcherGRPCConnectionCache,
-		Gitserver:                   gitserver.NewClient(s.db),
+		Gitserver:                   gitserver.NewClient(),
 	}
 }
 

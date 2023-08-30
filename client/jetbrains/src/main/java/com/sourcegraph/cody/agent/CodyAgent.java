@@ -48,7 +48,7 @@ public class CodyAgent implements Disposable {
   private String agentNotRunningExplanation = "";
   private @NotNull CompletableFuture<CodyAgentServer> initialized = new CompletableFuture<>();
   private AtomicBoolean firstConnection = new AtomicBoolean(true);
-  private Future<Void> listeningToJsonRpc;
+  @NotNull private Future<Void> listeningToJsonRpc = CompletableFuture.completedFuture(null);
   private Process process;
 
   public CodyAgent(@NotNull Project project) {
@@ -74,8 +74,6 @@ public class CodyAgent implements Disposable {
     return agent != null
         && agent.process != null
         && agent.process.isAlive()
-        && agent.agentNotRunningExplanation.isEmpty()
-        && agent.listeningToJsonRpc != null
         && !agent.listeningToJsonRpc.isDone()
         && !agent.listeningToJsonRpc.isCancelled()
         && agent.client.server != null;
@@ -94,7 +92,7 @@ public class CodyAgent implements Disposable {
     return getClient(project).server;
   }
 
-  public static CodyAgentCodebase getCodebase(@NotNull Project project) {
+  public static @Nullable CodyAgentCodebase getCodebase(@NotNull Project project) {
     if (!isConnected(project)) {
       return null;
     }
@@ -113,6 +111,7 @@ public class CodyAgent implements Disposable {
         // the Cody agent server.
         this.initialized = new CompletableFuture<>();
       }
+      this.agentNotRunningExplanation = "";
       startListeningToAgent();
       executorService.submit(
           () -> {
@@ -152,7 +151,11 @@ public class CodyAgent implements Disposable {
     EditorEventMulticaster multicaster = EditorFactory.getInstance().getEventMulticaster();
     if (multicaster instanceof EditorEventMulticasterEx) {
       EditorEventMulticasterEx ex = (EditorEventMulticasterEx) multicaster;
-      ex.addFocusChangeListener(new CodyAgentFocusListener(), this.disposable);
+      try {
+        ex.addFocusChangeListener(new CodyAgentFocusListener(), this.disposable);
+      } catch (Exception ignored) {
+        // Ignore exception https://github.com/sourcegraph/sourcegraph/issues/56032
+      }
     }
   }
 
@@ -178,7 +181,7 @@ public class CodyAgent implements Disposable {
   }
 
   private static String agentBinaryName() {
-    String os = SystemInfoRt.isMac ? "macos" : SystemInfoRt.isWindows ? "windows" : "linux";
+    String os = SystemInfoRt.isMac ? "macos" : SystemInfoRt.isWindows ? "win" : "linux";
     String arch = CpuArch.isArm64() ? "arm64" : "x64";
     return "agent-" + os + "-" + arch + binarySuffix();
   }
