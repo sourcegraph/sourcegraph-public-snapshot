@@ -13,19 +13,14 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// Message is a protobuf message.
-type Message interface {
-	proto.Message
-}
-
 // New returns a new Chunker that will use the given sendFunc to send chunks of messages.
-func New[T Message](sendFunc func([]T) error) *Chunker[T] {
+func New[T proto.Message](sendFunc func([]T) error) *Chunker[T] {
 	return &Chunker[T]{sendFunc: sendFunc}
 }
 
 // Chunker lets you spread items you want to send over multiple chunks.
 // This type is not thread-safe.
-type Chunker[T Message] struct {
+type Chunker[T proto.Message] struct {
 	sendFunc func([]T) error // sendFunc is the function that will be invoked when a chunk is ready to be sent.
 
 	buffer    []T // buffer stores the items that will be sent when the sendFunc is invoked.
@@ -49,44 +44,57 @@ func (c *Chunker[T]) Send(items ...T) error {
 }
 
 func (c *Chunker[T]) sendOne(item T) error {
-	if c.sizeBytes == 0 {
-		c.clearBuffer()
-	}
-
 	itemSize := proto.Size(item)
 
 	if itemSize+c.sizeBytes >= maxMessageSize {
 		if err := c.sendResponseMsg(); err != nil {
 			return err
 		}
-
-		c.clearBuffer()
 	}
 
-	c.append(item)
+	c.buffer = append(c.buffer, item)
 	c.sizeBytes += itemSize
 
 	return nil
 }
 
-func (c *Chunker[T]) append(items ...T) {
-	c.buffer = append(c.buffer, items...)
-}
-
-func (c *Chunker[T]) clearBuffer() {
-	c.buffer = c.buffer[:0]
-}
-
 func (c *Chunker[T]) sendResponseMsg() error {
 	c.sizeBytes = 0
-	return c.sendFunc(c.buffer)
+
+	err := c.sendFunc(c.buffer)
+	if err != nil {
+		return err
+	}
+
+	c.buffer = c.buffer[:0]
+	return nil
 }
 
 // Flush sends remaining items in the current chunk, if any.
 func (c *Chunker[T]) Flush() error {
-	if c.sizeBytes == 0 {
+	if len(c.buffer) == 0 {
 		return nil
 	}
 
-	return c.sendResponseMsg()
+	err := c.sendResponseMsg()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// SendAll is a convenience function that immediately sends all provided items in smaller chunks using the provided
+// sendFunc.
+//
+// See the documentation for Chunker.Send() for more information.
+func SendAll[T proto.Message](sendFunc func([]T) error, items ...T) error {
+	c := New(sendFunc)
+
+	err := c.Send(items...)
+	if err != nil {
+		return err
+	}
+
+	return c.Flush()
 }
