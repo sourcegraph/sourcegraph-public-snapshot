@@ -6,7 +6,8 @@ import { TelemetryV2Service, EventName, EventParameters } from '@sourcegraph/sha
 
 import { storage } from '../../browser-extension/web-extension-api/storage'
 import { isInPage } from '../context'
-import { getExtensionVersion, getPlatformName } from '../util/context'
+
+// import { getExtensionVersion, getPlatformName } from '../util/context'
 
 const uidKey = 'sourcegraphAnonymousUid'
 
@@ -55,8 +56,8 @@ export class ConditionalTelemetryV2Service implements TelemetryV2Service {
 export class EventRecorder implements TelemetryV2Service {
     private uid: string | null = null
 
-    private platform = getPlatformName()
-    private version = getExtensionVersion()
+    // private platform = getPlatformName()
+    // private version = getExtensionVersion()
 
     /**
      * Generate a new anonymous user ID if one has not yet been set and stored.
