@@ -29,8 +29,9 @@ export interface GitserversPageProps extends TelemetryProps {}
 
 export const SiteAdminGitserversPage: FC<GitserversPageProps> = ({ telemetryService }) => {
     useEffect(() => {
-        telemetryService.logPageView('SiteAdminWebhook')
+        telemetryService.logPageView('SiteAdminGitserversPage')
     }, [telemetryService])
+
     return (
         <Container>
             <PageTitle title="Gitservers" />
