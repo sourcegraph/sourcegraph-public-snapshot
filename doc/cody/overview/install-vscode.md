@@ -77,6 +77,12 @@ Once connected, click the Cody icon from the sidebar again, and a panel will ope
 - Open a file in a supported programming language like JavaScript, Python, Go, etc.
 - As you start typing, Cody AI should begin providing intelligent suggestions and context-aware completions based on your coding patterns and the context of your code
 
+## Commands
+
+Cody also supports executing reusable prompts known as **Commands** from within the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai). They allow you to run predefined actions (like `Explain Selected Code` and `Generate Unit Tests` for example) with smart context-fetching anywhere in the editor.
+
+[Learn more about commands here →](./../capabilities.md#commands)
+
 ## Enable code graph context for context-aware answers (Optional)
 
 You can optionally configure code graph content, which gives Cody the ability to provide context-aware answers. For example, Cody can write example API calls if has context of a codebase's API schema.
@@ -89,10 +95,6 @@ Learn more about how to:
 ## Updating the extension
 
 VS Code will typically notify you when updates are available for installed extensions. Follow the prompts to update the Cody AI extension to the latest version.
-
-## Congratulations!
-
-Congratulations! You've successfully installed the Cody AI extension for VS Code. Enjoy the benefits of intutive code autocompletions, intelligent code suggestions and enhanced coding productivity in your development workflow.
 
 ## More benefits
 
