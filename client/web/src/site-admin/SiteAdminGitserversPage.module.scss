@@ -1,0 +1,8 @@
+.node-wrapper {
+    list-style: none;
+    padding: 0;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+}
