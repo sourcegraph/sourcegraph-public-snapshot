@@ -30,15 +30,7 @@ type TerraformCloudOptions struct {
 	Enabled bool
 }
 
-type GCPOptions struct {
-	// ProjectID can override the generated project ID, if provided. Otherwise,
-	// one is generated using the naming scheme:
-	//
-	//   ${svc.id}-${env.id}
-	//
-	// This is useful when importing projects.
-	ProjectID *string
-}
+type GCPOptions struct{}
 
 // Renderer takes MSP service specifications
 type Renderer struct {
@@ -74,24 +66,25 @@ func (r *Renderer) RenderEnvironment(
 	}
 
 	var (
-		projectID = pointers.Deref(r.GCP.ProjectID, fmt.Sprintf("%s-%s", svc.ID, env.ID))
-		stacks    = stack.NewSet(r.OutputDir, stackSetOptions...)
+		projectIDPrefix = fmt.Sprintf("%s-%s-", svc.ID, env.ID)
+		stacks          = stack.NewSet(r.OutputDir, stackSetOptions...)
 	)
 
 	// Render all required CDKTF stacks for this environment
-	if _, err := project.NewStack(stacks, project.Variables{
-		ProjectID: projectID,
-		Name:      pointers.Deref(svc.Name, svc.ID),
+	projectOutput, err := project.NewStack(stacks, project.Variables{
+		ProjectIDPrefix: projectIDPrefix,
+		Name:            pointers.Deref(svc.Name, svc.ID),
 		Labels: map[string]string{
 			"service":     svc.ID,
 			"environment": env.ID,
 			"msp":         "true",
 		},
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, errors.Wrap(err, "failed to create project stack")
 	}
 	if _, err := cloudrun.NewStack(stacks, cloudrun.Variables{
-		ProjectID:   projectID,
+		ProjectID:   *projectOutput.Project.Id(),
 		Service:     svc,
 		Image:       build.Image,
 		Environment: env,

@@ -9,9 +9,10 @@ import (
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/project"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectservice"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/randomprovider"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -35,17 +36,23 @@ var gcpServices = []string{
 
 const (
 	BillingAccountID = "017005-C370B2-0E3030"
-	ProjectFolderID  = "26336759932"
+	ProjectFolderID  = "folders/26336759932"
 )
 
 type Output struct {
+	// Project is created with a generated project ID.
 	Project project.Project
 }
 
 type Variables struct {
-	ProjectID string
-	Name      string
-	Labels    map[string]string
+	// ProjectIDPrefix is the prefix for a project ID. A suffix of the format
+	// '-${randomizedSuffix}' will be added, as project IDs must be unique.
+	ProjectIDPrefix string
+
+	// Name is a display name for the project. It does not need to be unique.
+	Name string
+
+	Labels map[string]string
 
 	// EnableAuditLogs ships GCP audit logs to security cluster
 	EnableAuditLogs bool
@@ -56,17 +63,22 @@ const StackName = "project"
 // NewStack creates a stack that provisions a GCP project.
 func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	stack := stacks.New(StackName,
-		googleprovider.With(vars.ProjectID))
+		randomprovider.With())
 
 	// Name all stack resources after the desired project ID
-	id := resourceid.New(vars.ProjectID)
+	id := resourceid.New(vars.ProjectIDPrefix)
+
+	projectID := random.New(stack, id, random.Config{
+		ByteLength: 6,
+		Prefix:     vars.ProjectIDPrefix,
+	})
 
 	output := &Output{
 		Project: project.NewProject(stack,
 			id.ResourceID("project"),
 			&project.ProjectConfig{
 				Name:              pointers.Ptr(vars.Name),
-				ProjectId:         pointers.Ptr(vars.ProjectID),
+				ProjectId:         &projectID.HexValue,
 				AutoCreateNetwork: false,
 				BillingAccount:    pointers.Ptr(BillingAccountID),
 				FolderId:          pointers.Ptr(ProjectFolderID),

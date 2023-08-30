@@ -59,9 +59,10 @@ type workspaceOptions struct {
 	TriggerPrefixes  []string
 	WorkingDirectory *string
 
-	ExecutionMode    *string
-	TerraformVersion *string
-	AutoApply        *bool
+	ExecutionMode     *string
+	TerraformVersion  *string
+	AutoApply         *bool
+	GlobalRemoteState *bool
 }
 
 // AsCreate should be kept up to date with AsUpdate.
@@ -77,9 +78,10 @@ func (c workspaceOptions) AsCreate(tags []*tfe.Tag) tfe.WorkspaceCreateOptions {
 		WorkingDirectory: c.WorkingDirectory,
 		TriggerPrefixes:  c.TriggerPrefixes,
 
-		ExecutionMode:    c.ExecutionMode,
-		TerraformVersion: c.TerraformVersion,
-		AutoApply:        c.AutoApply,
+		ExecutionMode:     c.ExecutionMode,
+		TerraformVersion:  c.TerraformVersion,
+		AutoApply:         c.AutoApply,
+		GlobalRemoteState: c.GlobalRemoteState,
 	}
 }
 
@@ -95,9 +97,10 @@ func (c workspaceOptions) AsUpdate() tfe.WorkspaceUpdateOptions {
 		WorkingDirectory: c.WorkingDirectory,
 		TriggerPrefixes:  c.TriggerPrefixes,
 
-		ExecutionMode:    c.ExecutionMode,
-		TerraformVersion: c.TerraformVersion,
-		AutoApply:        c.AutoApply,
+		ExecutionMode:     c.ExecutionMode,
+		TerraformVersion:  c.TerraformVersion,
+		AutoApply:         c.AutoApply,
+		GlobalRemoteState: c.GlobalRemoteState,
 	}
 }
 
@@ -154,6 +157,12 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 			TerraformVersion: pointers.Ptr(terraform.Version),
 			AutoApply:        pointers.Ptr(true),
 		}
+		// HACK: make project output available globally so that other stacks
+		// can reference the generated, randomized ID.
+		if s == "project" {
+			wantWorkspaceOptions.GlobalRemoteState = pointers.Ptr(true)
+		}
+
 		wantWorkspaceTags := []*tfe.Tag{
 			{Name: "msp"},
 			{Name: fmt.Sprintf("msp-service-%s", svc.ID)},

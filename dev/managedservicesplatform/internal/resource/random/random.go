@@ -10,6 +10,11 @@ import (
 
 type Config struct {
 	ByteLength int `validate:"required"`
+	// Prefix is added to the start of the random output followed by a '-', for
+	// example:
+	//
+	//   ${prefix}-${randomSuffix}
+	Prefix string
 }
 
 type Output struct {
@@ -20,11 +25,16 @@ type Output struct {
 //
 // Requires stack to be created with randomprovider.With().
 func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
+	var prefix *string
+	if config.Prefix != "" {
+		prefix = pointers.Ptr(config.Prefix + "-")
+	}
 	rid := randomid.NewId(
 		scope,
 		id.ResourceID("random"),
 		&randomid.IdConfig{
 			ByteLength: pointers.Float64(config.ByteLength),
+			Prefix:     prefix,
 		},
 	)
 	return &Output{HexValue: *rid.Hex()}
