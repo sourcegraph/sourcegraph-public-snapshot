@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/security"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
@@ -181,6 +182,14 @@ func unsafeSignUp(
 			return errors.New(defaultErrorMessage), http.StatusInternalServerError, nil
 		}
 		newUserData.EmailVerificationCode = code
+	}
+
+	if banned, err := security.IsEmailBanned(creds.Email); err != nil {
+		logger.Error("failed to check if email domain is banned", log.Error(err))
+		return errors.New("could not determine if email domain is banned"), http.StatusInternalServerError, nil
+	} else if banned {
+		logger.Error("user tried to register with banned email domain", log.String("email", creds.Email))
+		return errors.New("this email address is not allowed to register"), http.StatusBadRequest, nil
 	}
 
 	// Prevent abuse (users adding emails of other people whom they want to annoy) with the
