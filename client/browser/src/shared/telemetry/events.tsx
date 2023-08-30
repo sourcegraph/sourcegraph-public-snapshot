@@ -12,43 +12,6 @@ import { isInPage } from '../context'
 const uidKey = 'sourcegraphAnonymousUid'
 
 /**
- * ConditionalTelemetryV2Service is a TelemetryV2Service which only logs when
- * the enable flag is set. Accepts an observable that emits the enabled value.
- *
- * EXPERIMENTAL
- */
-export class ConditionalTelemetryV2Service implements TelemetryV2Service {
-    /** Log events are passed on to the inner TelemetryService */
-    private subscription = new Subscription()
-
-    /** The enabled state set by an observable, provided upon instantiation */
-    private isEnabled = false
-
-    constructor(private innerTelemetryService: TelemetryV2Service, isEnabled: Observable<boolean>) {
-        this.subscription.add(
-            isEnabled.subscribe(value => {
-                this.isEnabled = value
-            })
-        )
-    }
-
-    public record(eventName: EventName, parameters?: EventParameters): void {
-        // Wait for this.isEnabled to get a new value
-        setTimeout(() => {
-            if (this.isEnabled) {
-                this.innerTelemetryService.record(eventName, parameters)
-            }
-        })
-    }
-
-    public unsubscribe(): void {
-        // Reset initial state
-        this.isEnabled = false
-        return this.subscription.unsubscribe()
-    }
-}
-
-/**
  * EventRecorder is the base implementation of TelemetryV2Service.
  *
  * EXPERIMENTAL
@@ -105,4 +68,41 @@ export class EventRecorder implements TelemetryV2Service {
      * This implementation currently no-ops.
      */
     public record(eventName: EventName, parameters?: EventParameters): void {}
+}
+
+/**
+ * ConditionalTelemetryV2Service is a TelemetryV2Service which only logs when
+ * the enable flag is set. Accepts an observable that emits the enabled value.
+ *
+ * EXPERIMENTAL
+ */
+export class ConditionalTelemetryV2Service implements TelemetryV2Service {
+    /** Log events are passed on to the inner TelemetryService */
+    private subscription = new Subscription()
+
+    /** The enabled state set by an observable, provided upon instantiation */
+    private isEnabled = false
+
+    constructor(private innerTelemetryService: TelemetryV2Service, isEnabled: Observable<boolean>) {
+        this.subscription.add(
+            isEnabled.subscribe(value => {
+                this.isEnabled = value
+            })
+        )
+    }
+
+    public record(eventName: EventName, parameters?: EventParameters): void {
+        // Wait for this.isEnabled to get a new value
+        setTimeout(() => {
+            if (this.isEnabled) {
+                this.innerTelemetryService.record(eventName, parameters)
+            }
+        })
+    }
+
+    public unsubscribe(): void {
+        // Reset initial state
+        this.isEnabled = false
+        return this.subscription.unsubscribe()
+    }
 }
