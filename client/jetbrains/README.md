@@ -1,24 +1,29 @@
 <!-- Plugin description -->
 
-# Cody AI by Sourcegraph
+# Sourcegraph Cody + Code Search
 
-Cody for JetBrains IDEs is an AI code assistant that can write code and answers questions across your entire codebase. It combines the power of large language models with Sourcegraph’s Code Graph API, generating deep knowledge of all of your code (and not just your open files). Large monorepos, multiple languages, and complex codebases are no problem for Cody.
+Use Sourcegraph Code Search and Sourcegraph’s AI assistant Cody directly from your JetBrains IDE.
 
-For example, you can ask Cody:
+- With Code Search, you can search code across all your repositories and code hosts—even the code you don’t have locally.
+- Cody can write code and answer questions across your entire codebase.
+
+**Cody AI for JetBrains IDEs is experimental right now. We’d love your [feedback](https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/jetbrains)**!
+
+## Features
+
+### 🤖 Ask Cody about anything in your codebase
+
+Cody combines the power of large language models (LLMs) with Sourcegraph’s Code Graph API, generating deep knowledge of all of your code—even the code you don’t have locally. Large monorepos, multiple languages, and complex codebases are no problem for Cody.
+
+Cody understands your entire codebase—not just your open files. Ask questions, insert code, and use the built-in recipes such as "Summarize recent code changes" and "Improve variable names".
+
+Example questions you can ask Cody:
 
 - Where is the CI config for the web integration tests?
 - Write a new GraphQL resolver for the AuditLog
 - Why is the UserConnectionResolver giving an error "unknown user", and how do I fix it?
 - Add helpful debug log statements
 - Make this work _(seriously, it often works—try it!)_
-
-  **Cody AI for JetBrains IDEs is experimental right now, and we’d love your [feedback](https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/jetbrains)**!
-
-## Features
-
-### 🤖 Ask Cody about anything in your codebase
-
-Cody understands your entire codebase — not just your open files. Ask questions, insert code, and use the built-in recipes such as "Summarize recent code changes" and "Improve variable names".
 
 ![Example of chatting with Cody](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/Chat_IntelliJ_SS.jpg)
 
