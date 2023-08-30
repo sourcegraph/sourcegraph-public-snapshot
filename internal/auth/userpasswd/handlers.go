@@ -186,7 +186,7 @@ func unsafeSignUp(
 
 	if banned, err := security.IsEmailBanned(creds.Email); err != nil {
 		logger.Error("failed to check if email is banned", log.Error(err))
-		return errors.New("could not determine if email address is banned"), http.StatusInternalServerError, nil
+		return errors.New("could not determine if email domain is banned"), http.StatusInternalServerError, nil
 	} else if banned {
 		logger.Error("user tried to register with banned email address", log.String("email", creds.Email))
 		return errors.New("this email address is not allowed to register"), http.StatusBadRequest, nil
