@@ -18,6 +18,12 @@ type EnvironmentSpec struct {
 	SecretEnv map[string]string `json:"secretEnv,omitempty"`
 }
 
+func (s EnvironmentSpec) Validate() []error {
+	var errs []error
+	// TODO
+	return errs
+}
+
 type EnvironmentDeploySpec struct {
 	Type   EnvironmentDeployType        `json:"type"`
 	Manual *EnvironmentDeployManualSpec `json:"manual,omitempty"`

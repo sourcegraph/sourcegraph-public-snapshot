@@ -11,6 +11,8 @@ type Config struct {
 	Workspace func(stackName string) string `validate:"required"`
 }
 
+const metadataKey = "tfc-workspace"
+
 // With configures the stack to use Terraform Cloud as remote state backend.
 // Any top-level CDKTF stack should use this as remote state backend.
 func With(config Config) stack.NewStackOption {
@@ -21,5 +23,6 @@ func With(config Config) stack.NewStackOption {
 			Organization: pointers.Ptr("sourcegraph"),
 			Workspaces:   cdktf.NewNamedCloudWorkspace(&workspace),
 		})
+		s.Metadata[metadataKey] = workspace
 	}
 }

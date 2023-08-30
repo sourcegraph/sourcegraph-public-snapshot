@@ -3,6 +3,8 @@ package spec
 import (
 	// We intentionally use sigs.k8s.io/yaml because it has some convenience features,
 	// and nicer formatting. We use this in Sourcegraph Cloud as well.
+	"os"
+
 	"sigs.k8s.io/yaml"
 )
 
@@ -20,6 +22,26 @@ type Spec struct {
 	Service      ServiceSpec       `json:"service"`
 	Build        BuildSpec         `json:"build"`
 	Environments []EnvironmentSpec `json:"environments"`
+}
+
+func (s Spec) Validate() []error {
+	var errs []error
+	errs = append(errs, s.Service.Validate()...)
+	errs = append(errs, s.Build.Validate()...)
+	for _, env := range s.Environments {
+		errs = append(errs, env.Validate()...)
+	}
+	return errs
+}
+
+// Open is a shortcut for opening a spec, validating it, and unmarshalling the
+// data as a MSP spec.
+func Open(specPath string) (*Spec, error) {
+	specData, err := os.ReadFile(specPath)
+	if err != nil {
+		return nil, err
+	}
+	return Parse(specData)
 }
 
 // Parse validates and unmarshals data as a MSP spec.

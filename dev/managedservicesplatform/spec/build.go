@@ -5,6 +5,12 @@ type BuildSpec struct {
 	Source BuildSourceSpec `json:"source"`
 }
 
+func (s BuildSpec) Validate() []error {
+	var errs []error
+	// TODO
+	return errs
+}
+
 type BuildSourceSpec struct {
 	Repo string `json:"repo"`
 	Dir  string `json:"dir"`

@@ -2,6 +2,7 @@ package schema
 
 import (
 	"encoding/json"
+	"os"
 
 	"github.com/invopop/jsonschema"
 
@@ -15,9 +16,12 @@ import (
 // repository root.
 func Render() ([]byte, error) {
 	// We must be in repo root to extract Go comments correctly
-	_, err := root.RepositoryRoot()
+	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to determine repository root location")
+		return nil, errors.Wrap(err, "must be in sourcegraph/sourcegraph repository")
+	}
+	if err := os.Chdir(repoRoot); err != nil {
+		return nil, errors.Wrap(err, "must be in sourcegraph/sourcegraph repository")
 	}
 
 	var r jsonschema.Reflector

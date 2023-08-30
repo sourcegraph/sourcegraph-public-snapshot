@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/tfcbackend"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/project"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/terraform"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 )
@@ -23,7 +24,7 @@ type TerraformCloudOptions struct {
 	// Terraform state backend with the following format as the workspace name
 	// for each stack:
 	//
-	//  msp-${svc.id}-${env.name}-${stackName}
+	//  msp-${svc.id}-${env.id}-${stackName}
 	//
 	// If false, a local backend will be used.
 	Enabled bool
@@ -74,7 +75,7 @@ func (r *Renderer) RenderEnvironment(
 		stackSetOptions = append(stackSetOptions,
 			tfcbackend.With(tfcbackend.Config{
 				Workspace: func(stackName string) string {
-					return fmt.Sprintf("msp-%s-%s-%s", svc.ID, env.ID, stackName)
+					return terraformcloud.WorkspaceName(svc, env, stackName)
 				},
 			}))
 	}

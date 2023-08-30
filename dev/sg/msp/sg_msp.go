@@ -7,6 +7,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/urfave/cli/v2"
 
@@ -33,6 +34,11 @@ import (
 //  "gopls": {
 //     "build.buildFlags": ["-tags=msp"]
 //  }
+
+const (
+	// TODO: Should we provision a separate project for this?
+	mspSecretsGCPProject = "sourcegraph-secrets"
+)
 
 func init() {
 	// Override no-op implementation with our real implementation.
@@ -138,12 +144,12 @@ func init() {
 				&cli.BoolFlag{
 					Name:  "tfc",
 					Usage: "Generate infrastructure stacks with Terraform Cloud backends",
-					Value: false, // TODO default to true
+					Value: true,
 				},
 				&cli.BoolFlag{
 					Name:  "gcp",
 					Usage: "Generate infrastructure stacks on real GCP configuration",
-					Value: false, // TODO default to true
+					Value: true,
 				},
 			},
 			Action: func(c *cli.Context) error {
@@ -152,7 +158,10 @@ func init() {
 				}
 
 				// Load specification
-				serviceSpecPath := c.Args().First()
+				serviceSpecPath, err := getYAMLPathArg(c, 0)
+				if err != nil {
+					return err
+				}
 				serviceSpecData, err := os.ReadFile(serviceSpecPath)
 				if err != nil {
 					return err
@@ -187,11 +196,19 @@ func init() {
 				}
 
 				// CDKTF needs the output dir to exist ahead of time, even for
-				// rendering.
-				if err := os.MkdirAll(renderer.OutputDir, 0755); err != nil {
-					return errors.Wrap(err, "prepare output directory")
+				// rendering. If it doesn't exist yet, create it
+				if f, err := os.Lstat(renderer.OutputDir); err != nil {
+					if !os.IsNotExist(err) {
+						return errors.Wrap(err, "check output directory")
+					}
+					if err := os.MkdirAll(renderer.OutputDir, 0755); err != nil {
+						return errors.Wrap(err, "prepare output directory")
+					}
+				} else if !f.IsDir() {
+					return errors.Newf("output directory %q is not a directory", renderer.OutputDir)
 				}
 
+				// Render environment
 				cdktf, err := renderer.RenderEnvironment(service.Service, service.Build, *deployEnv)
 				if err != nil {
 					return err
@@ -206,6 +223,63 @@ func init() {
 				pending.Complete(
 					output.Styledf(output.StyleSuccess, "Terraform assets generated in %q!", renderer.OutputDir))
 				return nil
+			},
+		},
+		{
+			Name:        "tfc",
+			Description: "Manage Terraform Cloud workspaces for a service",
+			ArgsUsage:   "<service spec file>",
+			Subcommands: []*cli.Command{
+				{
+					Name:        "sync",
+					Description: "Create or update all required Terraform Cloud workspaces for a service",
+					Action: func(c *cli.Context) error {
+						serviceSpecPath, err := getYAMLPathArg(c, 0)
+						if err != nil {
+							return err
+						}
+						serviceSpecData, err := os.ReadFile(serviceSpecPath)
+						if err != nil {
+							return err
+						}
+						service, err := spec.Parse(serviceSpecData)
+						if err != nil {
+							return err
+						}
+
+						secretStore, err := secrets.FromContext(c.Context)
+						if err != nil {
+							return err
+						}
+						tfcOptions, err := mspLoadTFCConfig(c.Context, secretStore, true)
+						if err != nil {
+							return err
+						}
+						// gcpOptions is not needed, so we load as if it were disabled
+						gcpOptions, err := mspLoadGCPConfig(c.Context, secretStore, false)
+						if err != nil {
+							return errors.Wrap(err, "load GCP config")
+						}
+
+						// tfcClient := terraformcloud.New("")
+
+						for _, deployEnv := range service.Environments {
+							cdktf, err := (&managedservicesplatform.Renderer{
+								OutputDir: "",
+								GCP:       *gcpOptions,
+								TFC:       *tfcOptions,
+							}).RenderEnvironment(service.Service, service.Build, deployEnv)
+							if err != nil {
+								return err
+							}
+							for stack := range cdktf.Stacks() {
+
+							}
+						}
+
+						return nil
+					},
+				},
 			},
 		},
 		{
@@ -244,23 +318,21 @@ func mspLoadGCPConfig(ctx context.Context, s *secrets.Store, enabled bool) (*man
 		return &managedservicesplatform.GCPOptions{
 			ParentFolderID:         "EXAMPLE",
 			BillingAccountID:       "EXAMPLE",
-			SharedSecretsProjectID: "sourcegraph-secrets",
+			SharedSecretsProjectID: "EXAMPLE",
 		}, nil
 	}
 
-	// TODO
 	parentFolderID, err := s.GetExternal(ctx, secrets.ExternalSecret{
-		Project: "",
-		Name:    "",
+		Project: mspSecretsGCPProject,
+		Name:    "MSP_PARENT_FOLDER_ID",
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "get ParentFolderID")
 	}
 
-	// TODO
 	billingAccountID, err := s.GetExternal(ctx, secrets.ExternalSecret{
-		Project: "",
-		Name:    "",
+		Project: mspSecretsGCPProject,
+		Name:    "MSP_BILLING_ACCOUNT_ID",
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "get BillingAccountID")
@@ -269,7 +341,7 @@ func mspLoadGCPConfig(ctx context.Context, s *secrets.Store, enabled bool) (*man
 	return &managedservicesplatform.GCPOptions{
 		ParentFolderID:         parentFolderID,
 		BillingAccountID:       billingAccountID,
-		SharedSecretsProjectID: "sourcegraph-secrets",
+		SharedSecretsProjectID: mspSecretsGCPProject,
 	}, nil
 }
 
@@ -281,10 +353,9 @@ func mspLoadTFCConfig(ctx context.Context, s *secrets.Store, enabled bool) (*man
 		}, nil
 	}
 
-	// TODO
 	accessToken, err := s.GetExternal(ctx, secrets.ExternalSecret{
-		Project: "",
-		Name:    "",
+		Name:    "MSP_TFC_ACCESS_TOKEN",
+		Project: mspSecretsGCPProject,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "get AccessToken")
@@ -294,4 +365,12 @@ func mspLoadTFCConfig(ctx context.Context, s *secrets.Store, enabled bool) (*man
 		Enabled:     true,
 		AccessToken: accessToken,
 	}, nil
+}
+
+func getYAMLPathArg(c *cli.Context, n int) (string, error) {
+	v := c.Args().Get(n)
+	if strings.HasSuffix(v, ".yaml") || strings.HasSuffix(v, ".yml") {
+		return v, errors.Newf("expected argument %d %q to be a path to a YAML file", n, v)
+	}
+	return v, nil
 }

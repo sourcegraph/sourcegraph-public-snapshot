@@ -11,6 +11,8 @@ import (
 type Stack struct {
 	Name  string
 	Stack cdktf.TerraformStack
+	// Metadata is arbitrary metadata that can be attached by stack options.
+	Metadata map[string]string
 }
 
 // Set collects the stacks that comprise a CDKTF application.
@@ -47,8 +49,9 @@ func NewSet(renderDir string, opts ...NewStackOption) *Set {
 // New creates a new stack belonging to this set.
 func (s *Set) New(name string, opts ...NewStackOption) cdktf.TerraformStack {
 	stack := Stack{
-		Name:  name,
-		Stack: cdktf.NewTerraformStack(s.app, &name),
+		Name:     name,
+		Stack:    cdktf.NewTerraformStack(s.app, &name),
+		Metadata: make(map[string]string),
 	}
 	for _, opt := range append(s.opts, opts...) {
 		opt(stack)

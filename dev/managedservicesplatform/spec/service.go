@@ -15,3 +15,9 @@ type ServiceSpec struct {
 	// lowercase-delimited version of the service ID.
 	EnvVarPrefix *string `json:"envVarPrefix,omitempty"`
 }
+
+func (s ServiceSpec) Validate() []error {
+	var errs []error
+	// TODO
+	return errs
+}
