@@ -151,9 +151,6 @@ type MockClient struct {
 	// RepoCloneProgressFunc is an instance of a mock function object
 	// controlling the behavior of the method RepoCloneProgress.
 	RepoCloneProgressFunc *ClientRepoCloneProgressFunc
-	// ReposStatsFunc is an instance of a mock function object controlling
-	// the behavior of the method ReposStats.
-	ReposStatsFunc *ClientReposStatsFunc
 	// RequestRepoCloneFunc is an instance of a mock function object
 	// controlling the behavior of the method RequestRepoClone.
 	RequestRepoCloneFunc *ClientRequestRepoCloneFunc
@@ -391,11 +388,6 @@ func NewMockClient() *MockClient {
 		},
 		RepoCloneProgressFunc: &ClientRepoCloneProgressFunc{
 			defaultHook: func(context.Context, ...api.RepoName) (r0 *protocol.RepoCloneProgressResponse, r1 error) {
-				return
-			},
-		},
-		ReposStatsFunc: &ClientReposStatsFunc{
-			defaultHook: func(context.Context) (r0 map[string]*protocol.ReposStats, r1 error) {
 				return
 			},
 		},
@@ -656,11 +648,6 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.RepoCloneProgress")
 			},
 		},
-		ReposStatsFunc: &ClientReposStatsFunc{
-			defaultHook: func(context.Context) (map[string]*protocol.ReposStats, error) {
-				panic("unexpected invocation of MockClient.ReposStats")
-			},
-		},
 		RequestRepoCloneFunc: &ClientRequestRepoCloneFunc{
 			defaultHook: func(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error) {
 				panic("unexpected invocation of MockClient.RequestRepoClone")
@@ -833,9 +820,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		RepoCloneProgressFunc: &ClientRepoCloneProgressFunc{
 			defaultHook: i.RepoCloneProgress,
-		},
-		ReposStatsFunc: &ClientReposStatsFunc{
-			defaultHook: i.ReposStats,
 		},
 		RequestRepoCloneFunc: &ClientRequestRepoCloneFunc{
 			defaultHook: i.RequestRepoClone,
@@ -5614,110 +5598,6 @@ func (c ClientRepoCloneProgressFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientRepoCloneProgressFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// ClientReposStatsFunc describes the behavior when the ReposStats method of
-// the parent MockClient instance is invoked.
-type ClientReposStatsFunc struct {
-	defaultHook func(context.Context) (map[string]*protocol.ReposStats, error)
-	hooks       []func(context.Context) (map[string]*protocol.ReposStats, error)
-	history     []ClientReposStatsFuncCall
-	mutex       sync.Mutex
-}
-
-// ReposStats delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockClient) ReposStats(v0 context.Context) (map[string]*protocol.ReposStats, error) {
-	r0, r1 := m.ReposStatsFunc.nextHook()(v0)
-	m.ReposStatsFunc.appendCall(ClientReposStatsFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ReposStats method of
-// the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientReposStatsFunc) SetDefaultHook(hook func(context.Context) (map[string]*protocol.ReposStats, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ReposStats method of the parent MockClient instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ClientReposStatsFunc) PushHook(hook func(context.Context) (map[string]*protocol.ReposStats, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientReposStatsFunc) SetDefaultReturn(r0 map[string]*protocol.ReposStats, r1 error) {
-	f.SetDefaultHook(func(context.Context) (map[string]*protocol.ReposStats, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientReposStatsFunc) PushReturn(r0 map[string]*protocol.ReposStats, r1 error) {
-	f.PushHook(func(context.Context) (map[string]*protocol.ReposStats, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientReposStatsFunc) nextHook() func(context.Context) (map[string]*protocol.ReposStats, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientReposStatsFunc) appendCall(r0 ClientReposStatsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientReposStatsFuncCall objects describing
-// the invocations of this function.
-func (f *ClientReposStatsFunc) History() []ClientReposStatsFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientReposStatsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientReposStatsFuncCall is an object that describes an invocation of
-// method ReposStats on an instance of MockClient.
-type ClientReposStatsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 map[string]*protocol.ReposStats
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientReposStatsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientReposStatsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

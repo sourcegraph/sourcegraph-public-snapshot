@@ -4,6 +4,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/azureopenai"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -29,6 +30,8 @@ func getBasic(endpoint string, provider conftypes.CompletionsProviderName, acces
 		return azureopenai.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
 	case conftypes.CompletionsProviderNameSourcegraph:
 		return codygateway.NewClient(httpcli.ExternalDoer, endpoint, accessToken)
+	case conftypes.CompletionsProviderNameFireworks:
+		return fireworks.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
 	default:
 		return nil, errors.Newf("unknown completion stream provider: %s", provider)
 	}

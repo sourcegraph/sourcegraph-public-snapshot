@@ -2601,7 +2601,7 @@ func (c *clientImplementor) ArchiveReader(
 	} else {
 		// Fall back to http request
 		u := c.archiveURL(ctx, repo, options)
-		resp, err := c.do(ctx, repo, "POST", u.String(), nil)
+		resp, err := c.do(ctx, repo, u.String(), nil)
 		if err != nil {
 			return nil, err
 		}

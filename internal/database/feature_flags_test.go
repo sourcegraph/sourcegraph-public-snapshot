@@ -57,6 +57,18 @@ func cleanup(t *testing.T, db DB) func() {
 	}
 }
 
+func setupClearRedisCacheTest(t *testing.T, expectedFlagName string) *bool {
+	clearRedisCacheCalled := false
+	oldClearRedisCache := clearRedisCache
+	clearRedisCache = func(flagName string) {
+		if flagName == expectedFlagName {
+			clearRedisCacheCalled = true
+		}
+	}
+	t.Cleanup(func() { clearRedisCache = oldClearRedisCache })
+	return &clearRedisCacheCalled
+}
+
 func testNewFeatureFlagRoundtrip(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
@@ -531,19 +543,11 @@ func testUserFlags(t *testing.T) {
 		u1 := mkUser("u", o1.ID)
 		f1 := mkFFBool("f1", true)
 		mkUserOverride(u1.ID, "f1", false)
-
-		called := false
-		oldClearRedisCache := clearRedisCache
-		clearRedisCache = func(flagName string) {
-			if flagName == f1.Name {
-				called = true
-			}
-		}
-		t.Cleanup(func() { clearRedisCache = oldClearRedisCache })
+		clearRedisCacheCalled := setupClearRedisCacheTest(t, f1.Name)
 
 		err := flagStore.DeleteFeatureFlag(ctx, f1.Name)
 		require.NoError(t, err)
-		require.True(t, called)
+		require.True(t, *clearRedisCacheCalled)
 
 		flags, err := flagStore.GetFeatureFlags(ctx)
 		require.NoError(t, err)
@@ -763,8 +767,10 @@ func testUpdateFeatureFlag(t *testing.T) {
 		boolFlag, err := flagStore.CreateBool(ctx, "update-test-true-flag", true)
 		require.NoError(t, err)
 		boolFlag.Bool.Value = false
+		clearRedisCacheCalled := setupClearRedisCacheTest(t, boolFlag.Name)
 		updatedFlag, err := flagStore.UpdateFeatureFlag(ctx, boolFlag)
 		require.NoError(t, err)
+		require.True(t, *clearRedisCacheCalled)
 		assert.False(t, updatedFlag.Bool.Value)
 		assert.Greater(t, updatedFlag.UpdatedAt, boolFlag.UpdatedAt)
 	})
@@ -773,8 +779,10 @@ func testUpdateFeatureFlag(t *testing.T) {
 		require.NoError(t, err)
 		const expectedValue = int32(1337)
 		rolloutFlag.Rollout.Rollout = expectedValue
+		clearRedisCacheCalled := setupClearRedisCacheTest(t, rolloutFlag.Name)
 		updatedFlag, err := flagStore.UpdateFeatureFlag(ctx, rolloutFlag)
 		require.NoError(t, err)
+		require.True(t, *clearRedisCacheCalled)
 		assert.Equal(t, expectedValue, updatedFlag.Rollout.Rollout)
 		assert.Greater(t, updatedFlag.UpdatedAt, rolloutFlag.UpdatedAt)
 	})

@@ -57,6 +57,9 @@ func newServerHandler(logger log.Logger, config *Config) (http.Handler, error) {
 		return nil, errors.Errorf("create Pub/Sub client: %v", err)
 	}
 	r.Path("/-/healthz").Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		// NOTE: Only mark as failed and respond with a non-200 status code if a critical
+		// component fails, otherwise the service would be marked as unhealthy and stop
+		// serving requests (in Cloud Run).
 		failed := false
 		status := make(map[string]string)
 		if err := pubsubClient.Ping(context.Background()); err != nil {
@@ -68,7 +71,6 @@ func newServerHandler(logger log.Logger, config *Config) (http.Handler, error) {
 
 		if hubspotutil.HasAPIKey() {
 			if err := hubspotutil.Client().Ping(30 * time.Second); err != nil {
-				failed = true
 				status["hubspotClient"] = err.Error()
 			} else {
 				status["hubspotClient"] = "OK"

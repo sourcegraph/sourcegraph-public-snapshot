@@ -64,7 +64,7 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 			repoembeddingsbg.NewRepoEmbeddingJobWorkerStore(observationCtx, db.Handle()),
 			db,
 			uploadStore,
-			gitserver.NewClient(db),
+			gitserver.NewClient(),
 			getQdrantInserter,
 			services.ContextService,
 			repoembeddingsbg.NewRepoEmbeddingJobsStore(db),
