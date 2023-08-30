@@ -1,6 +1,6 @@
 <idea-plugin require-restart="true">
     <id>com.sourcegraph.jetbrains</id>
-    <name>Cody AI by Sourcegraph</name>
+    <name>Sourcegraph Cody + Code Search</name>
     <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
 
     <!--
@@ -25,13 +25,13 @@
             parentId="tools"
             instance="com.sourcegraph.config.SettingsConfigurable"
             id="com.sourcegraph.config.SettingsConfigurable"
-            displayName="Cody AI by Sourcegraph"
+            displayName="Sourcegraph Cody + Code Search"
             nonDefaultProject="false"
         />
-        <notificationGroup id="Cody AI by Sourcegraph: server access" displayType="BALLOON"/>
-        <notificationGroup id="Cody AI by Sourcegraph errors" displayType="BALLOON"/>
-        <notificationGroup id="Cody AI by Sourcegraph: URL sharing" displayType="BALLOON"/>
-        <notificationGroup id="Cody AI by Sourcegraph plugin updates" displayType="STICKY_BALLOON"/>
+        <notificationGroup id="Sourcegraph: server access" displayType="BALLOON"/>
+        <notificationGroup id="Sourcegraph errors" displayType="BALLOON"/>
+        <notificationGroup id="Sourcegraph: URL sharing" displayType="BALLOON"/>
+        <notificationGroup id="Sourcegraph Cody + Code Search plugin updates" displayType="STICKY_BALLOON"/>
         <projectService id="sourcegraph.findService" serviceImplementation="com.sourcegraph.find.FindService"/>
         <postStartupActivity implementation="com.sourcegraph.telemetry.PostStartupActivity"/>
         <postStartupActivity implementation="com.sourcegraph.config.NotificationActivity"/>
