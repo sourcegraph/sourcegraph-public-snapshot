@@ -31,7 +31,7 @@ public abstract class CodyAutocompleteElementRenderer implements EditorCustomEle
     this.completionItem = completionItem;
     this.themeAttributes =
         isCustomAutocompleteColorEnabled()
-            ? AutocompleteRenderUtils.getCustomTextAttributes(getCustomAutocompleteColor())
+            ? AutocompleteRenderUtils.getCustomTextAttributes(editor, getCustomAutocompleteColor())
             : AutocompleteRenderUtils.getTextAttributesForEditor(editor);
     this.editor = editor;
     this.type = type;

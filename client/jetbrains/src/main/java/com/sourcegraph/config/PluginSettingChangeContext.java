@@ -11,7 +11,7 @@ public class PluginSettingChangeContext {
   public final boolean oldCodyVerboseDebugEnabled;
 
   @NotNull public final String newUrl;
-  public final Integer oldCustomAutocompleteColor;
+  @Nullable public final Integer oldCustomAutocompleteColor;
   public final boolean isDotComAccessTokenChanged;
   public final boolean isEnterpriseAccessTokenChanged;
 
