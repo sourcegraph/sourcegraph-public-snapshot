@@ -83,6 +83,7 @@ func InitGitserver() {
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(32),
 		DB:                      db,
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
+		Locker:                  server.NewRepositoryLocker(),
 	}
 
 	grpcServer := defaults.NewServer(logger)
@@ -99,7 +100,7 @@ func InitGitserver() {
 	}()
 
 	serverAddress := l.Addr().String()
-	source := gitserver.NewTestClientSource(&t, db, []string{serverAddress})
+	source := gitserver.NewTestClientSource(&t, []string{serverAddress})
 	testGitserverClient = gitserver.NewTestClient(httpcli.InternalDoer, source)
 	GitserverAddresses = []string{serverAddress}
 }

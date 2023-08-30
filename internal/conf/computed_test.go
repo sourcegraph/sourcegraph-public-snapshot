@@ -7,7 +7,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/license"
@@ -314,53 +313,6 @@ func TestCodyEnabled(t *testing.T) {
 	}
 }
 
-func TestGetDeduplicatedForksIndex(t *testing.T) {
-	testCases := []struct {
-		name       string
-		haveConfig *schema.Repositories
-		wantIndex  collections.Set[string]
-	}{
-		{
-			name:      "config not set",
-			wantIndex: map[string]struct{}{},
-		},
-		{
-			name:       "repositories set, but deduplicated forks is empty",
-			haveConfig: &schema.Repositories{},
-			wantIndex:  map[string]struct{}{},
-		},
-		{
-			name: "deduplicated forks is not empty",
-			haveConfig: &schema.Repositories{
-				DeduplicateForks: []string{
-					"abc",
-					"def",
-					"abc", // a duplicate
-				},
-			},
-			wantIndex: map[string]struct{}{
-				"abc": {},
-				"def": {},
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			Mock(&Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					Repositories: tc.haveConfig,
-				},
-			})
-
-			gotIndex := GetDeduplicatedForksIndex()
-			if diff := cmp.Diff(gotIndex, tc.wantIndex); diff != "" {
-				t.Errorf("mismatched deduplicated repos index: (-want, +got)\n%s", diff)
-			}
-		})
-	}
-}
-
 func TestGetCompletionsConfig(t *testing.T) {
 	licenseKey := "theasdfkey"
 	licenseAccessToken := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
@@ -547,6 +499,28 @@ func TestGetCompletionsConfig(t *testing.T) {
 				AccessToken:              "asdf",
 				Provider:                 "azure-openai",
 				Endpoint:                 "https://acmecorp.openai.azure.com",
+			},
+		},
+		{
+			name: "Fireworks completions completions",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider:    "fireworks",
+					AccessToken: "asdf",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:                "accounts/fireworks/models/llama-v2-7b",
+				ChatModelMaxTokens:       3000,
+				FastChatModel:            "accounts/fireworks/models/llama-v2-7b",
+				FastChatModelMaxTokens:   3000,
+				CompletionModel:          "accounts/fireworks/models/starcoder-7b-w8a16",
+				CompletionModelMaxTokens: 6000,
+				AccessToken:              "asdf",
+				Provider:                 "fireworks",
+				Endpoint:                 "https://api.fireworks.ai/inference/v1/completions",
 			},
 		},
 		{

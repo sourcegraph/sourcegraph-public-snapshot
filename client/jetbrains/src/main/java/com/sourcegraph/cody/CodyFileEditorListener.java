@@ -22,6 +22,9 @@ public class CodyFileEditorListener implements FileEditorManagerListener {
     if (document == null) {
       return;
     }
+    if (!CodyAgent.isConnected(source.getProject())) {
+      return;
+    }
     CodyAgentClient client = CodyAgent.getClient(source.getProject());
     if (client.server == null) {
       return;

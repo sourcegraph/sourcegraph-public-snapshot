@@ -22,8 +22,9 @@ import com.sourcegraph.cody.CodyAgentProjectListener;
 import com.sourcegraph.cody.CodyToolWindowFactory;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
-import com.sourcegraph.cody.api.CodyLLMConfiguration;
-import com.sourcegraph.cody.autocomplete.CodyAutoCompleteManager;
+import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager;
+import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus;
+import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService;
 import com.sourcegraph.find.browser.JavaToJSBridge;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import java.awt.event.InputEvent;
@@ -64,12 +65,12 @@ public class SettingsChangeListener implements Disposable {
               javaToJSBridge.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project));
             }
 
-            if (context.oldCodyEnabled && !context.newCodyEnabled) {
-              logger.warn("Stopping Cody agent because of config changes");
-              new CodyAgentProjectListener().stopAgent(project);
-            } else if (!context.oldCodyEnabled && context.newCodyEnabled) {
-              logger.warn("Starting Cody agent because of config changes");
+            if (context.newCodyEnabled) {
+              // Starting the agent is idempotent, so it's OK if we call startAgent multiple times.
               new CodyAgentProjectListener().startAgent(project);
+            } else {
+              // Stopping the agent is idempotent, so it's OK if we call stopAgent multiple times.
+              new CodyAgentProjectListener().stopAgent(project);
             }
 
             // Notify Cody Agent about config changes.
@@ -79,15 +80,15 @@ public class SettingsChangeListener implements Disposable {
             }
 
             // Log install events
-            if (!Objects.equals(context.oldUrl, context.newUrl)) {
-              GraphQlLogger.logInstallEvent(project, ConfigUtil::setInstallEventLogged);
+            boolean urlChanged = !Objects.equals(context.oldUrl, context.newUrl);
+            if (urlChanged) {
+              GraphQlLogger.logInstallEvent(project).thenAccept(ConfigUtil::setInstallEventLogged);
             } else if ((context.isDotComAccessTokenChanged
                     || context.isEnterpriseAccessTokenChanged)
                 && !ConfigUtil.isInstallEventLogged()) {
-              GraphQlLogger.logInstallEvent(project, ConfigUtil::setInstallEventLogged);
+              GraphQlLogger.logInstallEvent(project).thenAccept(ConfigUtil::setInstallEventLogged);
             }
 
-            boolean urlChanged = !Objects.equals(context.oldUrl, context.newUrl);
             SettingsComponent.InstanceType instanceType = ConfigUtil.getInstanceType(project);
             boolean accessTokenChanged =
                 (instanceType == SettingsComponent.InstanceType.DOTCOM
@@ -99,32 +100,29 @@ public class SettingsChangeListener implements Disposable {
             // Notify user about a successful connection
             if (connectionSettingsChanged) {
               String accessTokenToTest = ConfigUtil.getProjectAccessToken(project);
-              ApiAuthenticator.testConnection(
-                  context.newUrl,
-                  accessTokenToTest,
-                  context.newCustomRequestHeaders,
-                  (status) -> {
-                    if (ConfigUtil.didAuthenticationFailLastTime()
-                        && status == ApiAuthenticator.ConnectionStatus.AUTHENTICATED) {
-                      notifyAboutSuccessfulConnection();
-                    }
-                    ConfigUtil.setAuthenticationFailedLastTime(
-                        status != ApiAuthenticator.ConnectionStatus.AUTHENTICATED);
-                  });
+              ApiAuthenticator.testConnection(project)
+                  .thenAccept(
+                      (status) -> {
+                        if (ConfigUtil.didAuthenticationFailLastTime()
+                            && status == ApiAuthenticator.ConnectionStatus.AUTHENTICATED) {
+                          notifyAboutSuccessfulConnection();
+                        }
+                        ConfigUtil.setAuthenticationFailedLastTime(true);
+                      });
             }
 
             // clear autocomplete suggestions if freshly disabled
-            if (context.oldCodyAutoCompleteEnabled && !context.newCodyAutoCompleteEnabled) {
+            if (context.oldCodyAutocompleteEnabled && !context.newCodyAutocompleteEnabled) {
               Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
-              CodyAutoCompleteManager codyAutoCompleteManager =
-                  CodyAutoCompleteManager.getInstance();
+              CodyAutocompleteManager codyAutocompleteManager =
+                  CodyAutocompleteManager.getInstance();
               Arrays.stream(openProjects)
                   .flatMap(
                       project ->
                           Arrays.stream(FileEditorManager.getInstance(project).getAllEditors()))
                   .filter(fileEditor -> fileEditor instanceof TextEditor)
                   .map(fileEditor -> ((TextEditor) fileEditor).getEditor())
-                  .forEach(codyAutoCompleteManager::clearAutoCompleteSuggestions);
+                  .forEach(codyAutocompleteManager::clearAutocompleteSuggestions);
             }
 
             // Disable/enable the Cody tool window depending on the setting
@@ -143,9 +141,13 @@ public class SettingsChangeListener implements Disposable {
                 toolWindow.setAvailable(true, null);
               }
             }
-            if (context.newCodyEnabled) {
-              // refresh Cody LLM configuration
-              CodyLLMConfiguration.getInstance(project).refreshCache();
+            if (!context.newCodyEnabled) {
+              CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.CodyDisabled);
+            } else if (!context.newCodyAutocompleteEnabled) {
+              CodyAutocompleteStatusService.notifyApplication(
+                  CodyAutocompleteStatus.AutocompleteDisabled);
+            } else {
+              CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.Ready);
             }
           }
         });

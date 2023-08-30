@@ -123,6 +123,10 @@ env:
   SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED: "true"
   SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: "1KB"
   SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: "100MB"
+  ## zoekt-specific message logging
+  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED: "true"
+  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: "1KB"
+  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: "100MB"
 
 commands:
   server:
@@ -169,7 +173,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/gitserver github.com/sourcegraph/sourcegraph/enterprise/cmd/gitserver
+      go build -gcflags="$GCFLAGS" -o .bin/gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
     checkBinary: .bin/gitserver
     env: &gitserverenv
       HOSTNAME: 127.0.0.1:3178
@@ -177,7 +181,6 @@ commands:
       - lib
       - internal
       - cmd/gitserver
-      - enterprise/cmd/gitserver
 
   # This is only here to stay backwards-compatible with people's custom
   # `sg.config.overwrite.yaml` files
@@ -239,7 +242,6 @@ commands:
         export GCFLAGS='-N -l'
       fi
 
-      ./cmd/symbols/build-ctags.sh &&
       go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
     checkBinary: .bin/symbols
     env:
@@ -273,9 +275,13 @@ commands:
   qdrant:
     cmd: |
       docker run -p 6333:6333 -p 6334:6334 \
-        -v $HOME/.sourcegraph-dev/data/qdrant_data:/qdrant/storage \
+        -v $HOME/.sourcegraph-dev/data/qdrant_data:/data \
         -e QDRANT__SERVICE__GRPC_PORT="6334" \
-        qdrant/qdrant
+        -e QDRANT__LOG_LEVEL=INFO \
+        -e QDRANT__STORAGE__STORAGE_PATH=/data \
+        -e QDRANT__STORAGE__SNAPSHOTS_PATH=/data \
+        --entrypoint /usr/local/bin/qdrant \
+        sourcegraph/qdrant:insiders
   worker:
     cmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -328,6 +334,9 @@ commands:
     checkBinary: .bin/pings
     env:
       SRC_LOG_LEVEL: info
+      PINGS_PUBSUB_PROJECT_ID: ''
+      PINGS_PUBSUB_TOPIC_ID: ''
+      HUBSPOT_ACCESS_TOKEN: ''
     watch:
       - lib
       - internal
@@ -927,7 +936,6 @@ bazelCommands:
     env:
       ENTERPRISE: 1
   symbols:
-    # TODO build ctags thing
     target: //enterprise/cmd/symbols
     checkBinary: .bin/symbols
     env:
@@ -936,7 +944,7 @@ bazelCommands:
       CTAGS_PROCESSES: 2
       USE_ROCKSKIP: "false"
   gitserver-template: &gitserver_bazel_template
-    target: //enterprise/cmd/gitserver
+    target: //cmd/gitserver
     env: &gitserverenv
       HOSTNAME: 127.0.0.1:3178
   # This is only here to stay backwards-compatible with people's custom
@@ -1498,7 +1506,7 @@ tests:
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
     env:
-      DOCSITE_VERSION: v1.9.2 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
+      DOCSITE_VERSION: v1.9.4 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
 
   web-e2e:
     preamble: |

@@ -23,7 +23,7 @@ func Init(
 	enterpriseServices *enterprise.Services,
 ) error {
 	repoEmbeddingsStore := repo.NewRepoEmbeddingJobsStore(db)
-	gitserverClient := gitserver.NewClient(db)
+	gitserverClient := gitserver.NewClient()
 	embeddingsClient := embeddings.NewDefaultClient()
 	enterpriseServices.EmbeddingsResolver = resolvers.NewResolver(
 		db,

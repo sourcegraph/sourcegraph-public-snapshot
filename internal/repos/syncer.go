@@ -48,11 +48,6 @@ type Syncer struct {
 	// Hooks for enterprise specific functionality. Ignored in OSS
 	EnterpriseCreateRepoHook func(context.Context, Store, *types.Repo) error
 	EnterpriseUpdateRepoHook func(context.Context, Store, *types.Repo, *types.Repo) error
-
-	// DeduplicatedForksSet is a set of all repos added to the deduplicateForks site config
-	// property. It exists only to aid in fast lookups instead of having to iterate through the list
-	// each time.
-	DeduplicatedForksSet *types.RepoURISet
 }
 
 // RunOptions contains options customizing Run behaviour.
@@ -79,7 +74,7 @@ func (s *Syncer) Routines(ctx context.Context, store Store, opts RunOptions) []g
 		s.initialUnmodifiedDiffFromStore(ctx, store)
 	}
 
-	worker, resetter := NewSyncWorker(ctx, observation.ContextWithLogger(s.ObsvCtx.Logger.Scoped("syncWorker", ""), s.ObsvCtx),
+	worker, resetter, syncerJanitor := NewSyncWorker(ctx, observation.ContextWithLogger(s.ObsvCtx.Logger.Scoped("syncWorker", ""), s.ObsvCtx),
 		store.Handle(),
 		&syncHandler{
 			syncer:          s,
@@ -110,7 +105,7 @@ func (s *Syncer) Routines(ctx context.Context, store Store, opts RunOptions) []g
 		goroutine.WithIntervalFunc(opts.EnqueueInterval),
 	)
 
-	return []goroutine.BackgroundRoutine{worker, resetter, scheduler}
+	return []goroutine.BackgroundRoutine{worker, resetter, syncerJanitor, scheduler}
 }
 
 type syncHandler struct {

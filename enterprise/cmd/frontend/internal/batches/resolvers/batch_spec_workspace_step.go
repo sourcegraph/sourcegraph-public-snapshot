@@ -158,10 +158,10 @@ func (r *batchSpecWorkspaceStepV1Resolver) DiffStat(ctx context.Context) (*graph
 
 func (r *batchSpecWorkspaceStepV1Resolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
 	if r.CachedResultFound() {
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(r.store.DatabaseDB()), r.repo, r.baseRev, r.cachedResult.Diff)
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(), r.repo, r.baseRev, r.cachedResult.Diff)
 	}
 	if r.stepInfo.DiffFound {
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(r.store.DatabaseDB()), r.repo, r.baseRev, r.stepInfo.Diff)
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(), r.repo, r.baseRev, r.stepInfo.Diff)
 	}
 	return nil, nil
 }
@@ -348,10 +348,10 @@ func (r *batchSpecWorkspaceStepV2Resolver) Diff(ctx context.Context) (graphqlbac
 	// If a cached result was found previously, or one was generated for this step, we can
 	// use it to return a comparison resolver.
 	if r.cachedResult != nil {
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(r.store.DatabaseDB()), r.repo, r.baseRev, r.cachedResult.Diff)
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(), r.repo, r.baseRev, r.cachedResult.Diff)
 	}
 	if r.stepInfo != nil && r.stepInfo.DiffFound {
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(r.store.DatabaseDB()), r.repo, r.baseRev, r.stepInfo.Diff)
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(), r.repo, r.baseRev, r.stepInfo.Diff)
 	}
 	return nil, nil
 }

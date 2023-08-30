@@ -23,6 +23,9 @@ public class CodyAgentFocusListener implements FocusChangeListener {
     if (file == null) {
       return;
     }
+    if (!CodyAgent.isConnected(editor.getProject())) {
+      return;
+    }
     CodyAgentClient client = CodyAgent.getClient(editor.getProject());
     if (client.server == null) {
       return;

@@ -2,11 +2,10 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
-	"path/filepath"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -70,7 +70,7 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 	internalReq := protocol.ExecRequest{
 		Repo:           api.RepoName(req.GetRepo()),
 		EnsureRevision: req.GetEnsureRevision(),
-		Args:           req.GetArgs(),
+		Args:           byteSlicesToStrings(req.GetArgs()),
 		Stdin:          req.GetStdin(),
 		NoTimeout:      req.GetNoTimeout(),
 	}
@@ -82,7 +82,7 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 	})
 
 	// Log which actor is accessing the repo.
-	args := req.GetArgs()
+	args := byteSlicesToStrings(req.GetArgs())
 	cmd := ""
 	if len(args) > 0 {
 		cmd = args[0]
@@ -220,7 +220,7 @@ func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest
 }
 
 func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService_P4ExecServer) error {
-	arguments := req.GetArgs()
+	arguments := byteSlicesToStrings(req.GetArgs())
 
 	if len(arguments) < 1 {
 		return status.Error(codes.InvalidArgument, "args must be greater than or equal to 1")
@@ -358,7 +358,7 @@ func (gs *GRPCServer) RepoCloneProgress(_ context.Context, req *proto.RepoCloneP
 	}
 	for _, repo := range repositories {
 		repoName := api.RepoName(repo)
-		result := gs.Server.repoCloneProgress(repoName)
+		result := repoCloneProgress(gs.Server.ReposDir, gs.Server.Locker, repoName)
 		resp.Results[repoName] = result
 	}
 	return resp.ToProto(), nil
@@ -367,7 +367,7 @@ func (gs *GRPCServer) RepoCloneProgress(_ context.Context, req *proto.RepoCloneP
 func (gs *GRPCServer) RepoDelete(ctx context.Context, req *proto.RepoDeleteRequest) (*proto.RepoDeleteResponse, error) {
 	repo := req.GetRepo()
 
-	if err := gs.Server.deleteRepo(ctx, api.UndeletedRepoName(api.RepoName(repo))); err != nil {
+	if err := deleteRepo(ctx, gs.Server.Logger, gs.Server.DB, gs.Server.Hostname, gs.Server.ReposDir, api.UndeletedRepoName(api.RepoName(repo))); err != nil {
 		gs.Server.Logger.Error("failed to delete repository", log.String("repo", repo), log.Error(err))
 		return &proto.RepoDeleteResponse{}, status.Errorf(codes.Internal, "failed to delete repository %s: %s", repo, err)
 	}
@@ -383,25 +383,38 @@ func (gs *GRPCServer) RepoUpdate(_ context.Context, req *proto.RepoUpdateRequest
 	return grpcResp.ToProto(), nil
 }
 
-func (gs *GRPCServer) ReposStats(_ context.Context, _ *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {
-	b, err := gs.Server.readReposStatsFile(filepath.Join(gs.Server.ReposDir, reposStatsName))
+// TODO: Remove this endpoint after 5.2, it is deprecated.
+func (gs *GRPCServer) ReposStats(ctx context.Context, _ *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {
+	size, err := gs.Server.DB.GitserverRepos().GetGitserverGitDirSize(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to read %s: %s", reposStatsName, err.Error())
+		return nil, err
 	}
 
-	var stats *protocol.ReposStats
-	if err := json.Unmarshal(b, &stats); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to unmarshal %s: %s", reposStatsName, err.Error())
+	shardCount := len(gitserver.NewGitserverAddresses(conf.Get()).Addresses)
+
+	resp := protocol.ReposStats{
+		UpdatedAt: time.Now(), // Unused value, to keep the API pretend the data is fresh.
+		// Divide the size by shard count so that the cumulative number on the client
+		// side is correct again.
+		GitDirBytes: size / int64(shardCount),
 	}
 
-	return stats.ToProto(), nil
+	return resp.ToProto(), nil
 }
 
 func (gs *GRPCServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoCloneableRequest) (*proto.IsRepoCloneableResponse, error) {
 	repo := api.RepoName(req.GetRepo())
-	resp, err := gs.Server.IsRepoCloneable(ctx, repo)
+	resp, err := gs.Server.isRepoCloneable(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
 	return resp.ToProto(), nil
+}
+
+func byteSlicesToStrings(in [][]byte) []string {
+	res := make([]string, len(in))
+	for i, b := range in {
+		res[i] = string(b)
+	}
+	return res
 }

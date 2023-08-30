@@ -40,12 +40,19 @@ type CoreTestOperationsOptions struct {
 //
 // If the conditions for the addition of an operation cannot be expressed using the above
 // arguments, please add it to the switch case within `GeneratePipeline` instead.
-func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *operations.Set {
+func CoreTestOperations(buildOpts bk.BuildOptions, diff changed.Diff, opts CoreTestOperationsOptions) *operations.Set {
 	// Base set
 	ops := operations.NewSet()
-	ops.Append(BazelOperations(opts.IsMainBranch)...)
+
+	// If the only thing that has change is the Client Jetbrains, then we skip:
+	// - BazelOperations
+	// - Sg Lint
+	if diff.Only(changed.ClientJetbrains) {
+		return ops
+	}
 
 	// Simple, fast-ish linter checks
+	ops.Append(BazelOperations(buildOpts, opts.IsMainBranch)...)
 	linterOps := operations.NewNamedSet("Linters and static analysis")
 	if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
 		linterOps.Append(addSgLints(targets))
