@@ -50,7 +50,7 @@ func IsEmailBanned(email string) bool {
 	}
 
 	domain := addr.Address[strings.Index(addr.Address, "@")+1:]
-	_, banned := bannedEmailDomains[domain]
+	_, banned := bannedEmailDomains[strings.ToLower(domain)]
 
 	return banned
 }
