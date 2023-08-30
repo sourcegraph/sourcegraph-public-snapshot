@@ -72,7 +72,7 @@ Click `Continue with Sourcegraph.com` in the Cody extension. From there, you'll 
 
 ## Verifying the installation
 
-Once connected, you should see the Cody icon on the left side of VS Code. Click it, and a panel will open up. To verify that the Cody AI extension has been successfully installed and is working as expected:
+Once connected, click the Cody icon from the sidebar again, and a panel will open. To verify that the Cody AI extension has been successfully installed and is working as expected:
 
 - Open a file in a supported programming language like JavaScript, Python, Go, etc.
 - As you start typing, Cody AI should begin providing intelligent suggestions and context-aware completions based on your coding patterns and the context of your code
