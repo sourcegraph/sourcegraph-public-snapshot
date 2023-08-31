@@ -10,8 +10,24 @@ jobs:
           fetch-depth: 0
       - name: TruffleHog OSS
         uses: trufflesecurity/trufflehog@main
+        continue-on-error: true
         with:
           path: ./
           base: ${{ github.event.repository.default_branch }}
           head: HEAD
-          extra_args: --debug --only-verified
+          extra_args: --no-update --only-verified --json
+
+      - name: Scan Results Status
+        if: steps.trufflehog.outcome == 'failure'
+        run: exit 1
+
+      - name: Post to Slack
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          payload: |
+              {
+                "text": "🚨 Trufflehog has detected verified secret in this pull request.",
+                "channel": ${{ secrets.SLACK_MONITORING_CHANNEL }}
+              }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
