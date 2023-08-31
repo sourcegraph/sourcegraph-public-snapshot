@@ -168,14 +168,12 @@
         <action
             id="cody.enableCodyAutocomplete"
             class="com.sourcegraph.cody.statusbar.CodyEnableAutocompleteAction"
-            text="Enable Cody Autocomplete"
-            icon="/icons/codyLogoSm.svg"/>
+            text="Enable Cody Autocomplete"/>
 
         <action
             id="cody.disableCodyAutocomplete"
             class="com.sourcegraph.cody.statusbar.CodyDisableAutocompleteAction"
-            text="Disable Cody Autocomplete"
-            icon="/icons/codyLogoSm.svg"/>
+            text="Disable Cody Autocomplete"/>
 
         <group id="CodyChatActionsGroup">
             <reference ref="cody.resetCurrentConversation"/>
