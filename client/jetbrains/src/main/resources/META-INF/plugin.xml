@@ -11,7 +11,7 @@
         - Version 2020.2 and 2020.3 have issues with adding custom HTTP headers to requests from within the JCEF view
              -> https://github.com/sourcegraph/sourcegraph/issues/37475#issuecomment-1171355831
     -->
-    <idea-version since-build="212.0" />
+    <idea-version since-build="212.0"/>
 
     <depends>com.intellij.modules.platform</depends>
     <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>
@@ -60,8 +60,10 @@
     </extensions>
 
     <applicationListeners>
-        <listener class="com.sourcegraph.cody.CodyAgentProjectListener" topic="com.intellij.openapi.project.ProjectManagerListener"/>
-        <listener class="com.sourcegraph.cody.CodyFileEditorListener" topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+        <listener class="com.sourcegraph.cody.CodyAgentProjectListener"
+                  topic="com.intellij.openapi.project.ProjectManagerListener"/>
+        <listener class="com.sourcegraph.cody.CodyFileEditorListener"
+                  topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
         <!-- CodyAgentFocusListener is commented out since it doesn't seem possible to register a listener via plugin.xml.
              We programmatically register a listener from CodyAgent instead. -->
         <!-- <listener class="com.sourcegraph.cody.CodyAgentFocusListener" topic="com.intellij.openapi.editor.ex.FocusChangeListener"/> -->
@@ -124,7 +126,8 @@
         </action>
 
         <!-- autocomplete -->
-        <action id="cody.acceptAutocompleteAction" class="com.sourcegraph.cody.autocomplete.AcceptCodyAutocompleteAction">
+        <action id="cody.acceptAutocompleteAction"
+                class="com.sourcegraph.cody.autocomplete.AcceptCodyAutocompleteAction">
             <keyboard-shortcut first-keystroke="TAB" keymap="$default"/>
             <override-text place="MainMenu" text="Accept Autocomplete Suggestion"/>
         </action>
@@ -154,13 +157,23 @@
             id="cody.downloadAndInstallCodyAction"
             class="com.sourcegraph.cody.recipes.DownloadCodyAppAction"
             text="Download Cody App"
-            icon="/icons/codyLogoSm.svg" />
+            icon="/icons/codyLogoSm.svg"/>
 
         <action
             id="cody.runCodyAppAction"
             class="com.sourcegraph.cody.recipes.RunCodyAppAction"
             text="Run Cody App"
-            icon="/icons/codyLogoSm.svg" />
+            icon="/icons/codyLogoSm.svg"/>
+
+        <action
+            id="cody.enableCodyAutocomplete"
+            class="com.sourcegraph.cody.statusbar.CodyEnableAutocompleteAction"
+            text="Enable Cody Autocomplete"/>
+
+        <action
+            id="cody.disableCodyAutocomplete"
+            class="com.sourcegraph.cody.statusbar.CodyDisableAutocompleteAction"
+            text="Disable Cody Autocomplete"/>
 
         <group id="CodyChatActionsGroup">
             <reference ref="cody.resetCurrentConversation"/>
@@ -182,6 +195,12 @@
             <reference ref="sourcegraph.openFile"/>
             <reference ref="sourcegraph.copy"/>
             <add-to-group anchor="last" group-id="EditorPopupMenu"/>
+        </group>
+
+        <group id="CodyStatusBarActions" popup="true" text="Cody" searchable="false"
+               class="com.sourcegraph.cody.statusbar.CodyStatusBarActionGroup">
+            <reference ref="cody.enableCodyAutocomplete"/>
+            <reference ref="cody.disableCodyAutocomplete"/>
         </group>
     </actions>
 </idea-plugin>

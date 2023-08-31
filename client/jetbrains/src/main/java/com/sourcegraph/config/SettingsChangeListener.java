@@ -8,12 +8,9 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.KeyboardShortcut;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.fileEditor.TextEditor;
 import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.util.messages.MessageBus;
@@ -29,7 +26,6 @@ import com.sourcegraph.find.browser.JavaToJSBridge;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.util.Arrays;
 import java.util.Objects;
 import javax.swing.KeyStroke;
 import org.jetbrains.annotations.NotNull;
@@ -113,16 +109,7 @@ public class SettingsChangeListener implements Disposable {
 
             // clear autocomplete suggestions if freshly disabled
             if (context.oldCodyAutocompleteEnabled && !context.newCodyAutocompleteEnabled) {
-              Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
-              CodyAutocompleteManager codyAutocompleteManager =
-                  CodyAutocompleteManager.getInstance();
-              Arrays.stream(openProjects)
-                  .flatMap(
-                      project ->
-                          Arrays.stream(FileEditorManager.getInstance(project).getAllEditors()))
-                  .filter(fileEditor -> fileEditor instanceof TextEditor)
-                  .map(fileEditor -> ((TextEditor) fileEditor).getEditor())
-                  .forEach(codyAutocompleteManager::clearAutocompleteSuggestions);
+              CodyAutocompleteManager.getInstance().clearAutocompleteSuggestionsForAllProjects();
             }
 
             // Disable/enable the Cody tool window depending on the setting

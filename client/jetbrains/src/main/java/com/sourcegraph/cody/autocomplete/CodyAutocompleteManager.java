@@ -8,7 +8,10 @@ import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.editor.impl.ImaginaryEditor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.TextEditor;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.TextRange;
@@ -31,6 +34,7 @@ import com.sourcegraph.telemetry.GraphQlLogger;
 import difflib.Delta;
 import difflib.DiffUtils;
 import difflib.Patch;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -58,6 +62,12 @@ public class CodyAutocompleteManager {
     return ApplicationManager.getApplication().getService(CodyAutocompleteManager.class);
   }
 
+  /**
+   * Clears any already rendered autocomplete suggestions for the given editor and cancels any
+   * pending ones.
+   *
+   * @param editor the editor to clear autocomplete suggestions for
+   */
   @RequiresEdt
   public void clearAutocompleteSuggestions(@NotNull Editor editor) {
     // Log "suggested" event and clear current autocompletion
@@ -82,6 +92,20 @@ public class CodyAutocompleteManager {
 
     // Clear any existing inline elements
     disposeInlays(editor);
+  }
+
+  /**
+   * Clears any already rendered autocomplete suggestions for all open editors and cancels any
+   * pending ones.
+   */
+  @RequiresEdt
+  public void clearAutocompleteSuggestionsForAllProjects() {
+    Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
+    Arrays.stream(openProjects)
+        .flatMap(project -> Arrays.stream(FileEditorManager.getInstance(project).getAllEditors()))
+        .filter(fileEditor -> fileEditor instanceof TextEditor)
+        .map(fileEditor -> ((TextEditor) fileEditor).getEditor())
+        .forEach(this::clearAutocompleteSuggestions);
   }
 
   @RequiresEdt
