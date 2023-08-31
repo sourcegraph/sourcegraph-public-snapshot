@@ -76,7 +76,10 @@ func productSubscriptionByDBID(ctx context.Context, logger log.Logger, db databa
 	audit.Log(ctx, logger, audit.Record{
 		Entity: auditEntityProductSubscriptions,
 		Action: action,
-		Fields: []log.Field{log.String("grant_reason", grantReason)},
+		Fields: []log.Field{
+			log.String("grant_reason", grantReason),
+			log.String("accessed_product_subscription_id", id),
+		},
 	})
 	return &productSubscription{logger: logger, v: v, db: db}, nil
 }
@@ -302,10 +305,14 @@ func (r ProductSubscriptionLicensingResolver) ProductSubscriptions(ctx context.C
 	if err != nil {
 		return nil, err
 	}
+	// 🚨 SECURITY: Record access with target
 	audit.Log(ctx, r.Logger, audit.Record{
 		Entity: auditEntityProductSubscriptions,
 		Action: "list",
-		Fields: []log.Field{log.String("grant_reason", grantReason)},
+		Fields: []log.Field{
+			log.String("grant_reason", grantReason),
+			log.Int32p("accessed_user_id", accountUserID),
+		},
 	})
 
 	var opt dbSubscriptionsListOptions
