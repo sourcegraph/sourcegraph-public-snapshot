@@ -237,6 +237,10 @@ public class ConfigUtil {
     return getApplicationLevelConfig().isCodyAutocompleteEnabled();
   }
 
+  public static boolean setCodyAutocompleteEnabled(boolean toggle) {
+    return getApplicationLevelConfig().isCodyAutocompleteEnabled = toggle;
+  }
+
   public static boolean isAccessTokenNotificationDismissed() {
     return getApplicationLevelConfig().isAccessTokenNotificationDismissed();
   }

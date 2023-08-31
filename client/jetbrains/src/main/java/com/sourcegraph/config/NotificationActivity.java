@@ -49,8 +49,8 @@ public class NotificationActivity implements StartupActivity.DumbAware {
     // Display notification
     Notification notification =
         new Notification(
-            "Cody AI by Sourcegraph: server access",
-            "Cody AI by Sourcegraph",
+            "Sourcegraph: server access",
+            "Sourcegraph",
             "A custom Sourcegraph URL is not set for this project. You can only access public repos. Do you want to set your custom URL?",
             NotificationType.INFORMATION);
     AnAction setUrlAction = new OpenPluginSettingsAction("Set URL");
@@ -83,8 +83,8 @@ public class NotificationActivity implements StartupActivity.DumbAware {
     String altSShortcutText = KeymapUtil.getShortcutText(altSShortcut);
     Notification notification =
         new Notification(
-            "Cody AI by Sourcegraph plugin updates",
-            "Cody AI by Sourcegraph",
+            "Sourcegraph Cody + Code Search plugin updates",
+            "Sourcegraph Cody + Code Search",
             "Access the new plugin and try out code search with the shortcut "
                 + altSShortcutText
                 + "! Learn more about the plugin’s functionality in our blog post.",
@@ -122,10 +122,7 @@ public class NotificationActivity implements StartupActivity.DumbAware {
             + " It is not possible to use Sourcegraph API and Cody without it.";
     Notification notification =
         new Notification(
-            "Cody AI by Sourcegraph: server access",
-            "Sourcegraph",
-            content,
-            NotificationType.INFORMATION);
+            "Sourcegraph: server access", "Sourcegraph", content, NotificationType.INFORMATION);
     notification.setIcon(Icons.CodyLogo);
     notification.addAction(new OpenPluginSettingsAction("Set Access Token"));
     notification.addAction(dumbAwareAction("Do Not Set", notification::expire));
