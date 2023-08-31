@@ -34,7 +34,7 @@ The Cody AI extension by Sourcegraph enhances your coding experience in VS Code 
 ## Prerequisites
 
 - You have the latest version of [VS Code](https://code.visualstudio.com/) installed
-- You have enabled an instance for [Cody from your Sourcegraph.com](overview/cody-with-sourcegraph.md) account
+- You have enabled an instance for [Cody from your Sourcegraph.com](cody-with-sourcegraph.md) account
 
 ## Install the VS Code extension
 
