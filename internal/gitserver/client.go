@@ -1585,6 +1585,17 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 
 		cc, err := client.CreateCommitFromPatchBinary(ctx)
 		if err != nil {
+			st, ok := status.FromError(err)
+			if ok {
+				for _, detail := range st.Details() {
+					switch dt := detail.(type) {
+					case *proto.CreateCommitFromPatchError:
+						var e protocol.CreateCommitFromPatchError
+						e.FromProto(dt)
+						return nil, &e
+					}
+				}
+			}
 			return nil, err
 		}
 
