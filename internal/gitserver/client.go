@@ -1584,15 +1584,22 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 		}
 		resp, err := client.CreateCommitFromPatchBinary(ctx, req.ToProto())
 		if err != nil {
+			st, ok := status.FromError(err)
+			if ok {
+				for _, detail := range st.Details() {
+					switch dt := detail.(type) {
+					case *proto.CreateCommitFromPatchError:
+						var e protocol.CreateCommitFromPatchError
+						e.FromProto(dt)
+						return nil, &e
+					}
+				}
+			}
 			return nil, err
 		}
 
 		var res protocol.CreateCommitFromPatchResponse
-		res.FromProto(resp)
-
-		if resp.GetError() != nil {
-			return &res, errors.New(resp.GetError().String())
-		}
+		res.FromProto(resp, nil)
 
 		return &res, nil
 	} else {
