@@ -15,19 +15,25 @@ jobs:
           path: ./
           base: ${{ github.event.repository.default_branch }}
           head: HEAD
-          extra_args: --no-update --only-verified --json
-
-      - name: Scan Results Status
-        if: steps.trufflehog.outcome == 'failure'
-        run: exit 1
+          extra_args: --no-update --only-verified --json --github-actions
 
       - name: Post to Slack
+        if: steps.trufflehog.outcome == 'failure'
         uses: slackapi/slack-github-action@v1.23.0
         with:
           payload: |
-              {
-                "text": "🚨 Trufflehog has detected verified secret in this pull request.",
-                "channel": ${{ secrets.SLACK_MONITORING_CHANNEL }}
-              }
+            {
+              "text": "🚨 *A secret was detected in a GitHub commit in the repo ${{ github.repository }}.*\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🚨 *A secret was detected in a GitHub commit in the repo ${{ github.repository }}.*\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+                  }
+                }
+              ]
+            }
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.TRUFFLEHOG_SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
