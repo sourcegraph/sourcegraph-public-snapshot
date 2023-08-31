@@ -11,7 +11,7 @@ jobs:
 
       - name: Install TruffleHog
         run: |
-          wget https://github.com/trufflesecurity/trufflehog/releases/download/v3.54.1/trufflehog_3.54.1_linux_amd64.tar.gz
+          wget -q https://github.com/trufflesecurity/trufflehog/releases/download/v3.54.1/trufflehog_3.54.1_linux_amd64.tar.gz
           tar xzf trufflehog_3.54.1_linux_amd64.tar.gz
           sudo cp trufflehog /usr/local/bin
 
@@ -19,10 +19,15 @@ jobs:
         id: scan
         run: |
           output=$(/usr/local/bin/trufflehog git file://./ --since-commit main --branch HEAD --no-update --github-actions --only-verified)
-          echo ::set-output name=secrets::$(echo "$output" | grep -q "Found verified"; echo $?)
+          echo $output
+          if echo "$output" | grep -q "Found verified"; then
+            echo "FOUND_SECRET=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "FOUND_SECRET=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Post to Slack
-        if: ${{ steps.scan.outputs.secrets == '0' }}
+        if: ${{ steps.scan.outputs.FOUND_SECRET == 'true' }}
         uses: slackapi/slack-github-action@v1.23.0
         with:
           payload: |
