@@ -19,7 +19,7 @@ jobs:
           extra_args: --only-verified
 
       - name: Post to Slack
-        if: steps.trufflehog.outcome == 'failure'
+        if: ${{ steps.trufflehog.outcome == 'failure' }}
         uses: slackapi/slack-github-action@v1.23.0
         with:
           payload: |
