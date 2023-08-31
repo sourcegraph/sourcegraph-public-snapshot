@@ -107,7 +107,6 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 source={query.get('src')}
                 onSignUp={handleSignUp}
                 isLightTheme={isLightTheme}
-                showEmailForm={query.has(ShowEmailFormQueryParameter)}
                 context={context}
                 telemetryService={telemetryService}
                 isSourcegraphDotCom={context.sourcegraphDotComMode}

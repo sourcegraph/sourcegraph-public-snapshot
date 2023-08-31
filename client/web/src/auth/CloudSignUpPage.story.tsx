@@ -45,23 +45,6 @@ export const Default: Story = () => (
                 source="Monitor"
                 onSignUp={sinon.stub()}
                 context={context}
-                showEmailForm={false}
-                telemetryService={NOOP_TELEMETRY_SERVICE}
-                isSourcegraphDotCom={true}
-            />
-        )}
-    </WebStory>
-)
-
-export const EmailForm: Story = () => (
-    <WebStory>
-        {({ isLightTheme }) => (
-            <CloudSignUpPage
-                isLightTheme={isLightTheme}
-                source="SearchCTA"
-                onSignUp={sinon.stub()}
-                context={context}
-                showEmailForm={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 isSourcegraphDotCom={true}
             />
@@ -77,7 +60,6 @@ export const InvalidSource: Story = () => (
                 source="test"
                 onSignUp={sinon.stub()}
                 context={context}
-                showEmailForm={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 isSourcegraphDotCom={true}
             />
@@ -93,7 +75,6 @@ export const OptimizationSignup: Story = () => (
                 source="test"
                 onSignUp={sinon.stub()}
                 context={context}
-                showEmailForm={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 isSourcegraphDotCom={true}
             />

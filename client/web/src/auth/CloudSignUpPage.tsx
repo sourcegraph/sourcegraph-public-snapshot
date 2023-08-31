@@ -22,7 +22,6 @@ import styles from './CloudSignUpPage.module.scss'
 
 interface Props extends TelemetryProps {
     source: string | null
-    showEmailForm: boolean
     /** Called to perform the signup on the server. */
     onSignUp: (args: SignUpArguments) => Promise<void>
     context: Pick<SourcegraphContext, 'authProviders' | 'authPasswordPolicy' | 'authMinPasswordLength'>
@@ -43,15 +42,12 @@ const SourceToTitleMap = {
 
 export type CloudSignUpSource = keyof typeof SourceToTitleMap
 
-export const ShowEmailFormQueryParameter = 'showEmail'
-
 /**
  * Sign up page specifically for Sourcegraph.com
  */
 export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     isLightTheme,
     source,
-    showEmailForm,
     onSignUp,
     context,
     telemetryService,
@@ -59,19 +55,12 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
 }) => {
     const location = useLocation()
 
-    const queryWithUseEmailToggled = new URLSearchParams(location.search)
-    if (showEmailForm) {
-        queryWithUseEmailToggled.delete(ShowEmailFormQueryParameter)
-    } else {
-        queryWithUseEmailToggled.append(ShowEmailFormQueryParameter, 'true')
-    }
-
     const assetsRoot = window.context?.assetsRoot || ''
     const sourceIsValid = source && Object.keys(SourceToTitleMap).includes(source)
     const defaultTitle = SourceToTitleMap.AI
     const title = sourceIsValid ? SourceToTitleMap[source as CloudSignUpSource] : defaultTitle
 
-    const invitedBy = queryWithUseEmailToggled.get('invitedBy')
+    const invitedBy = new URLSearchParams(location.search).get('invitedBy')
     const { data } = useQuery<UserAreaUserProfileResult, UserAreaUserProfileVariables>(USER_AREA_USER_PROFILE, {
         variables: { username: invitedBy || '', isSourcegraphDotCom },
         skip: !invitedBy,
@@ -99,39 +88,6 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
             className="my-3"
         />
     )
-
-    const renderCodeHostAuth = (): JSX.Element => (
-        <>
-            <ExternalsAuth
-                context={context}
-                githubLabel="Continue with GitHub"
-                gitlabLabel="Continue with GitLab"
-                onClick={logEventAndSetFlags}
-            />
-
-            <div className="mb-4">
-                Or, <Link to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}>continue with email</Link>
-            </div>
-        </>
-    )
-
-    const renderEmailAuthForm = (): JSX.Element => (
-        <>
-            <small className="d-block mt-3">
-                <Link
-                    className="d-flex align-items-center"
-                    to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}
-                >
-                    <Icon className={styles.backIcon} aria-hidden={true} svgPath={mdiChevronLeft} />
-                    Go back
-                </Link>
-            </small>
-
-            {signUpForm}
-        </>
-    )
-
-    const renderAuthMethod = (): JSX.Element => (showEmailForm ? renderEmailAuthForm() : renderCodeHostAuth())
 
     return (
         <div className={styles.page}>
@@ -193,7 +149,12 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
 
                 <div className={classNames(styles.leftOrRight, styles.signUpWrapper)}>
                     <H2>Create a free account</H2>
-                    {renderAuthMethod()}
+                    <ExternalsAuth
+                        context={context}
+                        githubLabel="Continue with GitHub"
+                        gitlabLabel="Continue with GitLab"
+                        onClick={logEventAndSetFlags}
+                    />
 
                     <small className="text-muted">
                         By registering, you agree to our{' '}
