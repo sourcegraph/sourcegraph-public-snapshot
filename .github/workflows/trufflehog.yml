@@ -11,7 +11,7 @@ jobs:
 
       - name: Install TruffleHog
         run: |
-          wget https://github.com/trufflesecurity/trufflehog/releases/download/v3.54.1/trufflehog_3.54.1_Linux_x86_64.tar.gz
+          wget https://github.com/trufflesecurity/trufflehog/releases/download/v3.54.1/trufflehog_3.54.1_linux_amd64.tar.gz
           tar xzf trufflehog_3.54.1_Linux_x86_64.tar.gz
           sudo cp trufflehog /usr/local/bin/trufflehog
 
