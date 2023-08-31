@@ -7,11 +7,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream"
 	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -46,8 +48,12 @@ func awsConfigOptsForKeyConfig(endpoint string, accessToken string) []func(*conf
 		configOpts = append(configOpts, config.WithRegion(endpoint))
 	}
 	if accessToken != "" {
-		parts := strings.SplitN(accessToken, ":", 2)
-		configOpts = append(configOpts, config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(parts[0], parts[1], "")))
+		parts := strings.SplitN(accessToken, ":", 3)
+		if len(parts) == 2 {
+			configOpts = append(configOpts, config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(parts[0], parts[1], "")))
+		} else if len(parts) == 3 {
+			configOpts = append(configOpts, config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(parts[0], parts[1], parts[2])))
+		}
 	}
 	return configOpts
 }
@@ -89,13 +95,35 @@ func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
 		return errors.Newf("unexpected status code from API: %d", resp.StatusCode)
 	}
 
-	dec := anthropic.NewDecoder(resp.Body)
-	for dec.Scan() {
+	var totalCompletion string
+	deco := eventstream.NewDecoder()
+	buf := make([]byte, 0, 1024*1024)
+	for {
+		m, err := deco.Decode(resp.Body, buf)
 		if ctx.Err() != nil && ctx.Err() == context.Canceled {
 			return nil
 		}
 
-		data := dec.Data()
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+
+		type payload struct {
+			Bytes []byte `json:"bytes"`
+		}
+
+		var p payload
+		if err := json.Unmarshal(m.Payload, &p); err != nil {
+			return err
+		}
+
+		data := p.Bytes
+
+		fmt.Printf("received event: %s\n", string(data))
+
 		// Gracefully skip over any data that isn't JSON-like. Anthropic's API sometimes sends
 		// non-documented data over the stream, like timestamps.
 		if !bytes.HasPrefix(data, []byte("{")) {
@@ -107,16 +135,19 @@ func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
 			return errors.Errorf("failed to decode event payload: %w - body: %s", err, string(data))
 		}
 
+		// Collect the whole completion, AWS already uses the new Anthropic API
+		// that sends partial completion results, but our clients still expect
+		// a fill completion to be returned.
+		totalCompletion += event.Completion
+
 		err = sendEvent(types.CompletionResponse{
-			Completion: event.Completion,
+			Completion: totalCompletion,
 			StopReason: event.StopReason,
 		})
 		if err != nil {
 			return err
 		}
 	}
-
-	return dec.Err()
 }
 
 func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
@@ -128,6 +159,14 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 	creds, err := defaultConfig.Credentials.Retrieve(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving aws credentials")
+	}
+
+	if requestParams.TopK == -1 {
+		requestParams.TopK = 0
+	}
+
+	if requestParams.TopP == -1 {
+		requestParams.TopP = 0
 	}
 
 	prompt, err := anthropic.GetPrompt(requestParams.Messages)
@@ -144,10 +183,12 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 		requestParams.StopSequences = []string{anthropic.HUMAN_PROMPT}
 	}
 
+	if requestParams.MaxTokensToSample == 0 {
+		requestParams.MaxTokensToSample = 300
+	}
+
 	payload := anthropicCompletionsRequestParameters{
-		Stream:            stream,
 		StopSequences:     requestParams.StopSequences,
-		Model:             requestParams.Model,
 		Temperature:       requestParams.Temperature,
 		MaxTokensToSample: requestParams.MaxTokensToSample,
 		TopP:              requestParams.TopP,
@@ -164,7 +205,11 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 	apiURL := url.URL{
 		Scheme: "https",
 		Host:   fmt.Sprintf("bedrock.%s.amazonaws.com", c.endpoint),
-		Path:   fmt.Sprintf("/model/%s/invoke-with-response-stream", payload.Model),
+		Path:   fmt.Sprintf("/model/%s/invoke-with-response-stream", requestParams.Model),
+	}
+
+	if !stream {
+		apiURL.Path = fmt.Sprintf("/model/%s/invoke", requestParams.Model)
 	}
 
 	fmt.Printf("talking to API at %s: %s\n", apiURL.String(), string(reqBody))
@@ -179,9 +224,14 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 	}
 
 	req.Header.Set("Cache-Control", "no-cache")
-	req.Header.Set("Accept", "application/json")
+	if !stream {
+		req.Header.Set("Accept", "application/json")
+	} else {
+		req.Header.Set("Accept", "application/vnd.amazon.eventstream")
+	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Client", clientID)
+	req.Header.Set("X-Amzn-Bedrock-Accept", "*/*")
 	// Don't store the prompt in the prompt history.
 	req.Header.Set("X-Amzn-Bedrock-Save", "false")
 
@@ -199,14 +249,14 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 
 type anthropicCompletionsRequestParameters struct {
 	Prompt            string   `json:"prompt"`
-	Temperature       float32  `json:"temperature"`
+	Temperature       float32  `json:"temperature,omitempty"`
 	MaxTokensToSample int      `json:"max_tokens_to_sample"`
-	StopSequences     []string `json:"stop_sequences"`
-	TopK              int      `json:"top_k"`
-	TopP              float32  `json:"top_p"`
-	Model             string   `json:"model"`
-	Stream            bool     `json:"stream"`
-	AnthropicVersion  string   `json:"anthropic_version,omitempty"`
+	StopSequences     []string `json:"stop_sequences,omitempty"`
+	TopK              int      `json:"top_k,omitempty"`
+	TopP              float32  `json:"top_p,omitempty"`
+	// Model             string   `json:"model"`
+	// Stream            bool     `json:"stream"`
+	AnthropicVersion string `json:"anthropic_version"`
 }
 
 type anthropicCompletionResponse struct {
