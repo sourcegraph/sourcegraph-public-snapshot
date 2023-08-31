@@ -794,71 +794,72 @@ func (m *mockP4ExecClient) Recv() (*proto.P4ExecResponse, error) {
 func TestClient_P4ExecGRPC(t *testing.T) {
 	_ = gitserver.CreateRepoDir(t)
 	type test struct {
-		name     string
+		name string
+
 		host     string
 		user     string
 		password string
 		args     []string
-		err      error
-		wantBody string
-		wantErr  string
+
+		mockErr error
+
+		wantBody                    string
+		wantReaderConstructionError string
+		wantReaderError             string
 	}
 	tests := []test{
 		{
-			name:     "check request body",
+			name: "check request body",
+
 			host:     "ssl:111.222.333.444:1666",
 			user:     "admin",
 			password: "pa$$word",
 			args:     []string{"protects"},
-			wantBody: "example output",
-			wantErr:  "<nil>",
+
+			wantBody:                    "example output",
+			wantReaderConstructionError: "<nil>",
+			wantReaderError:             "<nil>",
 		},
 		{
-			name:    "error response",
-			err:     errors.New("example error"),
-			wantErr: "rpc error: code = Unknown desc = example error",
+			name: "error response",
+
+			mockErr:                     errors.New("example error"),
+			wantReaderConstructionError: "<nil>",
+			wantReaderError:             "rpc error: code = Unknown desc = example error",
 		},
 		{
-			name:    "context cancellation",
-			err:     status.New(codes.Canceled, context.Canceled.Error()).Err(),
-			wantErr: context.Canceled.Error(),
+			name: "context cancellation",
+
+			mockErr:                     status.New(codes.Canceled, context.Canceled.Error()).Err(),
+			wantReaderConstructionError: "<nil>",
+			wantReaderError:             context.Canceled.Error(),
 		},
 		{
-			name:    "context expiration",
-			err:     status.New(codes.DeadlineExceeded, context.DeadlineExceeded.Error()).Err(),
-			wantErr: context.DeadlineExceeded.Error(),
+			name: "context expiration",
+
+			mockErr:                     status.New(codes.DeadlineExceeded, context.DeadlineExceeded.Error()).Err(),
+			wantReaderConstructionError: "<nil>",
+			wantReaderError:             context.DeadlineExceeded.Error(),
+		},
+		{
+			name: "invalid credentials - reported on reader instantiation",
+
+			mockErr:                     status.New(codes.InvalidArgument, "that is totally wrong").Err(),
+			wantReaderConstructionError: status.New(codes.InvalidArgument, "that is totally wrong").Err().Error(),
+			wantReaderError:             status.New(codes.InvalidArgument, "that is totally wrong").Err().Error(),
+		},
+		{
+			name: "permission denied - reported on reader instantiation",
+
+			mockErr:                     status.New(codes.PermissionDenied, "you can't do this").Err(),
+			wantReaderConstructionError: status.New(codes.PermissionDenied, "you can't do this").Err().Error(),
+			wantReaderError:             status.New(codes.PermissionDenied, "you can't do this").Err().Error(),
 		},
 	}
 
 	ctx := context.Background()
-	runTest := func(t *testing.T, test test, cli gitserver.Client, called bool) {
+	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			t.Log(test.name)
-
-			rc, _, _ := cli.P4Exec(ctx, test.host, test.user, test.password, test.args...)
-
-			var body []byte
-			var err error
-			if rc != nil {
-				defer func() { _ = rc.Close() }()
-
-				body, err = io.ReadAll(rc)
-				if err != nil {
-					if diff := cmp.Diff(test.wantErr, fmt.Sprintf("%v", err)); diff != "" {
-						t.Fatalf("Mismatch (-want +got):\n%s", diff)
-					}
-				}
-			}
-
-			if diff := cmp.Diff(test.wantBody, string(body)); diff != "" {
-				t.Fatalf("Mismatch (-want +got):\n%s", diff)
-			}
-		})
-
-	}
-
-	t.Run("GRPC", func(t *testing.T) {
-		for _, test := range tests {
 			conf.Mock(&conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					ExperimentalFeatures: &schema.ExperimentalFeatures{
@@ -879,7 +880,7 @@ func TestClient_P4ExecGRPC(t *testing.T) {
 					mockP4Exec := func(ctx context.Context, in *proto.P4ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_P4ExecClient, error) {
 						called = true
 						return &mockP4ExecClient{
-							Err: test.err,
+							Err: test.mockErr,
 						}, nil
 					}
 
@@ -888,15 +889,34 @@ func TestClient_P4ExecGRPC(t *testing.T) {
 			})
 
 			cli := gitserver.NewTestClient(&http.Client{}, source)
-			runTest(t, test, cli, called)
+			rc, _, err := cli.P4Exec(ctx, test.host, test.user, test.password, test.args...)
+			if diff := cmp.Diff(test.wantReaderConstructionError, fmt.Sprintf("%v", err)); diff != "" {
+				t.Errorf("error when creating reader mismatch (-want +got):\n%s", diff)
+			}
+
+			var body []byte
+			if rc != nil {
+				t.Cleanup(func() {
+					_ = rc.Close()
+				})
+
+				body, err = io.ReadAll(rc)
+				if err != nil {
+					if diff := cmp.Diff(test.wantReaderError, fmt.Sprintf("%v", err)); diff != "" {
+						t.Errorf("Mismatch (-want +got):\n%s", diff)
+					}
+				}
+			}
+
+			if diff := cmp.Diff(test.wantBody, string(body)); diff != "" {
+				t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			}
 
 			if !called {
 				t.Fatal("GRPC should be called")
 			}
-		}
-
-	})
-
+		})
+	}
 }
 
 func TestClient_P4Exec(t *testing.T) {

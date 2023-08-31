@@ -24,7 +24,7 @@ public class SettingsConfigurable implements Configurable {
   @Nls(capitalization = Nls.Capitalization.Title)
   @Override
   public String getDisplayName() {
-    return "Cody AI by Sourcegraph";
+    return "Sourcegraph Cody + Code Search";
   }
 
   @Override
