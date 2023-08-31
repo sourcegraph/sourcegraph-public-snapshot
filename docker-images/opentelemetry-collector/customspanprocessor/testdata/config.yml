@@ -1,0 +1,18 @@
+receivers:
+  examplereceiver:
+
+processors:
+  spanattrcount:
+
+exporters:
+  exampleexporter:
+
+service:
+  pipelines:
+    traces:
+      receivers:
+      - examplereceiver
+      processors:
+      - splitbatch
+      exporters:
+      - exampleexporter

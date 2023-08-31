@@ -36,3 +36,5 @@ processors:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v$OTEL_COLLECTOR_VERSION
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v$OTEL_COLLECTOR_VERSION
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v$OTEL_COLLECTOR_VERSION
+  - gomod: github.com/sourcegraph/sourcegraph/lib/spanattrprocesssor v0.0.0
+    path: /customspanprocessor
