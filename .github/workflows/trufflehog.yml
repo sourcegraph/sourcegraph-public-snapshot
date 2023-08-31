@@ -9,17 +9,23 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: TruffleHog OSS
-        uses: trufflesecurity/trufflehog@main
-        continue-on-error: true
+      - name: Install Go
+        uses: actions/setup-go@v2
         with:
-          path: ./
-          base: ${{ github.event.repository.default_branch }}
-          head: HEAD
-          extra_args: --only-verified
+          go-version: 1.21.0
+
+      - name: Install TruffleHog
+        run: |
+          go install github.com/trufflesecurity/trufflehog@latest
+
+      - name: Run TruffleHog
+        id: scan
+        run: |
+          output=$(~/go/bin/trufflehog git file://./ --since-commit main --branch HEAD --no-update --github-actions --only-verified)
+          echo ::set-output name=secrets::$(echo "$output" | grep -q "Found verified"; echo $?)
 
       - name: Post to Slack
-        if: ${{ steps.trufflehog.outcome == 'failure' }}
+        if: ${{ steps.scan.outputs.secrets == '0' }}
         uses: slackapi/slack-github-action@v1.23.0
         with:
           payload: |
