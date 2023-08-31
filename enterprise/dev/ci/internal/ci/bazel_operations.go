@@ -72,6 +72,7 @@ func bazelPushImagesCmd(version string, isCandidate bool, depKey string) func(*b
 			bk.Key(stepKey),
 			bk.Env("PUSH_VERSION", version),
 			bk.Env("CANDIDATE_ONLY", candidate),
+			bazelApplyPrecheckChanges(),
 			bk.Cmd(bazelStampedCmd(`build $$(bazel query 'kind("oci_push rule", //...)')`)),
 			bk.Cmd("./enterprise/dev/ci/push_all.sh"),
 		)
@@ -116,14 +117,16 @@ func bazelAnalysisPhase() func(*bk.Pipeline) {
 		)
 	}
 }
+
 func bazelPrechecks() func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.Key("bazel-prechecks"),
 		bk.SoftFail(100),
 		bk.Agent("queue", "bazel"),
+		bk.ArtifactPaths("./bazel-configure.diff"),
 		bk.AnnotatedCmd("dev/ci/bazel-prechecks.sh", bk.AnnotatedCmdOpts{
 			Annotations: &bk.AnnotationOpts{
-				Type:         bk.AnnotationTypeWarning,
+				Type:         bk.AnnotationTypeError,
 				IncludeNames: false,
 			},
 		}),
@@ -141,9 +144,14 @@ func bazelAnnouncef(format string, args ...any) bk.StepOpt {
 	return bk.Cmd(fmt.Sprintf(`echo "--- :bazel: %s"`, msg))
 }
 
+func bazelApplyPrecheckChanges() bk.StepOpt {
+	return bk.Cmd("dev/ci/bazel-prechecks-apply.sh")
+}
+
 func bazelTest(targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.DependsOn("bazel-prechecks"),
+		bk.AllowDependencyFailure(),
 		bk.Agent("queue", "bazel"),
 		bk.Key("bazel-tests"),
 		bk.ArtifactPaths("./bazel-testlogs/enterprise/cmd/embeddings/shared/shared_test/*.log", "./command.profile.gz"),
@@ -152,6 +160,8 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 
 	// Test commands
 	bazelTestCmds := []bk.StepOpt{}
+
+	cmds = append(cmds, bazelApplyPrecheckChanges())
 
 	// bazel build //client/web:bundle is very resource hungry and often crashes when ran along other targets
 	// so we run it first to avoid failing builds midway.
@@ -180,6 +190,7 @@ func triggerBackCompatTest(buildOpts bk.BuildOptions) func(*bk.Pipeline) {
 		pipeline.AddTrigger(":bazel::snail: Async BackCompat Tests", "sourcegraph-backcompat",
 			bk.Key("trigger-backcompat"),
 			bk.DependsOn("bazel-prechecks"),
+			bk.AllowDependencyFailure(),
 			bk.Build(buildOpts),
 		)
 	}
