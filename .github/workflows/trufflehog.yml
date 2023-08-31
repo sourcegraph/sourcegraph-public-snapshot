@@ -9,19 +9,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.21.0
-
       - name: Install TruffleHog
         run: |
-          go install github.com/trufflesecurity/trufflehog@latest
+          wget https://github.com/trufflesecurity/trufflehog/releases/download/v3.54.1/trufflehog_3.54.1_Linux_x86_64.tar.gz
+          tar xzf trufflehog_3.54.1_Linux_x86_64.tar.gz
+          sudo cp trufflehog /usr/local/bin/trufflehog
 
       - name: Run TruffleHog
         id: scan
         run: |
-          output=$(~/go/bin/trufflehog git file://./ --since-commit main --branch HEAD --no-update --github-actions --only-verified)
+          output=$(/usr/local/bin/trufflehog git file://./ --since-commit main --branch HEAD --no-update --github-actions --only-verified)
           echo ::set-output name=secrets::$(echo "$output" | grep -q "Found verified"; echo $?)
 
       - name: Post to Slack
