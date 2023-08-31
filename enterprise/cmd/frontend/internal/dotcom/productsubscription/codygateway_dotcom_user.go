@@ -52,11 +52,6 @@ func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.
 	if err != nil {
 		return nil, err
 	}
-	audit.Log(ctx, r.Logger, audit.Record{
-		Entity: auditEntityDotcomCodyGatewayUser,
-		Action: "access",
-		Fields: []log.Field{log.String("grant_reason", grantReason)},
-	})
 
 	dbTokens := newDBTokens(r.DB)
 	userID, err := dbTokens.LookupDotcomUserIDByAccessToken(ctx, args.Token)
@@ -66,6 +61,16 @@ func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.
 		}
 		return nil, err
 	}
+
+	// 🚨 SECURITY: Record access with the resolved user ID
+	audit.Log(ctx, r.Logger, audit.Record{
+		Entity: auditEntityDotcomCodyGatewayUser,
+		Action: "access",
+		Fields: []log.Field{
+			log.String("grant_reason", grantReason),
+			log.Int("accessed_user_id", userID),
+		},
+	})
 
 	user, err := r.DB.Users().GetByID(ctx, int32(userID))
 	if err != nil {

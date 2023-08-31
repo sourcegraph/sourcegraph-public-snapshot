@@ -272,7 +272,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 		case "users":
 			_, _ = cmd.Stdout.Write([]byte("admin <admin@joe-perforce-server> (admin) accessed 2021/01/31"))
 			_, _ = cmd.Stderr.Write([]byte("teststderr"))
-			return 42, nil
+			return 42, errors.New("the answer to life the universe and everything")
 		}
 		return 0, nil
 	}
@@ -322,11 +322,12 @@ func TestServer_handleP4Exec(t *testing.T) {
 			var buf bytes.Buffer
 			for {
 				resp, err := execClient.Recv()
+				if errors.Is(err, io.EOF) {
+					return buf.Bytes(), nil
+				}
+
 				if err != nil {
-					if err == io.EOF {
-						return buf.Bytes(), nil
-					}
-					return nil, err
+					return buf.Bytes(), err
 				}
 
 				_, err = buf.Write(resp.GetData())
@@ -336,7 +337,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 			}
 		}
 
-		t.Run("success", func(t *testing.T) {
+		t.Run("users", func(t *testing.T) {
 			updateRunCommandMock(defaultMockRunCommand)
 
 			_, client, closeFunc := startServer(t)
@@ -350,8 +351,13 @@ func TestServer_handleP4Exec(t *testing.T) {
 			}
 
 			data, err := readAll(stream)
-			if status.Code(err) != codes.OK {
-				t.Fatalf("expected no error, got %v", err)
+			s, ok := status.FromError(err)
+			if !ok {
+				t.Fatal("received non-status error from p4exec call")
+			}
+
+			if diff := cmp.Diff("the answer to life the universe and everything", s.Message()); diff != "" {
+				t.Fatalf("unexpected error in stream (-want +got):\n%s", diff)
 			}
 
 			expectedData := []byte("admin <admin@joe-perforce-server> (admin) accessed 2021/01/31")
@@ -435,7 +441,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 				ExpectedCode: http.StatusOK,
 				ExpectedBody: "admin <admin@joe-perforce-server> (admin) accessed 2021/01/31",
 				ExpectedTrailers: http.Header{
-					"X-Exec-Error":       {""},
+					"X-Exec-Error":       {"the answer to life the universe and everything"},
 					"X-Exec-Exit-Status": {"42"},
 					"X-Exec-Stderr":      {"teststderr"},
 				},

@@ -58,12 +58,12 @@ func (gs *GRPCServer) CreateCommitFromPatchBinary(ctx context.Context, req *prot
 	r.FromProto(req)
 	_, resp := gs.Server.createCommitFromPatch(ctx, r)
 
-	if resp.Error != nil {
-		return resp.ToProto(), resp.Error
+	res, err := resp.ToProto()
+	if err != nil {
+		return nil, err.ToStatus().Err()
 	}
 
-	return resp.ToProto(), nil
-
+	return res, nil
 }
 
 func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_ExecServer) error {
@@ -275,12 +275,26 @@ func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService
 
 func (gs *GRPCServer) doP4Exec(ctx context.Context, logger log.Logger, req *protocol.P4ExecRequest, userAgent string, w io.Writer) error {
 	execStatus := gs.Server.p4Exec(ctx, logger, req, userAgent, w)
-	if execStatus.Err != nil {
+
+	if execStatus.ExitStatus != 0 || execStatus.Err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return status.FromContextError(ctxErr).Err()
 		}
 
-		return execStatus.Err
+		gRPCStatus := codes.Unknown
+		if strings.Contains(execStatus.Err.Error(), "signal: killed") {
+			gRPCStatus = codes.Aborted
+		}
+
+		s, err := status.New(gRPCStatus, execStatus.Err.Error()).WithDetails(&proto.ExecStatusPayload{
+			StatusCode: int32(execStatus.ExitStatus),
+			Stderr:     execStatus.Stderr,
+		})
+		if err != nil {
+			gs.Server.Logger.Error("failed to marshal status", log.Error(err))
+			return err
+		}
+		return s.Err()
 	}
 
 	return nil
