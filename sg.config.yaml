@@ -7,8 +7,10 @@ env:
   PGPASSWORD: sourcegraph
   PGDATABASE: sourcegraph
   PGSSLMODE: disable
-  SG_DEV_MIGRATE_ON_APPLICATION_STARTUP: "true"
+  SG_DEV_MIGRATE_ON_APPLICATION_STARTUP: 'true'
   INSECURE_DEV: true
+  AWS_SECRET_ACCESS_KEY: U9pNXyYEqkZ/jZB+r+prLmYoN4GVQLkqCgty4BQM
+  AWS_ACCESS_KEY_ID: AKIA2OGYBAH62NDGUHMX
 
   SRC_REPOS_DIR: $HOME/.sourcegraph/repos
   SRC_LOG_LEVEL: info
@@ -25,11 +27,11 @@ env:
   # Enable sharded indexed search mode:
   INDEXED_SEARCH_SERVERS: localhost:3070 localhost:3071
 
-  GO111MODULE: "on"
+  GO111MODULE: 'on'
 
   DEPLOY_TYPE: dev
 
-  SRC_HTTP_ADDR: ":3082"
+  SRC_HTTP_ADDR: ':3082'
 
   GITHUB_BASE_URL: http://127.0.0.1:3180
   # I don't think we even need to set these?
@@ -44,9 +46,9 @@ env:
   PROMETHEUS_URL: http://localhost:9090
   JAEGER_SERVER_URL: http://localhost:16686
 
-  SRC_GRPC_ENABLE_CONF: "true"
-  SRC_DEVELOPMENT: "true"
-  SRC_PROF_HTTP: ""
+  SRC_GRPC_ENABLE_CONF: 'true'
+  SRC_DEVELOPMENT: 'true'
+  SRC_PROF_HTTP: ''
   SRC_PROF_SERVICES: |
     [
       { "Name": "frontend", "Host": "127.0.0.1:6063" },
@@ -86,7 +88,7 @@ env:
   SOURCEGRAPH_HTTPS_PORT: 3443
 
   # Required for `web` commands
-  NODE_OPTIONS: "--max_old_space_size=8192"
+  NODE_OPTIONS: '--max_old_space_size=8192'
   # Default `NODE_ENV` to `development`
   NODE_ENV: development
 
@@ -120,13 +122,13 @@ env:
   # OTEL_EXPORTER_OTLP_PROTOCOL: http/json
 
   # Enable full protobuf message logging when an internal error occurred
-  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED: "true"
-  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: "1KB"
-  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: "100MB"
+  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED: 'true'
+  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: '1KB'
+  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: '100MB'
   ## zoekt-specific message logging
-  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED: "true"
-  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: "1KB"
-  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: "100MB"
+  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED: 'true'
+  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: '1KB'
+  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: '100MB'
 
 commands:
   server:
@@ -134,9 +136,9 @@ commands:
     cmd: ./dev/run-server-image.sh
     env:
       TAG: insiders
-      CLEAN: "true"
-      DATA: "/tmp/sourcegraph-data"
-      URL: "http://localhost:7080"
+      CLEAN: 'true'
+      DATA: '/tmp/sourcegraph-data'
+      URL: 'http://localhost:7080'
 
   frontend:
     description: Enterprise frontend
@@ -157,8 +159,8 @@ commands:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
       ENTERPRISE: 1
-      SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
-      SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
+      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
+      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
       # frontend processes need this to be so that the paths to the assets are rendered correctly
       WEBPACK_DEV_SERVER: 1
     watch:
@@ -248,7 +250,7 @@ commands:
       CTAGS_COMMAND: dev/universal-ctags-dev
       SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
       CTAGS_PROCESSES: 2
-      USE_ROCKSKIP: "false"
+      USE_ROCKSKIP: 'false'
     watch:
       - lib
       - internal
@@ -310,13 +312,13 @@ commands:
     env:
       CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN: foobar
       # Set in override if you want to test local Cody Gateway: https://docs.sourcegraph.com/dev/how-to/cody_gateway
-      CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: ""
+      CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: ''
       CODY_GATEWAY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
       CODY_GATEWAY_ALLOW_ANONYMOUS: true
       CODY_GATEWAY_DIAGNOSTICS_SECRET: sekret
       SRC_LOG_LEVEL: info
       # Enables metrics in dev via debugserver
-      SRC_PROF_HTTP: "127.0.0.1:6098"
+      SRC_PROF_HTTP: '127.0.0.1:6098'
     watch:
       - lib
       - internal
@@ -626,8 +628,8 @@ commands:
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/multiqueue-executor-temp" .bin/executor
     env:
-      EXECUTOR_QUEUE_NAME: ""
-      EXECUTOR_QUEUE_NAMES: "codeintel,batches"
+      EXECUTOR_QUEUE_NAME: ''
+      EXECUTOR_QUEUE_NAMES: 'codeintel,batches'
       EXECUTOR_MAXIMUM_NUM_JOBS: 8
 
   blobstore:
@@ -720,8 +722,8 @@ commands:
       CONTAINER: grafana
       PORT: 3370
       # docker containers must access things via docker host on non-linux platforms
-      DOCKER_USER: ""
-      ADD_HOST_FLAG: ""
+      DOCKER_USER: ''
+      ADD_HOST_FLAG: ''
       CACHE: false
 
   prometheus:
@@ -777,11 +779,11 @@ commands:
       CONTAINER: prometheus
       PORT: 9090
       CONFIG_DIR: docker-images/prometheus/config
-      DOCKER_USER: ""
-      DOCKER_NET: ""
+      DOCKER_USER: ''
+      DOCKER_NET: ''
       PROM_TARGETS: dev/prometheus/all/prometheus_targets.yml
       SRC_FRONTEND_INTERNAL: host.docker.internal:3090
-      ADD_HOST_FLAG: ""
+      ADD_HOST_FLAG: ''
       DISABLE_SOURCEGRAPH_CONFIG: false
 
   postgres_exporter:
@@ -804,7 +806,7 @@ commands:
       docker pull index.docker.io/grafana/loki:$LOKI_VERSION
     env:
       LOKI_DISK: $HOME/.sourcegraph-dev/data/loki
-      LOKI_VERSION: "2.3.0"
+      LOKI_VERSION: '2.3.0'
       LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
 
   otel-collector:
@@ -839,7 +841,7 @@ commands:
       IMAGE: opentelemetry-collector:candidate
       # Overwrite the following in sg.config.overwrite.yaml, based on which collector
       # config you are using - see docker-images/opentelemetry-collector for more details.
-      CONFIGURATION_FILE: "configs/jaeger.yaml"
+      CONFIGURATION_FILE: 'configs/jaeger.yaml'
       # HONEYCOMB_API_KEY: ''
       # HONEYCOMB_DATASET: ''
 
@@ -876,8 +878,8 @@ commands:
     checkBinary: .bin/sourcegraph
     env:
       ENTERPRISE: 1
-      SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
-      SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
+      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
+      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
       WEBPACK_DEV_SERVER: 1
     watch:
       - cmd
@@ -901,13 +903,13 @@ bazelCommands:
     ignoreStderr: true
     env:
       # Environment copied from Dockerfile
-      WORKERS: "1"
-      ROCKET_ENV: "production"
-      ROCKET_LIMITS: "{json=10485760}"
-      ROCKET_SECRET_KEY: "SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA="
-      ROCKET_KEEP_ALIVE: "0"
-      ROCKET_PORT: "9238"
-      QUIET: "true"
+      WORKERS: '1'
+      ROCKET_ENV: 'production'
+      ROCKET_LIMITS: '{json=10485760}'
+      ROCKET_SECRET_KEY: 'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='
+      ROCKET_KEEP_ALIVE: '0'
+      ROCKET_PORT: '9238'
+      QUIET: 'true'
   github-proxy:
     target: //cmd/github-proxy
   frontend:
@@ -921,8 +923,8 @@ bazelCommands:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
       ENTERPRISE: 1
-      SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
-      SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
+      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
+      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
       # frontend processes need this to be so that the paths to the assets are rendered correctly
       WEBPACK_DEV_SERVER: 1
   worker:
@@ -942,7 +944,7 @@ bazelCommands:
       CTAGS_COMMAND: dev/universal-ctags-dev
       SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
       CTAGS_PROCESSES: 2
-      USE_ROCKSKIP: "false"
+      USE_ROCKSKIP: 'false'
   gitserver-template: &gitserver_bazel_template
     target: //cmd/gitserver
     env: &gitserverenv
@@ -1056,7 +1058,7 @@ commandsets:
     env:
       # EXTSVC_CONFIG_FILE being set prevents the e2e test suite to add
       # additional connections.
-      EXTSVC_CONFIG_FILE: ""
+      EXTSVC_CONFIG_FILE: ''
 
   dotcom:
     # This is 95% the enterprise runset, with the addition of Cody Gateway.
@@ -1470,7 +1472,6 @@ commandsets:
     env:
       QDRANT_ENDPOINT: 'localhost:6334'
 
-
 tests:
   # These can be run with `sg test [name]`
   backend:
@@ -1482,9 +1483,9 @@ tests:
     env:
       # These are defaults. They can be overwritten by setting the env vars when
       # running the command.
-      BASE_URL: "http://localhost:3080"
-      EMAIL: "joe@sourcegraph.com"
-      PASSWORD: "12345"
+      BASE_URL: 'http://localhost:3080'
+      EMAIL: 'joe@sourcegraph.com'
+      PASSWORD: '12345'
 
   bext:
     cmd: pnpm --filter @sourcegraph/browser test
@@ -1522,8 +1523,8 @@ tests:
       BROWSER: chrome
     external_secrets:
       GH_TOKEN:
-        project: "sourcegraph-ci"
-        name: "BUILDKITE_GITHUBDOTCOM_TOKEN"
+        project: 'sourcegraph-ci'
+        name: 'BUILDKITE_GITHUBDOTCOM_TOKEN'
 
   web-regression:
     preamble: |
