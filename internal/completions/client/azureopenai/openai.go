@@ -26,7 +26,7 @@ func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.Completions
 type azureCompletionClient struct {
 	cli         httpcli.Doer
 	accessToken string
-	endpoint string
+	endpoint    string
 }
 
 func (c *azureCompletionClient) Complete(
@@ -204,6 +204,11 @@ func (c *azureCompletionClient) makeCompletionRequest(ctx context.Context, reque
 		requestParams.TopP = 0
 	}
 
+	prompt, err := getPrompt(requestParams.Messages)
+	if err != nil {
+		return nil, err
+	}
+
 	// TODO(sqs): make CompletionRequestParameters non-anthropic-specific
 	payload := azureCompletionsRequestParameters{
 		Temperature: requestParams.Temperature,
@@ -215,26 +220,8 @@ func (c *azureCompletionClient) makeCompletionRequest(ctx context.Context, reque
 		// TODO: Our clients are currently heavily biased towards Anthropic,
 		// so the stop sequences we send might not actually be very useful
 		// for OpenAI.
-		Stop: requestParams.StopSequences,
-	}
-	first := true
-	for _, m := range requestParams.Messages {
-		// TODO(sqs): map these 'roles' to openai system/user/assistant
-		var role string
-		switch m.Speaker {
-		case types.HUMAN_MESSAGE_SPEAKER:
-			role = "user"
-		case types.ASISSTANT_MESSAGE_SPEAKER:
-			role = "assistant"
-		default:
-			role = strings.ToLower(role)
-		}
-		if !first {
-			payload.Prompt += "\n\n"
-		}
-		first = false
-		payload.Prompt += role + ": " + m.Text
-
+		Stop:   requestParams.StopSequences,
+		Prompt: prompt,
 	}
 
 	reqBody, err := json.Marshal(payload)
@@ -326,4 +313,12 @@ type openaiResponse struct {
 	Usage   azure          `json:"usage"`
 	Model   string         `json:"model"`
 	Choices []openaiChoice `json:"choices"`
+}
+
+func getPrompt(messages []types.Message) (string, error) {
+	if len(messages) != 1 {
+		return "", errors.New("Expected to receive exactly one message with the prompt")
+	}
+
+	return messages[0].Text, nil
 }
