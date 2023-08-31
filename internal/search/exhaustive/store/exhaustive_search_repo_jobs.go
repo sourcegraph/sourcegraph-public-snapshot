@@ -116,7 +116,7 @@ func scanRepoSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchRepoJob, error
 		&job.RepoID,
 		&job.RefSpec,
 		&job.SearchJobID,
-		&dbutil.NullString{S: job.FailureMessage},
+		&dbutil.NullString{S: &job.FailureMessage},
 		&dbutil.NullTime{Time: &job.StartedAt},
 		&dbutil.NullTime{Time: &job.FinishedAt},
 		&dbutil.NullTime{Time: &job.ProcessAfter},
