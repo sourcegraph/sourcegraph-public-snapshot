@@ -15,7 +15,7 @@ jobs:
           path: ./
           base: ${{ github.event.repository.default_branch }}
           head: HEAD
-          extra_args: --no-update --only-verified --json --github-actions
+          extra_args: --only-verified --json --github-actions
 
       - name: Post to Slack
         if: steps.trufflehog.outcome == 'failure'
