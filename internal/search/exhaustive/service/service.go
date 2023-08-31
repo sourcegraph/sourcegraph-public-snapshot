@@ -40,6 +40,7 @@ func opAttrs(attrs ...attribute.KeyValue) observation.Args {
 type operations struct {
 	createSearchJob *observation.Operation
 	getSearchJob    *observation.Operation
+	listSearchJobs  *observation.Operation
 }
 
 var (
@@ -71,6 +72,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		singletonOperations = &operations{
 			createSearchJob: op("CreateSearchJob"),
 			getSearchJob:    op("GetSearchJob"),
+			listSearchJobs:  op("ListSearchJobs"),
 		}
 	})
 	return singletonOperations
@@ -114,4 +116,15 @@ func (s *Service) GetSearchJob(ctx context.Context, id int64) (_ *types.Exhausti
 	defer endObservation(1, observation.Args{})
 
 	return s.store.GetExhaustiveSearchJob(ctx, id)
+}
+
+func (s *Service) ListSearchJobs(ctx context.Context) (jobs []*types.ExhaustiveSearchJob, err error) {
+	ctx, _, endObservation := s.operations.listSearchJobs.With(ctx, &err, observation.Args{})
+	defer func() {
+		endObservation(1, opAttrs(
+			attribute.Int("len", len(jobs)),
+		))
+	}()
+
+	return s.store.ListExhaustiveSearchJobs(ctx)
 }

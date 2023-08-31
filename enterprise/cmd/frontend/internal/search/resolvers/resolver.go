@@ -43,7 +43,12 @@ func (r *Resolver) DeleteSearchJob(ctx context.Context, args *graphqlbackend.Del
 }
 
 func (r *Resolver) SearchJobs(ctx context.Context, args *graphqlbackend.SearchJobsArgs) (graphqlbackend.SearchJobsConnectionResolver, error) {
-	return nil, errors.New("not implemented")
+	// TODO respect args. For now we always return everything a user created
+	jobs, err := r.svc.ListSearchJobs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &searchJobsConnectionResolver{Jobs: jobs, db: r.db}, nil
 }
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
