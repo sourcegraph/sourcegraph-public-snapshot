@@ -43,6 +43,6 @@ If you are automatically signed out of Cody upon every VS Code restart due to ke
 
 ### Autocomplete Rate limits
 
-Cody supports 1,000 suggested autocompletions per day, per user. For Sourcegraph Enterprise instances, this rate limited is pooled across all users.
+Cody supports 1,000 suggested autocompletions per day, per user. For Sourcegraph Enterprise instances, this rate limit is pooled across all users.
 
 If you hit the rate limit, please wait a bit and try again later. You can also contact Sourcegraph Support to discuss increasing your rate limit for your use case.
