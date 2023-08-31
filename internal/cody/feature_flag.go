@@ -46,7 +46,7 @@ func isCodyEnabled(ctx context.Context) bool {
 		return false
 	}
 
-	if !conf.CodyEnabled() {
+	if !conf.CodyChatEnabled() {
 		return false
 	}
 
@@ -62,7 +62,7 @@ func isCodyEnabled(ctx context.Context) bool {
 // If the App user's dotcom auth token is present, cody is enabled.
 // In all other cases Cody is disabled.
 func isCodyEnabledInApp() bool {
-	if conf.CodyEnabled() {
+	if conf.CodyChatEnabled() {
 		return true
 	}
 

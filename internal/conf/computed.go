@@ -125,18 +125,18 @@ func BatchChangesRestrictedToAdmins() bool {
 	return false
 }
 
-// CodyEnabled returns whether Cody is enabled on this instance.
+// CodyChatEnabled returns whether Cody is enabled on this instance.
 //
 // If `cody.enabled` is not set or set to false, it's not enabled.
 //
 // Legacy-support for `completions.enabled`:
 // If `cody.enabled` is NOT set, but `completions.enabled` is true, then cody is enabled.
 // If `cody.enabled` is set, and `completions.enabled` is set to false, cody is disabled.
-func CodyEnabled() bool {
-	return codyEnabled(Get().SiteConfig())
+func CodyChatEnabled() bool {
+	return codyChatEnabled(Get().SiteConfig())
 }
 
-func codyEnabled(siteConfig schema.SiteConfiguration) bool {
+func codyChatEnabled(siteConfig schema.SiteConfiguration) bool {
 	enabled := siteConfig.CodyEnabled
 	completions := siteConfig.Completions
 
@@ -150,6 +150,52 @@ func codyEnabled(siteConfig schema.SiteConfiguration) bool {
 	if enabled == nil && completions != nil {
 		// Unset means false.
 		return completions.Enabled != nil && *completions.Enabled
+	}
+
+	if enabled == nil {
+		return false
+	}
+
+	return *enabled
+}
+
+// CodyAutocompleteEnabled returns whether Cody is enabled on this instance.
+//
+// If `cody.enabled` is not set or set to false, it's not enabled.
+//
+// Legacy-support for `completions.enabled`:
+// If `cody.enabled` and autocomplete are NOT set, but `completions.enabled` is true, then autocomplete is enabled.
+// If `cody.enabled` is set, and `completions.enabled` is set to false and autocomplete is not set, autocomplete is disabled.
+func CodyAutocompleteEnabled() bool {
+	return codyAutocompleteEnabled(Get().SiteConfig())
+}
+
+func codyAutocompleteEnabled(siteConfig schema.SiteConfiguration) bool {
+	enabled := siteConfig.CodyEnabled
+	completions := siteConfig.Completions
+	autocomplete := siteConfig.Autocomplete
+
+	// If the cody.enabled flag is explicitly false, disable all cody features.
+	if enabled != nil && !*enabled {
+		return false
+	}
+
+	// Support for Legacy configurations in which `completions` is the only configuration set.
+	if enabled == nil && autocomplete == nil && completions != nil {
+		// Unset means false.
+		return completions.Enabled != nil && *completions.Enabled
+	}
+
+	// Support for Legacy configurations in which `completions` is the only configuration set.
+	if enabled == nil && autocomplete == nil && completions != nil {
+		// Unset means false.
+		return completions.Enabled != nil && *completions.Enabled
+	}
+
+	// Support for configurations in which `autocomplete` is the only configuration set.
+	if enabled == nil && autocomplete != nil {
+		// Unset means false.
+		return autocomplete.Enabled != nil && *autocomplete.Enabled
 	}
 
 	if enabled == nil {
@@ -576,7 +622,7 @@ func HashedLicenseKeyWithPrefix(licenseKey string, prefix string) string {
 // site configuration. The configuration may be nil if completions is disabled.
 func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.CompletionsConfig) {
 	// If cody is disabled, don't use completions.
-	if !codyEnabled(siteConfig) {
+	if !codyChatEnabled(siteConfig) {
 		return nil
 	}
 
@@ -814,7 +860,7 @@ const embeddingsMaxFileSizeBytes = 1000000
 // site configuration. The configuration may be nil if completions is disabled.
 func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.EmbeddingsConfig {
 	// If cody is disabled, don't use embeddings.
-	if !codyEnabled(siteConfig) {
+	if !codyChatEnabled(siteConfig) {
 		return nil
 	}
 

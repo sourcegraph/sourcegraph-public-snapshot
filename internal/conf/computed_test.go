@@ -307,7 +307,7 @@ func TestCodyEnabled(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			Mock(&Unified{SiteConfiguration: test.sc})
-			have := CodyEnabled()
+			have := CodyChatEnabled()
 			assert.Equal(t, test.want, have)
 		})
 	}
