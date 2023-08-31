@@ -746,6 +746,32 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		if completionsConfig.CompletionModel == "" {
 			completionsConfig.CompletionModel = "accounts/fireworks/models/starcoder-7b-w8a16"
 		}
+	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAWSBedrock) {
+		// If no endpoint is configured, use a default value.
+		if completionsConfig.Endpoint == "" {
+			completionsConfig.Endpoint = "us-west-2"
+		}
+
+		// If not access token is set, we cannot talk to AWS. Bail.
+		// TODO: What about generic AWS config?
+		// if completionsConfig.AccessToken == "" {
+		// 	return nil
+		// }
+
+		// Set a default chat model.
+		if completionsConfig.ChatModel == "" {
+			completionsConfig.ChatModel = "anthropic.claude-v2"
+		}
+
+		// Set a default fast chat model.
+		if completionsConfig.FastChatModel == "" {
+			completionsConfig.FastChatModel = "anthropic.claude-instant-v1"
+		}
+
+		// Set a default completions model.
+		if completionsConfig.CompletionModel == "" {
+			completionsConfig.CompletionModel = "anthropic.claude-instant-v1"
+		}
 	}
 
 	// Make sure models are always treated case-insensitive.

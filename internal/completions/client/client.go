@@ -2,6 +2,7 @@ package client
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/awsbedrock"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/azureopenai"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
@@ -32,6 +33,8 @@ func getBasic(endpoint string, provider conftypes.CompletionsProviderName, acces
 		return codygateway.NewClient(httpcli.ExternalDoer, endpoint, accessToken)
 	case conftypes.CompletionsProviderNameFireworks:
 		return fireworks.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
+	case conftypes.CompletionsProviderNameAWSBedrock:
+		return awsbedrock.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
 	default:
 		return nil, errors.Newf("unknown completion stream provider: %s", provider)
 	}

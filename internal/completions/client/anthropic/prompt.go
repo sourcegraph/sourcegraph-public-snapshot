@@ -10,7 +10,7 @@ import (
 const HUMAN_PROMPT = "\n\nHuman:"
 const ASSISTANT_PROMPT = "\n\nAssistant:"
 
-func getPrompt(messages []types.Message) (string, error) {
+func GetPrompt(messages []types.Message) (string, error) {
 	prompt := make([]string, 0, len(messages))
 	for idx, message := range messages {
 		if idx > 0 && messages[idx-1].Speaker == message.Speaker {

@@ -1,21 +1,32 @@
-package anthropic
+package awsbedrock
 
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
+	"time"
 
+	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewClient(cli httpcli.Doer, apiURL, accessToken string) types.CompletionsClient {
-	return &anthropicClient{
+func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
+	return &awsBedrockAnthropicCompletionStreamClient{
 		cli:         cli,
 		accessToken: accessToken,
-		apiURL:      apiURL,
+		endpoint:    endpoint,
 	}
 }
 
@@ -23,18 +34,30 @@ const (
 	clientID = "sourcegraph/1.0"
 )
 
-type anthropicClient struct {
+type awsBedrockAnthropicCompletionStreamClient struct {
 	cli         httpcli.Doer
 	accessToken string
-	apiURL      string
+	endpoint    string
 }
 
-func (a *anthropicClient) Complete(
+func awsConfigOptsForKeyConfig(endpoint string, accessToken string) []func(*config.LoadOptions) error {
+	configOpts := []func(*config.LoadOptions) error{}
+	if endpoint != "" {
+		configOpts = append(configOpts, config.WithRegion(endpoint))
+	}
+	if accessToken != "" {
+		parts := strings.SplitN(accessToken, ":", 2)
+		configOpts = append(configOpts, config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(parts[0], parts[1], "")))
+	}
+	return configOpts
+}
+
+func (c *awsBedrockAnthropicCompletionStreamClient) Complete(
 	ctx context.Context,
 	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
-	resp, err := a.makeRequest(ctx, requestParams, false)
+	resp, err := c.makeRequest(ctx, requestParams, false)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +73,7 @@ func (a *anthropicClient) Complete(
 	}, nil
 }
 
-func (a *anthropicClient) Stream(
+func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
 	ctx context.Context,
 	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
@@ -66,7 +89,7 @@ func (a *anthropicClient) Stream(
 		return errors.Newf("unexpected status code from API: %d", resp.StatusCode)
 	}
 
-	dec := NewDecoder(resp.Body)
+	dec := anthropic.NewDecoder(resp.Body)
 	for dec.Scan() {
 		if ctx.Err() != nil && ctx.Err() == context.Canceled {
 			return nil
@@ -96,8 +119,18 @@ func (a *anthropicClient) Stream(
 	return dec.Err()
 }
 
-func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
-	prompt, err := GetPrompt(requestParams.Messages)
+func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
+	defaultConfig, err := config.LoadDefaultConfig(ctx, awsConfigOptsForKeyConfig(c.endpoint, c.accessToken)...)
+	if err != nil {
+		return nil, errors.Wrap(err, "loading aws config")
+	}
+
+	creds, err := defaultConfig.Credentials.Retrieve(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving aws credentials")
+	}
+
+	prompt, err := anthropic.GetPrompt(requestParams.Messages)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +141,7 @@ func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.C
 	}
 
 	if len(requestParams.StopSequences) == 0 {
-		requestParams.StopSequences = []string{HUMAN_PROMPT}
+		requestParams.StopSequences = []string{anthropic.HUMAN_PROMPT}
 	}
 
 	payload := anthropicCompletionsRequestParameters{
@@ -120,6 +153,7 @@ func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.C
 		TopP:              requestParams.TopP,
 		TopK:              requestParams.TopK,
 		Prompt:            prompt,
+		AnthropicVersion:  "bedrock-2023-05-31",
 	}
 
 	reqBody, err := json.Marshal(payload)
@@ -127,32 +161,37 @@ func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.C
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", a.apiURL, bytes.NewReader(reqBody))
+	apiURL := url.URL{
+		Scheme: "https",
+		Host:   fmt.Sprintf("bedrock.%s.amazonaws.com", c.endpoint),
+		Path:   fmt.Sprintf("/model/%s/invoke-with-response-stream", payload.Model),
+	}
+
+	fmt.Printf("talking to API at %s: %s\n", apiURL.String(), string(reqBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL.String(), bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}
 
-	// Mimic headers set by the official Anthropic client:
-	// https://sourcegraph.com/github.com/anthropics/anthropic-sdk-typescript@493075d70f50f1568a276ed0cb177e297f5fef9f/-/blob/src/index.ts
+	hash := sha256.Sum256(reqBody)
+	if err := v4.NewSigner().SignHTTP(ctx, creds, req, hex.EncodeToString(hash[:]), "bedrock", c.endpoint, time.Now()); err != nil {
+		return nil, errors.Wrap(err, "signing request")
+	}
+
 	req.Header.Set("Cache-Control", "no-cache")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Client", clientID)
-	req.Header.Set("X-API-Key", a.accessToken)
-	// Set the API version so responses are in the expected format.
-	// NOTE: When changing this here, Cody Gateway currently overwrites this header
-	// with 2023-01-01, so it will not be respected in Gateway usage and we will
-	// have to fall back to the old parser, or implement a mechanism on the Gateway
-	// side that understands the version header we send here and switch out the parser.
-	req.Header.Set("anthropic-version", "2023-01-01")
+	// Don't store the prompt in the prompt history.
+	req.Header.Set("X-Amzn-Bedrock-Save", "false")
 
-	resp, err := a.cli.Do(req)
+	resp, err := c.cli.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, types.NewErrStatusNotOK("Anthropic", resp)
+		return nil, types.NewErrStatusNotOK("AWS Bedrock", resp)
 	}
 
 	return resp, nil
@@ -167,6 +206,7 @@ type anthropicCompletionsRequestParameters struct {
 	TopP              float32  `json:"top_p"`
 	Model             string   `json:"model"`
 	Stream            bool     `json:"stream"`
+	AnthropicVersion  string   `json:"anthropic_version,omitempty"`
 }
 
 type anthropicCompletionResponse struct {
