@@ -128,6 +128,7 @@ func (c *Config) Load() {
 			"accounts/fireworks/models/starcoder-7b-w8a16",
 			"accounts/fireworks/models/starcoder-3b-w8a16",
 			"accounts/fireworks/models/starcoder-1b-w8a16",
+			"accounts/fireworks/models/llama-v2-7b-code",
 			"accounts/fireworks/models/llama-v2-13b-code",
 			"accounts/fireworks/models/llama-v2-13b-code-instruct",
 			"accounts/fireworks/models/wizardcoder-15b",
