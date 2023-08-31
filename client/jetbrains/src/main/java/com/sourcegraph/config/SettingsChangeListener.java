@@ -109,7 +109,7 @@ public class SettingsChangeListener implements Disposable {
 
             // clear autocomplete suggestions if freshly disabled
             if (context.oldCodyAutocompleteEnabled && !context.newCodyAutocompleteEnabled) {
-              CodyAutocompleteManager.getInstance().clearAutocompleteSuggestions();
+              CodyAutocompleteManager.getInstance().clearAutocompleteSuggestionsForAllProjects();
             }
 
             // Disable/enable the Cody tool window depending on the setting

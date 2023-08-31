@@ -99,7 +99,7 @@ public class CodyAutocompleteManager {
    * pending ones.
    */
   @RequiresEdt
-  public void clearAutocompleteSuggestions() {
+  public void clearAutocompleteSuggestionsForAllProjects() {
     Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
     Arrays.stream(openProjects)
         .flatMap(project -> Arrays.stream(FileEditorManager.getInstance(project).getAllEditors()))
