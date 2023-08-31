@@ -121,7 +121,7 @@ func (c *Config) Load() {
 		c.AddError(errors.New("must provide allowed models for OpenAI"))
 	}
 
-	c.Fireworks.AccessToken = c.Get("CODY_GATEWAY_FIREWORKS_ACCESS_TOKEN", "", "The Fireworks access token to be used.")
+	c.Fireworks.AccessToken = c.GetOptional("CODY_GATEWAY_FIREWORKS_ACCESS_TOKEN", "The Fireworks access token to be used.")
 	c.Fireworks.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_FIREWORKS_ALLOWED_MODELS",
 		strings.Join([]string{
 			"accounts/fireworks/models/starcoder-16b-w8a16",

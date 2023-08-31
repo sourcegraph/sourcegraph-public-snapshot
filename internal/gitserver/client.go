@@ -893,7 +893,37 @@ func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password str
 			return nil, nil, err
 		}
 
+		// We need to check the first message from the gRPC errors to see if we get an argument or permisison related
+		// error before continuing to read the rest of the stream. If the first message is an error, we cancel the stream and
+		// forward the error.
+		//
+		// This is necessary to provide parity between the REST and gRPC implementations of
+		// P4Exec. Users of cli.P4Exec may assume error handling occurs immediately,
+		// as is the case with the HTTP implementation where these kinds of errors are returned as soon as the
+		// function returns. gRPC is asynchronous, so we have to start consuming messages from
+		// the stream to see any errors from the server. Reading the first message ensures we
+		// handle any errors synchronously, similar to the HTTP implementation.
+
+		firstMessage, firstError := stream.Recv()
+		switch status.Code(firstError) {
+		case codes.InvalidArgument, codes.PermissionDenied:
+			cancel()
+			return nil, nil, convertGitserverError(firstError)
+		}
+
+		firstMessageRead := false
 		r := streamio.NewReader(func() ([]byte, error) {
+			// Check if we've read the first message yet. If not, read it and return.
+			if !firstMessageRead {
+				firstMessageRead = true
+
+				if firstError != nil {
+					return nil, firstError
+				}
+
+				return firstMessage.GetData(), nil
+			}
+
 			msg, err := stream.Recv()
 			if err != nil {
 				if status.Code(err) == codes.Canceled {
