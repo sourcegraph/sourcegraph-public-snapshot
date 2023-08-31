@@ -34,9 +34,10 @@ class SourcegraphPersisentAccounts :
       if (localAppInstalled) {
         finalState =
             state +
-                SourcegraphAccount(
+                SourcegraphAccount.create(
                     LocalAppManager.LOCAL_APP_ID,
-                    SourcegraphServerPath(LocalAppManager.getLocalAppUrl()))
+                    SourcegraphServerPath(LocalAppManager.getLocalAppUrl()),
+                    LocalAppManager.LOCAL_APP_ID)
       }
     }
     this.state = finalState

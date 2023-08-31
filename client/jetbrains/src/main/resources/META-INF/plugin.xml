@@ -19,6 +19,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <projectService serviceImplementation="com.sourcegraph.config.CodyProjectService"/>
+        <projectService serviceImplementation="com.sourcegraph.cody.config.SettingsModel"/>
         <projectService serviceImplementation="com.sourcegraph.config.SettingsChangeListener"/>
         <applicationService serviceImplementation="com.sourcegraph.config.CodyApplicationService"/>
         <projectConfigurable
@@ -48,6 +49,7 @@
         <projectService id="sourcegraph.findService" serviceImplementation="com.sourcegraph.find.FindService"/>
         <postStartupActivity implementation="com.sourcegraph.telemetry.PostStartupActivity"/>
         <postStartupActivity implementation="com.sourcegraph.config.NotificationActivity"/>
+        <postStartupActivity implementation="com.sourcegraph.cody.config.SettingsMigration"/>
 
         <!-- Cody -->
         <toolWindow
@@ -223,7 +225,8 @@
                     class="com.sourcegraph.cody.config.AddCodyAccountAction"/>
             <action id="Sourcegraph.Accounts.AddSourcegraphAccountWithToken" text="Log In with Token to Sourcegraph"
                     class="com.sourcegraph.cody.config.AddSourcegraphAccountWithTokenAction"/>
-            <action id="Sourcegraph.Accounts.AddSourcegraphEnterpriseAccount" text="Log In with Token to Sourcegraph Enterprise"
+            <action id="Sourcegraph.Accounts.AddSourcegraphEnterpriseAccount"
+                    text="Log In with Token to Sourcegraph Enterprise"
                     class="com.sourcegraph.cody.config.AddSourcegraphEnterpriseAccountAction"/>
 
             <separator/>

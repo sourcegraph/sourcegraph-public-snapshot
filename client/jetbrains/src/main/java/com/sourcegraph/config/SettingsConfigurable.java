@@ -74,8 +74,6 @@ public class SettingsConfigurable implements Configurable {
 
     boolean oldCodyEnabled = ConfigUtil.isCodyEnabled();
     boolean oldCodyAutocompleteEnabled = ConfigUtil.isCodyAutocompleteEnabled();
-    boolean oldCodyDebugEnabled = ConfigUtil.isCodyDebugEnabled();
-    boolean oldCodyVerboseDebugEnabled = ConfigUtil.isCodyVerboseDebugEnabled();
     String oldUrl = ConfigUtil.getSourcegraphUrl(project);
     String newDotComAccessToken = mySettingsComponent.getDotComAccessToken();
     String newEnterpriseAccessToken = mySettingsComponent.getEnterpriseAccessToken();
@@ -94,16 +92,10 @@ public class SettingsConfigurable implements Configurable {
             oldCodyEnabled,
             oldCodyAutocompleteEnabled,
             oldUrl,
-            oldCodyDebugEnabled,
-            oldCodyVerboseDebugEnabled,
             newUrl,
-            mySettingsComponent.isDotComAccessTokenChanged(),
-            mySettingsComponent.isEnterpriseAccessTokenChanged(),
-            mySettingsComponent.getCustomRequestHeaders(),
+            !newUrl.equals(oldUrl),
             mySettingsComponent.isCodyEnabled(),
-            mySettingsComponent.isCodyAutocompleteEnabled(),
-            mySettingsComponent.isCodyDebugEnabled(),
-            mySettingsComponent.isCodyVerboseDebugEnabled());
+            mySettingsComponent.isCodyAutocompleteEnabled());
 
     publisher.beforeAction(context);
 

@@ -3,9 +3,13 @@ package com.sourcegraph.config;
 import com.google.gson.JsonObject;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManagerCore;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.cody.agent.ExtensionConfiguration;
+import com.sourcegraph.cody.config.SourcegraphAccount;
+import com.sourcegraph.cody.config.SourcegraphAccountManager;
+import com.sourcegraph.cody.config.SourcegraphProjectDefaultAccountHolder;
 import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.find.Search;
 import java.util.ArrayList;
@@ -41,8 +45,17 @@ public class ConfigUtil {
   @NotNull
   public static JsonObject getConfigAsJson(@NotNull Project project) {
     JsonObject configAsJson = new JsonObject();
-    configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(project));
-    configAsJson.addProperty("accessToken", ConfigUtil.getProjectAccessToken(project));
+    SourcegraphProjectDefaultAccountHolder defaultAccountHolder =
+        project.getService(SourcegraphProjectDefaultAccountHolder.class);
+    SourcegraphAccountManager sourcegraphAccountManager =
+        ApplicationManager.getApplication().getService(SourcegraphAccountManager.class);
+    SourcegraphAccount defaultAccount = defaultAccountHolder.getAccount();
+    Optional<SourcegraphAccount> maybeDefaultAccount = Optional.ofNullable(defaultAccount);
+    Optional<String> instanceUrl = maybeDefaultAccount.map(it -> it.getServer().getUrl());
+    Optional<String> accessToken =
+        maybeDefaultAccount.map(sourcegraphAccountManager::findCredentials);
+    configAsJson.addProperty("instanceURL", instanceUrl.orElse(DOTCOM_URL));
+    configAsJson.addProperty("accessToken", accessToken.orElse(""));
     configAsJson.addProperty(
         "customRequestHeadersAsString", ConfigUtil.getCustomRequestHeaders(project));
     configAsJson.addProperty("pluginVersion", ConfigUtil.getPluginVersion());

@@ -79,32 +79,9 @@ public class SettingsChangeListener implements Disposable {
             boolean urlChanged = !Objects.equals(context.oldUrl, context.newUrl);
             if (urlChanged) {
               GraphQlLogger.logInstallEvent(project).thenAccept(ConfigUtil::setInstallEventLogged);
-            } else if ((context.isDotComAccessTokenChanged
-                    || context.isEnterpriseAccessTokenChanged)
+            } else if (context.isAuthMethodChanged
                 && !ConfigUtil.isInstallEventLogged()) {
               GraphQlLogger.logInstallEvent(project).thenAccept(ConfigUtil::setInstallEventLogged);
-            }
-
-            SettingsComponent.InstanceType instanceType = ConfigUtil.getInstanceType(project);
-            boolean accessTokenChanged =
-                (instanceType == SettingsComponent.InstanceType.DOTCOM
-                        && context.isDotComAccessTokenChanged)
-                    || (instanceType == SettingsComponent.InstanceType.ENTERPRISE
-                        && context.isEnterpriseAccessTokenChanged);
-
-            boolean connectionSettingsChanged = urlChanged || accessTokenChanged;
-            // Notify user about a successful connection
-            if (connectionSettingsChanged) {
-              String accessTokenToTest = ConfigUtil.getProjectAccessToken(project);
-              ApiAuthenticator.testConnection(project)
-                  .thenAccept(
-                      (status) -> {
-                        if (ConfigUtil.didAuthenticationFailLastTime()
-                            && status == ApiAuthenticator.ConnectionStatus.AUTHENTICATED) {
-                          notifyAboutSuccessfulConnection();
-                        }
-                        ConfigUtil.setAuthenticationFailedLastTime(true);
-                      });
             }
 
             // clear autocomplete suggestions if freshly disabled
@@ -140,31 +117,7 @@ public class SettingsChangeListener implements Disposable {
         });
   }
 
-  private void notifyAboutSuccessfulConnection() {
-    KeyboardShortcut altSShortcut =
-        new KeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.ALT_DOWN_MASK), null);
-    String altSShortcutText = KeymapUtil.getShortcutText(altSShortcut);
-    Notification notification =
-        new Notification(
-            "Sourcegraph: server access",
-            "Sourcegraph: auth success",
-            "Your Sourcegraph account has been connected to the Sourcegraph plugin. "
-                + "Open the Cody sidebar, or press "
-                + altSShortcutText
-                + " to open Sourcegraph.",
-            NotificationType.INFORMATION);
-    AnAction dismissAction =
-        new DumbAwareAction("Dismiss") {
-          @Override
-          public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-            notification.expire();
-          }
-        };
-    notification.addAction(dismissAction);
-    Notifications.Bus.notify(notification);
-  }
-
-  public void setJavaToJSBridge(JavaToJSBridge javaToJSBridge) {
+    public void setJavaToJSBridge(JavaToJSBridge javaToJSBridge) {
     this.javaToJSBridge = javaToJSBridge;
   }
 

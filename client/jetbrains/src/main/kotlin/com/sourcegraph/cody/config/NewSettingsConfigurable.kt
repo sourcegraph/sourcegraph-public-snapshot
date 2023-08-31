@@ -18,26 +18,21 @@ import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.sourcegraph.cody.Icons
 import com.sourcegraph.config.CodyApplicationService
+import com.sourcegraph.config.CodyProjectService
 import com.sourcegraph.config.ConfigUtil
+import com.sourcegraph.config.PluginSettingChangeActionNotifier
+import com.sourcegraph.config.PluginSettingChangeContext
 
 class NewSettingsConfigurable(private val project: Project) :
     BoundConfigurable(ConfigUtil.SERVICE_DISPLAY_NAME) {
-  private var isCodyEnabledCheckBox: Boolean = false
-  private var isCodyAutocompleteEnabled: Boolean = false
-  private var isCodyDebugEnabled: Boolean = false
-  private var isCodyVerboseDebugEnabled: Boolean = false
-  private var defaultBranchName: String = "main"
-  private var remoteUrlReplacements: String = ""
-  private var isUrlNotificationDismissed: Boolean = false
-  private var customRequestHeaders: String = ""
+  private val settingsModel = SettingsModel.getInstance(project)
+  private val accountManager = service<SourcegraphAccountManager>()
+  private val defaultAccountHolder = project.service<SourcegraphProjectDefaultAccountHolder>()
 
   override fun createPanel(): DialogPanel {
-    val defaultAccountHolder = project.service<SourcegraphProjectDefaultAccountHolder>()
-    val accountManager = service<SourcegraphAccountManager>()
-    val settings = CodyApplicationService.getInstance()
+    val accountsModel = SourcegraphAccountListModel(project)
     val indicatorsProvider =
         ProgressIndicatorsProvider().also { Disposer.register(disposable!!, it) }
-    val accountsModel = SourcegraphAccountListModel(project)
     val detailsProvider =
         SourcegraphAccounDetailsProvider(indicatorsProvider, accountManager, accountsModel)
     return panel {
@@ -70,7 +65,7 @@ class NewSettingsConfigurable(private val project: Project) :
                       .trimMargin(),
                   MAX_LINE_LENGTH_NO_WRAP)
               .horizontalAlign(HorizontalAlign.FILL)
-              .bindText(::customRequestHeaders)
+              .bindText(settingsModel::customRequestHeaders)
               .applyToComponent {
                 this.setEmptyState("Client-ID, client-one, X-Extra, some metadata")
               }
@@ -102,15 +97,18 @@ class NewSettingsConfigurable(private val project: Project) :
               .comment(
                   "Disable this to turn off all AI-based functionality of the plugin, including the Cody chat sidebar and autocomplete",
                   MAX_LINE_LENGTH_NO_WRAP)
-              .bindSelected(::isCodyEnabledCheckBox)
+              .bindSelected(settingsModel::isCodyEnabled)
         }
-        row { checkBox("Enable Cody autocomplete").bindSelected(::isCodyAutocompleteEnabled) }
+        row {
+          checkBox("Enable Cody autocomplete")
+              .bindSelected(settingsModel::isCodyAutocompleteEnabled)
+        }
         row {
           checkBox("Enable debug")
               .comment("Enables debug output visible in the idea.log")
-              .bindSelected(::isCodyDebugEnabled)
+              .bindSelected(settingsModel::isCodyDebugEnabled)
         }
-        row { checkBox("Verbose debug").bindSelected(::isCodyVerboseDebugEnabled) }
+        row { checkBox("Verbose debug").bindSelected(settingsModel::isCodyVerboseDebugEnabled) }
       }
       group("Code search") {
         row {
@@ -118,7 +116,7 @@ class NewSettingsConfigurable(private val project: Project) :
               .label("Default branch name:")
               .comment("The branch to use if the current branch is not yet pushed")
               .horizontalAlign(HorizontalAlign.FILL)
-              .bindText(::defaultBranchName)
+              .bindText(settingsModel::defaultBranchName)
               .applyToComponent {
                 this.setEmptyState("main")
                 toolTipText = "Usually \"main\" or \"master\", but can be any name"
@@ -135,16 +133,67 @@ class NewSettingsConfigurable(private val project: Project) :
                       .trimMargin(),
                   MAX_LINE_LENGTH_NO_WRAP)
               .horizontalAlign(HorizontalAlign.FILL)
-              .bindText(::remoteUrlReplacements)
+              .bindText(settingsModel::remoteUrlReplacements)
               .applyToComponent {
                 this.setEmptyState("search1, replacement1, search2, replacement2, ...")
               }
         }
         row {
           checkBox("Do not show the \"No Sourcegraph URL set\" notification for this project")
-              .bindSelected(::isUrlNotificationDismissed)
+              .bindSelected(settingsModel::isUrlNotificationDismissed)
         }
       }
     }
+  }
+
+  override fun apply() {
+    val bus = project.messageBus
+    val publisher = bus.syncPublisher(PluginSettingChangeActionNotifier.TOPIC)
+
+    val aSettings = CodyApplicationService.getInstance()
+    val pSettings = CodyProjectService.getInstance(project)
+
+    val oldCodyEnabled = ConfigUtil.isCodyEnabled()
+    val oldCodyAutocompleteEnabled = ConfigUtil.isCodyAutocompleteEnabled()
+    val oldDefaultAccount = defaultAccountHolder.account
+    val oldUrl = oldDefaultAccount?.server?.url ?: ""
+    val oldAccessToken = oldDefaultAccount?.let { accountManager.findCredentials(it) }
+
+    super.apply()
+
+    val defaultAccount = defaultAccountHolder.account
+    val accessToken = defaultAccount?.let { accountManager.findCredentials(it) }
+    val newUrl = defaultAccount?.server?.url ?: ""
+    val context =
+        PluginSettingChangeContext(
+            oldCodyEnabled,
+            oldCodyAutocompleteEnabled,
+            oldUrl,
+            newUrl,
+            oldUrl != newUrl || oldAccessToken != accessToken,
+            settingsModel.isCodyEnabled,
+            settingsModel.isCodyAutocompleteEnabled)
+
+    if (pSettings.customRequestHeaders != null) {
+      pSettings.customRequestHeaders = settingsModel.customRequestHeaders
+    } else {
+      aSettings.customRequestHeaders = settingsModel.customRequestHeaders
+    }
+    if (pSettings.defaultBranch != null) {
+      pSettings.defaultBranch = settingsModel.defaultBranchName
+    } else {
+      aSettings.defaultBranch = settingsModel.defaultBranchName
+    }
+    if (pSettings.remoteUrlReplacements != null) {
+      pSettings.remoteUrlReplacements = settingsModel.remoteUrlReplacements
+    } else {
+      aSettings.remoteUrlReplacements = settingsModel.remoteUrlReplacements
+    }
+    aSettings.isUrlNotificationDismissed = settingsModel.isUrlNotificationDismissed
+    aSettings.setCodyEnabled(settingsModel.isCodyEnabled)
+    aSettings.isCodyAutocompleteEnabled = settingsModel.isCodyAutocompleteEnabled
+    aSettings.isCodyDebugEnabled = settingsModel.isCodyDebugEnabled
+    aSettings.isCodyVerboseDebugEnabled = settingsModel.isCodyVerboseDebugEnabled
+    publisher.afterAction(context)
   }
 }

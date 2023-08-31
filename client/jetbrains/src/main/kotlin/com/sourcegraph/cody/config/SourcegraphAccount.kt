@@ -22,4 +22,16 @@ class SourcegraphAccount(
   }
 
   override fun toString(): String = "$server/$name"
+
+  companion object {
+    fun create(name: String, server: SourcegraphServerPath, id: String): SourcegraphAccount {
+      val username =
+          if (id == LocalAppManager.LOCAL_APP_ID) {
+            LocalAppManager.LOCAL_APP_ID
+          } else {
+            name
+          }
+      return SourcegraphAccount(username, server, id)
+    }
+  }
 }

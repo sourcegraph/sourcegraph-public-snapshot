@@ -20,7 +20,7 @@ class AddCodyAccountAction : DumbAwareAction() {
     val accountsHost = e.getData(SourcegraphAccountsHost.KEY)!!
     val token = LocalAppManager.getLocalAppAccessToken()
     val account =
-        SourcegraphAccount(
+        SourcegraphAccount.create(
             LocalAppManager.LOCAL_APP_ID,
             SourcegraphServerPath(LocalAppManager.getLocalAppUrl()),
             LocalAppManager.LOCAL_APP_ID)

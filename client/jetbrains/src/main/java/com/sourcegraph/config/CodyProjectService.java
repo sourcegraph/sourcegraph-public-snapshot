@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 public class CodyProjectService implements PersistentStateComponent<CodyProjectService> {
 
   @NotNull
-  static CodyProjectService getInstance(@NotNull Project project) {
+  public static CodyProjectService getInstance(@NotNull Project project) {
     return project.getService(CodyProjectService.class);
   }
 
