@@ -15,7 +15,7 @@ func (svc) Name() string { return "symbols" }
 
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 	LoadConfig()
-	return nil, []debugserver.Endpoint{GRPCWebUIDebugEndpoint()}
+	return nil, []debugserver.Endpoint{}
 }
 
 func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {

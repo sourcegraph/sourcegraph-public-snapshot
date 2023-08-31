@@ -17,7 +17,7 @@ func (svc) Name() string { return "symbols" }
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 	symbols_shared.LoadConfig()
 	config := loadRockskipConfig(env.BaseConfig{}, symbols_shared.CtagsConfig, symbols_shared.RepositoryFetcherConfig)
-	return &config, []debugserver.Endpoint{symbols_shared.GRPCWebUIDebugEndpoint()}
+	return &config, []debugserver.Endpoint{}
 }
 
 func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {

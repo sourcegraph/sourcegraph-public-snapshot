@@ -5,7 +5,6 @@ go_library(
     srcs = [
         "debug.go",
         "expvar.go",
-        "grpcui.go",
         "metadata.go",
         "ready.go",
     ],
@@ -14,17 +13,12 @@ go_library(
     deps = [
         "//internal/env",
         "//internal/goroutine",
-        "//internal/grpc/defaults",
         "//internal/httpserver",
         "//internal/version",
-        "//lib/errors",
         "@com_github_felixge_fgprof//:fgprof",
-        "@com_github_fullstorydev_grpcui//standalone",
         "@com_github_gorilla_mux//:mux",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_prometheus_client_golang//prometheus/promhttp",
-        "@com_github_sourcegraph_log//:log",
-        "@org_golang_google_grpc//:go_default_library",
     ],
 )

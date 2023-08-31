@@ -14,7 +14,7 @@ type svc struct{}
 func (svc) Name() string { return "searcher" }
 
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
-	return nil, []debugserver.Endpoint{GRPCWebUIDebugEndpoint()}
+	return nil, []debugserver.Endpoint{}
 }
 
 func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, _ env.Config) error {

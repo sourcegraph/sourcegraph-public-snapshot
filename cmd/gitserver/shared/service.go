@@ -15,11 +15,7 @@ func (svc) Name() string { return "gitserver" }
 
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 	c := LoadConfig()
-	endpoints := []debugserver.Endpoint{
-		GRPCWebUIDebugEndpoint(c.ListenAddress),
-	}
-
-	return c, endpoints
+	return c, []debugserver.Endpoint{}
 }
 
 func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {

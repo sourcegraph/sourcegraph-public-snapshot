@@ -5,7 +5,6 @@ go_library(
     name = "shared",
     srcs = [
         "config.go",
-        "debug.go",
         "service.go",
         "shared.go",
     ],
