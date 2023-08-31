@@ -41,19 +41,18 @@ public class SettingsConfigurable implements Configurable {
 
   @Override
   public boolean isModified() {
-    return !mySettingsComponent.getInstanceType().equals(ConfigUtil.getInstanceType(project))
-        || !mySettingsComponent.getEnterpriseUrl().equals(ConfigUtil.getEnterpriseUrl(project))
+    return !mySettingsComponent.getEnterpriseUrl().equals(ConfigUtil.getEnterpriseUrl(project))
         || mySettingsComponent.isDotComAccessTokenChanged()
         || mySettingsComponent.isEnterpriseAccessTokenChanged()
         || !mySettingsComponent
             .getCustomRequestHeaders()
-            .equals(ConfigUtil.getCustomRequestHeaders(project))
+            .equals("")
         || !mySettingsComponent
             .getDefaultBranchName()
             .equals(ConfigUtil.getDefaultBranchName(project))
         || !mySettingsComponent
             .getRemoteUrlReplacements()
-            .equals(ConfigUtil.getRemoteUrlReplacements(project))
+            .equals("")
         || mySettingsComponent.isUrlNotificationDismissed()
             != ConfigUtil.isUrlNotificationDismissed()
         || mySettingsComponent.isCodyEnabled() != ConfigUtil.isCodyEnabled()
@@ -152,14 +151,13 @@ public class SettingsConfigurable implements Configurable {
 
   @Override
   public void reset() {
-    mySettingsComponent.setInstanceType(ConfigUtil.getInstanceType(project));
     mySettingsComponent.setEnterpriseUrl(ConfigUtil.getEnterpriseUrl(project));
     mySettingsComponent.resetDotComAccessToken();
     mySettingsComponent.resetEnterpriseAccessToken();
-    mySettingsComponent.setCustomRequestHeaders(ConfigUtil.getCustomRequestHeaders(project));
+    mySettingsComponent.setCustomRequestHeaders("");
     String defaultBranchName = ConfigUtil.getDefaultBranchName(project);
     mySettingsComponent.setDefaultBranchName(defaultBranchName);
-    String remoteUrlReplacements = ConfigUtil.getRemoteUrlReplacements(project);
+    String remoteUrlReplacements = "";
     mySettingsComponent.setRemoteUrlReplacements(remoteUrlReplacements);
     mySettingsComponent.setUrlNotificationDismissedEnabled(ConfigUtil.isUrlNotificationDismissed());
     mySettingsComponent.setCodyEnabled(ConfigUtil.isCodyEnabled());

@@ -1,13 +1,9 @@
 package com.sourcegraph.config;
 
-import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationType;
-import com.intellij.notification.Notifications;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.KeyboardShortcut;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.TextEditor;
 import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
@@ -20,14 +16,17 @@ import com.sourcegraph.cody.CodyToolWindowFactory;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager;
+import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus;
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService;
 import com.sourcegraph.find.browser.JavaToJSBridge;
 import com.sourcegraph.telemetry.GraphQlLogger;
+
+import java.util.Arrays;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.util.Objects;
-import javax.swing.KeyStroke;
+
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -42,6 +41,8 @@ public class SettingsChangeListener implements Disposable {
   public SettingsChangeListener(@NotNull Project project) {
     MessageBus bus = project.getMessageBus();
 
+    CodyApplicationSettings codyApplicationSettings = CodyApplicationSettings.getInstance();
+
     connection = bus.connect();
     connection.subscribe(
         PluginSettingChangeActionNotifier.TOPIC,
@@ -50,7 +51,7 @@ public class SettingsChangeListener implements Disposable {
           public void beforeAction(@NotNull PluginSettingChangeContext context) {
             if (!Objects.equals(context.oldUrl, context.newUrl)) {
               GraphQlLogger.logUninstallEvent(project);
-              ConfigUtil.setInstallEventLogged(false);
+              codyApplicationSettings.setInstallEventLogged(false);
             }
           }
 
@@ -78,10 +79,10 @@ public class SettingsChangeListener implements Disposable {
             // Log install events
             boolean urlChanged = !Objects.equals(context.oldUrl, context.newUrl);
             if (urlChanged) {
-              GraphQlLogger.logInstallEvent(project).thenAccept(ConfigUtil::setInstallEventLogged);
+              GraphQlLogger.logInstallEvent(project).thenAccept(codyApplicationSettings::setInstallEventLogged);
             } else if (context.isAuthMethodChanged
-                && !ConfigUtil.isInstallEventLogged()) {
-              GraphQlLogger.logInstallEvent(project).thenAccept(ConfigUtil::setInstallEventLogged);
+                && !codyApplicationSettings.isInstallEventLogged()) {
+              GraphQlLogger.logInstallEvent(project).thenAccept(codyApplicationSettings::setInstallEventLogged);
             }
 
             // clear autocomplete suggestions if freshly disabled

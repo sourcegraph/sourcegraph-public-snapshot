@@ -17,15 +17,15 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.sourcegraph.cody.Icons
-import com.sourcegraph.config.CodyApplicationService
-import com.sourcegraph.config.CodyProjectService
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.config.PluginSettingChangeActionNotifier
 import com.sourcegraph.config.PluginSettingChangeContext
 
 class NewSettingsConfigurable(private val project: Project) :
     BoundConfigurable(ConfigUtil.SERVICE_DISPLAY_NAME) {
-  private val settingsModel = SettingsModel.getInstance(project)
+  private val codyProjectSettings = project.service<CodyProjectSettings>()
+  private val codyApplicationSettings = service<CodyApplicationSettings>()
+  private val settingsModel = SettingsModel()
   private val accountManager = service<SourcegraphAccountManager>()
   private val defaultAccountHolder = project.service<SourcegraphProjectDefaultAccountHolder>()
 
@@ -108,7 +108,10 @@ class NewSettingsConfigurable(private val project: Project) :
               .comment("Enables debug output visible in the idea.log")
               .bindSelected(settingsModel::isCodyDebugEnabled)
         }
-        row { checkBox("Verbose debug").bindSelected(settingsModel::isCodyVerboseDebugEnabled) }
+        row {
+          checkBox("Verbose debug")
+              .bindSelected(settingsModel::isCodyVerboseDebugEnabled)
+        }
       }
       group("Code search") {
         row {
@@ -146,15 +149,27 @@ class NewSettingsConfigurable(private val project: Project) :
     }
   }
 
+  override fun reset() {
+    super.reset()
+    settingsModel.isCodyEnabled = codyApplicationSettings.isCodyEnabled
+    settingsModel.isCodyAutocompleteEnabled =
+        codyApplicationSettings.isCodyAutocompleteEnabled
+    settingsModel.isCodyDebugEnabled = codyApplicationSettings.isCodyDebugEnabled
+    settingsModel.isCodyVerboseDebugEnabled =
+        codyApplicationSettings.isCodyVerboseDebugEnabled
+    settingsModel.isUrlNotificationDismissed =
+        codyApplicationSettings.isUrlNotificationDismissed
+    settingsModel.defaultBranchName = codyProjectSettings.defaultBranchName
+    settingsModel.customRequestHeaders = codyProjectSettings.customRequestHeaders
+    settingsModel.remoteUrlReplacements = codyProjectSettings.remoteUrlReplacements
+  }
+
   override fun apply() {
     val bus = project.messageBus
     val publisher = bus.syncPublisher(PluginSettingChangeActionNotifier.TOPIC)
 
-    val aSettings = CodyApplicationService.getInstance()
-    val pSettings = CodyProjectService.getInstance(project)
-
-    val oldCodyEnabled = ConfigUtil.isCodyEnabled()
-    val oldCodyAutocompleteEnabled = ConfigUtil.isCodyAutocompleteEnabled()
+    val oldCodyEnabled = codyApplicationSettings.isCodyEnabled
+    val oldCodyAutocompleteEnabled = codyApplicationSettings.isCodyAutocompleteEnabled
     val oldDefaultAccount = defaultAccountHolder.account
     val oldUrl = oldDefaultAccount?.server?.url ?: ""
     val oldAccessToken = oldDefaultAccount?.let { accountManager.findCredentials(it) }
@@ -174,26 +189,18 @@ class NewSettingsConfigurable(private val project: Project) :
             settingsModel.isCodyEnabled,
             settingsModel.isCodyAutocompleteEnabled)
 
-    if (pSettings.customRequestHeaders != null) {
-      pSettings.customRequestHeaders = settingsModel.customRequestHeaders
-    } else {
-      aSettings.customRequestHeaders = settingsModel.customRequestHeaders
-    }
-    if (pSettings.defaultBranch != null) {
-      pSettings.defaultBranch = settingsModel.defaultBranchName
-    } else {
-      aSettings.defaultBranch = settingsModel.defaultBranchName
-    }
-    if (pSettings.remoteUrlReplacements != null) {
-      pSettings.remoteUrlReplacements = settingsModel.remoteUrlReplacements
-    } else {
-      aSettings.remoteUrlReplacements = settingsModel.remoteUrlReplacements
-    }
-    aSettings.isUrlNotificationDismissed = settingsModel.isUrlNotificationDismissed
-    aSettings.setCodyEnabled(settingsModel.isCodyEnabled)
-    aSettings.isCodyAutocompleteEnabled = settingsModel.isCodyAutocompleteEnabled
-    aSettings.isCodyDebugEnabled = settingsModel.isCodyDebugEnabled
-    aSettings.isCodyVerboseDebugEnabled = settingsModel.isCodyVerboseDebugEnabled
+    codyProjectSettings.customRequestHeaders = settingsModel.customRequestHeaders
+    codyProjectSettings.defaultBranchName = settingsModel.defaultBranchName
+    codyProjectSettings.remoteUrlReplacements = settingsModel.remoteUrlReplacements
+    codyApplicationSettings.isCodyEnabled = settingsModel.isCodyEnabled
+    codyApplicationSettings.isCodyAutocompleteEnabled =
+        settingsModel.isCodyAutocompleteEnabled
+    codyApplicationSettings.isCodyDebugEnabled = settingsModel.isCodyDebugEnabled
+    codyApplicationSettings.isCodyVerboseDebugEnabled =
+        settingsModel.isCodyVerboseDebugEnabled
+    codyApplicationSettings.isUrlNotificationDismissed =
+        settingsModel.isUrlNotificationDismissed
+
     publisher.afterAction(context)
   }
 }

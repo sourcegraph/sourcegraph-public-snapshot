@@ -13,8 +13,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import com.intellij.util.containers.orNull
 import com.sourcegraph.cody.localapp.LocalAppManager
+import com.sourcegraph.config.AccessTokenStorage
+import com.sourcegraph.config.CodyApplicationService
+import com.sourcegraph.config.CodyProjectService
 import com.sourcegraph.config.ConfigUtil
-import com.sourcegraph.config.SettingsComponent
+import com.sourcegraph.config.UserLevelConfig
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
@@ -22,35 +25,35 @@ class SettingsMigration : StartupActivity, DumbAware {
 
   private val accountManager = service<SourcegraphAccountManager>()
   override fun runActivity(project: Project) {
-    val settingsModel = SettingsModel.getInstance(project)
-    val defaultAccountHolder = project.service<SourcegraphProjectDefaultAccountHolder>()
     RunOnceUtil.runOnceForProject(project, UUID.randomUUID().toString()) {
-      migrateAccounts(project, defaultAccountHolder)
-      migrateSettings(project, settingsModel)
+      migrateAccounts(project)
+      migrateProjectSettings(project)
     }
+    RunOnceUtil.runOnceForApp(UUID.randomUUID().toString()) { migrateApplicationSettings() }
   }
 
   private fun migrateAccounts(
       project: Project,
-      defaultAccountHolder: SourcegraphProjectDefaultAccountHolder
   ) {
+    val defaultAccountHolder = project.service<SourcegraphProjectDefaultAccountHolder>()
     val requestExecutorFactory = SourcegraphApiRequestExecutor.Factory.getInstance()
-    val instanceType = ConfigUtil.getInstanceType(project)
-    migrateDotcomAccount(project, instanceType, requestExecutorFactory, defaultAccountHolder)
-    migrateEnterpriseAccount(project, instanceType, requestExecutorFactory, defaultAccountHolder)
-    migrateCodyAccount(instanceType, requestExecutorFactory, defaultAccountHolder)
+    val defaultAccountType = ConfigUtil.getDefaultAccountType(project)
+    migrateDotcomAccount(project, defaultAccountType, requestExecutorFactory, defaultAccountHolder)
+    migrateEnterpriseAccount(
+        project, defaultAccountType, requestExecutorFactory, defaultAccountHolder)
+    migrateCodyAccount(defaultAccountType, requestExecutorFactory, defaultAccountHolder)
   }
 
   private fun migrateDotcomAccount(
       project: Project,
-      instanceType: SettingsComponent.InstanceType,
+      accountType: AccountType,
       requestExecutorFactory: SourcegraphApiRequestExecutor.Factory,
       defaultAccountHolder: SourcegraphProjectDefaultAccountHolder
   ) {
-    val dotcomAccessToken = ConfigUtil.getDotComAccessToken(project)
+    val dotcomAccessToken = extractDotcomAccessToken(project)
     if (!dotcomAccessToken.isNullOrEmpty()) {
       val server = SourcegraphServerPath(ConfigUtil.DOTCOM_URL)
-      val shouldSetAccountAsDefault = instanceType == SettingsComponent.InstanceType.DOTCOM
+      val shouldSetAccountAsDefault = accountType == AccountType.DOTCOM
       if (shouldSetAccountAsDefault) {
         addAsDefaultAccountIfUnique(
             dotcomAccessToken,
@@ -70,17 +73,16 @@ class SettingsMigration : StartupActivity, DumbAware {
 
   private fun migrateEnterpriseAccount(
       project: Project,
-      instanceType: SettingsComponent.InstanceType,
+      accountType: AccountType,
       requestExecutorFactory: SourcegraphApiRequestExecutor.Factory,
       defaultAccountHolder: SourcegraphProjectDefaultAccountHolder
   ) {
-    val enterpriseAccessToken = ConfigUtil.getEnterpriseAccessToken(project)
+    val enterpriseAccessToken = extractEnterpriseAccessToken(project)
     if (!enterpriseAccessToken.isNullOrEmpty()) {
-      val enterpriseUrl = ConfigUtil.getEnterpriseUrl(project)
+      val enterpriseUrl = extractEnterpriseUrl(project)
       runCatching { SourcegraphServerPath.from(enterpriseUrl) }
           .fold({
-            val shouldSetAccountAsDefault =
-                instanceType == SettingsComponent.InstanceType.ENTERPRISE
+            val shouldSetAccountAsDefault = accountType == AccountType.ENTERPRISE
             if (shouldSetAccountAsDefault) {
               addAsDefaultAccountIfUnique(
                   enterpriseAccessToken,
@@ -102,7 +104,7 @@ class SettingsMigration : StartupActivity, DumbAware {
   }
 
   private fun migrateCodyAccount(
-      instanceType: SettingsComponent.InstanceType,
+      accountType: AccountType,
       requestExecutorFactory: SourcegraphApiRequestExecutor.Factory,
       defaultAccountHolder: SourcegraphProjectDefaultAccountHolder
   ) {
@@ -111,7 +113,7 @@ class SettingsMigration : StartupActivity, DumbAware {
       val codyUrl = LocalAppManager.getLocalAppUrl()
       runCatching { SourcegraphServerPath.from(codyUrl) }
           .fold({
-            val shouldSetAccountAsDefault = instanceType == SettingsComponent.InstanceType.LOCAL_APP
+            val shouldSetAccountAsDefault = accountType == AccountType.LOCAL_APP
             if (shouldSetAccountAsDefault) {
               addAsDefaultAccountIfUnique(
                   localAppAccessToken,
@@ -193,15 +195,150 @@ class SettingsMigration : StartupActivity, DumbAware {
     }
   }
 
-  private fun migrateSettings(project: Project, settingsModel: SettingsModel) {
-    settingsModel.isCodyEnabled = ConfigUtil.isCodyEnabled()
-    settingsModel.isCodyAutocompleteEnabled = ConfigUtil.isCodyAutocompleteEnabled()
-    settingsModel.isCodyDebugEnabled = ConfigUtil.isCodyDebugEnabled()
-    settingsModel.isCodyVerboseDebugEnabled = ConfigUtil.isCodyVerboseDebugEnabled()
-    settingsModel.defaultBranchName = ConfigUtil.getDefaultBranchName(project)
-    settingsModel.remoteUrlReplacements = ConfigUtil.getRemoteUrlReplacements(project)
-    settingsModel.customRequestHeaders = ConfigUtil.getCustomRequestHeaders(project)
-    settingsModel.isUrlNotificationDismissed = ConfigUtil.isUrlNotificationDismissed()
+  private fun extractEnterpriseUrl(project: Project): String {
+    // Project level
+    val projectLevelUrl = project.service<CodyProjectService>().sourcegraphUrl
+    if (!projectLevelUrl.isNullOrEmpty()) {
+      return addSlashIfNeeded(projectLevelUrl)
+    }
+
+    // Application level
+    val applicationLevelUrl = service<CodyApplicationService>().sourcegraphUrl
+    if (!applicationLevelUrl.isNullOrEmpty()) {
+      return addSlashIfNeeded(applicationLevelUrl)
+    }
+
+    // User level or default
+    val userLevelUrl = UserLevelConfig.getSourcegraphUrl()
+    return if (userLevelUrl.isNotEmpty()) addSlashIfNeeded(userLevelUrl) else ""
+  }
+
+  private fun extractCustomRequestHeaders(project: Project): String {
+    // Project level
+    val projectLevelCustomRequestHeaders =
+        project.service<CodyProjectService>().getCustomRequestHeaders()
+    if (!projectLevelCustomRequestHeaders.isNullOrEmpty()) {
+      return projectLevelCustomRequestHeaders
+    }
+
+    // Application level
+    val applicationLevelCustomRequestHeaders =
+        service<CodyApplicationService>().getCustomRequestHeaders()
+    return if (!applicationLevelCustomRequestHeaders.isNullOrEmpty()) {
+      applicationLevelCustomRequestHeaders
+    } else ""
+  }
+
+  private fun extractDefaultBranchName(project: Project): String {
+    // Project level
+    val projectLevelDefaultBranchName = project.service<CodyProjectService>().defaultBranchName
+    if (!projectLevelDefaultBranchName.isNullOrEmpty()) {
+      return projectLevelDefaultBranchName
+    }
+
+    // Application level
+    val applicationLevelDefaultBranchName = service<CodyApplicationService>().defaultBranchName
+    if (!applicationLevelDefaultBranchName.isNullOrEmpty()) {
+      return applicationLevelDefaultBranchName
+    }
+
+    // User level or default
+    val userLevelDefaultBranchName = UserLevelConfig.getDefaultBranchName()
+    return userLevelDefaultBranchName ?: "main"
+  }
+
+  private fun extractRemoteUrlReplacements(project: Project): String {
+    // Project level
+    val projectLevelReplacements = project.service<CodyProjectService>().getRemoteUrlReplacements()
+    if (!projectLevelReplacements.isNullOrEmpty()) {
+      return projectLevelReplacements
+    }
+
+    // Application level
+    val applicationLevelReplacements = service<CodyApplicationService>().getRemoteUrlReplacements()
+    if (!applicationLevelReplacements.isNullOrEmpty()) {
+      return applicationLevelReplacements
+    }
+
+    // User level or default
+    val userLevelRemoteUrlReplacements = UserLevelConfig.getRemoteUrlReplacements()
+    return userLevelRemoteUrlReplacements ?: ""
+  }
+
+  private fun extractDotcomAccessToken(project: Project): String? {
+    // Project level overrides secure storage
+    val projectLevelAccessToken = project.service<CodyProjectService>().getDotComAccessToken()
+    if (projectLevelAccessToken != null) {
+      return projectLevelAccessToken
+    }
+
+    // Get token from secure storage
+    val securelyStoredAccessToken = AccessTokenStorage.getDotComAccessToken()
+    if (securelyStoredAccessToken.isEmpty) {
+      return null // Uer denied access to token storage
+    }
+    if (securelyStoredAccessToken.get().isNotEmpty()) {
+      return securelyStoredAccessToken.get()
+    }
+
+    // No secure token found, so use app-level token.
+    val codyApplicationService = service<CodyApplicationService>()
+    val unsafeApplicationLevelAccessToken = codyApplicationService.dotComAccessToken
+    return unsafeApplicationLevelAccessToken ?: ""
+  }
+
+  private fun extractEnterpriseAccessToken(project: Project): String? {
+    // Project level overrides secure storage
+    val unsafeProjectLevelAccessToken =
+        project.service<CodyProjectService>().getEnterpriseAccessToken()
+    if (unsafeProjectLevelAccessToken != null) {
+      return unsafeProjectLevelAccessToken
+    }
+
+    // Get token from secure storage
+    val securelyStoredAccessToken = AccessTokenStorage.getEnterpriseAccessToken()
+    if (securelyStoredAccessToken.isEmpty) {
+      return null // Uer denied access to token storage
+    }
+    if (securelyStoredAccessToken.get().isNotEmpty()) {
+      return securelyStoredAccessToken.get()
+    }
+
+    // No secure token found, so use app-level token.
+    val service = service<CodyApplicationService>()
+    val unsafeApplicationLevelAccessToken = service.enterpriseAccessToken
+    return unsafeApplicationLevelAccessToken ?: ""
+  }
+
+  private fun migrateProjectSettings(project: Project) {
+    val codyProjectSettings = project.service<CodyProjectSettings>()
+    codyProjectSettings.defaultBranchName = extractDefaultBranchName(project)
+    codyProjectSettings.remoteUrlReplacements = extractRemoteUrlReplacements(project)
+    codyProjectSettings.customRequestHeaders = extractCustomRequestHeaders(project)
+  }
+
+  private fun addSlashIfNeeded(url: String): String {
+    return if (url.endsWith("/")) url else "$url/"
+  }
+
+  private fun migrateApplicationSettings() {
+    val codyApplicationSettings = service<CodyApplicationSettings>()
+    val codyApplicationService = service<CodyApplicationService>()
+    codyApplicationSettings.isCodyEnabled = codyApplicationService.isCodyEnabled
+    codyApplicationSettings.isCodyAutocompleteEnabled =
+        if (codyApplicationService.isCodyAutocompleteEnabled == true) true
+        else codyApplicationService.areCodyCompletionsEnabled ?: false
+    codyApplicationSettings.isCodyDebugEnabled =
+        codyApplicationService.isCodyDebugEnabled ?: false
+    codyApplicationSettings.isCodyVerboseDebugEnabled =
+        codyApplicationService.isCodyVerboseDebugEnabled ?: false
+    codyApplicationSettings.isUrlNotificationDismissed =
+        codyApplicationService.isUrlNotificationDismissed
+    codyApplicationSettings.anonymousUserId = codyApplicationService.anonymousUserId
+    codyApplicationSettings.isInstallEventLogged =
+        codyApplicationService.isInstallEventLogged
+    codyApplicationSettings.lastUpdateNotificationPluginVersion =
+        codyApplicationService.lastUpdateNotificationPluginVersion
   }
 
   companion object {

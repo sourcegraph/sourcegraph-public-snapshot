@@ -9,9 +9,9 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.sourcegraph.cody.config.AccountType;
 import com.sourcegraph.common.ErrorNotification;
 import com.sourcegraph.config.ConfigUtil;
-import com.sourcegraph.config.SettingsComponent;
 import com.sourcegraph.find.PreviewContent;
 import com.sourcegraph.find.SourcegraphVirtualFile;
 import com.sourcegraph.vcs.RepoInfo;
@@ -137,7 +137,6 @@ public abstract class FileActionBase extends DumbAwareAction {
       return;
     }
     e.getPresentation()
-        .setEnabled(
-            ConfigUtil.getInstanceType(project) != SettingsComponent.InstanceType.LOCAL_APP);
+        .setEnabled(ConfigUtil.getDefaultAccountType(project) != AccountType.LOCAL_APP);
   }
 }

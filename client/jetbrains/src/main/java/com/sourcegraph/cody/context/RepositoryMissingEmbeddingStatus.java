@@ -2,6 +2,7 @@ package com.sourcegraph.cody.context;
 
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.cody.Icons;
+import com.sourcegraph.cody.config.AccountType;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
 import javax.swing.Icon;
@@ -19,8 +20,8 @@ public class RepositoryMissingEmbeddingStatus extends RepoAvailableEmbeddingStat
 
   @Override
   public @NotNull String getTooltip(@NotNull Project project) {
-    SettingsComponent.InstanceType instanceType = ConfigUtil.getInstanceType(project);
-    if (instanceType == SettingsComponent.InstanceType.LOCAL_APP) {
+    AccountType accountType = ConfigUtil.getDefaultAccountType(project);
+    if (accountType == AccountType.LOCAL_APP) {
       return "Repository is not set up in Cody App";
     } else {
       return "Repository does not exist on Sourcegraph";

@@ -11,23 +11,15 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import com.sourcegraph.Icons;
+import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.common.BrowserOpener;
 import com.sourcegraph.find.FindService;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.util.Optional;
 import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
 
 public class NotificationActivity implements StartupActivity.DumbAware {
-  private static AnAction dumbAwareAction(String text, Runnable action) {
-    return new DumbAwareAction(text) {
-      @Override
-      public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-        action.run();
-      }
-    };
-  }
 
   @Override
   public void runActivity(@NotNull Project project) {
@@ -37,6 +29,7 @@ public class NotificationActivity implements StartupActivity.DumbAware {
         || lastNotifiedPluginVersion.compareTo(latestReleaseMilestoneVersion) < 0) {
       notifyAboutUpdate(project);
     } else {
+      // TODO what to do with this type of notification?
       String url = ConfigUtil.getEnterpriseUrl(project);
       if (!ConfigUtil.isUrlNotificationDismissed()
           && (url.length() == 0 || url.startsWith(ConfigUtil.DOTCOM_URL))) {
@@ -66,7 +59,7 @@ public class NotificationActivity implements StartupActivity.DumbAware {
           @Override
           public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
             notification.expire();
-            ConfigUtil.setUrlNotificationDismissed(true);
+            CodyApplicationSettings.getInstance().setUrlNotificationDismissed(true);
           }
         };
     notification.setIcon(Icons.CodyLogo);

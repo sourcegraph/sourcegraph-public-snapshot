@@ -8,6 +8,7 @@ import com.sourcegraph.cody.PluginUtil;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.protocol.CompletionEvent;
 import com.sourcegraph.cody.agent.protocol.Event;
+import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.config.ConfigUtil;
 import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
@@ -17,7 +18,9 @@ public class GraphQlLogger {
   private static final Gson gson = new GsonBuilder().serializeNulls().create();
 
   public static CompletableFuture<Boolean> logInstallEvent(@NotNull Project project) {
-    if (ConfigUtil.getAnonymousUserId() != null && project.isDisposed()) {
+    CodyApplicationSettings codyApplicationSettings =
+        CodyApplicationSettings.getInstance();
+    if (codyApplicationSettings.getAnonymousUserId() != null && project.isDisposed()) {
       var event = createEvent(project, "CodyInstalled", new JsonObject());
       return logEvent(project, event);
     }
@@ -25,7 +28,9 @@ public class GraphQlLogger {
   }
 
   public static void logUninstallEvent(@NotNull Project project) {
-    if (ConfigUtil.getAnonymousUserId() != null) {
+    CodyApplicationSettings codyApplicationSettings =
+        CodyApplicationSettings.getInstance();
+    if (codyApplicationSettings.getAnonymousUserId() != null) {
       Event event = createEvent(project, "CodyUninstalled", new JsonObject());
       logEvent(project, event);
     }
@@ -80,7 +85,9 @@ public class GraphQlLogger {
   private static Event createEvent(
       @NotNull Project project, @NotNull String eventName, @NotNull JsonObject eventParameters) {
     var updatedEventParameters = addGlobalEventParameters(eventParameters, project);
-    String anonymousUserId = ConfigUtil.getAnonymousUserId();
+    CodyApplicationSettings codyApplicationSettings =
+        CodyApplicationSettings.getInstance();
+    String anonymousUserId = codyApplicationSettings.getAnonymousUserId();
     return new Event(
         eventName, anonymousUserId != null ? anonymousUserId : "", "", updatedEventParameters);
   }

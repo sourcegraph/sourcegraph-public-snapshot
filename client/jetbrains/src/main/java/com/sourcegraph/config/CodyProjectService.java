@@ -4,10 +4,10 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.project.Project;
-import com.sourcegraph.find.Search;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@Deprecated(since = "3.0.10")
 @State(
     name = "Config",
     storages = {@Storage("sourcegraph.xml")})
@@ -58,16 +58,6 @@ public class CodyProjectService implements PersistentStateComponent<CodyProjectS
   @Nullable
   public String getRemoteUrlReplacements() {
     return remoteUrlReplacements;
-  }
-
-  @Nullable
-  public Search getLastSearch() {
-    if (lastSearchQuery == null) {
-      return null;
-    } else {
-      return new Search(
-          lastSearchQuery, lastSearchCaseSensitive, lastSearchPatternType, lastSearchContextSpec);
-    }
   }
 
   @Nullable
