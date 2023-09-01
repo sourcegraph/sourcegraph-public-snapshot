@@ -31,6 +31,7 @@ export enum EnterprisePageRoutes {
     BatchChanges = '/batch-changes/*',
     CodeMonitoring = '/code-monitoring/*',
     Insights = '/insights/*',
+    SearchJobs = '/search-jobs/*',
     Contexts = '/contexts',
     CreateContext = '/contexts/new',
     EditContext = '/contexts/:specOrOrg/:spec?/edit',

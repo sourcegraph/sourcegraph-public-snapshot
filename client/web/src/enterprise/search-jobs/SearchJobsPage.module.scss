@@ -1,0 +1,35 @@
+.header {
+    display: flex;
+    flex-wrap: wrap;
+    // Different form controls in the header have different height
+    // values. To solve visual differences between component we should
+    // "force" same height for each of them.
+    align-items: stretch;
+    gap: 0.5rem;
+}
+
+.search {
+    margin: 0;
+    flex-grow: 1;
+    flex-basis: 24rem;
+
+    &-input {
+        // Stretch inner input element by all "stretched" container
+        // height value
+        height: 100%;
+    }
+}
+
+.filters {
+    margin: 0;
+}
+
+.sort {
+    margin: 0;
+
+    &-select {
+        // Stretch inner select element by all "stretched" container
+        // height value
+        height: 100%;
+    }
+}

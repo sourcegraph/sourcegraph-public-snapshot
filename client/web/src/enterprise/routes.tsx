@@ -1,5 +1,6 @@
 import { Navigate, type RouteObject } from 'react-router-dom'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { LegacyRoute } from '../LegacyRouteContext'
@@ -37,6 +38,7 @@ const CodyChatPage = lazyComponent(() => import('../cody/chat/CodyChatPage'), 'C
 const OwnPage = lazyComponent(() => import('./own/OwnPage'), 'OwnPage')
 const AppAuthCallbackPage = lazyComponent(() => import('./app/AppAuthCallbackPage'), 'AppAuthCallbackPage')
 const AppSetup = lazyComponent(() => import('./app/setup/AppSetupWizard'), 'AppSetupWizard')
+const SearchJob = lazyComponent(() => import('./search-jobs/SearchJobsPage'), 'SearchJobsPage')
 
 export const enterpriseRoutes: RouteObject[] = [
     {
@@ -71,6 +73,21 @@ export const enterpriseRoutes: RouteObject[] = [
             <LegacyRoute
                 render={props => <CodeInsightsRouter {...props} />}
                 condition={({ codeInsightsEnabled }) => !!codeInsightsEnabled}
+            />
+        ),
+    },
+    {
+        path: EnterprisePageRoutes.SearchJobs,
+        element: (
+            <LegacyRoute
+                render={props => <SearchJob />}
+                condition={({ settingsCascade }) => {
+                    if (isErrorLike(settingsCascade.final)) {
+                        return false
+                    }
+
+                    return settingsCascade.final?.experimentalFeatures?.searchJobs ?? false
+                }}
             />
         ),
     },
