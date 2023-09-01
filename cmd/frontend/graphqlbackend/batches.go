@@ -224,6 +224,10 @@ type MergeChangesetsArgs struct {
 	Squash bool
 }
 
+type ExportChangesetsArgs struct {
+	BulkOperationBaseArgs
+}
+
 type CloseChangesetsArgs struct {
 	BulkOperationBaseArgs
 }
@@ -282,6 +286,7 @@ type BatchChangesResolver interface {
 	CreateChangesetComments(ctx context.Context, args *CreateChangesetCommentsArgs) (BulkOperationResolver, error)
 	ReenqueueChangesets(ctx context.Context, args *ReenqueueChangesetsArgs) (BulkOperationResolver, error)
 	MergeChangesets(ctx context.Context, args *MergeChangesetsArgs) (BulkOperationResolver, error)
+	ExportChangesets(ctx context.Context, args *ExportChangesetsArgs) (BulkOperationResolver, error)
 	CloseChangesets(ctx context.Context, args *CloseChangesetsArgs) (BulkOperationResolver, error)
 	PublishChangesets(ctx context.Context, args *PublishChangesetsArgs) (BulkOperationResolver, error)
 

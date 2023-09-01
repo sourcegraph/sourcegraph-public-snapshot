@@ -1778,6 +1778,11 @@ extend type Mutation {
     mergeChangesets(batchChange: ID!, changesets: [ID!]!, squash: Boolean = false): BulkOperation!
 
     """
+    Export multiple changesets from a batch change to a CSV file.
+    """
+    exportChangesets(batchChange: ID!, changesets: [ID!]!): BulkOperation!
+
+    """
     Close multiple changesets.
 
     Experimental: This API is likely to change in the future.
