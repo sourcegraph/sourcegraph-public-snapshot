@@ -155,7 +155,8 @@ func (s *store) transact(ctx context.Context) (stx *store, err error) {
 
 	txBase, err := s.Store.Transact(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "starting transaction")
+		// We return the `store` here because callers of the transact method may expect a non-nil return value.
+		return s, errors.Wrap(err, "starting transaction")
 	}
 	return &store{
 		Store:   txBase,
