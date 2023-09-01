@@ -893,7 +893,37 @@ func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password str
 			return nil, nil, err
 		}
 
+		// We need to check the first message from the gRPC errors to see if we get an argument or permisison related
+		// error before continuing to read the rest of the stream. If the first message is an error, we cancel the stream and
+		// forward the error.
+		//
+		// This is necessary to provide parity between the REST and gRPC implementations of
+		// P4Exec. Users of cli.P4Exec may assume error handling occurs immediately,
+		// as is the case with the HTTP implementation where these kinds of errors are returned as soon as the
+		// function returns. gRPC is asynchronous, so we have to start consuming messages from
+		// the stream to see any errors from the server. Reading the first message ensures we
+		// handle any errors synchronously, similar to the HTTP implementation.
+
+		firstMessage, firstError := stream.Recv()
+		switch status.Code(firstError) {
+		case codes.InvalidArgument, codes.PermissionDenied:
+			cancel()
+			return nil, nil, convertGitserverError(firstError)
+		}
+
+		firstMessageRead := false
 		r := streamio.NewReader(func() ([]byte, error) {
+			// Check if we've read the first message yet. If not, read it and return.
+			if !firstMessageRead {
+				firstMessageRead = true
+
+				if firstError != nil {
+					return nil, firstError
+				}
+
+				return firstMessage.GetData(), nil
+			}
+
 			msg, err := stream.Recv()
 			if err != nil {
 				if status.Code(err) == codes.Canceled {
@@ -1552,45 +1582,96 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 		if err != nil {
 			return nil, err
 		}
-		resp, err := client.CreateCommitFromPatchBinary(ctx, req.ToProto())
+
+		cc, err := client.CreateCommitFromPatchBinary(ctx)
 		if err != nil {
-			return nil, err
-		}
-
-		var res protocol.CreateCommitFromPatchResponse
-		res.FromProto(resp)
-
-		if resp.GetError() != nil {
-			return &res, errors.New(resp.GetError().String())
-		}
-
-		return &res, nil
-	} else {
-		resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read response body")
-		}
-		var res protocol.CreateCommitFromPatchResponse
-		if err := json.Unmarshal(body, &res); err != nil {
-			c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
-			return nil, &url.Error{
-				URL: resp.Request.URL.String(),
-				Op:  "CreateCommitFromPatch",
-				Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.StatusCode, string(body)),
+			st, ok := status.FromError(err)
+			if ok {
+				for _, detail := range st.Details() {
+					switch dt := detail.(type) {
+					case *proto.CreateCommitFromPatchError:
+						var e protocol.CreateCommitFromPatchError
+						e.FromProto(dt)
+						return nil, &e
+					}
+				}
 			}
+			return nil, err
 		}
 
-		if res.Error != nil {
-			return &res, res.Error
+		// Send the metadata event first.
+		if err := cc.Send(&proto.CreateCommitFromPatchBinaryRequest{Payload: &proto.CreateCommitFromPatchBinaryRequest_Metadata_{
+			Metadata: req.ToMetadataProto(),
+		}}); err != nil {
+			return nil, errors.Wrap(err, "sending metadata")
 		}
+
+		// Then create a writer that sends data in chunks that won't exceed the maximum
+		// message size of gRPC of the patch in separate events.
+		w := streamio.NewWriter(func(p []byte) error {
+			req := &proto.CreateCommitFromPatchBinaryRequest{
+				Payload: &proto.CreateCommitFromPatchBinaryRequest_Patch_{
+					Patch: &proto.CreateCommitFromPatchBinaryRequest_Patch{
+						Data: p,
+					},
+				},
+			}
+			return cc.Send(req)
+		})
+
+		if _, err := w.Write(req.Patch); err != nil {
+			return nil, errors.Wrap(err, "writing chunk of patch")
+		}
+
+		resp, err := cc.CloseAndRecv()
+		if err != nil {
+			st, ok := status.FromError(err)
+			if !ok {
+				return nil, err
+			}
+
+			for _, detail := range st.Details() {
+				switch dt := detail.(type) {
+				case *proto.CreateCommitFromPatchError:
+					var e protocol.CreateCommitFromPatchError
+					e.FromProto(dt)
+					return nil, &e
+				}
+			}
+
+			return nil, err
+		}
+
+		var res protocol.CreateCommitFromPatchResponse
+		res.FromProto(resp, nil)
+
 		return &res, nil
 	}
+
+	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+	var res protocol.CreateCommitFromPatchResponse
+	if err := json.Unmarshal(body, &res); err != nil {
+		c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "CreateCommitFromPatch",
+			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.StatusCode, string(body)),
+		}
+	}
+
+	if res.Error != nil {
+		return &res, res.Error
+	}
+	return &res, nil
 }
 
 func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
