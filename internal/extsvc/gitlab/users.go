@@ -20,6 +20,9 @@ type User struct {
 	Identities []Identity `json:"identities"`
 }
 
+// AuthUser represents a GitLab user for authentication it's slightly different from User
+// as this has the CreatedAt field. This object is used for handling authenticating users,
+// so that we can check the creation time of the account.
 type AuthUser struct {
 	ID         int32      `json:"id"`
 	Name       string     `json:"name"`
