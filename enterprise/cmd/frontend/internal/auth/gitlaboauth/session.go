@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -44,9 +45,11 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, "Could not read GitLab user from callback request.", errors.Wrap(err, "could not read user from context")
 	}
 
-	if envvar.SourcegraphDotComMode() {
+	exp := conf.ExperimentalFeatures()
 
-		twoWeeksAgo := time.Now().Add(-13 * 24 * time.Hour)
+	if envvar.SourcegraphDotComMode() && exp.MinExtAccountAge > 0 {
+
+		twoWeeksAgo := time.Now().Add(time.Duration(exp.MinExtAccountAge) * 24 * time.Hour)
 
 		if gUser.CreatedAt.After(twoWeeksAgo) {
 			return nil, "User account was created less than 14 days ago", errors.New("user account too new")
