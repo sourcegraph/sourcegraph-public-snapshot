@@ -11,7 +11,9 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/contentlibrary"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/search"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
@@ -72,6 +74,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"scim":           scim.Init,
 	"searchcontexts": searchcontexts.Init,
 	"contentLibrary": contentlibrary.Init,
+	"search":         search.Init,
 }
 
 func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterprise.Services {

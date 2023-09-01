@@ -32,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -70,9 +69,9 @@ var initConnsOnce sync.Once
 // initialised correctly.
 var conns *atomicGitServerConns
 
-func getAtomicGitserverConns(logger sglog.Logger, db database.DB) *atomicGitServerConns {
+func getAtomicGitserverConns() *atomicGitServerConns {
 	initConnsOnce.Do(func() {
-		conns = &atomicGitServerConns{db: db, logger: logger}
+		conns = &atomicGitServerConns{}
 	})
 
 	return conns
@@ -98,7 +97,7 @@ type ClientSource interface {
 }
 
 // NewClient returns a new gitserver.Client.
-func NewClient(db database.DB) Client {
+func NewClient() Client {
 	logger := sglog.Scoped("GitserverClient", "Client to talk from other services to Gitserver")
 	return &clientImplementor{
 		logger:      logger,
@@ -109,7 +108,7 @@ func NewClient(db database.DB) Client {
 		// frontend internal API)
 		userAgent:    filepath.Base(os.Args[0]),
 		operations:   getOperations(),
-		clientSource: getAtomicGitserverConns(logger, db),
+		clientSource: getAtomicGitserverConns(),
 	}
 }
 
@@ -315,15 +314,6 @@ type Client interface {
 	// ResolveRevisions expands a set of RevisionSpecifiers (which may include hashes, globs, refs, or glob exclusions)
 	// into an equivalent set of commit hashes
 	ResolveRevisions(_ context.Context, repo api.RepoName, _ []protocol.RevisionSpecifier) ([]string, error)
-
-	// ReposStats will return a map of the ReposStats for each gitserver in a
-	// map. If we fail to fetch a stat from a gitserver, it won't be in the
-	// returned map and will be appended to the error. If no errors occur err will
-	// be nil.
-	//
-	// Note: If the statistics for a gitserver have not been computed, the
-	// UpdatedAt field will be zero. This can happen for new gitservers.
-	ReposStats(context.Context) (map[string]*protocol.ReposStats, error)
 
 	// RequestRepoUpdate is the new protocol endpoint for synchronous requests
 	// with more detailed responses. Do not use this if you are not repo-updater.
@@ -620,7 +610,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 		req := &proto.ExecRequest{
 			Repo:           string(repoName),
 			EnsureRevision: c.EnsureRevision(),
-			Args:           c.args[1:],
+			Args:           stringsToByteSlices(c.args[1:]),
 			Stdin:          c.stdin,
 			NoTimeout:      c.noTimeout,
 		}
@@ -807,7 +797,7 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 	}
 
 	uri := "http://" + addrForRepo + "/search"
-	resp, err := c.do(ctx, repoName, "POST", uri, buf.Bytes())
+	resp, err := c.do(ctx, repoName, uri, buf.Bytes())
 	if err != nil {
 		return false, err
 	}
@@ -903,7 +893,37 @@ func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password str
 			return nil, nil, err
 		}
 
+		// We need to check the first message from the gRPC errors to see if we get an argument or permisison related
+		// error before continuing to read the rest of the stream. If the first message is an error, we cancel the stream and
+		// forward the error.
+		//
+		// This is necessary to provide parity between the REST and gRPC implementations of
+		// P4Exec. Users of cli.P4Exec may assume error handling occurs immediately,
+		// as is the case with the HTTP implementation where these kinds of errors are returned as soon as the
+		// function returns. gRPC is asynchronous, so we have to start consuming messages from
+		// the stream to see any errors from the server. Reading the first message ensures we
+		// handle any errors synchronously, similar to the HTTP implementation.
+
+		firstMessage, firstError := stream.Recv()
+		switch status.Code(firstError) {
+		case codes.InvalidArgument, codes.PermissionDenied:
+			cancel()
+			return nil, nil, convertGitserverError(firstError)
+		}
+
+		firstMessageRead := false
 		r := streamio.NewReader(func() ([]byte, error) {
+			// Check if we've read the first message yet. If not, read it and return.
+			if !firstMessageRead {
+				firstMessageRead = true
+
+				if firstError != nil {
+					return nil, firstError
+				}
+
+				return firstMessage.GetData(), nil
+			}
+
 			msg, err := stream.Recv()
 			if err != nil {
 				if status.Code(err) == codes.Canceled {
@@ -1036,7 +1056,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 			}
 
 			uri := "http://" + addr + "/batch-log"
-			resp, err := c.do(ctx, api.RepoName(strings.Join(repoNames, ",")), "POST", uri, buf.Bytes())
+			resp, err := c.do(ctx, api.RepoName(strings.Join(repoNames, ",")), uri, buf.Bytes())
 			if err != nil {
 				return err
 			}
@@ -1460,58 +1480,6 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 	}
 }
 
-func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protocol.ReposStats, error) {
-	stats := map[string]*protocol.ReposStats{}
-	var allErr error
-
-	if conf.IsGRPCEnabled(ctx) {
-		for _, addr := range c.clientSource.Addresses() {
-			client, err := addr.GRPCClient()
-			if err != nil {
-				return nil, err
-			}
-
-			resp, err := client.ReposStats(ctx, &proto.ReposStatsRequest{})
-			if err != nil {
-				allErr = errors.Append(allErr, err)
-			} else {
-				rs := &protocol.ReposStats{}
-				rs.FromProto(resp)
-				stats[addr.Address()] = rs
-			}
-		}
-	} else {
-
-		for _, addr := range c.Addrs() {
-			stat, err := c.doReposStats(ctx, addr)
-			if err != nil {
-				allErr = errors.Append(allErr, err)
-			} else {
-				stats[addr] = stat
-			}
-
-		}
-	}
-
-	return stats, allErr
-}
-
-func (c *clientImplementor) doReposStats(ctx context.Context, addr string) (*protocol.ReposStats, error) {
-	resp, err := c.do(ctx, "", "GET", fmt.Sprintf("http://%s/repos-stats", addr), nil)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	var stats protocol.ReposStats
-	err = json.NewDecoder(resp.Body).Decode(&stats)
-	if err != nil {
-		return nil, err
-	}
-
-	return &stats, nil
-}
-
 func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) error {
 	// In case the repo has already been deleted from the database we need to pass
 	// the old name in order to land on the correct gitserver instance
@@ -1541,7 +1509,7 @@ func (c *clientImplementor) removeFrom(ctx context.Context, repo api.RepoName, f
 	}
 
 	uri := "http://" + from + "/delete"
-	resp, err := c.do(ctx, repo, "POST", uri, b)
+	resp, err := c.do(ctx, repo, uri, b)
 	if err != nil {
 		return err
 	}
@@ -1567,7 +1535,7 @@ func (c *clientImplementor) httpPost(ctx context.Context, repo api.RepoName, op 
 
 	addrForRepo := c.AddrForRepo(ctx, repo)
 	uri := "http://" + addrForRepo + "/" + op
-	return c.do(ctx, repo, "POST", uri, b)
+	return c.do(ctx, repo, uri, b)
 }
 
 // do performs a request to a gitserver instance based on the address in the uri
@@ -1575,7 +1543,8 @@ func (c *clientImplementor) httpPost(ctx context.Context, repo api.RepoName, op 
 //
 // repoForTracing parameter is optional. If it is provided, then "repo" attribute is added
 // to trace span.
-func (c *clientImplementor) do(ctx context.Context, repoForTracing api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
+func (c *clientImplementor) do(ctx context.Context, repoForTracing api.RepoName, uri string, payload []byte) (resp *http.Response, err error) {
+	method := http.MethodPost
 	parsedURL, err := url.ParseRequestURI(uri)
 	if err != nil {
 		return nil, errors.Wrap(err, "do")
@@ -1613,45 +1582,96 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 		if err != nil {
 			return nil, err
 		}
-		resp, err := client.CreateCommitFromPatchBinary(ctx, req.ToProto())
+
+		cc, err := client.CreateCommitFromPatchBinary(ctx)
 		if err != nil {
-			return nil, err
-		}
-
-		var res protocol.CreateCommitFromPatchResponse
-		res.FromProto(resp)
-
-		if resp.GetError() != nil {
-			return &res, errors.New(resp.GetError().String())
-		}
-
-		return &res, nil
-	} else {
-		resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read response body")
-		}
-		var res protocol.CreateCommitFromPatchResponse
-		if err := json.Unmarshal(body, &res); err != nil {
-			c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
-			return nil, &url.Error{
-				URL: resp.Request.URL.String(),
-				Op:  "CreateCommitFromPatch",
-				Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.StatusCode, string(body)),
+			st, ok := status.FromError(err)
+			if ok {
+				for _, detail := range st.Details() {
+					switch dt := detail.(type) {
+					case *proto.CreateCommitFromPatchError:
+						var e protocol.CreateCommitFromPatchError
+						e.FromProto(dt)
+						return nil, &e
+					}
+				}
 			}
+			return nil, err
 		}
 
-		if res.Error != nil {
-			return &res, res.Error
+		// Send the metadata event first.
+		if err := cc.Send(&proto.CreateCommitFromPatchBinaryRequest{Payload: &proto.CreateCommitFromPatchBinaryRequest_Metadata_{
+			Metadata: req.ToMetadataProto(),
+		}}); err != nil {
+			return nil, errors.Wrap(err, "sending metadata")
 		}
+
+		// Then create a writer that sends data in chunks that won't exceed the maximum
+		// message size of gRPC of the patch in separate events.
+		w := streamio.NewWriter(func(p []byte) error {
+			req := &proto.CreateCommitFromPatchBinaryRequest{
+				Payload: &proto.CreateCommitFromPatchBinaryRequest_Patch_{
+					Patch: &proto.CreateCommitFromPatchBinaryRequest_Patch{
+						Data: p,
+					},
+				},
+			}
+			return cc.Send(req)
+		})
+
+		if _, err := w.Write(req.Patch); err != nil {
+			return nil, errors.Wrap(err, "writing chunk of patch")
+		}
+
+		resp, err := cc.CloseAndRecv()
+		if err != nil {
+			st, ok := status.FromError(err)
+			if !ok {
+				return nil, err
+			}
+
+			for _, detail := range st.Details() {
+				switch dt := detail.(type) {
+				case *proto.CreateCommitFromPatchError:
+					var e protocol.CreateCommitFromPatchError
+					e.FromProto(dt)
+					return nil, &e
+				}
+			}
+
+			return nil, err
+		}
+
+		var res protocol.CreateCommitFromPatchResponse
+		res.FromProto(resp, nil)
+
 		return &res, nil
 	}
+
+	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+	var res protocol.CreateCommitFromPatchResponse
+	if err := json.Unmarshal(body, &res); err != nil {
+		c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "CreateCommitFromPatch",
+			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.StatusCode, string(body)),
+		}
+	}
+
+	if res.Error != nil {
+		return &res, res.Error
+	}
+	return &res, nil
 }
 
 func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
@@ -1774,4 +1794,12 @@ func readResponseBody(body io.Reader) string {
 	// strings.TrimSpace, see attached screenshots in this pull request:
 	// https://github.com/sourcegraph/sourcegraph/pull/39358.
 	return strings.TrimSpace(string(content))
+}
+
+func stringsToByteSlices(in []string) [][]byte {
+	res := make([][]byte, len(in))
+	for i, s := range in {
+		res[i] = []byte(s)
+	}
+	return res
 }

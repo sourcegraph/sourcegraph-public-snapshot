@@ -14,5 +14,6 @@ go_library(
         "//internal/httpcli",
         "//lib/errors",
         "@com_github_google_go_querystring//query",
+        "@org_uber_go_atomic//:atomic",
     ],
 )

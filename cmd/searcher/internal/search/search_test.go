@@ -21,7 +21,6 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
@@ -576,7 +575,7 @@ func newStore(t *testing.T, files map[string]struct {
 	}
 
 	return &search.Store{
-		GitserverClient: gitserver.NewClient(dbmocks.NewMockDB()),
+		GitserverClient: gitserver.NewClient(),
 		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 			r, w := io.Pipe()
 			go func() {

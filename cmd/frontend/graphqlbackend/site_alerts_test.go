@@ -514,3 +514,85 @@ func TestSMTPConfigAlert(t *testing.T) {
 		})
 	}
 }
+
+func TestEmptyExternalURLAlert(t *testing.T) {
+	type args struct {
+		args AlertFuncArgs
+	}
+
+	ctx := actor.WithActor(context.Background(), actor.FromMockUser(1))
+	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"setup-checklist": true}, nil, nil))
+
+	tests := []struct {
+		name   string
+		args   args
+		config *schema.SiteConfiguration
+		want   []*Alert
+	}{
+		{
+			name: "do not show anything for non-admin",
+			args: args{
+				args: AlertFuncArgs{
+					IsSiteAdmin: false,
+					Ctx:         ctx,
+				},
+			},
+			config: nil,
+			want:   nil,
+		},
+		{
+			name: "do not show alert if externalURL is configured correctly",
+			args: args{
+				args: AlertFuncArgs{
+					IsSiteAdmin: true,
+					Ctx:         ctx,
+				},
+			},
+			config: &schema.SiteConfiguration{
+				ExternalURL: "https://sourcegraph.example.test",
+			},
+			want: nil,
+		},
+		{
+			name: "show alert if externalURL is empty",
+			args: args{
+				args: AlertFuncArgs{
+					IsSiteAdmin: true,
+					Ctx:         ctx,
+				},
+			},
+			config: &schema.SiteConfiguration{
+				ExternalURL: "",
+			},
+			want: []*Alert{{
+				GroupValue:   AlertGroupExternalURL,
+				TypeValue:    AlertTypeError,
+				MessageValue: "`externalURL` is required to be set for many features of Sourcegraph to work correctly.",
+			}},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.config != nil {
+				conf.Mock(&conf.Unified{SiteConfiguration: *test.config})
+			}
+
+			defer func() {
+				conf.Mock(nil)
+			}()
+
+			gotAlerts := emptyExternalURLAlert(test.args.args)
+			if len(gotAlerts) != len(test.want) {
+				t.Errorf("got %s", gotAlerts[0].Message())
+				t.Errorf("expected %+v, got %+v", test.want, gotAlerts)
+				return
+			}
+			for i, got := range gotAlerts {
+				want := test.want[i]
+				if diff := cmp.Diff(*want, *got); diff != "" {
+					t.Fatalf("diff mismatch (-want +got):\n%s", diff)
+				}
+			}
+		})
+	}
+}

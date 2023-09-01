@@ -349,3 +349,11 @@
 /app /cody/overview/app 308
 /cody/explanations/enabling_cody /cody/overview/cody-with-sourcegraph 308
 /cody/explanations/enabling_cody_enterprise /cody/overview/enable-cody-enterprise 308
+
+# Cody Quickstart redirects
+/cody/quickstart#quickstart-for-cody-in-vs-code /cody/quickstart#cody-quickstart 308
+/cody/quickstart#introduction /cody/quickstart#cody-quickstart 308
+/cody/quickstart#getting-started-with-the-cody-extension-and-recipes /cody/quickstart#getting-started-with-cody-extension-and-commands 308
+/cody/quickstart#generate-a-unit-test /cody/quickstart#1-generate-a-unit-test 308
+/cody/quickstart#ask-cody-to-pull-reference-documentation /cody/quickstart#3-ask-cody-to-pull-reference-documentation 308
+/cody/quickstart#ask-cody-to-write-context-aware-code /cody/quickstart#working-with-the-cody-extension 308

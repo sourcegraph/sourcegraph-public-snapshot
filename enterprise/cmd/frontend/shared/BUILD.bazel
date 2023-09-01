@@ -35,6 +35,7 @@ go_library(
         "//enterprise/cmd/frontend/internal/registry",
         "//enterprise/cmd/frontend/internal/repos/webhooks",
         "//enterprise/cmd/frontend/internal/scim",
+        "//enterprise/cmd/frontend/internal/search",
         "//enterprise/cmd/frontend/internal/searchcontexts",
         "//internal/codeintel",
         "//internal/codeintel/shared",

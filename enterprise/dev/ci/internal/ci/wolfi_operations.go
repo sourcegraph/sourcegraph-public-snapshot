@@ -77,6 +77,7 @@ func buildPackage(target string) (func(*bk.Pipeline), string) {
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", "bazel"),
 			bk.Key(stepKey),
+			bk.SoftFail(222),
 		)
 	}, stepKey
 }
@@ -105,6 +106,7 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 			bk.Agent("queue", "bazel"),
 			bk.Env("DOCKER_BAZEL", "true"),
 			bk.Key(stepKey),
+			bk.SoftFail(222),
 		}
 		// If packages have changed, wait for repo to be re-indexed as base images may depend on new packages
 		if dependOnPackages {

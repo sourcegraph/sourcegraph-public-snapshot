@@ -15,7 +15,7 @@ func NonZeroPtr[T comparable](val T) *T {
 	return Ptr(val)
 }
 
-// Deref safely dereferences a pointer. If pointer is nil, returns zero value,
+// Deref safely dereferences a pointer. If pointer is nil, returns defaultValue,
 // otherwise returns dereferenced value.
 func Deref[T any](v *T, defaultValue T) T {
 	if v != nil {

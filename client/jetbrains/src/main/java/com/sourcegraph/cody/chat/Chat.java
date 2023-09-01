@@ -22,6 +22,7 @@ public class Chat {
       @NotNull CodyAgentClient client,
       @NotNull CompletableFuture<CodyAgentServer> codyAgentServer,
       @NotNull ChatMessage humanMessage,
+      @NotNull String recipeId,
       @NotNull UpdatableChat chat,
       @NotNull CancellationToken cancellationToken)
       throws ExecutionException, InterruptedException {
@@ -61,7 +62,7 @@ public class Chat {
               try {
                 server.recipesExecute(
                     new ExecuteRecipeParams()
-                        .setId("chat-question")
+                        .setId(recipeId)
                         .setHumanChatInput(humanMessage.getText()));
               } catch (Exception ignored) {
                 // Ignore bugs in the agent when executing recipes
@@ -70,7 +71,7 @@ public class Chat {
             CodyAgent.executorService)
         .get();
     // TODO we need to move this finishMessageProcessing to be executed when the whole message
-    // processing is finished to make "stop generating" works. Ideally we need a signal from agent
+    // processing is finished to make "stop generating" work. Ideally we need a signal from agent
     // that it finished processing the message so we can call this method.
     chat.finishMessageProcessing();
   }

@@ -8,12 +8,9 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.KeyboardShortcut;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.fileEditor.TextEditor;
 import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.util.messages.MessageBus;
@@ -22,12 +19,13 @@ import com.sourcegraph.cody.CodyAgentProjectListener;
 import com.sourcegraph.cody.CodyToolWindowFactory;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
-import com.sourcegraph.cody.autocomplete.CodyAutoCompleteManager;
+import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager;
+import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus;
+import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService;
 import com.sourcegraph.find.browser.JavaToJSBridge;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.util.Arrays;
 import java.util.Objects;
 import javax.swing.KeyStroke;
 import org.jetbrains.annotations.NotNull;
@@ -78,7 +76,8 @@ public class SettingsChangeListener implements Disposable {
             }
 
             // Log install events
-            if (!Objects.equals(context.oldUrl, context.newUrl)) {
+            boolean urlChanged = !Objects.equals(context.oldUrl, context.newUrl);
+            if (urlChanged) {
               GraphQlLogger.logInstallEvent(project).thenAccept(ConfigUtil::setInstallEventLogged);
             } else if ((context.isDotComAccessTokenChanged
                     || context.isEnterpriseAccessTokenChanged)
@@ -86,7 +85,6 @@ public class SettingsChangeListener implements Disposable {
               GraphQlLogger.logInstallEvent(project).thenAccept(ConfigUtil::setInstallEventLogged);
             }
 
-            boolean urlChanged = !Objects.equals(context.oldUrl, context.newUrl);
             SettingsComponent.InstanceType instanceType = ConfigUtil.getInstanceType(project);
             boolean accessTokenChanged =
                 (instanceType == SettingsComponent.InstanceType.DOTCOM
@@ -110,17 +108,8 @@ public class SettingsChangeListener implements Disposable {
             }
 
             // clear autocomplete suggestions if freshly disabled
-            if (context.oldCodyAutoCompleteEnabled && !context.newCodyAutoCompleteEnabled) {
-              Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
-              CodyAutoCompleteManager codyAutoCompleteManager =
-                  CodyAutoCompleteManager.getInstance();
-              Arrays.stream(openProjects)
-                  .flatMap(
-                      project ->
-                          Arrays.stream(FileEditorManager.getInstance(project).getAllEditors()))
-                  .filter(fileEditor -> fileEditor instanceof TextEditor)
-                  .map(fileEditor -> ((TextEditor) fileEditor).getEditor())
-                  .forEach(codyAutoCompleteManager::clearAutoCompleteSuggestions);
+            if (context.oldCodyAutocompleteEnabled && !context.newCodyAutocompleteEnabled) {
+              CodyAutocompleteManager.getInstance().clearAutocompleteSuggestionsForAllProjects();
             }
 
             // Disable/enable the Cody tool window depending on the setting
@@ -139,6 +128,14 @@ public class SettingsChangeListener implements Disposable {
                 toolWindow.setAvailable(true, null);
               }
             }
+            if (!context.newCodyEnabled) {
+              CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.CodyDisabled);
+            } else if (!context.newCodyAutocompleteEnabled) {
+              CodyAutocompleteStatusService.notifyApplication(
+                  CodyAutocompleteStatus.AutocompleteDisabled);
+            } else {
+              CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.Ready);
+            }
           }
         });
   }
@@ -149,8 +146,8 @@ public class SettingsChangeListener implements Disposable {
     String altSShortcutText = KeymapUtil.getShortcutText(altSShortcut);
     Notification notification =
         new Notification(
-            "Cody AI by Sourcegraph: server access",
-            "Cody AI by Sourcegraph: auth success",
+            "Sourcegraph: server access",
+            "Sourcegraph: auth success",
             "Your Sourcegraph account has been connected to the Sourcegraph plugin. "
                 + "Open the Cody sidebar, or press "
                 + altSShortcutText

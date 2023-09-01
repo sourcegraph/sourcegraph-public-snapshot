@@ -13,7 +13,6 @@ go_library(
     deps = [
         "//internal/authz",
         "//internal/authz/types",
-        "//internal/database",
         "//internal/extsvc",
         "//internal/extsvc/perforce",
         "//internal/gitserver",
@@ -45,7 +44,6 @@ go_test(
         "//internal/authz",
         "//internal/authz/subrepoperms",
         "//internal/conf",
-        "//internal/database/dbmocks",
         "//internal/encryption/testing",
         "//internal/extsvc",
         "//internal/extsvc/perforce",

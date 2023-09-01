@@ -238,6 +238,10 @@ func (d *decoder) decode() (*RepoEmbeddingIndex, error) {
 			}
 			ei.Embeddings = append(ei.Embeddings, Quantize(embeddingsBuf, quantizeBuf)...)
 		}
+
+		if err := ei.Validate(); err != nil {
+			return nil, err
+		}
 	}
 
 	return rei, nil

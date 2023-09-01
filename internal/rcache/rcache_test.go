@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -96,11 +97,6 @@ func TestCache_simple(t *testing.T) {
 func TestCache_deleteAllKeysWithPrefix(t *testing.T) {
 	SetupForTest(t)
 
-	// decrease the deleteBatchSize
-	oldV := deleteBatchSize
-	deleteBatchSize = 2
-	defer func() { deleteBatchSize = oldV }()
-
 	c := New("some_prefix")
 	var aKeys, bKeys []string
 	var key string
@@ -124,7 +120,7 @@ func TestCache_deleteAllKeysWithPrefix(t *testing.T) {
 	conn := pool.Get()
 	defer conn.Close()
 
-	err := deleteAllKeysWithPrefix(conn, c.rkeyPrefix()+"a")
+	err := redispool.DeleteAllKeysWithPrefix(conn, c.rkeyPrefix()+"a")
 	if err != nil {
 		t.Error(err)
 	}

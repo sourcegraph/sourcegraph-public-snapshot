@@ -841,7 +841,7 @@ type Mutation {
     # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
     # introduce any breaking changes, and let new parameters be optional with
     # reasonable defaults instead.
-    sendTestEmail(to: String!): String!
+    sendTestEmail(to: String!, config: SMTPConfig): String!
 
     """
     Enqueues a sync for the external service. It will be picked up in the background.
@@ -7597,6 +7597,7 @@ enum AlertGroup {
     AUTHENTICATION
     CODEHOST
     CODY
+    EXTERNAL_URL
     LICENSE
     OBSERVABILITY
     SMTP
@@ -9994,6 +9995,70 @@ input TeamMemberInput {
 }
 
 """
+Defines the available SMTP authentication mechanisms.
+
+NONE: No authentication.
+PLAIN: Plain authentication using username and password.
+CRAM_MD5: CRAM-MD5 authentication using username and secret.
+"""
+enum SMTPAuthType {
+    """
+    No authentication.
+    """
+    NONE
+    """
+    Plain authentication, which uses username and password.
+    """
+    PLAIN
+    """
+    Cram MD5 authentication, which uses username and secret.
+    """
+    CRAM_MD5
+}
+
+"""
+Configuration to specify SMTP server settings.
+"""
+input SMTPConfig {
+    """
+    Hostname of the SMTP server.
+    """
+    host: String!
+    """
+    Port of the SMTP server.
+    """
+    port: Int!
+    """
+    Type of authentication to use for the SMTP server.
+    """
+    authentication: SMTPAuthType!
+    """
+    Username to authenticate with if authentication type is not "NONE".
+    """
+    username: String
+    """
+    Password or cram-md5 secret in case authentication type is "CRAM-MD5"
+    """
+    password: String
+    """
+    Domain to send with the hello command, if required by the SMTP server.
+    """
+    domain: String
+    """
+    If true, TLS verification will be skipped. Defaults to false.
+    """
+    noVerifyTLS: Boolean
+    """
+    The FROM email address that is used in emails sent by Sourcegraph.
+    """
+    emailAddress: String!
+    """
+    The FROM name that is used in emails sent by Sourcegraph.
+    """
+    emailSenderName: String
+}
+
+"""
 A list of access requests
 """
 type AccessRequestConnection {
@@ -10602,4 +10667,85 @@ type PerforceChangelist {
     The corresponding git commit of this changelist.
     """
     commit: GitCommit!
+}
+
+extend type Query {
+    """
+    List of all configured code hosts on this instance.
+
+    Site-admin only.
+    """
+    codeHosts(first: Int = 50, after: String, search: String): CodeHostConnection!
+}
+
+"""
+A list of code hosts.
+"""
+type CodeHostConnection {
+    """
+    Only when this flag is true, the connection can be trusted to be complete.
+    This will stop existing in Sourcegraph 5.3 when the migration is ensured
+    to be complete.
+    """
+    isMigrationDone: Boolean!
+
+    """
+    A list of code hosts.
+    """
+    nodes: [CodeHost!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+
+    """
+    The total number of records in this result set.
+    """
+    totalCount: Int!
+}
+
+"""
+A specific code host, like github.com.
+"""
+type CodeHost implements Node {
+    """
+    The id of the code host.
+    """
+    id: ID!
+
+    """
+    The type of code host, e.g. GITHUB.
+    """
+    kind: ExternalServiceKind!
+
+    """
+    The url for the code host, e.g. github.com.
+    """
+    url: String!
+
+    """
+    A amount of API requests Sourcegraph can send to the code host.
+    """
+    apiRateLimitQuota: Int
+
+    """
+    How often API rate limits get reset. Defined in seconds.
+    """
+    apiRateLimitIntervalSeconds: Int
+
+    """
+    A amount of git requests Sourcegraph can send to the code host.
+    """
+    gitRateLimitQuota: Int
+
+    """
+    How often git rate limits get reset. Defined in seconds.
+    """
+    gitRateLimitIntervalSeconds: Int
+
+    """
+    All external services that refer to this code host.
+    """
+    externalServices(first: Int = 50, after: String): ExternalServiceConnection!
 }

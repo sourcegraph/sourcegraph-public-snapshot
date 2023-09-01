@@ -40,7 +40,7 @@ type FileChunkContext struct {
 	EndLine   int
 }
 
-func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embeddingsClient embeddings.Client, searchClient client.SearchClient, qdrantSearcher vdb.VectorSearcher) *CodyContextClient {
+func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embeddingsClient embeddings.Client, searchClient client.SearchClient, getQdrantSearcher func() (vdb.VectorSearcher, error)) *CodyContextClient {
 	redMetrics := metrics.NewREDMetrics(
 		obsCtx.Registerer,
 		"codycontext_client",
@@ -59,10 +59,10 @@ func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embedding
 	}
 
 	return &CodyContextClient{
-		db:               db,
-		embeddingsClient: embeddingsClient,
-		searchClient:     searchClient,
-		qdrantSearcher:   qdrantSearcher,
+		db:                db,
+		embeddingsClient:  embeddingsClient,
+		searchClient:      searchClient,
+		getQdrantSearcher: getQdrantSearcher,
 
 		obsCtx:                 obsCtx,
 		getCodyContextOp:       op("getCodyContext"),
@@ -72,10 +72,10 @@ func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embedding
 }
 
 type CodyContextClient struct {
-	db               database.DB
-	embeddingsClient embeddings.Client
-	searchClient     client.SearchClient
-	qdrantSearcher   vdb.VectorSearcher
+	db                database.DB
+	embeddingsClient  embeddings.Client
+	searchClient      client.SearchClient
+	getQdrantSearcher func() (vdb.VectorSearcher, error)
 
 	obsCtx                 *observation.Context
 	getCodyContextOp       *observation.Operation
@@ -335,6 +335,10 @@ func (c *CodyContextClient) getEmbeddingsContextFromQdrant(ctx context.Context, 
 	if err != nil {
 		return nil, errors.Wrap(err, "getting embeddings client")
 	}
+	qdrantSearcher, err := c.getQdrantSearcher()
+	if err != nil {
+		return nil, errors.Wrap(err, "getting qdrant searcher")
+	}
 
 	resp, err := client.GetQueryEmbedding(ctx, args.Query)
 	if err != nil || len(resp.Failed) > 0 {
@@ -349,7 +353,7 @@ func (c *CodyContextClient) getEmbeddingsContextFromQdrant(ctx context.Context, 
 		CodeLimit: int(args.CodeResultsCount),
 		TextLimit: int(args.TextResultsCount),
 	}
-	chunks, err := c.qdrantSearcher.Search(ctx, params)
+	chunks, err := qdrantSearcher.Search(ctx, params)
 	if err != nil {
 		return nil, errors.Wrap(err, "searching vector DB")
 	}
