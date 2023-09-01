@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
@@ -58,7 +57,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, "Could not read GitHub user from callback request.", err
 	}
 	exp := conf.ExperimentalFeatures()
-	if envvar.SourcegraphDotComMode() && exp.MinExtAccountAge > 0 {
+	if exp.MinExtAccountAge > 0 {
 
 		twoWeeksAgo := time.Now().Add(time.Duration(-exp.MinExtAccountAge) * 24 * time.Hour)
 
