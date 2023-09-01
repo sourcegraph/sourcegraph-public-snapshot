@@ -357,3 +357,8 @@
 /cody/quickstart#generate-a-unit-test /cody/quickstart#1-generate-a-unit-test 308
 /cody/quickstart#ask-cody-to-pull-reference-documentation /cody/quickstart#3-ask-cody-to-pull-reference-documentation 308
 /cody/quickstart#ask-cody-to-write-context-aware-code /cody/quickstart#working-with-the-cody-extension 308
+
+# Cody VS Code installation guide redirects
+/cody/overview/install-vscode#introduction /cody/overview/install-vscode 308
+/cody/overview/install-vscode#requirements /cody/overview/install-vscode#prerequisites 308
+/cody/overview/install-vscode#optional-enable-code-graph-context-for-context-aware-answers /cody/overview/install-vscode#enable-code-graph-context-for-context-aware-answers-optional 308
