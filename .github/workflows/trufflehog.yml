@@ -21,7 +21,7 @@ jobs:
           output=$(/usr/local/bin/trufflehog git file://./ --since-commit main --branch HEAD --no-update --github-actions --only-verified)
           echo $output
           if echo "$output" | grep -q "Found verified"; then
-            echo "FOUND_SECRET=true" >> "$GITHUB_OUTPUT"
+            echo "FOUND_SECRET=true" >> "${GITHUB_OUTPUT}"
           else
             echo "FOUND_SECRET=false" >> "${GITHUB_OUTPUT}"
           fi
