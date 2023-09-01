@@ -1,8 +1,20 @@
-.node-wrapper {
-    list-style: none;
-    padding: 0;
+.node {
+    border-radius: var(--border-radius);
+    padding: 1rem 2rem;
 
-    &:last-child {
-        margin-bottom: 0;
+    &-wrapper {
+        list-style: none;
+        padding: 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    &-icon {
+        // border: 1px solid red;
+        width: fit-content;
+        padding: 0.5rem;
+        border-radius: var(--border-radius);
+        background-color: var(--gray-02);
     }
 }
