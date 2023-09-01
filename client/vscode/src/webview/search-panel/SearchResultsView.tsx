@@ -359,6 +359,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                         platformContext={platformContext}
                         stats={
                             <StreamingProgress
+                                query={context.submittedSearchQueryState.queryState.query}
                                 progress={
                                     context.searchResults?.progress || { durationMs: 0, matchCount: 0, skipped: [] }
                                 }

@@ -48,7 +48,9 @@ describe('StreamingProgressSkippedButton', () => {
             ],
         }
 
-        renderWithBrandedContext(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
+        renderWithBrandedContext(
+            <StreamingProgressSkippedButton query="" progress={progress} onSearchAgain={sinon.spy()} />
+        )
         expect(screen.getByTestId('streaming-progress-skipped')).toBeInTheDocument()
         expect(screen.queryByTestId('streaming-progress-skipped')).not.toHaveClass('outline-danger')
     })
@@ -92,7 +94,9 @@ describe('StreamingProgressSkippedButton', () => {
             ],
         }
 
-        renderWithBrandedContext(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
+        renderWithBrandedContext(
+            <StreamingProgressSkippedButton query="" progress={progress} onSearchAgain={sinon.spy()} />
+        )
         expect(screen.getByTestId('streaming-progress-skipped')).toHaveClass('btnOutline btnDanger')
         expect(screen.queryByTestId('streaming-progress-skipped')).not.toHaveClass('btnOutline btnSecondary')
     })
@@ -126,7 +130,9 @@ describe('StreamingProgressSkippedButton', () => {
             ],
         }
 
-        renderWithBrandedContext(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
+        renderWithBrandedContext(
+            <StreamingProgressSkippedButton query="" progress={progress} onSearchAgain={sinon.spy()} />
+        )
 
         const button = screen.getByTestId('streaming-progress-skipped')
 
@@ -172,7 +178,9 @@ describe('StreamingProgressSkippedButton', () => {
 
         const onSearchAgain = sinon.spy()
 
-        renderWithBrandedContext(<StreamingProgressSkippedButton progress={progress} onSearchAgain={onSearchAgain} />)
+        renderWithBrandedContext(
+            <StreamingProgressSkippedButton query="" progress={progress} onSearchAgain={onSearchAgain} />
+        )
         const toggleButton = screen.getByTestId('streaming-progress-skipped')
 
         userEvent.click(toggleButton)

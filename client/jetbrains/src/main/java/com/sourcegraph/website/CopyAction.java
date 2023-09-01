@@ -20,8 +20,8 @@ public class CopyAction extends FileActionBase {
     // Display notification
     Notification notification =
         new Notification(
-            "Cody AI by Sourcegraph: URL sharing",
-            "Cody AI by Sourcegraph",
+            "Sourcegraph: URL sharing",
+            "Sourcegraph",
             "File URL copied to clipboard: " + urlWithoutUtm,
             NotificationType.INFORMATION);
     Notifications.Bus.notify(notification);
