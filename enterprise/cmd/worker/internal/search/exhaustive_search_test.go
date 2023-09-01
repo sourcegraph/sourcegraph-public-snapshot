@@ -14,15 +14,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 )
 
 func TestExhaustiveSearch(t *testing.T) {
-	// TODO(keegan) I can imagine evolving this into a full e2e test using the
-	// DB and the searcher fake to test all the worker tables.
-	// TODO use searchJob to do initialization
+	// This test exercises the full worker infra from the time a search job is
+	// created until it is done.
 
 	require := require.New(t)
 	observationCtx := observation.TestContextTB(t)
@@ -30,8 +28,7 @@ func TestExhaustiveSearch(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	s := store.New(db, observation.TestContextTB(t))
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(actor.WithInternalActor(context.Background()))
 	defer cancel()
 
 	userID := insertRow(t, s.Store, "users", "username", "alice")
@@ -47,23 +44,22 @@ func TestExhaustiveSearch(t *testing.T) {
 	})
 	require.NoError(err)
 
-	workerStore := store.NewExhaustiveSearchJobWorkerStore(observationCtx, db.Handle())
-	worker := NewExhaustiveSearchWorker(
-		ctx,
-		observationCtx,
-		workerStore,
-		s,
-		service.NewSearcherFake(),
-	)
-
-	go worker.Start()
-	defer worker.Stop()
-
-	// Wait until all work is done. QueuedCount(ctx, true) returns all work in
-	// queue or currently being processed.
+	// Now that the job is created, we start up all the worker routines for
+	// exhaustive search and wait until there are no more jobs left.
+	searchJob := &searchJob{
+		workerDB: db,
+		config: config{
+			WorkerInterval: 10 * time.Millisecond,
+		},
+	}
+	routines, err := searchJob.Routines(ctx, observationCtx)
+	require.NoError(err)
+	for _, routine := range routines {
+		go routine.Start()
+		defer routine.Stop()
+	}
 	require.Eventually(func() bool {
-		count, _ := workerStore.QueuedCount(ctx, true)
-		return count == 0
+		return !searchJob.hasWork(ctx)
 	}, tTimeout(t, 10*time.Second), 10*time.Millisecond)
 
 	// We now validate by directly checking the entries are created that we
