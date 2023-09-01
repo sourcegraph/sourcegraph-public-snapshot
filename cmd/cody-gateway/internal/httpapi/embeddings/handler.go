@@ -159,8 +159,10 @@ func NewHandler(
 			}
 
 			w.Header().Add("Content-Type", "application/json; charset=utf-8")
-			// Write implicitly returns a 200 status code:
-			resolvedStatusCode = 200
+			// Write implicitly returns a 200 status code if one isn't set yet
+			if resolvedStatusCode <= 0 {
+				resolvedStatusCode = 200
+			}
 			_, _ = w.Write(data)
 		}))
 }
