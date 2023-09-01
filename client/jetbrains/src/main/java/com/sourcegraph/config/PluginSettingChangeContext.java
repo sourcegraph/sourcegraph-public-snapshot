@@ -3,6 +3,8 @@ package com.sourcegraph.config;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 public class PluginSettingChangeContext {
   @NotNull public final String oldUrl;
   public final boolean oldCodyEnabled;
@@ -14,6 +16,7 @@ public class PluginSettingChangeContext {
   @Nullable public final Integer oldCustomAutocompleteColor;
   public final boolean isDotComAccessTokenChanged;
   public final boolean isEnterpriseAccessTokenChanged;
+  public final List<String> oldBlacklistedAutocompleteLanguageIds;
 
   @Nullable public final String newCustomRequestHeaders;
   public final boolean newCodyEnabled;
@@ -24,6 +27,8 @@ public class PluginSettingChangeContext {
   public final boolean isCustomAutocompleteColorEnabled;
   @Nullable public final Integer customAutocompleteColor;
 
+  public final List<String> newBlacklistedAutocompleteLanguageIds;
+
   public PluginSettingChangeContext(
       boolean oldCodyEnabled,
       boolean oldCodyAutocompleteEnabled,
@@ -32,6 +37,7 @@ public class PluginSettingChangeContext {
       boolean oldCodyVerboseDebugEnabled,
       Integer oldCustomAutocompleteColor,
       boolean oldIsCustomAutocompleteColorEnabled,
+      List<String> oldBlacklistedAutocompleteLanguageIds,
       @NotNull String newUrl,
       boolean isDotComAccessTokenChanged,
       boolean isEnterpriseAccessTokenChanged,
@@ -41,12 +47,14 @@ public class PluginSettingChangeContext {
       boolean newCodyDebugEnabled,
       boolean newCodyVerboseDebugEnabled,
       boolean isCustomAutocompleteColorEnabled,
-      @Nullable Integer customAutocompleteColor) {
+      @Nullable Integer customAutocompleteColor,
+      List<String> newBlacklistedAutocompleteLanguageIds) {
     this.oldCodyEnabled = oldCodyEnabled;
     this.oldCodyAutocompleteEnabled = oldCodyAutocompleteEnabled;
     this.oldUrl = oldUrl;
     this.oldCodyDebugEnabled = oldCodyDebugEnabled;
     this.oldCodyVerboseDebugEnabled = oldCodyVerboseDebugEnabled;
+    this.oldBlacklistedAutocompleteLanguageIds = oldBlacklistedAutocompleteLanguageIds;
     this.newUrl = newUrl;
     this.oldCustomAutocompleteColor = oldCustomAutocompleteColor;
     this.isDotComAccessTokenChanged = isDotComAccessTokenChanged;
@@ -59,5 +67,6 @@ public class PluginSettingChangeContext {
     this.isCustomAutocompleteColorEnabled = isCustomAutocompleteColorEnabled;
     this.oldIsCustomAutocompleteColorEnabled = oldIsCustomAutocompleteColorEnabled;
     this.customAutocompleteColor = customAutocompleteColor;
+    this.newBlacklistedAutocompleteLanguageIds = newBlacklistedAutocompleteLanguageIds;
   }
 }

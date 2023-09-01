@@ -11,6 +11,7 @@ import com.intellij.openapi.project.ProjectManager;
 import com.sourcegraph.cody.agent.ExtensionConfiguration;
 import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.find.Search;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -385,5 +386,9 @@ public class ConfigUtil {
         .filter(fileEditor -> fileEditor instanceof com.intellij.openapi.fileEditor.TextEditor)
         .map(fileEditor -> ((com.intellij.openapi.fileEditor.TextEditor) fileEditor).getEditor())
         .collect(Collectors.toList());
+  }
+
+  public static List<String> getBlacklistedAutocompleteLanguageIds() {
+    return getApplicationLevelConfig().blacklistedAutocompleteLanguageIds;
   }
 }

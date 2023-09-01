@@ -16,6 +16,7 @@ import com.intellij.util.ui.FormBuilder;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import com.jetbrains.jsonSchema.settings.mappings.JsonSchemaConfigurable;
+import com.sourcegraph.cody.config.AutocompleteLanguageTable;
 import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.cody.ui.PasswordFieldWithShowHideButton;
 import com.sourcegraph.common.AuthorizationUtil;
@@ -24,6 +25,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.Enumeration;
 import java.util.Objects;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -53,6 +55,7 @@ public class SettingsComponent implements Disposable {
   private JBCheckBox isUrlNotificationDismissedCheckBox;
   private JBCheckBox isCodyEnabledCheckBox;
   private JBCheckBox isCodyAutocompleteEnabledCheckBox;
+  private AutocompleteLanguageTable autocompleteLanguageTable;
 
   private ActionLink installLocalAppLink;
   private JLabel installLocalAppComment;
@@ -456,6 +459,14 @@ public class SettingsComponent implements Disposable {
     isCodyAutocompleteEnabledCheckBox.setSelected(value);
   }
 
+  public List<String> getBlacklistedAutocompleteLanguageIds() {
+    return autocompleteLanguageTable.getBlacklistedLanguageIds();
+  }
+
+  public void setBlacklistedLanguageIds(List<String> languageIds) {
+    autocompleteLanguageTable.setBlacklistedLanguageIds(languageIds);
+  }
+
   public boolean isCodyDebugEnabled() {
     return isCodyDebugEnabledCheckBox.isSelected();
   }
@@ -621,7 +632,6 @@ public class SettingsComponent implements Disposable {
   private JPanel createCodySettingsPanel() {
     //noinspection DialogTitleCapitalization
     isCodyEnabledCheckBox = new JBCheckBox("Enable Cody");
-    isCodyAutocompleteEnabledCheckBox = new JBCheckBox("Enable Cody autocomplete");
     isCodyDebugEnabledCheckBox = new JBCheckBox("Enable debug");
     isCodyVerboseDebugEnabledCheckBox = new JBCheckBox("Verbose debug");
 
@@ -640,17 +650,28 @@ public class SettingsComponent implements Disposable {
         0, 0, colorPanelWidth, customAutocompleteColorPanel.getHeight());
     customAutocompleteColorPanelWrapper.add(customAutocompleteColorPanel);
 
+    isCodyAutocompleteEnabledCheckBox = new JBCheckBox("Enable Cody autocomplete");
+    autocompleteLanguageTable = new AutocompleteLanguageTable();
+    JComponent languageWhitelistTableComponent = autocompleteLanguageTable.getComponent();
+
+    JPanel codyAutocompletePanel =
+        FormBuilder.createFormBuilder()
+            .addComponent(isCodyAutocompleteEnabledCheckBox)
+            .addComponent(languageWhitelistTableComponent)
+            .getPanel();
+    codyAutocompletePanel.setBorder(
+        IdeBorderFactory.createTitledBorder("Autocomplete", true, JBUI.insetsTop(8)));
     JPanel codySettingsPanel =
         FormBuilder.createFormBuilder()
             .addComponent(isCodyEnabledCheckBox, 10)
             .addTooltip(
                 "Disable this to turn off all AI-based functionality of the plugin, including the Cody chat sidebar and autocomplete")
-            .addComponent(isCodyAutocompleteEnabledCheckBox, 5)
-            .addComponent(isCodyDebugEnabledCheckBox)
+            .addComponent(isCodyDebugEnabledCheckBox, 5)
             .addTooltip("Enables debug output visible in the idea.log")
             .addComponent(isCodyVerboseDebugEnabledCheckBox)
             .addLabeledComponent(
                 isCustomAutocompleteColorEnabledCheckBox, customAutocompleteColorPanelWrapper)
+            .addComponent(codyAutocompletePanel)
             .getPanel();
     codySettingsPanel.setBorder(
         IdeBorderFactory.createTitledBorder("Cody AI", true, JBUI.insetsTop(8)));
