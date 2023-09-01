@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/peterhellberg/link"
 )
@@ -16,6 +17,7 @@ type User struct {
 	State      string     `json:"state"`
 	AvatarURL  string     `json:"avatar_url"`
 	WebURL     string     `json:"web_url"`
+	CreatedAt  time.Time  `json:"created_at"`
 	Identities []Identity `json:"identities"`
 }
 
