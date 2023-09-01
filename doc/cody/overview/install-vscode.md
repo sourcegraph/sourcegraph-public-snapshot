@@ -23,6 +23,54 @@
   color: var(--link-color);
   font-weight: bold;
 }
+
+.limg {
+  list-style: none;
+  margin: 3rem 0 !important;
+  padding: 0 !important;
+}
+.limg li {
+  margin-bottom: 1rem;
+  padding: 0 !important;
+}
+
+.limg li:last {
+  margin-bottom: 0;
+}
+
+.limg a {
+    display: flex;
+    flex-direction: column;
+    transition-property: all;
+   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+     transition-duration: 350ms;
+     border-radius: 0.75rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+
+}
+
+.limg a {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  background: rgb(113 220 232 / 19%);
+}
+
+.limg p {
+  margin: 0rem;
+}
+.limg a img {
+  width: 1rem;
+}
+
+.limg h3 {
+  display:flex;
+  gap: 0.6rem;
+  margin-top: 0;
+  margin-bottom: .25rem
+
+}
+
 </style>
 
 # Installing Cody in VS Code
@@ -30,6 +78,15 @@
 <p class="subtitle">Learn how to use Cody and its features with the VS Code editor.</p>
 
 The Cody AI extension by Sourcegraph enhances your coding experience in VS Code by providing intelligent code sugsgestions, context-aware completions, and advanced code analysis. This guide will walk you through the steps to install and set up the Cody within your VS Code environment.
+
+<ul class="limg">
+  <li>
+    <a class="card text-left" target="_blank" href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai">
+    <h3><img alt="VS Code" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/vscode.svg"/> Cody: VS Code Extension</h3>
+    <p>Install Cody's free and open source extension for VS Code.</p>
+    </a>
+  </li>
+</ul>
 
 ## Prerequisites
 
@@ -81,7 +138,7 @@ Once connected, click the Cody icon from the sidebar again, and a panel will ope
 
 Cody also supports executing reusable prompts known as **Commands** from within the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai). They allow you to run predefined actions (like `Explain Selected Code` and `Generate Unit Tests` for example) with smart context-fetching anywhere in the editor.
 
-[Learn more about commands here →](./../capabilities.md#commands)
+[Learn more about Commands here →](./../capabilities.md#commands)
 
 ## Enable code graph context for context-aware answers (Optional)
 
