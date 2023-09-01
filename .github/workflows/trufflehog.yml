@@ -23,7 +23,7 @@ jobs:
           if echo "$output" | grep -q "Found verified"; then
             echo "FOUND_SECRET=true" >> "$GITHUB_OUTPUT"
           else
-            echo "FOUND_SECRET=false" >> $GITHUB_OUTPUT
+            echo "FOUND_SECRET=false" >> "${GITHUB_OUTPUT}"
           fi
 
       - name: Post to Slack
