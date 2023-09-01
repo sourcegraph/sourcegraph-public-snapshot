@@ -9,7 +9,7 @@ option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 
 service GitserverService {
   rpc BatchLog(BatchLogRequest) returns (BatchLogResponse) {}
-  rpc CreateCommitFromPatchBinary(CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
+  rpc CreateCommitFromPatchBinary(stream CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
   rpc GetObject(GetObjectRequest) returns (GetObjectResponse) {}
   rpc IsRepoCloneable(IsRepoCloneableRequest) returns (IsRepoCloneableResponse) {}
@@ -95,25 +95,35 @@ message PushConfig {
 // CreateCommitFromPatchBinaryRequest is the request information needed for
 // creating the simulated staging area git object for a repo.
 message CreateCommitFromPatchBinaryRequest {
-  // repo is the name of the repo to be updated
-  string repo = 1;
-  // base_commit is the revision that the staging area object is based on
-  string base_commit = 2;
-  // patch is the diff contents to be used to create the staging area revision
-  bytes patch = 3;
-  // target_ref is the ref that will be created for this patch
-  string target_ref = 4;
-  // unique_ref is a boolean that indicates whether a unique number will be
-  // appended to the end (ie TargetRef-{#}). The generated ref will be returned.
-  bool unique_ref = 5;
-  // commit_info is the information to be used for the commit
-  PatchCommitInfo commit_info = 6;
-  // push_config is the configuration to be used for pushing the commit
-  PushConfig push = 7;
-  // git_apply_args are the arguments to be passed to git apply
-  repeated string git_apply_args = 8;
-  // push_ref is the optional override for the ref that is pushed to
-  optional string push_ref = 9;
+  message Metadata {
+    // repo is the name of the repo to be updated
+    string repo = 1;
+    // base_commit is the revision that the staging area object is based on
+    string base_commit = 2;
+    // target_ref is the ref that will be created for this patch
+    string target_ref = 3;
+    // unique_ref is a boolean that indicates whether a unique number will be
+    // appended to the end (ie TargetRef-{#}). The generated ref will be returned.
+    bool unique_ref = 4;
+    // commit_info is the information to be used for the commit
+    PatchCommitInfo commit_info = 5;
+    // push_config is the configuration to be used for pushing the commit
+    PushConfig push = 6;
+    // git_apply_args are the arguments to be passed to git apply
+    repeated string git_apply_args = 7;
+    // push_ref is the optional override for the ref that is pushed to
+    optional string push_ref = 8;
+  }
+
+  message Patch {
+    // data is the diff contents to be used to create the staging area revision
+    bytes data = 1;
+  }
+
+  oneof payload {
+    Metadata metadata = 1;
+    Patch patch = 2;
+  }
 }
 
 message CreateCommitFromPatchError {
