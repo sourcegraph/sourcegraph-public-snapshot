@@ -22,20 +22,3 @@ func (LicenseResolver) EnterpriseLicenseHasFeature(ctx context.Context, args *gr
 
 	return true, nil
 }
-
-func (LicenseResolver) LicenseInfo(ctx context.Context, args *graphqlbackend.LicenseInfoArgs) (*graphqlbackend.LicenseInfoResolver, error) {
-	var (
-		info *licensing.Info
-		err  error
-	)
-	if args.LicenseKey != nil {
-		info, _, err = licensing.GetLicenseInfoFromKey(*args.LicenseKey)
-	} else {
-		info, err = licensing.GetConfiguredProductLicenseInfo()
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	return &graphqlbackend.LicenseInfoResolver{Info: info}, nil
-}
