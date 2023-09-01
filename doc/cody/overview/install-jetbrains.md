@@ -23,6 +23,78 @@
   color: var(--link-color);
   font-weight: bold;
 }
+
+.markdown-body .cards {
+  display: flex;
+  align-items: stretch;
+}
+
+.markdown-body .cards .card {
+  flex: 1;
+  margin: 0.5em;
+  color: var(--text-color);
+  border-radius: 4px;
+  border: 1px solid var(--sidebar-nav-active-bg);
+  padding: 1.5rem;
+  padding-top: 1.25rem;
+}
+
+.markdown-body .cards .card:hover {
+  color: var(--link-color);
+}
+
+.markdown-body .cards .card span {
+  color: var(--link-color);
+  font-weight: bold;
+}
+
+.limg {
+  list-style: none;
+  margin: 3rem 0 !important;
+  padding: 0 !important;
+}
+.limg li {
+  margin-bottom: 1rem;
+  padding: 0 !important;
+}
+
+.limg li:last {
+  margin-bottom: 0;
+}
+
+.limg a {
+    display: flex;
+    flex-direction: column;
+    transition-property: all;
+   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+     transition-duration: 350ms;
+     border-radius: 0.75rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+
+}
+
+.limg a {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  background: rgb(113 220 232 / 19%);
+}
+
+.limg p {
+  margin: 0rem;
+}
+.limg a img {
+  width: 1rem;
+}
+
+.limg h3 {
+  display:flex;
+  gap: 0.6rem;
+  margin-top: 0;
+  margin-bottom: .25rem
+
+}
+
 </style>
 
 # Install Cody for JetBrains <span class="badge badge-experimental" style="margin-left: 0.5rem; vertical-align:middle;">Experimental</span>
@@ -30,6 +102,15 @@
 <p class="subtitle">Learn how to use Cody and its features with the JetBrains IntelliJ editor.</p>
 
 The Cody AI extension by Sourcegraph enhances your coding experience in JetBrains IntelliJ editor by providing intelligent code sugsgestions, context-aware completions, and advanced code analysis. This guide will walk you through the steps to install and set up the Cody within your JetBrains environment.
+
+<ul class="limg">
+  <li>
+    <a class="card text-left" target="_blank" href="https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph">
+      <h3><img alt="JetBrains" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/jb_beam.svg" />JetBrains Extension (experimental)</h3>
+      <p>Install Cody's free and open source extension for JetBrains.</p>
+    </a>
+  </li>
+  </ul>
 
 ## Prerequisites
 
