@@ -36,7 +36,9 @@ func NewDBFromConfFunc(logger log.Logger, def VectorDB) func() (VectorDB, error)
 			}
 			return
 		}
-		if newAddr := conf.Get().ServiceConnections().Qdrant; newAddr != oldAddr {
+		if newAddr := c.ServiceConnections().Qdrant; newAddr != oldAddr {
+			// The address has changed or this is running for the first time.
+			// Attempt to open dial Qdrant.
 			newConn, dialErr := defaults.Dial(newAddr, logger)
 			oldAddr = newAddr
 			err = dialErr
@@ -110,12 +112,12 @@ func getHnswConfigDiff(conf *schema.Qdrant) *qdrant.HnswConfigDiff {
 
 	// Default values should match the documented defaults in site.schema.json.
 	return &qdrant.HnswConfigDiff{
-		M:                  getUint64(overrides.M, 8),
-		PayloadM:           getUint64(overrides.PayloadM, 8),
-		EfConstruct:        getUint64(overrides.EfConstruct, 100),
-		FullScanThreshold:  getUint64(overrides.FullScanThreshold, 10),
+		M:                  toUint64(overrides.M),
+		PayloadM:           toUint64(overrides.PayloadM),
+		EfConstruct:        toUint64(overrides.EfConstruct),
+		FullScanThreshold:  toUint64(overrides.FullScanThreshold),
 		OnDisk:             pointers.Ptr(pointers.Deref(overrides.OnDisk, true)),
-		MaxIndexingThreads: pointers.Ptr(uint64(4)),
+		MaxIndexingThreads: nil, // default
 	}
 }
 
@@ -125,11 +127,11 @@ func getOptimizersConfigDiff(conf *schema.Qdrant) *qdrant.OptimizersConfigDiff {
 
 	// Default values should match the documented defaults in site.schema.json.
 	return &qdrant.OptimizersConfigDiff{
-		DefaultSegmentNumber:   pointers.Ptr(uint64(4)),
-		IndexingThreshold:      getUint64(overrides.IndexingThreshold, 100),
-		VacuumMinVectorNumber:  pointers.Ptr(uint64(100)),
+		IndexingThreshold:      getUint64(overrides.IndexingThreshold, 0),
 		MemmapThreshold:        getUint64(overrides.MemmapThreshold, 100),
-		MaxOptimizationThreads: pointers.Ptr(uint64(2)),
+		DefaultSegmentNumber:   nil,
+		VacuumMinVectorNumber:  nil,
+		MaxOptimizationThreads: nil,
 	}
 }
 
@@ -170,6 +172,14 @@ func getQuantizationConfig(conf *schema.Qdrant) *qdrant.QuantizationConfig {
 			},
 		},
 	}
+}
+
+func toUint64(input *int) *uint64 {
+	if input == nil {
+		return nil
+	}
+	u := uint64(*input)
+	return &u
 }
 
 func getUint64(input *int, def uint64) *uint64 {
