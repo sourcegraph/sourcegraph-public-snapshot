@@ -480,7 +480,7 @@ public class SettingsComponent implements Disposable {
     isCustomAutocompleteColorEnabledCheckBox.setSelected(value);
   }
 
-  public Integer getCustomAutocompleteColorPanel() {
+  public @NotNull Integer getCustomAutocompleteColorPanel() {
     Color selectedColor = customAutocompleteColorPanel.getSelectedColor();
     return Objects.requireNonNull(selectedColor).getRGB();
   }

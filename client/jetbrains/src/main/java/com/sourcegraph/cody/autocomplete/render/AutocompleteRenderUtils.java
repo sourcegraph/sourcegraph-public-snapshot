@@ -38,7 +38,7 @@ public class AutocompleteRenderUtils {
   public static TextAttributes getCustomTextAttributes(
       @NotNull Editor editor, @NotNull Integer fontColor) {
     Color color = new Color(fontColor);
-    TextAttributes attrs = getTextAttributesForEditor(editor);
+    TextAttributes attrs = getTextAttributesForEditor(editor).clone();
     attrs.setForegroundColor(color);
     return attrs;
   }
