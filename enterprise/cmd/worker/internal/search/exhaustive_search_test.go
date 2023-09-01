@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
@@ -18,16 +19,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 )
 
-func TestExhaustiveSearchHandler(t *testing.T) {
+func TestExhaustiveSearch(t *testing.T) {
 	// TODO(keegan) I can imagine evolving this into a full e2e test using the
 	// DB and the searcher fake to test all the worker tables.
+	// TODO use searchJob to do initialization
 
 	require := require.New(t)
 	observationCtx := observation.TestContextTB(t)
 	logger := observationCtx.Logger
-	ctx := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	s := store.New(db, observation.TestContextTB(t))
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	userID := insertRow(t, s.Store, "users", "username", "alice")
 	insertRow(t, s.Store, "repo", "id", 1, "name", "repoa")
@@ -41,17 +46,25 @@ func TestExhaustiveSearchHandler(t *testing.T) {
 		Query:       query,
 	})
 	require.NoError(err)
-	job, err := s.GetExhaustiveSearchJob(ctx, jobID)
-	require.NoError(err)
 
-	handler := exhaustiveSearchHandler{
-		logger:      logger,
-		store:       s,
-		newSearcher: service.NewSearcherFake(),
-	}
+	workerStore := store.NewExhaustiveSearchJobWorkerStore(observationCtx, db.Handle())
+	worker := NewExhaustiveSearchWorker(
+		ctx,
+		observationCtx,
+		workerStore,
+		s,
+		service.NewSearcherFake(),
+	)
 
-	err = handler.Handle(ctx, logger, job)
-	require.NoError(err)
+	go worker.Start()
+	defer worker.Stop()
+
+	// Wait until all work is done. QueuedCount(ctx, true) returns all work in
+	// queue or currently being processed.
+	require.Eventually(func() bool {
+		count, _ := workerStore.QueuedCount(ctx, true)
+		return count == 0
+	}, tTimeout(t, 10*time.Second), 10*time.Millisecond)
 
 	// We now validate by directly checking the entries are created that we
 	// want.
@@ -89,4 +102,18 @@ func insertRow(t testing.TB, store *basestore.Store, table string, keyValues ...
 		t.Fatal(err)
 	}
 	return id
+}
+
+// tTimeout returns the duration until t's deadline. If there is no deadline
+// or the deadline is further away than max, then max is returned.
+func tTimeout(t *testing.T, max time.Duration) time.Duration {
+	deadline, ok := t.Deadline()
+	if !ok {
+		return max
+	}
+	timeout := time.Until(deadline)
+	if max < timeout {
+		return max
+	}
+	return timeout
 }
