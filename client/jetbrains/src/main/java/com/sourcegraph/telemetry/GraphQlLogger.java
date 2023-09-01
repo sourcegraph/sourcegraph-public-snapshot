@@ -9,6 +9,7 @@ import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.protocol.CompletionEvent;
 import com.sourcegraph.cody.agent.protocol.Event;
 import com.sourcegraph.cody.config.CodyApplicationSettings;
+import com.sourcegraph.cody.config.SourcegraphServerPath;
 import com.sourcegraph.config.ConfigUtil;
 import java.util.concurrent.CompletableFuture;
 import org.jetbrains.annotations.NotNull;
@@ -17,21 +18,21 @@ import org.jetbrains.annotations.Nullable;
 public class GraphQlLogger {
   private static final Gson gson = new GsonBuilder().serializeNulls().create();
 
-  public static CompletableFuture<Boolean> logInstallEvent(@NotNull Project project) {
+  public static CompletableFuture<Boolean> logInstallEvent(@NotNull Project project, @NotNull SourcegraphServerPath sourcegraphServerPath) {
     CodyApplicationSettings codyApplicationSettings =
         CodyApplicationSettings.getInstance();
     if (codyApplicationSettings.getAnonymousUserId() != null && project.isDisposed()) {
-      var event = createEvent(project, "CodyInstalled", new JsonObject());
+      var event = createEvent(sourcegraphServerPath, "CodyInstalled", new JsonObject());
       return logEvent(project, event);
     }
     return CompletableFuture.completedFuture(false);
   }
 
-  public static void logUninstallEvent(@NotNull Project project) {
+  public static void logUninstallEvent(@NotNull Project project, @NotNull SourcegraphServerPath sourcegraphServerPath) {
     CodyApplicationSettings codyApplicationSettings =
         CodyApplicationSettings.getInstance();
     if (codyApplicationSettings.getAnonymousUserId() != null) {
-      Event event = createEvent(project, "CodyUninstalled", new JsonObject());
+      Event event = createEvent(sourcegraphServerPath, "CodyUninstalled", new JsonObject());
       logEvent(project, event);
     }
   }
@@ -54,7 +55,7 @@ public class GraphQlLogger {
       @NotNull Project project, @Nullable CompletionEvent.Params params) {
     String eventName = "CodyJetBrainsPlugin:completion:accepted";
     JsonObject eventParameters = addCompletionEventParams(new JsonObject(), params);
-    logEvent(project, createEvent(project, eventName, eventParameters));
+    logEvent(project, createEvent(ConfigUtil.getServerPath(project), eventName, eventParameters));
   }
 
   private static JsonObject addCompletionEventParams(
@@ -78,13 +79,13 @@ public class GraphQlLogger {
   public static void logCodyEvent(
       @NotNull Project project, @NotNull String componentName, @NotNull String action) {
     var eventName = "CodyJetBrainsPlugin:" + componentName + ":" + action;
-    logEvent(project, createEvent(project, eventName, new JsonObject()));
+    logEvent(project, createEvent(ConfigUtil.getServerPath(project), eventName, new JsonObject()));
   }
 
   @NotNull
   private static Event createEvent(
-      @NotNull Project project, @NotNull String eventName, @NotNull JsonObject eventParameters) {
-    var updatedEventParameters = addGlobalEventParameters(eventParameters, project);
+      @NotNull SourcegraphServerPath sourcegraphServerPath, @NotNull String eventName, @NotNull JsonObject eventParameters) {
+    var updatedEventParameters = addGlobalEventParameters(eventParameters, sourcegraphServerPath);
     CodyApplicationSettings codyApplicationSettings =
         CodyApplicationSettings.getInstance();
     String anonymousUserId = codyApplicationSettings.getAnonymousUserId();
@@ -94,10 +95,10 @@ public class GraphQlLogger {
 
   @NotNull
   private static JsonObject addGlobalEventParameters(
-      @NotNull JsonObject eventParameters, @NotNull Project project) {
+      @NotNull JsonObject eventParameters, @NotNull SourcegraphServerPath sourcegraphServerPath) {
     // project specific properties
     var updatedEventParameters = eventParameters.deepCopy();
-    updatedEventParameters.addProperty("serverEndpoint", ConfigUtil.getSourcegraphUrl(project));
+    updatedEventParameters.addProperty("serverEndpoint", sourcegraphServerPath.getUrl());
     // Extension specific properties
     JsonObject extensionDetails = new JsonObject();
     extensionDetails.addProperty("ide", "JetBrains");

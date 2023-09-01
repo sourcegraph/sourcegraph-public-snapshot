@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 public class BrowserOpener {
   public static void openRelativeUrlInBrowser(
       @NotNull Project project, @NotNull String relativeUrl) {
-    openInBrowser(project, ConfigUtil.getSourcegraphUrl(project) + "/" + relativeUrl);
+    openInBrowser(project, ConfigUtil.getServerPath(project).getUrl() + "/" + relativeUrl);
   }
 
   public static void openInBrowser(@NotNull Project project, @NotNull String absoluteUrl) {

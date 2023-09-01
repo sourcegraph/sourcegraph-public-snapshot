@@ -28,6 +28,7 @@ data class SourcegraphServerPath(@Attribute("url") var url: String = "") : Serve
             "^(https?://)?([^/?:]+)(:(\\d+))?((/[^/?#]+)*)?/?", Pattern.CASE_INSENSITIVE)
 
     @Throws(SourcegraphParseException::class)
+    @JvmStatic
     fun from(uri: String): SourcegraphServerPath {
       val matcher = URL_REGEX.matcher(uri)
       if (!matcher.matches()) throw SourcegraphParseException("Not a valid URL")

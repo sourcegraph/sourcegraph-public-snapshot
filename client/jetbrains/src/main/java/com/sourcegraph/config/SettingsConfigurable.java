@@ -73,7 +73,7 @@ public class SettingsConfigurable implements Configurable {
 
     boolean oldCodyEnabled = ConfigUtil.isCodyEnabled();
     boolean oldCodyAutocompleteEnabled = ConfigUtil.isCodyAutocompleteEnabled();
-    String oldUrl = ConfigUtil.getSourcegraphUrl(project);
+    String oldUrl = ConfigUtil.getServerPath(project).getUrl();
     String newDotComAccessToken = mySettingsComponent.getDotComAccessToken();
     String newEnterpriseAccessToken = mySettingsComponent.getEnterpriseAccessToken();
     String enterpriseUrl = mySettingsComponent.getEnterpriseUrl();

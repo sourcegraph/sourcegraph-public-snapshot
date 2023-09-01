@@ -50,7 +50,7 @@ public class SettingsChangeListener implements Disposable {
           @Override
           public void beforeAction(@NotNull PluginSettingChangeContext context) {
             if (!Objects.equals(context.oldUrl, context.newUrl)) {
-              GraphQlLogger.logUninstallEvent(project);
+//              GraphQlLogger.logUninstallEvent(project);
               codyApplicationSettings.setInstallEventLogged(false);
             }
           }
@@ -77,13 +77,12 @@ public class SettingsChangeListener implements Disposable {
             }
 
             // Log install events
-            boolean urlChanged = !Objects.equals(context.oldUrl, context.newUrl);
-            if (urlChanged) {
-              GraphQlLogger.logInstallEvent(project).thenAccept(codyApplicationSettings::setInstallEventLogged);
-            } else if (context.isAuthMethodChanged
-                && !codyApplicationSettings.isInstallEventLogged()) {
-              GraphQlLogger.logInstallEvent(project).thenAccept(codyApplicationSettings::setInstallEventLogged);
-            }
+//            if (!Objects.equals(context.oldUrl, context.newUrl)) {
+//              GraphQlLogger.logInstallEvent(project).thenAccept(codyApplicationSettings::setInstallEventLogged);
+//            } else if (context.isAuthMethodChanged
+//                && !codyApplicationSettings.isInstallEventLogged()) {
+//              GraphQlLogger.logInstallEvent(project).thenAccept(codyApplicationSettings::setInstallEventLogged);
+//            }
 
             // clear autocomplete suggestions if freshly disabled
             if (context.oldCodyAutocompleteEnabled && !context.newCodyAutocompleteEnabled) {

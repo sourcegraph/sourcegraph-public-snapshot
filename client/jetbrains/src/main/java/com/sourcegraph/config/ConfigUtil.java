@@ -7,12 +7,13 @@ import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.cody.agent.ExtensionConfiguration;
 import com.sourcegraph.cody.config.AccountType;
+import com.sourcegraph.cody.config.CodyApplicationSettings;
+import com.sourcegraph.cody.config.CodyProjectSettings;
 import com.sourcegraph.cody.config.DefaultAccountLoader;
 import com.sourcegraph.cody.config.ServerAuth;
 import com.sourcegraph.cody.config.ServerAuthLoader;
 import com.sourcegraph.cody.config.SourcegraphAccount;
-import com.sourcegraph.cody.config.CodyApplicationSettings;
-import com.sourcegraph.cody.config.CodyProjectSettings;
+import com.sourcegraph.cody.config.SourcegraphServerPath;
 import com.sourcegraph.cody.localapp.LocalAppManager;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,17 +45,14 @@ public class ConfigUtil {
   public static JsonObject getConfigAsJson(@NotNull Project project) {
     JsonObject configAsJson = new JsonObject();
     ServerAuth serverAuth = ServerAuthLoader.loadServerAuth(project);
-    CodyProjectSettings codyProjectSettings =
-        CodyProjectSettings.getInstance(project);
-    CodyApplicationSettings codyApplicationSettings =
-        CodyApplicationSettings.getInstance();
+    CodyProjectSettings codyProjectSettings = CodyProjectSettings.getInstance(project);
+    CodyApplicationSettings codyApplicationSettings = CodyApplicationSettings.getInstance();
     configAsJson.addProperty("instanceURL", serverAuth.getInstanceUrl());
     configAsJson.addProperty("accessToken", serverAuth.getAccessToken());
     configAsJson.addProperty(
         "customRequestHeadersAsString", codyProjectSettings.getCustomRequestHeaders());
     configAsJson.addProperty("pluginVersion", ConfigUtil.getPluginVersion());
-    configAsJson.addProperty(
-        "anonymousUserId", codyApplicationSettings.getAnonymousUserId());
+    configAsJson.addProperty("anonymousUserId", codyApplicationSettings.getAnonymousUserId());
     return configAsJson;
   }
 
@@ -71,9 +69,11 @@ public class ConfigUtil {
   }
 
   @NotNull
-  public static String getSourcegraphUrl(@NotNull Project project) {
+  public static SourcegraphServerPath getServerPath(@NotNull Project project) {
     SourcegraphAccount defaultAccount = DefaultAccountLoader.loadDefaultAccount(project);
-    return defaultAccount != null ? defaultAccount.getServer().getUrl() : DOTCOM_URL;
+    return defaultAccount != null
+        ? defaultAccount.getServer()
+        : SourcegraphServerPath.from(DOTCOM_URL);
   }
 
   @NotNull
@@ -83,8 +83,7 @@ public class ConfigUtil {
 
   public static Map<String, String> getCustomRequestHeadersAsMap(@NotNull Project project) {
     Map<String, String> result = new HashMap<>();
-    CodyProjectSettings codyProjectSettings =
-        project.getService(CodyProjectSettings.class);
+    CodyProjectSettings codyProjectSettings = project.getService(CodyProjectSettings.class);
     String[] pairs = codyProjectSettings.getCustomRequestHeaders().split(",");
     for (int i = 0; i + 1 < pairs.length; i = i + 2) {
       result.put(pairs[i], pairs[i + 1]);

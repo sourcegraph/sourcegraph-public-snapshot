@@ -28,6 +28,7 @@ class NewSettingsConfigurable(private val project: Project) :
   private val settingsModel = SettingsModel()
   private val accountManager = service<SourcegraphAccountManager>()
   private val defaultAccountHolder = project.service<SourcegraphProjectDefaultAccountHolder>()
+  private lateinit var dialogPanel: DialogPanel
 
   override fun createPanel(): DialogPanel {
     val accountsModel = SourcegraphAccountListModel(project)
@@ -35,7 +36,7 @@ class NewSettingsConfigurable(private val project: Project) :
         ProgressIndicatorsProvider().also { Disposer.register(disposable!!, it) }
     val detailsProvider =
         SourcegraphAccounDetailsProvider(indicatorsProvider, accountManager, accountsModel)
-    return panel {
+    dialogPanel = panel {
       group("Authentication") {
         row {
           accountsPanel(
@@ -108,10 +109,7 @@ class NewSettingsConfigurable(private val project: Project) :
               .comment("Enables debug output visible in the idea.log")
               .bindSelected(settingsModel::isCodyDebugEnabled)
         }
-        row {
-          checkBox("Verbose debug")
-              .bindSelected(settingsModel::isCodyVerboseDebugEnabled)
-        }
+        row { checkBox("Verbose debug").bindSelected(settingsModel::isCodyVerboseDebugEnabled) }
       }
       group("Code search") {
         row {
@@ -147,21 +145,19 @@ class NewSettingsConfigurable(private val project: Project) :
         }
       }
     }
+    return dialogPanel
   }
 
   override fun reset() {
-    super.reset()
     settingsModel.isCodyEnabled = codyApplicationSettings.isCodyEnabled
-    settingsModel.isCodyAutocompleteEnabled =
-        codyApplicationSettings.isCodyAutocompleteEnabled
+    settingsModel.isCodyAutocompleteEnabled = codyApplicationSettings.isCodyAutocompleteEnabled
     settingsModel.isCodyDebugEnabled = codyApplicationSettings.isCodyDebugEnabled
-    settingsModel.isCodyVerboseDebugEnabled =
-        codyApplicationSettings.isCodyVerboseDebugEnabled
-    settingsModel.isUrlNotificationDismissed =
-        codyApplicationSettings.isUrlNotificationDismissed
+    settingsModel.isCodyVerboseDebugEnabled = codyApplicationSettings.isCodyVerboseDebugEnabled
+    settingsModel.isUrlNotificationDismissed = codyApplicationSettings.isUrlNotificationDismissed
     settingsModel.defaultBranchName = codyProjectSettings.defaultBranchName
     settingsModel.customRequestHeaders = codyProjectSettings.customRequestHeaders
     settingsModel.remoteUrlReplacements = codyProjectSettings.remoteUrlReplacements
+    dialogPanel.reset()
   }
 
   override fun apply() {
@@ -173,6 +169,7 @@ class NewSettingsConfigurable(private val project: Project) :
     val oldDefaultAccount = defaultAccountHolder.account
     val oldUrl = oldDefaultAccount?.server?.url ?: ""
     val oldAccessToken = oldDefaultAccount?.let { accountManager.findCredentials(it) }
+    val oldAccounts = accountManager.accounts
 
     super.apply()
 
@@ -193,13 +190,10 @@ class NewSettingsConfigurable(private val project: Project) :
     codyProjectSettings.defaultBranchName = settingsModel.defaultBranchName
     codyProjectSettings.remoteUrlReplacements = settingsModel.remoteUrlReplacements
     codyApplicationSettings.isCodyEnabled = settingsModel.isCodyEnabled
-    codyApplicationSettings.isCodyAutocompleteEnabled =
-        settingsModel.isCodyAutocompleteEnabled
+    codyApplicationSettings.isCodyAutocompleteEnabled = settingsModel.isCodyAutocompleteEnabled
     codyApplicationSettings.isCodyDebugEnabled = settingsModel.isCodyDebugEnabled
-    codyApplicationSettings.isCodyVerboseDebugEnabled =
-        settingsModel.isCodyVerboseDebugEnabled
-    codyApplicationSettings.isUrlNotificationDismissed =
-        settingsModel.isUrlNotificationDismissed
+    codyApplicationSettings.isCodyVerboseDebugEnabled = settingsModel.isCodyVerboseDebugEnabled
+    codyApplicationSettings.isUrlNotificationDismissed = settingsModel.isUrlNotificationDismissed
 
     publisher.afterAction(context)
   }

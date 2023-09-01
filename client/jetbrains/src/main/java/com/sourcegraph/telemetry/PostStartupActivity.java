@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import com.sourcegraph.cody.CodyAgentProjectListener;
 import com.sourcegraph.cody.config.CodyApplicationSettings;
+import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsChangeListener;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
@@ -24,8 +25,7 @@ public class PostStartupActivity implements StartupActivity.DumbAware {
     // When no anonymous user ID is set yet, we create a new one and treat this as an installation
     // event.
     // This likely means that the user has never started IntelliJ with our extension before
-    CodyApplicationSettings codyApplicationSettings =
-        CodyApplicationSettings.getInstance();
+    CodyApplicationSettings codyApplicationSettings = CodyApplicationSettings.getInstance();
     if (codyApplicationSettings.getAnonymousUserId() == null) {
       codyApplicationSettings.setAnonymousUserId(generateAnonymousUserId());
     }
@@ -34,7 +34,7 @@ public class PostStartupActivity implements StartupActivity.DumbAware {
         new PluginStateListener() {
           public void install(@NotNull IdeaPluginDescriptor ideaPluginDescriptor) {
             CodyAgentProjectListener.startAgent(project);
-            GraphQlLogger.logInstallEvent(project)
+            GraphQlLogger.logInstallEvent(project, ConfigUtil.getServerPath(project))
                 .thenAccept(
                     wasSuccessful -> {
                       if (wasSuccessful) {
@@ -50,7 +50,7 @@ public class PostStartupActivity implements StartupActivity.DumbAware {
                 .getPluginId()
                 .getIdString()
                 .equals("com.sourcegraph.jetbrains")) {
-              GraphQlLogger.logUninstallEvent(project);
+              GraphQlLogger.logUninstallEvent(project, ConfigUtil.getServerPath(project));
 
               // Clearing this so that we can detect a new installation if the user re-enables the
               // extension.
