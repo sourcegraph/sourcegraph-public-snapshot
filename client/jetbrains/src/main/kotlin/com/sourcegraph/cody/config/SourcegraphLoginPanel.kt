@@ -7,6 +7,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.ui.ValidationInfo
+import com.intellij.openapi.ui.setEmptyState
 import com.intellij.ui.AnimatedIcon
 import com.intellij.ui.components.fields.ExtendableTextComponent
 import com.intellij.ui.components.fields.ExtendableTextField
@@ -24,11 +25,13 @@ internal class SourcegraphLoginPanel(
 ) : Wrapper() {
 
   private val serverTextField = ExtendableTextField(SourcegraphServerPath.DEFAULT_HOST, 0)
+  private val customRequestHeadersField = ExtendableTextField("", 0)
   private var tokenAcquisitionError: ValidationInfo? = null
 
   private lateinit var currentUi: SourcegraphCredentialsUi
   private var tokenUi =
-      SourcegraphTokenCredentialsUi(serverTextField, executorFactory, isAccountUnique)
+      SourcegraphTokenCredentialsUi(
+          serverTextField, customRequestHeadersField, executorFactory, isAccountUnique)
 
   private val progressIcon = AnimatedIcon.Default()
   private val progressExtension = ExtendableTextComponent.Extension { progressIcon }
@@ -42,6 +45,19 @@ internal class SourcegraphLoginPanel(
 
   init {
     applyUi(tokenUi)
+    //      .label("Custom request headers:")
+    //              .comment(
+    //                  """Any custom headers to send with every request to Sourcegraph.<br>
+    //                  |Use any number of pairs: "header1, value1, header2, value2, ...".<br>
+    //                  |Whitespace around commas doesn't matter.
+    //              """
+    //                      .trimMargin(),
+    //                  MAX_LINE_LENGTH_NO_WRAP)
+    //              .horizontalAlign(HorizontalAlign.FILL)
+    //              .bindText(settingsModel::customRequestHeaders)
+    //              .applyToComponent {
+    //                this.setEmptyState("Client-ID, client-one, X-Extra, some metadata")
+    //              }
   }
 
   private fun applyUi(ui: SourcegraphCredentialsUi) {
@@ -58,18 +74,40 @@ internal class SourcegraphLoginPanel(
   fun doValidateAll(): List<ValidationInfo> {
     val uiError =
         DialogValidationUtils.notBlank(serverTextField, "Server url cannot be empty")
-            ?: validateServerPath(serverTextField) ?: currentUi.getValidator().invoke()
+            ?: validateServerPath(serverTextField)
+                ?: validateCustomRequestHeaders(customRequestHeadersField)
+                ?: currentUi.getValidator().invoke()
 
     return listOfNotNull(uiError, tokenAcquisitionError)
   }
 
   private fun validateServerPath(field: JTextField): ValidationInfo? =
       try {
-        SourcegraphServerPath.from(field.text)
+        SourcegraphServerPath.from(field.text, "")
         null
       } catch (e: Exception) {
         ValidationInfo("Invalid server url", field)
       }
+
+  private fun validateCustomRequestHeaders(field: JTextField): ValidationInfo? {
+    if (field.getText().isEmpty()) {
+      return null
+    }
+    val pairs: Array<String> =
+        field.getText().split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+    if (pairs.size % 2 != 0) {
+      return ValidationInfo("Must be a comma-separated list of string pairs", field)
+    }
+    var i = 0
+    while (i < pairs.size) {
+      val headerName = pairs[i].trim { it <= ' ' }
+      if (!headerName.matches("[\\w-]+".toRegex())) {
+        return ValidationInfo("Invalid HTTP header name: $headerName", field)
+      }
+      i += 2
+    }
+    return null
+  }
 
   private fun setBusy(busy: Boolean) {
     serverTextField.apply {
@@ -95,7 +133,8 @@ internal class SourcegraphLoginPanel(
         .errorOnEdt(progressIndicator.modalityState) { setError(it) }
   }
 
-  fun getServer(): SourcegraphServerPath = SourcegraphServerPath.from(serverTextField.text.trim())
+  fun getServer(): SourcegraphServerPath =
+      SourcegraphServerPath.from(serverTextField.text.trim(), customRequestHeadersField.text.trim())
 
   fun setServer(path: String, editable: Boolean) {
     serverTextField.text = path

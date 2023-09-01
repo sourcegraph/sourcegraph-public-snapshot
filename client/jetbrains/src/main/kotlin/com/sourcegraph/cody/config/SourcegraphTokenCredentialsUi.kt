@@ -2,11 +2,14 @@ package com.sourcegraph.cody.config
 
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.ui.ValidationInfo
+import com.intellij.openapi.ui.setEmptyState
 import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.components.fields.ExtendableTextField
+import com.intellij.ui.dsl.builder.MAX_LINE_LENGTH_NO_WRAP
 import com.intellij.ui.layout.ComponentPredicate
 import com.intellij.ui.layout.LayoutBuilder
+import com.intellij.ui.layout.applyToComponent
 import com.sourcegraph.cody.config.DialogValidationUtils.notBlank
 import java.net.UnknownHostException
 import javax.swing.JComponent
@@ -15,6 +18,7 @@ import javax.swing.event.DocumentEvent
 
 internal class SourcegraphTokenCredentialsUi(
     private val serverTextField: ExtendableTextField,
+    private val customRequestHeadersField: ExtendableTextField,
     val factory: SourcegraphApiRequestExecutor.Factory,
     val isAccountUnique: UniqueLoginPredicate
 ) : SourcegraphCredentialsUi() {
@@ -29,11 +33,24 @@ internal class SourcegraphTokenCredentialsUi(
   override fun LayoutBuilder.centerPanel() {
     row("Server: ") { serverTextField(pushX, growX) }
     row("Token: ") { tokenTextField(constraints = arrayOf(pushX, growX)) }
+    row("Custom request headers: ") {
+      customRequestHeadersField(pushX, growX)
+          .comment(
+              """Any custom headers to send with every request to Sourcegraph.<br>
+                  |Use any number of pairs: "header1, value1, header2, value2, ...".<br>
+                  |Whitespace around commas doesn't matter.
+              """
+                  .trimMargin(),
+              MAX_LINE_LENGTH_NO_WRAP)
+          .applyToComponent { this.setEmptyState("Client-ID, client-one, X-Extra, some metadata") }
+    }
   }
 
   override fun getPreferredFocusableComponent(): JComponent = tokenTextField
 
-  override fun getValidator(): Validator = { notBlank(tokenTextField, "Token cannot be empty") }
+  override fun getValidator(): () -> ValidationInfo? = {
+    notBlank(tokenTextField, "Token cannot be empty")
+  }
 
   override fun createExecutor() = factory.create(tokenTextField.text)
 
@@ -109,7 +126,7 @@ private val JTextField.serverValid: ComponentPredicate
 
 private fun JTextField.tryParseServer(): SourcegraphServerPath? =
     try {
-      SourcegraphServerPath.from(text.trim())
+      SourcegraphServerPath.from(text.trim(), "")
     } catch (e: SourcegraphParseException) {
       null
     }

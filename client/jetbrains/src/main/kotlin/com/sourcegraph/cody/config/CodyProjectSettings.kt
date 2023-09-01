@@ -11,7 +11,6 @@ import com.sourcegraph.find.Search
 data class CodyProjectSettings(
     var defaultBranchName: String = "main",
     var remoteUrlReplacements: String = "",
-    var customRequestHeaders: String = "",
     var lastSearchQuery: String? = null,
     var lastSearchCaseSensitive: Boolean = false,
     var lastSearchPatternType: String? = null,
@@ -22,7 +21,6 @@ data class CodyProjectSettings(
   override fun loadState(state: CodyProjectSettings) {
     this.defaultBranchName = state.defaultBranchName
     this.remoteUrlReplacements = state.remoteUrlReplacements
-    this.customRequestHeaders = state.customRequestHeaders
     this.lastSearchQuery = state.lastSearchQuery
     this.lastSearchCaseSensitive = state.lastSearchCaseSensitive
     this.lastSearchPatternType = state.lastSearchPatternType

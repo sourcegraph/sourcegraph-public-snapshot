@@ -26,21 +26,29 @@ class SettingsMigration : StartupActivity, DumbAware {
   private val accountManager = service<SourcegraphAccountManager>()
   override fun runActivity(project: Project) {
     RunOnceUtil.runOnceForProject(project, UUID.randomUUID().toString()) {
-      migrateAccounts(project)
+      val customRequestHeaders = extractCustomRequestHeaders(project)
       migrateProjectSettings(project)
+      migrateAccounts(project, customRequestHeaders)
     }
     RunOnceUtil.runOnceForApp(UUID.randomUUID().toString()) { migrateApplicationSettings() }
   }
 
-  private fun migrateAccounts(
-      project: Project,
-  ) {
+  private fun migrateAccounts(project: Project, customRequestHeaders: String) {
     val defaultAccountHolder = project.service<SourcegraphProjectDefaultAccountHolder>()
     val requestExecutorFactory = SourcegraphApiRequestExecutor.Factory.getInstance()
     val defaultAccountType = ConfigUtil.getDefaultAccountType(project)
-    migrateDotcomAccount(project, defaultAccountType, requestExecutorFactory, defaultAccountHolder)
+    migrateDotcomAccount(
+        project,
+        defaultAccountType,
+        requestExecutorFactory,
+        defaultAccountHolder,
+        customRequestHeaders)
     migrateEnterpriseAccount(
-        project, defaultAccountType, requestExecutorFactory, defaultAccountHolder)
+        project,
+        defaultAccountType,
+        requestExecutorFactory,
+        defaultAccountHolder,
+        customRequestHeaders)
     migrateCodyAccount(defaultAccountType, requestExecutorFactory, defaultAccountHolder)
   }
 
@@ -48,11 +56,12 @@ class SettingsMigration : StartupActivity, DumbAware {
       project: Project,
       accountType: AccountType,
       requestExecutorFactory: SourcegraphApiRequestExecutor.Factory,
-      defaultAccountHolder: SourcegraphProjectDefaultAccountHolder
+      defaultAccountHolder: SourcegraphProjectDefaultAccountHolder,
+      customRequestHeaders: String
   ) {
     val dotcomAccessToken = extractDotcomAccessToken(project)
     if (!dotcomAccessToken.isNullOrEmpty()) {
-      val server = SourcegraphServerPath(ConfigUtil.DOTCOM_URL)
+      val server = SourcegraphServerPath(ConfigUtil.DOTCOM_URL, customRequestHeaders)
       val shouldSetAccountAsDefault = accountType == AccountType.DOTCOM
       if (shouldSetAccountAsDefault) {
         addAsDefaultAccountIfUnique(
@@ -60,7 +69,8 @@ class SettingsMigration : StartupActivity, DumbAware {
             server,
             requestExecutorFactory,
             EmptyProgressIndicator(ModalityState.NON_MODAL),
-            defaultAccountHolder)
+            defaultAccountHolder,
+            customRequestHeaders)
       } else {
         addAccountIfUnique(
             dotcomAccessToken,
@@ -75,12 +85,13 @@ class SettingsMigration : StartupActivity, DumbAware {
       project: Project,
       accountType: AccountType,
       requestExecutorFactory: SourcegraphApiRequestExecutor.Factory,
-      defaultAccountHolder: SourcegraphProjectDefaultAccountHolder
+      defaultAccountHolder: SourcegraphProjectDefaultAccountHolder,
+      customRequestHeaders: String
   ) {
     val enterpriseAccessToken = extractEnterpriseAccessToken(project)
     if (!enterpriseAccessToken.isNullOrEmpty()) {
       val enterpriseUrl = extractEnterpriseUrl(project)
-      runCatching { SourcegraphServerPath.from(enterpriseUrl) }
+      runCatching { SourcegraphServerPath.from(enterpriseUrl, customRequestHeaders) }
           .fold({
             val shouldSetAccountAsDefault = accountType == AccountType.ENTERPRISE
             if (shouldSetAccountAsDefault) {
@@ -111,7 +122,7 @@ class SettingsMigration : StartupActivity, DumbAware {
     val localAppAccessToken = LocalAppManager.getLocalAppAccessToken().orNull()
     if (LocalAppManager.isLocalAppInstalled() && localAppAccessToken != null) {
       val codyUrl = LocalAppManager.getLocalAppUrl()
-      runCatching { SourcegraphServerPath.from(codyUrl) }
+      runCatching { SourcegraphServerPath.from(codyUrl, "") }
           .fold({
             val shouldSetAccountAsDefault = accountType == AccountType.LOCAL_APP
             if (shouldSetAccountAsDefault) {
@@ -314,7 +325,6 @@ class SettingsMigration : StartupActivity, DumbAware {
     val codyProjectSettings = project.service<CodyProjectSettings>()
     codyProjectSettings.defaultBranchName = extractDefaultBranchName(project)
     codyProjectSettings.remoteUrlReplacements = extractRemoteUrlReplacements(project)
-    codyProjectSettings.customRequestHeaders = extractCustomRequestHeaders(project)
   }
 
   private fun addSlashIfNeeded(url: String): String {
@@ -328,15 +338,13 @@ class SettingsMigration : StartupActivity, DumbAware {
     codyApplicationSettings.isCodyAutocompleteEnabled =
         if (codyApplicationService.isCodyAutocompleteEnabled == true) true
         else codyApplicationService.areCodyCompletionsEnabled ?: false
-    codyApplicationSettings.isCodyDebugEnabled =
-        codyApplicationService.isCodyDebugEnabled ?: false
+    codyApplicationSettings.isCodyDebugEnabled = codyApplicationService.isCodyDebugEnabled ?: false
     codyApplicationSettings.isCodyVerboseDebugEnabled =
         codyApplicationService.isCodyVerboseDebugEnabled ?: false
     codyApplicationSettings.isUrlNotificationDismissed =
         codyApplicationService.isUrlNotificationDismissed
     codyApplicationSettings.anonymousUserId = codyApplicationService.anonymousUserId
-    codyApplicationSettings.isInstallEventLogged =
-        codyApplicationService.isInstallEventLogged
+    codyApplicationSettings.isInstallEventLogged = codyApplicationService.isInstallEventLogged
     codyApplicationSettings.lastUpdateNotificationPluginVersion =
         codyApplicationService.lastUpdateNotificationPluginVersion
   }

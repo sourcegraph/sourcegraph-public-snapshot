@@ -7,7 +7,10 @@ import com.sourcegraph.config.ConfigUtil
 import java.util.regex.Pattern
 
 @Tag("server")
-data class SourcegraphServerPath(@Attribute("url") var url: String = "") : ServerPath {
+data class SourcegraphServerPath(
+    @Attribute("url") var url: String = "",
+    @Attribute("customRequestHeaders") var customRequestHeaders: String = ""
+) : ServerPath {
 
   private val GRAPHQL_API_SUFFIX = ".api/graphql"
 
@@ -29,10 +32,10 @@ data class SourcegraphServerPath(@Attribute("url") var url: String = "") : Serve
 
     @Throws(SourcegraphParseException::class)
     @JvmStatic
-    fun from(uri: String): SourcegraphServerPath {
+    fun from(uri: String, customRequestHeaders: String): SourcegraphServerPath {
       val matcher = URL_REGEX.matcher(uri)
       if (!matcher.matches()) throw SourcegraphParseException("Not a valid URL")
-      return SourcegraphServerPath(uri)
+      return SourcegraphServerPath(uri, customRequestHeaders)
     }
   }
 }

@@ -4,7 +4,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.sourcegraph.config.ConfigUtil
 
-data class ServerAuth(val instanceUrl: String, val accessToken: String)
+data class ServerAuth(val instanceUrl: String, val accessToken: String, val customRequestHeaders: String)
 
 object ServerAuthLoader {
 
@@ -15,8 +15,8 @@ object ServerAuthLoader {
     val defaultAccount = defaultAccountHolder.account
     if (defaultAccount != null) {
       val accessToken = sourcegraphAccountManager.findCredentials(defaultAccount) ?: ""
-      return ServerAuth(defaultAccount.server.url, accessToken)
+      return ServerAuth(defaultAccount.server.url, accessToken, defaultAccount.server.customRequestHeaders)
     }
-    return ServerAuth(ConfigUtil.DOTCOM_URL, "")
+    return ServerAuth(ConfigUtil.DOTCOM_URL, "", "")
   }
 }

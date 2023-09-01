@@ -7,7 +7,6 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
-import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.ui.setEmptyState
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.dsl.builder.MAX_LINE_LENGTH_NO_WRAP
@@ -53,42 +52,6 @@ class NewSettingsConfigurable(private val project: Project) :
                 DataManager.registerDataProvider(it.component) { key ->
                   if (SourcegraphAccountsHost.KEY.`is`(key)) accountsModel else null
                 }
-              }
-        }
-        row {
-          textField()
-              .label("Custom request headers:")
-              .comment(
-                  """Any custom headers to send with every request to Sourcegraph.<br>
-                  |Use any number of pairs: "header1, value1, header2, value2, ...".<br>
-                  |Whitespace around commas doesn't matter.
-              """
-                      .trimMargin(),
-                  MAX_LINE_LENGTH_NO_WRAP)
-              .horizontalAlign(HorizontalAlign.FILL)
-              .bindText(settingsModel::customRequestHeaders)
-              .applyToComponent {
-                this.setEmptyState("Client-ID, client-one, X-Extra, some metadata")
-              }
-              .validation {
-                if (it.getText().isEmpty()) {
-                  return@validation null
-                }
-                val pairs: Array<String> =
-                    it.getText().split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-                if (pairs.size % 2 != 0) {
-                  return@validation ValidationInfo(
-                      "Must be a comma-separated list of string pairs", it)
-                }
-                var i = 0
-                while (i < pairs.size) {
-                  val headerName = pairs[i].trim { it <= ' ' }
-                  if (!headerName.matches("[\\w-]+".toRegex())) {
-                    return@validation ValidationInfo("Invalid HTTP header name: $headerName", it)
-                  }
-                  i += 2
-                }
-                return@validation null
               }
         }
       }
@@ -155,7 +118,6 @@ class NewSettingsConfigurable(private val project: Project) :
     settingsModel.isCodyVerboseDebugEnabled = codyApplicationSettings.isCodyVerboseDebugEnabled
     settingsModel.isUrlNotificationDismissed = codyApplicationSettings.isUrlNotificationDismissed
     settingsModel.defaultBranchName = codyProjectSettings.defaultBranchName
-    settingsModel.customRequestHeaders = codyProjectSettings.customRequestHeaders
     settingsModel.remoteUrlReplacements = codyProjectSettings.remoteUrlReplacements
     dialogPanel.reset()
   }
@@ -186,7 +148,6 @@ class NewSettingsConfigurable(private val project: Project) :
             settingsModel.isCodyEnabled,
             settingsModel.isCodyAutocompleteEnabled)
 
-    codyProjectSettings.customRequestHeaders = settingsModel.customRequestHeaders
     codyProjectSettings.defaultBranchName = settingsModel.defaultBranchName
     codyProjectSettings.remoteUrlReplacements = settingsModel.remoteUrlReplacements
     codyApplicationSettings.isCodyEnabled = settingsModel.isCodyEnabled
