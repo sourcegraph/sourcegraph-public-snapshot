@@ -43,7 +43,7 @@ func GetPublicExternalAccountData(ctx context.Context, accountData *extsvc.Accou
 }
 
 // SetExternalAccountData sets the user and token into the external account data blob.
-func SetExternalAccountData(data *extsvc.AccountData, user *User, token *oauth2.Token) error {
+func SetExternalAccountData(data *extsvc.AccountData, user *AuthUser, token *oauth2.Token) error {
 	serializedUser, err := json.Marshal(user)
 	if err != nil {
 		return err
