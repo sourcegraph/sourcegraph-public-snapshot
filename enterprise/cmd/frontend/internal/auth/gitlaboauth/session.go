@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
@@ -40,6 +42,15 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	gUser, err := UserFromContext(ctx)
 	if err != nil {
 		return nil, "Could not read GitLab user from callback request.", errors.Wrap(err, "could not read user from context")
+	}
+
+	if envvar.SourcegraphDotComMode() {
+
+		twoWeeksAgo := time.Now().Add(-13 * 24 * time.Hour)
+
+		if gUser.CreatedAt.After(twoWeeksAgo) {
+			return nil, "User account was created less than 14 days ago", errors.New("user account too new")
+		}
 	}
 
 	login, err := auth.NormalizeUsername(gUser.Username)

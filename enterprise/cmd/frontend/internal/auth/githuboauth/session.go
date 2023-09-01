@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/dghubble/gologin/github"
 	"github.com/inconshreveable/log15"
@@ -14,6 +15,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
@@ -45,6 +47,7 @@ func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
 	ghUser, err := github.UserFromContext(ctx)
+
 	if ghUser == nil {
 		if err != nil {
 			err = errors.Wrap(err, "could not read user from context")
@@ -52,6 +55,15 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			err = errors.New("could not read user from context")
 		}
 		return nil, "Could not read GitHub user from callback request.", err
+	}
+
+	if envvar.SourcegraphDotComMode() {
+
+		twoWeeksAgo := time.Now().Add(-13 * 24 * time.Hour)
+
+		if ghUser.CreatedAt.After(twoWeeksAgo) {
+			return nil, "User account was created less than 14 days ago", errors.New("user account too new")
+		}
 	}
 
 	login, err := auth.NormalizeUsername(deref(ghUser.Login))
