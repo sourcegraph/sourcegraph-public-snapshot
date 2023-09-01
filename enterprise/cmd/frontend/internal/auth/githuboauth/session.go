@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/dghubble/gologin/github"
 	"github.com/inconshreveable/log15"
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	esauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -45,6 +47,7 @@ func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
 	ghUser, err := github.UserFromContext(ctx)
+
 	if ghUser == nil {
 		if err != nil {
 			err = errors.Wrap(err, "could not read user from context")
@@ -52,6 +55,15 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			err = errors.New("could not read user from context")
 		}
 		return nil, "Could not read GitHub user from callback request.", err
+	}
+	exp := conf.ExperimentalFeatures()
+	if exp.MinExtAccountAge > 0 {
+
+		twoWeeksAgo := time.Now().Add(time.Duration(-exp.MinExtAccountAge) * 24 * time.Hour)
+
+		if ghUser.CreatedAt.After(twoWeeksAgo) {
+			return nil, "User account was created less than 14 days ago", errors.New("user account too new")
+		}
 	}
 
 	login, err := auth.NormalizeUsername(deref(ghUser.Login))

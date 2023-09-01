@@ -857,6 +857,8 @@ type ExperimentalFeatures struct {
 	InsightsDataRetention *bool `json:"insightsDataRetention,omitempty"`
 	// JvmPackages description: Allow adding JVM package host connections
 	JvmPackages string `json:"jvmPackages,omitempty"`
+	// MinExtAccountAge description: The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com
+	MinExtAccountAge int `json:"minExtAccountAge,omitempty"`
 	// NpmPackages description: Allow adding npm package code host connections
 	NpmPackages string `json:"npmPackages,omitempty"`
 	// Pagure description: Allow adding Pagure code host connections
@@ -937,6 +939,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "insightsBackfillerV2")
 	delete(m, "insightsDataRetention")
 	delete(m, "jvmPackages")
+	delete(m, "minExtAccountAge")
 	delete(m, "npmPackages")
 	delete(m, "pagure")
 	delete(m, "passwordPolicy")
