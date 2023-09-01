@@ -29,7 +29,7 @@ type AuthUser struct {
 	AvatarURL  string     `json:"avatar_url"`
 	WebURL     string     `json:"web_url"`
 	Identities []Identity `json:"identities"`
-	CreatedAt  time.Time  `json:"created_at"`
+	CreatedAt  time.Time  `json:"created_at,omitempty"`
 }
 
 type Identity struct {

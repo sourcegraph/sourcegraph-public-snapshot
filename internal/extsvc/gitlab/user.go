@@ -12,9 +12,9 @@ import (
 
 // GetExternalAccountData returns the deserialized user and token from the external account data
 // JSON blob in a typesafe way.
-func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr *User, tok *oauth2.Token, err error) {
+func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr *AuthUser, tok *oauth2.Token, err error) {
 	if data.Data != nil {
-		usr, err = encryption.DecryptJSON[User](ctx, data.Data)
+		usr, err = encryption.DecryptJSON[AuthUser](ctx, data.Data)
 		if err != nil {
 			return nil, nil, err
 		}
