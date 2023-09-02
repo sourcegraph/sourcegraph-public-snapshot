@@ -46,7 +46,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 
 	dc := conf.Get().Dotcom
 
-	if dc.MinimumExternalAccountAge > 0 {
+	if dc != nil && dc.MinimumExternalAccountAge > 0 {
 
 		earliestValidCreationDate := time.Now().Add(time.Duration(-dc.MinimumExternalAccountAge) * 24 * time.Hour)
 
