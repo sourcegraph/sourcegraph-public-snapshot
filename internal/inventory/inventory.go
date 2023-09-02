@@ -129,6 +129,10 @@ func countLines(r io.Reader, buf []byte) (lineCount int, byteCount int, err erro
 // GetLanguageByFilename returns the guessed language for the named file (and
 // safe == true if this is very likely to be correct).
 func GetLanguageByFilename(name string) (language string, safe bool) {
+	lang, safe := enry.GetLanguageByFilename(name)
+	if lang != "" {
+		return lang, safe
+	}
 	return enry.GetLanguageByExtension(name)
 }
 
