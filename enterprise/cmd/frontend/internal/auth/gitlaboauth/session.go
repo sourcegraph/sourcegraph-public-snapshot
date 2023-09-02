@@ -44,14 +44,14 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, "Could not read GitLab user from callback request.", errors.Wrap(err, "could not read user from context")
 	}
 
-	exp := conf.ExperimentalFeatures()
+	dc := conf.Get().Dotcom
 
-	if exp.MinExtAccountAge > 0 {
+	if dc != nil && dc.MinimumExternalAccountAge > 0 {
 
-		twoWeeksAgo := time.Now().Add(time.Duration(-exp.MinExtAccountAge) * 24 * time.Hour)
+		earliestValidCreationDate := time.Now().Add(time.Duration(-dc.MinimumExternalAccountAge) * 24 * time.Hour)
 
-		if gUser.CreatedAt.After(twoWeeksAgo) {
-			return nil, "User account was created less than 14 days ago", errors.New("user account too new")
+		if gUser.CreatedAt.After(earliestValidCreationDate) {
+			return nil, fmt.Sprintf("User account was created less than %d days ago", dc.MinimumExternalAccountAge), errors.New("user account too new")
 		}
 	}
 

@@ -56,13 +56,14 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		}
 		return nil, "Could not read GitHub user from callback request.", err
 	}
-	exp := conf.ExperimentalFeatures()
-	if exp.MinExtAccountAge > 0 {
+	dc := conf.Get().Dotcom
 
-		twoWeeksAgo := time.Now().Add(time.Duration(-exp.MinExtAccountAge) * 24 * time.Hour)
+	if dc != nil && dc.MinimumExternalAccountAge > 0 {
 
-		if ghUser.CreatedAt.After(twoWeeksAgo) {
-			return nil, "User account was created less than 14 days ago", errors.New("user account too new")
+		earliestValidCreationDate := time.Now().Add(time.Duration(-dc.MinimumExternalAccountAge) * 24 * time.Hour)
+
+		if ghUser.CreatedAt.After(earliestValidCreationDate) {
+			return nil, fmt.Sprintf("User account was created less than %d days ago", dc.MinimumExternalAccountAge), errors.New("user account too new")
 		}
 	}
 
