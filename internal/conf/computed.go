@@ -808,6 +808,163 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	return computedConfig
 }
 
+// GetAutocompleteConfig evaluates a complete autocomplete configuration based on
+// site configuration. The configuration may be nil if it is disabled.
+func GetAutocompleteConfig(siteConfig schema.SiteConfiguration) (c *conftypes.AutocompleteConfig) {
+	// If cody is disabled, don't use autocomplete.
+	if !codyEnabled(siteConfig) {
+		return nil
+	}
+
+	// Additionally, completions in App are disabled if there is no dotcom auth token
+	// and the user hasn't provided their own api token.
+	if deploy.IsApp() {
+		if (siteConfig.App == nil || len(siteConfig.App.DotcomAuthToken) == 0) &&
+			((siteConfig.Completions == nil && siteConfig.Autocomplete == nil) || siteConfig.Completions.AccessToken == "") {
+			return nil
+		}
+	}
+
+	// completionsConfig contains the fallback values
+	completionsConfig := GetCompletionsConfig(siteConfig)
+
+	autocompleteConfig := siteConfig.Autocomplete
+	// If no completions configuration is set at all, but cody is enabled, assume
+	// a default configuration.
+	if autocompleteConfig == nil {
+		// if there is not autocomplete config and no completions config it must be disabled
+		if completionsConfig == nil {
+			return nil
+		}
+		autocompleteConfig = &schema.Autocomplete{
+			Provider: string(conftypes.CompletionsProviderNameSourcegraph),
+			Model:    "anthropic/claude-instant-1",
+		}
+	}
+
+	// If no provider is configured, we assume the Sourcegraph provider. Prior
+	// to provider becoming an optional field, provider was required, so unset
+	// provider is definitely with the understanding that the Sourcegraph
+	// provider is the default. Since this is new, we also enforce that the new
+	// CodyEnabled config is set (instead of relying on backcompat)
+	if autocompleteConfig.Provider == "" {
+		if !newCodyEnabled(siteConfig) {
+			return nil
+		}
+		autocompleteConfig.Provider = string(conftypes.CompletionsProviderNameSourcegraph)
+	}
+
+	// If ChatModel is not set, fall back to the deprecated Model field.
+	// Note: It might also be empty.
+	if autocompleteConfig.Model == "" {
+		autocompleteConfig.Model = completionsConfig.CompletionModel
+	}
+
+	if autocompleteConfig.Provider == string(conftypes.CompletionsProviderNameSourcegraph) {
+		// If no endpoint is configured, use a default value.
+		if autocompleteConfig.Endpoint == "" {
+			autocompleteConfig.Endpoint = "https://cody-gateway.sourcegraph.com"
+		}
+
+		// Set the access token, either use the configured one, or generate one for the platform.
+		autocompleteConfig.AccessToken = getSourcegraphProviderAccessToken(completionsConfig.AccessToken, siteConfig)
+		// If we weren't able to generate an access token of some sort, authing with
+		// Cody Gateway is not possible and we cannot use completions.
+		if autocompleteConfig.AccessToken == "" {
+			return nil
+		}
+
+		// Set a default completions model.
+		if autocompleteConfig.Model == "" {
+			autocompleteConfig.Model = "anthropic/claude-instant-1"
+		}
+	} else if autocompleteConfig.Provider == string(conftypes.CompletionsProviderNameOpenAI) {
+		// If no endpoint is configured, use a default value.
+		if autocompleteConfig.Endpoint == "" {
+			autocompleteConfig.Endpoint = "https://api.openai.com/v1/chat/completions"
+		}
+
+		// If not access token is set, we cannot talk to OpenAI. Bail.
+		if autocompleteConfig.AccessToken == "" {
+			return nil
+		}
+
+		// Set a default completions model.
+		if autocompleteConfig.Model == "" {
+			autocompleteConfig.Model = "gpt-3.5-turbo"
+		}
+	} else if autocompleteConfig.Provider == string(conftypes.CompletionsProviderNameAnthropic) {
+		// If no endpoint is configured, use a default value.
+		if autocompleteConfig.Endpoint == "" {
+			autocompleteConfig.Endpoint = "https://api.anthropic.com/v1/complete"
+		}
+
+		// If not access token is set, we cannot talk to Anthropic. Bail.
+		if autocompleteConfig.AccessToken == "" {
+			return nil
+		}
+
+		// Set a default completions model.
+		if autocompleteConfig.Model == "" {
+			autocompleteConfig.Model = "claude-instant-1"
+		}
+	} else if autocompleteConfig.Provider == string(conftypes.CompletionsProviderNameAzureOpenAI) {
+		// If no endpoint is configured, this provider is misconfigured.
+		if autocompleteConfig.Endpoint == "" {
+			return nil
+		}
+
+		// If not access token is set, we cannot talk to Azure OpenAI. Bail.
+		if autocompleteConfig.AccessToken == "" {
+			return nil
+		}
+
+		// If not completions model is set, we cannot talk to Azure OpenAI. Bail.
+		if autocompleteConfig.Model == "" {
+			return nil
+		}
+	} else if autocompleteConfig.Provider == string(conftypes.CompletionsProviderNameFireworks) {
+		// If no endpoint is configured, use a default value.
+		if autocompleteConfig.Endpoint == "" {
+			autocompleteConfig.Endpoint = "https://api.fireworks.ai/inference/v1/completions"
+		}
+
+		// If not access token is set, we cannot talk to Fireworks. Bail.
+		if autocompleteConfig.AccessToken == "" {
+			return nil
+		}
+
+		// Set a default completions model.
+		if autocompleteConfig.Model == "" {
+			autocompleteConfig.Model = "accounts/fireworks/models/starcoder-7b-w8a16"
+		}
+	}
+
+	// Make sure models are always treated case-insensitive.
+	autocompleteConfig.Model = strings.ToLower(autocompleteConfig.Model)
+
+	// If after trying to set default we still have not all models configured, completions are
+	// not available.
+	if autocompleteConfig.Model == "" {
+		return nil
+	}
+
+	if autocompleteConfig.ModelMaxTokens == 0 {
+		autocompleteConfig.ModelMaxTokens = defaultMaxPromptTokens(conftypes.CompletionsProviderName(autocompleteConfig.Provider), autocompleteConfig.Model)
+	}
+
+	computedConfig := &conftypes.AutocompleteConfig{
+		Provider:          conftypes.CompletionsProviderName(autocompleteConfig.Provider),
+		AccessToken:       autocompleteConfig.AccessToken,
+		Model:             autocompleteConfig.Model,
+		ModelMaxTokens:    autocompleteConfig.ModelMaxTokens,
+		Endpoint:          autocompleteConfig.Endpoint,
+		PerUserDailyLimit: autocompleteConfig.PerUserDailyLimit,
+	}
+
+	return computedConfig
+}
+
 const embeddingsMaxFileSizeBytes = 1000000
 
 // GetEmbeddingsConfig evaluates a complete embeddings configuration based on

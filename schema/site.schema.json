@@ -2953,14 +2953,6 @@
       "description": "Configuration for the autocomplete service.",
       "type": "object",
       "properties": {
-        "enabled": {
-          "description": "Toggles whether chat service is enabled.",
-          "type": "boolean",
-          "!go": {
-            "pointer": true
-          },
-          "default": true
-        },
         "model": {
           "description": "The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.",
           "type": "string"

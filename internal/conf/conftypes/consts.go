@@ -21,6 +21,16 @@ type CompletionsConfig struct {
 
 type CompletionsProviderName string
 
+type AutocompleteConfig struct {
+	Model          string
+	ModelMaxTokens int
+
+	AccessToken       string
+	Provider          CompletionsProviderName
+	Endpoint          string
+	PerUserDailyLimit int
+}
+
 const (
 	CompletionsProviderNameAnthropic   CompletionsProviderName = "anthropic"
 	CompletionsProviderNameOpenAI      CompletionsProviderName = "openai"
