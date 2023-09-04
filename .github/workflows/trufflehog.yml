@@ -12,7 +12,7 @@ jobs:
       - name: Install TruffleHog
         run: |
           wget -q https://github.com/trufflesecurity/trufflehog/releases/download/v3.54.3/trufflehog_3.54.3_linux_amd64.tar.gz -o trufflehog.tar.gz
-          sudo tar xzf trufflehog_3.54.3_linux_amd64.tar.gz --directory=/usr/local/bin/ trufflehog
+          sudo tar xzf trufflehog.tar.gz --directory=/usr/local/bin/ trufflehog
 
       - name: Run TruffleHog
         id: scan
