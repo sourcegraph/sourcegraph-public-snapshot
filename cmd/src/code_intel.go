@@ -16,7 +16,7 @@ Usage:
 
 The commands are:
 
-    upload     uploads an LSIF dump file
+    upload     uploads a SCIP or LSIF index
 
 Use "src code-intel [command] -h" for more information about a command.
 `
