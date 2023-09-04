@@ -24,23 +24,28 @@ import (
 func init() {
 	usage := `
 Examples:
+  Before running any of these, first use src auth to authenticate.
+  Alternately, use the SRC_ACCESS_TOKEN environment variable for
+  individual src-cli invocations. 
 
-  Upload a SCIP index with explicit repo, commit, and upload files:
+  If run from within the project itself, src-cli will infer various
+  flags based on git metadata.
 
-    	$ src code-intel upload -repo=FOO -commit=BAR -file=index.scip
+        $ src code-intel upload # uploads ./index.scip
+
+  If src-cli is invoked outside the project root, or if you're using
+  a version control system other than git, specify flags explicitly:
+
+    	$ src code-intel upload -root='' -repo=FOO -commit=BAR -file=index.scip
 
   Upload a SCIP index for a subproject:
 
     	$ src code-intel upload -root=cmd/
 
-  Upload a SCIP index when lsifEnforceAuth is enabled:
+  Upload a SCIP index when lsif.enforceAuth is enabled in site settings:
 
     	$ src code-intel upload -github-token=BAZ, or
     	$ src code-intel upload -gitlab-token=BAZ
-
-  Upload an LSIF index when the LSIF indexer does not not declare a tool name.
-
-    	$ src code-intel upload -indexer=lsif-elixir
 
   For any of these commands, an LSIF index (default name: dump.lsif) can be
   used instead of a SCIP index (default name: index.scip).
