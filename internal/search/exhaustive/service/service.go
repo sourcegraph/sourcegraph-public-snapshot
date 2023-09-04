@@ -108,7 +108,7 @@ func (s *Service) CreateSearchJob(ctx context.Context, query string) (_ *types.E
 }
 
 func (s *Service) GetSearchJob(ctx context.Context, id int64) (_ *types.ExhaustiveSearchJob, err error) {
-	ctx, _, endObservation := s.operations.createSearchJob.With(ctx, &err, opAttrs(
+	ctx, _, endObservation := s.operations.getSearchJob.With(ctx, &err, opAttrs(
 		attribute.Int64("id", id),
 	))
 	defer endObservation(1, observation.Args{})
