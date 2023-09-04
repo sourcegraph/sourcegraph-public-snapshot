@@ -61,6 +61,7 @@ func opAttrs(attrs ...attribute.KeyValue) observation.Args {
 type operations struct {
 	createExhaustiveSearchJob *observation.Operation
 	getExhaustiveSearchJob    *observation.Operation
+	listExhaustiveSearchJobs  *observation.Operation
 
 	createExhaustiveSearchRepoJob *observation.Operation
 
@@ -90,6 +91,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 	return &operations{
 		createExhaustiveSearchJob: op("CreateExhaustiveSearchJob"),
 		getExhaustiveSearchJob:    op("GetExhaustiveSearchJob"),
+		listExhaustiveSearchJobs:  op("ListExhaustiveSearchJobs"),
 
 		createExhaustiveSearchRepoJob: op("CreateExhaustiveSearchRepoJob"),
 

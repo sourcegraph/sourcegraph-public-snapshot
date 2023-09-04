@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -134,6 +135,44 @@ const getExhaustiveSearchJobQueryFmtStr = `
 SELECT %s FROM exhaustive_search_jobs
 WHERE (%s)
 LIMIT 1
+`
+
+func (s *Store) ListExhaustiveSearchJobs(ctx context.Context) (jobs []*types.ExhaustiveSearchJob, err error) {
+	ctx, _, endObservation := s.operations.listExhaustiveSearchJobs.With(ctx, &err, observation.Args{})
+	defer func() {
+		endObservation(1, opAttrs(attribute.Int("length", len(jobs))))
+	}()
+
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return nil, errors.New("can only list jobs for an authenticated user")
+	}
+
+	q := sqlf.Sprintf(
+		listExhaustiveSearchJobsQueryFmtStr,
+		sqlf.Join(exhaustiveSearchJobColumns, ", "),
+		actor.UID,
+	)
+
+	rows, err := s.Store.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		job, err := scanExhaustiveSearchJob(rows)
+		if err != nil {
+			return nil, err
+		}
+		jobs = append(jobs, job)
+	}
+
+	return jobs, rows.Err()
+}
+
+const listExhaustiveSearchJobsQueryFmtStr = `
+SELECT %s FROM exhaustive_search_jobs
+WHERE initiator_id = %d
 `
 
 func scanExhaustiveSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, error) {
