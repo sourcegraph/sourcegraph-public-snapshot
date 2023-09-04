@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class EditorUtils {
 
+  public static final String VIM_EXIT_INSERT_MODE_ACTION = "VimInsertExitModeAction";
+
   /**
    * Returns a new String, using the given indentation settings to determine the tab size.
    *
