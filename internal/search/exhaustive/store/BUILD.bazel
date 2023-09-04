@@ -12,6 +12,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/auth",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbutil",
@@ -22,6 +23,7 @@ go_library(
         "//lib/errors",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -39,7 +41,9 @@ go_test(
     ],
     deps = [
         ":store",
+        "//internal/actor",
         "//internal/api",
+        "//internal/auth",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",

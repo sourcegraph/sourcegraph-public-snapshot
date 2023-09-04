@@ -9,6 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 )
 
 // Init initializes the given enterpriseServices to include the required resolvers for search.
@@ -20,7 +22,10 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	enterpriseServices.SearchJobsResolver = resolvers.New(observationCtx.Logger, db)
+	store := store.New(db, observationCtx)
+	svc := service.New(observationCtx, store)
+
+	enterpriseServices.SearchJobsResolver = resolvers.New(observationCtx.Logger, db, svc)
 
 	return nil
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -15,17 +16,22 @@ import (
 type Resolver struct {
 	logger log.Logger
 	db     database.DB
+	svc    *service.Service
 }
 
 // New returns a new Resolver whose store uses the given database
-func New(logger log.Logger, db database.DB) graphqlbackend.SearchJobsResolver {
-	return &Resolver{logger: logger, db: db}
+func New(logger log.Logger, db database.DB, svc *service.Service) graphqlbackend.SearchJobsResolver {
+	return &Resolver{logger: logger, db: db, svc: svc}
 }
 
 var _ graphqlbackend.SearchJobsResolver = &Resolver{}
 
 func (r *Resolver) CreateSearchJob(ctx context.Context, args *graphqlbackend.CreateSearchJobArgs) (graphqlbackend.SearchJobResolver, error) {
-	return nil, errors.New("not implemented")
+	job, err := r.svc.CreateSearchJob(ctx, args.Query)
+	if err != nil {
+		return nil, err
+	}
+	return searchJobResolver{Job: job, db: r.db}, nil
 }
 
 func (r *Resolver) CancelSearchJob(ctx context.Context, args *graphqlbackend.CancelSearchJobArgs) (*graphqlbackend.EmptyResponse, error) {
@@ -49,5 +55,13 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 }
 
 func (r *Resolver) searchJobByID(ctx context.Context, id graphql.ID) (graphqlbackend.SearchJobResolver, error) {
-	return &searchJobResolver{}, nil
+	jobID, err := unmarshalSearchJobID(id)
+	if err != nil {
+		return nil, err
+	}
+	job, err := r.svc.GetSearchJob(ctx, jobID)
+	if err != nil {
+		return nil, err
+	}
+	return searchJobResolver{Job: job, db: r.db}, nil
 }
