@@ -12,6 +12,7 @@ import com.intellij.ui.components.fields.ExtendableTextComponent
 import com.intellij.ui.components.fields.ExtendableTextField
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.layout.LayoutBuilder
+import com.sourcegraph.cody.config.DialogValidationUtils.notBlank
 import java.util.concurrent.CompletableFuture
 import javax.swing.JComponent
 import javax.swing.JTextField
@@ -59,7 +60,7 @@ internal class SourcegraphLoginPanel(
 
   fun doValidateAll(): List<ValidationInfo> {
     val uiError =
-        DialogValidationUtils.notBlank(serverTextField, "Server url cannot be empty")
+        notBlank(serverTextField, "Server url cannot be empty")
             ?: validateServerPath(serverTextField)
                 ?: validateCustomRequestHeaders(customRequestHeadersField)
                 ?: currentUi.getValidator().invoke()

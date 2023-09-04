@@ -8,7 +8,9 @@ import com.intellij.ui.components.fields.ExtendableTextField
 import com.intellij.ui.dsl.builder.MAX_LINE_LENGTH_NO_WRAP
 import com.intellij.ui.layout.LayoutBuilder
 import com.intellij.ui.layout.applyToComponent
+import com.sourcegraph.cody.config.DialogValidationUtils.custom
 import com.sourcegraph.cody.config.DialogValidationUtils.notBlank
+import com.sourcegraph.common.AuthorizationUtil
 import java.net.UnknownHostException
 import javax.swing.JComponent
 
@@ -46,6 +48,9 @@ internal class SourcegraphTokenCredentialsUi(
 
   override fun getValidator(): () -> ValidationInfo? = {
     notBlank(tokenTextField, "Token cannot be empty")
+        ?: custom(tokenTextField, "Invalid access token") {
+          AuthorizationUtil.isValidAccessToken(tokenTextField.text)
+        }
   }
 
   override fun createExecutor() = factory.create(tokenTextField.text)
