@@ -23,13 +23,7 @@
         <projectService serviceImplementation="com.sourcegraph.config.SettingsChangeListener"/>
         <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyApplicationSettings"/>
         <applicationService serviceImplementation="com.sourcegraph.config.CodyApplicationService"/>
-<!--        <projectConfigurable-->
-<!--            parentId="tools"-->
-<!--            instance="com.sourcegraph.config.SettingsConfigurable"-->
-<!--            id="com.sourcegraph.config.SettingsConfigurable"-->
-<!--            displayName="Sourcegraph Cody + Code Search"-->
-<!--            nonDefaultProject="false"-->
-<!--        />-->
+        <applicationService serviceImplementation="com.sourcegraph.cody.config.SourcegraphAuthenticationManager"/>
 
         <projectConfigurable
             parentId="tools"

@@ -6,14 +6,12 @@ import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.cody.agent.ExtensionConfiguration;
-import com.sourcegraph.cody.config.AccountType;
 import com.sourcegraph.cody.config.CodyApplicationSettings;
-import com.sourcegraph.cody.config.DefaultAccountLoader;
 import com.sourcegraph.cody.config.ServerAuth;
 import com.sourcegraph.cody.config.ServerAuthLoader;
 import com.sourcegraph.cody.config.SourcegraphAccount;
+import com.sourcegraph.cody.config.SourcegraphAuthenticationManager;
 import com.sourcegraph.cody.config.SourcegraphServerPath;
-import com.sourcegraph.cody.localapp.LocalAppManager;
 import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.Contract;
@@ -54,20 +52,10 @@ public class ConfigUtil {
   }
 
   @NotNull
-  public static AccountType getDefaultAccountType(@NotNull Project project) {
-    SourcegraphAccount defaultAccount = DefaultAccountLoader.loadDefaultAccount(project);
-    if (defaultAccount != null) {
-      return defaultAccount.getAccountType();
-    } else {
-      return LocalAppManager.isLocalAppInstalled() && LocalAppManager.isPlatformSupported()
-          ? AccountType.LOCAL_APP
-          : AccountType.DOTCOM;
-    }
-  }
-
-  @NotNull
   public static SourcegraphServerPath getServerPath(@NotNull Project project) {
-    SourcegraphAccount defaultAccount = DefaultAccountLoader.loadDefaultAccount(project);
+    SourcegraphAccount defaultAccount =
+        SourcegraphAuthenticationManager.getInstance().getDefaultAccount(project);
+    ;
     return defaultAccount != null
         ? defaultAccount.getServer()
         : SourcegraphServerPath.from(DOTCOM_URL, "");

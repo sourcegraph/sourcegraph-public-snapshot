@@ -36,6 +36,8 @@ internal abstract class BaseLoginDialog(
   fun setToken(token: String?) = loginPanel.setToken(token)
   fun setLogin(login: String?) = loginPanel.setLogin(login, false)
   fun setServer(path: String, editable: Boolean) = loginPanel.setServer(path, editable)
+  fun setCustomRequestHeaders(customRequestHeaders: String) =
+      loginPanel.setCustomRequestHeaders(customRequestHeaders)
 
   fun setError(exception: Throwable) {
     loginPanel.setError(exception)

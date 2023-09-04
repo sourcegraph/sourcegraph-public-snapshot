@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture
 
 class SettingsMigration : StartupActivity, DumbAware {
 
-  private val accountManager = service<SourcegraphAccountManager>()
+  private val sourcegraphAuthenticationManager = SourcegraphAuthenticationManager.getInstance()
   override fun runActivity(project: Project) {
     RunOnceUtil.runOnceForProject(project, UUID.randomUUID().toString()) {
       val customRequestHeaders = extractCustomRequestHeaders(project)
@@ -34,42 +34,30 @@ class SettingsMigration : StartupActivity, DumbAware {
   }
 
   private fun migrateAccounts(project: Project, customRequestHeaders: String) {
-    val defaultAccountHolder = project.service<SourcegraphProjectDefaultAccountHolder>()
     val requestExecutorFactory = SourcegraphApiRequestExecutor.Factory.getInstance()
-    val defaultAccountType = ConfigUtil.getDefaultAccountType(project)
-    migrateDotcomAccount(
-        project,
-        defaultAccountType,
-        requestExecutorFactory,
-        defaultAccountHolder,
-        customRequestHeaders)
-    migrateEnterpriseAccount(
-        project,
-        defaultAccountType,
-        requestExecutorFactory,
-        defaultAccountHolder,
-        customRequestHeaders)
-    migrateCodyAccount(defaultAccountType, requestExecutorFactory, defaultAccountHolder)
+    migrateDotcomAccount(project, requestExecutorFactory, customRequestHeaders)
+    migrateEnterpriseAccount(project, requestExecutorFactory, customRequestHeaders)
+    migrateCodyAccount(project, requestExecutorFactory)
   }
 
   private fun migrateDotcomAccount(
       project: Project,
-      accountType: AccountType,
       requestExecutorFactory: SourcegraphApiRequestExecutor.Factory,
-      defaultAccountHolder: SourcegraphProjectDefaultAccountHolder,
       customRequestHeaders: String
   ) {
     val dotcomAccessToken = extractDotcomAccessToken(project)
     if (!dotcomAccessToken.isNullOrEmpty()) {
       val server = SourcegraphServerPath(ConfigUtil.DOTCOM_URL, customRequestHeaders)
-      val shouldSetAccountAsDefault = accountType == AccountType.DOTCOM
+      val shouldSetAccountAsDefault =
+          SourcegraphAuthenticationManager.getInstance().getDefaultAccountType(project) ==
+              AccountType.DOTCOM
       if (shouldSetAccountAsDefault) {
         addAsDefaultAccountIfUnique(
+            project,
             dotcomAccessToken,
             server,
             requestExecutorFactory,
             EmptyProgressIndicator(ModalityState.NON_MODAL),
-            defaultAccountHolder,
             customRequestHeaders)
       } else {
         addAccountIfUnique(
@@ -83,9 +71,7 @@ class SettingsMigration : StartupActivity, DumbAware {
 
   private fun migrateEnterpriseAccount(
       project: Project,
-      accountType: AccountType,
       requestExecutorFactory: SourcegraphApiRequestExecutor.Factory,
-      defaultAccountHolder: SourcegraphProjectDefaultAccountHolder,
       customRequestHeaders: String
   ) {
     val enterpriseAccessToken = extractEnterpriseAccessToken(project)
@@ -93,14 +79,16 @@ class SettingsMigration : StartupActivity, DumbAware {
       val enterpriseUrl = extractEnterpriseUrl(project)
       runCatching { SourcegraphServerPath.from(enterpriseUrl, customRequestHeaders) }
           .fold({
-            val shouldSetAccountAsDefault = accountType == AccountType.ENTERPRISE
+            val shouldSetAccountAsDefault =
+                SourcegraphAuthenticationManager.getInstance().getDefaultAccountType(project) ==
+                    AccountType.ENTERPRISE
             if (shouldSetAccountAsDefault) {
               addAsDefaultAccountIfUnique(
+                  project,
                   enterpriseAccessToken,
                   it,
                   requestExecutorFactory,
-                  EmptyProgressIndicator(ModalityState.NON_MODAL),
-                  defaultAccountHolder)
+                  EmptyProgressIndicator(ModalityState.NON_MODAL))
             } else {
               addAccountIfUnique(
                   enterpriseAccessToken,
@@ -115,23 +103,24 @@ class SettingsMigration : StartupActivity, DumbAware {
   }
 
   private fun migrateCodyAccount(
-      accountType: AccountType,
-      requestExecutorFactory: SourcegraphApiRequestExecutor.Factory,
-      defaultAccountHolder: SourcegraphProjectDefaultAccountHolder
+      project: Project,
+      requestExecutorFactory: SourcegraphApiRequestExecutor.Factory
   ) {
     val localAppAccessToken = LocalAppManager.getLocalAppAccessToken().orNull()
     if (LocalAppManager.isLocalAppInstalled() && localAppAccessToken != null) {
       val codyUrl = LocalAppManager.getLocalAppUrl()
       runCatching { SourcegraphServerPath.from(codyUrl, "") }
           .fold({
-            val shouldSetAccountAsDefault = accountType == AccountType.LOCAL_APP
+            val shouldSetAccountAsDefault =
+                SourcegraphAuthenticationManager.getInstance().getDefaultAccountType(project) ==
+                    AccountType.LOCAL_APP
             if (shouldSetAccountAsDefault) {
               addAsDefaultAccountIfUnique(
+                  project,
                   localAppAccessToken,
                   it,
                   requestExecutorFactory,
                   EmptyProgressIndicator(ModalityState.NON_MODAL),
-                  defaultAccountHolder,
                   LocalAppManager.LOCAL_APP_ID)
             } else {
               addAccountIfUnique(
@@ -160,17 +149,17 @@ class SettingsMigration : StartupActivity, DumbAware {
   }
 
   private fun addAsDefaultAccountIfUnique(
+      project: Project,
       accessToken: String,
       server: SourcegraphServerPath,
       requestExecutorFactory: SourcegraphApiRequestExecutor.Factory,
       progressIndicator: EmptyProgressIndicator,
-      projectDefaultAccountHolder: SourcegraphProjectDefaultAccountHolder,
       id: String = UUID.randomUUID().toString(),
   ) {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
       val sourcegraphAccount = SourcegraphAccount.create(it.name, server, id)
       addAccount(sourcegraphAccount, accessToken)
-      projectDefaultAccountHolder.account = sourcegraphAccount
+      SourcegraphAuthenticationManager.getInstance().setDefaultAccount(project, sourcegraphAccount)
     }
   }
 
@@ -196,14 +185,13 @@ class SettingsMigration : StartupActivity, DumbAware {
 
   private fun addAccount(sourcegraphAccount: SourcegraphAccount, token: String) {
     if (isAccountUnique(sourcegraphAccount)) {
-      accountManager.updateAccount(sourcegraphAccount, token)
+      sourcegraphAuthenticationManager.updateAccountToken(sourcegraphAccount, token)
     }
   }
 
   private fun isAccountUnique(sourcegraphAccount: SourcegraphAccount): Boolean {
-    return accountManager.accounts.none {
-      it.name == sourcegraphAccount.name && it.server == sourcegraphAccount.server
-    }
+    return sourcegraphAuthenticationManager.isAccountUnique(
+        sourcegraphAccount.name, sourcegraphAccount.server)
   }
 
   private fun extractEnterpriseUrl(project: Project): String {

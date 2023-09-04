@@ -29,14 +29,16 @@ class SourcegraphAccountListModel(private val project: Project) :
   }
 
   override fun editAccount(parentComponent: JComponent, account: SourcegraphAccount) {
-    //        val authData = GithubAuthenticationManager.getInstance().login(
-    //            project, parentComponent,
-    //            GHLoginRequest(server = account.server, login = account.name)
-    //        )
-    //        if (authData == null) return
-    //
-    //        account.name = authData.login
-    newCredentials[account] = UUID.randomUUID().toString()
+    val authData =
+        SourcegraphAuthenticationManager.getInstance()
+            .login(
+                project,
+                parentComponent,
+                SourcegraphLoginRequest(server = account.server, login = account.name))
+            ?: return
+
+    account.name = authData.login
+    newCredentials[account] = authData.token
     notifyCredentialsChanged(account)
   }
 
@@ -52,5 +54,5 @@ class SourcegraphAccountListModel(private val project: Project) :
   }
 
   override fun isAccountUnique(login: String, server: SourcegraphServerPath): Boolean =
-      accountsListModel.items.none { it.name == login && it.server == server }
+      SourcegraphAuthenticationManager.getInstance().isAccountUnique(login, server)
 }

@@ -7,7 +7,6 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.ui.ValidationInfo
-import com.intellij.openapi.ui.setEmptyState
 import com.intellij.ui.AnimatedIcon
 import com.intellij.ui.components.fields.ExtendableTextComponent
 import com.intellij.ui.components.fields.ExtendableTextField
@@ -45,19 +44,6 @@ internal class SourcegraphLoginPanel(
 
   init {
     applyUi(tokenUi)
-    //      .label("Custom request headers:")
-    //              .comment(
-    //                  """Any custom headers to send with every request to Sourcegraph.<br>
-    //                  |Use any number of pairs: "header1, value1, header2, value2, ...".<br>
-    //                  |Whitespace around commas doesn't matter.
-    //              """
-    //                      .trimMargin(),
-    //                  MAX_LINE_LENGTH_NO_WRAP)
-    //              .horizontalAlign(HorizontalAlign.FILL)
-    //              .bindText(settingsModel::customRequestHeaders)
-    //              .applyToComponent {
-    //                this.setEmptyState("Client-ID, client-one, X-Extra, some metadata")
-    //              }
   }
 
   private fun applyUi(ui: SourcegraphCredentialsUi) {
@@ -139,6 +125,10 @@ internal class SourcegraphLoginPanel(
   fun setServer(path: String, editable: Boolean) {
     serverTextField.text = path
     serverTextField.isEditable = editable
+  }
+
+  fun setCustomRequestHeaders(customRequestHeaders: String) {
+    customRequestHeadersField.text = customRequestHeaders
   }
 
   fun setLogin(login: String?, editable: Boolean) {

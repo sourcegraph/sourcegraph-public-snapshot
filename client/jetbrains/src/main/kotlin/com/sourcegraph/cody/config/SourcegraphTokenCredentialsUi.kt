@@ -3,18 +3,14 @@ package com.sourcegraph.cody.config
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.ui.setEmptyState
-import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.components.fields.ExtendableTextField
 import com.intellij.ui.dsl.builder.MAX_LINE_LENGTH_NO_WRAP
-import com.intellij.ui.layout.ComponentPredicate
 import com.intellij.ui.layout.LayoutBuilder
 import com.intellij.ui.layout.applyToComponent
 import com.sourcegraph.cody.config.DialogValidationUtils.notBlank
 import java.net.UnknownHostException
 import javax.swing.JComponent
-import javax.swing.JTextField
-import javax.swing.event.DocumentEvent
 
 internal class SourcegraphTokenCredentialsUi(
     private val serverTextField: ExtendableTextField,
@@ -111,22 +107,3 @@ internal class SourcegraphTokenCredentialsUi(
         }
   }
 }
-
-private val JTextField.serverValid: ComponentPredicate
-  get() =
-      object : ComponentPredicate() {
-        override fun invoke(): Boolean = tryParseServer() != null
-
-        override fun addListener(listener: (Boolean) -> Unit) =
-            document.addDocumentListener(
-                object : DocumentAdapter() {
-                  override fun textChanged(e: DocumentEvent) = listener(tryParseServer() != null)
-                })
-      }
-
-private fun JTextField.tryParseServer(): SourcegraphServerPath? =
-    try {
-      SourcegraphServerPath.from(text.trim(), "")
-    } catch (e: SourcegraphParseException) {
-      null
-    }

@@ -4,8 +4,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.cody.config.AccountType;
+import com.sourcegraph.cody.config.SourcegraphAuthenticationManager;
 import com.sourcegraph.cody.localapp.LocalAppManager;
-import com.sourcegraph.config.ConfigUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class RunCodyAppAction extends DumbAwareAction {
@@ -22,7 +22,7 @@ public class RunCodyAppAction extends DumbAwareAction {
       return;
     }
     if (LocalAppManager.isPlatformSupported()
-        && ConfigUtil.getDefaultAccountType(project) == AccountType.LOCAL_APP) {
+        && SourcegraphAuthenticationManager.getInstance().getDefaultAccountType(project) == AccountType.LOCAL_APP) {
       if (LocalAppManager.isLocalAppInstalled() && !LocalAppManager.isLocalAppRunning()) {
         showAction(e);
         return;

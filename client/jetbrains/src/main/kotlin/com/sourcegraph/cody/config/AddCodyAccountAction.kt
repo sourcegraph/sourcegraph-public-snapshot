@@ -1,15 +1,15 @@
 package com.sourcegraph.cody.config
 
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbAwareAction
 import com.sourcegraph.cody.localapp.LocalAppManager
 
 class AddCodyAccountAction : DumbAwareAction() {
   override fun update(e: AnActionEvent) {
     val localAppInstalled = LocalAppManager.isLocalAppInstalled()
-    val accountManager = service<SourcegraphAccountManager>()
-    val codyAccountAlreadyAdded = accountManager.accounts.any { it.isCodyApp() }
+    val sourcegraphAuthenticationManager = SourcegraphAuthenticationManager.getInstance()
+    val codyAccountAlreadyAdded =
+        sourcegraphAuthenticationManager.getAccounts().any { it.isCodyApp() }
     e.presentation.isEnabledAndVisible =
         e.getData(SourcegraphAccountsHost.KEY) != null &&
             localAppInstalled &&
