@@ -91,20 +91,6 @@ func init() {
 							},
 							Resources: &spec.EnvironmentResourcesSpec{
 								Redis: &spec.EnvironmentResourceRedisSpec{},
-								// TODO: Not implemented.
-								// BigQueryTable: &spec.EnvironmentResourceBigQueryTableSpec{
-								// 	Region:  "us-central1",
-								// 	TableID: "events",
-								// 	Schema: []spec.EnvironmentResourceBigQuerySchemaColumn{
-								// 		{
-								// 			Name:        "name",
-								// 			Type:        "STRING",
-								// 			Mode:        "REQUIRED",
-								// 			Description: "The name of the event",
-								// 		},
-								// 		// TODO
-								// 	},
-								// },
 							},
 							Env: map[string]string{
 								"SRC_LOG_LEVEL": "info",

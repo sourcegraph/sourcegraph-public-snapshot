@@ -68,7 +68,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 			Protocol: pointers.Ptr("HTTP"),
 			PortName: pointers.Ptr("http"),
 
-			// TODO: Parameterize
+			// TODO: Parameterize with cloudflaresecuritypolicy as needed
 			SecurityPolicy: nil,
 
 			Backend: []*computebackendservice.ComputeBackendServiceBackend{{

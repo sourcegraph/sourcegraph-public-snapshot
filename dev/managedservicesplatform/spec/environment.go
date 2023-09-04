@@ -20,7 +20,7 @@ type EnvironmentSpec struct {
 
 func (s EnvironmentSpec) Validate() []error {
 	var errs []error
-	// TODO
+	// TODO: Add validation
 	return errs
 }
 
@@ -37,7 +37,7 @@ const (
 
 // ResolveTag uses the deploy spec to resolve an appropriate tag for the environment.
 //
-// TODO
+// TODO: Implement ability to resolve latest concrete tag from a source
 func (d EnvironmentDeploySpec) ResolveTag() (string, error) {
 	switch d.Type {
 	case EnvironmentDeployTypeManual:

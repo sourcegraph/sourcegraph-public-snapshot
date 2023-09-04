@@ -6,6 +6,8 @@ import (
 	"os"
 
 	"sigs.k8s.io/yaml"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Spec is a Managed Services Platform (MSP) service.
@@ -46,10 +48,12 @@ func Open(specPath string) (*Spec, error) {
 
 // Parse validates and unmarshals data as a MSP spec.
 func Parse(data []byte) (*Spec, error) {
-	// TODO: Add validaton
 	var s Spec
 	if err := yaml.Unmarshal(data, &s); err != nil {
 		return nil, err
+	}
+	if validationErrs := s.Validate(); len(validationErrs) > 0 {
+		return nil, errors.Append(nil, validationErrs...)
 	}
 	return &s, nil
 }

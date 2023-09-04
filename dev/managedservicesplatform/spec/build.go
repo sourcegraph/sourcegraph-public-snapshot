@@ -7,7 +7,7 @@ type BuildSpec struct {
 
 func (s BuildSpec) Validate() []error {
 	var errs []error
-	// TODO
+	// TODO: Add validation
 	return errs
 }
 

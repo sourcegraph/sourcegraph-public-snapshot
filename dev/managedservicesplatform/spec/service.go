@@ -18,6 +18,6 @@ type ServiceSpec struct {
 
 func (s ServiceSpec) Validate() []error {
 	var errs []error
-	// TODO
+	// TODO: Add validation
 	return errs
 }

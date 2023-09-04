@@ -22,6 +22,7 @@ type Config struct {
 	Spec spec.EnvironmentResourceBigQueryTableSpec
 }
 
+// TODO: Implement BigQuery provisioning
 func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
-	return nil, nil // TODO
+	return nil, nil
 }
