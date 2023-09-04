@@ -86,7 +86,7 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 				InitiatorID: userID,
 				Query:       "repo:^github\\.com/hashicorp/errwrap$ CreateExhaustiveSearchJob_exists",
 			},
-			expectedErr: errors.New("ERROR: duplicate key value violates unique constraint \"exhaustive_search_jobs_query_initiator_id_key\" (SQLSTATE 23505)"),
+			expectedErr: nil,
 		},
 
 		// Security tests
