@@ -44,15 +44,11 @@ public class SettingsConfigurable implements Configurable {
     return !mySettingsComponent.getEnterpriseUrl().equals(ConfigUtil.getEnterpriseUrl(project))
         || mySettingsComponent.isDotComAccessTokenChanged()
         || mySettingsComponent.isEnterpriseAccessTokenChanged()
-        || !mySettingsComponent
-            .getCustomRequestHeaders()
-            .equals("")
+        || !mySettingsComponent.getCustomRequestHeaders().equals("")
         || !mySettingsComponent
             .getDefaultBranchName()
             .equals(ConfigUtil.getDefaultBranchName(project))
-        || !mySettingsComponent
-            .getRemoteUrlReplacements()
-            .equals("")
+        || !mySettingsComponent.getRemoteUrlReplacements().equals("")
         || mySettingsComponent.isUrlNotificationDismissed()
             != ConfigUtil.isUrlNotificationDismissed()
         || mySettingsComponent.isCodyEnabled() != ConfigUtil.isCodyEnabled()
@@ -92,9 +88,9 @@ public class SettingsConfigurable implements Configurable {
             oldCodyAutocompleteEnabled,
             oldUrl,
             newUrl,
-            !newUrl.equals(oldUrl),
             mySettingsComponent.isCodyEnabled(),
-            mySettingsComponent.isCodyAutocompleteEnabled());
+            mySettingsComponent.isCodyAutocompleteEnabled(),
+            false);
 
     publisher.beforeAction(context);
 

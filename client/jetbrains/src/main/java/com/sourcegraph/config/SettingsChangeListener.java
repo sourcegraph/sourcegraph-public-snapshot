@@ -21,12 +21,10 @@ import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus;
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService;
 import com.sourcegraph.find.browser.JavaToJSBridge;
 import com.sourcegraph.telemetry.GraphQlLogger;
-
 import java.util.Arrays;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.util.Objects;
-
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -50,7 +48,7 @@ public class SettingsChangeListener implements Disposable {
           @Override
           public void beforeAction(@NotNull PluginSettingChangeContext context) {
             if (!Objects.equals(context.oldUrl, context.newUrl)) {
-//              GraphQlLogger.logUninstallEvent(project);
+              GraphQlLogger.logUninstallEvent(project);
               codyApplicationSettings.setInstallEventLogged(false);
             }
           }
@@ -77,12 +75,14 @@ public class SettingsChangeListener implements Disposable {
             }
 
             // Log install events
-//            if (!Objects.equals(context.oldUrl, context.newUrl)) {
-//              GraphQlLogger.logInstallEvent(project).thenAccept(codyApplicationSettings::setInstallEventLogged);
-//            } else if (context.isAuthMethodChanged
-//                && !codyApplicationSettings.isInstallEventLogged()) {
-//              GraphQlLogger.logInstallEvent(project).thenAccept(codyApplicationSettings::setInstallEventLogged);
-//            }
+            if (!Objects.equals(context.oldUrl, context.newUrl)) {
+              GraphQlLogger.logInstallEvent(project)
+                  .thenAccept(codyApplicationSettings::setInstallEventLogged);
+            } else if (context.accessTokenChanged
+                && !codyApplicationSettings.isInstallEventLogged()) {
+              GraphQlLogger.logInstallEvent(project)
+                  .thenAccept(codyApplicationSettings::setInstallEventLogged);
+            }
 
             // clear autocomplete suggestions if freshly disabled
             if (context.oldCodyAutocompleteEnabled && !context.newCodyAutocompleteEnabled) {
@@ -117,7 +117,7 @@ public class SettingsChangeListener implements Disposable {
         });
   }
 
-    public void setJavaToJSBridge(JavaToJSBridge javaToJSBridge) {
+  public void setJavaToJSBridge(JavaToJSBridge javaToJSBridge) {
     this.javaToJSBridge = javaToJSBridge;
   }
 

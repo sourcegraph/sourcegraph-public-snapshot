@@ -8,24 +8,24 @@ public class PluginSettingChangeContext {
   public final boolean oldCodyAutocompleteEnabled;
 
   @NotNull public final String newUrl;
-  public final boolean isAuthMethodChanged;
   public final boolean newCodyEnabled;
   public final boolean newCodyAutocompleteEnabled;
+  public boolean accessTokenChanged;
 
   public PluginSettingChangeContext(
       boolean oldCodyEnabled,
       boolean oldCodyAutocompleteEnabled,
       @NotNull String oldUrl,
       @NotNull String newUrl,
-      boolean isAuthMethodChanged,
       boolean newCodyEnabled,
-      boolean newCodyAutocompleteEnabled) {
+      boolean newCodyAutocompleteEnabled,
+      boolean accessTokenChanged) {
     this.oldCodyEnabled = oldCodyEnabled;
     this.oldCodyAutocompleteEnabled = oldCodyAutocompleteEnabled;
     this.oldUrl = oldUrl;
     this.newUrl = newUrl;
-    this.isAuthMethodChanged = isAuthMethodChanged;
     this.newCodyEnabled = newCodyEnabled;
     this.newCodyAutocompleteEnabled = newCodyAutocompleteEnabled;
+    this.accessTokenChanged = accessTokenChanged;
   }
 }

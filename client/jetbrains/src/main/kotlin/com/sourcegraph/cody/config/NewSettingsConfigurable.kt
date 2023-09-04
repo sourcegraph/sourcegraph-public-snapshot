@@ -27,10 +27,10 @@ class NewSettingsConfigurable(private val project: Project) :
   private val settingsModel = SettingsModel()
   private val accountManager = service<CodyAccountManager>()
   private val defaultAccountHolder = project.service<CodyProjectDefaultAccountHolder>()
+  private val accountsModel = CodyAccountListModel(project)
   private lateinit var dialogPanel: DialogPanel
 
   override fun createPanel(): DialogPanel {
-    val accountsModel = CodyAccountListModel(project)
     val indicatorsProvider =
         ProgressIndicatorsProvider().also { Disposer.register(disposable!!, it) }
     val detailsProvider =
@@ -131,22 +131,23 @@ class NewSettingsConfigurable(private val project: Project) :
     val oldDefaultAccount = defaultAccountHolder.account
     val oldUrl = oldDefaultAccount?.server?.url ?: ""
     val oldAccessToken = oldDefaultAccount?.let { accountManager.findCredentials(it) }
-    val oldAccounts = accountManager.accounts
 
-    super.apply()
-
-    val defaultAccount = defaultAccountHolder.account
-    val accessToken = defaultAccount?.let { accountManager.findCredentials(it) }
-    val newUrl = defaultAccount?.server?.url ?: ""
+    val newDefaultAccount = accountsModel.defaultAccount
+    val newAccessToken = newDefaultAccount?.let { accountsModel.newCredentials[it] }
+    val newUrl = newDefaultAccount?.server?.url ?: ""
     val context =
         PluginSettingChangeContext(
             oldCodyEnabled,
             oldCodyAutocompleteEnabled,
             oldUrl,
             newUrl,
-            oldUrl != newUrl || oldAccessToken != accessToken,
             settingsModel.isCodyEnabled,
-            settingsModel.isCodyAutocompleteEnabled)
+            settingsModel.isCodyAutocompleteEnabled,
+            oldAccessToken != newAccessToken)
+
+    publisher.beforeAction(context)
+
+    super.apply()
 
     codyProjectSettings.defaultBranchName = settingsModel.defaultBranchName
     codyProjectSettings.remoteUrlReplacements = settingsModel.remoteUrlReplacements

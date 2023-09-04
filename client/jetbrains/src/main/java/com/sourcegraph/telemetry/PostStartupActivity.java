@@ -34,7 +34,7 @@ public class PostStartupActivity implements StartupActivity.DumbAware {
         new PluginStateListener() {
           public void install(@NotNull IdeaPluginDescriptor ideaPluginDescriptor) {
             CodyAgentProjectListener.startAgent(project);
-            GraphQlLogger.logInstallEvent(project, ConfigUtil.getServerPath(project))
+            GraphQlLogger.logInstallEvent(project)
                 .thenAccept(
                     wasSuccessful -> {
                       if (wasSuccessful) {
@@ -50,7 +50,7 @@ public class PostStartupActivity implements StartupActivity.DumbAware {
                 .getPluginId()
                 .getIdString()
                 .equals("com.sourcegraph.jetbrains")) {
-              GraphQlLogger.logUninstallEvent(project, ConfigUtil.getServerPath(project));
+              GraphQlLogger.logUninstallEvent(project);
 
               // Clearing this so that we can detect a new installation if the user re-enables the
               // extension.

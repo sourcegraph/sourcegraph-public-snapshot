@@ -18,21 +18,20 @@ import org.jetbrains.annotations.Nullable;
 public class GraphQlLogger {
   private static final Gson gson = new GsonBuilder().serializeNulls().create();
 
-  public static CompletableFuture<Boolean> logInstallEvent(@NotNull Project project, @NotNull SourcegraphServerPath sourcegraphServerPath) {
-    CodyApplicationSettings codyApplicationSettings =
-        CodyApplicationSettings.getInstance();
+  public static CompletableFuture<Boolean> logInstallEvent(@NotNull Project project) {
+    CodyApplicationSettings codyApplicationSettings = CodyApplicationSettings.getInstance();
     if (codyApplicationSettings.getAnonymousUserId() != null && project.isDisposed()) {
-      var event = createEvent(sourcegraphServerPath, "CodyInstalled", new JsonObject());
+      var event = createEvent(ConfigUtil.getServerPath(project), "CodyInstalled", new JsonObject());
       return logEvent(project, event);
     }
     return CompletableFuture.completedFuture(false);
   }
 
-  public static void logUninstallEvent(@NotNull Project project, @NotNull SourcegraphServerPath sourcegraphServerPath) {
-    CodyApplicationSettings codyApplicationSettings =
-        CodyApplicationSettings.getInstance();
+  public static void logUninstallEvent(@NotNull Project project) {
+    CodyApplicationSettings codyApplicationSettings = CodyApplicationSettings.getInstance();
     if (codyApplicationSettings.getAnonymousUserId() != null) {
-      Event event = createEvent(sourcegraphServerPath, "CodyUninstalled", new JsonObject());
+      Event event =
+          createEvent(ConfigUtil.getServerPath(project), "CodyUninstalled", new JsonObject());
       logEvent(project, event);
     }
   }
@@ -84,10 +83,12 @@ public class GraphQlLogger {
 
   @NotNull
   private static Event createEvent(
-      @NotNull SourcegraphServerPath sourcegraphServerPath, @NotNull String eventName, @NotNull JsonObject eventParameters) {
-    var updatedEventParameters = addGlobalEventParameters(eventParameters, sourcegraphServerPath);
-    CodyApplicationSettings codyApplicationSettings =
-        CodyApplicationSettings.getInstance();
+      @NotNull SourcegraphServerPath sourcegraphServerPath,
+      @NotNull String eventName,
+      @NotNull JsonObject eventParameters) {
+    var updatedEventParameters =
+        addGlobalEventParameters(eventParameters, sourcegraphServerPath);
+    CodyApplicationSettings codyApplicationSettings = CodyApplicationSettings.getInstance();
     String anonymousUserId = codyApplicationSettings.getAnonymousUserId();
     return new Event(
         eventName, anonymousUserId != null ? anonymousUserId : "", "", updatedEventParameters);
