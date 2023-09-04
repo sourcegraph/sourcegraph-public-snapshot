@@ -12,6 +12,7 @@ import com.intellij.ui.components.fields.ExtendableTextComponent
 import com.intellij.ui.components.fields.ExtendableTextField
 import com.intellij.ui.components.panels.Wrapper
 import com.intellij.ui.layout.LayoutBuilder
+import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.config.DialogValidationUtils.notBlank
 import java.util.concurrent.CompletableFuture
 import javax.swing.JComponent
@@ -19,7 +20,7 @@ import javax.swing.JTextField
 
 internal typealias UniqueLoginPredicate = (login: String, server: SourcegraphServerPath) -> Boolean
 
-internal class SourcegraphLoginPanel(
+internal class CodyLoginPanel(
     executorFactory: SourcegraphApiRequestExecutor.Factory,
     isAccountUnique: UniqueLoginPredicate
 ) : Wrapper() {
@@ -28,9 +29,9 @@ internal class SourcegraphLoginPanel(
   private val customRequestHeadersField = ExtendableTextField("", 0)
   private var tokenAcquisitionError: ValidationInfo? = null
 
-  private lateinit var currentUi: SourcegraphCredentialsUi
+  private lateinit var currentUi: CodyCredentialsUi
   private var tokenUi =
-      SourcegraphTokenCredentialsUi(
+      CodyTokenCredentialsUi(
           serverTextField, customRequestHeadersField, executorFactory, isAccountUnique)
 
   private val progressIcon = AnimatedIcon.Default()
@@ -47,7 +48,7 @@ internal class SourcegraphLoginPanel(
     applyUi(tokenUi)
   }
 
-  private fun applyUi(ui: SourcegraphCredentialsUi) {
+  private fun applyUi(ui: CodyCredentialsUi) {
     currentUi = ui
     setContent(currentUi.getPanel())
     currentUi.getPreferredFocusableComponent()?.requestFocus()

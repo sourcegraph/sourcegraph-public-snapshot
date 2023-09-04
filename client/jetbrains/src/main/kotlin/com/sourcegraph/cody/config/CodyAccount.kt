@@ -16,7 +16,7 @@ enum class AccountType {
 }
 
 @Tag("account")
-class SourcegraphAccount(
+class CodyAccount(
     @set:Transient @NlsSafe @Attribute("name") override var name: String = "",
     @Property(style = Property.Style.ATTRIBUTE, surroundWithTag = false)
     override val server: SourcegraphServerPath =
@@ -45,14 +45,14 @@ class SourcegraphAccount(
         name: String,
         server: SourcegraphServerPath,
         id: String,
-    ): SourcegraphAccount {
+    ): CodyAccount {
       val username =
           if (id == LocalAppManager.LOCAL_APP_ID) {
             LocalAppManager.LOCAL_APP_ID
           } else {
             name
           }
-      return SourcegraphAccount(username, server, id)
+      return CodyAccount(username, server, id)
     }
   }
 }

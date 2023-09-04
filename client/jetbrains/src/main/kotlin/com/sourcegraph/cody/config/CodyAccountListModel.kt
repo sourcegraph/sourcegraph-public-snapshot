@@ -10,31 +10,31 @@ import com.intellij.ui.awt.RelativePoint
 import java.util.UUID
 import javax.swing.JComponent
 
-class SourcegraphAccountListModel(private val project: Project) :
-    AccountsListModelBase<SourcegraphAccount, String>(),
-    AccountsListModel.WithDefault<SourcegraphAccount, String>,
-    SourcegraphAccountsHost {
+class CodyAccountListModel(private val project: Project) :
+    AccountsListModelBase<CodyAccount, String>(),
+    AccountsListModel.WithDefault<CodyAccount, String>,
+    CodyAccountsHost {
 
   private val actionManager = ActionManager.getInstance()
 
-  override var defaultAccount: SourcegraphAccount? = null
+  override var defaultAccount: CodyAccount? = null
 
   override fun addAccount(parentComponent: JComponent, point: RelativePoint?) {
-    val group = actionManager.getAction("Sourcegraph.Accounts.AddAccount") as ActionGroup
-    val popup = actionManager.createActionPopupMenu("AddSourcegraphAccount", group)
+    val group = actionManager.getAction("Cody.Accounts.AddAccount") as ActionGroup
+    val popup = actionManager.createActionPopupMenu("AddCodyAccount", group)
 
     val actualPoint = point ?: RelativePoint.getCenterOf(parentComponent)
     popup.setTargetComponent(parentComponent)
     JBPopupMenu.showAt(actualPoint, popup.component)
   }
 
-  override fun editAccount(parentComponent: JComponent, account: SourcegraphAccount) {
+  override fun editAccount(parentComponent: JComponent, account: CodyAccount) {
     val authData =
-        SourcegraphAuthenticationManager.getInstance()
+        CodyAuthenticationManager.getInstance()
             .login(
                 project,
                 parentComponent,
-                SourcegraphLoginRequest(server = account.server, login = account.name))
+                CodyLoginRequest(server = account.server, login = account.name))
             ?: return
 
     account.name = authData.login
@@ -43,16 +43,16 @@ class SourcegraphAccountListModel(private val project: Project) :
   }
 
   override fun addAccount(server: SourcegraphServerPath, login: String, token: String) {
-    val account = SourcegraphAccount(login, server, id = UUID.randomUUID().toString())
+    val account = CodyAccount(login, server, id = UUID.randomUUID().toString())
     addAccount(account, token)
   }
 
-  override fun addAccount(account: SourcegraphAccount, token: String) {
+  override fun addAccount(account: CodyAccount, token: String) {
     accountsListModel.add(account)
     newCredentials[account] = token
     notifyCredentialsChanged(account)
   }
 
   override fun isAccountUnique(login: String, server: SourcegraphServerPath): Boolean =
-      SourcegraphAuthenticationManager.getInstance().isAccountUnique(login, server)
+      CodyAuthenticationManager.getInstance().isAccountUnique(login, server)
 }

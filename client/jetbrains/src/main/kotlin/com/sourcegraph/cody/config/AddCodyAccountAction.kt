@@ -7,20 +7,20 @@ import com.sourcegraph.cody.localapp.LocalAppManager
 class AddCodyAccountAction : DumbAwareAction() {
   override fun update(e: AnActionEvent) {
     val localAppInstalled = LocalAppManager.isLocalAppInstalled()
-    val sourcegraphAuthenticationManager = SourcegraphAuthenticationManager.getInstance()
+    val codyAuthenticationManager = CodyAuthenticationManager.getInstance()
     val codyAccountAlreadyAdded =
-        sourcegraphAuthenticationManager.getAccounts().any { it.isCodyApp() }
+        codyAuthenticationManager.getAccounts().any { it.isCodyApp() }
     e.presentation.isEnabledAndVisible =
-        e.getData(SourcegraphAccountsHost.KEY) != null &&
+        e.getData(CodyAccountsHost.KEY) != null &&
             localAppInstalled &&
             !codyAccountAlreadyAdded
   }
 
   override fun actionPerformed(e: AnActionEvent) {
-    val accountsHost = e.getData(SourcegraphAccountsHost.KEY)!!
+    val accountsHost = e.getData(CodyAccountsHost.KEY)!!
     val token = LocalAppManager.getLocalAppAccessToken()
     val account =
-        SourcegraphAccount.create(
+        CodyAccount.create(
             LocalAppManager.LOCAL_APP_ID,
             SourcegraphServerPath(LocalAppManager.getLocalAppUrl()),
             LocalAppManager.LOCAL_APP_ID)

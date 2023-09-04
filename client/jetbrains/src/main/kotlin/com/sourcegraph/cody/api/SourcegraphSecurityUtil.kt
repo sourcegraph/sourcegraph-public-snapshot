@@ -1,6 +1,8 @@
-package com.sourcegraph.cody.config
+package com.sourcegraph.cody.api
 
 import com.intellij.openapi.progress.ProgressIndicator
+import com.sourcegraph.cody.config.CodyAccountDetails
+import com.sourcegraph.cody.config.SourcegraphServerPath
 
 object SourcegraphSecurityUtil {
 
@@ -9,7 +11,7 @@ object SourcegraphSecurityUtil {
       executor: SourcegraphApiRequestExecutor,
       progressIndicator: ProgressIndicator,
       server: SourcegraphServerPath
-  ): SourcegraphAccountDetailed {
+  ): CodyAccountDetails {
     return executor
         .execute(progressIndicator, SourcegraphApiRequests.CurrentUser.getDetails(server))
         .currentUser

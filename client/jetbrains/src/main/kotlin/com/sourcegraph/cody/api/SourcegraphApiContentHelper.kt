@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.config
+package com.sourcegraph.cody.api
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.JsonInclude
@@ -48,9 +48,6 @@ object SourcegraphApiContentHelper {
                   JsonAutoDetect.Visibility.NONE,
                   JsonAutoDetect.Visibility.ANY))
 
-  @Throws(SourcegraphJsonException::class)
-  inline fun <reified T> fromJson(string: String): T = fromJson(string, T::class.java)
-
   @JvmStatic
   @Throws(SourcegraphJsonException::class)
   fun <T> fromJson(string: String, clazz: Class<T>, gqlNaming: Boolean = false): T {
@@ -71,13 +68,6 @@ object SourcegraphApiContentHelper {
   ): T {
     return readJson(
         reader, jackson.typeFactory.constructParametricType(clazz, *parameters), gqlNaming)
-  }
-
-  @JvmStatic
-  @Throws(SourcegraphJsonException::class)
-  fun <T> readJsonList(reader: Reader, parameterClass: Class<T>): List<T> {
-    return readJson(
-        reader, jackson.typeFactory.constructCollectionType(List::class.java, parameterClass))
   }
 
   @Throws(SourcegraphJsonException::class)

@@ -23,7 +23,7 @@
         <projectService serviceImplementation="com.sourcegraph.config.SettingsChangeListener"/>
         <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyApplicationSettings"/>
         <applicationService serviceImplementation="com.sourcegraph.config.CodyApplicationService"/>
-        <applicationService serviceImplementation="com.sourcegraph.cody.config.SourcegraphAuthenticationManager"/>
+        <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyAuthenticationManager"/>
 
         <projectConfigurable
             parentId="tools"
@@ -33,10 +33,10 @@
             nonDefaultProject="false"
         />
 
-        <applicationService serviceImplementation="com.sourcegraph.cody.config.SourcegraphPersisentAccounts"/>
-        <applicationService serviceImplementation="com.sourcegraph.cody.config.SourcegraphApiRequestExecutor$Factory"/>
-        <applicationService serviceImplementation="com.sourcegraph.cody.config.CachingSourcegraphUserAvatarLoader"/>
-        <projectService serviceImplementation="com.sourcegraph.cody.config.SourcegraphProjectDefaultAccountHolder"/>
+        <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyPersisentAccounts"/>
+        <applicationService serviceImplementation="com.sourcegraph.cody.api.SourcegraphApiRequestExecutor$Factory"/>
+        <applicationService serviceImplementation="com.sourcegraph.cody.config.CachingCodyUserAvatarLoader"/>
+        <projectService serviceImplementation="com.sourcegraph.cody.config.CodyProjectDefaultAccountHolder"/>
         <notificationGroup id="Sourcegraph: server access" displayType="BALLOON"/>
         <notificationGroup id="Sourcegraph errors" displayType="BALLOON"/>
         <notificationGroup id="Sourcegraph: URL sharing" displayType="BALLOON"/>
@@ -215,14 +215,14 @@
             <reference ref="cody.disableCodyAutocomplete"/>
         </group>
 
-        <group id="Sourcegraph.Accounts.AddAccount">
-            <action id="Sourcegraph.Accounts.AddCodyAccount" text="Log in to Local Cody App"
+        <group id="Cody.Accounts.AddAccount">
+            <action id="Cody.Accounts.AddCodyAccount" text="Log in to Local Cody App"
                     class="com.sourcegraph.cody.config.AddCodyAccountAction"/>
-            <action id="Sourcegraph.Accounts.AddSourcegraphAccountWithToken" text="Log In with Token to Sourcegraph"
-                    class="com.sourcegraph.cody.config.AddSourcegraphAccountWithTokenAction"/>
-            <action id="Sourcegraph.Accounts.AddSourcegraphEnterpriseAccount"
+            <action id="Cody.Accounts.AddCodyAccountWithToken" text="Log In with Token to Sourcegraph"
+                    class="com.sourcegraph.cody.config.AddCodyAccountWithTokenAction"/>
+            <action id="Cody.Accounts.AddCodyEnterpriseAccount"
                     text="Log In with Token to Sourcegraph Enterprise"
-                    class="com.sourcegraph.cody.config.AddSourcegraphEnterpriseAccountAction"/>
+                    class="com.sourcegraph.cody.config.AddCodyEnterpriseAccountAction"/>
 
             <separator/>
         </group>

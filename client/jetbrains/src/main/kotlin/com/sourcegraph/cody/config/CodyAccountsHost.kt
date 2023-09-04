@@ -8,13 +8,13 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.ui.components.DropDownLink
 import javax.swing.JButton
 
-interface SourcegraphAccountsHost {
+interface CodyAccountsHost {
   fun addAccount(server: SourcegraphServerPath, login: String, token: String)
-  fun addAccount(account: SourcegraphAccount, token: String)
+  fun addAccount(account: CodyAccount, token: String)
   fun isAccountUnique(login: String, server: SourcegraphServerPath): Boolean
 
   companion object {
-    val KEY: DataKey<SourcegraphAccountsHost> = DataKey.create("SourcegraphAccountsHots")
+    val KEY: DataKey<CodyAccountsHost> = DataKey.create("SourcegraphAccountsHots")
 
     fun createAddAccountLink(): JButton =
         DropDownLink("Add account") {

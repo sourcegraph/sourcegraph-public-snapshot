@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.config
+package com.sourcegraph.cody.api
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
@@ -12,8 +12,6 @@ import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.io.HttpRequests
 import com.intellij.util.io.HttpSecurityUtil
 import com.intellij.util.io.RequestBuilder
-import org.jetbrains.annotations.CalledInAny
-import org.jetbrains.annotations.TestOnly
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -21,6 +19,8 @@ import java.io.Reader
 import java.net.HttpURLConnection
 import java.util.EventListener
 import java.util.zip.GZIPInputStream
+import org.jetbrains.annotations.CalledInAny
+import org.jetbrains.annotations.TestOnly
 
 sealed class SourcegraphApiRequestExecutor {
 
@@ -73,16 +73,6 @@ sealed class SourcegraphApiRequestExecutor {
     }
   }
 
-  class NoAuth internal constructor() : Base() {
-    override fun <T> execute(indicator: ProgressIndicator, request: SourcegraphApiRequest<T>): T {
-      indicator.checkCanceled()
-      return createRequestBuilder(request)
-          .tuner { connection -> request.additionalHeaders.forEach(connection::addRequestProperty) }
-          .useProxy(true)
-          .execute(request, indicator)
-    }
-  }
-
   abstract class Base() : SourcegraphApiRequestExecutor() {
     protected fun <T> RequestBuilder.execute(
         request: SourcegraphApiRequest<T>,
@@ -125,9 +115,7 @@ sealed class SourcegraphApiRequestExecutor {
     protected fun createRequestBuilder(request: SourcegraphApiRequest<*>): RequestBuilder {
       return when (request) {
             is SourcegraphApiRequest.Get -> HttpRequests.request(request.url)
-            is SourcegraphApiRequest.Patch -> HttpRequests.patch(request.url, request.bodyMimeType)
             is SourcegraphApiRequest.Post -> HttpRequests.post(request.url, request.bodyMimeType)
-            is SourcegraphApiRequest.Put -> HttpRequests.put(request.url, request.bodyMimeType)
             else -> throw UnsupportedOperationException("${request.javaClass} is not supported")
           }
           .userAgent("Cody")
@@ -186,8 +174,6 @@ sealed class SourcegraphApiRequestExecutor {
     fun create(token: String, useProxy: Boolean = true): WithTokenAuth {
       return WithTokenAuth(token, useProxy)
     }
-
-    @CalledInAny fun create() = NoAuth()
 
     companion object {
       @JvmStatic fun getInstance(): Factory = service()

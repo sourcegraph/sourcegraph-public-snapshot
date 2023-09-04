@@ -9,20 +9,20 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 
 @State(
-    name = "SourcegraphDefaultAccount",
+    name = "CodyDefaultAccount",
     storages = [Storage(StoragePathMacros.WORKSPACE_FILE)],
     reportStatistic = false)
-class SourcegraphProjectDefaultAccountHolder(project: Project) :
-    PersistentDefaultAccountHolder<SourcegraphAccount>(project) {
+class CodyProjectDefaultAccountHolder(project: Project) :
+    PersistentDefaultAccountHolder<CodyAccount>(project) {
 
   init {
     accountManager()
         .addListener(
             this,
-            object : AccountsListener<SourcegraphAccount> {
+            object : AccountsListener<CodyAccount> {
               override fun onAccountListChanged(
-                  old: Collection<SourcegraphAccount>,
-                  new: Collection<SourcegraphAccount>
+                  old: Collection<CodyAccount>,
+                  new: Collection<CodyAccount>
               ) {
                 if (account == null) {
                   account = new.firstOrNull { it.isCodyApp() } ?: new.firstOrNull()
@@ -30,7 +30,7 @@ class SourcegraphProjectDefaultAccountHolder(project: Project) :
               }
             })
   }
-  override fun accountManager() = service<SourcegraphAccountManager>()
+  override fun accountManager() = service<CodyAccountManager>()
 
   override fun notifyDefaultAccountMissing() {}
 }

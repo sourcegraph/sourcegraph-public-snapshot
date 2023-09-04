@@ -10,6 +10,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.util.Disposer
+import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import java.awt.Component
 import javax.swing.JComponent
 
@@ -20,7 +21,7 @@ internal abstract class BaseLoginDialog(
     isAccountUnique: UniqueLoginPredicate
 ) : DialogWrapper(project, parent, false, IdeModalityType.PROJECT) {
 
-  protected val loginPanel = SourcegraphLoginPanel(executorFactory, isAccountUnique)
+  protected val loginPanel = CodyLoginPanel(executorFactory, isAccountUnique)
 
   private var _login = ""
   private var _token = ""

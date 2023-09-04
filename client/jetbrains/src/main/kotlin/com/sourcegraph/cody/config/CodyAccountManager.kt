@@ -6,9 +6,9 @@ import com.intellij.openapi.components.service
 import com.sourcegraph.config.ConfigUtil
 
 @Service
-class SourcegraphAccountManager :
-    AccountManagerBase<SourcegraphAccount, String>(ConfigUtil.SERVICE_DISPLAY_NAME) {
-  override fun accountsRepository() = service<SourcegraphPersisentAccounts>()
+class CodyAccountManager :
+    AccountManagerBase<CodyAccount, String>(ConfigUtil.SERVICE_DISPLAY_NAME) {
+  override fun accountsRepository() = service<CodyPersisentAccounts>()
 
   override fun deserializeCredentials(credentials: String): String = credentials
 

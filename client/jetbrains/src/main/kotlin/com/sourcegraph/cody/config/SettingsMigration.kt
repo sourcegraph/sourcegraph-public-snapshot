@@ -12,6 +12,8 @@ import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import com.intellij.util.containers.orNull
+import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
+import com.sourcegraph.cody.api.SourcegraphSecurityUtil
 import com.sourcegraph.cody.localapp.LocalAppManager
 import com.sourcegraph.config.AccessTokenStorage
 import com.sourcegraph.config.CodyApplicationService
@@ -23,7 +25,7 @@ import java.util.concurrent.CompletableFuture
 
 class SettingsMigration : StartupActivity, DumbAware {
 
-  private val sourcegraphAuthenticationManager = SourcegraphAuthenticationManager.getInstance()
+  private val codyAuthenticationManager = CodyAuthenticationManager.getInstance()
   override fun runActivity(project: Project) {
     RunOnceUtil.runOnceForProject(project, UUID.randomUUID().toString()) {
       val customRequestHeaders = extractCustomRequestHeaders(project)
@@ -49,7 +51,7 @@ class SettingsMigration : StartupActivity, DumbAware {
     if (!dotcomAccessToken.isNullOrEmpty()) {
       val server = SourcegraphServerPath(ConfigUtil.DOTCOM_URL, customRequestHeaders)
       val shouldSetAccountAsDefault =
-          SourcegraphAuthenticationManager.getInstance().getDefaultAccountType(project) ==
+          CodyAuthenticationManager.getInstance().getDefaultAccountType(project) ==
               AccountType.DOTCOM
       if (shouldSetAccountAsDefault) {
         addAsDefaultAccountIfUnique(
@@ -80,7 +82,7 @@ class SettingsMigration : StartupActivity, DumbAware {
       runCatching { SourcegraphServerPath.from(enterpriseUrl, customRequestHeaders) }
           .fold({
             val shouldSetAccountAsDefault =
-                SourcegraphAuthenticationManager.getInstance().getDefaultAccountType(project) ==
+                CodyAuthenticationManager.getInstance().getDefaultAccountType(project) ==
                     AccountType.ENTERPRISE
             if (shouldSetAccountAsDefault) {
               addAsDefaultAccountIfUnique(
@@ -112,7 +114,7 @@ class SettingsMigration : StartupActivity, DumbAware {
       runCatching { SourcegraphServerPath.from(codyUrl, "") }
           .fold({
             val shouldSetAccountAsDefault =
-                SourcegraphAuthenticationManager.getInstance().getDefaultAccountType(project) ==
+                CodyAuthenticationManager.getInstance().getDefaultAccountType(project) ==
                     AccountType.LOCAL_APP
             if (shouldSetAccountAsDefault) {
               addAsDefaultAccountIfUnique(
@@ -144,7 +146,7 @@ class SettingsMigration : StartupActivity, DumbAware {
       id: String = UUID.randomUUID().toString(),
   ) {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
-      addAccount(SourcegraphAccount.create(it.name, server, id), accessToken)
+      addAccount(CodyAccount.create(it.name, server, id), accessToken)
     }
   }
 
@@ -157,9 +159,9 @@ class SettingsMigration : StartupActivity, DumbAware {
       id: String = UUID.randomUUID().toString(),
   ) {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
-      val sourcegraphAccount = SourcegraphAccount.create(it.name, server, id)
-      addAccount(sourcegraphAccount, accessToken)
-      SourcegraphAuthenticationManager.getInstance().setDefaultAccount(project, sourcegraphAccount)
+      val codyAccount = CodyAccount.create(it.name, server, id)
+      addAccount(codyAccount, accessToken)
+      CodyAuthenticationManager.getInstance().setDefaultAccount(project, codyAccount)
     }
   }
 
@@ -168,7 +170,7 @@ class SettingsMigration : StartupActivity, DumbAware {
       accessToken: String,
       progressIndicator: EmptyProgressIndicator,
       server: SourcegraphServerPath,
-      onSuccess: (SourcegraphAccountDetailed) -> Unit
+      onSuccess: (CodyAccountDetails) -> Unit
   ): CompletableFuture<Unit> =
       service<ProgressManager>()
           .submitIOTask(progressIndicator) {
@@ -183,15 +185,15 @@ class SettingsMigration : StartupActivity, DumbAware {
             }
           }
 
-  private fun addAccount(sourcegraphAccount: SourcegraphAccount, token: String) {
-    if (isAccountUnique(sourcegraphAccount)) {
-      sourcegraphAuthenticationManager.updateAccountToken(sourcegraphAccount, token)
+  private fun addAccount(codyAccount: CodyAccount, token: String) {
+    if (isAccountUnique(codyAccount)) {
+      codyAuthenticationManager.updateAccountToken(codyAccount, token)
     }
   }
 
-  private fun isAccountUnique(sourcegraphAccount: SourcegraphAccount): Boolean {
-    return sourcegraphAuthenticationManager.isAccountUnique(
-        sourcegraphAccount.name, sourcegraphAccount.server)
+  private fun isAccountUnique(codyAccount: CodyAccount): Boolean {
+    return codyAuthenticationManager.isAccountUnique(
+        codyAccount.name, codyAccount.server)
   }
 
   private fun extractEnterpriseUrl(project: Project): String {

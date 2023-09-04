@@ -11,22 +11,24 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.util.IconUtil
 import com.sourcegraph.cody.Icons
+import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
+import com.sourcegraph.cody.api.SourcegraphSecurityUtil
 import java.util.concurrent.CompletableFuture
 
-internal class SourcegraphAccounDetailsProvider(
+class CodyAccounDetailsProvider(
     progressIndicatorsProvider: ProgressIndicatorsProvider,
-    private val accountManager: SourcegraphAccountManager,
-    private val accountsModel: SourcegraphAccountListModel
+    private val accountManager: CodyAccountManager,
+    private val accountsModel: CodyAccountListModel
 ) :
-    LoadingAccountsDetailsProvider<SourcegraphAccount, SourcegraphAccountDetailed>(
+    LoadingAccountsDetailsProvider<CodyAccount, CodyAccountDetails>(
         progressIndicatorsProvider) {
 
   override val defaultIcon = IconUtil.resizeSquared(Icons.CodyLogo, 40)
 
   override fun scheduleLoad(
-      account: SourcegraphAccount,
+      account: CodyAccount,
       indicator: ProgressIndicator
-  ): CompletableFuture<DetailsLoadingResult<SourcegraphAccountDetailed>> {
+  ): CompletableFuture<DetailsLoadingResult<CodyAccountDetails>> {
     val token =
         accountsModel.newCredentials.getOrElse(account) { accountManager.findCredentials(account) }
             ?: return CompletableFuture.completedFuture(noToken())
@@ -34,14 +36,14 @@ internal class SourcegraphAccounDetailsProvider(
     return ProgressManager.getInstance()
         .submitIOTask(EmptyProgressIndicator()) {
           if (account.isCodyApp()) {
-            val details = SourcegraphAccountDetailed(account.name, null)
+            val details = CodyAccountDetails(account.name, null)
             DetailsLoadingResult(details, IconUtil.toBufferedImage(defaultIcon), null, false)
           } else {
             val accountDetails =
                 SourcegraphSecurityUtil.loadCurrentUserDetails(executor, it, account.server)
             val image =
                 accountDetails.avatarURL?.let { url ->
-                  CachingSourcegraphUserAvatarLoader.getInstance()
+                  CachingCodyUserAvatarLoader.getInstance()
                       .requestAvatar(executor, url)
                       .join()
                 }
@@ -55,5 +57,5 @@ internal class SourcegraphAccounDetailsProvider(
   }
 
   private fun noToken() =
-      DetailsLoadingResult<SourcegraphAccountDetailed>(null, null, "Missing access token", true)
+      DetailsLoadingResult<CodyAccountDetails>(null, null, "Missing access token", true)
 }

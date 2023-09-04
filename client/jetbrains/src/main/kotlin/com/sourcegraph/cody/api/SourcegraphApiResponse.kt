@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.config
+package com.sourcegraph.cody.api
 
 import com.intellij.util.ThrowableConvertor
 import java.io.IOException

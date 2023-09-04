@@ -10,7 +10,7 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.cody.config.AccountType;
-import com.sourcegraph.cody.config.SourcegraphAuthenticationManager;
+import com.sourcegraph.cody.config.CodyAuthenticationManager;
 import com.sourcegraph.common.ErrorNotification;
 import com.sourcegraph.find.PreviewContent;
 import com.sourcegraph.find.SourcegraphVirtualFile;
@@ -138,7 +138,7 @@ public abstract class FileActionBase extends DumbAwareAction {
     }
     e.getPresentation()
         .setEnabled(
-            SourcegraphAuthenticationManager.getInstance().getDefaultAccountType(project)
+            CodyAuthenticationManager.getInstance().getDefaultAccountType(project)
                 != AccountType.LOCAL_APP);
   }
 }

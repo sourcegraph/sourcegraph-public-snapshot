@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.config
+package com.sourcegraph.cody.api
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.ToggleAction

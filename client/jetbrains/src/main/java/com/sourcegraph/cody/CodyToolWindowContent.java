@@ -42,8 +42,8 @@ import com.sourcegraph.cody.chat.ContextFilesMessage;
 import com.sourcegraph.cody.chat.MessagePanel;
 import com.sourcegraph.cody.chat.Transcript;
 import com.sourcegraph.cody.config.AccountType;
-import com.sourcegraph.cody.config.SourcegraphAccount;
-import com.sourcegraph.cody.config.SourcegraphAuthenticationManager;
+import com.sourcegraph.cody.config.CodyAccount;
+import com.sourcegraph.cody.config.CodyAuthenticationManager;
 import com.sourcegraph.cody.context.ContextMessage;
 import com.sourcegraph.cody.context.EmbeddingStatusView;
 import com.sourcegraph.cody.localapp.LocalAppManager;
@@ -291,7 +291,7 @@ public class CodyToolWindowContent implements UpdatableChat {
   @RequiresEdt
   private void updateVisibilityOfContentPanels() {
     if (LocalAppManager.isPlatformSupported()
-        && SourcegraphAuthenticationManager.getInstance().getDefaultAccountType(project) == AccountType.LOCAL_APP) {
+        && CodyAuthenticationManager.getInstance().getDefaultAccountType(project) == AccountType.LOCAL_APP) {
       if (!LocalAppManager.isLocalAppInstalled()) {
         allContentLayout.show(allContentPanel, "appNotInstalledPanel");
         isChatVisible = false;
@@ -365,7 +365,7 @@ public class CodyToolWindowContent implements UpdatableChat {
   }
 
   private void addWelcomeMessage() {
-    SourcegraphAccount defaultAccount = SourcegraphAuthenticationManager.getInstance().getDefaultAccount(project);;
+    CodyAccount defaultAccount = CodyAuthenticationManager.getInstance().getDefaultAccount(project);;
     String welcomeText =
         "Hello! I'm Cody. I can write code and answer questions for you. See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.";
     addMessageToChat(ChatMessage.createAssistantMessage(welcomeText));
@@ -574,7 +574,7 @@ public class CodyToolWindowContent implements UpdatableChat {
     // Use context
     if (contextMessages.isEmpty()) {
       AccountType accountType =
-          SourcegraphAuthenticationManager.getInstance().getDefaultAccountType(project);
+          CodyAuthenticationManager.getInstance().getDefaultAccountType(project);
 
       String report = "I found no context for your request.";
       String ask =

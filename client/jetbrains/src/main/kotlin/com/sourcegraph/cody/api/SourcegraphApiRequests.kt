@@ -1,5 +1,7 @@
-package com.sourcegraph.cody.config
+package com.sourcegraph.cody.api
 
+import com.sourcegraph.cody.config.CodyAccountDetails
+import com.sourcegraph.cody.config.SourcegraphServerPath
 import java.awt.Image
 
 object SourcegraphApiRequests {
@@ -15,7 +17,7 @@ object SourcegraphApiRequests {
           CurrentUserWrapper::class.java)
     }
 
-    data class CurrentUserWrapper(val currentUser: SourcegraphAccountDetailed)
+    data class CurrentUserWrapper(val currentUser: CodyAccountDetails)
 
     @JvmStatic
     fun getAvatar(url: String) =

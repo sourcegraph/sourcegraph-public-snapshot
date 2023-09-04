@@ -15,26 +15,26 @@ import com.sourcegraph.cody.localapp.LocalAppManager
         ],
     reportStatistic = false,
     category = SettingsCategory.TOOLS)
-class SourcegraphPersisentAccounts :
-    AccountsRepository<SourcegraphAccount>, PersistentStateComponent<Array<SourcegraphAccount>> {
-  private var state = emptyArray<SourcegraphAccount>()
+class CodyPersisentAccounts :
+    AccountsRepository<CodyAccount>, PersistentStateComponent<Array<CodyAccount>> {
+  private var state = emptyArray<CodyAccount>()
 
-  override var accounts: Set<SourcegraphAccount>
+  override var accounts: Set<CodyAccount>
     get() = state.toSet()
     set(value) {
       state = value.toTypedArray()
     }
 
-  override fun getState(): Array<SourcegraphAccount> = state
+  override fun getState(): Array<CodyAccount> = state
 
-  override fun loadState(state: Array<SourcegraphAccount>) {
+  override fun loadState(state: Array<CodyAccount>) {
     var finalState = state
     if (state.none { it.id == LocalAppManager.LOCAL_APP_ID }) {
       val localAppInstalled = LocalAppManager.isLocalAppInstalled()
       if (localAppInstalled) {
         finalState =
             state +
-                SourcegraphAccount.create(
+                CodyAccount.create(
                     LocalAppManager.LOCAL_APP_ID,
                     SourcegraphServerPath(LocalAppManager.getLocalAppUrl()),
                     LocalAppManager.LOCAL_APP_ID)

@@ -25,16 +25,16 @@ class NewSettingsConfigurable(private val project: Project) :
   private val codyProjectSettings = project.service<CodyProjectSettings>()
   private val codyApplicationSettings = service<CodyApplicationSettings>()
   private val settingsModel = SettingsModel()
-  private val accountManager = service<SourcegraphAccountManager>()
-  private val defaultAccountHolder = project.service<SourcegraphProjectDefaultAccountHolder>()
+  private val accountManager = service<CodyAccountManager>()
+  private val defaultAccountHolder = project.service<CodyProjectDefaultAccountHolder>()
   private lateinit var dialogPanel: DialogPanel
 
   override fun createPanel(): DialogPanel {
-    val accountsModel = SourcegraphAccountListModel(project)
+    val accountsModel = CodyAccountListModel(project)
     val indicatorsProvider =
         ProgressIndicatorsProvider().also { Disposer.register(disposable!!, it) }
     val detailsProvider =
-        SourcegraphAccounDetailsProvider(indicatorsProvider, accountManager, accountsModel)
+        CodyAccounDetailsProvider(indicatorsProvider, accountManager, accountsModel)
     dialogPanel = panel {
       group("Authentication") {
         row {
@@ -50,7 +50,7 @@ class NewSettingsConfigurable(private val project: Project) :
               .verticalAlign(VerticalAlign.FILL)
               .also {
                 DataManager.registerDataProvider(it.component) { key ->
-                  if (SourcegraphAccountsHost.KEY.`is`(key)) accountsModel else null
+                  if (CodyAccountsHost.KEY.`is`(key)) accountsModel else null
                 }
               }
         }

@@ -8,18 +8,21 @@ import com.intellij.ui.components.fields.ExtendableTextField
 import com.intellij.ui.dsl.builder.MAX_LINE_LENGTH_NO_WRAP
 import com.intellij.ui.layout.LayoutBuilder
 import com.intellij.ui.layout.applyToComponent
+import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
+import com.sourcegraph.cody.api.SourcegraphAuthenticationException
+import com.sourcegraph.cody.api.SourcegraphSecurityUtil
 import com.sourcegraph.cody.config.DialogValidationUtils.custom
 import com.sourcegraph.cody.config.DialogValidationUtils.notBlank
 import com.sourcegraph.common.AuthorizationUtil
 import java.net.UnknownHostException
 import javax.swing.JComponent
 
-internal class SourcegraphTokenCredentialsUi(
+internal class CodyTokenCredentialsUi(
     private val serverTextField: ExtendableTextField,
     private val customRequestHeadersField: ExtendableTextField,
     val factory: SourcegraphApiRequestExecutor.Factory,
     val isAccountUnique: UniqueLoginPredicate
-) : SourcegraphCredentialsUi() {
+) : CodyCredentialsUi() {
 
   private val tokenTextField = JBTextField()
   private var fixedLogin: String? = null

@@ -13,10 +13,10 @@ object ServerAuthLoader {
 
   @JvmStatic
   fun loadServerAuth(project: Project): ServerAuth {
-    val sourcegraphAuthenticationManager = SourcegraphAuthenticationManager.getInstance()
-    val defaultAccount = sourcegraphAuthenticationManager.getDefaultAccount(project)
+    val codyAuthenticationManager = CodyAuthenticationManager.getInstance()
+    val defaultAccount = codyAuthenticationManager.getDefaultAccount(project)
     if (defaultAccount != null) {
-      val accessToken = sourcegraphAuthenticationManager.getTokenForAccount(defaultAccount) ?: ""
+      val accessToken = codyAuthenticationManager.getTokenForAccount(defaultAccount) ?: ""
       return ServerAuth(
           defaultAccount.server.url, accessToken, defaultAccount.server.customRequestHeaders)
     }

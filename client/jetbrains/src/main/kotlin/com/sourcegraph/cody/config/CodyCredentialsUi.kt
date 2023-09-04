@@ -6,10 +6,11 @@ import com.intellij.ui.layout.LayoutBuilder
 import com.intellij.ui.layout.panel
 import com.intellij.util.ui.JBEmptyBorder
 import com.intellij.util.ui.UIUtil
+import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import javax.swing.JComponent
 import javax.swing.JPanel
 
-internal abstract class SourcegraphCredentialsUi {
+internal abstract class CodyCredentialsUi {
     abstract fun getPreferredFocusableComponent(): JComponent?
     abstract fun getValidator(): Validator
     abstract fun createExecutor(): SourcegraphApiRequestExecutor

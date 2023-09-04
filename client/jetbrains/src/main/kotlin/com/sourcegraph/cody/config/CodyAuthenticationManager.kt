@@ -8,7 +8,7 @@ import com.sourcegraph.cody.localapp.LocalAppManager
 import java.awt.Component
 import org.jetbrains.annotations.CalledInAny
 
-internal class SourcegraphAuthData(val account: SourcegraphAccount, login: String, token: String) :
+internal class CodyAuthData(val account: CodyAccount, login: String, token: String) :
     AuthData(login, token) {
   val server: SourcegraphServerPath
     get() = account.server
@@ -17,14 +17,14 @@ internal class SourcegraphAuthData(val account: SourcegraphAccount, login: Strin
 }
 
 /** Entry point for interactions with Sourcegraph authentication subsystem */
-class SourcegraphAuthenticationManager internal constructor() {
-  private val accountManager: SourcegraphAccountManager
+class CodyAuthenticationManager internal constructor() {
+  private val accountManager: CodyAccountManager
     get() = service()
 
-  @CalledInAny fun getAccounts(): Set<SourcegraphAccount> = accountManager.accounts
+  @CalledInAny fun getAccounts(): Set<CodyAccount> = accountManager.accounts
 
   @CalledInAny
-  internal fun getTokenForAccount(account: SourcegraphAccount): String? =
+  internal fun getTokenForAccount(account: CodyAccount): String? =
       accountManager.findCredentials(account)
 
   internal fun isAccountUnique(name: String, server: SourcegraphServerPath) =
@@ -34,18 +34,18 @@ class SourcegraphAuthenticationManager internal constructor() {
   internal fun login(
       project: Project?,
       parentComponent: Component?,
-      request: SourcegraphLoginRequest
-  ): SourcegraphAuthData? = request.loginWithToken(project, parentComponent)
+      request: CodyLoginRequest
+  ): CodyAuthData? = request.loginWithToken(project, parentComponent)
 
   @RequiresEdt
-  internal fun updateAccountToken(account: SourcegraphAccount, newToken: String) =
+  internal fun updateAccountToken(account: CodyAccount, newToken: String) =
       accountManager.updateAccount(account, newToken)
 
-  fun getDefaultAccount(project: Project): SourcegraphAccount? =
-      project.service<SourcegraphProjectDefaultAccountHolder>().account
+  fun getDefaultAccount(project: Project): CodyAccount? =
+      project.service<CodyProjectDefaultAccountHolder>().account
 
-  fun setDefaultAccount(project: Project, account: SourcegraphAccount?) {
-    project.service<SourcegraphProjectDefaultAccountHolder>().account = account
+  fun setDefaultAccount(project: Project, account: CodyAccount?) {
+    project.service<CodyProjectDefaultAccountHolder>().account = account
   }
 
   fun getDefaultAccountType(project: Project): AccountType {
@@ -56,6 +56,6 @@ class SourcegraphAuthenticationManager internal constructor() {
   }
 
   companion object {
-    @JvmStatic fun getInstance(): SourcegraphAuthenticationManager = service()
+    @JvmStatic fun getInstance(): CodyAuthenticationManager = service()
   }
 }

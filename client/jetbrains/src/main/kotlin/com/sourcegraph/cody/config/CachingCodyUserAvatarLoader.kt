@@ -12,12 +12,14 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.LowMemoryWatcher
 import com.intellij.util.ImageLoader
+import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
+import com.sourcegraph.cody.api.SourcegraphApiRequests
 import java.awt.Image
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.CompletableFuture
 
-class CachingSourcegraphUserAvatarLoader : Disposable {
+class CachingCodyUserAvatarLoader : Disposable {
 
   private val indicatorProvider = ProgressIndicatorsProvider().also { Disposer.register(this, it) }
 
@@ -62,9 +64,9 @@ class CachingSourcegraphUserAvatarLoader : Disposable {
   override fun dispose() {}
 
   companion object {
-    private val LOG = logger<CachingSourcegraphUserAvatarLoader>()
+    private val LOG = logger<CachingCodyUserAvatarLoader>()
 
-    @JvmStatic fun getInstance(): CachingSourcegraphUserAvatarLoader = service()
+    @JvmStatic fun getInstance(): CachingCodyUserAvatarLoader = service()
 
     private const val MAXIMUM_ICON_SIZE = 40
 
