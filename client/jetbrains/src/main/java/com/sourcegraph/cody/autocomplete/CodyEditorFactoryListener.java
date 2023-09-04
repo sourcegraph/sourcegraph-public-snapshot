@@ -1,5 +1,7 @@
 package com.sourcegraph.cody.autocomplete;
 
+import static com.sourcegraph.common.EditorUtils.VIM_EXIT_INSERT_MODE_ACTION;
+
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.openapi.editor.Caret;
@@ -25,6 +27,7 @@ import com.sourcegraph.cody.vscode.InlineAutocompleteTriggerKind;
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind;
 import com.sourcegraph.config.ConfigUtil;
 import java.util.List;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -62,6 +65,10 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
     @Override
     public void caretPositionChanged(@NotNull CaretEvent e) {
       if (!ConfigUtil.isCodyEnabled()) {
+        return;
+      }
+      String commandName = CommandProcessor.getInstance().getCurrentCommandName();
+      if (Objects.equals(commandName, VIM_EXIT_INSERT_MODE_ACTION)) {
         return;
       }
       informAgentAboutEditorChange(e.getEditor());
