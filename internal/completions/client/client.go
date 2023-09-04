@@ -29,7 +29,12 @@ func getBasic(endpoint string, provider conftypes.CompletionsProviderName, acces
 	case conftypes.CompletionsProviderNameAzureOpenAI:
 		return azureopenai.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
 	case conftypes.CompletionsProviderNameSourcegraph:
-		return codygateway.NewClient(httpcli.ExternalDoer, endpoint, accessToken)
+		// Expose Sourcegraph actor to Cody Gateway
+		actorDoer, err := httpcli.ExternalClientFactory.Doer(httpcli.ActorTransportOpt)
+		if err != nil {
+			return nil, errors.Wrap(err, "httpcli.Doer")
+		}
+		return codygateway.NewClient(actorDoer, endpoint, accessToken)
 	case conftypes.CompletionsProviderNameFireworks:
 		return fireworks.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
 	default:
