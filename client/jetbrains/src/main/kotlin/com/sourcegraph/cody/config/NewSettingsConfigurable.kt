@@ -27,10 +27,11 @@ class NewSettingsConfigurable(private val project: Project) :
   private val settingsModel = SettingsModel()
   private val accountManager = service<CodyAccountManager>()
   private val defaultAccountHolder = project.service<CodyProjectDefaultAccountHolder>()
-  private val accountsModel = CodyAccountListModel(project)
+  private lateinit var accountsModel: CodyAccountListModel
   private lateinit var dialogPanel: DialogPanel
 
   override fun createPanel(): DialogPanel {
+    accountsModel = CodyAccountListModel(project)
     val indicatorsProvider =
         ProgressIndicatorsProvider().also { Disposer.register(disposable!!, it) }
     val detailsProvider =
@@ -130,11 +131,16 @@ class NewSettingsConfigurable(private val project: Project) :
     val oldCodyAutocompleteEnabled = codyApplicationSettings.isCodyAutocompleteEnabled
     val oldDefaultAccount = defaultAccountHolder.account
     val oldUrl = oldDefaultAccount?.server?.url ?: ""
-    val oldAccessToken = oldDefaultAccount?.let { accountManager.findCredentials(it) }
 
-    val newDefaultAccount = accountsModel.defaultAccount
-    val newAccessToken = newDefaultAccount?.let { accountsModel.newCredentials[it] }
-    val newUrl = newDefaultAccount?.server?.url ?: ""
+    var defaultAccount = accountsModel.defaultAccount
+    val newAccessToken = defaultAccount?.let { accountsModel.newCredentials[it] }
+    val accessTokenChanged = newAccessToken != null
+    val defaultAccountRemoved = !accountsModel.accounts.contains(defaultAccount)
+    if (defaultAccountRemoved) {
+      defaultAccount = accountsModel.accounts.getFirstAccountOrNull()
+    }
+
+    val newUrl = defaultAccount?.server?.url ?: ""
     val context =
         PluginSettingChangeContext(
             oldCodyEnabled,
@@ -143,12 +149,13 @@ class NewSettingsConfigurable(private val project: Project) :
             newUrl,
             settingsModel.isCodyEnabled,
             settingsModel.isCodyAutocompleteEnabled,
-            oldAccessToken != newAccessToken)
+            accessTokenChanged)
 
     publisher.beforeAction(context)
 
     super.apply()
-
+    CodyAuthenticationManager.getInstance().setDefaultAccount(project, defaultAccount)
+    accountsModel.defaultAccount = defaultAccount
     codyProjectSettings.defaultBranchName = settingsModel.defaultBranchName
     codyProjectSettings.remoteUrlReplacements = settingsModel.remoteUrlReplacements
     codyApplicationSettings.isCodyEnabled = settingsModel.isCodyEnabled

@@ -161,7 +161,9 @@ class SettingsMigration : StartupActivity, DumbAware {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
       val codyAccount = CodyAccount.create(it.name, server, id)
       addAccount(codyAccount, accessToken)
-      CodyAuthenticationManager.getInstance().setDefaultAccount(project, codyAccount)
+        if(CodyAuthenticationManager.getInstance().getDefaultAccount(project) == null){
+            CodyAuthenticationManager.getInstance().setDefaultAccount(project, codyAccount)
+        }
     }
   }
 

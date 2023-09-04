@@ -56,3 +56,6 @@ class CodyAccount(
     }
   }
 }
+
+fun Collection<CodyAccount>.getFirstAccountOrNull() =
+    this.firstOrNull { it.isCodyApp() } ?: this.firstOrNull()

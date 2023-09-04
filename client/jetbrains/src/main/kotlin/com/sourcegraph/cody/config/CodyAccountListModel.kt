@@ -7,6 +7,8 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.JBPopupMenu
 import com.intellij.ui.awt.RelativePoint
+import com.intellij.util.containers.orNull
+import com.sourcegraph.cody.localapp.LocalAppManager
 import java.util.UUID
 import javax.swing.JComponent
 
@@ -30,12 +32,22 @@ class CodyAccountListModel(private val project: Project) :
 
   override fun editAccount(parentComponent: JComponent, account: CodyAccount) {
     val authData =
-        CodyAuthenticationManager.getInstance()
-            .login(
-                project,
-                parentComponent,
-                CodyLoginRequest(server = account.server, login = account.name))
-            ?: return
+        if (!account.isCodyApp()) {
+          CodyAuthenticationManager.getInstance()
+              .login(
+                  project,
+                  parentComponent,
+                  CodyLoginRequest(server = account.server, login = account.name))
+        } else {
+          val localAppAccessToken = LocalAppManager.getLocalAppAccessToken().orNull()
+          if (localAppAccessToken != null) {
+            CodyAuthData(account, LocalAppManager.LOCAL_APP_ID, localAppAccessToken)
+          } else {
+            null
+          }
+        }
+
+    if (authData == null) return
 
     account.name = authData.login
     newCredentials[account] = authData.token
