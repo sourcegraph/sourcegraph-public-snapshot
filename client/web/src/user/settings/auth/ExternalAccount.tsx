@@ -1,4 +1,4 @@
-import React, { useState, useCallback, FC } from 'react'
+import React, { useState, useCallback, type FC } from 'react'
 
 import type { ErrorLike } from '@sourcegraph/common'
 import { Button, Link, H3 } from '@sourcegraph/wildcard'
@@ -121,6 +121,26 @@ export const ExternalAccountConnectionDetails: FC<ExternalAccountConnectionDetai
                     {account.external?.displayName ? (
                         <>
                             {account.external.displayName} (@{account.external?.login})
+                        </>
+                    ) : (
+                        'Not connected'
+                    )}
+                </>
+            )
+        case 'github':
+            return (
+                <>
+                    {account.external?.login ? (
+                        <>
+                            {account.external.displayName} (
+                            <Link
+                                to={`https://github.com/${account.external.login}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                @{account.external.login}
+                            </Link>
+                            )
                         </>
                     ) : (
                         'Not connected'
