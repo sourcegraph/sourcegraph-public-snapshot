@@ -37,6 +37,10 @@ go_test(
         "exhaustive_search_test.go",
     ],
     embed = [":search"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/actor",
         "//internal/database",
