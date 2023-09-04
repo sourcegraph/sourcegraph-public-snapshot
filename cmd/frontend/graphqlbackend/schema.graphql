@@ -841,7 +841,7 @@ type Mutation {
     # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
     # introduce any breaking changes, and let new parameters be optional with
     # reasonable defaults instead.
-    sendTestEmail(to: String!, config: SMTPConfig): String!
+    sendTestEmail(to: String!): String!
 
     """
     Enqueues a sync for the external service. It will be picked up in the background.
@@ -7591,28 +7591,9 @@ enum AlertType {
 }
 
 """
-The group of alerts.
-"""
-enum AlertGroup {
-    AUTHENTICATION
-    CODEHOST
-    CODY
-    EXTERNAL_URL
-    LICENSE
-    OBSERVABILITY
-    SMTP
-    UPDATE
-    OTHER
-}
-
-"""
 An alert message shown to the viewer.
 """
 type Alert {
-    """
-    The group of this alert. Indicates what system it relates to.
-    """
-    group: AlertGroup!
     """
     The type of this alert.
     """
@@ -9992,70 +9973,6 @@ input TeamMemberInput {
     Account Login is usually the username on the external account platform.
     """
     externalAccountLogin: String
-}
-
-"""
-Defines the available SMTP authentication mechanisms.
-
-NONE: No authentication.
-PLAIN: Plain authentication using username and password.
-CRAM_MD5: CRAM-MD5 authentication using username and secret.
-"""
-enum SMTPAuthType {
-    """
-    No authentication.
-    """
-    NONE
-    """
-    Plain authentication, which uses username and password.
-    """
-    PLAIN
-    """
-    Cram MD5 authentication, which uses username and secret.
-    """
-    CRAM_MD5
-}
-
-"""
-Configuration to specify SMTP server settings.
-"""
-input SMTPConfig {
-    """
-    Hostname of the SMTP server.
-    """
-    host: String!
-    """
-    Port of the SMTP server.
-    """
-    port: Int!
-    """
-    Type of authentication to use for the SMTP server.
-    """
-    authentication: SMTPAuthType!
-    """
-    Username to authenticate with if authentication type is not "NONE".
-    """
-    username: String
-    """
-    Password or cram-md5 secret in case authentication type is "CRAM-MD5"
-    """
-    password: String
-    """
-    Domain to send with the hello command, if required by the SMTP server.
-    """
-    domain: String
-    """
-    If true, TLS verification will be skipped. Defaults to false.
-    """
-    noVerifyTLS: Boolean
-    """
-    The FROM email address that is used in emails sent by Sourcegraph.
-    """
-    emailAddress: String!
-    """
-    The FROM name that is used in emails sent by Sourcegraph.
-    """
-    emailSenderName: String
 }
 
 """
