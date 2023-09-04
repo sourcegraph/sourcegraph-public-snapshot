@@ -88,7 +88,7 @@ func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Cont
 
 		j.workers = []goroutine.BackgroundRoutine{
 			newExhaustiveSearchWorker(workCtx, observationCtx, searchWorkerStore, exhaustiveSearchStore, newSearcher, j.config),
-			newExhaustiveSearchRepoWorker(workCtx, observationCtx, repoWorkerStore, exhaustiveSearchStore, j.config),
+			newExhaustiveSearchRepoWorker(workCtx, observationCtx, repoWorkerStore, exhaustiveSearchStore, newSearcher, j.config),
 			newExhaustiveSearchRepoRevisionWorker(workCtx, observationCtx, revWorkerStore, exhaustiveSearchStore, j.config),
 		}
 	})
