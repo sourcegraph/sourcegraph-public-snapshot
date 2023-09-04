@@ -5,9 +5,6 @@ package googlesecretsmanager
 const ProjectID = "sourcegraph-secrets"
 
 var (
-	SecretGCPBillingAccount  = "MSP_BILLING_ACCOUNT_ID" // TODO: Add
-	SecretGCPProjectFolderID = "MSP_PARENT_FOLDER_ID"   // TODO: Add
-
 	SecretTFCAccessToken   = "TFC_ORGANIZATION_TOKEN"
 	SecretTFCOAuthClientID = "TFC_OAUTH_CLIENT_ID"
 

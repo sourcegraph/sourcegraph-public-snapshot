@@ -37,7 +37,8 @@ var gcpServices = []string{
 
 const (
 	BillingAccountID = "017005-C370B2-0E3030"
-	ProjectFolderID  = "folders/26336759932"
+	// DefaultProjectFolderID points to the 'Managed Services' folder
+	DefaultProjectFolderID = "folders/26336759932"
 )
 
 type Output struct {
@@ -53,9 +54,15 @@ type Variables struct {
 	// Name is a display name for the project. It does not need to be unique.
 	Name string
 
+	// Labels to apply to the project.
 	Labels map[string]string
 
-	// EnableAuditLogs ships GCP audit logs to security cluster
+	// ProjectFolderID is a 'folders/'-prefixed folder ID to create the project
+	// in. A default project is set.
+	ProjectFolderID *string
+
+	// EnableAuditLogs ships GCP audit logs to security cluster.
+	// TODO: Not yet implemented
 	EnableAuditLogs bool
 }
 
@@ -84,7 +91,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 				ProjectId:         &projectID.HexValue,
 				AutoCreateNetwork: false,
 				BillingAccount:    pointers.Ptr(BillingAccountID),
-				FolderId:          pointers.Ptr(ProjectFolderID),
+				FolderId:          pointers.Ptr(pointers.Deref(vars.ProjectFolderID, DefaultProjectFolderID)),
 				Labels: func(input map[string]string) *map[string]*string {
 					labels := make(map[string]*string)
 					for k, v := range input {
