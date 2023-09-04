@@ -2,6 +2,7 @@ use anyhow::Result;
 use scip::types::Occurrence;
 use scip_treesitter_languages::parsers::BundledParser;
 
+pub mod chunking;
 pub mod ctags;
 pub mod globals;
 pub mod languages;
