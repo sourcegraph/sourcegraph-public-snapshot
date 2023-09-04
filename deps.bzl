@@ -1778,8 +1778,8 @@ def go_dependencies():
         name = "com_github_dlclark_regexp2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/dlclark/regexp2",
-        sum = "h1:rJD5HeGIT/2b5CDk63FVCwZA3qgYElfg+oQK7uH5pfE=",
-        version = "v1.8.0",
+        sum = "h1:+/GIL799phkJqYW+3YbOd8LCcbHzT0Pbo8zl70MHsq0=",
+        version = "v1.10.0",
     )
     go_repository(
         name = "com_github_dnaeon_go_vcr",
@@ -5590,6 +5590,15 @@ def go_dependencies():
         sum = "h1:VasscCm72135zRysgrJDKsntdmPN+OuU3+nnHYA9wyc=",
         version = "v1.10.1",
     )
+    go_repository(
+        name = "com_github_pkoukk_tiktoken_go",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/pkoukk/tiktoken-go",
+        replace = "github.com/sourcegraph/tiktoken-go",
+        sum = "h1:Wu8W50qCMC+BYoBQY/wTPt0QNglXF/IO3zljM+LKuNM=",
+        version = "v0.0.0-20230905173153-caab340cf008",
+    )
+
     go_repository(
         name = "com_github_pmezard_go_difflib",
         build_file_proto_mode = "disable_global",
