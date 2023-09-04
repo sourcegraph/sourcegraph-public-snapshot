@@ -38,8 +38,6 @@ import (
 //     "build.buildFlags": ["-tags=msp"]
 //  }
 
-const ()
-
 func init() {
 	// Override no-op implementation with our real implementation.
 	Command.Hidden = false
