@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
@@ -13,21 +14,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 )
 
-func TestExhaustiveSearchHandler(t *testing.T) {
-	// TODO(keegan) I can imagine evolving this into a full e2e test using the
-	// DB and the searcher fake to test all the worker tables.
+func TestExhaustiveSearch(t *testing.T) {
+	// This test exercises the full worker infra from the time a search job is
+	// created until it is done.
 
 	require := require.New(t)
 	observationCtx := observation.TestContextTB(t)
 	logger := observationCtx.Logger
-	ctx := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	s := store.New(db, observation.TestContextTB(t))
+
+	ctx, cancel := context.WithCancel(actor.WithInternalActor(context.Background()))
+	defer cancel()
 
 	userID := insertRow(t, s.Store, "users", "username", "alice")
 	insertRow(t, s.Store, "repo", "id", 1, "name", "repoa")
@@ -41,17 +43,24 @@ func TestExhaustiveSearchHandler(t *testing.T) {
 		Query:       query,
 	})
 	require.NoError(err)
-	job, err := s.GetExhaustiveSearchJob(ctx, jobID)
-	require.NoError(err)
 
-	handler := exhaustiveSearchHandler{
-		logger:      logger,
-		store:       s,
-		newSearcher: service.NewSearcherFake(),
+	// Now that the job is created, we start up all the worker routines for
+	// exhaustive search and wait until there are no more jobs left.
+	searchJob := &searchJob{
+		workerDB: db,
+		config: config{
+			WorkerInterval: 10 * time.Millisecond,
+		},
 	}
-
-	err = handler.Handle(ctx, logger, job)
+	routines, err := searchJob.Routines(ctx, observationCtx)
 	require.NoError(err)
+	for _, routine := range routines {
+		go routine.Start()
+		defer routine.Stop()
+	}
+	require.Eventually(func() bool {
+		return !searchJob.hasWork(ctx)
+	}, tTimeout(t, 10*time.Second), 10*time.Millisecond)
 
 	// We now validate by directly checking the entries are created that we
 	// want.
@@ -89,4 +98,18 @@ func insertRow(t testing.TB, store *basestore.Store, table string, keyValues ...
 		t.Fatal(err)
 	}
 	return id
+}
+
+// tTimeout returns the duration until t's deadline. If there is no deadline
+// or the deadline is further away than max, then max is returned.
+func tTimeout(t *testing.T, max time.Duration) time.Duration {
+	deadline, ok := t.Deadline()
+	if !ok {
+		return max
+	}
+	timeout := time.Until(deadline)
+	if max < timeout {
+		return max
+	}
+	return timeout
 }

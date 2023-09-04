@@ -16,13 +16,14 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-// NewExhaustiveSearchWorker creates a background routine that periodically runs the exhaustive search.
-func NewExhaustiveSearchWorker(
+// newExhaustiveSearchWorker creates a background routine that periodically runs the exhaustive search.
+func newExhaustiveSearchWorker(
 	ctx context.Context,
 	observationCtx *observation.Context,
 	workerStore dbworkerstore.Store[*types.ExhaustiveSearchJob],
 	exhaustiveSearchStore *store.Store,
 	newSearcher service.NewSearcher,
+	config config,
 ) goroutine.BackgroundRoutine {
 	handler := &exhaustiveSearchHandler{
 		logger:      log.Scoped("exhaustive-search", "The background worker running exhaustive searches"),
@@ -34,7 +35,7 @@ func NewExhaustiveSearchWorker(
 		Name:              "exhaustive_search_worker",
 		Description:       "runs the exhaustive search",
 		NumHandlers:       5,
-		Interval:          1 * time.Second,
+		Interval:          config.WorkerInterval,
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           workerutil.NewMetrics(observationCtx, "exhaustive_search_worker"),
 	}

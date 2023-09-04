@@ -15,6 +15,7 @@ go_library(
         "//cmd/worker/job",
         "//cmd/worker/shared/init/db",
         "//internal/actor",
+        "//internal/database",
         "//internal/env",
         "//internal/goroutine",
         "//internal/observation",
@@ -31,11 +32,7 @@ go_library(
 
 go_test(
     name = "search_test",
-    srcs = [
-        "exhaustive_search_repo_revision_test.go",
-        "exhaustive_search_repo_test.go",
-        "exhaustive_search_test.go",
-    ],
+    srcs = ["exhaustive_search_test.go"],
     embed = [":search"],
     tags = [
         # Test requires localhost database
@@ -47,13 +44,9 @@ go_test(
         "//internal/database/basestore",
         "//internal/database/dbtest",
         "//internal/observation",
-        "//internal/search/exhaustive/service",
         "//internal/search/exhaustive/store",
         "//internal/search/exhaustive/types",
-        "//lib/errors",
         "@com_github_keegancsmith_sqlf//:sqlf",
-        "@com_github_sourcegraph_log//logtest",
-        "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
 )
