@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 )
 
@@ -32,6 +33,9 @@ func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Cont
 		return nil, err
 	}
 
+	// We currently are relying on a fake for search.
+	newSearcher := service.NewSearcherFake()
+
 	exhaustiveSearchStore := store.New(db, observationCtx)
 
 	searchWorkerStore := store.NewExhaustiveSearchJobWorkerStore(observationCtx, db.Handle())
@@ -45,7 +49,7 @@ func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Cont
 
 	workCtx := actor.WithInternalActor(context.Background())
 	return []goroutine.BackgroundRoutine{
-		NewExhaustiveSearchWorker(workCtx, observationCtx, searchWorkerStore, exhaustiveSearchStore),
+		NewExhaustiveSearchWorker(workCtx, observationCtx, searchWorkerStore, exhaustiveSearchStore, newSearcher),
 		NewExhaustiveSearchRepoWorker(workCtx, observationCtx, repoWorkerStore, exhaustiveSearchStore),
 		NewExhaustiveSearchRepoRevisionWorker(workCtx, observationCtx, revWorkerStore, exhaustiveSearchStore),
 	}, nil

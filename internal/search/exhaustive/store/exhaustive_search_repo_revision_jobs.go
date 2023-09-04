@@ -53,14 +53,6 @@ var revSearchJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("updated_at"),
 }
 
-// ExhaustiveSearchRepoRevisionJobStore is the interface for interacting with "exhaustive_search_repo_revision_jobs".
-type ExhaustiveSearchRepoRevisionJobStore interface {
-	// CreateExhaustiveSearchRepoRevisionJob creates a new types.ExhaustiveSearchRepoRevisionJob.
-	CreateExhaustiveSearchRepoRevisionJob(ctx context.Context, job types.ExhaustiveSearchRepoRevisionJob) (int64, error)
-}
-
-var _ ExhaustiveSearchRepoJobStore = &Store{}
-
 func (s *Store) CreateExhaustiveSearchRepoRevisionJob(ctx context.Context, job types.ExhaustiveSearchRepoRevisionJob) (int64, error) {
 	var err error
 	ctx, _, endObservation := s.operations.createExhaustiveSearchRepoJob.With(ctx, &err, observation.Args{})
