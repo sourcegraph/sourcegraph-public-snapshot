@@ -68,7 +68,7 @@ public class BrowserAndLoadingPanel extends JLayeredPane {
       emptyText.appendLine(
           "Make sure your Sourcegraph URL and access token are correct to use search.");
       emptyText.appendLine(
-          "Click here to configure your Cody AI by Sourcegraph settings.",
+          "Click here to configure your Sourcegraph Cody + Code Search settings.",
           new SimpleTextAttributes(STYLE_PLAIN, JBUI.CurrentTheme.Link.Foreground.ENABLED),
           __ ->
               ShowSettingsUtil.getInstance()

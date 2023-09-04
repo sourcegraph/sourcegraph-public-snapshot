@@ -1,7 +1,11 @@
 package com.sourcegraph.cody.statusbar
 
+import com.intellij.ide.DataManager
+import com.intellij.openapi.actionSystem.ActionGroup
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.ListPopup
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.StatusBarWidget
@@ -21,9 +25,17 @@ class CodyStatusBarWidget(project: Project) : EditorBasedStatusBarPopup(project,
     return state
   }
 
-  override fun createPopup(context: DataContext?): ListPopup? {
-    return null
-  }
+    override fun createPopup(context: DataContext?): ListPopup {
+        val actionGroup = ActionManager.getInstance().getAction("CodyStatusBarActions") as? ActionGroup
+            ?: CodyStatusBarActionGroup()
+        return JBPopupFactory.getInstance()
+            .createActionGroupPopup(
+                "Cody",
+                actionGroup,
+                DataManager.getInstance().getDataContext(this.component),
+                JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
+                true)
+    }
 
   override fun createInstance(project: Project): StatusBarWidget {
     return CodyStatusBarWidget(project)

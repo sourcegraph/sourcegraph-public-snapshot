@@ -5,6 +5,31 @@ EXIT_CODE=0
 
 bazelrc=(--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
 
+#shellcheck disable=SC2317
+# generates and uploads all bazel diffs checked by this script
+# in a single buildkite artifact, to be applied by subsequent
+# buildkite steps.
+function generate_diff_artifact() {
+  if [[ $EXIT_CODE -ne 0 ]]; then
+    temp=$(mktemp -d -t "buildkite-$BUILDKITE_BUILD_NUMBER-XXXXXXXX")
+    trap 'rm -rf -- "$temp"' EXIT
+
+    mv ./annotations/* "$temp/"
+    git clean -ffdx
+
+    bazel "${bazelrc[@]}" configure >/dev/null 2>&1
+    bazel "${bazelrc[@]}" run //:gazelle-update-repos >/dev/null 2>&1
+
+    git diff > bazel-configure.diff
+
+    # restore annotations
+    mkdir -p ./annotations
+    mv "$temp"/* ./annotations/
+  fi
+}
+
+trap generate_diff_artifact EXIT
+
 echo "--- :bazel: Running bazel configure"
 bazel "${bazelrc[@]}" configure
 
@@ -23,7 +48,7 @@ if [[ $EXIT_CODE -ne 0 ]]; then
   bazel configure
   ```
 
-  #### For more information please see the [Bazel FAQ](https://docs.sourcegraph.com/dev/background-information/bazel#faq)
+  #### For more information please see the [Bazel FAQ](https://docs.sourcegraph.com/dev/background-information/bazel/faq)
 
 END
   exit "$EXIT_CODE"
@@ -47,7 +72,7 @@ if [[ $EXIT_CODE -ne 0 ]]; then
   bazel run //:gazelle-update-repos
   ```
 
-  #### For more information please see the [Bazel FAQ](https://docs.sourcegraph.com/dev/background-information/bazel#faq)
+  #### For more information please see the [Bazel FAQ](https://docs.sourcegraph.com/dev/background-information/bazel/faq)
 
 END
   exit "$EXIT_CODE"
@@ -79,6 +104,5 @@ END
     EXIT_CODE=100
   fi
 fi
-
 
 exit "$EXIT_CODE"

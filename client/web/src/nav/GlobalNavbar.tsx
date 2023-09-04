@@ -36,7 +36,6 @@ import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import type { SentinelProps } from '../sentinel/types'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
-import { NotificationsNavbarItem } from '../site-admin/notifications/NotificationsNavbarItem'
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
 import { EventName, EventLocation } from '../util/constants'
@@ -195,8 +194,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 
     const isLightTheme = useIsLightTheme()
 
-    const [isSetupChecklistEnabled] = useFeatureFlag('setup-checklist', false)
-
     return (
         <>
             <NavBar
@@ -306,7 +303,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             </Link>
                         </NavAction>
                     )}
-                    {isSetupChecklistEnabled && <NotificationsNavbarItem />}
                     {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {isSourcegraphDotCom && (
                         <NavAction>

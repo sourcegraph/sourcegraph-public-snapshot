@@ -8,6 +8,7 @@
 - Added ability to hide completion suggestions with ESC key [#55955](https://github.com/sourcegraph/sourcegraph/pull/55955)
 - New alt-backslash shortcut to exlicitly trigger autocomplete [#55926](https://github.com/sourcegraph/sourcegraph/pull/55926)
 - Add visual hints about Cody status to status bar [#56046](https://github.com/sourcegraph/sourcegraph/pull/56046)
+- Added a status bar toggle for enabling/disabling Cody autocomplete [#56310](https://github.com/sourcegraph/sourcegraph/pull/56310)
 
 ### Changed
 
@@ -25,6 +26,7 @@
 
 ### Fixed
 
+- Removing autocomplete inlays when ESC key is pressed when using Cody alongside the IdeaVIM plugin [#56347](https://github.com/sourcegraph/sourcegraph/pull/56347)
 - Handle uncaught exception [#56048](https://github.com/sourcegraph/sourcegraph/pull/56048)
 - Start the agent process on Windows [#56055](https://github.com/sourcegraph/sourcegraph/pull/56055)
 - Internal: use `Autocomplete` instead of `AutoComplete` [#56106](https://github.com/sourcegraph/sourcegraph/pull/56106)

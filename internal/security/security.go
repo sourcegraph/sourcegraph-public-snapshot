@@ -5,18 +5,78 @@ package security
 import (
 	"fmt"
 	"net"
+	"net/mail"
+	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var userRegex = lazyregexp.New("^[a-zA-Z0-9]+$")
+var (
+	userRegex              = lazyregexp.New("^[a-zA-Z0-9]+$")
+	bannedEmailDomainsOnce sync.Once
+	bannedEmailDomains     = collections.NewSet[string]()
+	bannedEmailDomainsErr  error
+)
+
+func ensureBannedEmailDomainsLoaded() error {
+	bannedEmailDomainsOnce.Do(func() {
+		if !envvar.SourcegraphDotComMode() {
+			return
+		}
+
+		denyListPath := os.Getenv("SRC_EMAIL_DOMAIN_DENY_LIST")
+		if denyListPath == "" {
+			return
+		}
+
+		b, err := os.ReadFile(denyListPath)
+		if err != nil {
+			bannedEmailDomainsErr = err
+			return
+		}
+
+		bannedEmailDomains = collections.NewSet(strings.Fields(string(b))...)
+	})
+	return bannedEmailDomainsErr
+}
+
+func IsEmailBanned(email string) (bool, error) {
+	if err := ensureBannedEmailDomainsLoaded(); err != nil {
+		return false, err
+	}
+	if bannedEmailDomains.IsEmpty() {
+		return false, nil
+	}
+
+	addr, err := mail.ParseAddress(email)
+	if err != nil {
+		return false, err
+	}
+
+	if len(addr.Address) == 0 {
+		return true, nil
+	}
+
+	parts := strings.Split(addr.Address, "@")
+
+	if len(parts) < 2 {
+		return true, nil
+	}
+
+	_, banned := bannedEmailDomains[strings.ToLower(parts[len(parts)-1])]
+
+	return banned, nil
+}
 
 // ValidateRemoteAddr validates if the input is a valid IP or a valid hostname.
 // It validates the hostname by attempting to resolve it.

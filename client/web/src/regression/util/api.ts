@@ -849,7 +849,7 @@ export function fetchSiteConfiguration({
 }: Pick<PlatformContext, 'requestGraphQL'>): Observable<SiteResult['site']> {
     return requestGraphQL<SiteResult>({
         request: gql`
-            query SiteRegression {
+            query Site {
                 site {
                     __typename
                     id
