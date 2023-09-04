@@ -202,6 +202,9 @@ func isSCIPAvailable() (bool, error) {
 		return false, err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusUnauthorized {
+		return false, upload.ErrUnauthorized
+	}
 
 	return resp.StatusCode == http.StatusOK, nil
 }
