@@ -84,16 +84,16 @@ type CSVWriter interface {
 }
 
 func NewCSVWriterFake(w io.Writer) CSVWriter {
-	return CSVWriterFake{
+	return csvWriterFake{
 		w: csv.NewWriter(w),
 	}
 }
 
-type CSVWriterFake struct {
+type csvWriterFake struct {
 	w *csv.Writer
 }
 
-func (c CSVWriterFake) writeAndFlush(s []string) error {
+func (c csvWriterFake) writeAndFlush(s []string) error {
 	err := c.w.Write(s)
 	if err != nil {
 		return err
@@ -102,11 +102,11 @@ func (c CSVWriterFake) writeAndFlush(s []string) error {
 	return c.w.Error()
 }
 
-func (c CSVWriterFake) WriteHeader(s ...string) error {
+func (c csvWriterFake) WriteHeader(s ...string) error {
 	return c.writeAndFlush(s)
 }
 
-func (c CSVWriterFake) WriteRow(s ...string) error {
+func (c csvWriterFake) WriteRow(s ...string) error {
 	return c.writeAndFlush(s)
 
 }
