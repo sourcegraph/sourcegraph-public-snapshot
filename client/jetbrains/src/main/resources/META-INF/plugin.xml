@@ -45,6 +45,7 @@
         <postStartupActivity implementation="com.sourcegraph.telemetry.PostStartupActivity"/>
         <postStartupActivity implementation="com.sourcegraph.config.NotificationActivity"/>
         <postStartupActivity implementation="com.sourcegraph.cody.config.SettingsMigration"/>
+        <postStartupActivity implementation="com.sourcegraph.cody.config.NotifyAboutNoDefaultAccount"/>
 
         <!-- Cody -->
         <toolWindow

@@ -42,7 +42,6 @@ import com.sourcegraph.cody.chat.ContextFilesMessage;
 import com.sourcegraph.cody.chat.MessagePanel;
 import com.sourcegraph.cody.chat.Transcript;
 import com.sourcegraph.cody.config.AccountType;
-import com.sourcegraph.cody.config.CodyAccount;
 import com.sourcegraph.cody.config.CodyAuthenticationManager;
 import com.sourcegraph.cody.context.ContextMessage;
 import com.sourcegraph.cody.context.EmbeddingStatusView;
@@ -366,22 +365,9 @@ public class CodyToolWindowContent implements UpdatableChat {
   }
 
   private void addWelcomeMessage() {
-    CodyAccount defaultAccount = CodyAuthenticationManager.getInstance().getDefaultAccount(project);
-    ;
     String welcomeText =
         "Hello! I'm Cody. I can write code and answer questions for you. See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.";
     addMessageToChat(ChatMessage.createAssistantMessage(welcomeText));
-    if (defaultAccount == null) {
-      String noAccessTokenText =
-          "<p>It looks like you don't have Sourcegraph Account configured.</p>"
-              + "<p>See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> how to create an access token one and configure your account in the settings to use Cody.</p>";
-      AssistantMessageWithSettingsButton assistantMessageWithSettingsButton =
-          new AssistantMessageWithSettingsButton(noAccessTokenText);
-      var messageContentPanel = new JPanel(new BorderLayout());
-      messageContentPanel.add(assistantMessageWithSettingsButton);
-      ApplicationManager.getApplication()
-          .invokeLater(() -> addComponentToChat(messageContentPanel));
-    }
   }
 
   @NotNull
@@ -413,7 +399,7 @@ public class CodyToolWindowContent implements UpdatableChat {
             });
   }
 
-  private void addComponentToChat(@NotNull JPanel messageContent) {
+  public void addComponentToChat(@NotNull JPanel messageContent) {
 
     var wrapperPanel = new JPanel();
     wrapperPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
