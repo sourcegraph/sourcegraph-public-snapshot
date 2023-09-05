@@ -47,7 +47,8 @@ public class GraphQlLogger {
     eventParameters.addProperty("displayDuration", displayDurationMs);
     eventParameters.addProperty("isAnyKnownPluginEnabled", PluginUtil.isAnyKnownPluginEnabled());
     JsonObject updatedEventParameters = addCompletionEventParams(eventParameters, params);
-    logEvent(project, createEvent(ConfigUtil.getServerPath(project), eventName, updatedEventParameters));
+    logEvent(
+        project, createEvent(ConfigUtil.getServerPath(project), eventName, updatedEventParameters));
   }
 
   public static void logAutocompleteAcceptedEvent(
@@ -86,8 +87,7 @@ public class GraphQlLogger {
       @NotNull SourcegraphServerPath sourcegraphServerPath,
       @NotNull String eventName,
       @NotNull JsonObject eventParameters) {
-    var updatedEventParameters =
-        addGlobalEventParameters(eventParameters, sourcegraphServerPath);
+    var updatedEventParameters = addGlobalEventParameters(eventParameters, sourcegraphServerPath);
     CodyApplicationSettings codyApplicationSettings = CodyApplicationSettings.getInstance();
     String anonymousUserId = codyApplicationSettings.getAnonymousUserId();
     return new Event(

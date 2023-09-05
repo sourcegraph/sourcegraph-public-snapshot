@@ -23,7 +23,7 @@ import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.config.PluginSettingChangeActionNotifier
 import com.sourcegraph.config.PluginSettingChangeContext
 
-class NewSettingsConfigurable(private val project: Project) :
+class SettingsConfigurable(private val project: Project) :
     BoundConfigurable(ConfigUtil.SERVICE_DISPLAY_NAME) {
   private val codyProjectSettings = project.service<CodyProjectSettings>()
   private val codyApplicationSettings = service<CodyApplicationSettings>()
