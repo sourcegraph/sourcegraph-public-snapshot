@@ -1491,9 +1491,18 @@ func (r *Resolver) ExportChangesets(ctx context.Context, args *graphqlbackend.Ex
 	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
 		return nil, err
 	}
-	// if err != nil {
-	//     return nil, err
-	// }
+
+	batchChangeID, changesetIDs, err := unmarshalBulkOperationBaseArgs(args.BulkOperationBaseArgs)
+	if err != nil {
+		return nil, err
+	}
+
+	svc := service.New(r.store)
+	out, err := svc.ExportChangesets(ctx, batchChangeID, changesetIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	// encoded := base64.StdEncoding.EncodeToString(data)
 	// return &encoded, nil
 	return nil, nil
