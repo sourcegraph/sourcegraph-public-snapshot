@@ -5,15 +5,13 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
 
-@State(
-    name = "CodyApplicationSettings",
-    storages = [Storage("cody_application_settings.xml")])
+@State(name = "CodyApplicationSettings", storages = [Storage("cody_application_settings.xml")])
 data class CodyApplicationSettings(
     var isCodyEnabled: Boolean = false,
     var isCodyAutocompleteEnabled: Boolean = false,
     var isCodyDebugEnabled: Boolean = false,
     var isCodyVerboseDebugEnabled: Boolean = false,
-    var isUrlNotificationDismissed: Boolean = false,
+    var isDefaultDotcomAccountNotificationDismissed: Boolean = false,
     var anonymousUserId: String? = null,
     var isInstallEventLogged: Boolean = false,
     var lastUpdateNotificationPluginVersion: String? = null
@@ -25,7 +23,8 @@ data class CodyApplicationSettings(
     this.isCodyAutocompleteEnabled = state.isCodyAutocompleteEnabled
     this.isCodyDebugEnabled = state.isCodyDebugEnabled
     this.isCodyVerboseDebugEnabled = state.isCodyVerboseDebugEnabled
-    this.isUrlNotificationDismissed = state.isUrlNotificationDismissed
+    this.isDefaultDotcomAccountNotificationDismissed =
+        state.isDefaultDotcomAccountNotificationDismissed
     this.anonymousUserId = state.anonymousUserId
     this.isInstallEventLogged = state.isInstallEventLogged
     this.lastUpdateNotificationPluginVersion = state.lastUpdateNotificationPluginVersion

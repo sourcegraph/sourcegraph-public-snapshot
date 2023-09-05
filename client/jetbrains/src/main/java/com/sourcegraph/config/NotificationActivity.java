@@ -11,7 +11,9 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import com.sourcegraph.Icons;
+import com.sourcegraph.cody.config.AccountType;
 import com.sourcegraph.cody.config.CodyApplicationSettings;
+import com.sourcegraph.cody.config.CodyAuthenticationManager;
 import com.sourcegraph.common.BrowserOpener;
 import com.sourcegraph.find.FindService;
 import java.awt.event.InputEvent;
@@ -29,24 +31,24 @@ public class NotificationActivity implements StartupActivity.DumbAware {
         || lastNotifiedPluginVersion.compareTo(latestReleaseMilestoneVersion) < 0) {
       notifyAboutUpdate(project);
     } else {
-      // TODO what to do with this type of notification?
-      String url = ConfigUtil.getEnterpriseUrl(project);
-      if (!ConfigUtil.isUrlNotificationDismissed()
-          && (url.length() == 0 || url.startsWith(ConfigUtil.DOTCOM_URL))) {
-        notifyAboutSourcegraphUrl();
+      AccountType defaultAccountType =
+          CodyAuthenticationManager.getInstance().getDefaultAccountType(project);
+      if (!ConfigUtil.isDefaultDotcomAccountNotificationDismissed()
+          && (defaultAccountType == AccountType.DOTCOM)) {
+        notifyAboutDefaultDotcomAccount();
       }
     }
   }
 
-  private void notifyAboutSourcegraphUrl() {
+  private void notifyAboutDefaultDotcomAccount() {
     // Display notification
     Notification notification =
         new Notification(
             "Sourcegraph: server access",
             "Sourcegraph",
-            "A custom Sourcegraph URL is not set for this project. You can only access public repos. Do you want to set your custom URL?",
+            "An enterprise Sourcegraph account is not set for this project. You can only access public repos. Do you want to set an enterprise account as the default one?",
             NotificationType.INFORMATION);
-    AnAction setUrlAction = new OpenPluginSettingsAction("Set URL");
+    AnAction setEnterpriseAccountAction = new OpenPluginSettingsAction("Set Enterprise Account");
     AnAction cancelAction =
         new DumbAwareAction("Do Not Set") {
           @Override
@@ -59,11 +61,12 @@ public class NotificationActivity implements StartupActivity.DumbAware {
           @Override
           public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
             notification.expire();
-            CodyApplicationSettings.getInstance().setUrlNotificationDismissed(true);
+            CodyApplicationSettings.getInstance()
+                .setDefaultDotcomAccountNotificationDismissed(true);
           }
         };
     notification.setIcon(Icons.CodyLogo);
-    notification.addAction(setUrlAction);
+    notification.addAction(setEnterpriseAccountAction);
     notification.addAction(cancelAction);
     notification.addAction(neverShowAgainAction);
     Notifications.Bus.notify(notification);

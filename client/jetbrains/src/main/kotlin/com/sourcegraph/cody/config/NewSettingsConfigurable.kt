@@ -128,7 +128,7 @@ class NewSettingsConfigurable(private val project: Project) :
     settingsModel.isCodyAutocompleteEnabled = codyApplicationSettings.isCodyAutocompleteEnabled
     settingsModel.isCodyDebugEnabled = codyApplicationSettings.isCodyDebugEnabled
     settingsModel.isCodyVerboseDebugEnabled = codyApplicationSettings.isCodyVerboseDebugEnabled
-    settingsModel.isUrlNotificationDismissed = codyApplicationSettings.isUrlNotificationDismissed
+    settingsModel.isUrlNotificationDismissed = codyApplicationSettings.isDefaultDotcomAccountNotificationDismissed
     settingsModel.defaultBranchName = codyProjectSettings.defaultBranchName
     settingsModel.remoteUrlReplacements = codyProjectSettings.remoteUrlReplacements
     dialogPanel.reset()
@@ -173,7 +173,7 @@ class NewSettingsConfigurable(private val project: Project) :
     codyApplicationSettings.isCodyAutocompleteEnabled = settingsModel.isCodyAutocompleteEnabled
     codyApplicationSettings.isCodyDebugEnabled = settingsModel.isCodyDebugEnabled
     codyApplicationSettings.isCodyVerboseDebugEnabled = settingsModel.isCodyVerboseDebugEnabled
-    codyApplicationSettings.isUrlNotificationDismissed = settingsModel.isUrlNotificationDismissed
+    codyApplicationSettings.isDefaultDotcomAccountNotificationDismissed = settingsModel.isUrlNotificationDismissed
 
     publisher.afterAction(context)
   }

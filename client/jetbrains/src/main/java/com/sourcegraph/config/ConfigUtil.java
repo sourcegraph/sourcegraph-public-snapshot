@@ -76,11 +76,6 @@ public class ConfigUtil {
   }
 
   @NotNull
-  public static String getDefaultBranchName(@NotNull Project project) {
-    return "";
-  }
-
-  @NotNull
   @Contract(pure = true)
   public static String getPluginVersion() {
     // Internal version
@@ -89,8 +84,8 @@ public class ConfigUtil {
     return plugin != null ? plugin.getVersion() : "unknown";
   }
 
-  public static boolean isUrlNotificationDismissed() {
-    return CodyApplicationSettings.getInstance().isUrlNotificationDismissed();
+  public static boolean isDefaultDotcomAccountNotificationDismissed() {
+    return CodyApplicationSettings.getInstance().isDefaultDotcomAccountNotificationDismissed();
   }
 
   public static boolean isCodyEnabled() {

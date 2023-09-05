@@ -304,7 +304,7 @@ class SettingsMigration : StartupActivity, DumbAware {
     codyApplicationSettings.isCodyDebugEnabled = codyApplicationService.isCodyDebugEnabled ?: false
     codyApplicationSettings.isCodyVerboseDebugEnabled =
         codyApplicationService.isCodyVerboseDebugEnabled ?: false
-    codyApplicationSettings.isUrlNotificationDismissed =
+    codyApplicationSettings.isDefaultDotcomAccountNotificationDismissed =
         codyApplicationService.isUrlNotificationDismissed
     codyApplicationSettings.anonymousUserId = codyApplicationService.anonymousUserId
     codyApplicationSettings.isInstallEventLogged = codyApplicationService.isInstallEventLogged
