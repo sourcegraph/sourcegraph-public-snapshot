@@ -110,6 +110,17 @@ func (s *Service) CreateSearchJob(ctx context.Context, query string) (_ *types.E
 	return tx.GetExhaustiveSearchJob(ctx, jobID)
 }
 
+func (s *Service) CancelSearchJob(ctx context.Context, id int64) error {
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	_, err = tx.CancelSearchJob(ctx, id)
+	return err
+}
+
 func (s *Service) GetSearchJob(ctx context.Context, id int64) (_ *types.ExhaustiveSearchJob, err error) {
 	ctx, _, endObservation := s.operations.getSearchJob.With(ctx, &err, opAttrs(
 		attribute.Int64("id", id),

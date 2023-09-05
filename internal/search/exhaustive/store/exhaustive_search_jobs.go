@@ -93,6 +93,56 @@ VALUES (%s, %s)
 RETURNING id
 `
 
+func (s *Store) CancelSearchJob(ctx context.Context, jobID int64) (int, error) {
+	now := time.Now()
+	q := sqlf.Sprintf(cancelJobFmtStr, now, jobID, now, now)
+
+	row := s.QueryRow(ctx, q)
+
+	var totalCanceled int
+	row.Scan(&totalCanceled)
+	if row.Err() != nil {
+		return -1, row.Err()
+	}
+
+	if totalCanceled == 0 {
+		return 0, errors.Newf("could not find cancellable search job: jobID=%d", jobID)
+	}
+
+	return totalCanceled, nil
+}
+
+const cancelJobFmtStr = `
+WITH updated_jobs AS (
+    -- Update the state of the main job
+    UPDATE exhaustive_search_jobs
+    SET CANCEL = TRUE,
+    state = CASE WHEN exhaustive_search_jobs.state = 'processing' THEN exhaustive_search_jobs.state ELSE 'canceled' END,
+    finished_at = CASE WHEN exhaustive_search_jobs.state = 'processing' THEN exhaustive_search_jobs.finished_at ELSE %s END
+    WHERE id = %s
+    RETURNING id
+),
+updated_repo_jobs AS (
+    -- Update the state of the dependent repo_jobs
+    UPDATE exhaustive_search_repo_jobs
+    SET CANCEL = TRUE,
+    state = CASE WHEN exhaustive_search_repo_jobs.state = 'processing' THEN exhaustive_search_repo_jobs.state ELSE 'canceled' END,
+    finished_at = CASE WHEN exhaustive_search_repo_jobs.state = 'processing' THEN exhaustive_search_repo_jobs.finished_at ELSE %s END
+    WHERE search_job_id IN (SELECT id FROM updated_jobs)
+    RETURNING id
+),
+updated_repo_revision_jobs AS (
+    -- Update the state of the dependent repo_revision_jobs
+    UPDATE exhaustive_search_repo_revision_jobs
+    SET CANCEL = TRUE,
+    state = CASE WHEN exhaustive_search_repo_revision_jobs.state = 'processing' THEN exhaustive_search_repo_revision_jobs.state ELSE 'canceled' END,
+    finished_at = CASE WHEN exhaustive_search_repo_revision_jobs.state = 'processing' THEN exhaustive_search_repo_revision_jobs.finished_at ELSE %s END
+    WHERE search_repo_job_id IN (SELECT id FROM updated_repo_jobs)
+    RETURNING id
+)
+SELECT (SELECT count(*) FROM updated_jobs) + (SELECT count(*) FROM updated_repo_jobs) + (SELECT count(*) FROM updated_repo_revision_jobs) as total_canceled
+`
+
 func (s *Store) GetExhaustiveSearchJob(ctx context.Context, id int64) (_ *types.ExhaustiveSearchJob, err error) {
 	ctx, _, endObservation := s.operations.getExhaustiveSearchJob.With(ctx, &err, opAttrs(
 		attribute.Int64("ID", id),
