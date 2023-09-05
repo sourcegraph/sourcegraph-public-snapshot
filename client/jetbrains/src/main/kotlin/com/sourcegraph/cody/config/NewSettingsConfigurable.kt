@@ -9,10 +9,13 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.setEmptyState
 import com.intellij.openapi.util.Disposer
+import com.intellij.ui.components.JBCheckBox
+import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.MAX_LINE_LENGTH_NO_WRAP
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.builder.selected
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.sourcegraph.cody.Icons
@@ -57,23 +60,31 @@ class NewSettingsConfigurable(private val project: Project) :
         }
       }
       group("Cody AI") {
+        lateinit var enableCodyCheckbox: Cell<JBCheckBox>
         row {
-          checkBox("Enable Cody")
-              .comment(
-                  "Disable this to turn off all AI-based functionality of the plugin, including the Cody chat sidebar and autocomplete",
-                  MAX_LINE_LENGTH_NO_WRAP)
-              .bindSelected(settingsModel::isCodyEnabled)
+          enableCodyCheckbox =
+              checkBox("Enable Cody")
+                  .comment(
+                      "Disable this to turn off all AI-based functionality of the plugin, including the Cody chat sidebar and autocomplete",
+                      MAX_LINE_LENGTH_NO_WRAP)
+                  .bindSelected(settingsModel::isCodyEnabled)
         }
         row {
           checkBox("Enable Cody autocomplete")
+              .enabledIf(enableCodyCheckbox.selected)
               .bindSelected(settingsModel::isCodyAutocompleteEnabled)
         }
         row {
           checkBox("Enable debug")
               .comment("Enables debug output visible in the idea.log")
+              .enabledIf(enableCodyCheckbox.selected)
               .bindSelected(settingsModel::isCodyDebugEnabled)
         }
-        row { checkBox("Verbose debug").bindSelected(settingsModel::isCodyVerboseDebugEnabled) }
+        row {
+          checkBox("Verbose debug")
+              .enabledIf(enableCodyCheckbox.selected)
+              .bindSelected(settingsModel::isCodyVerboseDebugEnabled)
+        }
       }
       group("Code search") {
         row {
