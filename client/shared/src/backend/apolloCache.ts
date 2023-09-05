@@ -19,6 +19,9 @@ const typePolicies: TypedTypePolicies = {
                 // We always want to merge responses from this field as it will be used through very different queries.
                 merge: true,
             },
+            site: {
+                merge: true,
+            },
         },
     },
 }

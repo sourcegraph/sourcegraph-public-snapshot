@@ -6,6 +6,8 @@ import cx from 'classnames'
 
 import { H4, Text, Popover, PopoverContent, PopoverTrigger, Position, Icon, Link } from '@sourcegraph/wildcard'
 
+import { useOnboardingChecklist } from './useOnboardingChecklist'
+
 import styles from './OnboardingChecklist.module.scss'
 
 export const OnboardingChecklist: FC = (): JSX.Element => {
@@ -49,6 +51,7 @@ export const OnboardingChecklist: FC = (): JSX.Element => {
         },
     ]
 
+    const { data, loading, error } = useOnboardingChecklist()
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
     const toggleDropdownOpen = useCallback(() => setIsDropdownOpen(isOpen => !isOpen), [])
 
