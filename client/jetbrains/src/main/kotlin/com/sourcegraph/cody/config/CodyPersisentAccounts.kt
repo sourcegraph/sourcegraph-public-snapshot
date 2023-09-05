@@ -8,10 +8,10 @@ import com.intellij.openapi.components.Storage
 import com.sourcegraph.cody.localapp.LocalAppManager
 
 @State(
-    name = "SourcegraphAccounts",
+    name = "CodyAccounts",
     storages =
         [
-            Storage(value = "sourcegraph_accounts.xml"),
+            Storage(value = "cody_accounts.xml"),
         ],
     reportStatistic = false,
     category = SettingsCategory.TOOLS)
