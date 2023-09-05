@@ -6,18 +6,19 @@ import { useQuery } from '@sourcegraph/http-client'
 
 import { SITE_CONFIG_QUERY } from './queries'
 
-interface OnboardingChecklistResult {
+export interface OnboardingChecklistResult {
     licenseKey: boolean
     externalURL: boolean
     emailSmtp: boolean
     authProviders: boolean
     externalServices: boolean
+    usersPermissions: boolean
 }
 
 interface UseOnboardingChecklistResult {
     loading: boolean
     error?: ErrorLike
-    data?: OnboardingChecklistResult | undefined
+    data?: OnboardingChecklistResult
 }
 
 export const useOnboardingChecklist = (): UseOnboardingChecklistResult => {
@@ -28,7 +29,7 @@ export const useOnboardingChecklist = (): UseOnboardingChecklistResult => {
     return {
         loading,
         error,
-        data: data ? getChecklistItems(data) : undefined,
+        ...(data && { data: getChecklistItems(data) }),
     }
 }
 
@@ -49,5 +50,6 @@ function getChecklistItems(data: SiteConfigResult): OnboardingChecklistResult {
         emailSmtp: config['email.smtp'].host !== '',
         authProviders: config['auth.providers'].length > 0,
         externalServices: data.externalServices?.nodes?.length > 0 || false,
+        usersPermissions: false,
     }
 }

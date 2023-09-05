@@ -4,56 +4,39 @@ import { mdiAlertCircle, mdiChevronDown, mdiCheckCircle, mdiCheckCircleOutline }
 // eslint-disable-next-line id-length
 import cx from 'classnames'
 
-import { H4, Text, Popover, PopoverContent, PopoverTrigger, Position, Icon, Link } from '@sourcegraph/wildcard'
+import {
+    H4,
+    LoadingSpinner,
+    Text,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+    Position,
+    Icon,
+    Link,
+} from '@sourcegraph/wildcard'
 
-import { useOnboardingChecklist } from './useOnboardingChecklist'
+import { content } from './OnboardingChecklist.content'
+import { useOnboardingChecklist, type OnboardingChecklistResult } from './useOnboardingChecklist'
 
 import styles from './OnboardingChecklist.module.scss'
 
 export const OnboardingChecklist: FC = (): JSX.Element => {
-    const mockData = [
-        {
-            isComplete: true,
-            title: 'Set license key',
-            description: 'Please set your license key',
-            link: '#',
-        },
-        {
-            isComplete: false,
-            title: 'Set external URL',
-            description: 'Must be set in order for Sourcegraph to work correctly.',
-            link: '#',
-        },
-        {
-            isComplete: false,
-            title: 'Set up SMTP',
-            description: 'Must be set in order for Sourcegraph to send emails.',
-            link: '#',
-        },
-        {
-            isComplete: false,
-            title: 'Connect a code host',
-            description: 'You must connect a code host to set up user authentication and use Sourcegraph.',
-            link: '#',
-        },
-        {
-            isComplete: false,
-            title: 'Set up user authentication',
-            description: 'We recommend that enterprise instances use SSO or SAML to authenticate users.',
-            link: '#',
-        },
-        {
-            isComplete: false,
-            title: 'Set user permissions',
-            description:
-                'We recommend limiting permissions based on repository permissions already set in your code host(s).',
-            link: '#',
-        },
-    ]
-
     const { data, loading, error } = useOnboardingChecklist()
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
     const toggleDropdownOpen = useCallback(() => setIsDropdownOpen(isOpen => !isOpen), [])
+
+    if (loading || !data) {
+        return <LoadingSpinner />
+    }
+    if (error) {
+        return <></>
+    }
+
+    const isComplete = Object.values(data).every((value: boolean) => value)
+    if (isComplete) {
+        return <></>
+    }
 
     return (
         <Popover isOpen={isDropdownOpen} onOpenChange={toggleDropdownOpen}>
@@ -64,11 +47,11 @@ export const OnboardingChecklist: FC = (): JSX.Element => {
             </PopoverTrigger>
             <PopoverContent className={styles.container} position={Position.bottom}>
                 <OnboardingChecklistList>
-                    {mockData.map(({ isComplete, title, description, link }, index) => (
+                    {content.map(({ id, isComplete, title, description, link }, index) => (
                         <OnboardingChecklistItem
                             // eslint-disable-next-line react/no-array-index-key
                             key={index}
-                            isComplete={isComplete}
+                            isComplete={data[id as keyof OnboardingChecklistResult] || isComplete}
                             title={title}
                             description={description}
                             link={link}
