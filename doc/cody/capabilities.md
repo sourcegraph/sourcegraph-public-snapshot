@@ -70,6 +70,8 @@ More specifically, Cody can answer questions like:
 - Can you write a new GraphQL resolver for the AuditLog?
 - Why is the UserConnectionResolver giving an error `unknown user`, and how do I fix it?
 
+![Example of Cody chat. You see the user ask Cody to describe what a file does, and Cody returns an answers that explains how the file is working in the context of the project.](https://storage.googleapis.com/sourcegraph-assets/cody/Docs/Sept2023/Context_Chat_SM.gif)
+
 <div class="getting-started">
   <a class="demo text-center" target="_blank" href="https://twitter.com/beyang/status/1647744307045228544">View Demo</a>
 </div>
@@ -116,6 +118,8 @@ There are three ways to run a command in VS Code:
 
 ![Cody Commands in VS Code](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-commands.png)
 
+![Example of the Cody 'Explain Code' command. The user highlights a section of code, then uses the hotkey to open the commands menu, then selects the command.](https://storage.googleapis.com/sourcegraph-assets/cody/Docs/Sept2023/Explain_Code_SM.gif)
+
 ### Custom commands <span class="badge badge-experimental">Experimental</span>
 
 **Custom commands** let you save your quick actions and prompts for Cody based on your common workflows. They are defined in JSON format and allow you to call CLI tools, write custom prompts, and select context to be sent to Cody. This provides a flexible way to tailor Cody to your needs.
@@ -123,6 +127,8 @@ There are three ways to run a command in VS Code:
 You can invoke custom commands with the same hotkey as predefined commands. Alternatively, you can right-click the selected code, open the Cody context menu, and select the `Custom Commands (Experimental)` option.
 
 ![Cody Custom Commands in VS Code](https://storage.googleapis.com/sourcegraph-assets/Docs/create-custom-commands.png)
+
+![Example of a user creating a custom "/Variables" command. The user creates a command that automatically makes the variable names in selected code more helpful.](https://storage.googleapis.com/sourcegraph-assets/cody/Docs/Sept2023/Custom_Command_SM.gif)
 
 ### Defining commands in the `cody.json` file
 
