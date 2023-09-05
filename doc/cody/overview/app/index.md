@@ -75,12 +75,6 @@
 
 The Cody app is a free, lightweight, native desktop application that connects your local code to our AI coding assistant, Cody. You can ask Cody questions about your code using the app's interface. However, Cody will be available directly inside your code editor if connected to the VS Code extension.
 
-<div class="socials">
-  <a href="https://discord.com/invite/s2qDtYGnAE"><img alt="Discord" src="discord.svg"></img></a>
-  <a href="https://twitter.com/sourcegraph"><img alt="Twitter" src="twitter.svg"></img></a>
-  <a href="https://github.com/sourcegraph/app"><img alt="GitHub" src="github.svg"></img></a>
-</div>
-
 ## Installation
 
 You can download and install the Cody desktop app for the following:
@@ -121,9 +115,9 @@ After a successful installation, follow these steps to complete the app setup:
 
 ## Rate limiting
 
-Several forms of rate limiting help us control costs for free versions of Cody. We're working actively to relax these limits and facilitate users with [Cody Gateway](./../../explanations/cody_gateway.md).
+Several forms of rate limiting help us manage costs for free versions of Cody. We're working actively to relax these limits and facilitate users with [Cody Gateway](./../../explanations/cody_gateway.md).
 
-If you hit these limits, you can request an increase by visiting our  [Discord](https://discord.com/servers/sourcegraph-969688426372825169) channel and requesting a higher limit for both chats and completions. If you'd like to use your third-party LLM provider instead of Cody Gateway, create your key with Anthropic or OpenAI and [update your app configuration](app_configuration.md).
+If you hit these limits, you can request an increased limit by visiting our [Discord](https://discord.com/servers/sourcegraph-969688426372825169) channel for both chats and completions. If you'd like to use your third-party LLM provider instead of Cody Gateway, create your key with Anthropic or OpenAI and [update your app configuration](app_configuration.md).
 
 ### Embeddings
 
@@ -141,11 +135,23 @@ If you're on a version that's `2023.6.13` or older, it's recommended to [uninsta
 
 ## Uninstalling the app
 
-Select "Troubleshooting > Clear All Data" from the system tray and delete the app from your applications folder. If you're on an older version of the app and don't see a "Clear All Data" option, run:
+To uninstall the app, navigate to **Troubleshooting > Clear All Data** from the system tray and delete the app from your applications folder.
+
+If you're on an older version of the app and don't see a "Clear All Data" option, run the following script in your terminal:
 
 ```shell
 rm -rf ~/.sourcegraph-psql ~/Library/Application\ Support/com.sourcegraph.cody ~/Library/Caches/com.sourcegraph.cody ~/Library/WebKit/com.sourcegraph.cody
 ```
+
+## Get help give feedback
+
+Cody app is new and we're iterating on it quickly. If you run into any trouble or have ideas/feedback, we'd love to hear from you. You can reach out via the following:
+
+<div class="socials">
+  <a href="https://discord.com/invite/s2qDtYGnAE"><img alt="Discord" src="discord.svg"></img></a>
+  <a href="https://twitter.com/sourcegraph"><img alt="Twitter" src="twitter.svg"></img></a>
+  <a href="https://github.com/sourcegraph/app"><img alt="GitHub" src="github.svg"></img></a>
+</div>
 
 ## Troubleshooting
 
@@ -158,10 +164,3 @@ See [App release pipeline](release-pipeline.md)
 ## API and integrations
 
 See [App API integrations](integrations.md)
-
-## Get help & give feedback
-
-Cody app is new and we're iterating on it quickly. If you run into any trouble or have ideas/feedback, we'd love to hear from you!
-
-* [Join our community Discord](https://discord.com/invite/s2qDtYGnAE) for live help/discussion
-* [Create a GitHub issue](https://github.com/sourcegraph/app/issues/new)
