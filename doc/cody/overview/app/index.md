@@ -1,4 +1,28 @@
 <style>
+  .markdown-body .cards {
+  display: flex;
+  align-items: stretch;
+}
+
+.markdown-body .cards .card {
+  flex: 1;
+  margin: 0.5em;
+  color: var(--text-color);
+  border-radius: 4px;
+  border: 1px solid var(--sidebar-nav-active-bg);
+  padding: 1.5rem;
+  padding-top: 1.25rem;
+}
+
+.markdown-body .cards .card:hover {
+  color: var(--link-color);
+}
+
+.markdown-body .cards .card span {
+  color: var(--link-color);
+  font-weight: bold;
+}
+
 .socials {
   display: flex;
   flex-direction: row;
@@ -111,7 +135,7 @@ After a successful installation, follow these steps to complete the app setup:
 - This code is sent to OpenAI to create [embeddings](./../../explanations/code_graph_context.md#embeddings), which helps Cody build the code graph and generate more accurate answers about your code
 - If you use [VS Code](./../install-vscode.md) or [JetBrains IntelliJ](./../install-jetbrains.md) IDEs, it's recommended to install their extensions and Ask Cody questions right within your editor
 
-> NOTE: The [JetBrains IntelliJ](./../install-jetbrains.md) extension is still in `Experimental` stage.
+> NOTE: The [JetBrains IntelliJ](./../install-jetbrains.md) extension is in the `Experimental` stage.
 
 ## Rate limiting
 
@@ -121,7 +145,7 @@ If you hit these limits, you can request an increased limit by visiting our [Dis
 
 ### Embeddings
 
-The default Cody app setup allows you to select up to 10 repos for embeddings. However, you can add more repos, and "Schedule Embeddings". Go to **Cody Settings > Advanced settings > Embedding jobs** and you can add and schedule repositories for embeddings.
+The default Cody app setup allows you to select up to 10 repos for embeddings. However, you can add more repos and "Schedule Embeddings". Go to **Cody Settings > Advanced settings > Embedding jobs**, and you can add and schedule repositories for embeddings.
 
 However, these additional number of supported repos will vary depending on their size.
 
@@ -145,7 +169,7 @@ rm -rf ~/.sourcegraph-psql ~/Library/Application\ Support/com.sourcegraph.cody ~
 
 ## Get help give feedback
 
-Cody app is new and we're iterating on it quickly. If you run into any trouble or have ideas/feedback, we'd love to hear from you. You can reach out via the following:
+Cody app is new and we're iterating on it quickly. If you run into any trouble or have ideas/feedback, you can reach out via the following:
 
 <div class="socials">
   <a href="https://discord.com/invite/s2qDtYGnAE"><img alt="Discord" src="discord.svg"></img></a>
@@ -153,14 +177,15 @@ Cody app is new and we're iterating on it quickly. If you run into any trouble o
   <a href="https://github.com/sourcegraph/app"><img alt="GitHub" src="github.svg"></img></a>
 </div>
 
-## Troubleshooting
+## More benefits
 
-See [App troubleshooting](troubleshooting.md)
+Read more about [App API integrations](integrations.md) to learn about how extensions and other clients can integrate with Cody app.
 
-## Release pipeline
+## More resources
 
-See [App release pipeline](release-pipeline.md)
+For more information on what to do next, we recommend the following resources:
 
-## API and integrations
-
-See [App API integrations](integrations.md)
+<div class="cards">
+  <a class="card text-left" href="./troubleshooting"><b>Troubleshooting</b><p>See app troubleshooting guide if you run into any issues.</p></a>
+  <a class="card text-left" href="./release-pipeline"><b>Release pipeline</b><p>Read more about our app release pipeline to get all updates.</p></a>
+</div>
