@@ -1581,7 +1581,6 @@ Referenced by:
  queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "exhaustive_search_jobs_pkey" PRIMARY KEY, btree (id)
-    "exhaustive_search_jobs_query_initiator_id_key" UNIQUE CONSTRAINT, btree (query, initiator_id)
 Foreign-key constraints:
     "exhaustive_search_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE
 Referenced by:
