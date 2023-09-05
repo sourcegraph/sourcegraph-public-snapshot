@@ -55,7 +55,7 @@ class CodyAccountListModel(private val project: Project) :
   }
 
   override fun addAccount(server: SourcegraphServerPath, login: String, token: String) {
-    val account = CodyAccount(login, server, id = UUID.randomUUID().toString())
+    val account = CodyAccount.create(login, server)
     addAccount(account, token)
   }
 
