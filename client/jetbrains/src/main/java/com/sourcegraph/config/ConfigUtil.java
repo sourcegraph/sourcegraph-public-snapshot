@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class ConfigUtil {
   public static final String DOTCOM_URL = "https://sourcegraph.com/";
-  public static final String SERVICE_DISPLAY_NAME = "Cody AI by Sourcegraph";
+  public static final String SERVICE_DISPLAY_NAME = "Sourcegraph Cody + Code Search";
 
   @NotNull
   public static ExtensionConfiguration getAgentConfiguration(@NotNull Project project) {
@@ -58,11 +58,6 @@ public class ConfigUtil {
     return defaultAccount != null
         ? defaultAccount.getServer()
         : SourcegraphServerPath.from(DOTCOM_URL, "");
-  }
-
-  @NotNull
-  public static String getEnterpriseUrl(@NotNull Project project) {
-    return "";
   }
 
   public static Map<String, String> getCustomRequestHeadersAsMap(

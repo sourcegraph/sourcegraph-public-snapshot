@@ -109,26 +109,4 @@ public class NotificationActivity implements StartupActivity.DumbAware {
 
     ConfigUtil.setLastUpdateNotificationPluginVersionToCurrent();
   }
-
-  public static void notifyAboutSourcegraphAccessToken(Optional<String> instanceUrl) {
-    String content =
-        instanceUrl
-                .map(url -> "A Sourcegraph Access Token for " + url + " has not been set.")
-                .orElse("A Sourcegraph Access Token has not been set.")
-            + " It is not possible to use Sourcegraph API and Cody without it.";
-    Notification notification =
-        new Notification(
-            "Sourcegraph: server access", "Sourcegraph", content, NotificationType.INFORMATION);
-    notification.setIcon(Icons.CodyLogo);
-    notification.addAction(new OpenPluginSettingsAction("Set Access Token"));
-    notification.addAction(dumbAwareAction("Do Not Set", notification::expire));
-    notification.addAction(
-        dumbAwareAction(
-            "Never Show Again",
-            () -> {
-              notification.expire();
-              ConfigUtil.setAccessTokenNotificationDismissed(true);
-            }));
-    Notifications.Bus.notify(notification);
-  }
 }

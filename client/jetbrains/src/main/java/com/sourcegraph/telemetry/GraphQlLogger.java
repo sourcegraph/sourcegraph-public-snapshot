@@ -47,7 +47,7 @@ public class GraphQlLogger {
     eventParameters.addProperty("displayDuration", displayDurationMs);
     eventParameters.addProperty("isAnyKnownPluginEnabled", PluginUtil.isAnyKnownPluginEnabled());
     JsonObject updatedEventParameters = addCompletionEventParams(eventParameters, params);
-    logEvent(project, createEvent(project, eventName, updatedEventParameters));
+    logEvent(project, createEvent(ConfigUtil.getServerPath(project), eventName, updatedEventParameters));
   }
 
   public static void logAutocompleteAcceptedEvent(
