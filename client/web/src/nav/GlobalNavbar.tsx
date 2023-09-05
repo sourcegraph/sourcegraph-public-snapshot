@@ -317,11 +317,14 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         </NavAction>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
-                    <OnboardingChecklist />
+
                     {props.authenticatedUser?.siteAdmin && !isSourcegraphApp && (
-                        <NavAction>
-                            <StatusMessagesNavItem isSourcegraphApp={isSourcegraphApp} />
-                        </NavAction>
+                        <>
+                            <OnboardingChecklist />
+                            <NavAction>
+                                <StatusMessagesNavItem isSourcegraphApp={isSourcegraphApp} />
+                            </NavAction>
+                        </>
                     )}
                     {!props.authenticatedUser ? (
                         <>
