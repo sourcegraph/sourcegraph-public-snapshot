@@ -8,12 +8,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // newExhaustiveSearchRepoRevisionWorker creates a background routine that periodically runs the exhaustive search of a revision on a repo.
@@ -22,11 +22,15 @@ func newExhaustiveSearchRepoRevisionWorker(
 	observationCtx *observation.Context,
 	workerStore dbworkerstore.Store[*types.ExhaustiveSearchRepoRevisionJob],
 	exhaustiveSearchStore *store.Store,
+	newSearcher service.NewSearcher,
+	csvWriter service.CSVWriter,
 	config config,
 ) goroutine.BackgroundRoutine {
 	handler := &exhaustiveSearchRepoRevHandler{
-		logger: log.Scoped("exhaustive-search-repo-revision", "The background worker running exhaustive searches on a revision of a repository"),
-		store:  exhaustiveSearchStore,
+		logger:      log.Scoped("exhaustive-search-repo-revision", "The background worker running exhaustive searches on a revision of a repository"),
+		store:       exhaustiveSearchStore,
+		newSearcher: newSearcher,
+		csvWriter:   csvWriter,
 	}
 
 	opts := workerutil.WorkerOptions{
@@ -42,13 +46,25 @@ func newExhaustiveSearchRepoRevisionWorker(
 }
 
 type exhaustiveSearchRepoRevHandler struct {
-	logger log.Logger
-	store  *store.Store
+	logger      log.Logger
+	store       *store.Store
+	newSearcher service.NewSearcher
+	csvWriter   service.CSVWriter
 }
 
 var _ workerutil.Handler[*types.ExhaustiveSearchRepoRevisionJob] = &exhaustiveSearchRepoRevHandler{}
 
 func (h *exhaustiveSearchRepoRevHandler) Handle(ctx context.Context, logger log.Logger, record *types.ExhaustiveSearchRepoRevisionJob) error {
-	// TODO at the moment this does nothing. This will be implemented in a future PR.
-	return errors.New("not implemented")
+	// TODO (stefan): why do we need the full RepositoryRevision for q.Search? Can we get rid of revSpec?
+	query, repoRev, err := h.store.GetQueryRepoRev(ctx, record)
+	if err != nil {
+		return err
+	}
+
+	q, err := h.newSearcher.NewSearch(ctx, query)
+	if err != nil {
+		return err
+	}
+
+	return q.Search(ctx, repoRev, h.csvWriter)
 }

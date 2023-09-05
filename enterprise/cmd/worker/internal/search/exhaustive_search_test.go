@@ -1,8 +1,10 @@
 package search
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -15,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 )
@@ -53,7 +56,9 @@ func TestExhaustiveSearch(t *testing.T) {
 			WorkerInterval: 10 * time.Millisecond,
 		},
 	}
-	routines, err := searchJob.Routines(ctx, observationCtx)
+
+	csvBuf := &bytes.Buffer{}
+	routines, err := searchJob.routines(ctx, observationCtx, service.NewSearcherFake(), service.NewCSVWriterFake(csvBuf))
 	require.NoError(err)
 	for _, routine := range routines {
 		go routine.Start()
@@ -105,6 +110,44 @@ func TestExhaustiveSearch(t *testing.T) {
 
 	got = strings.Join(gotParts, " ")
 	require.Equal(want, got)
+
+	require.Equal([][]string{
+		{
+			"repo,revspec,revision",
+			"1,spec,rev1",
+		},
+		{
+			"repo,revspec,revision",
+			"1,spec,rev2",
+		},
+		{
+			"repo,revspec,revision",
+			"2,spec,rev3",
+		},
+	}, parseCSV(csvBuf.String()))
+}
+
+func parseCSV(csv string) (o [][]string) {
+	rows := strings.Split(csv, "\n")
+	for i := 0; i < len(rows)-1; i += 2 {
+		o = append(o, []string{rows[i], rows[i+1]})
+	}
+	sort.Sort(byRow(o))
+	return
+}
+
+type byRow [][]string
+
+func (b byRow) Len() int {
+	return len(b)
+}
+
+func (b byRow) Less(i, j int) bool {
+	return b[i][1] < b[j][1]
+}
+
+func (b byRow) Swap(i, j int) {
+	b[i], b[j] = b[j], b[i]
 }
 
 // insertRow is a helper for inserting a row into a table. It assumes the

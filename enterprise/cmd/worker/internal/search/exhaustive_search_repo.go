@@ -52,7 +52,7 @@ type exhaustiveSearchRepoHandler struct {
 var _ workerutil.Handler[*types.ExhaustiveSearchRepoJob] = &exhaustiveSearchRepoHandler{}
 
 func (h *exhaustiveSearchRepoHandler) Handle(ctx context.Context, logger log.Logger, record *types.ExhaustiveSearchRepoJob) error {
-	repoRevSpec := service.RepositoryRevSpec{
+	repoRevSpec := types.RepositoryRevSpec{
 		Repository:        record.RepoID,
 		RevisionSpecifier: record.RefSpec,
 	}
