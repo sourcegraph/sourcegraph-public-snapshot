@@ -12,7 +12,8 @@ import (
 )
 
 func createUser(store *basestore.Store, username string) (int32, error) {
-	q := sqlf.Sprintf(`INSERT INTO users(username) VALUES(%s) RETURNING id`, username)
+	admin := username == "admin"
+	q := sqlf.Sprintf(`INSERT INTO users(username, site_admin) VALUES(%s, %s) RETURNING id`, username, admin)
 	row := store.QueryRow(context.Background(), q)
 	var userID int32
 	err := row.Scan(&userID)

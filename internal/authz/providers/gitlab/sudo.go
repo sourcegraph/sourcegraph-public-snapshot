@@ -110,7 +110,7 @@ func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, curre
 		return nil, nil
 	}
 
-	var glUser *gitlab.User
+	var glUser *gitlab.AuthUser
 	if p.useNativeUsername {
 		glUser, err = p.fetchAccountByUsername(ctx, user.Username)
 	} else {
@@ -155,7 +155,7 @@ func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, curre
 	return &glExternalAccount, nil
 }
 
-func (p *SudoProvider) fetchAccountByExternalUID(ctx context.Context, uid string) (*gitlab.User, error) {
+func (p *SudoProvider) fetchAccountByExternalUID(ctx context.Context, uid string) (*gitlab.AuthUser, error) {
 	q := make(url.Values)
 	q.Add("extern_uid", uid)
 	q.Add("provider", p.gitlabProvider)
@@ -173,7 +173,7 @@ func (p *SudoProvider) fetchAccountByExternalUID(ctx context.Context, uid string
 	return glUsers[0], nil
 }
 
-func (p *SudoProvider) fetchAccountByUsername(ctx context.Context, username string) (*gitlab.User, error) {
+func (p *SudoProvider) fetchAccountByUsername(ctx context.Context, username string) (*gitlab.AuthUser, error) {
 	q := make(url.Values)
 	q.Add("username", username)
 	q.Add("per_page", "2")

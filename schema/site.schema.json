@@ -1940,6 +1940,11 @@
       "description": "Configuration options for Sourcegraph.com only.",
       "type": "object",
       "properties": {
+        "minimumExternalAccountAge": {
+          "description": "The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com.",
+          "type": "integer",
+          "default": 0
+        },
         "app.notifications": {
           "description": "Notifications to display in the Sourcegraph app.",
           "type": "array",

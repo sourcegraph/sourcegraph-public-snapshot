@@ -11768,16 +11768,6 @@
           "IndexDefinition": "CREATE UNIQUE INDEX exhaustive_search_jobs_pkey ON exhaustive_search_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
-        },
-        {
-          "Name": "exhaustive_search_jobs_query_initiator_id_key",
-          "IsPrimaryKey": false,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX exhaustive_search_jobs_query_initiator_id_key ON exhaustive_search_jobs USING btree (query, initiator_id)",
-          "ConstraintType": "u",
-          "ConstraintDefinition": "UNIQUE (query, initiator_id)"
         }
       ],
       "Constraints": [

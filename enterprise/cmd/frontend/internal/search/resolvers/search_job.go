@@ -7,54 +7,67 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 const searchJobIDKind = "SearchJob"
 
-// MarshalSearchJobID marshals an int64 into a Relay ID for a search job.
-func MarshalSearchJobID(id int64) graphql.ID {
-	return relay.MarshalID(searchJobIDKind, id)
+func unmarshalSearchJobID(id graphql.ID) (int64, error) {
+	var v int64
+	err := relay.UnmarshalSpec(id, &v)
+	return v, err
 }
 
 var _ graphqlbackend.SearchJobResolver = &searchJobResolver{}
 
 type searchJobResolver struct {
+	Job *types.ExhaustiveSearchJob
+	db  database.DB
 }
 
-func (s searchJobResolver) ID() graphql.ID {
-	return "not implemented"
+func (r searchJobResolver) ID() graphql.ID {
+	return relay.MarshalID(searchJobIDKind, r.Job.ID)
 }
 
-func (s searchJobResolver) Query() string {
-	return "not implemented"
+func (r searchJobResolver) Query() string {
+	return r.Job.Query
 }
 
-func (s searchJobResolver) State(ctx context.Context) string {
-	return "QUEUED"
+func (r searchJobResolver) State(ctx context.Context) string {
+	return r.Job.State.ToGraphQL()
 }
 
-func (s searchJobResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return nil, errors.New("not implemented")
+func (r searchJobResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+	user, err := r.db.Users().GetByID(ctx, r.Job.InitiatorID)
+	if err != nil {
+		return nil, err
+	}
+	return graphqlbackend.NewUserResolver(ctx, r.db, user), nil
 }
 
-func (s searchJobResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{}
+func (r searchJobResolver) CreatedAt() gqlutil.DateTime {
+	return *gqlutil.FromTime(r.Job.CreatedAt)
 }
 
-func (s searchJobResolver) StartedAt(ctx context.Context) *gqlutil.DateTime {
-	return nil
+func (r searchJobResolver) StartedAt(ctx context.Context) *gqlutil.DateTime {
+	return gqlutil.FromTime(r.Job.StartedAt)
 }
 
-func (s searchJobResolver) FinishedAt(ctx context.Context) *gqlutil.DateTime {
-	return nil
+func (r searchJobResolver) FinishedAt(ctx context.Context) *gqlutil.DateTime {
+	return gqlutil.FromTime(r.Job.FinishedAt)
 }
 
-func (s searchJobResolver) URL(ctx context.Context) (*string, error) {
-	return nil, errors.New("not implemented")
+func (r searchJobResolver) URL(ctx context.Context) (*string, error) {
+	if r.Job.State == types.JobStateCompleted {
+		return pointers.Ptr("https://www.youtube.com/watch?v=dQw4w9WgXcQ"), nil
+	}
+	return nil, nil
 }
 
-func (s searchJobResolver) RepoStats(ctx context.Context) (graphqlbackend.SearchJobStatsResolver, error) {
+func (r searchJobResolver) RepoStats(ctx context.Context) (graphqlbackend.SearchJobStatsResolver, error) {
 	return nil, errors.New("not implemented")
 }
