@@ -217,8 +217,6 @@
         </group>
 
         <group id="Cody.Accounts.AddAccount">
-            <action id="Cody.Accounts.AddCodyAccount" text="Log in to Local Cody App"
-                    class="com.sourcegraph.cody.config.AddCodyAccountAction"/>
             <action id="Cody.Accounts.AddCodyAccountWithToken" text="Log In with Token to Sourcegraph"
                     class="com.sourcegraph.cody.config.AddCodyAccountWithTokenAction"/>
             <action id="Cody.Accounts.AddCodyEnterpriseAccount"
