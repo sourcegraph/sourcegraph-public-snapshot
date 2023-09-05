@@ -25,12 +25,12 @@ class SettingsMigration : StartupActivity, DumbAware {
 
   private val codyAuthenticationManager = CodyAuthenticationManager.getInstance()
   override fun runActivity(project: Project) {
-    RunOnceUtil.runOnceForProject(project, UUID.randomUUID().toString()) {
+    RunOnceUtil.runOnceForProject(project, "CodyProjectSettingsMigration") {
       val customRequestHeaders = extractCustomRequestHeaders(project)
       migrateProjectSettings(project)
       migrateAccounts(project, customRequestHeaders)
     }
-    RunOnceUtil.runOnceForApp(UUID.randomUUID().toString()) { migrateApplicationSettings() }
+    RunOnceUtil.runOnceForApp("CodyApplicationSettingsMigration") { migrateApplicationSettings() }
   }
 
   private fun migrateAccounts(project: Project, customRequestHeaders: String) {
