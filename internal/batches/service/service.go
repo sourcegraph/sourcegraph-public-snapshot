@@ -1,7 +1,10 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
+	"encoding/csv"
 	"fmt"
 	"strings"
 	"sync"
@@ -95,6 +98,7 @@ type operations struct {
 	applyBatchChange                     *observation.Operation
 	reconcileBatchChange                 *observation.Operation
 	validateChangesetSpecs               *observation.Operation
+	exportChangesets                     *observation.Operation
 }
 
 var (
@@ -1379,6 +1383,123 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 	}
 
 	return bulkGroupID, nil
+}
+
+func (s *Service) ExportChangesets(ctx context.Context, batchChangeID int64, ids []int64) (out string, err error) {
+	ctx, _, endObservation := s.operations.exportChangesets.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	// Load the BatchChange to check for write permissions.
+	batchChange, err := s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: batchChangeID})
+	if err != nil {
+		return out, errors.Wrap(err, "loading batch change")
+	}
+
+	// If the batch change belongs to an org namespace, org members will be able to access it if
+	// the `orgs.allMembersBatchChangesAdmin` setting is true.
+	if err := s.checkViewerCanAdminister(ctx, batchChange.NamespaceOrgID, batchChange.CreatorID, false); err != nil {
+		return out, err
+	}
+
+	cs, _, err := s.store.ListChangesets(ctx, store.ListChangesetsOpts{
+		IDs:           ids,
+		BatchChangeID: batchChangeID,
+		// We only want to allow changesets the user has access to.
+		EnforceAuthz: true,
+	})
+	if err != nil {
+		return out, errors.Wrap(err, "listing changesets")
+	}
+
+	var b bytes.Buffer
+	writer := csv.NewWriter(&b)
+
+	data, err := s.generateChangesetExportData(ctx, cs)
+	if err != nil {
+		return out, err
+	}
+
+	if err = writer.WriteAll(data); err != nil {
+		return out, nil
+	}
+
+	out = base64.StdEncoding.EncodeToString(b.Bytes())
+	return out, nil
+}
+
+func (s *Service) generateChangesetExportData(ctx context.Context, changesets btypes.Changesets) ([][]string, error) {
+	var header = []string{"Title", "ReviewState", "State", "ExternalURL", "Verfied", "CheckState"}
+	var rows = make([][]string, 0, len(changesets)+1)
+
+	rows = append(rows, header)
+
+	for _, cs := range changesets {
+		title, err := s.getChangesetTitle(ctx, cs)
+		if err != nil {
+			return nil, err
+		}
+
+		var verified bool
+		if cs.CommitVerification != nil {
+			verified = cs.CommitVerification.Verified
+		}
+
+		var externalURL string
+		if cs.Published() && cs.ExternalState != btypes.ChangesetExternalStateDeleted {
+			url, err := cs.URL()
+			if err != nil {
+				return nil, err
+			}
+			externalURL = url
+		}
+
+		var checkState string
+		if cs.Published() {
+			checkState = string(cs.ExternalCheckState)
+		}
+
+		rows = append(rows, []string{
+			title,
+			string(cs.ExternalReviewState),
+			string(cs.State),
+			externalURL,
+			fmt.Sprint(verified),
+			checkState,
+		})
+	}
+
+	return rows, nil
+}
+
+// computeChangesetSpec retrieves the ChangesetSpec for the given Changeset from
+// the store. It returns an error if the Changeset's CurrentSpecID field is 0,
+// indicating it has no associated ChangesetSpec.
+func (s *Service) computeChangesetSpec(ctx context.Context, cs *btypes.Changeset) (*btypes.ChangesetSpec, error) {
+	if cs.CurrentSpecID == 0 {
+		return nil, errors.New("Changeset has no ChangesetSpec")
+	}
+
+	return s.store.GetChangesetSpecByID(ctx, cs.CurrentSpecID)
+}
+
+// getChangesetTitle returns the title for the given Changeset.
+//
+// If the Changeset is published, it will return the stored title.
+// Otherwise, it will load the associated ChangesetSpec and return its title.
+func (s *Service) getChangesetTitle(ctx context.Context, cs *btypes.Changeset) (string, error) {
+	if cs.Published() {
+		t, err := cs.Title()
+		if err != nil {
+			return "", err
+		}
+		return t, nil
+	}
+
+	spec, err := s.computeChangesetSpec(ctx, cs)
+	if err != nil {
+		return "", err
+	}
+	return spec.Title, nil
 }
 
 // ValidateChangesetSpecs checks whether the given BachSpec has ChangesetSpecs

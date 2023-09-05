@@ -1841,6 +1841,10 @@ extend type Mutation {
     toggleBatchSpecAutoApply(batchSpec: ID!, value: Boolean!): BatchSpec!
 }
 
+type ExportChangesetsResult {
+    data: String!
+}
+
 extend type Query {
     """
     A list of batch changes.
