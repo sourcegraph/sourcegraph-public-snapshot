@@ -11,10 +11,8 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
-import com.intellij.util.containers.orNull
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphSecurityUtil
-import com.sourcegraph.cody.localapp.LocalAppManager
 import com.sourcegraph.config.AccessTokenStorage
 import com.sourcegraph.config.CodyApplicationService
 import com.sourcegraph.config.CodyProjectService
@@ -39,7 +37,6 @@ class SettingsMigration : StartupActivity, DumbAware {
     val requestExecutorFactory = SourcegraphApiRequestExecutor.Factory.getInstance()
     migrateDotcomAccount(project, requestExecutorFactory, customRequestHeaders)
     migrateEnterpriseAccount(project, requestExecutorFactory, customRequestHeaders)
-    migrateCodyAccount(project, requestExecutorFactory)
   }
 
   private fun migrateDotcomAccount(
@@ -50,9 +47,10 @@ class SettingsMigration : StartupActivity, DumbAware {
     val dotcomAccessToken = extractDotcomAccessToken(project)
     if (!dotcomAccessToken.isNullOrEmpty()) {
       val server = SourcegraphServerPath(ConfigUtil.DOTCOM_URL, customRequestHeaders)
+      val extractedAccountType = extractAccountType(project)
       val shouldSetAccountAsDefault =
-          CodyAuthenticationManager.getInstance().getDefaultAccountType(project) ==
-              AccountType.DOTCOM
+          extractedAccountType == AccountType.DOTCOM ||
+              extractedAccountType == AccountType.LOCAL_APP
       if (shouldSetAccountAsDefault) {
         addAsDefaultAccountIfUnique(
             project,
@@ -81,9 +79,7 @@ class SettingsMigration : StartupActivity, DumbAware {
       val enterpriseUrl = extractEnterpriseUrl(project)
       runCatching { SourcegraphServerPath.from(enterpriseUrl, customRequestHeaders) }
           .fold({
-            val shouldSetAccountAsDefault =
-                CodyAuthenticationManager.getInstance().getDefaultAccountType(project) ==
-                    AccountType.ENTERPRISE
+            val shouldSetAccountAsDefault = extractAccountType(project) == AccountType.ENTERPRISE
             if (shouldSetAccountAsDefault) {
               addAsDefaultAccountIfUnique(
                   project,
@@ -100,40 +96,6 @@ class SettingsMigration : StartupActivity, DumbAware {
             }
           }) {
             LOG.warn("Unable to parse enterprise server url: '$enterpriseUrl'", it)
-          }
-    }
-  }
-
-  private fun migrateCodyAccount(
-      project: Project,
-      requestExecutorFactory: SourcegraphApiRequestExecutor.Factory
-  ) {
-    val localAppAccessToken = LocalAppManager.getLocalAppAccessToken().orNull()
-    if (LocalAppManager.isLocalAppInstalled() && localAppAccessToken != null) {
-      val codyUrl = LocalAppManager.getLocalAppUrl()
-      runCatching { SourcegraphServerPath.from(codyUrl, "") }
-          .fold({
-            val shouldSetAccountAsDefault =
-                CodyAuthenticationManager.getInstance().getDefaultAccountType(project) ==
-                    AccountType.LOCAL_APP
-            if (shouldSetAccountAsDefault) {
-              addAsDefaultAccountIfUnique(
-                  project,
-                  localAppAccessToken,
-                  it,
-                  requestExecutorFactory,
-                  EmptyProgressIndicator(ModalityState.NON_MODAL),
-                  LocalAppManager.LOCAL_APP_ID)
-            } else {
-              addAccountIfUnique(
-                  localAppAccessToken,
-                  it,
-                  requestExecutorFactory,
-                  EmptyProgressIndicator(ModalityState.NON_MODAL),
-                  LocalAppManager.LOCAL_APP_ID)
-            }
-          }) {
-            LOG.warn("Unable to parse local app server url: '$localAppAccessToken'", it)
           }
     }
   }
@@ -161,9 +123,9 @@ class SettingsMigration : StartupActivity, DumbAware {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
       val codyAccount = CodyAccount.create(it.name, server, id)
       addAccount(codyAccount, accessToken)
-        if(CodyAuthenticationManager.getInstance().getDefaultAccount(project) == null){
-            CodyAuthenticationManager.getInstance().setDefaultAccount(project, codyAccount)
-        }
+      if (CodyAuthenticationManager.getInstance().getDefaultAccount(project) == null) {
+        CodyAuthenticationManager.getInstance().setDefaultAccount(project, codyAccount)
+      }
     }
   }
 
@@ -194,8 +156,7 @@ class SettingsMigration : StartupActivity, DumbAware {
   }
 
   private fun isAccountUnique(codyAccount: CodyAccount): Boolean {
-    return codyAuthenticationManager.isAccountUnique(
-        codyAccount.name, codyAccount.server)
+    return codyAuthenticationManager.isAccountUnique(codyAccount.name, codyAccount.server)
   }
 
   private fun extractEnterpriseUrl(project: Project): String {
@@ -321,6 +282,16 @@ class SettingsMigration : StartupActivity, DumbAware {
 
   private fun addSlashIfNeeded(url: String): String {
     return if (url.endsWith("/")) url else "$url/"
+  }
+
+  private fun extractAccountType(project: Project): AccountType {
+    return project.service<CodyProjectService>().getInstanceType()?.let { toAccountType(it) }
+        ?: service<CodyApplicationService>().getInstanceType()?.let { toAccountType(it) }
+            ?: AccountType.DOTCOM
+  }
+
+  private fun toAccountType(it: String): AccountType? {
+    return runCatching { AccountType.valueOf(it) }.getOrNull()
   }
 
   private fun migrateApplicationSettings() {

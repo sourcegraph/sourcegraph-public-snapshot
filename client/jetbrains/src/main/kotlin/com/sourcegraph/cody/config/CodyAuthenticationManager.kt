@@ -50,9 +50,7 @@ class CodyAuthenticationManager internal constructor() {
 
   fun getDefaultAccountType(project: Project): AccountType {
     return getDefaultAccount(project)?.getAccountType()
-        ?: if (LocalAppManager.isLocalAppInstalled() && LocalAppManager.isPlatformSupported())
-            AccountType.LOCAL_APP
-        else AccountType.DOTCOM
+        ?: AccountType.DOTCOM
   }
 
   companion object {
