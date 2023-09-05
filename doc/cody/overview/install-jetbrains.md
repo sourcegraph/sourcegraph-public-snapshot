@@ -101,7 +101,7 @@
 
 <p class="subtitle">Learn how to use Cody and its features with the JetBrains IntelliJ editor.</p>
 
-The Cody AI extension by Sourcegraph enhances your coding experience in JetBrains IntelliJ editor by providing intelligent code suggestions, context-aware completions, and advanced code analysis. This guide will walk you through the steps to install and set up the Cody within your JetBrains environment.
+The Cody extension by Sourcegraph enhances your coding experience in JetBrains IntelliJ editor by providing intelligent code sugsgestions, context-aware completions, and advanced code analysis. This guide will walk you through the steps to install and set up the Cody within your JetBrains environment.
 
 <ul class="limg">
   <li>
@@ -119,13 +119,15 @@ The Cody AI extension by Sourcegraph enhances your coding experience in JetBrain
 
 ## Install the JetBrains IntelliJ Cody extension
 
-Follow these steps to install the Cody AI extension for JetBrains IntelliJ:
+Follow these steps to install the Cody extension for JetBrains IntelliJ:
 
 - Open JetBrains IntelliJ editor on your local machine
 - Open "Settings" (Mac: `⌘+,` Windows: `Ctrl+Alt+S`) and select "Plugins"
 - Type and search "Cody AI by Sourcegraph" extension and click "Install"
 
 Alternatively, you can also [Download and install the extension from the Jetbrains marketplace](https://plugins.jetbrains.com/plugin/9682-sourcegraph).
+
+> NOTE: Cody works well equally on other JetBrains IDEs like PyCharm, RubyMine, WebStorm etc. The installation steps remain the same.
 
 ## Connect the extension to Sourcegraph
 
@@ -143,10 +145,10 @@ Click `Continue with Sourcegraph.com` in the Cody extension. From there, you'll 
 
 ## Verifying the installation
 
-Once connected, click the Cody icon from the sidebar again, and a panel will open. To verify that the Cody AI extension has been successfully installed and is working as expected:
+Once connected, click the Cody icon from the sidebar again, and a panel will open. To verify that the Cody extension has been successfully installed and is working as expected:
 
 - Open a file in a supported programming language like JavaScript, Python, Go, etc.
-- As you start typing, Cody AI should begin providing intelligent suggestions and context-aware completions based on your coding patterns and the context of your code
+- As you start typing, Cody should begin providing intelligent suggestions and context-aware completions based on your coding patterns and the context of your code
 
 ## Recipes
 
@@ -172,7 +174,7 @@ Learn more about how to:
 
 ## Updating the extension
 
-JetBrains IntelliJ will typically notify you when updates are available for installed extensions. Follow the prompts to update the Cody AI extension to the latest version.
+JetBrains IntelliJ will typically notify you when updates are available for installed extensions. Follow the prompts to update the Cody extension to the latest version.
 
 ## More benefits
 
