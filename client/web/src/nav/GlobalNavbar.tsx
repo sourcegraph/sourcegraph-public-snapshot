@@ -42,6 +42,7 @@ import { EventName, EventLocation } from '../util/constants'
 
 import { NavAction, NavActions, NavBar, NavGroup, NavItem, NavLink } from '.'
 import { NavDropdown, type NavDropdownItem } from './NavBar/NavDropdown'
+import { OnboardingChecklist } from './OnboardingChecklist'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
 
@@ -316,6 +317,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         </NavAction>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
+                    <OnboardingChecklist />
                     {props.authenticatedUser?.siteAdmin && !isSourcegraphApp && (
                         <NavAction>
                             <StatusMessagesNavItem isSourcegraphApp={isSourcegraphApp} />
