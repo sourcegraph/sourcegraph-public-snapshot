@@ -77,7 +77,7 @@ func testAccessTokens_Create(t *testing.T) {
 	}
 	assertSecurityEventCount(t, db, SecurityEventAccessTokenCreated, 1)
 
-	if !strings.HasPrefix(tv0, "sgp_") {
+	if !strings.HasPrefix(tv0, "sgp_fdb7465abed6e87a9f9f4cbfc1652a16179ac4eb") {
 		t.Errorf("got %q, want prefix 'sgp_'", tv0)
 	}
 
