@@ -10,7 +10,8 @@ import (
 	sqlf "github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/prometheus/statsd_exporter/pkg/clock"
-	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -25,8 +26,8 @@ func Test_AutoIndexingManualEnqueuedDequeueOrder(t *testing.T) {
 		t.Skip()
 	}
 
-	raw := dbtest.NewDB(log.NoOp(), t)
-	db := database.NewDB(log.NoOp(), raw)
+	raw := dbtest.NewDB(logtest.Scoped(t), t)
+	db := database.NewDB(logtest.Scoped(t), raw)
 
 	opts := IndexWorkerStoreOptions
 	workerstore := store.New(&observation.TestContext, db.Handle(), opts)
