@@ -46,7 +46,7 @@ describe('PostSignUpPage', () => {
         // Renders email verification modal.
         expect(screen.getByText('Verify your email address')).toBeVisible()
 
-        // Render cody survery when next button is clicked
+        // Render cody survey when next button is clicked
         const nextButton = screen.getByRole('button', { name: 'Next' })
         fireEvent.click(nextButton)
 
