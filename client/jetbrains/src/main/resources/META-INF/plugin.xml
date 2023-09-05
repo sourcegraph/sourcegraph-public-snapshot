@@ -203,4 +203,9 @@
             <reference ref="cody.disableCodyAutocomplete"/>
         </group>
     </actions>
+
+    <projectListeners>
+    <listener topic="com.intellij.openapi.command.CommandListener"
+              class="com.sourcegraph.cody.editor.CodyCommandListener"/>
+    </projectListeners>
 </idea-plugin>

@@ -200,7 +200,7 @@ func TestClient_CreateCommitFromPatchRequest_ProtoRoundTrip(t *testing.T) {
 				GitApplyArgs: gitApplyArgs,
 			}
 			var converted protocol.CreateCommitFromPatchRequest
-			converted.FromProto(original.ToProto())
+			converted.FromProto(original.ToMetadataProto(), original.Patch)
 
 			if diff = cmp.Diff(original, converted); diff != "" {
 				return false
@@ -1490,7 +1490,7 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 
 type mockClient struct {
 	mockBatchLog                    func(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error)
-	mockCreateCommitFromPatchBinary func(ctx context.Context, in *proto.CreateCommitFromPatchBinaryRequest, opts ...grpc.CallOption) (*proto.CreateCommitFromPatchBinaryResponse, error)
+	mockCreateCommitFromPatchBinary func(ctx context.Context, opts ...grpc.CallOption) (proto.GitserverService_CreateCommitFromPatchBinaryClient, error)
 	mockExec                        func(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error)
 	mockGetObject                   func(ctx context.Context, in *proto.GetObjectRequest, opts ...grpc.CallOption) (*proto.GetObjectResponse, error)
 	mockIsRepoCloneable             func(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error)
@@ -1526,8 +1526,8 @@ func (mc *mockClient) P4Exec(ctx context.Context, in *proto.P4ExecRequest, opts 
 }
 
 // CreateCommitFromPatchBinary implements v1.GitserverServiceClient.
-func (mc *mockClient) CreateCommitFromPatchBinary(ctx context.Context, in *proto.CreateCommitFromPatchBinaryRequest, opts ...grpc.CallOption) (*proto.CreateCommitFromPatchBinaryResponse, error) {
-	return mc.mockCreateCommitFromPatchBinary(ctx, in, opts...)
+func (mc *mockClient) CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (proto.GitserverService_CreateCommitFromPatchBinaryClient, error) {
+	return mc.mockCreateCommitFromPatchBinary(ctx, opts...)
 }
 
 // RepoUpdate implements v1.GitserverServiceClient

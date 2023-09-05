@@ -5492,9 +5492,6 @@ ALTER TABLE ONLY executor_secrets
 ALTER TABLE ONLY exhaustive_search_jobs
     ADD CONSTRAINT exhaustive_search_jobs_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY exhaustive_search_jobs
-    ADD CONSTRAINT exhaustive_search_jobs_query_initiator_id_key UNIQUE (query, initiator_id);
-
 ALTER TABLE ONLY exhaustive_search_repo_jobs
     ADD CONSTRAINT exhaustive_search_repo_jobs_pkey PRIMARY KEY (id);
 

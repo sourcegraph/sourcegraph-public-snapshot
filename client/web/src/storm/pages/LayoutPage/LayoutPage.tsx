@@ -77,11 +77,8 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
         routeMatch.pathname.startsWith(EnterprisePageRoutes.CodySearch)
     )
 
-    const [isSetupChecklistEnabled, flagLoading] = useFeatureFlag('setup-checklist')
-    const [setupSkipped] = useLocalStorage('setup.skipped', false)
-    // navigate to setup wizard if not skipped and new setup-checklist is disabled
-    const wasSetupWizardSkipped = flagLoading || isSetupChecklistEnabled || setupSkipped
-
+    // eslint-disable-next-line no-restricted-syntax
+    const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
     const { fuzzyFinder } = useExperimentalFeatures(features => ({
         // enable fuzzy finder by default unless it's explicitly disabled in settings
         fuzzyFinder: features.fuzzyFinder ?? true,

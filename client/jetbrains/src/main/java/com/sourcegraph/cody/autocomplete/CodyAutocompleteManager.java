@@ -343,7 +343,8 @@ public class CodyAutocompleteManager {
     VirtualFile virtualFile = FileDocumentManager.getInstance().getFile(editor.getDocument());
 
     if (virtualFile != null) {
-      return virtualFile.getDetectedLineSeparator();
+      return Optional.ofNullable(virtualFile.getDetectedLineSeparator())
+          .orElse(System.lineSeparator());
     } else {
       return System.lineSeparator();
     }

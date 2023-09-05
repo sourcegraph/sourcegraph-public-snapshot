@@ -26,6 +26,7 @@
 
 ### Fixed
 
+- Removing autocomplete inlays when ESC key is pressed when using Cody alongside the IdeaVIM plugin [#56347](https://github.com/sourcegraph/sourcegraph/pull/56347)
 - Handle uncaught exception [#56048](https://github.com/sourcegraph/sourcegraph/pull/56048)
 - Start the agent process on Windows [#56055](https://github.com/sourcegraph/sourcegraph/pull/56055)
 - Internal: use `Autocomplete` instead of `AutoComplete` [#56106](https://github.com/sourcegraph/sourcegraph/pull/56106)
