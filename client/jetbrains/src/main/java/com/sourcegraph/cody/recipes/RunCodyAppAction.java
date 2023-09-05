@@ -22,7 +22,8 @@ public class RunCodyAppAction extends DumbAwareAction {
       return;
     }
     if (LocalAppManager.isPlatformSupported()
-        && CodyAuthenticationManager.getInstance().getDefaultAccountType(project) == AccountType.LOCAL_APP) {
+        && CodyAuthenticationManager.getInstance().getDefaultAccountType(project)
+            == AccountType.LOCAL_APP) {
       if (LocalAppManager.isLocalAppInstalled() && !LocalAppManager.isLocalAppRunning()) {
         showAction(e);
         return;

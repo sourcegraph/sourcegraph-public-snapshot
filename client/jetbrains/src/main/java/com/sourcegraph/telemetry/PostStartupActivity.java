@@ -7,7 +7,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import com.sourcegraph.cody.CodyAgentProjectListener;
 import com.sourcegraph.cody.config.CodyApplicationSettings;
-import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsChangeListener;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;

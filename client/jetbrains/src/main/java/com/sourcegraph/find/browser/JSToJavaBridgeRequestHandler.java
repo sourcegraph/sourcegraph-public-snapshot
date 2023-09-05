@@ -38,8 +38,7 @@ public class JSToJavaBridgeRequestHandler {
     String action = request.get("action").getAsString();
     JsonObject arguments;
     PreviewContent previewContent;
-    CodyProjectSettings codyProjectSettings =
-        CodyProjectSettings.getInstance(project);
+    CodyProjectSettings codyProjectSettings = CodyProjectSettings.getInstance(project);
     try {
       switch (action) {
         case "getConfig":

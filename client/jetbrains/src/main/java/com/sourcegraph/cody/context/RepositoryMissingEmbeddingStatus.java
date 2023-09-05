@@ -19,7 +19,8 @@ public class RepositoryMissingEmbeddingStatus extends RepoAvailableEmbeddingStat
 
   @Override
   public @NotNull String getTooltip(@NotNull Project project) {
-    AccountType accountType = CodyAuthenticationManager.getInstance().getDefaultAccountType(project);
+    AccountType accountType =
+        CodyAuthenticationManager.getInstance().getDefaultAccountType(project);
     if (accountType == AccountType.LOCAL_APP) {
       return "Repository is not set up in Cody App";
     } else {

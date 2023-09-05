@@ -291,7 +291,8 @@ public class CodyToolWindowContent implements UpdatableChat {
   @RequiresEdt
   private void updateVisibilityOfContentPanels() {
     if (LocalAppManager.isPlatformSupported()
-        && CodyAuthenticationManager.getInstance().getDefaultAccountType(project) == AccountType.LOCAL_APP) {
+        && CodyAuthenticationManager.getInstance().getDefaultAccountType(project)
+            == AccountType.LOCAL_APP) {
       if (!LocalAppManager.isLocalAppInstalled()) {
         allContentLayout.show(allContentPanel, "appNotInstalledPanel");
         isChatVisible = false;
@@ -365,7 +366,8 @@ public class CodyToolWindowContent implements UpdatableChat {
   }
 
   private void addWelcomeMessage() {
-    CodyAccount defaultAccount = CodyAuthenticationManager.getInstance().getDefaultAccount(project);;
+    CodyAccount defaultAccount = CodyAuthenticationManager.getInstance().getDefaultAccount(project);
+    ;
     String welcomeText =
         "Hello! I'm Cody. I can write code and answer questions for you. See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.";
     addMessageToChat(ChatMessage.createAssistantMessage(welcomeText));

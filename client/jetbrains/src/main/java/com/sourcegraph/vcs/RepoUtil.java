@@ -31,8 +31,7 @@ public class RepoUtil {
     String relativePath = "";
     String remoteUrl = "";
     String remoteBranchName = "";
-    CodyProjectSettings codyProjectSettings =
-        CodyProjectSettings.getInstance(project);
+    CodyProjectSettings codyProjectSettings = CodyProjectSettings.getInstance(project);
     try {
       String repoRootPath = getRepoRootPath(project, file);
       if (repoRootPath == null) {
@@ -72,9 +71,7 @@ public class RepoUtil {
     return new RepoInfo(
         vcsType,
         remoteUrl,
-        remoteBranchName != null
-            ? remoteBranchName
-            : codyProjectSettings.getDefaultBranchName(),
+        remoteBranchName != null ? remoteBranchName : codyProjectSettings.getDefaultBranchName(),
         relativePath);
   }
 
@@ -105,7 +102,8 @@ public class RepoUtil {
     return repository.getRoot().getName();
   }
 
-  private static String doReplacements(@NotNull CodyProjectSettings codyProjectSettings, @NotNull String remoteUrl) {
+  private static String doReplacements(
+      @NotNull CodyProjectSettings codyProjectSettings, @NotNull String remoteUrl) {
     String remoteUrlWithReplacements = remoteUrl;
     String r = codyProjectSettings.getRemoteUrlReplacements();
     String[] replacements = r.trim().split("\\s*,\\s*");

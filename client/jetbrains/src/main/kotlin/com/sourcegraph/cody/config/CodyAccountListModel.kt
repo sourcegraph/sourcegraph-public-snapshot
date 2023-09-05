@@ -66,5 +66,5 @@ class CodyAccountListModel(private val project: Project) :
   }
 
   override fun isAccountUnique(login: String, server: SourcegraphServerPath): Boolean =
-      CodyAuthenticationManager.getInstance().isAccountUnique(login, server)
+      accountsListModel.items.none { it.name == login && it.server == server }
 }

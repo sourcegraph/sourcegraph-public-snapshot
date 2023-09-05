@@ -145,8 +145,7 @@ public class SettingsComponent implements Disposable {
     // Create enterprise access token field
     JBLabel accessTokenLabel = new JBLabel("Access token:");
     enterpriseAccessTokenTextField =
-        new PasswordFieldWithShowHideButton(
-            new JBPasswordField(), () -> "");
+        new PasswordFieldWithShowHideButton(new JBPasswordField(), () -> "");
     enterpriseAccessTokenTextField.setEmptyText("Paste your access token here");
     addValidation(
         enterpriseAccessTokenTextField,
@@ -166,8 +165,7 @@ public class SettingsComponent implements Disposable {
             .withBorder(JBUI.Borders.emptyLeft(10));
     JBLabel dotComAccessTokenLabel = new JBLabel("Access token:");
     dotComAccessTokenTextField =
-        new PasswordFieldWithShowHideButton(
-            new JBPasswordField(), () -> "");
+        new PasswordFieldWithShowHideButton(new JBPasswordField(), () -> "");
     dotComAccessTokenTextField.setEmptyText("Paste your access token here");
     addValidation(
         dotComAccessTokenTextField,

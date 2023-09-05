@@ -6,11 +6,11 @@ import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.cody.agent.ExtensionConfiguration;
+import com.sourcegraph.cody.config.CodyAccount;
 import com.sourcegraph.cody.config.CodyApplicationSettings;
+import com.sourcegraph.cody.config.CodyAuthenticationManager;
 import com.sourcegraph.cody.config.ServerAuth;
 import com.sourcegraph.cody.config.ServerAuthLoader;
-import com.sourcegraph.cody.config.CodyAccount;
-import com.sourcegraph.cody.config.CodyAuthenticationManager;
 import com.sourcegraph.cody.config.SourcegraphServerPath;
 import java.util.HashMap;
 import java.util.Map;
@@ -53,8 +53,7 @@ public class ConfigUtil {
 
   @NotNull
   public static SourcegraphServerPath getServerPath(@NotNull Project project) {
-    CodyAccount defaultAccount =
-        CodyAuthenticationManager.getInstance().getDefaultAccount(project);
+    CodyAccount defaultAccount = CodyAuthenticationManager.getInstance().getDefaultAccount(project);
     ;
     return defaultAccount != null
         ? defaultAccount.getServer()
