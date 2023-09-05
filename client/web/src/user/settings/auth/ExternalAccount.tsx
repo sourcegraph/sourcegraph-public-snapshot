@@ -127,26 +127,6 @@ export const ExternalAccountConnectionDetails: FC<ExternalAccountConnectionDetai
                     )}
                 </>
             )
-        case 'github':
-            return (
-                <>
-                    {account.external?.login ? (
-                        <>
-                            {account.external.displayName} (
-                            <Link
-                                to={`https://github.com/${account.external.login}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                @{account.external.login}
-                            </Link>
-                            )
-                        </>
-                    ) : (
-                        'Not connected'
-                    )}
-                </>
-            )
         default:
             return (
                 <>

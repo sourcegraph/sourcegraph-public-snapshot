@@ -5,7 +5,7 @@ exports[`ExternalAccountConnectionDetails renders correctly when display name is
   test@sourcegraph.com (
   <a
     class=""
-    href="https://github.com/test"
+    href="https://example.com"
     rel="noopener noreferrer"
     target="_blank"
   >
