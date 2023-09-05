@@ -55,7 +55,6 @@ type exhaustiveSearchRepoRevHandler struct {
 var _ workerutil.Handler[*types.ExhaustiveSearchRepoRevisionJob] = &exhaustiveSearchRepoRevHandler{}
 
 func (h *exhaustiveSearchRepoRevHandler) Handle(ctx context.Context, logger log.Logger, record *types.ExhaustiveSearchRepoRevisionJob) error {
-	// TODO (stefan): why do we need the full RepositoryRevision for q.Search? Can we get rid of revSpec?
 	query, repoRev, err := h.store.GetQueryRepoRev(ctx, record)
 	if err != nil {
 		return err
