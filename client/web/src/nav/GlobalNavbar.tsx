@@ -293,16 +293,16 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             name="feedback"
                         />
                     )}
+                    {isSourcegraphDotCom && (
+                        <NavItem>
+                            <NavLink variant={navLinkVariant} to="https://about.sourcegraph.com" external={true}>
+                                About Sourcegraph
+                            </NavLink>
+                        </NavItem>
+                    )}
                 </NavGroup>
                 <NavActions>
                     {isSourcegraphApp && <UpdateGlobalNav />}
-                    {!props.authenticatedUser && !isSourcegraphDotCom && (
-                        <NavAction>
-                            <Link className={styles.link} to="https://about.sourcegraph.com">
-                                About Sourcegraph
-                            </Link>
-                        </NavAction>
-                    )}
                     {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {isSourcegraphDotCom && (
                         <NavAction>
