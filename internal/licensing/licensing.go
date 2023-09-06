@@ -155,8 +155,12 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 			signature = lastSignature
 		} else {
 			var err error
-			info, signature, err = GetLicenseInfoFromKey(keyText)
+			info, signature, err = ParseProductLicenseKey(keyText)
 			if err != nil {
+				return nil, "", err
+			}
+
+			if err = info.hasUnknownPlan(); err != nil {
 				return nil, "", err
 			}
 
@@ -169,19 +173,6 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 		// If no license key, default to free tier
 		return GetFreeLicenseInfo(), "", nil
 	}
-}
-
-func GetLicenseInfoFromKey(keyText string) (*Info, string, error) {
-	info, signature, err := ParseProductLicenseKey(keyText)
-	if err != nil {
-		return nil, "", err
-	}
-
-	if err = info.hasUnknownPlan(); err != nil {
-		return nil, "", err
-	}
-
-	return info, signature, nil
 }
 
 // licenseGenerationPrivateKeyURL is the URL where Sourcegraph staff can find the private key for

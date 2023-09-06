@@ -109,7 +109,7 @@ func gitlabHandler(config *oauth2.Config, success, failure http.Handler) http.Ha
 
 // validateResponse returns an error if the given GitLab user or error are unexpected. Returns nil
 // if they are valid.
-func validateResponse(user *gitlab.User, err error) error {
+func validateResponse(user *gitlab.AuthUser, err error) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to get GitLab user")
 	}

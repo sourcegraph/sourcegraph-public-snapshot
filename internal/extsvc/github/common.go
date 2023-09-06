@@ -2033,7 +2033,10 @@ func GetPublicExternalAccountData(ctx context.Context, data *extsvc.AccountData)
 	return &extsvc.PublicAccountData{
 		DisplayName: d.Name,
 		Login:       d.Login,
-		URL:         d.URL,
+
+		// Github returns the API url as URL, so to ensure the link to the user's profile
+		// is correct, we substitute this for the HTMLURL which is the correct profile url.
+		URL: d.HTMLURL,
 	}, nil
 }
 

@@ -11,7 +11,6 @@ import { Link, Markdown } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
 import { DismissibleAlert } from '../components/DismissibleAlert'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import type { GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables } from '../graphql-operations'
 import { FreeUsersExceededAlert } from '../site/FreeUsersExceededAlert'
 import { LicenseExpirationAlert } from '../site/LicenseExpirationAlert'
@@ -42,7 +41,6 @@ const QUERY = gql`
 
     ${siteFlagFieldsFragment}
 `
-// todo: remove or hide (if ff used) in favor of new setup checklist
 /**
  * Fetches and displays relevant global alerts at the top of the page
  */
@@ -55,18 +53,12 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
 
     const showNoEmbeddingPoliciesAlert =
         window.context?.codyEnabled && data?.codeIntelligenceConfigurationPolicies.totalCount === 0
-    const [isSetupChecklistEnabled] = useFeatureFlag('setup-checklist', false)
-
-    const shouldRepositoriesConfigurationAlert =
-        !isSetupChecklistEnabled &&
-        siteFlagsValue?.externalServicesCounts.remoteExternalServicesCount === 0 &&
-        !isSourcegraphApp
 
     return (
         <div className={classNames('test-global-alert', styles.globalAlerts)}>
             {siteFlagsValue && (
                 <>
-                    {shouldRepositoriesConfigurationAlert && (
+                    {siteFlagsValue?.externalServicesCounts.remoteExternalServicesCount === 0 && !isSourcegraphApp && (
                         <NeedsRepositoryConfigurationAlert className={styles.alert} />
                     )}
                     {siteFlagsValue.freeUsersExceeded && (
@@ -75,12 +67,10 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                             className={styles.alert}
                         />
                     )}
-                    {!isSetupChecklistEnabled &&
-                        siteFlagsValue.alerts.map((alert, index) => (
-                            <GlobalAlert key={index} alert={alert} className={styles.alert} />
-                        ))}
-                    {!isSetupChecklistEnabled &&
-                        siteFlagsValue.productSubscription.license &&
+                    {siteFlagsValue.alerts.map((alert, index) => (
+                        <GlobalAlert key={index} alert={alert} className={styles.alert} />
+                    ))}
+                    {siteFlagsValue.productSubscription.license &&
                         (() => {
                             const expiresAt = parseISO(siteFlagsValue.productSubscription.license.expiresAt)
                             return (

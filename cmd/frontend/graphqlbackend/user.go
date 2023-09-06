@@ -448,37 +448,48 @@ type userMutationArgs struct {
 	UserID *graphql.ID
 }
 
+func (r *schemaResolver) affectedUserID(ctx context.Context, args *userMutationArgs) (affectedUserID int32, err error) {
+	if args.UserID != nil {
+		return UnmarshalUserID(*args.UserID)
+	}
+
+	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return user.ID, nil
+}
+
 func (r *schemaResolver) SetTosAccepted(ctx context.Context, args *userMutationArgs) (*EmptyResponse, error) {
+	affectedUserID, err := r.affectedUserID(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+
 	tosAccepted := true
 	update := database.UserUpdate{TosAccepted: &tosAccepted}
-
-	return r.updateAffectedUser(ctx, args, update)
+	return r.updateAffectedUser(ctx, affectedUserID, update)
 }
 
 func (r *schemaResolver) SetCompletedPostSignup(ctx context.Context, args *userMutationArgs) (*EmptyResponse, error) {
-	completedPostSignup := true
-	update := database.UserUpdate{CompletedPostSignup: &completedPostSignup}
-
-	return r.updateAffectedUser(ctx, args, update)
-}
-
-func (r *schemaResolver) updateAffectedUser(ctx context.Context, args *userMutationArgs, update database.UserUpdate) (*EmptyResponse, error) {
-	var affectedUserID int32
-	if args.UserID != nil {
-		var err error
-		affectedUserID, err = UnmarshalUserID(*args.UserID)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		user, err := r.db.Users().GetByCurrentAuthUser(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		affectedUserID = user.ID
+	affectedUserID, err := r.affectedUserID(ctx, args)
+	if err != nil {
+		return nil, err
 	}
 
+	has, err := backend.NewUserEmailsService(r.db, r.logger).HasVerifiedEmail(ctx, affectedUserID)
+	if err != nil {
+		return nil, err
+	} else if !has {
+		return nil, errors.New("must have a verified email to complete post-signup flow")
+	}
+
+	completedPostSignup := true
+	update := database.UserUpdate{CompletedPostSignup: &completedPostSignup}
+	return r.updateAffectedUser(ctx, affectedUserID, update)
+}
+
+func (r *schemaResolver) updateAffectedUser(ctx context.Context, affectedUserID int32, update database.UserUpdate) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to set the Terms of Service accepted flag.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, affectedUserID); err != nil {
 		return nil, err
