@@ -123,13 +123,13 @@
         align-items: center;
         gap: 0.5rem;
         flex-wrap: nowrap;
-        text-wrap: nowrap;
+        white-space: nowrap;
 
         @media (--sm-breakpoint-down) {
             // Make it full width in the current row.
             grid-column: 1 / 3;
             flex-wrap: wrap;
-            text-wrap: none;
+            white-space: normal;
         }
     }
 
