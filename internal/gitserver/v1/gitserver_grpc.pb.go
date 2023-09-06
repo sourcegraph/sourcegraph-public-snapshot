@@ -41,7 +41,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GitserverServiceClient interface {
 	BatchLog(ctx context.Context, in *BatchLogRequest, opts ...grpc.CallOption) (*BatchLogResponse, error)
-	CreateCommitFromPatchBinary(ctx context.Context, in *CreateCommitFromPatchBinaryRequest, opts ...grpc.CallOption) (*CreateCommitFromPatchBinaryResponse, error)
+	CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (GitserverService_CreateCommitFromPatchBinaryClient, error)
 	DiskInfo(ctx context.Context, in *DiskInfoRequest, opts ...grpc.CallOption) (*DiskInfoResponse, error)
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
 	GetObject(ctx context.Context, in *GetObjectRequest, opts ...grpc.CallOption) (*GetObjectResponse, error)
@@ -323,7 +323,7 @@ func (c *gitserverServiceClient) ReposStats(ctx context.Context, in *ReposStatsR
 // for forward compatibility
 type GitserverServiceServer interface {
 	BatchLog(context.Context, *BatchLogRequest) (*BatchLogResponse, error)
-	CreateCommitFromPatchBinary(context.Context, *CreateCommitFromPatchBinaryRequest) (*CreateCommitFromPatchBinaryResponse, error)
+	CreateCommitFromPatchBinary(GitserverService_CreateCommitFromPatchBinaryServer) error
 	DiskInfo(context.Context, *DiskInfoRequest) (*DiskInfoResponse, error)
 	Exec(*ExecRequest, GitserverService_ExecServer) error
 	GetObject(context.Context, *GetObjectRequest) (*GetObjectResponse, error)
@@ -703,10 +703,6 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "BatchLog",
 			Handler:    _GitserverService_BatchLog_Handler,
-		},
-		{
-			MethodName: "CreateCommitFromPatchBinary",
-			Handler:    _GitserverService_CreateCommitFromPatchBinary_Handler,
 		},
 		{
 			MethodName: "DiskInfo",
