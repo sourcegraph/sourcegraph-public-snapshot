@@ -557,3 +557,10 @@
     :why: 
     :versions: []
     :when: 2023-08-23 22:45:52.736440000 Z
+- - :license
+  - github.com/hashicorp/go-tfe
+  - MPL-2.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2023-09-06 22:04:27.722891000 Z
