@@ -2,7 +2,6 @@ package search
 
 import (
 	"context"
-	"io"
 	"sync"
 	"time"
 
@@ -55,18 +54,7 @@ func (j *searchJob) Config() []env.Config {
 	return nil
 }
 
-func (j *searchJob) Routines(ctx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	// We currently are relying on a fake for search.
-	return j.routines(ctx, observationCtx, service.NewSearcherFake(), service.NewCSVWriterFake(io.Discard))
-}
-
-// Only exposed for tests
-func (j *searchJob) routines(
-	_ context.Context,
-	observationCtx *observation.Context,
-	newSearcher service.NewSearcher,
-	csvWriter service.CSVWriter,
-) ([]goroutine.BackgroundRoutine, error) {
+func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	j.once.Do(func() {
 		db := j.workerDB
 		if db == nil {
@@ -75,6 +63,9 @@ func (j *searchJob) routines(
 				return
 			}
 		}
+
+		// We currently are relying on a fake for search.
+		newSearcher := service.NewSearcherFake()
 
 		exhaustiveSearchStore := store.New(db, observationCtx)
 
@@ -98,7 +89,7 @@ func (j *searchJob) routines(
 		j.workers = []goroutine.BackgroundRoutine{
 			newExhaustiveSearchWorker(workCtx, observationCtx, searchWorkerStore, exhaustiveSearchStore, newSearcher, j.config),
 			newExhaustiveSearchRepoWorker(workCtx, observationCtx, repoWorkerStore, exhaustiveSearchStore, newSearcher, j.config),
-			newExhaustiveSearchRepoRevisionWorker(workCtx, observationCtx, revWorkerStore, exhaustiveSearchStore, newSearcher, csvWriter, j.config),
+			newExhaustiveSearchRepoRevisionWorker(workCtx, observationCtx, revWorkerStore, exhaustiveSearchStore, newSearcher, j.config),
 		}
 	})
 

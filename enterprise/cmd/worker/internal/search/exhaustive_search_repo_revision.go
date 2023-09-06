@@ -2,6 +2,7 @@ package search
 
 import (
 	"context"
+	"io"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -23,14 +24,12 @@ func newExhaustiveSearchRepoRevisionWorker(
 	workerStore dbworkerstore.Store[*types.ExhaustiveSearchRepoRevisionJob],
 	exhaustiveSearchStore *store.Store,
 	newSearcher service.NewSearcher,
-	csvWriter service.CSVWriter,
 	config config,
 ) goroutine.BackgroundRoutine {
 	handler := &exhaustiveSearchRepoRevHandler{
 		logger:      log.Scoped("exhaustive-search-repo-revision", "The background worker running exhaustive searches on a revision of a repository"),
 		store:       exhaustiveSearchStore,
 		newSearcher: newSearcher,
-		csvWriter:   csvWriter,
 	}
 
 	opts := workerutil.WorkerOptions{
@@ -54,6 +53,9 @@ type exhaustiveSearchRepoRevHandler struct {
 
 var _ workerutil.Handler[*types.ExhaustiveSearchRepoRevisionJob] = &exhaustiveSearchRepoRevHandler{}
 
+// Temporary hack. We will replace this quickly once we implement the blobstore.
+var csvBuf = io.Discard
+
 func (h *exhaustiveSearchRepoRevHandler) Handle(ctx context.Context, logger log.Logger, record *types.ExhaustiveSearchRepoRevisionJob) error {
 	query, repoRev, err := h.store.GetQueryRepoRev(ctx, record)
 	if err != nil {
@@ -65,5 +67,7 @@ func (h *exhaustiveSearchRepoRevHandler) Handle(ctx context.Context, logger log.
 		return err
 	}
 
-	return q.Search(ctx, repoRev, h.csvWriter)
+	csvWriter := service.NewCSVWriterFake(csvBuf)
+
+	return q.Search(ctx, repoRev, csvWriter)
 }

@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 )
@@ -57,8 +56,8 @@ func TestExhaustiveSearch(t *testing.T) {
 		},
 	}
 
-	csvBuf := &bytes.Buffer{}
-	routines, err := searchJob.routines(ctx, observationCtx, service.NewSearcherFake(), service.NewCSVWriterFake(csvBuf))
+	csvBuf = &bytes.Buffer{}
+	routines, err := searchJob.Routines(ctx, observationCtx)
 	require.NoError(err)
 	for _, routine := range routines {
 		go routine.Start()
@@ -124,7 +123,7 @@ func TestExhaustiveSearch(t *testing.T) {
 			"repo,revspec,revision",
 			"2,spec,rev3",
 		},
-	}, parseCSV(csvBuf.String()))
+	}, parseCSV(csvBuf.(*bytes.Buffer).String()))
 }
 
 func parseCSV(csv string) (o [][]string) {
