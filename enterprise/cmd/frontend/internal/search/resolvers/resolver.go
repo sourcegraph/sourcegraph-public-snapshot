@@ -60,7 +60,7 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 }
 
 func (r *Resolver) searchJobByID(ctx context.Context, id graphql.ID) (graphqlbackend.SearchJobResolver, error) {
-	jobID, err := unmarshalSearchJobID(id)
+	jobID, err := UnmarshalSearchJobID(id)
 	if err != nil {
 		return nil, err
 	}
