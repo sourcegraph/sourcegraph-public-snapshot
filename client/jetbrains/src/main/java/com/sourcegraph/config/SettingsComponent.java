@@ -6,7 +6,7 @@ import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComponentValidator;
 import com.intellij.openapi.ui.ValidationInfo;
-import com.intellij.ui.IdeBorderFactory;
+import com.intellij.ui.*;
 import com.intellij.ui.components.ActionLink;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
@@ -19,21 +19,18 @@ import com.jetbrains.jsonSchema.settings.mappings.JsonSchemaConfigurable;
 import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.cody.ui.PasswordFieldWithShowHideButton;
 import com.sourcegraph.common.AuthorizationUtil;
+import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.Enumeration;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import javax.swing.AbstractButton;
-import javax.swing.ButtonGroup;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JRadioButton;
+import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.Document;
@@ -63,9 +60,12 @@ public class SettingsComponent implements Disposable {
   private JLabel runLocalAppComment;
   private JBCheckBox isCodyDebugEnabledCheckBox;
   private JBCheckBox isCodyVerboseDebugEnabledCheckBox;
+  private JBCheckBox isCustomAutocompleteColorEnabledCheckBox;
+  private ColorPanel customAutocompleteColorPanel;
 
   private final ScheduledExecutorService codyAppStateCheckerExecutorService =
       Executors.newSingleThreadScheduledExecutor();
+  private final int colorPanelWidth = 62;
 
   public JComponent getPreferredFocusedComponent() {
     return defaultBranchNameTextField;
@@ -472,6 +472,24 @@ public class SettingsComponent implements Disposable {
     isCodyVerboseDebugEnabledCheckBox.setSelected(value);
   }
 
+  public boolean isCustomAutocompleteColorEnabled() {
+    return isCustomAutocompleteColorEnabledCheckBox.isSelected();
+  }
+
+  public void setIsCustomAutocompleteColorEnabled(boolean value) {
+    isCustomAutocompleteColorEnabledCheckBox.setSelected(value);
+  }
+
+  public @NotNull Integer getCustomAutocompleteColorPanel() {
+    Color selectedColor = customAutocompleteColorPanel.getSelectedColor();
+    return Objects.requireNonNull(selectedColor).getRGB();
+  }
+
+  public void setCustomAutocompleteColorPanel(Integer value) {
+    Color c = new Color(value);
+    customAutocompleteColorPanel.setSelectedColor(c);
+  }
+
   private void setInstanceSettingsEnabled(@NotNull InstanceType instanceType) {
     // enterprise stuff
     boolean isEnterprise = instanceType == InstanceType.ENTERPRISE;
@@ -606,6 +624,22 @@ public class SettingsComponent implements Disposable {
     isCodyAutocompleteEnabledCheckBox = new JBCheckBox("Enable Cody autocomplete");
     isCodyDebugEnabledCheckBox = new JBCheckBox("Enable debug");
     isCodyVerboseDebugEnabledCheckBox = new JBCheckBox("Verbose debug");
+
+    isCustomAutocompleteColorEnabledCheckBox = new JBCheckBox("Enable custom autocomplete color");
+
+    customAutocompleteColorPanel = new ColorPanel();
+    customAutocompleteColorPanel.setVisible(false);
+    isCustomAutocompleteColorEnabledCheckBox.addChangeListener(
+        e -> {
+          customAutocompleteColorPanel.setVisible(
+              isCustomAutocompleteColorEnabledCheckBox.isSelected());
+        });
+
+    JPanel customAutocompleteColorPanelWrapper = new JPanel(new FlowLayout(FlowLayout.LEFT));
+    customAutocompleteColorPanelWrapper.setBounds(
+        0, 0, colorPanelWidth, customAutocompleteColorPanel.getHeight());
+    customAutocompleteColorPanelWrapper.add(customAutocompleteColorPanel);
+
     JPanel codySettingsPanel =
         FormBuilder.createFormBuilder()
             .addComponent(isCodyEnabledCheckBox, 10)
@@ -615,6 +649,8 @@ public class SettingsComponent implements Disposable {
             .addComponent(isCodyDebugEnabledCheckBox)
             .addTooltip("Enables debug output visible in the idea.log")
             .addComponent(isCodyVerboseDebugEnabledCheckBox)
+            .addLabeledComponent(
+                isCustomAutocompleteColorEnabledCheckBox, customAutocompleteColorPanelWrapper)
             .getPanel();
     codySettingsPanel.setBorder(
         IdeBorderFactory.createTitledBorder("Cody AI", true, JBUI.insetsTop(8)));
@@ -630,6 +666,8 @@ public class SettingsComponent implements Disposable {
     isCodyAutocompleteEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
     isCodyDebugEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
     isCodyVerboseDebugEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
+    isCustomAutocompleteColorEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
+    customAutocompleteColorPanel.setEnabled(isCodyEnabledCheckBox.isSelected());
   }
 
   @Override

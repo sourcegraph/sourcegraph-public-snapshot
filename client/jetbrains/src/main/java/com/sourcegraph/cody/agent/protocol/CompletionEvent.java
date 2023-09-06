@@ -11,10 +11,10 @@ public class CompletionEvent {
     public String providerIdentifier;
     public String languageId;
     @Nullable public ContextSummary contextSummary;
-    public String source;
+    @Nullable public String source;
     public String id;
-    public int lineCount;
-    public int charCount;
+    @Nullable public Integer lineCount;
+    @Nullable public Integer charCount;
 
     @Override
     public String toString() {
@@ -50,8 +50,8 @@ public class CompletionEvent {
   }
 
   public static class ContextSummary {
-    public boolean embeddings;
-    public double local;
+    @Nullable public Double embeddings;
+    @Nullable public Double local;
     public double duration;
 
     @Override

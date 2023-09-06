@@ -67,7 +67,7 @@ export const Popover: Story = () => {
 
     return (
         <BrandedStory>
-            {() => <StreamingProgressSkippedPopover progress={progress} onSearchAgain={() => {}} />}
+            {() => <StreamingProgressSkippedPopover query="" progress={progress} onSearchAgain={() => {}} />}
         </BrandedStory>
     )
 }
@@ -103,7 +103,7 @@ export const ShouldCloseAllInfo: Story = () => {
 
     return (
         <BrandedStory>
-            {() => <StreamingProgressSkippedPopover progress={progress} onSearchAgain={() => {}} />}
+            {() => <StreamingProgressSkippedPopover query="" progress={progress} onSearchAgain={() => {}} />}
         </BrandedStory>
     )
 }
@@ -131,7 +131,7 @@ export const ShouldOpenOneInfo: Story = () => {
 
     return (
         <BrandedStory>
-            {() => <StreamingProgressSkippedPopover progress={progress} onSearchAgain={() => {}} />}
+            {() => <StreamingProgressSkippedPopover query="" progress={progress} onSearchAgain={() => {}} />}
         </BrandedStory>
     )
 }

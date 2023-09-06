@@ -16,12 +16,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// NewExhaustiveSearchRepoRevisionWorker creates a background routine that periodically runs the exhaustive search of a revision on a repo.
-func NewExhaustiveSearchRepoRevisionWorker(
+// newExhaustiveSearchRepoRevisionWorker creates a background routine that periodically runs the exhaustive search of a revision on a repo.
+func newExhaustiveSearchRepoRevisionWorker(
 	ctx context.Context,
 	observationCtx *observation.Context,
 	workerStore dbworkerstore.Store[*types.ExhaustiveSearchRepoRevisionJob],
 	exhaustiveSearchStore *store.Store,
+	config config,
 ) goroutine.BackgroundRoutine {
 	handler := &exhaustiveSearchRepoRevHandler{
 		logger: log.Scoped("exhaustive-search-repo-revision", "The background worker running exhaustive searches on a revision of a repository"),
@@ -32,7 +33,7 @@ func NewExhaustiveSearchRepoRevisionWorker(
 		Name:              "exhaustive_search_repo_revision_worker",
 		Description:       "runs the exhaustive search on a revision of a repository",
 		NumHandlers:       5,
-		Interval:          1 * time.Second,
+		Interval:          config.WorkerInterval,
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           workerutil.NewMetrics(observationCtx, "exhaustive_search_repo_revision_worker"),
 	}

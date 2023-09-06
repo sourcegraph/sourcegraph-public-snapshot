@@ -21,12 +21,12 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 		types.CompletionsFeatureChat,
 		rl,
 		"chat",
-		func(requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) string {
+		func(requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
 			// No user defined models for now.
 			if requestParams.Fast {
-				return c.FastChatModel
+				return c.FastChatModel, nil
 			}
-			return c.ChatModel
+			return c.ChatModel, nil
 		},
 	)
 }

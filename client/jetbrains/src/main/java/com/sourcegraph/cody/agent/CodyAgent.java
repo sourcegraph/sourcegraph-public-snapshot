@@ -92,7 +92,7 @@ public class CodyAgent implements Disposable {
     return getClient(project).server;
   }
 
-  public static CodyAgentCodebase getCodebase(@NotNull Project project) {
+  public static @Nullable CodyAgentCodebase getCodebase(@NotNull Project project) {
     if (!isConnected(project)) {
       return null;
     }
@@ -203,7 +203,7 @@ public class CodyAgent implements Disposable {
   private static File agentBinary() throws CodyAgentException {
     Path pluginPath = agentDirectory();
     if (pluginPath == null) {
-      throw new CodyAgentException("Cody AI by Sourcegraph plugin path not found");
+      throw new CodyAgentException("Sourcegraph Cody + Code Search plugin path not found");
     }
     Path binarySource = pluginPath.resolve("agent").resolve(agentBinaryName());
     if (!Files.isRegularFile(binarySource)) {

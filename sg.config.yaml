@@ -119,6 +119,9 @@ env:
   # OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
   # OTEL_EXPORTER_OTLP_PROTOCOL: http/json
 
+  # Enable gRPC Web UI for debugging
+  GRPC_WEB_UI_ENABLED: "true"
+
   # Enable full protobuf message logging when an internal error occurred
   SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED: "true"
   SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: "1KB"
@@ -173,7 +176,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/gitserver github.com/sourcegraph/sourcegraph/enterprise/cmd/gitserver
+      go build -gcflags="$GCFLAGS" -o .bin/gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
     checkBinary: .bin/gitserver
     env: &gitserverenv
       HOSTNAME: 127.0.0.1:3178
@@ -181,7 +184,6 @@ commands:
       - lib
       - internal
       - cmd/gitserver
-      - enterprise/cmd/gitserver
 
   # This is only here to stay backwards-compatible with people's custom
   # `sg.config.overwrite.yaml` files
@@ -945,7 +947,7 @@ bazelCommands:
       CTAGS_PROCESSES: 2
       USE_ROCKSKIP: "false"
   gitserver-template: &gitserver_bazel_template
-    target: //enterprise/cmd/gitserver
+    target: //cmd/gitserver
     env: &gitserverenv
       HOSTNAME: 127.0.0.1:3178
   # This is only here to stay backwards-compatible with people's custom
