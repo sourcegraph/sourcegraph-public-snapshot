@@ -11,6 +11,7 @@ public class PluginSettingChangeContext {
   public final boolean oldCodyVerboseDebugEnabled;
 
   @NotNull public final String newUrl;
+  @Nullable public final Integer oldCustomAutocompleteColor;
   public final boolean isDotComAccessTokenChanged;
   public final boolean isEnterpriseAccessTokenChanged;
 
@@ -19,6 +20,9 @@ public class PluginSettingChangeContext {
   public final boolean newCodyAutocompleteEnabled;
   public final boolean newCodyDebugEnabled;
   public final boolean newCodyVerboseDebugEnabled;
+  public final boolean oldIsCustomAutocompleteColorEnabled;
+  public final boolean isCustomAutocompleteColorEnabled;
+  @Nullable public final Integer customAutocompleteColor;
 
   public PluginSettingChangeContext(
       boolean oldCodyEnabled,
@@ -26,6 +30,8 @@ public class PluginSettingChangeContext {
       @NotNull String oldUrl,
       boolean oldCodyDebugEnabled,
       boolean oldCodyVerboseDebugEnabled,
+      Integer oldCustomAutocompleteColor,
+      boolean oldIsCustomAutocompleteColorEnabled,
       @NotNull String newUrl,
       boolean isDotComAccessTokenChanged,
       boolean isEnterpriseAccessTokenChanged,
@@ -33,13 +39,16 @@ public class PluginSettingChangeContext {
       boolean newCodyEnabled,
       boolean newCodyAutocompleteEnabled,
       boolean newCodyDebugEnabled,
-      boolean newCodyVerboseDebugEnabled) {
+      boolean newCodyVerboseDebugEnabled,
+      boolean isCustomAutocompleteColorEnabled,
+      @Nullable Integer customAutocompleteColor) {
     this.oldCodyEnabled = oldCodyEnabled;
     this.oldCodyAutocompleteEnabled = oldCodyAutocompleteEnabled;
     this.oldUrl = oldUrl;
     this.oldCodyDebugEnabled = oldCodyDebugEnabled;
     this.oldCodyVerboseDebugEnabled = oldCodyVerboseDebugEnabled;
     this.newUrl = newUrl;
+    this.oldCustomAutocompleteColor = oldCustomAutocompleteColor;
     this.isDotComAccessTokenChanged = isDotComAccessTokenChanged;
     this.isEnterpriseAccessTokenChanged = isEnterpriseAccessTokenChanged;
     this.newCustomRequestHeaders = newCustomRequestHeaders;
@@ -47,5 +56,8 @@ public class PluginSettingChangeContext {
     this.newCodyAutocompleteEnabled = newCodyAutocompleteEnabled;
     this.newCodyDebugEnabled = newCodyDebugEnabled;
     this.newCodyVerboseDebugEnabled = newCodyVerboseDebugEnabled;
+    this.isCustomAutocompleteColorEnabled = isCustomAutocompleteColorEnabled;
+    this.oldIsCustomAutocompleteColorEnabled = oldIsCustomAutocompleteColorEnabled;
+    this.customAutocompleteColor = customAutocompleteColor;
   }
 }

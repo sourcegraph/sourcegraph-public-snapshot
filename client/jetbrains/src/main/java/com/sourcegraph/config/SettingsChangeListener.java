@@ -20,6 +20,7 @@ import com.sourcegraph.cody.CodyToolWindowFactory;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager;
+import com.sourcegraph.cody.autocomplete.render.AutocompleteRenderUtils;
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus;
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService;
 import com.sourcegraph.find.browser.JavaToJSBridge;
@@ -135,6 +136,15 @@ public class SettingsChangeListener implements Disposable {
                   CodyAutocompleteStatus.AutocompleteDisabled);
             } else {
               CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.Ready);
+            }
+
+            // Rerender autocompletions when custom autocomplete color changed
+            // or when checkbox state changed
+            if (!Objects.equals(context.oldCustomAutocompleteColor, context.customAutocompleteColor)
+                || (context.oldIsCustomAutocompleteColorEnabled
+                    != context.isCustomAutocompleteColorEnabled)) {
+              ConfigUtil.getAllEditors()
+                  .forEach(AutocompleteRenderUtils::rerenderAllAutocompleteInlays);
             }
           }
         });

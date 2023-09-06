@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.util.messages.MessageBus;
 import com.sourcegraph.cody.localapp.LocalAppManager;
+import java.util.Objects;
 import javax.swing.*;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nls;
@@ -59,8 +60,12 @@ public class SettingsConfigurable implements Configurable {
         || mySettingsComponent.isCodyEnabled() != ConfigUtil.isCodyEnabled()
         || mySettingsComponent.isCodyAutocompleteEnabled() != ConfigUtil.isCodyAutocompleteEnabled()
         || mySettingsComponent.isCodyDebugEnabled() != ConfigUtil.isCodyDebugEnabled()
-        || mySettingsComponent.isCodyVerboseDebugEnabled()
-            != ConfigUtil.isCodyVerboseDebugEnabled();
+        || mySettingsComponent.isCodyVerboseDebugEnabled() != ConfigUtil.isCodyVerboseDebugEnabled()
+        || mySettingsComponent.isCustomAutocompleteColorEnabled()
+            != ConfigUtil.isCustomAutocompleteColorEnabled()
+        || !Objects.equals(
+            mySettingsComponent.getCustomAutocompleteColorPanel(),
+            ConfigUtil.getCustomAutocompleteColor());
   }
 
   @Override
@@ -76,6 +81,8 @@ public class SettingsConfigurable implements Configurable {
     boolean oldCodyAutocompleteEnabled = ConfigUtil.isCodyAutocompleteEnabled();
     boolean oldCodyDebugEnabled = ConfigUtil.isCodyDebugEnabled();
     boolean oldCodyVerboseDebugEnabled = ConfigUtil.isCodyVerboseDebugEnabled();
+    boolean oldIsCustomAutocompleteColorEnabled = ConfigUtil.isCustomAutocompleteColorEnabled();
+    Integer oldCustomAutocompleteColor = ConfigUtil.getCustomAutocompleteColor();
     String oldUrl = ConfigUtil.getSourcegraphUrl(project);
     String newDotComAccessToken = mySettingsComponent.getDotComAccessToken();
     String newEnterpriseAccessToken = mySettingsComponent.getEnterpriseAccessToken();
@@ -96,6 +103,8 @@ public class SettingsConfigurable implements Configurable {
             oldUrl,
             oldCodyDebugEnabled,
             oldCodyVerboseDebugEnabled,
+            oldCustomAutocompleteColor,
+            oldIsCustomAutocompleteColorEnabled,
             newUrl,
             mySettingsComponent.isDotComAccessTokenChanged(),
             mySettingsComponent.isEnterpriseAccessTokenChanged(),
@@ -103,7 +112,9 @@ public class SettingsConfigurable implements Configurable {
             mySettingsComponent.isCodyEnabled(),
             mySettingsComponent.isCodyAutocompleteEnabled(),
             mySettingsComponent.isCodyDebugEnabled(),
-            mySettingsComponent.isCodyVerboseDebugEnabled());
+            mySettingsComponent.isCodyVerboseDebugEnabled(),
+            mySettingsComponent.isCustomAutocompleteColorEnabled(),
+            mySettingsComponent.getCustomAutocompleteColorPanel());
 
     publisher.beforeAction(context);
 
@@ -154,6 +165,9 @@ public class SettingsConfigurable implements Configurable {
     aSettings.isCodyAutocompleteEnabled = mySettingsComponent.isCodyAutocompleteEnabled();
     aSettings.isCodyDebugEnabled = mySettingsComponent.isCodyDebugEnabled();
     aSettings.isCodyVerboseDebugEnabled = mySettingsComponent.isCodyVerboseDebugEnabled();
+    aSettings.isCustomAutocompleteColorEnabled =
+        mySettingsComponent.isCustomAutocompleteColorEnabled();
+    aSettings.customAutocompleteColor = mySettingsComponent.getCustomAutocompleteColorPanel();
 
     publisher.afterAction(context);
   }
@@ -174,6 +188,9 @@ public class SettingsConfigurable implements Configurable {
     mySettingsComponent.setCodyAutocompleteEnabled(ConfigUtil.isCodyAutocompleteEnabled());
     mySettingsComponent.setIsCodyDebugEnabled(ConfigUtil.isCodyDebugEnabled());
     mySettingsComponent.setIsCodyVerboseDebugEnabled(ConfigUtil.isCodyVerboseDebugEnabled());
+    mySettingsComponent.setIsCustomAutocompleteColorEnabled(
+        ConfigUtil.isCustomAutocompleteColorEnabled());
+    mySettingsComponent.setCustomAutocompleteColorPanel(ConfigUtil.getCustomAutocompleteColor());
     mySettingsComponent.getPanel().requestFocusInWindow();
   }
 
