@@ -18,19 +18,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // AccessTokenAuthMiddleware authenticates the user based on the
 // token query parameter or the "Authorization" header.
-func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Handler) http.Handler {
-	logger = logger.Scoped("accessTokenAuth", "Access token authentication middleware")
+func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.Handler) http.Handler {
+	baseLogger = baseLogger.Scoped("accessTokenAuth", "Access token authentication middleware")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// SCIM uses an auth token which is checked separately in the SCIM package.
 		if strings.HasPrefix(r.URL.Path, "/.api/scim/v2") {
 			next.ServeHTTP(w, r)
 			return
 		}
+
+		logger := trace.Logger(r.Context(), baseLogger)
 
 		w.Header().Add("Vary", "Authorization")
 
