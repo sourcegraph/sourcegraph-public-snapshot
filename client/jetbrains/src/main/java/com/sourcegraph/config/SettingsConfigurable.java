@@ -5,16 +5,14 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.util.messages.MessageBus;
 import com.sourcegraph.cody.localapp.LocalAppManager;
+import com.sourcegraph.utils.CollectionUtil;
+import java.util.List;
 import java.util.Objects;
 import javax.swing.*;
-
-import com.sourcegraph.utils.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
 
 /** Provides controller functionality for application settings. */
 public class SettingsConfigurable implements Configurable {
@@ -63,7 +61,7 @@ public class SettingsConfigurable implements Configurable {
             != ConfigUtil.isUrlNotificationDismissed()
         || mySettingsComponent.isCodyEnabled() != ConfigUtil.isCodyEnabled()
         || mySettingsComponent.isCodyAutocompleteEnabled() != ConfigUtil.isCodyAutocompleteEnabled()
-        || !CollectionUtils.Companion.sameElements(
+        || !CollectionUtil.Companion.sameElements(
             mySettingsComponent.getBlacklistedAutocompleteLanguageIds(),
             ConfigUtil.getBlacklistedAutocompleteLanguageIds())
         || mySettingsComponent.isCodyDebugEnabled() != ConfigUtil.isCodyDebugEnabled()
@@ -199,7 +197,8 @@ public class SettingsConfigurable implements Configurable {
     mySettingsComponent.setUrlNotificationDismissedEnabled(ConfigUtil.isUrlNotificationDismissed());
     mySettingsComponent.setCodyEnabled(ConfigUtil.isCodyEnabled());
     mySettingsComponent.setCodyAutocompleteEnabled(ConfigUtil.isCodyAutocompleteEnabled());
-    mySettingsComponent.setBlacklistedLanguageIds(ConfigUtil.getBlacklistedAutocompleteLanguageIds());
+    mySettingsComponent.setBlacklistedLanguageIds(
+        ConfigUtil.getBlacklistedAutocompleteLanguageIds());
     mySettingsComponent.setIsCodyDebugEnabled(ConfigUtil.isCodyDebugEnabled());
     mySettingsComponent.setIsCodyVerboseDebugEnabled(ConfigUtil.isCodyVerboseDebugEnabled());
     mySettingsComponent.setIsCustomAutocompleteColorEnabled(

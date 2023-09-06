@@ -1,9 +1,8 @@
 package com.sourcegraph.config;
 
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
 
 public class PluginSettingChangeContext {
   @NotNull public final String oldUrl;

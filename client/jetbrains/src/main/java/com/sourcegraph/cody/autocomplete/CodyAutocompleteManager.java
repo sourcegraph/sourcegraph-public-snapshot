@@ -31,6 +31,7 @@ import com.sourcegraph.common.EditorUtils;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.UserLevelConfig;
 import com.sourcegraph.telemetry.GraphQlLogger;
+import com.sourcegraph.utils.CodyLanguageUtil;
 import difflib.Delta;
 import difflib.DiffUtils;
 import difflib.Patch;
@@ -123,6 +124,7 @@ public class CodyAutocompleteManager {
     return ConfigUtil.isCodyEnabled()
         && ConfigUtil.isCodyAutocompleteEnabled()
         && editor != null
+        && !CodyLanguageUtil.Companion.isLanguageBlacklisted(editor)
         && editor.getDocument().isWritable()
         && isProjectAvailable(editor.getProject())
         && isEditorSupported(editor);

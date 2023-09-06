@@ -202,7 +202,6 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
 
   public void setBlacklistedAutocompleteLanguageIds(
       List<String> blacklistedAutocompleteLanguageIds) {
-      this.blacklistedAutocompleteLanguageIds = blacklistedAutocompleteLanguageIds;
+    this.blacklistedAutocompleteLanguageIds = blacklistedAutocompleteLanguageIds;
   }
-
 }
