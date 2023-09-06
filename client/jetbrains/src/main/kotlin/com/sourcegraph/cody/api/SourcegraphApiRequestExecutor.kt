@@ -58,9 +58,6 @@ sealed class SourcegraphApiRequestExecutor {
 
     @Throws(IOException::class, ProcessCanceledException::class)
     override fun <T> execute(indicator: ProgressIndicator, request: SourcegraphApiRequest<T>): T {
-      if (service<SourcegraphRequestExecutorBreaker>().isRequestsShouldFail)
-          error(
-              "Request failure was triggered by user action. This a pretty long description of this failure that should resemble some long error which can go out of bounds.")
       indicator.checkCanceled()
       return createRequestBuilder(request)
           .tuner { connection ->
