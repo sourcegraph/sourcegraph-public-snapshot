@@ -27,6 +27,7 @@ type RecordedCommand struct {
 	Path      string    `json:"path"`
 	Output    string    `json:"output"`
 	IsSuccess bool      `json:"success"`
+	Reason    string    `json:"reason"`
 }
 
 func UnmarshalCommand(rawCommand []byte) (RecordedCommand, error) {
@@ -96,7 +97,7 @@ func (rc *RecordingCmd) before(ctx context.Context, _ log.Logger, cmd *exec.Cmd)
 	return nil
 }
 
-func (rc *RecordingCmd) after(_ context.Context, logger log.Logger, cmd *exec.Cmd) {
+func (rc *RecordingCmd) after(ctx context.Context, logger log.Logger, cmd *exec.Cmd) {
 	// ensure we don't record ourselves twice if the caller calls Wait() twice for example.
 	defer func() { rc.done = true }()
 	if rc.done {
@@ -108,6 +109,8 @@ func (rc *RecordingCmd) after(_ context.Context, logger log.Logger, cmd *exec.Cm
 		return
 	}
 
+	reason := getCommandReason(ctx)
+
 	// record this command in redis
 	val := RecordedCommand{
 		Start:    rc.start,
@@ -118,6 +121,7 @@ func (rc *RecordingCmd) after(_ context.Context, logger log.Logger, cmd *exec.Cm
 
 		IsSuccess: cmd.ProcessState.Success(),
 		Output:    rc.Cmd.GetExecutionOutput(),
+		Reason:    reason.ToString(),
 	}
 
 	data, err := json.Marshal(&val)

@@ -7,6 +7,10 @@ type (
 	reasonKey int
 )
 
+func (r reason) ToString() string {
+	return string(r)
+}
+
 const (
 	commandReasonKey reasonKey = iota
 
@@ -18,7 +22,7 @@ func SetCommandReason(ctx context.Context, r reason) context.Context {
 	return context.WithValue(ctx, commandReasonKey, r)
 }
 
-func GetCommandReason(ctx context.Context) reason {
+func getCommandReason(ctx context.Context) reason {
 	r := ctx.Value(commandReasonKey).(reason)
 	return r
 }
