@@ -433,21 +433,29 @@ func (c *V3Client) GetAuthenticatedUserOrgsDetailsAndMembership(ctx context.Cont
 }
 
 type restTeam struct {
+	ID   int    `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
 	Slug string `json:"slug,omitempty"`
 	URL  string `json:"url,omitempty"`
 
-	ReposCount   int  `json:"repos_count,omitempty"`
-	Organization *Org `json:"organization,omitempty"`
+	ReposCount   int       `json:"repos_count,omitempty"`
+	Organization *Org      `json:"organization,omitempty"`
+	Parent       *restTeam `json:"parent,omitempty"`
 }
 
 func (t *restTeam) convert() *Team {
+	if t == nil {
+		return nil
+	}
+
 	return &Team{
+		ID:           t.ID,
 		Name:         t.Name,
 		Slug:         t.Slug,
 		URL:          t.URL,
 		ReposCount:   t.ReposCount,
 		Organization: t.Organization,
+		Parent:       t.Parent.convert(),
 	}
 }
 
@@ -548,6 +556,15 @@ func (c *V3Client) GetOrganization(ctx context.Context, login string) (org *OrgD
 		err = &OrgNotFoundError{}
 	}
 	return
+}
+
+func (c *V3Client) GetOrganizations(ctx context.Context, page int) ([]*OrgDetails, bool, error) {
+	var orgs []*OrgDetails
+	respState, err := c.get(ctx, fmt.Sprintf("/user/orgs?page=%d&per_page=100", page), &orgs)
+	if err != nil {
+		return nil, false, err
+	}
+	return orgs, respState.hasNextPage(), nil
 }
 
 // ListOrganizations lists all orgs from GitHub. This is intended to be used for GitHub enterprise

@@ -161,7 +161,7 @@ func (p *Provider) requiredAuthScopes() (requiredAuthScope, bool) {
 // fetchUserPermsByToken fetches all the private repo ids that the token can access.
 //
 // This may return a partial result if an error is encountered, e.g. via rate limits.
-func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.AccountID, token *auth.OAuthBearerToken, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) fetchUserPermsByToken(ctx context.Context, db database.DB, accountID extsvc.AccountID, token *auth.OAuthBearerToken, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
 	logger := log.Scoped("fetchUserPermsByToken", "fetches all the private repo ids that the token can access.")
 
@@ -170,7 +170,64 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 		return nil, errors.Wrap(err, "get client")
 	}
 
+	id := string(accountID)
+
 	client = client.WithAuthenticator(token)
+	ghdb := db.GitHubDB()
+
+	var orgIDs []int
+	for page := 1; true; page = page + 1 {
+		orgs, hasNextPage, err := client.GetOrganizations(ctx, page)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			for _, org := range orgs {
+				orgIDs = append(orgIDs, org.ID)
+			}
+		}
+		if !hasNextPage {
+			break
+		}
+	}
+	ghdb.SetUserOrgs(ctx, "https://github.com/", id, orgIDs)
+
+	var teamIDs []int
+	for page := 1; true; page = page + 1 {
+		teams, hasNextPage, _, err := client.GetAuthenticatedUserTeams(ctx, page)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			for _, team := range teams {
+				teamIDs = append(teamIDs, team.ID)
+				if team.Parent == nil {
+					ghdb.SetTeamDetails(ctx, "https://github.com/", team.ID, team.Organization.ID)
+				} else {
+					ghdb.SetTeamDetailsWithParent(ctx, "https://github.com/", team.ID, team.Parent.ID, team.Organization.ID)
+				}
+			}
+		}
+		if !hasNextPage {
+			break
+		}
+	}
+	ghdb.SetUserTeams(ctx, "https://github.com/", id, teamIDs)
+
+	var repoIDs []string
+	for page := 1; true; page = page + 1 {
+		repos, hasNextPage, _, err := client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page, 100, github.AffiliationCollaborator, github.AffiliationOwner)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			for _, repo := range repos {
+				repoIDs = append(repoIDs, repo.ID)
+			}
+		}
+
+		if !hasNextPage {
+			break
+		}
+	}
+	ghdb.SetUserRepos(ctx, "https://github.com/", id, repoIDs)
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
@@ -347,7 +404,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		NeedsRefreshBuffer: 5,
 	}
 
-	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), oauthToken, opts)
+	return p.fetchUserPermsByToken(ctx, p.db, extsvc.AccountID(account.AccountID), oauthToken, opts)
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to
@@ -421,6 +478,23 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	if err != nil {
 		return nil, errors.Wrap(err, "get client")
 	}
+
+	var teamIDs []int
+	for page := 1; true; page = page + 1 {
+		teams, hasNextPage, err := client.ListRepositoryTeams(ctx, owner, name, page)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			for _, team := range teams {
+				teamIDs = append(teamIDs, team.ID)
+			}
+		}
+
+		if !hasNextPage {
+			break
+		}
+	}
+	p.db.GitHubDB().SetRepoTeams(ctx, "https://github.com/", repo.ExternalRepoSpec.ID, teamIDs)
 
 	// Sync collaborators
 	hasNextPage := true

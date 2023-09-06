@@ -106,6 +106,7 @@ go_library(
         "//internal/database/dbconn",
         "//internal/database/dbtest",
         "//internal/database/dbutil",
+        "//internal/database/githubdb",
         "//internal/encryption",
         "//internal/encryption/keyring",
         "//internal/env",

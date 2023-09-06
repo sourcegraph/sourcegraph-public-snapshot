@@ -51,9 +51,11 @@ type Actor struct {
 
 // A Team represents a team on Github.
 type Team struct {
-	Name string `json:",omitempty"`
-	Slug string `json:",omitempty"`
-	URL  string `json:",omitempty"`
+	ID     int    `json:",omitempty"`
+	Name   string `json:",omitempty"`
+	Slug   string `json:",omitempty"`
+	URL    string `json:",omitempty"`
+	Parent *Team  `json:",omitempty"`
 
 	ReposCount   int  `json:",omitempty"`
 	Organization *Org `json:",omitempty"`

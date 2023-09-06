@@ -34,6 +34,9 @@ type MockClient struct {
 	// GetOrganizationFunc is an instance of a mock function object
 	// controlling the behavior of the method GetOrganization.
 	GetOrganizationFunc *ClientGetOrganizationFunc
+	// GetOrganizationsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetOrganizations.
+	GetOrganizationsFunc *ClientGetOrganizationsFunc
 	// GetRepositoryFunc is an instance of a mock function object
 	// controlling the behavior of the method GetRepository.
 	GetRepositoryFunc *ClientGetRepositoryFunc
@@ -89,6 +92,11 @@ func NewMockClient() *MockClient {
 		},
 		GetOrganizationFunc: &ClientGetOrganizationFunc{
 			defaultHook: func(context.Context, string) (r0 *github.OrgDetails, r1 error) {
+				return
+			},
+		},
+		GetOrganizationsFunc: &ClientGetOrganizationsFunc{
+			defaultHook: func(context.Context) (r0 []*github.OrgDetails, r1 error) {
 				return
 			},
 		},
@@ -169,6 +177,11 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.GetOrganization")
 			},
 		},
+		GetOrganizationsFunc: &ClientGetOrganizationsFunc{
+			defaultHook: func(context.Context) ([]*github.OrgDetails, error) {
+				panic("unexpected invocation of MockClient.GetOrganizations")
+			},
+		},
 		GetRepositoryFunc: &ClientGetRepositoryFunc{
 			defaultHook: func(context.Context, string, string) (*github.Repository, error) {
 				panic("unexpected invocation of MockClient.GetRepository")
@@ -230,6 +243,7 @@ type surrogateMockClient interface {
 	GetAuthenticatedUserOrgsDetailsAndMembership(context.Context, int) ([]github.OrgDetailsAndMembership, bool, int, error)
 	GetAuthenticatedUserTeams(context.Context, int) ([]*github.Team, bool, int, error)
 	GetOrganization(context.Context, string) (*github.OrgDetails, error)
+	GetOrganizations(context.Context) ([]*github.OrgDetails, error)
 	GetRepository(context.Context, string, string) (*github.Repository, error)
 	ListAffiliatedRepositories(context.Context, github.Visibility, int, int, ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error)
 	ListOrgRepositories(context.Context, string, int, string) ([]*github.Repository, bool, int, error)
@@ -257,6 +271,9 @@ func NewMockClientFrom(i surrogateMockClient) *MockClient {
 		},
 		GetOrganizationFunc: &ClientGetOrganizationFunc{
 			defaultHook: i.GetOrganization,
+		},
+		GetOrganizationsFunc: &ClientGetOrganizationsFunc{
+			defaultHook: i.GetOrganizations,
 		},
 		GetRepositoryFunc: &ClientGetRepositoryFunc{
 			defaultHook: i.GetRepository,
@@ -741,6 +758,111 @@ func (c ClientGetOrganizationFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientGetOrganizationFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientGetOrganizationsFunc describes the behavior when the
+// GetOrganizations method of the parent MockClient instance is invoked.
+type ClientGetOrganizationsFunc struct {
+	defaultHook func(context.Context) ([]*github.OrgDetails, error)
+	hooks       []func(context.Context) ([]*github.OrgDetails, error)
+	history     []ClientGetOrganizationsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetOrganizations delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockClient) GetOrganizations(v0 context.Context) ([]*github.OrgDetails, error) {
+	r0, r1 := m.GetOrganizationsFunc.nextHook()(v0)
+	m.GetOrganizationsFunc.appendCall(ClientGetOrganizationsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetOrganizations
+// method of the parent MockClient instance is invoked and the hook queue is
+// empty.
+func (f *ClientGetOrganizationsFunc) SetDefaultHook(hook func(context.Context) ([]*github.OrgDetails, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetOrganizations method of the parent MockClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ClientGetOrganizationsFunc) PushHook(hook func(context.Context) ([]*github.OrgDetails, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientGetOrganizationsFunc) SetDefaultReturn(r0 []*github.OrgDetails, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]*github.OrgDetails, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientGetOrganizationsFunc) PushReturn(r0 []*github.OrgDetails, r1 error) {
+	f.PushHook(func(context.Context) ([]*github.OrgDetails, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientGetOrganizationsFunc) nextHook() func(context.Context) ([]*github.OrgDetails, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientGetOrganizationsFunc) appendCall(r0 ClientGetOrganizationsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientGetOrganizationsFuncCall objects
+// describing the invocations of this function.
+func (f *ClientGetOrganizationsFunc) History() []ClientGetOrganizationsFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientGetOrganizationsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientGetOrganizationsFuncCall is an object that describes an invocation
+// of method GetOrganizations on an instance of MockClient.
+type ClientGetOrganizationsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*github.OrgDetails
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientGetOrganizationsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientGetOrganizationsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

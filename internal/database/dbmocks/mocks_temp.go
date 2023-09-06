@@ -19,6 +19,7 @@ import (
 	conf "github.com/sourcegraph/sourcegraph/internal/conf"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	githubdb "github.com/sourcegraph/sourcegraph/internal/database/githubdb"
 	encryption "github.com/sourcegraph/sourcegraph/internal/encryption"
 	extsvc "github.com/sourcegraph/sourcegraph/internal/extsvc"
 	auth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -14952,6 +14953,9 @@ type MockDB struct {
 	// GitHubAppsFunc is an instance of a mock function object controlling
 	// the behavior of the method GitHubApps.
 	GitHubAppsFunc *DBGitHubAppsFunc
+	// GitHubDBFunc is an instance of a mock function object controlling the
+	// behavior of the method GitHubDB.
+	GitHubDBFunc *DBGitHubDBFunc
 	// GitserverLocalCloneFunc is an instance of a mock function object
 	// controlling the behavior of the method GitserverLocalClone.
 	GitserverLocalCloneFunc *DBGitserverLocalCloneFunc
@@ -15189,6 +15193,11 @@ func NewMockDB() *MockDB {
 		},
 		GitHubAppsFunc: &DBGitHubAppsFunc{
 			defaultHook: func() (r0 store.GitHubAppsStore) {
+				return
+			},
+		},
+		GitHubDBFunc: &DBGitHubDBFunc{
+			defaultHook: func() (r0 githubdb.Store) {
 				return
 			},
 		},
@@ -15524,6 +15533,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.GitHubApps")
 			},
 		},
+		GitHubDBFunc: &DBGitHubDBFunc{
+			defaultHook: func() githubdb.Store {
+				panic("unexpected invocation of MockDB.GitHubDB")
+			},
+		},
 		GitserverLocalCloneFunc: &DBGitserverLocalCloneFunc{
 			defaultHook: func() database.GitserverLocalCloneStore {
 				panic("unexpected invocation of MockDB.GitserverLocalClone")
@@ -15817,6 +15831,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		GitHubAppsFunc: &DBGitHubAppsFunc{
 			defaultHook: i.GitHubApps,
+		},
+		GitHubDBFunc: &DBGitHubDBFunc{
+			defaultHook: i.GitHubDB,
 		},
 		GitserverLocalCloneFunc: &DBGitserverLocalCloneFunc{
 			defaultHook: i.GitserverLocalClone,
@@ -17849,6 +17866,104 @@ func (c DBGitHubAppsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBGitHubAppsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBGitHubDBFunc describes the behavior when the GitHubDB method of the
+// parent MockDB instance is invoked.
+type DBGitHubDBFunc struct {
+	defaultHook func() githubdb.Store
+	hooks       []func() githubdb.Store
+	history     []DBGitHubDBFuncCall
+	mutex       sync.Mutex
+}
+
+// GitHubDB delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) GitHubDB() githubdb.Store {
+	r0 := m.GitHubDBFunc.nextHook()()
+	m.GitHubDBFunc.appendCall(DBGitHubDBFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the GitHubDB method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBGitHubDBFunc) SetDefaultHook(hook func() githubdb.Store) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GitHubDB method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBGitHubDBFunc) PushHook(hook func() githubdb.Store) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBGitHubDBFunc) SetDefaultReturn(r0 githubdb.Store) {
+	f.SetDefaultHook(func() githubdb.Store {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBGitHubDBFunc) PushReturn(r0 githubdb.Store) {
+	f.PushHook(func() githubdb.Store {
+		return r0
+	})
+}
+
+func (f *DBGitHubDBFunc) nextHook() func() githubdb.Store {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBGitHubDBFunc) appendCall(r0 DBGitHubDBFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBGitHubDBFuncCall objects describing the
+// invocations of this function.
+func (f *DBGitHubDBFunc) History() []DBGitHubDBFuncCall {
+	f.mutex.Lock()
+	history := make([]DBGitHubDBFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBGitHubDBFuncCall is an object that describes an invocation of method
+// GitHubDB on an instance of MockDB.
+type DBGitHubDBFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 githubdb.Store
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBGitHubDBFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBGitHubDBFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

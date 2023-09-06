@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/githubdb"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	gha "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 )
@@ -35,6 +36,7 @@ type DB interface {
 	ExternalServices() ExternalServiceStore
 	FeatureFlags() FeatureFlagStore
 	GitHubApps() gha.GitHubAppsStore
+	GitHubDB() githubdb.Store
 	GitserverRepos() GitserverRepoStore
 	GitserverLocalClone() GitserverLocalCloneStore
 	GlobalState() GlobalStateStore
@@ -101,6 +103,10 @@ func NewDBWith(logger log.Logger, other basestore.ShareableStore) DB {
 type db struct {
 	*basestore.Store
 	logger log.Logger
+}
+
+func (d *db) GitHubDB() githubdb.Store {
+	return githubdb.NewStore(d.Store)
 }
 
 func (d *db) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {

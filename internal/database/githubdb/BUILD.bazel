@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "githubdb",
+    srcs = ["githubdb.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/githubdb",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database/basestore",
+        "@com_github_google_go_github//github",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+    ],
+)
