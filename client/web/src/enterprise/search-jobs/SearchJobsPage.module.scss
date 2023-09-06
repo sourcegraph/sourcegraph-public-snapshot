@@ -143,6 +143,8 @@
         display: flex;
         flex-wrap: nowrap;
         align-self: center;
+        align-items: center;
+        gap: 0.25rem;
     }
 }
 
@@ -155,4 +157,8 @@
 
 .pagination-info {
     color: var(--text-muted);
+}
+
+.zero-state {
+    grid-column: 1 / -1;
 }

@@ -17,7 +17,11 @@ import { GetUsersListResult, GetUsersListVariables } from '../../graphql-operati
 
 import styles from './UsersPicker.module.scss'
 
-const GET_USERS_QUERY = gql`
+/**
+ * User picker query to fetch list of users, exported only for Storybook story
+ * apollo mocks, not designed to be reused in other places.
+ */
+export const GET_USERS_QUERY = gql`
     fragment UserSuggestion on User {
         id
         username
@@ -26,12 +30,6 @@ const GET_USERS_QUERY = gql`
         siteAdmin
         primaryEmail {
             email
-        }
-        roles {
-            nodes {
-                id
-                name
-            }
         }
     }
 

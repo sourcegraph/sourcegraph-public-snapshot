@@ -31,6 +31,7 @@ import {
 
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import { Page } from '../../components/Page'
+import { ListPageZeroState } from '../../components/ZeroStates/ListPageZeroState'
 import { SearchJobNode, SearchJobsResult, SearchJobsVariables } from '../../graphql-operations'
 
 import { User, UsersPicker } from './UsersPicker'
@@ -215,17 +216,19 @@ export const SearchJobsPage: FC = props => {
                     </ul>
                 )}
 
-                <footer className={styles.footer}>
-                    {hasNextPage && (
-                        <Button variant="secondary" outline={true} disabled={loading} onClick={fetchMore}>
-                            Show more
-                        </Button>
-                    )}
-                    <span className={styles.paginationInfo}>
-                        {connection?.totalCount ?? 0} <b>search jobs</b> total{' '}
-                        {hasNextPage && <>(showing first {searchJobs.length})</>}
-                    </span>
-                </footer>
+                {connection && connection.nodes.length > 0 && (
+                    <footer className={styles.footer}>
+                        {hasNextPage && (
+                            <Button variant="secondary" outline={true} disabled={loading} onClick={fetchMore}>
+                                Show more
+                            </Button>
+                        )}
+                        <span className={styles.paginationInfo}>
+                            {connection?.totalCount ?? 0} <b>search jobs</b> total{' '}
+                            {hasNextPage && <>(showing first {searchJobs.length})</>}
+                        </span>
+                    </footer>
+                )}
             </Container>
         </Page>
     )
@@ -242,7 +245,7 @@ const SearchJob: FC<SearchJobProps> = props => {
     return (
         <li className={styles.job}>
             <span className={styles.jobStatus}>
-                <span className={styles.jobStartedDate}>{job.startedAt}</span>
+                <span>{job.startedAt}</span>
                 <SearchJobBadge job={job} />
             </span>
 
@@ -266,7 +269,7 @@ const SearchJob: FC<SearchJobProps> = props => {
                 <Button variant="secondary" outline={true}>
                     <Icon svgPath={mdiRefresh} aria-hidden={true} />
                 </Button>
-                <Button variant="secondary" outline={true}>
+                <Button variant="danger" outline={true}>
                     <Icon svgPath={mdiDelete} aria-hidden={true} />
                 </Button>
             </span>
@@ -318,6 +321,12 @@ const getBadgeVariant = (jobStatus: SearchJobState): BadgeVariantType => {
     }
 }
 
-const SearchJobsZeroState: FC = props => <span>No Search jobs found</span>
+const SearchJobsZeroState: FC = () => (
+    <ListPageZeroState
+        title="No Search jobs found"
+        subTitle="Create your first search job from the search page in the results menu"
+        className={styles.zeroState}
+    />
+)
 
 const formatJobState = (state: SearchJobState): string => upperFirst(state.toLowerCase())
