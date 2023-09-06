@@ -52,6 +52,7 @@ func Symbols() *monitoring.Dashboard {
 				shared.GRPCInternalErrorMetricsOptions{
 					HumanServiceName:   containerName,
 					RawGRPCServiceName: grpcServiceName,
+					Namespace:          "src",
 
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerCodeIntel),

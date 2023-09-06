@@ -418,6 +418,7 @@ func Frontend() *monitoring.Dashboard {
 				shared.GRPCInternalErrorMetricsOptions{
 					HumanServiceName:   "frontend",
 					RawGRPCServiceName: grpcZoektConfigurationServiceName,
+					Namespace:          "", // intentionally empty
 
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSearchCore),

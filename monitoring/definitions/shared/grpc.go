@@ -289,12 +289,19 @@ type GRPCInternalErrorMetricsOptions struct {
 	//
 	// Example: (Search | Exec)
 	MethodFilterRegex string
+
+	// Namespace is the Prometheus metrics namespace for metrics emitted by this service.
+	Namespace string
 }
 
 // NewGRPCInternalErrorMetricsGroup creates a Group containing metrics that track "internal" gRPC errors.
 func NewGRPCInternalErrorMetricsGroup(opts GRPCInternalErrorMetricsOptions, owner monitoring.ObservableOwner) monitoring.Group {
 	metric := func(base string, labelFilters ...string) string {
 		m := base
+
+		if opts.Namespace != "" {
+			m = fmt.Sprintf("%s_%s", opts.Namespace, m)
+		}
 
 		if len(labelFilters) > 0 {
 			m = fmt.Sprintf("%s{%s}", m, strings.Join(labelFilters, ","))

@@ -548,6 +548,7 @@ func GitServer() *monitoring.Dashboard {
 				shared.GRPCInternalErrorMetricsOptions{
 					HumanServiceName:   "gitserver",
 					RawGRPCServiceName: grpcServiceName,
+					Namespace:          "src",
 
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSearchCore),
