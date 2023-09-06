@@ -12,6 +12,7 @@ export const SITE_CONFIG_QUERY = gql`
             nodes {
                 id
                 displayName
+                unrestrictedAccess
             }
         }
     }

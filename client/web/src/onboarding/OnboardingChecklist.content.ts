@@ -1,7 +1,7 @@
 export const content = [
     {
         id: 'licenseKey',
-        isComplete: true,
+        isComplete: false,
         title: 'Set license key',
         description: 'Please set your license key',
         link: '#',

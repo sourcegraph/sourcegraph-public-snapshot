@@ -6,7 +6,12 @@ import { useQuery } from '@sourcegraph/http-client'
 
 import { SITE_CONFIG_QUERY } from './queries'
 
-export interface OnboardingChecklistResult {
+interface OnboardingChecklistResult {
+    licenseKey: string
+    checklistItem: OnboardingChecklistItem
+}
+
+export interface OnboardingChecklistItem {
     licenseKey: boolean
     externalURL: boolean
     emailSmtp: boolean
@@ -44,12 +49,17 @@ interface EffectiveContent {
 
 function getChecklistItems(data: SiteConfigResult): OnboardingChecklistResult {
     const config = parse(data.site.configuration.effectiveContents) as EffectiveContent
+
     return {
-        licenseKey: config.licenseKey !== '',
-        externalURL: config.externalURL !== '',
-        emailSmtp: config['email.smtp'].host !== '',
-        authProviders: config['auth.providers'].length > 0,
-        externalServices: data.externalServices?.nodes?.length > 0 || false,
-        usersPermissions: false,
+        licenseKey: config.licenseKey,
+        checklistItem: {
+            licenseKey: config.licenseKey !== '',
+            externalURL: config.externalURL !== '',
+            emailSmtp: config['email.smtp'].host !== '',
+            authProviders: config['auth.providers'].length > 0,
+            externalServices: data.externalServices?.nodes?.length > 0 || false,
+            usersPermissions:
+                data.externalServices?.nodes?.every(({ unrestrictedAccess }) => !unrestrictedAccess) ?? false,
+        },
     }
 }
