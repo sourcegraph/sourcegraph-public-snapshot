@@ -66,7 +66,6 @@ go_library(
         "@com_github_gorilla_schema//:schema",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_graph_gophers_graphql_go//errors",
-        "@com_github_inconshreveable_log15//:log15",
         "@com_github_masterminds_semver//:semver",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",

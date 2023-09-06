@@ -1017,8 +1017,8 @@ def go_dependencies():
         name = "com_github_certifi_gocertifi",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/certifi/gocertifi",
-        sum = "h1:S2NE3iHSwP0XV47EEXL8mWmRdEfGscSJ+7EgePNgt0s=",
-        version = "v0.0.0-20210507211836-431795d63e8d",
+        sum = "h1:uH66TXeswKn5PW5zdZ39xEwfS9an067BirqA+P4QaLI=",
+        version = "v0.0.0-20200922220541-2c3bb06c6054",
     )
 
     go_repository(

@@ -11,8 +11,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/inconshreveable/log15"
-	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log"
 	"github.com/throttled/throttled/v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -25,7 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func serveGraphQL(logger sglog.Logger, schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInternal bool) func(w http.ResponseWriter, r *http.Request) (err error) {
+func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInternal bool) func(w http.ResponseWriter, r *http.Request) (err error) {
 	return func(w http.ResponseWriter, r *http.Request) (err error) {
 		if r.Method != "POST" {
 			// The URL router should not have routed to this handler if method is not POST, but just in
@@ -48,7 +47,7 @@ func serveGraphQL(logger sglog.Logger, schema *graphql.Schema, rlw graphqlbacken
 		if r.Header.Get("Content-Encoding") == "gzip" {
 			gzipReader, err := gzip.NewReader(r.Body)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to decompress request body")
 			}
 
 			r.Body = gzipReader
@@ -58,7 +57,7 @@ func serveGraphQL(logger sglog.Logger, schema *graphql.Schema, rlw graphqlbacken
 
 		var params graphQLQueryParams
 		if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-			return err
+			return errors.Wrapf(err, "failed to decode request")
 		}
 
 		traceData := traceData{
@@ -86,7 +85,8 @@ func serveGraphQL(logger sglog.Logger, schema *graphql.Schema, rlw graphqlbacken
 		if len(validationErrs) == 0 {
 			cost, costErr = graphqlbackend.EstimateQueryCost(params.Query, params.Variables)
 			if costErr != nil {
-				log15.Debug("estimating GraphQL cost", "error", costErr)
+				logger.Debug("failed to estimate GraphQL cost",
+					log.Error(costErr))
 			}
 			traceData.costError = costErr
 			traceData.cost = cost
@@ -99,7 +99,7 @@ func serveGraphQL(logger sglog.Logger, schema *graphql.Schema, rlw graphqlbacken
 					RequestSource: requestSource,
 				})
 				if err != nil {
-					log15.Error("checking GraphQL rate limit", "error", err)
+					logger.Error("checking GraphQL rate limit", log.Error(err))
 					traceData.limitError = err
 				} else {
 					traceData.limited = limited
@@ -118,11 +118,11 @@ func serveGraphQL(logger sglog.Logger, schema *graphql.Schema, rlw graphqlbacken
 		traceData.queryErrors = response.Errors
 		responseJSON, err := json.Marshal(response)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to marshal GraphQL response")
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(responseJSON)
+		_, _ = w.Write(responseJSON)
 
 		return nil
 	}
@@ -168,7 +168,7 @@ func getUID(r *http.Request) (uid string, ip bool, anonymous bool) {
 	return "unknown", false, anonymous
 }
 
-func recordAuditLog(ctx context.Context, logger sglog.Logger, data traceData) {
+func recordAuditLog(ctx context.Context, logger log.Logger, data traceData) {
 	if !audit.IsEnabled(conf.SiteConfig(), audit.GraphQL) {
 		return
 	}
@@ -176,14 +176,14 @@ func recordAuditLog(ctx context.Context, logger sglog.Logger, data traceData) {
 	audit.Log(ctx, logger, audit.Record{
 		Entity: "GraphQL",
 		Action: "request",
-		Fields: []sglog.Field{
-			sglog.Object("request",
-				sglog.String("name", data.requestName),
-				sglog.String("source", data.requestSource),
-				sglog.String("variables", toJson(data.queryParams.Variables)),
-				sglog.String("query", data.queryParams.Query)),
-			sglog.Bool("mutation", strings.Contains(data.queryParams.Query, "mutation")),
-			sglog.Bool("successful", len(data.queryErrors) == 0),
+		Fields: []log.Field{
+			log.Object("request",
+				log.String("name", data.requestName),
+				log.String("source", data.requestSource),
+				log.String("variables", toJson(data.queryParams.Variables)),
+				log.String("query", data.queryParams.Query)),
+			log.Bool("mutation", strings.Contains(data.queryParams.Query, "mutation")),
+			log.Bool("successful", len(data.queryErrors) == 0),
 		},
 	})
 }
