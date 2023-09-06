@@ -55,7 +55,7 @@ Chat lets you ask Cody general programming questions or questions about your spe
 
 Cody uses several search methods (including keyword and semantic search) to find files in your codebase that are relevant to your chat questions. It then uses context from those files to provide an informed response based on your codebase. Cody also tells you which code files it reads to generate its responses.
 
-Context retrieval isn't perfect, and Cody occasionally uses incorrect context or hallucinates answers. When Cody returns an incorrect response, it is often worth asking the question again slightly differently to see if Cody can find better context the second time. 
+Context retrieval isn't perfect, and Cody occasionally uses incorrect context or hallucinates answers. When Cody returns an incorrect response, it is often worth asking the question again slightly differently to see if Cody can find better context the second time.
 
 Cody's chat function can handle use cases like:
 
@@ -133,4 +133,3 @@ To make custom commands globally available across multiple projects, create a ne
 ## Language support
 
 Cody uses LLMs trained on broad code, and we've found it to support all common programming languages effectively. However, the quality of autocompletion and other features may vary based on how well the underlying LLM model was trained in a given language.
-

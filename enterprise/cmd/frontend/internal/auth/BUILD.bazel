@@ -1,4 +1,3 @@
-load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -22,26 +21,9 @@ go_library(
         "//enterprise/cmd/frontend/internal/auth/saml",
         "//enterprise/cmd/frontend/internal/auth/sourcegraphoperator",
         "//internal/auth",
-        "//internal/collections",
         "//internal/conf",
         "//internal/database",
-        "//internal/featureflag",
         "//internal/licensing",
         "@com_github_sourcegraph_log//:log",
-    ],
-)
-
-go_test(
-    name = "auth_test",
-    srcs = ["init_test.go"],
-    embed = [":auth"],
-    deps = [
-        "//cmd/frontend/graphqlbackend",
-        "//internal/actor",
-        "//internal/conf",
-        "//internal/featureflag",
-        "//internal/licensing",
-        "//schema",
-        "@com_github_google_go_cmp//cmp",
     ],
 )

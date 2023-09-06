@@ -29,7 +29,6 @@ export type FeatureFlagName =
     | 'own-promote'
     | 'own-analytics'
     | 'enable-simple-search'
-    | 'setup-checklist'
     | 'end-user-onboarding'
 
 interface OrgFlagOverride {
