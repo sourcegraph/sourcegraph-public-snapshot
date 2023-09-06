@@ -40,9 +40,23 @@ extend type Query {
         """
         first: Int = 50
         """
+        The number of nodes to return starting from the end (latest).
+        Note: Use either last or first (see above) in the query. Setting both will
+        return an error.
+        """
+        last: Int
+        """
         The cursor to start at.
         """
         after: String
+        """
+        Opaque pagination cursor to be used when paginating backwards.
+        """
+        before: String
+        """
+        List of users ids by which we wil filter out search jobs list.
+        """
+        usersIds: [ID!]
         """
         The query to filter the results by.
         """
@@ -86,6 +100,10 @@ enum SearchJobState {
     The search job has completed.
     """
     COMPLETED
+    """
+    The search job has canceled.
+    """
+    CANCELED
 }
 
 """
