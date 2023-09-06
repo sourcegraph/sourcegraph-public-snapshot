@@ -7,10 +7,6 @@ WRAP_POSTGRES_UTILS = """
 port_offset=$(($$ % 1000))
 pg_port=$(($port_offset + 5432 + 1))
 
-echo "---"
-env
-echo "---"
-
 docker load --input {pg_image}
 container_id=$(docker run --rm --detach --platform linux/amd64 -p $pg_port:5432 postgres-12:candidate)
 trap "docker kill $container_id" EXIT
@@ -45,6 +41,7 @@ def _migration_impl(ctx):
         inputs = ctx.files.srcs,
         outputs = [ctx.outputs.out],
         progress_message = "Running squash migration for %s" % ctx.attr.db,
+        use_default_shell_env = True,
         command = """{wrap_postgres_script}
         export HOME=$(pwd)
         export SG_FORCE_REPO_ROOT=$(pwd)
@@ -75,6 +72,7 @@ def _describe_impl(ctx):
         inputs = ctx.files.srcs,
         outputs = [ctx.outputs.out],
         progress_message = "Running describe migration for %s" % ctx.attr.db,
+        use_default_shell_env = True,
         command = """
         {wrap_postgres_script}
 
