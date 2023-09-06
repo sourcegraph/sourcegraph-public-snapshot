@@ -37,11 +37,14 @@ export PGHOST=localhost
 """
 
 def _migration_impl(ctx):
+    docker_host = ctx.var.get("DOCKER_HOST", default = "")
     ctx.actions.run_shell(
         inputs = ctx.files.srcs,
         outputs = [ctx.outputs.out],
         progress_message = "Running squash migration for %s" % ctx.attr.db,
-        use_default_shell_env = True,
+        env = {
+            "DOCKER_HOST": docker_host,
+        },
         command = """{wrap_postgres_script}
         export HOME=$(pwd)
         export SG_FORCE_REPO_ROOT=$(pwd)
@@ -68,11 +71,14 @@ migration = rule(
 )
 
 def _describe_impl(ctx):
+    docker_host = ctx.var.get("DOCKER_HOST", default = "")
     ctx.actions.run_shell(
         inputs = ctx.files.srcs,
         outputs = [ctx.outputs.out],
         progress_message = "Running describe migration for %s" % ctx.attr.db,
-        use_default_shell_env = True,
+        env = {
+            "DOCKER_HOST": docker_host,
+        },
         command = """
         {wrap_postgres_script}
 
