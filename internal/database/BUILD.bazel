@@ -427,4 +427,5 @@ build_test(
         "codeintel-describe",
         "codeinsights-describe",
     ],
+    tags = ["requires-network"],
 )
