@@ -81,7 +81,7 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 				// Report errors on malformed Authorization headers for schemes we do handle, to
 				// make it clear to the client that their request is not proceeding with their
 				// supplied credentials.
-				logger.Error("invalid Authorization header", log.Error(err))
+				logger.Warn("invalid Authorization header", log.Error(err))
 				http.Error(w, "Invalid Authorization header.", http.StatusUnauthorized)
 				return
 			}
@@ -204,7 +204,7 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 				// the necessary scope in the Lookup call above.
 				user, err := db.Users().GetByUsername(r.Context(), sudoUser)
 				if err != nil {
-					logger.Error(
+					logger.Warn(
 						"invalid username used with sudo access token",
 						log.String("sudoUser", sudoUser),
 						log.Error(err),
