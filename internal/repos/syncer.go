@@ -339,7 +339,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 			})
 			logger.Debug("syncGroup completed", log.String("updatedRepo", fmt.Sprintf("%v", updatedRepo.(*types.Repo))))
 			if err != nil {
-				logger.Error("SyncRepo", log.Error(err), log.Bool("shared", shared))
+				logger.Error("background.SyncRepo", log.Error(err), log.Bool("shared", shared))
 			}
 		}()
 		return repo, nil
@@ -350,8 +350,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 		return s.syncRepo(ctx, codehost, name, repo)
 	})
 	if err != nil {
-		logger.Error("SyncRepo", log.Error(err), log.Bool("shared", shared))
-		return nil, err
+		return nil, errors.Wrapf(err, "foreground.SyncRepo (shared=%v)", shared)
 	}
 	return updatedRepo.(*types.Repo), nil
 }
