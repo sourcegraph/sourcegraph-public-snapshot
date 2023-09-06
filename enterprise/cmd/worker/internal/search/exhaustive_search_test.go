@@ -1,9 +1,12 @@
 package search
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -53,6 +56,8 @@ func TestExhaustiveSearch(t *testing.T) {
 			WorkerInterval: 10 * time.Millisecond,
 		},
 	}
+
+	csvBuf = &concurrentWriter{writer: &bytes.Buffer{}}
 	routines, err := searchJob.Routines(ctx, observationCtx)
 	require.NoError(err)
 	for _, routine := range routines {
@@ -105,6 +110,44 @@ func TestExhaustiveSearch(t *testing.T) {
 
 	got = strings.Join(gotParts, " ")
 	require.Equal(want, got)
+
+	require.Equal([][]string{
+		{
+			"repo,revspec,revision",
+			"1,spec,rev1",
+		},
+		{
+			"repo,revspec,revision",
+			"1,spec,rev2",
+		},
+		{
+			"repo,revspec,revision",
+			"2,spec,rev3",
+		},
+	}, parseCSV(csvBuf.(*concurrentWriter).String()))
+}
+
+func parseCSV(csv string) (o [][]string) {
+	rows := strings.Split(csv, "\n")
+	for i := 0; i < len(rows)-1; i += 2 {
+		o = append(o, []string{rows[i], rows[i+1]})
+	}
+	sort.Sort(byRow(o))
+	return
+}
+
+type byRow [][]string
+
+func (b byRow) Len() int {
+	return len(b)
+}
+
+func (b byRow) Less(i, j int) bool {
+	return b[i][1] < b[j][1]
+}
+
+func (b byRow) Swap(i, j int) {
+	b[i], b[j] = b[j], b[i]
 }
 
 // insertRow is a helper for inserting a row into a table. It assumes the
@@ -139,4 +182,21 @@ func tTimeout(t *testing.T, max time.Duration) time.Duration {
 		return max
 	}
 	return timeout
+}
+
+type concurrentWriter struct {
+	mu     sync.Mutex
+	writer *bytes.Buffer
+}
+
+func (w *concurrentWriter) String() string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.writer.String()
+}
+
+func (w *concurrentWriter) Write(p []byte) (n int, err error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.writer.Write(p)
 }
