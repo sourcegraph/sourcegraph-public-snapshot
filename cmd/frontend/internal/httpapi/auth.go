@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -21,6 +22,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+const authAuditEntity = "httpapi/auth"
 
 // AccessTokenAuthMiddleware authenticates the user based on the
 // token query parameter or the "Authorization" header.
@@ -84,7 +87,14 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 				// Report errors on malformed Authorization headers for schemes we do handle, to
 				// make it clear to the client that their request is not proceeding with their
 				// supplied credentials.
-				logger.Warn("invalid Authorization header", log.Error(err))
+				audit.Log(r.Context(), logger, audit.Record{
+					Entity: authAuditEntity,
+					Action: "check_authorization_header",
+					Fields: []log.Field{
+						log.String("problem", "invalid Authorization header"),
+						log.Error(err),
+					},
+				})
 				http.Error(w, "Invalid Authorization header.", http.StatusUnauthorized)
 				return
 			}
@@ -207,11 +217,15 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 				// the necessary scope in the Lookup call above.
 				user, err := db.Users().GetByUsername(r.Context(), sudoUser)
 				if err != nil {
-					logger.Warn(
-						"invalid username used with sudo access token",
-						log.String("sudoUser", sudoUser),
-						log.Error(err),
-					)
+					audit.Log(r.Context(), logger, audit.Record{
+						Entity: authAuditEntity,
+						Action: "check_sudo_access",
+						Fields: []log.Field{
+							log.String("problem", "invalid username used with sudo access token"),
+							log.String("sudoUser", sudoUser),
+							log.Error(err),
+						},
+					})
 					var message string
 					if errcode.IsNotFound(err) {
 						message = "Unable to sudo to nonexistent user."
