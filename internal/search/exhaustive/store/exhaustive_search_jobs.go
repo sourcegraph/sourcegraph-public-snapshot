@@ -100,13 +100,9 @@ func (s *Store) CancelSearchJob(ctx context.Context, jobID int64) (int, error) {
 	row := s.QueryRow(ctx, q)
 
 	var totalCanceled int
-	row.Scan(&totalCanceled)
-	if row.Err() != nil {
-		return -1, row.Err()
-	}
-
-	if totalCanceled == 0 {
-		return 0, errors.Newf("could not find cancellable search job: jobID=%d", jobID)
+	err := row.Scan(&totalCanceled)
+	if err != nil {
+		return -1, err
 	}
 
 	return totalCanceled, nil
