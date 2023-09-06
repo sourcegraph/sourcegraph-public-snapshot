@@ -164,7 +164,7 @@ export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopover
 
             {exhaustiveSearch && (
                 <>
-                    <hr className="mx-3" />
+                    <hr className="mx-3 mt-3" />
                     <ExhaustiveSearchMessage query={query} />
                 </>
             )}
@@ -196,6 +196,10 @@ const SkippedReasons: FC<SkippedReasonsProps> = props => {
 
 const SlimSkippedReasons: FC<SkippedReasonsProps> = props => {
     const { items } = props
+
+    if (items.length === 0) {
+        return null
+    }
 
     return (
         <div className={styles.streamingSkippedItem}>
@@ -256,7 +260,7 @@ const SkippedItemsSearch: FC<SkippedItemsSearchProps> = props => {
     const { slim, items, disabled, onSearchSettingsChange, onSubmit } = props
 
     return (
-        <Form className="pb-3 px-3" onSubmit={onSubmit} data-testid="popover-form">
+        <Form className={classNames('px-3', { 'pb-3': !slim })} onSubmit={onSubmit} data-testid="popover-form">
             <div className="mb-2 mt-3">Search again:</div>
             <div className="form-check">
                 {items.map(
@@ -312,7 +316,7 @@ export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props =
             </header>
 
             {validationErrors.length > 0 && (
-                <Alert variant="warning">
+                <Alert variant="secondary" withIcon={false}>
                     <ul className={styles.exhaustiveSearchWarningList}>
                         {validationErrors.map(validationError => (
                             <li key={validationError.reason}>{validationError.reason}</li>
