@@ -1,6 +1,6 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 
-import { Series } from '@sourcegraph/wildcard'
+import type { Series } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'

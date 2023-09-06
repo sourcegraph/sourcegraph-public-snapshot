@@ -426,7 +426,7 @@ type ExternalAccountsListOptions struct {
 }
 
 func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error) {
-	tr, ctx := trace.New(ctx, "UserExternalAccountsStore.List", "")
+	tr, ctx := trace.New(ctx, "UserExternalAccountsStore.List")
 	defer func() {
 		if err != nil {
 			tr.SetError(err)
@@ -438,7 +438,7 @@ func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccoun
 			attribute.Int("accounts.count", len(acct)),
 		)
 
-		tr.Finish()
+		tr.End()
 	}()
 
 	conds := s.listSQL(opt)
@@ -446,7 +446,7 @@ func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccoun
 }
 
 func (s *userExternalAccountsStore) ListForUsers(ctx context.Context, userIDs []int32) (userToAccts map[int32][]*extsvc.Account, err error) {
-	tr, ctx := trace.New(ctx, "UserExternalAccountsStore.ListForUsers", "")
+	tr, ctx := trace.New(ctx, "UserExternalAccountsStore.ListForUsers")
 	var count int
 	defer func() {
 		if err != nil {
@@ -457,7 +457,7 @@ func (s *userExternalAccountsStore) ListForUsers(ctx context.Context, userIDs []
 			attribute.String("userIDs", fmt.Sprintf("%v", userIDs)),
 			attribute.Int("accounts.count", count),
 		)
-		tr.Finish()
+		tr.End()
 	}()
 	if len(userIDs) == 0 {
 		return

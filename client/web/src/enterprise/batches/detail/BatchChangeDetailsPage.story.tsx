@@ -1,5 +1,5 @@
 import { useMemo } from '@storybook/addons'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
@@ -9,11 +9,15 @@ import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/setting
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-import { BatchChangeByNamespaceResult, BatchChangeFields, ExternalServiceKind } from '../../../graphql-operations'
+import {
+    type BatchChangeByNamespaceResult,
+    type BatchChangeFields,
+    ExternalServiceKind,
+} from '../../../graphql-operations'
 
 import {
-    queryExternalChangesetWithFileDiffs,
-    queryAllChangesetIDs as _queryAllChangesetIDs,
+    type queryExternalChangesetWithFileDiffs,
+    type queryAllChangesetIDs as _queryAllChangesetIDs,
     BATCH_CHANGE_BY_NAMESPACE,
     BULK_OPERATIONS,
     CHANGESETS,

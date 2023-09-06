@@ -1,0 +1,30 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "janitor",
+    srcs = [
+        "nameset.go",
+        "observability.go",
+        "orphaned_vms.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/executor/internal/janitor",
+    visibility = ["//cmd/executor:__subpackages__"],
+    deps = [
+        "//cmd/executor/internal/ignite",
+        "//cmd/executor/internal/util",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "janitor_test",
+    timeout = "short",
+    srcs = ["orphaned_vms_test.go"],
+    embed = [":janitor"],
+    deps = ["@com_github_google_go_cmp//cmp"],
+)

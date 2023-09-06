@@ -20,10 +20,10 @@ import {
     useDebounce,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import { usePageSwitcherPagination } from '../../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { PageTitle } from '../../../components/PageTitle'
-import {
+import type {
     OrgAreaOrganizationFields,
     OrganizationSettingsMembersResult,
     OrganizationSettingsMembersVariables,
@@ -33,7 +33,7 @@ import {
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { userURL } from '../../../user'
-import { OrgAreaRouteContext } from '../../area/OrgArea'
+import type { OrgAreaRouteContext } from '../../area/OrgArea'
 import { ORGANIZATION_MEMBERS_QUERY, REMOVE_USER_FROM_ORGANIZATION_QUERY } from '../../backend'
 
 import { InviteForm } from './InviteForm'
@@ -105,8 +105,7 @@ const UserNode: React.FunctionComponent<UserNodeProps> = ({
                     </div>
                 </div>
                 <div className="flex-1 d-flex align-items-center justify-content-between">
-                    <span className="text-muted flex-1">{node.siteAdmin ? 'Admin' : 'Member'}</span>
-                    <div>
+                    <div className="flex-1">
                         {authenticatedUser && org.viewerCanAdminister && (
                             <Button
                                 className="site-admin-detail-list__action test-remove-org-member"
@@ -252,7 +251,6 @@ export const OrgSettingsMembersPage: React.FunctionComponent<Props> = ({
                                 } organization`}
                             </strong>
                             <div className="flex-1 d-flex align-items-center justify-content-between">
-                                <strong>Role</strong>
                                 <strong>Action</strong>
                             </div>
                         </li>

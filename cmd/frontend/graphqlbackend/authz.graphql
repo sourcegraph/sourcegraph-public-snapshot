@@ -345,6 +345,19 @@ enum RepositoryPermission {
 }
 
 """
+PermissionSource indicates where a permission originated from.
+
+REPO_SYNC: The permission was synced from the code host, via repo-centric permission sync.
+USER_SYNC: The permission was synced from the code host using user-centric permission sync.
+API: The permission was set explicitly via the GraphQL API.
+"""
+enum PermissionSource {
+    REPO_SYNC
+    USER_SYNC
+    API
+}
+
+"""
 Permissions information of a repository or a user.
 """
 type PermissionsInfo {
@@ -362,6 +375,10 @@ type PermissionsInfo {
     change to the database row (i.e. incremental update).
     """
     updatedAt: DateTime
+    """
+    What was the source of the last permission update. The value is updated whenever different source last touched the database row (i.e. permission sync or explicit permissions update)
+    """
+    source: PermissionSource
     """
     If true for a repo, it indicates access to the repo is allowed for all users.
     It will always be false for users.

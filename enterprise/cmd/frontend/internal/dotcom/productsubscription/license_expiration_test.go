@@ -10,10 +10,10 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/slack"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -64,10 +64,10 @@ func TestCheckForUpcomingLicenseExpirations(t *testing.T) {
 		return infos[licenseKey], "", nil
 	}
 
-	users := database.NewStrictMockUserStore()
+	users := dbmocks.NewStrictMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "alice"}, nil)
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	t.Cleanup(func() {

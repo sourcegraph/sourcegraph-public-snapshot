@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "background",
+    srcs = ["init.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/codeintel/uploads/internal/background/backfiller",
+        "//internal/codeintel/uploads/internal/background/commitgraph",
+        "//internal/codeintel/uploads/internal/background/expirer",
+        "//internal/codeintel/uploads/internal/background/janitor",
+        "//internal/codeintel/uploads/internal/background/processor",
+        "//internal/codeintel/uploads/internal/lsifstore",
+        "//internal/codeintel/uploads/internal/store",
+        "//internal/database",
+        "//internal/gitserver",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//internal/uploadstore",
+        "//internal/workerutil/dbworker",
+        "//internal/workerutil/dbworker/store",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

@@ -7,10 +7,10 @@ import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 
 import { Alert, Icon, Text, Link, Button, ErrorAlert, AnchorLink } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
-import { AuthProvider, SourcegraphContext } from '../jscontext'
+import type { AuthProvider, SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
@@ -46,11 +46,8 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     const [searchParams, setSearchParams] = useSearchParams()
     const isRequestAccessAllowed = checkRequestAccessAllowed(props.context)
 
-    let returnTo = getReturnTo(location)
+    const returnTo = getReturnTo(location)
     if (authenticatedUser) {
-        if (context.sourcegraphDotComMode && returnTo === '/search') {
-            returnTo = '/get-cody'
-        }
         return <Navigate to={returnTo} replace={true} />
     }
 
@@ -134,10 +131,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                     /* eslint-disable react/no-array-index-key */
                     <div className="mb-2" key={index}>
                         <Button
-                            to={
-                                provider.authenticationURL +
-                                (context.sourcegraphDotComMode && returnTo === '/search' ? '&redirect=/get-cody' : '')
-                            }
+                            to={provider.authenticationURL}
                             display="block"
                             variant={showMoreProviders ? 'secondary' : 'primary'}
                             as={AnchorLink}

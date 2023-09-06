@@ -5,8 +5,8 @@ import (
 	"math"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -64,6 +64,7 @@ func (r *embeddingsSetupProgressResolver) CurrentRepository(ctx context.Context)
 	}
 	return r.currentRepo
 }
+
 func (r *embeddingsSetupProgressResolver) CurrentRepositoryFilesProcessed(ctx context.Context) *int32 {
 	r.getStatus(ctx)
 	if r.err != nil {
@@ -71,6 +72,7 @@ func (r *embeddingsSetupProgressResolver) CurrentRepositoryFilesProcessed(ctx co
 	}
 	return r.currentProcessed
 }
+
 func (r *embeddingsSetupProgressResolver) CurrentRepositoryTotalFilesToProcess(ctx context.Context) *int32 {
 	r.getStatus(ctx)
 	if r.err != nil {
@@ -78,6 +80,7 @@ func (r *embeddingsSetupProgressResolver) CurrentRepositoryTotalFilesToProcess(c
 	}
 	return r.currentTotal
 }
+
 func (r *embeddingsSetupProgressResolver) OneRepositoryReady(ctx context.Context) bool {
 	r.getStatus(ctx)
 	if r.err != nil {

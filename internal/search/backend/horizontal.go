@@ -139,7 +139,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	// GobCache exists so we only pay the cost of marshalling a query once
 	// when we aggregate it out over all the replicas. Zoekt's RPC layers
 	// unwrap this before passing it on to the Zoekt evaluation layers.
-	if !IsZoektGRPCEnabled(ctx) {
+	if !conf.IsGRPCEnabled(ctx) {
 		q = &query.GobCache{Q: q}
 	}
 
@@ -223,7 +223,7 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 	// GobCache exists, so we only pay the cost of marshalling a query once
 	// when we aggregate it out over all the replicas. Zoekt's RPC layers
 	// unwrap this before passing it on to the Zoekt evaluation layers.
-	if !IsZoektGRPCEnabled(ctx) {
+	if !conf.IsGRPCEnabled(ctx) {
 		q = &query.GobCache{Q: q}
 	}
 
@@ -764,11 +764,9 @@ func isZoektRolloutError(ctx context.Context, err error) bool {
 	}
 
 	metricIgnoredError.WithLabelValues(reason).Inc()
-	if span := trace.TraceFromContext(ctx); span != nil {
-		span.AddEvent("rollout",
-			attribute.String("rollout.reason", reason),
-			attribute.String("rollout.error", err.Error()))
-	}
+	trace.FromContext(ctx).AddEvent("rollout",
+		attribute.String("rollout.reason", reason),
+		attribute.String("rollout.error", err.Error()))
 
 	return true
 }

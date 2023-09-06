@@ -3,13 +3,13 @@ import { map } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
 import { isHTTPAuthError } from '@sourcegraph/http-client'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
-import { EMPTY_SETTINGS_CASCADE, gqlToCascade, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
+import { EMPTY_SETTINGS_CASCADE, gqlToCascade, type SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { createGraphQLHelpers } from '../backend/requestGraphQl'
-import { CodeHost } from '../code-hosts/shared/codeHost'
+import type { CodeHost } from '../code-hosts/shared/codeHost'
 
 import { createExtensionHost } from './extensionHost'
 import { getInlineExtensions } from './inlineExtensionsService'

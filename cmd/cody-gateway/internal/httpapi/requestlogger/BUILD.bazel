@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "requestlogger",
+    srcs = ["requestlogger.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/requestlogger",
+    visibility = ["//cmd/cody-gateway:__subpackages__"],
+    deps = [
+        "//cmd/cody-gateway/internal/actor",
+        "//cmd/cody-gateway/internal/response",
+        "//internal/requestclient",
+        "//internal/trace",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

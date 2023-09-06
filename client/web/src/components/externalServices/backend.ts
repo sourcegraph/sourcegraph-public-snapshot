@@ -1,15 +1,15 @@
-import { Dispatch, SetStateAction } from 'react'
+import type { Dispatch, SetStateAction } from 'react'
 
-import { QueryTuple, MutationTuple, QueryResult } from '@apollo/client'
+import type { QueryTuple, MutationTuple, QueryResult } from '@apollo/client'
 import { parse } from 'jsonc-parser'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors, useMutation, useLazyQuery, useQuery } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../backend/graphql'
-import {
+import type {
     UpdateExternalServiceResult,
     UpdateExternalServiceVariables,
     Scalars,
@@ -33,7 +33,10 @@ import {
     ExternalServiceResult,
     ExternalServiceVariables,
 } from '../../graphql-operations'
-import { useShowMorePagination, UseShowMorePaginationResult } from '../FilteredConnection/hooks/useShowMorePagination'
+import {
+    useShowMorePagination,
+    type UseShowMorePaginationResult,
+} from '../FilteredConnection/hooks/useShowMorePagination'
 
 export const externalServiceFragment = gql`
     fragment ExternalServiceFields on ExternalService {
@@ -214,8 +217,8 @@ export const FETCH_EXTERNAL_SERVICE = gql`
 `
 
 export const EXTERNAL_SERVICES = gql`
-    query ExternalServices($first: Int, $after: String) {
-        externalServices(first: $first, after: $after) {
+    query ExternalServices($first: Int, $after: String, $repo: ID) {
+        externalServices(first: $first, after: $after, repo: $repo) {
             nodes {
                 ...ListExternalServiceFields
             }
@@ -246,7 +249,7 @@ export const useExternalServicesConnection = (
 ): UseShowMorePaginationResult<ExternalServicesResult, ListExternalServiceFields> =>
     useShowMorePagination<ExternalServicesResult, ExternalServicesVariables, ListExternalServiceFields>({
         query: EXTERNAL_SERVICES,
-        variables: { after: vars.after, first: vars.first ?? 10 },
+        variables: { after: vars.after, first: vars.first ?? 10, repo: vars.repo },
         getConnection: result => {
             const { externalServices } = dataOrThrowErrors(result)
             return externalServices
@@ -340,11 +343,13 @@ export const useFetchExternalService = (
             }
         },
     })
+
 export interface GitHubAppDetails {
     appID: number
     baseURL: string
     installationID: number
 }
+
 export interface ExternalServiceFieldsWithConfig extends ExternalServiceFields {
     parsedConfig?: {
         gitHubAppDetails?: GitHubAppDetails

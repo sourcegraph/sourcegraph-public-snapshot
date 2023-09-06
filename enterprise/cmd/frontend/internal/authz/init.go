@@ -15,19 +15,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/enforcement"
-	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
-	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
+	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -43,9 +42,9 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	database.ValidateExternalServiceConfig = edb.ValidateExternalServiceConfig
+	database.ValidateExternalServiceConfig = providers.ValidateExternalServiceConfig
 	database.AuthzWith = func(other basestore.ShareableStore) database.AuthzStore {
-		return edb.NewAuthzStore(observationCtx.Logger, db, clock)
+		return database.NewAuthzStore(observationCtx.Logger, db, clock)
 	}
 
 	extsvcStore := db.ExternalServices()
@@ -53,7 +52,7 @@ func Init(
 	// TODO(nsc): use c
 	// Report any authz provider problems in external configs.
 	conf.ContributeWarning(func(cfg conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		_, providers, seriousProblems, warnings, _ := eiauthz.ProvidersFromConfig(ctx, cfg, extsvcStore, db)
+		_, providers, seriousProblems, warnings, _ := providers.ProvidersFromConfig(ctx, cfg, extsvcStore, db)
 		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
 
 		// Validating the connection may make a cross service call, so we should use an
@@ -74,7 +73,7 @@ func Init(
 	enterpriseServices.PermissionsGitHubWebhook = webhooks.NewGitHubWebhook(log.Scoped("PermissionsGitHubWebhook", "permissions sync webhook handler for GitHub webhooks"))
 
 	var err error
-	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(edb.NewEnterpriseDB(db).SubRepoPerms())
+	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(db.SubRepoPerms())
 	if err != nil {
 		return errors.Wrap(err, "Failed to createe sub-repo client")
 	}
@@ -84,9 +83,11 @@ func Init(
 			return nil
 		}
 
+		reason := licensing.GetLicenseInvalidReason()
+
 		return []*graphqlbackend.Alert{{
 			TypeValue:    graphqlbackend.AlertTypeError,
-			MessageValue: "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Free features). Update the license key in the [**site configuration**](/site-admin/configuration).",
+			MessageValue: fmt.Sprintf("The Sourcegraph license key is invalid. Reason: %s. To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Free features). Update the license key in the [**site configuration**](/site-admin/configuration). Please contact Sourcegraph support for more information.", reason),
 		}}
 	})
 
@@ -101,7 +102,7 @@ func Init(
 			return nil
 		}
 
-		_, _, _, _, invalidConnections := eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
+		_, _, _, _, invalidConnections := providers.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
 
 		// We currently support three types of authz providers: GitHub, GitLab and Bitbucket Server.
 		authzTypes := make(map[string]struct{}, 3)
@@ -218,7 +219,7 @@ func Init(
 	go func() {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
-			allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
+			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

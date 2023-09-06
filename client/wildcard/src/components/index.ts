@@ -1,6 +1,7 @@
 /** Component exports */
 export { BeforeUnloadPrompt } from './BeforeUnloadPrompt'
 export { Button, ButtonGroup, BUTTON_SIZES } from './Button'
+export { Breadcrumbs } from './Breadcrumbs'
 export { Alert, AlertLink } from './Alert'
 export { Container } from './Container'
 export { ErrorAlert } from './ErrorAlert'
@@ -76,6 +77,7 @@ export {
     usePopoverContext,
     Flipping,
     Strategy,
+    Overlapping,
 } from './Popover'
 export { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
 export {

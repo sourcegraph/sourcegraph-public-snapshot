@@ -18,12 +18,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -101,16 +101,16 @@ func TestSearch(t *testing.T) {
 			settings.MockCurrentUserFinal = &schema.Settings{}
 			defer func() { settings.MockCurrentUserFinal = nil }()
 
-			repos := database.NewMockRepoStore()
+			repos := dbmocks.NewMockRepoStore()
 			repos.ListFunc.SetDefaultHook(tc.reposListMock)
 
-			ext := database.NewMockExternalServiceStore()
+			ext := dbmocks.NewMockExternalServiceStore()
 			ext.ListFunc.SetDefaultHook(tc.externalServicesListMock)
 
-			phabricator := database.NewMockPhabricatorStore()
+			phabricator := dbmocks.NewMockPhabricatorStore()
 			phabricator.GetByNameFunc.SetDefaultHook(tc.phabricatorGetRepoByNameMock)
 
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.ReposFunc.SetDefaultReturn(repos)
 			db.ExternalServicesFunc.SetDefaultReturn(ext)
 			db.PhabricatorFunc.SetDefaultReturn(phabricator)
@@ -118,7 +118,7 @@ func TestSearch(t *testing.T) {
 			gsClient := gitserver.NewMockClient()
 			gsClient.ResolveRevisionFunc.SetDefaultHook(tc.repoRevsMock)
 
-			sr := newSchemaResolver(db, gsClient, jobutil.NewUnimplementedEnterpriseJobs())
+			sr := newSchemaResolver(db, gsClient)
 			gqlSchema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&requestTracer{}))
 			if err != nil {
 				t.Fatal(err)
@@ -338,9 +338,9 @@ func BenchmarkSearchResults(b *testing.B) {
 	})
 
 	ctx := context.Background()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.ListMinimalReposFunc.SetDefaultReturn(minimalRepos, nil)
 	repos.CountFunc.SetDefaultReturn(len(minimalRepos), nil)
 	db.ReposFunc.SetDefaultReturn(repos)

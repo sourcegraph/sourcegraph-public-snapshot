@@ -2,11 +2,12 @@ import React, { useEffect, useMemo, type FC, type PropsWithChildren } from 'reac
 
 import { createRouter, type History, Action, type Location, type Router } from '@remix-run/router'
 import type { Navigation } from '@sveltejs/kit'
-import { RouterProvider, UNSAFE_enhanceManualRouteObjects, type RouteObject } from 'react-router-dom'
+import { RouterProvider, type RouteObject, UNSAFE_enhanceManualRouteObjects } from 'react-router-dom'
 import { RouterLink, setLinkComponent } from 'wildcard/src'
 
 import { goto } from '$app/navigation'
 import { navigating } from '$app/stores'
+import { SettingsProvider, type SettingsCascadeOrError } from '$lib/shared'
 
 import { WildcardThemeContext, type WildcardTheme } from './wildcard'
 
@@ -20,7 +21,11 @@ const WILDCARD_THEME: WildcardTheme = {
  * Creates a minimal context for rendering React components inside Svelte, including a
  * custom React Router router to integrate with SvelteKit.
  */
-export const ReactAdapter: FC<PropsWithChildren<{ route: string }>> = ({ route, children }) => {
+export const ReactAdapter: FC<PropsWithChildren<{ route: string; settings: SettingsCascadeOrError }>> = ({
+    route,
+    children,
+    settings,
+}) => {
     const router = useMemo(
         () =>
             createSvelteKitRouter([
@@ -40,7 +45,9 @@ export const ReactAdapter: FC<PropsWithChildren<{ route: string }>> = ({ route, 
 
     return (
         <WildcardThemeContext.Provider value={WILDCARD_THEME}>
-            <RouterProvider router={router} />
+            <SettingsProvider settingsCascade={settings}>
+                <RouterProvider router={router} />
+            </SettingsProvider>
         </WildcardThemeContext.Provider>
     )
 }

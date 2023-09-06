@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Panel, useWindowSize, VIEWPORT_LG } from '@sourcegraph/wildcard'
 
-import { Workspaces, WorkspacesProps } from './Workspaces'
+import { Workspaces, type WorkspacesProps } from './Workspaces'
 
 import styles from './WorkspacesPanel.module.scss'
 

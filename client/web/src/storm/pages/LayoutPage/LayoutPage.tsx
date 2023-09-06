@@ -10,6 +10,7 @@ import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackPrompt, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
+import { StartupUpdateChecker } from '../../../cody/update/StartupUpdateChecker'
 import { communitySearchContextsRoutes } from '../../../communitySearchContexts/routes'
 import { AppRouterContainer } from '../../../components/AppRouterContainer'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
@@ -20,7 +21,7 @@ import { useUserHistory } from '../../../components/useUserHistory'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { GlobalAlerts } from '../../../global/GlobalAlerts'
 import { useHandleSubmitFeedback } from '../../../hooks'
-import { LegacyLayoutRouteContext } from '../../../LegacyRouteContext'
+import type { LegacyLayoutRouteContext } from '../../../LegacyRouteContext'
 import { CodySurveyToast, SurveyToast } from '../../../marketing/toast'
 import { GlobalNavbar } from '../../../nav/GlobalNavbar'
 import { EnterprisePageRoutes, PageRoutes } from '../../../routes.constants'
@@ -219,6 +220,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     showFeedbackModal={showFeedbackModal}
                 />
             )}
+            {props.isSourcegraphApp && <StartupUpdateChecker />}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
             <ErrorBoundary location={location}>
                 <Suspense

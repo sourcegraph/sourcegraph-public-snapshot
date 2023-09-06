@@ -4,18 +4,14 @@ import (
 	"context"
 	"io"
 
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/zoekt"
 	v1 "github.com/sourcegraph/zoekt/grpc/v1"
 	"github.com/sourcegraph/zoekt/query"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-)
 
-func IsZoektGRPCEnabled(ctx context.Context) bool {
-	return grpc.IsGRPCEnabled(ctx) && featureflag.FromContext(ctx).GetBoolOr("grpc-zoekt", false)
-}
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+)
 
 // switchableZoektGRPCClient is a zoekt.Streamer that can switch between
 // gRPC and HTTP backends.
@@ -25,7 +21,7 @@ type switchableZoektGRPCClient struct {
 }
 
 func (c *switchableZoektGRPCClient) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, sender zoekt.Sender) error {
-	if IsZoektGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		return c.grpcClient.StreamSearch(ctx, q, opts, sender)
 	} else {
 		return c.httpClient.StreamSearch(ctx, q, opts, sender)
@@ -33,7 +29,7 @@ func (c *switchableZoektGRPCClient) StreamSearch(ctx context.Context, q query.Q,
 }
 
 func (c *switchableZoektGRPCClient) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
-	if IsZoektGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		return c.grpcClient.Search(ctx, q, opts)
 	} else {
 		return c.httpClient.Search(ctx, q, opts)
@@ -41,7 +37,7 @@ func (c *switchableZoektGRPCClient) Search(ctx context.Context, q query.Q, opts 
 }
 
 func (c *switchableZoektGRPCClient) List(ctx context.Context, q query.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
-	if IsZoektGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		return c.grpcClient.List(ctx, q, opts)
 	} else {
 		return c.httpClient.List(ctx, q, opts)
@@ -90,7 +86,10 @@ func (z *zoektGRPCClient) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			return convertError(err)
 		}
 
-		sender.Send(zoekt.SearchResultFromProto(msg))
+		var repoURLS map[string]string      // We don't use repoURLs in Sourcegraph
+		var lineFragments map[string]string // We don't use lineFragments in Sourcegraph
+
+		sender.Send(zoekt.SearchResultFromProto(msg, repoURLS, lineFragments))
 	}
 }
 
@@ -109,7 +108,10 @@ func (z *zoektGRPCClient) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 		return nil, convertError(err)
 	}
 
-	return zoekt.SearchResultFromProto(resp), nil
+	var repoURLS map[string]string      // We don't use repoURLs in Sourcegraph
+	var lineFragments map[string]string // We don't use lineFragments in Sourcegraph
+
+	return zoekt.SearchResultFromProto(resp, repoURLS, lineFragments), nil
 }
 
 // List lists repositories. The query `q` can only contain

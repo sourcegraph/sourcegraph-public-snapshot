@@ -104,7 +104,7 @@ func setupTmpDir() error {
 func Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc) error {
 	logger := observationCtx.Logger
 
-	// Ready immediately
+	// Ready as soon as the database connection has been established.
 	ready()
 
 	var cacheSizeBytes int64
@@ -130,6 +130,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 	sService := &search.Service{
 		Store: &search.Store{
+			GitserverClient: git,
 			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 				// We pass in a nil sub-repo permissions checker and an internal actor here since
 				// searcher needs access to all data in the archive.

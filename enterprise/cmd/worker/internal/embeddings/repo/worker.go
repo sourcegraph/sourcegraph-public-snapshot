@@ -5,13 +5,14 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	repoembeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings"
+	repoembeddingsbg "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
+	vdb "github.com/sourcegraph/sourcegraph/internal/embeddings/db"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -52,15 +53,19 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 		return nil, err
 	}
 
+	getQdrantDB := vdb.NewDBFromConfFunc(observationCtx.Logger, vdb.NewNoopDB())
+	getQdrantInserter := func() (vdb.VectorInserter, error) { return getQdrantDB() }
+
 	workCtx := actor.WithInternalActor(context.Background())
 	return []goroutine.BackgroundRoutine{
 		newRepoEmbeddingJobWorker(
 			workCtx,
 			observationCtx,
 			repoembeddingsbg.NewRepoEmbeddingJobWorkerStore(observationCtx, db.Handle()),
-			edb.NewEnterpriseDB(db),
+			db,
 			uploadStore,
 			gitserver.NewClient(),
+			getQdrantInserter,
 			services.ContextService,
 			repoembeddingsbg.NewRepoEmbeddingJobsStore(db),
 		),
@@ -71,9 +76,10 @@ func newRepoEmbeddingJobWorker(
 	ctx context.Context,
 	observationCtx *observation.Context,
 	workerStore dbworkerstore.Store[*repoembeddingsbg.RepoEmbeddingJob],
-	db edb.EnterpriseDB,
+	db database.DB,
 	uploadStore uploadstore.Store,
 	gitserverClient gitserver.Client,
+	getQdrantInserter func() (vdb.VectorInserter, error),
 	contextService embed.ContextService,
 	repoEmbeddingJobsStore repoembeddingsbg.RepoEmbeddingJobsStore,
 ) *workerutil.Worker[*repoembeddingsbg.RepoEmbeddingJob] {
@@ -81,6 +87,7 @@ func newRepoEmbeddingJobWorker(
 		db:                     db,
 		uploadStore:            uploadStore,
 		gitserverClient:        gitserverClient,
+		getQdrantInserter:      getQdrantInserter,
 		contextService:         contextService,
 		repoEmbeddingJobsStore: repoEmbeddingJobsStore,
 	}

@@ -12,11 +12,12 @@ import (
 	"syscall"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/cacert"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/trace" //nolint:staticcheck // OT is deprecated
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 // unsetExitStatus is a sentinel value for an unknown/unset exit status.
@@ -50,7 +51,7 @@ func runCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error)
 	}
 	runCommandMockMu.RUnlock()
 
-	tr, _ := trace.New(ctx, "gitserver", "runCommand",
+	tr, _ := trace.New(ctx, "runCommand",
 		attribute.String("path", cmd.Unwrap().Path),
 		attribute.StringSlice("args", cmd.Unwrap().Args),
 		attribute.String("dir", cmd.Unwrap().Dir))
@@ -58,7 +59,7 @@ func runCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error)
 		if err != nil {
 			tr.SetAttributes(attribute.Int("exitCode", exitCode))
 		}
-		tr.FinishWithErr(&err)
+		tr.EndWithErr(&err)
 	}()
 
 	err = cmd.Run()
@@ -76,7 +77,6 @@ func runCommandCombinedOutput(ctx context.Context, cmd wrexec.Cmder) ([]byte, er
 	cmd.Unwrap().Stdout = &buf
 	cmd.Unwrap().Stderr = &buf
 	_, err := runCommand(ctx, cmd)
-	cmd.CombinedOutput()
 	return buf.Bytes(), err
 }
 

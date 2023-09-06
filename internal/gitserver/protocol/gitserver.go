@@ -260,12 +260,6 @@ type ExecRequest struct {
 	NoTimeout      bool     `json:"noTimeout"`
 }
 
-// ListFilesOpts specifies options when calling gitserverClient.ListFiles.
-type ListFilesOpts struct {
-	IncludeDirs      bool
-	MaxFileSizeBytes int64
-}
-
 // BatchLogRequest is a request to execute a `git log` command inside a set of
 // git repositories present on the target shard.
 type BatchLogRequest struct {
@@ -384,7 +378,7 @@ func (r *P4ExecRequest) ToProto() *proto.P4ExecRequest {
 		P4Port:   r.P4Port,
 		P4User:   r.P4User,
 		P4Passwd: r.P4Passwd,
-		Args:     r.Args,
+		Args:     stringsToByteSlices(r.Args),
 	}
 }
 
@@ -393,34 +387,29 @@ func (r *P4ExecRequest) FromProto(p *proto.P4ExecRequest) {
 		P4Port:   p.GetP4Port(),
 		P4User:   p.GetP4User(),
 		P4Passwd: p.GetP4Passwd(),
-		Args:     p.GetArgs(),
+		Args:     byteSlicesToStrings(p.GetArgs()),
 	}
 }
 
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
 type RepoUpdateRequest struct {
-	Repo  api.RepoName  `json:"repo"`  // identifying URL for repo
-	Since time.Duration `json:"since"` // debounce interval for queries, used only with request-repo-update
-
-	// CloneFromShard is the hostname of the gitserver instance that is the current owner of the
-	// repository. If this is set, then the RepoUpdateRequest is to migrate the repo from
-	// that gitserver instance to the new home of the repo.
-	CloneFromShard string `json:"cloneFromShard"`
+	// Repo identifies URL for repo.
+	Repo api.RepoName `json:"repo"`
+	// Since is a debounce interval for queries, used only with request-repo-update.
+	Since time.Duration `json:"since"`
 }
 
 func (r *RepoUpdateRequest) ToProto() *proto.RepoUpdateRequest {
 	return &proto.RepoUpdateRequest{
-		Repo:           string(r.Repo),
-		Since:          durationpb.New(r.Since),
-		CloneFromShard: r.CloneFromShard,
+		Repo:  string(r.Repo),
+		Since: durationpb.New(r.Since),
 	}
 }
 
 func (r *RepoUpdateRequest) FromProto(p *proto.RepoUpdateRequest) {
 	*r = RepoUpdateRequest{
-		Repo:           api.RepoName(p.GetRepo()),
-		Since:          p.GetSince().AsDuration(),
-		CloneFromShard: p.GetCloneFromShard(),
+		Repo:  api.RepoName(p.GetRepo()),
+		Since: p.GetSince().AsDuration(),
 	}
 }
 
@@ -653,11 +642,10 @@ type CreateCommitFromPatchRequest struct {
 	PushRef *string
 }
 
-func (c *CreateCommitFromPatchRequest) ToProto() *proto.CreateCommitFromPatchBinaryRequest {
-	cc := &proto.CreateCommitFromPatchBinaryRequest{
+func (c *CreateCommitFromPatchRequest) ToMetadataProto() *proto.CreateCommitFromPatchBinaryRequest_Metadata {
+	cc := &proto.CreateCommitFromPatchBinaryRequest_Metadata{
 		Repo:         string(c.Repo),
 		BaseCommit:   string(c.BaseCommit),
-		Patch:        c.Patch,
 		TargetRef:    c.TargetRef,
 		UniqueRef:    c.UniqueRef,
 		CommitInfo:   c.CommitInfo.ToProto(),
@@ -672,7 +660,7 @@ func (c *CreateCommitFromPatchRequest) ToProto() *proto.CreateCommitFromPatchBin
 	return cc
 }
 
-func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchBinaryRequest) {
+func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchBinaryRequest_Metadata, patch []byte) {
 	gp := p.GetPush()
 	var pushConfig *PushConfig
 	if gp != nil {
@@ -683,9 +671,9 @@ func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchB
 	*c = CreateCommitFromPatchRequest{
 		Repo:         api.RepoName(p.GetRepo()),
 		BaseCommit:   api.CommitID(p.GetBaseCommit()),
-		Patch:        p.GetPatch(),
 		TargetRef:    p.GetTargetRef(),
 		UniqueRef:    p.GetUniqueRef(),
+		Patch:        patch,
 		CommitInfo:   PatchCommitInfoFromProto(p.GetCommitInfo()),
 		Push:         pushConfig,
 		GitApplyArgs: p.GetGitApplyArgs(),
@@ -787,29 +775,28 @@ type CreateCommitFromPatchResponse struct {
 	ChangelistId string
 }
 
-func (r *CreateCommitFromPatchResponse) ToProto() *proto.CreateCommitFromPatchBinaryResponse {
-	var err *proto.CreateCommitFromPatchError
-	if r.Error != nil {
-		err = r.Error.ToProto()
-	} else {
-		err = nil
-	}
-	return &proto.CreateCommitFromPatchBinaryResponse{
+func (r *CreateCommitFromPatchResponse) ToProto() (*proto.CreateCommitFromPatchBinaryResponse, *proto.CreateCommitFromPatchError) {
+	res := &proto.CreateCommitFromPatchBinaryResponse{
 		Rev:          r.Rev,
-		Error:        err,
 		ChangelistId: r.ChangelistId,
 	}
+
+	if r.Error != nil {
+		return res, r.Error.ToProto()
+	}
+
+	return res, nil
 }
 
-func (r *CreateCommitFromPatchResponse) FromProto(p *proto.CreateCommitFromPatchBinaryResponse) {
-	if p.GetError() == nil {
+func (r *CreateCommitFromPatchResponse) FromProto(res *proto.CreateCommitFromPatchBinaryResponse, err *proto.CreateCommitFromPatchError) {
+	if err == nil {
 		r.Error = nil
 	} else {
 		r.Error = &CreateCommitFromPatchError{}
-		r.Error.FromProto(p.GetError())
+		r.Error.FromProto(err)
 	}
-	r.Rev = p.GetRev()
-	r.ChangelistId = p.ChangelistId
+	r.Rev = res.GetRev()
+	r.ChangelistId = res.ChangelistId
 }
 
 // SetError adds the supplied error related details to e.
@@ -933,4 +920,20 @@ func ParsePerforceChangelistState(state string) (PerforceChangelistState, error)
 	default:
 		return "", errors.Newf("invalid Perforce changelist state: %s", state)
 	}
+}
+
+func stringsToByteSlices(in []string) [][]byte {
+	res := make([][]byte, len(in))
+	for i, s := range in {
+		res[i] = []byte(s)
+	}
+	return res
+}
+
+func byteSlicesToStrings(in [][]byte) []string {
+	res := make([]string, len(in))
+	for i, s := range in {
+		res[i] = string(s)
+	}
+	return res
 }

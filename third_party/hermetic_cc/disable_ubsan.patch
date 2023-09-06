@@ -1,0 +1,30 @@
+diff --git a/toolchain/zig-wrapper.zig b/toolchain/zig-wrapper.zig
+index 4a0fab4..5e5f2a9 100644
+--- a/toolchain/zig-wrapper.zig
++++ b/toolchain/zig-wrapper.zig
+@@ -173,6 +173,15 @@ fn parseArgs(
+     const arg0 = argv_it.next() orelse
+         return parseFatal(arena, "error: argv[0] cannot be null", .{});
+
++    const zig_tool = blk: {
++        const b = fs.path.basename(arg0);
++        if (builtin.target.os.tag == .windows and
++            std.ascii.eqlIgnoreCase(".exe", b[b.len - 4 ..]))
++            break :blk b[0 .. b.len - 4];
++
++        break :blk b;
++    };
++
+     const arg0_noexe = noExe(fs.path.basename(arg0));
+
+     const run_mode = getRunMode(arg0, arg0_noexe) catch |err| switch (err) {
+@@ -238,6 +247,9 @@ fn parseArgs(
+     while (argv_it.next()) |arg|
+         try args.append(arena, arg);
+
++    if (mem.eql(u8, zig_tool, "cc") or mem.eql(u8, zig_tool, "c++"))
++        try args.append(arena, "-fno-sanitize=undefined");
++
+     return ParseResults{ .exec = .{ .args = args, .env = env } };
+ }
+

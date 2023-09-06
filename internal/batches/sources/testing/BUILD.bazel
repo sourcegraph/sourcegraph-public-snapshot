@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testing",
+    srcs = ["fake.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/batches/sources/testing",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/batches/sources",
+        "//internal/batches/store",
+        "//internal/batches/types",
+        "//internal/extsvc/auth",
+        "//internal/gitserver/protocol",
+        "//internal/types",
+        "//lib/errors",
+    ],
+)

@@ -8,17 +8,22 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	dbtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
+
+const auditEntityDotcomCodyGatewayUser = "dotcom-codygatewayuser"
 
 type ErrDotcomUserNotFound struct {
 	err error
@@ -37,14 +42,17 @@ func (e ErrDotcomUserNotFound) Extensions() map[string]any {
 
 // CodyGatewayDotcomUserResolver implements the GraphQL Query and Mutation fields related to Cody gateway users.
 type CodyGatewayDotcomUserResolver struct {
-	DB database.DB
+	Logger log.Logger
+	DB     database.DB
 }
 
 func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.Context, args *graphqlbackend.CodyGatewayUsersByAccessTokenArgs) (graphqlbackend.CodyGatewayUser, error) {
 	// 🚨 SECURITY: Only site admins or the service accounts may check users.
-	if err := serviceAccountOrSiteAdmin(ctx, r.DB, false); err != nil {
+	grantReason, err := serviceAccountOrSiteAdmin(ctx, r.DB, false)
+	if err != nil {
 		return nil, err
 	}
+
 	dbTokens := newDBTokens(r.DB)
 	userID, err := dbTokens.LookupDotcomUserIDByAccessToken(ctx, args.Token)
 	if err != nil {
@@ -53,6 +61,16 @@ func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.
 		}
 		return nil, err
 	}
+
+	// 🚨 SECURITY: Record access with the resolved user ID
+	audit.Log(ctx, r.Logger, audit.Record{
+		Entity: auditEntityDotcomCodyGatewayUser,
+		Action: "access",
+		Fields: []log.Field{
+			log.String("grant_reason", grantReason),
+			log.Int("accessed_user_id", userID),
+		},
+	})
 
 	user, err := r.DB.Users().GetByID(ctx, int32(userID))
 	if err != nil {
@@ -210,9 +228,9 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 func allowedModels(scope types.CompletionsFeature) []string {
 	switch scope {
 	case types.CompletionsFeatureChat:
-		return []string{"anthropic/claude-v1", "anthropic/claude-instant-v1"}
+		return []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
 	case types.CompletionsFeatureCode:
-		return []string{"anthropic/claude-instant-v1"}
+		return []string{"anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
 	default:
 		return []string{}
 	}

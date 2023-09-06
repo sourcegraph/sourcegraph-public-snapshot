@@ -18,12 +18,14 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/unpack"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/sshagent"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/perforce"
+	"github.com/sourcegraph/sourcegraph/internal/unpack"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -61,7 +63,8 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	var resp protocol.CreateCommitFromPatchResponse
 
 	repo := string(protocol.NormalizeRepo(req.Repo))
-	repoGitDir := filepath.Join(s.ReposDir, repo, ".git")
+	repoDir := filepath.Join(s.ReposDir, repo)
+	repoGitDir := filepath.Join(repoDir, ".git")
 	if _, err := os.Stat(repoGitDir); os.IsNotExist(err) {
 		repoGitDir = filepath.Join(s.ReposDir, repo)
 		if _, err := os.Stat(repoGitDir); os.IsNotExist(err) {
@@ -87,7 +90,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		ref = *req.PushRef
 	}
 	if req.UniqueRef {
-		refs, err := repoRemoteRefs(ctx, remoteURL, ref)
+		refs, err := s.repoRemoteRefs(ctx, remoteURL, repo, ref)
 		if err != nil {
 			logger.Error("Failed to get remote refs", log.Error(err))
 			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteRefs"))
@@ -128,7 +131,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}()
 
 	// Ensure tmp directory exists
-	tmpRepoDir, err := s.tempDir("patch-repo-")
+	tmpRepoDir, err := tempDir(s.ReposDir, "patch-repo-")
 	if err != nil {
 		resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: make tmp repo"))
 		return http.StatusInternalServerError, resp
@@ -142,17 +145,17 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	// Temporary logging command wrapper
 	prefix := fmt.Sprintf("%d %s ", atomic.AddUint64(&patchID, 1), repo)
 	run := func(cmd *exec.Cmd, reason string) ([]byte, error) {
-		if !gitdomain.IsAllowedGitCmd(logger, cmd.Args[1:]) {
+		if !gitdomain.IsAllowedGitCmd(logger, cmd.Args[1:], repoDir) {
 			return nil, errors.New("command not on allow list")
 		}
 
 		t := time.Now()
+
 		// runRemoteGitCommand since one of our commands could be git push
 		out, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, nil)
-
 		logger := logger.With(
 			log.String("prefix", prefix),
-			log.String("command", argsToString(cmd.Args)),
+			log.String("command", redactor.redact(argsToString(cmd.Args))),
 			log.Duration("duration", time.Since(t)),
 			log.String("output", string(out)),
 		)
@@ -225,11 +228,14 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		committerEmail = authorEmail
 	}
 
-	gitCommitArgs := []string{"commit"}
-	for _, m := range messages {
-		gitCommitArgs = append(gitCommitArgs, "-m", stylizeCommitMessage(m))
-	}
-	cmd = exec.CommandContext(ctx, "git", gitCommitArgs...)
+	// Commit messages can be arbitrary strings, so using `-m` runs into problems.
+	// Instead, feed the commit messages to stdin.
+	cmd = exec.CommandContext(ctx, "git", "commit", "-F", "-")
+	// NOTE: join messages with a blank line in between ("\n\n")
+	// because the previous behavior was to use multiple -m arguments,
+	// which concatenate with a blank line in between.
+	// Gerrit is the only code host that uses multiple messages at the moment.
+	cmd.Stdin = strings.NewReader(strings.Join(messages, "\n\n"))
 
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(os.Environ(), []string{
@@ -311,7 +317,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 				// it in the background.
 				// This is used to pass the private key to be used when pushing to the remote,
 				// without the need to store it on the disk.
-				agent, err := newSSHAgent(logger, []byte(req.Push.PrivateKey), []byte(req.Push.Passphrase))
+				agent, err := sshagent.New(logger, []byte(req.Push.PrivateKey), []byte(req.Push.Passphrase))
 				if err != nil {
 					resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: error creating ssh-agent"))
 					return http.StatusInternalServerError, resp
@@ -349,15 +355,48 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	return http.StatusOK, resp
 }
 
-func stylizeCommitMessage(message string) string {
-	if styleMessage(message) {
-		return fmt.Sprintf("%q", message)
-	}
-	return message
-}
+// repoRemoteRefs returns a map containing ref + commit pairs from the
+// remote Git repository starting with the specified prefix.
+//
+// The ref prefix `ref/<ref type>/` is stripped away from the returned
+// refs.
+func (s *Server) repoRemoteRefs(ctx context.Context, remoteURL *vcs.URL, repoName, prefix string) (map[string]string, error) {
+	// The expected output of this git command is a list of:
+	// <commit hash> <ref name>
+	cmd := exec.Command("git", "ls-remote", remoteURL.String(), prefix+"*")
 
-func styleMessage(message string) bool {
-	return !strings.HasPrefix(message, "Change-Id: I")
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	_, err := runCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, nil, api.RepoName(repoName), cmd))
+	if err != nil {
+		stderr := stderr.Bytes()
+		if len(stderr) > 200 {
+			stderr = stderr[:200]
+		}
+		return nil, errors.Errorf("git %s failed: %s (%q)", cmd.Args, err, stderr)
+	}
+
+	refs := make(map[string]string)
+	raw := stdout.String()
+	for _, line := range strings.Split(raw, "\n") {
+		if line == "" {
+			continue
+		}
+
+		fields := strings.Fields(line)
+		if len(fields) != 2 {
+			return nil, errors.Errorf("git %s failed (invalid output): %s", cmd.Args, line)
+		}
+
+		split := strings.SplitN(fields[1], "/", 3)
+		if len(split) != 3 {
+			return nil, errors.Errorf("git %s failed (invalid refname): %s", cmd.Args, fields[1])
+		}
+
+		refs[split[2]] = fields[0]
+	}
+	return refs, nil
 }
 
 func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchCommit string, remoteURL *vcs.URL, tmpGitPathEnv, altObjectsEnv string) (string, error) {
@@ -391,7 +430,7 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 	p4client := strings.TrimPrefix(req.TargetRef, "refs/heads/")
 
 	// do all work in (another) temporary directory
-	tmpClientDir, err := s.tempDir("perforce-client-")
+	tmpClientDir, err := tempDir(s.ReposDir, "perforce-client-")
 	if err != nil {
 		return "", errors.Wrap(err, "gitserver: make tmp repo for Perforce client")
 	}

@@ -1,8 +1,8 @@
 import React from 'react'
 
-import { Badge, BadgeProps, BadgeVariantType, Link } from '@sourcegraph/wildcard'
+import { Badge, type BadgeProps, type BadgeVariantType, Link } from '@sourcegraph/wildcard'
 
-import {
+import type {
     AssignedOwnerFields,
     CodeownersFileEntryFields,
     RecentContributorOwnershipSignalFields,

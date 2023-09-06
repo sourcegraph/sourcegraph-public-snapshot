@@ -16,7 +16,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/binary"
@@ -25,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -197,8 +197,8 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 }
 
 func (r *GitTreeEntryResolver) url(ctx context.Context) *url.URL {
-	tr, ctx := trace.New(ctx, "GitTreeEntryResolver", "url")
-	defer tr.Finish()
+	tr, ctx := trace.New(ctx, "GitTreeEntryResolver.url")
+	defer tr.End()
 
 	if submodule := r.Submodule(); submodule != nil {
 		tr.SetAttributes(attribute.Bool("submodule", true))
@@ -294,8 +294,8 @@ func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
 }
 
 func cloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (_ string, err error) {
-	tr, ctx := trace.New(ctx, "gitTreeEntry", "cloneURLToRepoName")
-	defer tr.FinishWithErr(&err)
+	tr, ctx := trace.New(ctx, "cloneURLToRepoName")
+	defer tr.EndWithErr(&err)
 
 	repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, db, cloneURL)
 	if err != nil {

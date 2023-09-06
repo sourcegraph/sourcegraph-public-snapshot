@@ -24,8 +24,8 @@ import (
 // error if a matching code host could not be found. This function does not actually check the code
 // host to see if the repository actually exists.
 func RepoSourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (repoName api.RepoName, err error) {
-	tr, ctx := trace.New(ctx, "RepoSourceCloneURLToRepoName", "", attribute.String("cloneURL", cloneURL))
-	defer tr.FinishWithErr(&err)
+	tr, ctx := trace.New(ctx, "RepoSourceCloneURLToRepoName", attribute.String("cloneURL", cloneURL))
+	defer tr.EndWithErr(&err)
 
 	if repoName := reposource.CustomCloneURLToRepoName(cloneURL); repoName != "" {
 		return repoName, nil
@@ -104,10 +104,10 @@ func RepoSourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL 
 }
 
 func getRepoNameFromService(ctx context.Context, cloneURL string, svc *types.ExternalService) (_ api.RepoName, err error) {
-	tr, ctx := trace.New(ctx, "cloneurls", "getRepoNameFromService",
+	tr, ctx := trace.New(ctx, "getRepoNameFromService",
 		attribute.Int64("externalService.ID", svc.ID),
 		attribute.String("externalService.Kind", svc.Kind))
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	cfg, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
 	if err != nil {

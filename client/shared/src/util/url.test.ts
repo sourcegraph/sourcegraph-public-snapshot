@@ -10,7 +10,7 @@ import {
     toPrettyBlobURL,
     withWorkspaceRootInputRevision,
     toAbsoluteBlobURL,
-    RepoFile,
+    type RepoFile,
     toRepoURL,
 } from './url'
 

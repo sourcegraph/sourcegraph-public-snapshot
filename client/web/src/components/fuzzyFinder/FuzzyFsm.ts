@@ -1,7 +1,7 @@
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
-import { FuzzySearch, SearchIndexing } from '../../fuzzyFinder/FuzzySearch'
-import { SearchValue } from '../../fuzzyFinder/SearchValue'
-import { createUrlFunction, WordSensitiveFuzzySearch } from '../../fuzzyFinder/WordSensitiveFuzzySearch'
+import type { FuzzySearch, FuzzySearchConstructorParameters, SearchIndexing } from '../../fuzzyFinder/FuzzySearch'
+import type { SearchValue } from '../../fuzzyFinder/SearchValue'
+import { WordSensitiveFuzzySearch } from '../../fuzzyFinder/WordSensitiveFuzzySearch'
 
 // The default value of 80k filenames is picked from the following observations:
 // - case-insensitive search is slow but works in the torvalds/linux repo (72k files)
@@ -51,14 +51,14 @@ export interface Failed {
     errorMessage: string
 }
 
-export function newFuzzyFSMFromValues(values: SearchValue[], createUrl: createUrlFunction): FuzzyFSM {
+export function newFuzzyFSMFromValues(values: SearchValue[], params?: FuzzySearchConstructorParameters): FuzzyFSM {
     if (values.length < DEFAULT_CASE_INSENSITIVE_FILE_COUNT_THRESHOLD) {
         return {
             key: 'ready',
-            fuzzy: new CaseInsensitiveFuzzySearch(values, createUrl),
+            fuzzy: new CaseInsensitiveFuzzySearch(values, params),
         }
     }
-    const indexing = WordSensitiveFuzzySearch.fromSearchValuesAsync(values, createUrl)
+    const indexing = WordSensitiveFuzzySearch.fromSearchValuesAsync(values, params)
     if (indexing.key === 'ready') {
         return {
             key: 'ready',

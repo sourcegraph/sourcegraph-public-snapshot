@@ -5,23 +5,29 @@ import { of } from 'rxjs'
 
 import { Container, Link, H2, H3 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { CallToActionBanner } from '../../components/CallToActionBanner'
 import { FilteredConnection } from '../../components/FilteredConnection'
-import { CodeMonitorFields, ListUserCodeMonitorsResult, ListUserCodeMonitorsVariables } from '../../graphql-operations'
+import type {
+    CodeMonitorFields,
+    ListAllCodeMonitorsResult,
+    ListAllCodeMonitorsVariables,
+    ListUserCodeMonitorsResult,
+    ListUserCodeMonitorsVariables,
+} from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
-import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
-import { CodeMonitoringPageProps } from './CodeMonitoringPage'
+import { CodeMonitorNode, type CodeMonitorNodeProps } from './CodeMonitoringNode'
+import type { CodeMonitoringPageProps } from './CodeMonitoringPage'
 
 interface CodeMonitorListProps
-    extends Required<Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>> {
+    extends Required<
+        Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'fetchCodeMonitors' | 'toggleCodeMonitorEnabled'>
+    > {
     authenticatedUser: AuthenticatedUser | null
 }
 
-const CodeMonitorEmptyList: React.FunctionComponent<
-    React.PropsWithChildren<{ authenticatedUser: AuthenticatedUser | null }>
-> = ({ authenticatedUser }) => (
+const CodeMonitorEmptyList: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <div className="text-center">
         <H2 className="text-muted mb-2">No code monitors have been created.</H2>
     </div>
@@ -30,6 +36,7 @@ const CodeMonitorEmptyList: React.FunctionComponent<
 export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<CodeMonitorListProps>> = ({
     authenticatedUser,
     fetchUserCodeMonitors,
+    fetchCodeMonitors,
     toggleCodeMonitorEnabled,
 }) => {
     const location = useLocation()
@@ -52,6 +59,15 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
             })
         },
         [authenticatedUser, fetchUserCodeMonitors]
+    )
+
+    const queryAllConnection = useCallback(
+        (args: Partial<ListAllCodeMonitorsVariables>) =>
+            fetchCodeMonitors({
+                first: args.first ?? 10,
+                after: args.after ?? null,
+            }),
+        [fetchCodeMonitors]
     )
 
     return (
@@ -88,16 +104,52 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
                             nodeComponentProps={{
                                 location,
                                 toggleCodeMonitorEnabled,
+                                showOwner: false,
                             }}
                             noun="code monitor"
                             pluralNoun="code monitors"
                             noSummaryIfAllNodesVisible={true}
                             cursorPaging={true}
                             withCenteredSummary={true}
-                            emptyElement={<CodeMonitorEmptyList authenticatedUser={authenticatedUser} />}
+                            emptyElement={<CodeMonitorEmptyList />}
                             listComponent="div"
                         />
                     </Container>
+                </div>
+            </div>
+            <div className="row mb-5">
+                <div className="d-flex flex-column w-100 col">
+                    {authenticatedUser?.siteAdmin && (
+                        <>
+                            <div className="d-flex align-items-center justify-content-between">
+                                <H3 className="mb-2">All code monitors</H3>
+                            </div>
+                            <Container className="py-3">
+                                <FilteredConnection<
+                                    CodeMonitorFields,
+                                    Omit<CodeMonitorNodeProps, 'node'>,
+                                    ListAllCodeMonitorsResult['monitors']['nodes']
+                                >
+                                    defaultFirst={10}
+                                    queryConnection={queryAllConnection}
+                                    hideSearch={true}
+                                    nodeComponent={CodeMonitorNode}
+                                    nodeComponentProps={{
+                                        location,
+                                        toggleCodeMonitorEnabled,
+                                        showOwner: authenticatedUser?.siteAdmin ?? false,
+                                    }}
+                                    noun="code monitor"
+                                    pluralNoun="code monitors"
+                                    noSummaryIfAllNodesVisible={true}
+                                    cursorPaging={true}
+                                    withCenteredSummary={true}
+                                    emptyElement={<CodeMonitorEmptyList />}
+                                    listComponent="div"
+                                />
+                            </Container>
+                        </>
+                    )}
                 </div>
             </div>
             <div className="mt-5">

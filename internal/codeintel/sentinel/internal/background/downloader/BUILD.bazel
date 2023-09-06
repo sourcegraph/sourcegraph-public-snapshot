@@ -1,0 +1,37 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "downloader",
+    srcs = [
+        "config.go",
+        "job.go",
+        "metrics.go",
+        "source_github.go",
+        "source_govulndb.go",
+        "source_osv.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/internal/background/downloader",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/codeintel/sentinel/internal/store",
+        "//internal/codeintel/sentinel/shared",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_mitchellh_mapstructure//:mapstructure",
+        "@com_github_pandatix_go_cvss//20",
+        "@com_github_pandatix_go_cvss//30",
+        "@com_github_pandatix_go_cvss//31",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "downloader_test",
+    srcs = ["source_osv_test.go"],
+    embed = [":downloader"],
+)

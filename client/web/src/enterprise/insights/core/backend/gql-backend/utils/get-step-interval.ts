@@ -1,4 +1,4 @@
-import { Duration } from 'date-fns'
+import type { Duration } from 'date-fns'
 
 import { isDefined } from '@sourcegraph/common'
 import { TimeIntervalStepUnit } from '@sourcegraph/shared/src/graphql-operations'

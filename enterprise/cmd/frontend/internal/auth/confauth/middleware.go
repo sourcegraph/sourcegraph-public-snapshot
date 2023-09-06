@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 )
 
 func setAllowAnonymousUsageContextKey(next http.Handler) http.Handler {

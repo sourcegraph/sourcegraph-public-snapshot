@@ -1,18 +1,18 @@
-import React, { FC, useCallback, useEffect, useRef } from 'react'
+import React, { type FC, useCallback, useEffect, useRef } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
-import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
+import type { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
 import { SearchBox, Toggles } from '@sourcegraph/branded'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import {
-    CaseSensitivityProps,
-    SearchPatternTypeProps,
-    SubmitSearchParameters,
+    type CaseSensitivityProps,
+    type SearchPatternTypeProps,
+    type SubmitSearchParameters,
     canSubmitSearch,
-    QueryState,
-    SearchModeProps,
+    type QueryState,
+    type SearchModeProps,
     getUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/search'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
@@ -26,6 +26,8 @@ import { LazyExperimentalSearchInput } from '../../../search/input/LazyExperimen
 import { useRecentSearches } from '../../../search/input/useRecentSearches'
 import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
 import { useNavbarQueryState, setSearchCaseSensitivity, setSearchPatternType, setSearchMode } from '../../../stores'
+
+import { SimpleSearch } from './SimpleSearch'
 
 import styles from './SearchPageInput.module.scss'
 
@@ -48,10 +50,11 @@ interface SearchPageInputProps {
     queryState: QueryState
     setQueryState: (newState: QueryState) => void
     hardCodedSearchContextSpec?: string
+    simpleSearch: boolean
 }
 
 export const SearchPageInput: FC<SearchPageInputProps> = props => {
-    const { queryState, setQueryState, hardCodedSearchContextSpec } = props
+    const { queryState, setQueryState, hardCodedSearchContextSpec, simpleSearch } = props
 
     const {
         authenticatedUser,
@@ -122,6 +125,13 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         [submitSearchOnChangeRef]
     )
 
+    const onSimpleSearchUpdate = useCallback(
+        (val: string) => {
+            setQueryState({ query: val })
+        },
+        [setQueryState]
+    )
+
     // TODO (#48103): Remove/simplify when new search input is released
     const input = experimentalQueryInput ? (
         <LazyExperimentalSearchInput
@@ -187,15 +197,27 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         />
     )
     return (
-        <div className="d-flex flex-row flex-shrink-past-contents">
-            <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
-                <div data-search-page-input-container={true} className={styles.inputContainer}>
-                    <TraceSpanProvider name="SearchBox">
-                        <div className="d-flex flex-grow-1 w-100">{input}</div>
-                    </TraceSpanProvider>
+        <div>
+            <div className="d-flex flex-row flex-shrink-past-contents">
+                <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
+                    <div data-search-page-input-container={true} className={styles.inputContainer}>
+                        <TraceSpanProvider name="SearchBox">
+                            <div className="d-flex flex-grow-1 w-100">{input}</div>
+                        </TraceSpanProvider>
+                    </div>
+                    <Notices className="my-3 text-center" location="home" />
+                </Form>
+            </div>
+            {simpleSearch && (
+                <div>
+                    <hr className="mt-4 mb-4" />
+                    <SimpleSearch
+                        telemetryService={telemetryService}
+                        onSubmit={onSubmit}
+                        onSimpleSearchUpdate={onSimpleSearchUpdate}
+                    />
                 </div>
-                <Notices className="my-3 text-center" location="home" />
-            </Form>
+            )}
         </div>
     )
 }

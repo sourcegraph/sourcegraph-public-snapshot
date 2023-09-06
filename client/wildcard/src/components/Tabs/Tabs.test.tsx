@@ -1,6 +1,6 @@
-import { render, RenderResult, cleanup, fireEvent } from '@testing-library/react'
+import { render, type RenderResult, cleanup, fireEvent } from '@testing-library/react'
 
-import { Tab, TabList, TabPanel, TabPanels, Tabs, TabsProps } from './Tabs'
+import { Tab, TabList, TabPanel, TabPanels, Tabs, type TabsProps } from './Tabs'
 
 const TabsTest = (props: TabsProps) => <Tabs {...props} />
 

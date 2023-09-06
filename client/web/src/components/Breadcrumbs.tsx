@@ -1,10 +1,10 @@
-import React, { FC, useState, useEffect, useMemo, useCallback } from 'react'
+import React, { type FC, useState, useEffect, useMemo, useCallback, type ReactNode } from 'react'
 
 import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { sortBy } from 'lodash'
 import { useLocation } from 'react-router-dom'
-import { Unsubscribable } from 'rxjs'
+import type { Unsubscribable } from 'rxjs'
 
 import { isDefined } from '@sourcegraph/common'
 import { Link, Icon } from '@sourcegraph/wildcard'
@@ -151,12 +151,13 @@ export const useBreadcrumbs = (): BreadcrumbsProps & BreadcrumbSetters => {
 interface BreadcrumbsInternalProps {
     breadcrumbs: BreadcrumbAtDepth[]
     className?: string
+    children?: ReactNode
 }
 
 /**
  * Renders breadcrumbs by depth.
  */
-export const Breadcrumbs: FC<BreadcrumbsInternalProps> = ({ breadcrumbs, className }) => {
+export const Breadcrumbs: FC<BreadcrumbsInternalProps> = ({ breadcrumbs, className, children }) => {
     const location = useLocation()
 
     return (
@@ -192,6 +193,7 @@ export const Breadcrumbs: FC<BreadcrumbsInternalProps> = ({ breadcrumbs, classNa
                         </span>
                     )
                 })}
+            {children}
         </nav>
     )
 }

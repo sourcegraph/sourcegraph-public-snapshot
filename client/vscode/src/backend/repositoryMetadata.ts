@@ -1,6 +1,6 @@
 import { gql } from '@sourcegraph/http-client'
 
-import { RepositoryMetadataResult, RepositoryMetadataVariables } from '../graphql-operations'
+import type { RepositoryMetadataResult, RepositoryMetadataVariables } from '../graphql-operations'
 
 import { requestGraphQLFromVSCode } from './requestGraphQl'
 

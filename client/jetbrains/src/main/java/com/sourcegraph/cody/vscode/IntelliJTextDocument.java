@@ -8,11 +8,11 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.sourcegraph.cody.completions.CompletionDocumentContext;
+import com.sourcegraph.cody.autocomplete.AutocompleteDocumentContext;
 import java.net.URI;
 import java.nio.file.Paths;
 import java.util.Optional;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 /** Implementation of vscode.TextDocument backed by IntelliJ's Editor. */
 public class IntelliJTextDocument implements TextDocument {
@@ -33,6 +33,7 @@ public class IntelliJTextDocument implements TextDocument {
   }
 
   @Override
+  @NotNull
   public String fileName() {
     return file.getName();
   }
@@ -62,19 +63,18 @@ public class IntelliJTextDocument implements TextDocument {
   }
 
   @Override
-  public CompletionDocumentContext getCompletionContext(int offset) {
+  public AutocompleteDocumentContext getAutocompleteContext(int offset) {
     Document document = this.editor.getDocument();
     int line = document.getLineNumber(offset);
     int lineEndOffset = document.getLineEndOffset(line);
     String sameLineSuffix = document.getText(TextRange.create(offset, lineEndOffset));
     int lineStartOffset = document.getLineStartOffset(line);
     String sameLinePrefix = document.getText(TextRange.create(lineStartOffset, offset));
-    return new CompletionDocumentContext(sameLinePrefix, sameLineSuffix);
+    return new AutocompleteDocumentContext(sameLinePrefix, sameLineSuffix);
   }
 
   @Override
-  @Nullable
-  public String getLanguageId() {
-    return Optional.ofNullable(this.language).map(Language::getID).orElse(null);
+  public @NotNull Optional<String> getLanguageId() {
+    return Optional.ofNullable(this.language).map(Language::getID);
   }
 }

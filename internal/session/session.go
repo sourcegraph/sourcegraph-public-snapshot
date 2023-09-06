@@ -371,8 +371,8 @@ func CookieMiddlewareWithCSRFSafety(
 }
 
 func authenticateByCookie(logger log.Logger, db database.DB, r *http.Request, w http.ResponseWriter) context.Context {
-	span, ctx := trace.New(r.Context(), "session", "authenticateByCookie")
-	defer span.Finish()
+	span, ctx := trace.New(r.Context(), "session.authenticateByCookie")
+	defer span.End()
 	logger = trace.Logger(ctx, logger)
 
 	// If the request is already authenticated from a cookie (and not a token), then do not clobber the request's existing

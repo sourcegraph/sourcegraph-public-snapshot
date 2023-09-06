@@ -12,12 +12,12 @@ import (
 
 	"github.com/mroth/weightedrand/v2"
 
-	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
-	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
-	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	executorstore "github.com/sourcegraph/sourcegraph/internal/executor/store"
+	executortypes "github.com/sourcegraph/sourcegraph/internal/executor/types"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -91,7 +91,7 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 		var err error
 		version2Supported, err = api.CheckSourcegraphVersion(req.Version, "4.3.0-0", "2022-11-24")
 		if err != nil {
-			return executortypes.Job{}, false, err
+			return executortypes.Job{}, false, errors.Wrapf(err, "failed to check version %q", req.Version)
 		}
 	}
 

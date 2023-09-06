@@ -12,7 +12,7 @@ import {
     repositoriesGroup as ossRepositoriesGroup,
     usersGroup as ossUsersGroup,
 } from '../../site-admin/sidebaritems'
-import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
+import type { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 
 const configurationGroup: SiteAdminSideBarGroup = {
@@ -45,7 +45,7 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: 'Code Insights jobs',
             to: '/site-admin/code-insights-jobs',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+            condition: ({ isSourcegraphApp, codeInsightsEnabled }) => !isSourcegraphApp && codeInsightsEnabled,
         },
     ],
 }

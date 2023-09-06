@@ -191,7 +191,8 @@
           "description": "Allow adding Perforce code host connections",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "enabled"
+          "default": "enabled",
+          "deprecationMessage": "Deprecated, Perforce is always enabled, setting is no longer used."
         },
         "perforceChangelistMapping": {
           "description": "Allow mapping of Perforce changelists to their commit SHAs in the DB",
@@ -804,10 +805,11 @@
       ]
     },
     "disablePublicRepoRedirects": {
-      "description": "Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.",
+      "description": "DEPRECATED! Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.",
       "type": "boolean",
       "group": "External services",
-      "examples": [true]
+      "examples": [true],
+      "deprecationMessage": "Deprecated because it's no longer supported and hasn't been working for a while."
     },
     "git.cloneURLToRepositoryName": {
       "description": "JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.",
@@ -998,7 +1000,7 @@
     },
     "scim.authToken": {
       "type": "string",
-      "description": "DISCLAIMER: UNDER DEVELOPMENT. THE ENDPOINT DOES NOT COMPLY WITH THE SCIM STANDARD YET. The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.",
+      "description": "The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.",
       "default": "",
       "group": "External services"
     },
@@ -1323,7 +1325,8 @@
       "description": "The name to use in the \"from\" address for emails sent by this server.",
       "type": "string",
       "group": "Email",
-      "examples": ["Sourcegraph"]
+      "default": "Sourcegraph",
+      "examples": ["Our Company Sourcegraph", "Example Inc Sourcegraph"]
     },
     "email.templates": {
       "description": "Configurable templates for some email types sent by Sourcegraph.",
@@ -1383,9 +1386,9 @@
       "examples": ["4.1.0"]
     },
     "executors.accessToken": {
-      "description": "The shared secret between Sourcegraph and executors.",
+      "description": "The shared secret between Sourcegraph and executors. The value must contain at least 20 characters.",
       "type": "string",
-      "minLength": 20,
+      "pattern": "^(.{20,}|REDACTED)$",
       "examples": ["my-super-secret-access-token"]
     },
     "executors.multiqueue": {
@@ -1899,26 +1902,37 @@
       ]
     },
     "gitRecorder": {
-      "description": "Record git operations that are executed on configured repositories. The following commands are not recorded: show, log, rev-parse and diff.",
+      "description": "Record git operations that are executed on configured repositories.",
       "type": "object",
       "properties": {
         "size": {
           "description": "Defines how many recordings to keep. Once this size is reached, the oldest entry will be removed.",
           "type": "integer",
-          "default": 100000
+          "default": 10000,
+          "minimum": 1,
+          "maximum": 10000
         },
         "repos": {
-          "description": "List of repositories whose git operations should be recorded.",
+          "description": "List of repositories whose git operations should be recorded. To record commands on all repositories, simply pass in an asterisk as the only item in the array.",
           "type": "array",
           "items": {
             "type": "string"
           }
+        },
+        "ignoredGitCommands": {
+          "description": "List of git commands that should be ignored and not recorded.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": ["show", "rev-parse", "log", "diff", "ls-tree"]
         }
       },
       "examples": [
         {
           "size": 1000,
-          "repos": ["github.com/sourcegraph/sourcegraph", "github.com/gorilla/mux"]
+          "repos": ["github.com/sourcegraph/sourcegraph", "github.com/gorilla/mux"],
+          "ignoredGitCommands": ["show", "rev-parse", "log", "diff", "ls-tree"]
         }
       ]
     },
@@ -1926,6 +1940,11 @@
       "description": "Configuration options for Sourcegraph.com only.",
       "type": "object",
       "properties": {
+        "minimumExternalAccountAge": {
+          "description": "The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com.",
+          "type": "integer",
+          "default": 0
+        },
         "app.notifications": {
           "description": "Notifications to display in the Sourcegraph app.",
           "type": "array",
@@ -2429,7 +2448,7 @@
         "provider": {
           "type": "string",
           "description": "The provider to use for generating embeddings. Defaults to sourcegraph.",
-          "enum": ["openai", "sourcegraph"]
+          "enum": ["openai", "azure-openai", "sourcegraph"]
         },
         "endpoint": {
           "type": "string",
@@ -2440,6 +2459,45 @@
           "description": "The url to the external embedding API service. Deprecated, use endpoint instead.",
           "type": "string",
           "format": "uri"
+        },
+        "fileFilters": {
+          "description": "Filters that allow you to specify which files in a repository should get embedded.",
+          "type": "object",
+          "properties": {
+            "excludedFilePathPatterns": {
+              "description": "A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                ".*ignore",
+                ".gitattributes",
+                ".mailmap",
+                "*.csv",
+                "*.svg",
+                "*.xml",
+                "__fixtures__/",
+                "node_modules/",
+                "testdata/",
+                "mocks/",
+                "vendor/"
+              ]
+            },
+            "includedFilePathPatterns": {
+              "description": "A list of glob patterns that match file paths you want to include in embeddings. If specified, all files not matching these include patterns are excluded.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "examples": ["*.go", "*.ts", "*.md", "src/", "cmd/"]
+            },
+            "maxFileSizeBytes": {
+              "description": "The maximum file size (in bytes) to include in embeddings. Must be between 0 and 100000 (1 MB).",
+              "type": "integer",
+              "default": 1000000
+            }
+          }
         },
         "excludedFilePathPatterns": {
           "description": "A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).",
@@ -2459,7 +2517,8 @@
             "testdata/",
             "mocks/",
             "vendor/"
-          ]
+          ],
+          "deprecationMessage": "Deprecated in favor of fileFilers.excludedFilePathPatterns"
         },
         "maxCodeEmbeddingsPerRepo": {
           "description": "The maximum number of embeddings for code files to generate per repo",
@@ -2491,6 +2550,14 @@
             "pointer": true
           },
           "default": "5000"
+        },
+        "excludeChunkOnError": {
+          "description": "Whether to cancel indexing a repo if embedding a single file fails. If true, the chunk that cannot generate embeddings is not indexed and the remainder of the repository proceeds with indexing.",
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          },
+          "default": true
         }
       },
       "examples": [
@@ -2552,7 +2619,7 @@
           "type": "string",
           "description": "The external completions provider. Defaults to 'sourcegraph'.",
           "default": "anthropic",
-          "enum": ["anthropic", "openai", "sourcegraph"]
+          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai"]
         },
         "endpoint": {
           "type": "string",
@@ -2905,6 +2972,11 @@
           "type": "string",
           "description": "URL of the GitLab instance, such as https://gitlab.com or https://gitlab.example.com.",
           "default": "https://gitlab.com/"
+        },
+        "ssoURL": {
+          "type": "string",
+          "description": "An alternate sign-in URL used to ease SSO sign-in flows, such as https://gitlab.com/groups/your-group/saml/sso?token=xxxxxx",
+          "default": ""
         },
         "clientID": {
           "type": "string",

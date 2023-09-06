@@ -8,22 +8,22 @@ import { catchError, startWith } from 'rxjs/operators'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { QueryState, SearchContextInputProps, SearchContextProps } from '@sourcegraph/shared/src/search'
-import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { QueryState, SearchContextInputProps, SearchContextProps } from '@sourcegraph/shared/src/search'
+import type { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, useObservable, Link, Card, Icon, Code, H2, H3, Text } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
-import { SearchPatternType } from '../graphql-operations'
+import type { SearchPatternType } from '../graphql-operations'
 import { submitSearch } from '../search/helpers'
 import { useNavbarQueryState } from '../stores'
 import { SearchPageInput } from '../storm/pages/SearchPage/SearchPageInput'
 import { eventLogger } from '../tracking/eventLogger'
 
-import { CommunitySearchContextMetadata } from './types'
+import type { CommunitySearchContextMetadata } from './types'
 
 import styles from './CommunitySearchContextPage.module.scss'
 
@@ -119,6 +119,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                     queryState={queryState}
                     setQueryState={setQueryState}
                     hardCodedSearchContextSpec={props.communitySearchContextMetadata.spec}
+                    simpleSearch={false}
                 />
             </div>
             {!props.communitySearchContextMetadata.lowProfile && (

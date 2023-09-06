@@ -192,8 +192,8 @@ func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
 }
 
 func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
-	tr, _ := trace.New(ctx, "DynamicFilters", "", attribute.String("resolver", "SearchResultsResolver"))
-	defer tr.Finish()
+	tr, _ := trace.New(ctx, "DynamicFilters", attribute.String("resolver", "SearchResultsResolver"))
+	defer tr.End()
 
 	var filters streaming.SearchFilters
 	filters.Update(streaming.SearchEvent{
@@ -235,8 +235,8 @@ func (sf *searchFilterResolver) Kind() string {
 // blameFileMatch blames the specified file match to produce the time at which
 // the first line match inside of it was authored.
 func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.FileMatch) (t time.Time, err error) {
-	tr, ctx := trace.New(ctx, "SearchResultsResolver", "blameFileMatch")
-	defer tr.FinishWithErr(&err)
+	tr, ctx := trace.New(ctx, "SearchResultsResolver.blameFileMatch")
+	defer tr.EndWithErr(&err)
 
 	// Blame the first line match.
 	if len(fm.ChunkMatches) == 0 {
@@ -460,7 +460,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err != nil {
 			return nil, err
 		}
-		j, err := jobutil.NewBasicJob(r.SearchInputs, b, r.enterpriseJobs)
+		j, err := jobutil.NewBasicJob(r.SearchInputs, b)
 		if err != nil {
 			return nil, err
 		}

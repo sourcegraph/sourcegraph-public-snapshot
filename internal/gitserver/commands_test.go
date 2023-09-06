@@ -17,10 +17,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	godiff "github.com/sourcegraph/go-diff/diff"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-
 	"github.com/google/go-cmp/cmp"
+	godiff "github.com/sourcegraph/go-diff/diff"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -658,15 +656,6 @@ func TestLsFiles(t *testing.T) {
 	client := NewClient()
 	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit string) ([]string, error) {
 		return client.LsFiles(ctx, checker, repo, api.CommitID(commit))
-	})
-}
-
-func TestListFiles(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-	client := NewClient()
-	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit string) ([]string, error) {
-		return client.ListFiles(ctx, checker, repo, api.CommitID(commit), &protocol.ListFilesOpts{})
 	})
 }
 
@@ -1954,6 +1943,13 @@ func TestRepository_Commits_options_path(t *testing.T) {
 				Path:  "file1",
 			},
 			wantCommits: wantGitCommits,
+		},
+		"git cmd non utf8": {
+			opt: CommitsOptions{
+				Range:  "master",
+				Author: "a\xc0rn",
+			},
+			wantCommits: nil,
 		},
 	}
 
@@ -3298,4 +3294,28 @@ func Test_CommitLog(t *testing.T) {
 			assert.Equal(t, test.wantCommits, len(logResults))
 		})
 	}
+}
+
+func TestErrorMessageTruncateOutput(t *testing.T) {
+	cmd := []string{"git", "ls-files"}
+
+	t.Run("short output", func(t *testing.T) {
+		shortOutput := "aaaaaaaaaab"
+		message := errorMessageTruncatedOutput(cmd, []byte(shortOutput))
+		want := fmt.Sprintf("git command [git ls-files] failed (output: %q)", shortOutput)
+
+		if diff := cmp.Diff(want, message); diff != "" {
+			t.Fatalf("wrong message. diff: %s", diff)
+		}
+	})
+
+	t.Run("truncating output", func(t *testing.T) {
+		longOutput := strings.Repeat("a", 5000) + "b"
+		message := errorMessageTruncatedOutput(cmd, []byte(longOutput))
+		want := fmt.Sprintf("git command [git ls-files] failed (truncated output: %q, 1 more)", longOutput[:5000])
+
+		if diff := cmp.Diff(want, message); diff != "" {
+			t.Fatalf("wrong message. diff: %s", diff)
+		}
+	})
 }

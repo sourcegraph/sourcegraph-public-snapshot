@@ -1,6 +1,6 @@
-import { EditorView, Tooltip, TooltipView } from '@codemirror/view'
+import type { EditorView, Tooltip, TooltipView } from '@codemirror/view'
 
-import * as sourcegraph from '@sourcegraph/extension-api-types'
+import type * as sourcegraph from '@sourcegraph/extension-api-types'
 
 import { getCodeIntelTooltipState, setFocusedOccurrenceTooltip } from '../token-selection/code-intel-tooltips'
 

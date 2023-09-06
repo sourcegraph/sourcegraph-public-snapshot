@@ -3,7 +3,7 @@
 // documentation for that. Its primary purpose is to show what Bootstrap's components look like with our styling
 // customizations.
 import { action } from '@storybook/addon-actions'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import 'storybook-addon-designs'
 

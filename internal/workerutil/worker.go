@@ -314,14 +314,13 @@ func (w *Worker[T]) dequeueAndHandle() (dequeued bool, err error) {
 		// TODO tail-based sampling once its a thing, until then, we can configure on a per-job basis
 		policy.WithShouldTrace(w.rootCtx, w.options.Metrics.traceSampler(record)),
 		w.options.Name,
-		"",
 	)
 	handleCtx, cancel := context.WithCancel(workerCtxWithSpan)
 	processLog := trace.Logger(workerCtxWithSpan, w.options.Metrics.logger)
 
 	// Register the record as running so it is included in heartbeat updates.
 	if !w.runningIDSet.Add(record.RecordUID(), cancel) {
-		workerSpan.FinishWithErr(&ErrJobAlreadyExists)
+		workerSpan.EndWithErr(&ErrJobAlreadyExists)
 		return false, ErrJobAlreadyExists
 	}
 
@@ -360,7 +359,7 @@ func (w *Worker[T]) dequeueAndHandle() (dequeued bool, err error) {
 			w.options.Metrics.numJobs.Dec()
 			w.handlerSemaphore <- struct{}{}
 			w.wg.Done()
-			workerSpan.Finish()
+			workerSpan.End()
 		}()
 
 		if err := w.handle(handleCtx, workerCtxWithSpan, record); err != nil {

@@ -11,8 +11,8 @@ import { Button, Link, Icon } from '@sourcegraph/wildcard'
 import { ConnectionList } from '../../../../components/FilteredConnection/ui'
 import {
     EventStatus,
-    MonitorActionEvents,
-    MonitorTriggerEventWithActions,
+    type MonitorActionEvents,
+    type MonitorTriggerEventWithActions,
     SearchPatternType,
 } from '../../../../graphql-operations'
 

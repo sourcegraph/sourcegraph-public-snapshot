@@ -3,8 +3,8 @@ import { Route, Routes } from 'react-router-dom'
 
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { AuthenticatedUser } from '../auth'
-import { SourcegraphContext } from '../jscontext'
+import type { AuthenticatedUser } from '../auth'
+import type { SourcegraphContext } from '../jscontext'
 
 import { SignInPage } from './SignInPage'
 
@@ -16,6 +16,7 @@ describe('SignInPage', () => {
             serviceType: 'builtin',
             authenticationURL: '',
             serviceID: '',
+            clientID: '1234',
         },
         {
             serviceType: 'github',
@@ -23,6 +24,7 @@ describe('SignInPage', () => {
             isBuiltin: false,
             authenticationURL: '/.auth/github/login?pc=f00bar',
             serviceID: 'https://github.com',
+            clientID: '1234',
         },
         {
             serviceType: 'gitlab',
@@ -30,6 +32,7 @@ describe('SignInPage', () => {
             isBuiltin: false,
             authenticationURL: '/.auth/gitlab/login?pc=f00bar',
             serviceID: 'https://gitlab.com',
+            clientID: '1234',
         },
     ]
 
@@ -146,6 +149,7 @@ describe('SignInPage', () => {
                 serviceType: 'sourcegraph-operator',
                 authenticationURL: '',
                 serviceID: '',
+                clientID: '',
             },
         ]
 
@@ -175,6 +179,7 @@ describe('SignInPage', () => {
                 serviceType: 'gerrit',
                 authenticationURL: '',
                 serviceID: '',
+                clientID: '',
             },
         ]
         it('does not render the Gerrit provider', () => {

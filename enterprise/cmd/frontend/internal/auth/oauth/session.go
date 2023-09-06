@@ -39,8 +39,8 @@ type SessionIssuerHelper interface {
 
 func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, sessionKey string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		span, ctx := trace.New(r.Context(), "oauth.SessionIssuer", "Handle")
-		defer span.Finish()
+		span, ctx := trace.New(r.Context(), "oauth.SessionIssuer")
+		defer span.End()
 
 		// Scopes logger to family from trace.New
 		logger := trace.Logger(ctx, logger)

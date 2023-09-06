@@ -1,11 +1,11 @@
-import { FC, useCallback, useEffect, useState, useMemo } from 'react'
+import { type FC, useCallback, useEffect, useState, useMemo } from 'react'
 
 import { mdiMapSearch } from '@mdi/js'
 import { capitalize } from 'lodash'
 import { useLocation } from 'react-router-dom'
 
 import { RepoEmbeddingJobState } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     Container,
@@ -15,7 +15,7 @@ import {
     useField,
     useForm,
     H3,
-    Validator,
+    type Validator,
     ErrorAlert,
     Form,
     useDebounce,
@@ -23,7 +23,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { CodyColorIcon } from '../../../cody/chat/CodyPageIcon'
-import { FilteredConnectionFilter, FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
+import type { FilteredConnectionFilter, FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
 import {
     ConnectionContainer,
     ConnectionError,

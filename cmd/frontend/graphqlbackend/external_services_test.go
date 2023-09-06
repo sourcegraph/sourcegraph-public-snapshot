@@ -17,9 +17,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
@@ -39,15 +39,15 @@ import (
 
 func TestAddExternalService(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).AddExternalService(ctx, &addExternalServiceArgs{})
+		result, err := newSchemaResolver(db, gitserver.NewClient()).AddExternalService(ctx, &addExternalServiceArgs{})
 		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %q", want, err)
 		}
@@ -56,13 +56,13 @@ func TestAddExternalService(t *testing.T) {
 		}
 	})
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	externalServices := database.NewMockExternalServiceStore()
+	externalServices := dbmocks.NewMockExternalServiceStore()
 	externalServices.CreateFunc.SetDefaultReturn(nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
@@ -97,15 +97,15 @@ func TestAddExternalService(t *testing.T) {
 
 func TestUpdateExternalService(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
 		t.Run("cannot update external services", func(t *testing.T) {
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db, nil, nil).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			result, err := newSchemaResolver(db, nil).UpdateExternalService(ctx, &updateExternalServiceArgs{
 				Input: updateExternalServiceInput{
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
@@ -120,10 +120,10 @@ func TestUpdateExternalService(t *testing.T) {
 	})
 
 	t.Run("empty config", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		externalServices := database.NewMockExternalServiceStore()
+		externalServices := dbmocks.NewMockExternalServiceStore()
 		externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 			return &types.ExternalService{
 				ID:     id,
@@ -131,12 +131,12 @@ func TestUpdateExternalService(t *testing.T) {
 			}, nil
 		})
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).UpdateExternalService(ctx, &updateExternalServiceArgs{
+		result, err := newSchemaResolver(db, gitserver.NewClient()).UpdateExternalService(ctx, &updateExternalServiceArgs{
 			Input: updateExternalServiceInput{
 				ID:     "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				Config: strptr(""),
@@ -152,10 +152,10 @@ func TestUpdateExternalService(t *testing.T) {
 		}
 	})
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	externalServices := database.NewMockExternalServiceStore()
+	externalServices := dbmocks.NewMockExternalServiceStore()
 	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
 		return nil
 	})
@@ -178,7 +178,7 @@ func TestUpdateExternalService(t *testing.T) {
 		}, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
@@ -210,10 +210,10 @@ func TestUpdateExternalService(t *testing.T) {
 }
 
 func TestExcludeRepoFromExternalServices_ExternalServiceDoesntSupportRepoExclusion(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	externalServices := database.NewMockExternalServiceStore()
+	externalServices := dbmocks.NewMockExternalServiceStore()
 	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
 		return nil
 	})
@@ -225,7 +225,7 @@ func TestExcludeRepoFromExternalServices_ExternalServiceDoesntSupportRepoExclusi
 		}}, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
 		return f(db)
 	})
@@ -259,10 +259,10 @@ func TestExcludeRepoFromExternalServices_ExternalServiceDoesntSupportRepoExclusi
 }
 
 func TestExcludeRepoFromExternalServices_NoExistingExcludedRepos_NewExcludedRepoAdded(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	externalServices := database.NewMockExternalServiceStore()
+	externalServices := dbmocks.NewMockExternalServiceStore()
 	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
 		return nil
 	})
@@ -274,7 +274,7 @@ func TestExcludeRepoFromExternalServices_NoExistingExcludedRepos_NewExcludedRepo
 		}}, nil
 	})
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
 		spec := api.ExternalRepoSpec{ServiceType: extsvc.KindGitHub}
 		metadata := &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}
@@ -285,7 +285,7 @@ func TestExcludeRepoFromExternalServices_NoExistingExcludedRepos_NewExcludedRepo
 	}
 	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
 		return f(db)
 	})
@@ -322,10 +322,10 @@ func TestExcludeRepoFromExternalServices_NoExistingExcludedRepos_NewExcludedRepo
 }
 
 func TestExcludeRepoFromExternalServices_ExcludedRepoExists_AnotherExcludedRepoAdded(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	externalServices := database.NewMockExternalServiceStore()
+	externalServices := dbmocks.NewMockExternalServiceStore()
 	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
 		return nil
 	})
@@ -337,7 +337,7 @@ func TestExcludeRepoFromExternalServices_ExcludedRepoExists_AnotherExcludedRepoA
 		}}, nil
 	})
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
 		spec := api.ExternalRepoSpec{ServiceType: extsvc.KindGitHub}
 		metadata := &github.Repository{NameWithOwner: "sourcegraph/horsegraph"}
@@ -348,7 +348,7 @@ func TestExcludeRepoFromExternalServices_ExcludedRepoExists_AnotherExcludedRepoA
 	}
 	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
 		return f(db)
 	})
@@ -383,10 +383,10 @@ func TestExcludeRepoFromExternalServices_ExcludedRepoExists_AnotherExcludedRepoA
 }
 
 func TestExcludeRepoFromExternalServices_ExcludedRepoExists_SameRepoIsNotExcludedAgain(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	externalServices := database.NewMockExternalServiceStore()
+	externalServices := dbmocks.NewMockExternalServiceStore()
 	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
 		return nil
 	})
@@ -398,7 +398,7 @@ func TestExcludeRepoFromExternalServices_ExcludedRepoExists_SameRepoIsNotExclude
 		}}, nil
 	})
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
 		spec := api.ExternalRepoSpec{ServiceType: extsvc.KindGitHub}
 		metadata := &github.Repository{NameWithOwner: "sourcegraph/horsegraph"}
@@ -409,7 +409,7 @@ func TestExcludeRepoFromExternalServices_ExcludedRepoExists_SameRepoIsNotExclude
 	}
 	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
 		return f(db)
 	})
@@ -444,10 +444,10 @@ func TestExcludeRepoFromExternalServices_ExcludedRepoExists_SameRepoIsNotExclude
 }
 
 func TestExcludeRepoFromExternalServices_ExcludedFromTwoExternalServices(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	externalServices := database.NewMockExternalServiceStore()
+	externalServices := dbmocks.NewMockExternalServiceStore()
 	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
 		return nil
 	})
@@ -469,7 +469,7 @@ func TestExcludeRepoFromExternalServices_ExcludedFromTwoExternalServices(t *test
 		}, nil
 	})
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
 		spec := api.ExternalRepoSpec{ServiceType: extsvc.KindGitHub}
 		metadata := &github.Repository{NameWithOwner: "sourcegraph/horsegraph"}
@@ -480,7 +480,7 @@ func TestExcludeRepoFromExternalServices_ExcludedFromTwoExternalServices(t *test
 	}
 	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
 		return f(db)
 	})
@@ -519,15 +519,15 @@ func TestExcludeRepoFromExternalServices_ExcludedFromTwoExternalServices(t *test
 
 func TestDeleteExternalService(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
 		t.Run("cannot delete external services", func(t *testing.T) {
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).DeleteExternalService(ctx, &deleteExternalServiceArgs{
+			result, err := newSchemaResolver(db, gitserver.NewClient()).DeleteExternalService(ctx, &deleteExternalServiceArgs{
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
 			if want := auth.ErrMustBeSiteAdmin; err != want {
@@ -539,9 +539,9 @@ func TestDeleteExternalService(t *testing.T) {
 		})
 	})
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
-	externalServices := database.NewMockExternalServiceStore()
+	externalServices := dbmocks.NewMockExternalServiceStore()
 	externalServices.DeleteFunc.SetDefaultReturn(nil)
 	externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 		return &types.ExternalService{
@@ -550,7 +550,7 @@ func TestDeleteExternalService(t *testing.T) {
 		}, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
@@ -579,16 +579,16 @@ func TestDeleteExternalService(t *testing.T) {
 func TestExternalServicesResolver(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		t.Run("cannot read site-level external services", func(t *testing.T) {
-			users := database.NewMockUserStore()
+			users := dbmocks.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 			users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 				return &types.User{ID: id}, nil
 			})
 
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
-			result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).ExternalServices(context.Background(), &ExternalServicesArgs{})
+			result, err := newSchemaResolver(db, gitserver.NewClient()).ExternalServices(context.Background(), &ExternalServicesArgs{})
 			if want := auth.ErrMustBeSiteAdmin; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
@@ -600,16 +600,16 @@ func TestExternalServicesResolver(t *testing.T) {
 
 	t.Run("authenticated as admin", func(t *testing.T) {
 		t.Run("can read site-level external service", func(t *testing.T) {
-			users := database.NewMockUserStore()
+			users := dbmocks.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 			users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 				return &types.User{ID: id, SiteAdmin: true}, nil
 			})
 
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
-			_, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).ExternalServices(context.Background(), &ExternalServicesArgs{})
+			_, err := newSchemaResolver(db, gitserver.NewClient()).ExternalServices(context.Background(), &ExternalServicesArgs{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -618,12 +618,12 @@ func TestExternalServicesResolver(t *testing.T) {
 }
 
 func TestExternalServices(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	externalServices := database.NewMockExternalServiceStore()
+	externalServices := dbmocks.NewMockExternalServiceStore()
 	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		if opt.AfterID > 0 {
+		if opt.AfterID > 0 || opt.RepoID == 42 {
 			return []*types.ExternalService{
 				{ID: 4, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindAWSCodeCommit},
 				{ID: 5, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGerrit},
@@ -651,7 +651,7 @@ func TestExternalServices(t *testing.T) {
 	})
 	externalServices.GetLastSyncErrorFunc.SetDefaultReturn("Oops", nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
@@ -691,6 +691,29 @@ func TestExternalServices(t *testing.T) {
 						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjE="},
 						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjI="},
 						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjM="},
+						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ="},
+						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjU="}
+                    ]
+                }
+			}
+		`,
+		},
+		{
+			Schema: mustParseGraphQLSchema(t, db),
+			Label:  "Read all external services for a given repo",
+			Query: fmt.Sprintf(`
+			{
+				externalServices(repo: "%s") {
+					nodes {
+						id
+					}
+				}
+			}
+		`, MarshalRepositoryID(42)),
+			ExpectedResult: `
+			{
+				"externalServices": {
+					"nodes": [
 						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ="},
 						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjU="}
                     ]
@@ -949,11 +972,11 @@ func TestExternalServices_PageInfo(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			externalServices := database.NewMockExternalServiceStore()
+			externalServices := dbmocks.NewMockExternalServiceStore()
 			externalServices.ListFunc.SetDefaultHook(test.mockList)
 			externalServices.CountFunc.SetDefaultHook(test.mockCount)
 
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 			r := &externalServiceConnectionResolver{
@@ -986,7 +1009,7 @@ func TestSyncExternalService_ContextTimeout(t *testing.T) {
 		Config: extsvc.NewEmptyConfig(),
 	}
 
-	err := backend.NewExternalServices(logtest.Scoped(t), database.NewMockDB(), repoupdater.NewClient(s.URL)).SyncExternalService(ctx, svc, 0*time.Millisecond)
+	err := backend.NewExternalServices(logtest.Scoped(t), dbmocks.NewMockDB(), repoupdater.NewClient(s.URL)).SyncExternalService(ctx, svc, 0*time.Millisecond)
 
 	if err == nil {
 		t.Error("Expected error but got nil")
@@ -1002,8 +1025,8 @@ func TestCancelExternalServiceSync(t *testing.T) {
 	externalServiceID := int64(1234)
 	syncJobID := int64(99)
 
-	newExternalServices := func() *database.MockExternalServiceStore {
-		externalServices := database.NewMockExternalServiceStore()
+	newExternalServices := func() *dbmocks.MockExternalServiceStore {
+		externalServices := dbmocks.NewMockExternalServiceStore()
 		externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 			return &types.ExternalService{
 				ID:          externalServiceID,
@@ -1026,11 +1049,11 @@ func TestCancelExternalServiceSync(t *testing.T) {
 	}
 
 	t.Run("as an admin with access to the external service", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
 		externalServices := newExternalServices()
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
@@ -1052,10 +1075,10 @@ func TestCancelExternalServiceSync(t *testing.T) {
 	})
 
 	t.Run("as a user without access to the external service", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -1136,10 +1159,10 @@ func TestExternalServiceNamespaces(t *testing.T) {
 	externalServiceGraphqlID := MarshalExternalServiceID(githubExternalService.ID)
 
 	t.Run("as an admin with access to the external service", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		mockExternalServiceNamespaces(t, []*types.ExternalServiceNamespace{&namespace}, nil)
@@ -1163,10 +1186,10 @@ func TestExternalServiceNamespaces(t *testing.T) {
 		})
 	})
 	t.Run("as a non-admin without access to the external service", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		mockExternalServiceNamespaces(t, []*types.ExternalServiceNamespace{&namespace}, nil)
@@ -1191,10 +1214,10 @@ func TestExternalServiceNamespaces(t *testing.T) {
 		})
 	})
 	t.Run("repoupdater returns an error", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		expectedErr := "connection check failed. could not fetch authenticated user: request to https://repoupdater/user returned status 401: Bad credentials"
@@ -1219,10 +1242,10 @@ func TestExternalServiceNamespaces(t *testing.T) {
 		})
 	})
 	t.Run("unsupported extsvc kind returns error", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		mockExternalServiceNamespaces(t, []*types.ExternalServiceNamespace{&namespace}, nil)
@@ -1246,10 +1269,10 @@ func TestExternalServiceNamespaces(t *testing.T) {
 		})
 	})
 	t.Run("pass existing external service ID - as an admin with access to the external service", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		id := relay.MarshalID("ExternalServiceNamespace", namespace)
@@ -1277,10 +1300,10 @@ func TestExternalServiceNamespaces(t *testing.T) {
 		})
 	})
 	t.Run("pass existing external service ID - external service not found", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		expectedErr := fmt.Sprintf("external service not found: %d", githubExternalService.ID)
@@ -1306,13 +1329,13 @@ func TestExternalServiceNamespaces(t *testing.T) {
 		})
 	})
 	t.Run("pass existing external service ID - unsupported extsvc kind returns error", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		expectedErr := fmt.Sprintf("External Service type does not support discovery of repositories and namespaces.")
+		expectedErr := "External Service type does not support discovery of repositories and namespaces."
 		mockExternalServiceNamespaces(t, []*types.ExternalServiceNamespace{&namespace}, errors.New(expectedErr))
 
 		RunTest(t, &Test{
@@ -1434,10 +1457,10 @@ func TestExternalServiceRepositories(t *testing.T) {
 	externalServiceGraphqlID := MarshalExternalServiceID(githubExternalService.ID)
 
 	t.Run("as an admin with access to the external service", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		mockExternalServiceRepos(t, []*types.ExternalServiceRepository{repo1.ToExternalServiceRepository(), repo2.ToExternalServiceRepository()}, nil)
@@ -1461,10 +1484,10 @@ func TestExternalServiceRepositories(t *testing.T) {
 		})
 	})
 	t.Run("as a non-admin without access to the external service", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		mockExternalServiceRepos(t, []*types.ExternalServiceRepository{repo1.ToExternalServiceRepository(), repo2.ToExternalServiceRepository()}, nil)
@@ -1491,10 +1514,10 @@ func TestExternalServiceRepositories(t *testing.T) {
 		})
 	})
 	t.Run("as an admin with access to the external service - pass excludeRepos", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		mockExternalServiceRepos(t, []*types.ExternalServiceRepository{repo1.ToExternalServiceRepository(), repo2.ToExternalServiceRepository()}, nil)
@@ -1518,10 +1541,10 @@ func TestExternalServiceRepositories(t *testing.T) {
 		})
 	})
 	t.Run("as an admin with access to the external service - pass non empty query string", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		mockExternalServiceRepos(t, []*types.ExternalServiceRepository{repo1.ToExternalServiceRepository(), repo2.ToExternalServiceRepository()}, nil)
@@ -1545,10 +1568,10 @@ func TestExternalServiceRepositories(t *testing.T) {
 		})
 	})
 	t.Run("repoupdater returns an error", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		mockExternalServiceRepos(t, nil, errors.New("connection check failed. could not fetch authenticated user: request to https://repoupdater/user returned status 401: Bad credentials"))
@@ -1574,10 +1597,10 @@ func TestExternalServiceRepositories(t *testing.T) {
 		})
 	})
 	t.Run("unsupported extsvc kind returns error", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		mockExternalServiceRepos(t, []*types.ExternalServiceRepository{repo1.ToExternalServiceRepository(), repo2.ToExternalServiceRepository()}, nil)
@@ -1603,10 +1626,10 @@ func TestExternalServiceRepositories(t *testing.T) {
 		})
 	})
 	t.Run("pass external service id - as an admin with access to the external service", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		mockExternalServiceRepos(t, []*types.ExternalServiceRepository{repo1.ToExternalServiceRepository(), repo2.ToExternalServiceRepository()}, nil)
@@ -1631,10 +1654,10 @@ func TestExternalServiceRepositories(t *testing.T) {
 		})
 	})
 	t.Run("pass external service id - external service not found", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		expectedError := fmt.Sprintf("external service not found: %d", githubExternalService.ID)
@@ -1662,13 +1685,13 @@ func TestExternalServiceRepositories(t *testing.T) {
 		})
 	})
 	t.Run("pass external service id - unsupported extsvc kind returns error", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		expectedError := fmt.Sprintf("External Service type does not support discovery of repositories and namespaces.")
+		expectedError := "External Service type does not support discovery of repositories and namespaces."
 		mockExternalServiceRepos(t, nil, errors.New(expectedError))
 
 		RunTest(t, &Test{

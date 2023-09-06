@@ -1,74 +1,92 @@
 package com.sourcegraph.cody.api;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.sourcegraph.cody.UpdatableChat;
 import com.sourcegraph.cody.chat.ChatMessage;
+import com.sourcegraph.cody.vscode.CancellationToken;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class ChatUpdaterCallbacks implements CompletionsCallbacks {
-  private final UpdatableChat chat;
-  private final String prefix;
-  private boolean gotFirstMessage = false;
+  private static final Logger logger = Logger.getInstance(ChatUpdaterCallbacks.class);
+  private static final String STOP_SEQUENCE_REGEXP = "(H|Hu|Hum|Huma|Human|Human:)$";
+  private static final Pattern stopSequencePattern = Pattern.compile(STOP_SEQUENCE_REGEXP);
+  @NotNull private final UpdatableChat chat;
+  @NotNull private final CancellationToken cancellationToken;
+  @NotNull private final String prefix;
+  private final AtomicBoolean gotFirstMessage = new AtomicBoolean(false);
+  private final AtomicReference<String> lastMessage = new AtomicReference<>("");
 
-  public ChatUpdaterCallbacks(@NotNull UpdatableChat chat, @Nullable String prefix) {
+  public ChatUpdaterCallbacks(
+      @NotNull UpdatableChat chat,
+      @NotNull CancellationToken cancellationToken,
+      @NotNull String prefix) {
     this.chat = chat;
+    this.cancellationToken = cancellationToken;
     this.prefix = prefix;
   }
 
   @Override
   public void onSubscribed() {
-    System.out.println("Subscribed to completions.");
+    logger.info("Subscribed to completions.");
   }
 
   @Override
   public void onData(@Nullable String data) {
-    if (data == null) {
-      return;
-    }
-    // print date/time and msg
-    // System.out.println(DateTimeFormatter.ofPattern("yyyy-MM-dd
-    // HH:mm:ss.SSS").format(LocalDateTime.now()) + " Data received by callback: " + data);
-    if (!gotFirstMessage) {
-      chat.addMessageToChat(ChatMessage.createAssistantMessage(reformatBotMessage(data, prefix)));
-      gotFirstMessage = true;
-    } else {
-      chat.updateLastMessage(ChatMessage.createAssistantMessage(reformatBotMessage(data, prefix)));
-    }
+    if (!cancellationToken.isCancelled())
+      Optional.ofNullable(data)
+          .ifPresent(
+              d -> {
+                String messageText = reformatBotMessage(d, prefix);
+                // ward against streaming data coming in out of order
+                if (messageText.length() > lastMessage.get().length()) {
+                  lastMessage.set(messageText);
+                  passMessageToChat(messageText);
+                }
+              });
+  }
+
+  private void passMessageToChat(@NotNull String messageText) {
+    ChatMessage chatMessage = ChatMessage.createAssistantMessage(messageText);
+    if (!gotFirstMessage.getAndSet(true)) chat.addMessageToChat(chatMessage);
+    else chat.updateLastMessage(chatMessage);
   }
 
   @Override
   public void onError(@NotNull Throwable error) {
-    String message = error.getMessage();
-    chat.respondToErrorFromServer(message != null ? message : "");
-    chat.finishMessageProcessing();
-    System.err.println("Error: " + error);
+    if (!cancellationToken.isCancelled()) {
+      String message = error.getMessage();
+      chat.respondToErrorFromServer(message != null ? message : "");
+      chat.finishMessageProcessing();
+      logger.warn(error);
+    }
   }
 
   @Override
   public void onComplete() {
-    System.out.println("Streaming completed.");
-    chat.finishMessageProcessing();
+    logger.info("Streaming completed.");
+    if (!cancellationToken.isCancelled()) {
+      chat.finishMessageProcessing();
+    }
   }
 
   @Override
   public void onCancelled() {
-    chat.finishMessageProcessing();
+    if (!cancellationToken.isCancelled()) {
+      chat.finishMessageProcessing();
+    }
   }
 
-  private static @NotNull String reformatBotMessage(@NotNull String text, @Nullable String prefix) {
-    String STOP_SEQUENCE_REGEXP = "(H|Hu|Hum|Huma|Human|Human:)$";
-    Pattern stopSequencePattern = Pattern.compile(STOP_SEQUENCE_REGEXP);
-
-    String reformattedMessage = (prefix != null ? prefix : "") + text.stripTrailing();
-
+  private static @NotNull String reformatBotMessage(@NotNull String text, @NotNull String prefix) {
+    String reformattedMessage = prefix + text.stripTrailing();
     Matcher stopSequenceMatcher = stopSequencePattern.matcher(reformattedMessage);
-
-    if (stopSequenceMatcher.find()) {
-      reformattedMessage = reformattedMessage.substring(0, stopSequenceMatcher.start());
-    }
-
-    return reformattedMessage;
+    return stopSequenceMatcher.find()
+        ? reformattedMessage.substring(0, stopSequenceMatcher.start())
+        : reformattedMessage;
   }
 }

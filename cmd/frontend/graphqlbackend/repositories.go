@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type repositoryArgs struct {
@@ -29,6 +30,9 @@ type repositoryArgs struct {
 	NotCloned  bool
 	Indexed    bool
 	NotIndexed bool
+
+	Embedded    bool
+	NotEmbedded bool
 
 	CloneStatus *string
 	FailedFetch bool
@@ -80,6 +84,16 @@ func (args *repositoryArgs) toReposListOptions() (database.ReposListOptions, err
 		opt.OnlyIndexed = true
 	}
 
+	if !args.Embedded && !args.NotEmbedded {
+		return database.ReposListOptions{}, errors.New("excluding embedded and not embedded repos leaves an empty set")
+	}
+	if !args.Embedded {
+		opt.NoEmbedded = true
+	}
+	if !args.NotEmbedded {
+		opt.OnlyEmbedded = true
+	}
+
 	if args.ExternalService != nil {
 		extSvcID, err := UnmarshalExternalServiceID(*args.ExternalService)
 		if err != nil {
@@ -98,12 +112,10 @@ func (r *schemaResolver) Repositories(ctx context.Context, args *repositoryArgs)
 	}
 
 	connectionStore := &repositoriesConnectionStore{
-		ctx:        ctx,
-		db:         r.db,
-		logger:     r.logger.Scoped("repositoryConnectionResolver", "resolves connections to a repository"),
-		opt:        opt,
-		indexed:    args.Indexed,
-		notIndexed: args.NotIndexed,
+		ctx:    ctx,
+		db:     r.db,
+		logger: r.logger.Scoped("repositoryConnectionResolver", "resolves connections to a repository"),
+		opt:    opt,
 	}
 
 	maxPageSize := 1000
@@ -124,12 +136,10 @@ func (r *schemaResolver) Repositories(ctx context.Context, args *repositoryArgs)
 }
 
 type repositoriesConnectionStore struct {
-	ctx        context.Context
-	logger     log.Logger
-	db         database.DB
-	opt        database.ReposListOptions
-	indexed    bool
-	notIndexed bool
+	ctx    context.Context
+	logger log.Logger
+	db     database.DB
+	opt    database.ReposListOptions
 }
 
 func (s *repositoriesConnectionStore) MarshalCursor(node *RepositoryResolver, orderBy database.OrderBy) (*string, error) {
@@ -196,22 +206,20 @@ func (s *repositoriesConnectionStore) UnmarshalCursor(cursor string, orderBy dat
 	return &csv, err
 }
 
-func i32ptr(v int32) *int32 { return &v }
-
 func (s *repositoriesConnectionStore) ComputeTotal(ctx context.Context) (countptr *int32, err error) {
 	// 🚨 SECURITY: Only site admins can list all repos, because a total repository
 	// count does not respect repository permissions.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, s.db); err != nil {
-		return i32ptr(int32(0)), nil
+		return pointers.Ptr(int32(0)), nil
 	}
 
 	// Counting repositories is slow on Sourcegraph.com. Don't wait very long for an exact count.
 	if envvar.SourcegraphDotComMode() {
-		return i32ptr(int32(0)), nil
+		return pointers.Ptr(int32(0)), nil
 	}
 
 	count, err := s.db.Repos().Count(ctx, s.opt)
-	return i32ptr(int32(count)), err
+	return pointers.Ptr(int32(count)), err
 }
 
 func (s *repositoriesConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*RepositoryResolver, error) {
@@ -363,7 +371,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 	}
 
 	count, err := r.db.Repos().Count(ctx, r.opt)
-	return i32ptr(int32(count)), err
+	return pointers.Ptr(int32(count)), err
 }
 
 func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {

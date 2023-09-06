@@ -112,6 +112,56 @@ func TestGetExists(t *testing.T) {
 	})
 }
 
+// Initialize uploadstore, upload objects, list the keys
+func TestList(t *testing.T) {
+	ctx := context.Background()
+	store, server, _ := initTestStore(ctx, t, t.TempDir())
+	defer server.Close()
+
+	// Upload three objects
+	uploaded, err := store.Upload(ctx, "foobar1", strings.NewReader("Hello 1! "))
+	autogold.Expect([]interface{}{9, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
+
+	uploaded, err = store.Upload(ctx, "foobar3", strings.NewReader("Hello 3!"))
+	autogold.Expect([]interface{}{8, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
+
+	uploaded, err = store.Upload(ctx, "foobar2", strings.NewReader("Hello 2! "))
+	autogold.Expect([]interface{}{9, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
+
+	// List the keys
+	iter, err := store.List(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var keys []string
+	for iter.Next() {
+		keys = append(keys, iter.Current())
+	}
+
+	autogold.Expect([]interface{}{[]string{"foobar1", "foobar2", "foobar3"}}).Equal(t, []any{keys})
+}
+
+func TestListEmpty(t *testing.T) {
+	ctx := context.Background()
+	store, server, _ := initTestStore(ctx, t, t.TempDir())
+	defer server.Close()
+
+	iter, err := store.List(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var keys []string
+	for iter.Next() {
+		keys = append(keys, iter.Current())
+	}
+
+	if len(keys) != 0 {
+		t.Fatalf("expected 0 keys but got %v", keys)
+	}
+}
+
 // Initialize uploadstore, upload two objects, compose them together
 //
 // Compose will concatenate the given source objects together and write to the given

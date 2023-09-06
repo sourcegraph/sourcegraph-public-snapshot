@@ -1,8 +1,8 @@
-import { QueryResult } from '@apollo/client'
+import type { QueryResult } from '@apollo/client'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 
-import { UserSelectSearchResult, UserSelectSearchVariables } from '../../graphql-operations'
+import type { UserSelectSearchResult, UserSelectSearchVariables } from '../../graphql-operations'
 
 const USER_SELECT_SEARCH_FIELDS = gql`
     fragment UserSelectSearchFields on User {

@@ -30,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -383,53 +382,52 @@ func prometheusGraphQLRequestName(requestName string) string {
 }
 
 func NewSchemaWithoutResolvers(db database.DB) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, []OptionalResolver{})
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{})
 }
 
 func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, []OptionalResolver{{NotebooksResolver: notebooks}})
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{NotebooksResolver: notebooks}})
 }
 
 func NewSchemaWithAuthzResolver(db database.DB, authz AuthzResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, []OptionalResolver{{AuthzResolver: authz}})
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{AuthzResolver: authz}})
 }
 
 func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver, githubApps GitHubAppsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, []OptionalResolver{{BatchChangesResolver: batchChanges}, {GitHubAppsResolver: githubApps}})
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{BatchChangesResolver: batchChanges}, {GitHubAppsResolver: githubApps}})
 }
 
 func NewSchemaWithCodeMonitorsResolver(db database.DB, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, []OptionalResolver{{CodeMonitorsResolver: codeMonitors}})
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{CodeMonitorsResolver: codeMonitors}})
 }
 
 func NewSchemaWithLicenseResolver(db database.DB, license LicenseResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, []OptionalResolver{{LicenseResolver: license}})
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{LicenseResolver: license}})
 }
 
 func NewSchemaWithWebhooksResolver(db database.DB, webhooksResolver WebhooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, []OptionalResolver{{WebhooksResolver: webhooksResolver}})
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{WebhooksResolver: webhooksResolver}})
 }
 
 func NewSchemaWithRBACResolver(db database.DB, rbacResolver RBACResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, []OptionalResolver{{RBACResolver: rbacResolver}})
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{RBACResolver: rbacResolver}})
 }
 
 func NewSchemaWithOwnResolver(db database.DB, own OwnResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, []OptionalResolver{{OwnResolver: own}})
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{OwnResolver: own}})
 }
 
 func NewSchemaWithCompletionsResolver(db database.DB, completionsResolver CompletionsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, []OptionalResolver{{CompletionsResolver: completionsResolver}})
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{CompletionsResolver: completionsResolver}})
 }
 
 func NewSchema(
 	db database.DB,
 	gitserverClient gitserver.Client,
-	enterpriseJobs jobutil.EnterpriseJobs,
 	optionals []OptionalResolver,
 	graphqlOpts ...graphql.SchemaOpt,
 ) (*graphql.Schema, error) {
-	resolver := newSchemaResolver(db, gitserverClient, enterpriseJobs)
+	resolver := newSchemaResolver(db, gitserverClient)
 	schemas := []string{mainSchema, outboundWebhooksSchema}
 
 	for _, optional := range optionals {
@@ -600,6 +598,22 @@ func NewSchema(
 			resolver.AppResolver = appResolver
 			schemas = append(schemas, appSchema)
 		}
+
+		if contentLibraryResolver := optional.ContentLibraryResolver; contentLibraryResolver != nil {
+			EnterpriseResolvers.contentLibraryResolver = contentLibraryResolver
+			resolver.ContentLibraryResolver = contentLibraryResolver
+			schemas = append(schemas, contentLibrary)
+		}
+
+		if searchJobsResolver := optional.SearchJobsResolver; searchJobsResolver != nil {
+			EnterpriseResolvers.searchJobsResolver = searchJobsResolver
+			resolver.SearchJobsResolver = searchJobsResolver
+			schemas = append(schemas, searchJobSchema)
+			// Register NodeByID handlers.
+			for kind, res := range searchJobsResolver.NodeResolvers() {
+				resolver.nodeByIDFns[kind] = res
+			}
+		}
 	}
 
 	logger := log.Scoped("GraphQL", "general GraphQL logging")
@@ -626,12 +640,11 @@ func NewSchema(
 //
 // schemaResolver must be instantiated using newSchemaResolver.
 type schemaResolver struct {
-	logger               log.Logger
-	db                   database.DB
-	gitserverClient      gitserver.Client
-	repoupdaterClient    *repoupdater.Client
-	nodeByIDFns          map[string]NodeByIDFunc
-	enterpriseSearchJobs jobutil.EnterpriseJobs
+	logger            log.Logger
+	db                database.DB
+	gitserverClient   gitserver.Client
+	repoupdaterClient *repoupdater.Client
+	nodeByIDFns       map[string]NodeByIDFunc
 
 	OptionalResolver
 }
@@ -649,6 +662,7 @@ type OptionalResolver struct {
 	CodyContextResolver
 	DotcomRootResolver
 	EmbeddingsResolver
+	SearchJobsResolver
 	GitHubAppsResolver
 	GuardrailsResolver
 	InsightsAggregationResolver
@@ -659,17 +673,17 @@ type OptionalResolver struct {
 	RBACResolver
 	SearchContextsResolver
 	WebhooksResolver
+	ContentLibraryResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
 // defaults. It does not implement any sub-resolvers.
-func newSchemaResolver(db database.DB, gitserverClient gitserver.Client, enterpriseJobs jobutil.EnterpriseJobs) *schemaResolver {
+func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schemaResolver {
 	r := &schemaResolver{
-		logger:               log.Scoped("schemaResolver", "GraphQL schema resolver"),
-		db:                   db,
-		gitserverClient:      gitserverClient,
-		repoupdaterClient:    repoupdater.DefaultClient,
-		enterpriseSearchJobs: enterpriseJobs,
+		logger:            log.Scoped("schemaResolver", "GraphQL schema resolver"),
+		db:                db,
+		gitserverClient:   gitserverClient,
+		repoupdaterClient: repoupdater.DefaultClient,
 	}
 
 	r.nodeByIDFns = map[string]NodeByIDFunc{
@@ -745,6 +759,9 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client, enterpr
 		permissionIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.permissionByID(ctx, id)
 		},
+		CodeHostKind: func(ctx context.Context, id graphql.ID) (Node, error) {
+			return CodeHostByID(ctx, r.db, id)
+		},
 	}
 	return r
 }
@@ -761,6 +778,7 @@ var EnterpriseResolvers = struct {
 	contextResolver             CodyContextResolver
 	dotcomResolver              DotcomRootResolver
 	embeddingsResolver          EmbeddingsResolver
+	searchJobsResolver          SearchJobsResolver
 	gitHubAppsResolver          GitHubAppsResolver
 	guardrailsResolver          GuardrailsResolver
 	insightsAggregationResolver InsightsAggregationResolver
@@ -771,13 +789,14 @@ var EnterpriseResolvers = struct {
 	rbacResolver                RBACResolver
 	searchContextsResolver      SearchContextsResolver
 	webhooksResolver            WebhooksResolver
+	contentLibraryResolver      ContentLibraryResolver
 }{}
 
 // Root returns a new schemaResolver.
 //
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
-	return newSchemaResolver(r.db, r.gitserverClient, r.enterpriseSearchJobs)
+	return newSchemaResolver(r.db, r.gitserverClient)
 }
 
 func (r *schemaResolver) Repository(ctx context.Context, args *struct {
@@ -807,8 +826,8 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 	Repo graphql.ID
 },
 ) (*EmptyResponse, error) {
-	var repoID api.RepoID
-	if err := relay.UnmarshalSpec(args.Repo, &repoID); err != nil {
+	repoID, err := UnmarshalRepositoryID(args.Repo)
+	if err != nil {
 		return nil, err
 	}
 

@@ -184,7 +184,6 @@ func (c *cmdRunner) runAndWatch(ctx context.Context, cmd Command, reload <-chan 
 				} else if cmd.Install == "" && cmd.InstallFunc != "" {
 					fn, ok := installFuncs[cmd.InstallFunc]
 					if !ok {
-						c.installSemaphore.Release(1)
 						return "", errors.Newf("no install func with name %q found", cmd.InstallFunc)
 					}
 					return "", fn(ctx, makeEnvMap(c.parentEnv, cmd.Env))
@@ -329,10 +328,10 @@ func (c *cmdRunner) waitForInstallation(ctx context.Context, cmdNames map[string
 		"Still waiting for %s to finish installing...",
 		"Before this I think the longest I ever had to wait was at Disneyland in '99, but %s is now #1",
 		"Still waiting for %s to finish installing...",
-		"At this point it could be anything - does your computer still have power?",
+		"At this point it could be anything - does your computer still have power? Come on, %s",
 		"Might as well check Slack. %s is taking its time...",
 		"In German there's a saying: ein guter Käse braucht seine Zeit - a good cheese needs its time. Maybe %s is cheese?",
-		"If %[1]s turns out to be cheese I'm gonna lose it. Hey, %[1]s, hurry up, will ya",
+		"If %ss turns out to be cheese I'm gonna lose it. Hey, hurry up, will ya",
 		"Still waiting for %s to finish installing...",
 	}
 	messageCount := 0

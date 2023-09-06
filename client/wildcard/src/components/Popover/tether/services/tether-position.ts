@@ -1,6 +1,6 @@
-import { createPoint, Point } from '../models/geometry/point'
-import { getIntersection, intersects, Rectangle } from '../models/geometry/rectangle'
-import { ElementPosition, Strategy } from '../models/tether-models'
+import { createPoint, type Point } from '../models/geometry/point'
+import { getIntersection, intersects, type Rectangle } from '../models/geometry/rectangle'
+import { type ElementPosition, Strategy } from '../models/tether-models'
 
 import {
     getConstrainedElement,
@@ -16,7 +16,7 @@ import {
     isElementVisible,
 } from './geometry'
 import { getExtendedConstraint } from './geometry/actions/get-extended-constraint'
-import { TetherLayout } from './types'
+import type { TetherLayout } from './types'
 
 export interface TetherState {
     /** Area of the element in pixels */

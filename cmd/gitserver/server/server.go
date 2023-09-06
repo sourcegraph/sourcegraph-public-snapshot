@@ -17,7 +17,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -51,6 +50,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/search"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
@@ -65,8 +65,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// tempDirName is the name used for the temporary directory under ReposDir.
-const tempDirName = ".tmp"
+// TempDirName is the name used for the temporary directory under ReposDir.
+const TempDirName = ".tmp"
 
 // P4HomeName is the name used for the directory that git p4 will use as $HOME
 // and where it will store cache data.
@@ -99,87 +99,6 @@ func init() {
 	traceLogs, _ = strconv.ParseBool(env.Get("SRC_GITSERVER_TRACE", "false", "Toggles trace logging to stderr"))
 }
 
-// runCommandGraceful runs the command and returns the exit status. If the
-// supplied context is cancelled we attempt to send SIGINT to the command to
-// allow it to gracefully shutdown. All clients of this function should pass in a
-// command *without* a context.
-func runCommandGraceful(ctx context.Context, logger log.Logger, cmd wrexec.Cmder) (exitCode int, err error) {
-	c := cmd.Unwrap()
-	tr, ctx := trace.New(ctx, "gitserver", "runCommandGraceful",
-		attribute.String("path", c.Path),
-		attribute.StringSlice("args", c.Args),
-		attribute.String("dir", c.Dir))
-	defer func() {
-		if err != nil {
-			tr.SetAttributes(attribute.Int("exitCode", exitCode))
-		}
-		tr.FinishWithErr(&err)
-	}()
-
-	exitCode = unsetExitStatus
-	err = cmd.Start()
-	if err != nil {
-		return exitCode, err
-	}
-
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		err = cmd.Wait()
-		if err != nil {
-			logger.Error("running command", log.Error(err))
-		}
-	}()
-
-	// Wait for command to exit or context to be done
-	select {
-	case <-ctx.Done():
-		logger.Debug("context cancelled, sending SIGINT")
-		// Attempt to send SIGINT
-		if err := cmd.Unwrap().Process.Signal(syscall.SIGINT); err != nil {
-			logger.Warn("Sending SIGINT to command", log.Error(err))
-			if err := cmd.Unwrap().Process.Kill(); err != nil {
-				logger.Warn("killing process", log.Error(err))
-			}
-			return exitCode, err
-		}
-		// Now, continue waiting for command for up to two seconds before killing it
-		timer := time.NewTimer(2 * time.Second)
-		select {
-		case <-done:
-			logger.Debug("process exited after SIGINT sent")
-			timer.Stop()
-			if err == nil {
-				exitCode = 0
-			}
-		case <-timer.C:
-			logger.Debug("timed out, killing process")
-			if err := cmd.Unwrap().Process.Kill(); err != nil {
-				logger.Warn("killing process", log.Error(err))
-			}
-			logger.Debug("process killed, waiting for done")
-			// Wait again to ensure we can access cmd.ProcessState below
-			<-done
-		}
-
-		if exitError, ok := err.(*exec.ExitError); ok {
-			exitCode = exitError.ExitCode()
-		}
-		err = ctx.Err()
-		return exitCode, err
-	case <-done:
-		// Happy path, command exits
-	}
-
-	if exitError, ok := err.(*exec.ExitError); ok {
-		exitCode = exitError.ExitCode()
-	}
-	if err == nil {
-		exitCode = 0
-	}
-	return exitCode, err
-}
-
 // cloneJob abstracts away a repo and necessary metadata to clone it. In the future it may be
 // possible to simplify this, but to do that, doClone will need to do a lot less than it does at the
 // moment.
@@ -191,10 +110,10 @@ type cloneJob struct {
 	// TODO: cloneJobConsumer should acquire a new lock. We are trying to keep the changes simple
 	// for the time being. When we start using the new approach of using long lived goroutines for
 	// cloning we will refactor doClone to acquire a new lock.
-	lock *RepositoryLock
+	lock RepositoryLock
 
 	remoteURL *vcs.URL
-	options   *cloneOptions
+	options   CloneOptions
 }
 
 // cloneTask is a thin wrapper around a cloneJob to associate the doneFunc with each job.
@@ -220,20 +139,11 @@ type Server struct {
 	// ReposDir is the path to the base directory for gitserver storage.
 	ReposDir string
 
-	// DesiredPercentFree is the desired percentage of disk space to keep free.
-	DesiredPercentFree int
-
-	// DiskSizer tells how much disk is free and how large the disk is.
-	DiskSizer DiskSizer
-
 	// GetRemoteURLFunc is a function which returns the remote URL for a
 	// repository. This is used when cloning or fetching a repository. In
 	// production this will speak to the database to look up the clone URL. In
 	// tests this is usually set to clone a local repository or intentionally
 	// error.
-	//
-	// Note: internal uses should call getRemoteURL which will handle
-	// GetRemoteURLFunc being nil.
 	GetRemoteURLFunc func(context.Context, api.RepoName) (string, error)
 
 	// GetVCSSyncer is a function which returns the VCS syncer for a repository.
@@ -246,12 +156,15 @@ type Server struct {
 	// actual hostname but can also be overridden by the HOSTNAME environment variable.
 	Hostname string
 
-	// shared db handle
+	// DB provides access to datastores.
 	DB database.DB
 
 	// CloneQueue is a threadsafe queue used by DoBackgroundClones to process incoming clone
 	// requests asynchronously.
 	CloneQueue *common.Queue[*cloneJob]
+
+	// Locker is used to lock repositories while fetching to prevent concurrent work.
+	Locker RepositoryLocker
 
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
@@ -265,11 +178,9 @@ type Server struct {
 	canceled bool
 	wg       sync.WaitGroup // tracks running background jobs
 
-	locker *RepositoryLocker
-
 	// cloneLimiter and cloneableLimiter limits the number of concurrent
 	// clones and ls-remotes respectively. Use s.acquireCloneLimiter() and
-	// s.acquireClonableLimiter() instead of using these directly.
+	// s.acquireCloneableLimiter() instead of using these directly.
 	cloneLimiter     *limiter.MutableLimiter
 	cloneableLimiter *limiter.MutableLimiter
 
@@ -287,7 +198,7 @@ type Server struct {
 	// operations provide uniform observability via internal/observation. This value is
 	// set by RegisterMetrics when compiled as part of the gitserver binary. The server
 	// method ensureOperations should be used in all references to avoid a nil pointer
-	// dereferencs.
+	// dereferences.
 	operations *operations
 
 	// RecordingCommandFactory is a factory that creates recordable commands by wrapping os/exec.Commands.
@@ -380,7 +291,6 @@ func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
 	s.ctx, s.cancel = context.WithCancel(context.Background())
-	s.locker = &RepositoryLocker{}
 	s.repoUpdateLocks = make(map[api.RepoName]*locks)
 
 	// GitMaxConcurrentClones controls the maximum number of clones that
@@ -390,10 +300,12 @@ func (s *Server) Handler() http.Handler {
 	// The new repo-updater scheduler enforces the rate limit across all gitserver,
 	// so ideally this logic could be removed here; however, ensureRevision can also
 	// cause an update to happen and it is called on every exec command.
+	// Max concurrent clones also means repo updates.
 	maxConcurrentClones := conf.GitMaxConcurrentClones()
 	s.cloneLimiter = limiter.NewMutable(maxConcurrentClones)
 	s.cloneableLimiter = limiter.NewMutable(maxConcurrentClones)
 
+	// TODO: Remove side-effects from this Handler method.
 	conf.Watch(func() {
 		limit := conf.GitMaxConcurrentClones()
 		s.cloneLimiter.SetLimit(limit)
@@ -442,6 +354,7 @@ func (s *Server) Handler() http.Handler {
 	)))
 	mux.HandleFunc("/list-gitolite", trace.WithRouteName("list-gitolite", s.handleListGitolite))
 	mux.HandleFunc("/is-repo-cloneable", trace.WithRouteName("is-repo-cloneable", s.handleIsRepoCloneable))
+	// TODO: Remove this endpoint after 5.2, it is deprecated.
 	mux.HandleFunc("/repos-stats", trace.WithRouteName("repos-stats", s.handleReposStats))
 	mux.HandleFunc("/repo-clone-progress", trace.WithRouteName("repo-clone-progress", s.handleRepoCloneProgress))
 	mux.HandleFunc("/delete", trace.WithRouteName("delete", s.handleRepoDelete))
@@ -468,9 +381,9 @@ func (s *Server) Handler() http.Handler {
 	)))
 
 	// Migration to hexagonal architecture starting here:
-
 	gitAdapter := &adapters.Git{
-		ReposDir: s.ReposDir,
+		ReposDir:                s.ReposDir,
+		RecordingCommandFactory: s.RecordingCommandFactory,
 	}
 	getObjectService := gitdomain.GetObjectService{
 		RevParse:      gitAdapter.RevParse,
@@ -479,9 +392,9 @@ func (s *Server) Handler() http.Handler {
 	getObjectFunc := gitdomain.GetObjectFunc(func(ctx context.Context, repo api.RepoName, objectName string) (_ *gitdomain.GitObject, err error) {
 		// Tracing is server concern, so add it here. Once generics lands we should be
 		// able to create some simple wrappers
-		tr, ctx := trace.New(ctx, "git", "GetObject",
+		tr, ctx := trace.New(ctx, "GetObject",
 			attribute.String("objectName", objectName))
-		defer tr.FinishWithErr(&err)
+		defer tr.EndWithErr(&err)
 
 		return getObjectService.GetObject(ctx, repo, objectName)
 	})
@@ -497,88 +410,116 @@ func (s *Server) Handler() http.Handler {
 	return headerXRequestedWithMiddleware(mux)
 }
 
-// Janitor does clean up tasks over s.ReposDir and is expected to run in a
-// background goroutine.
-func (s *Server) Janitor(ctx context.Context, interval time.Duration) {
-	if runtime.GOOS == "windows" {
-		// See https://github.com/sourcegraph/sourcegraph/issues/54317 for details.
-		s.Logger.Warn("Janitor is disabled")
-		return
-	}
-
-	for {
-		gitserverAddrs := gitserver.NewGitserverAddressesFromConf(conf.Get())
-		s.cleanupRepos(actor.WithInternalActor(ctx), gitserverAddrs)
-		time.Sleep(interval)
-	}
-}
-
-// SyncRepoState syncs state on disk to the database for all repos and is
-// expected to run in a background goroutine. We perform a full sync if the known
-// gitserver addresses has changed since the last run. Otherwise, we only sync
-// repos that have not yet been assigned a shard.
-func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int) {
+// NewRepoStateSyncer returns a periodic goroutine that syncs state on disk to the
+// database for all repos. We perform a full sync if the known gitserver addresses
+// has changed since the last run. Otherwise, we only sync repos that have not yet
+// been assigned a shard.
+func NewRepoStateSyncer(
+	ctx context.Context,
+	logger log.Logger,
+	db database.DB,
+	locker RepositoryLocker,
+	shardID string,
+	reposDir string,
+	interval time.Duration,
+	batchSize int,
+	perSecond int,
+) goroutine.BackgroundRoutine {
 	var previousAddrs string
 	var previousPinned string
-	for {
-		gitServerAddrs := gitserver.NewGitserverAddressesFromConf(conf.Get())
-		addrs := gitServerAddrs.Addresses
-		// We turn addrs into a string here for easy comparison and storage of previous
-		// addresses since we'd need to take a copy of the slice anyway.
-		currentAddrs := strings.Join(addrs, ",")
-		fullSync := currentAddrs != previousAddrs
-		previousAddrs = currentAddrs
 
-		// We turn PinnedServers into a string here for easy comparison and storage
-		// of previous pins.
-		pinnedServerPairs := make([]string, 0, len(gitServerAddrs.PinnedServers))
-		for k, v := range gitServerAddrs.PinnedServers {
-			pinnedServerPairs = append(pinnedServerPairs, fmt.Sprintf("%s=%s", k, v))
-		}
-		sort.Strings(pinnedServerPairs)
-		currentPinned := strings.Join(pinnedServerPairs, ",")
-		fullSync = fullSync || currentPinned != previousPinned
-		previousPinned = currentPinned
+	return goroutine.NewPeriodicGoroutine(
+		actor.WithInternalActor(ctx),
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			gitServerAddrs := gitserver.NewGitserverAddresses(conf.Get())
+			addrs := gitServerAddrs.Addresses
+			// We turn addrs into a string here for easy comparison and storage of previous
+			// addresses since we'd need to take a copy of the slice anyway.
+			currentAddrs := strings.Join(addrs, ",")
+			fullSync := currentAddrs != previousAddrs
+			previousAddrs = currentAddrs
 
-		if err := s.syncRepoState(gitServerAddrs, batchSize, perSecond, fullSync); err != nil {
-			s.Logger.Error("Syncing repo state", log.Error(err))
-		}
+			// We turn PinnedServers into a string here for easy comparison and storage
+			// of previous pins.
+			pinnedServerPairs := make([]string, 0, len(gitServerAddrs.PinnedServers))
+			for k, v := range gitServerAddrs.PinnedServers {
+				pinnedServerPairs = append(pinnedServerPairs, fmt.Sprintf("%s=%s", k, v))
+			}
+			sort.Strings(pinnedServerPairs)
+			currentPinned := strings.Join(pinnedServerPairs, ",")
+			fullSync = fullSync || currentPinned != previousPinned
+			previousPinned = currentPinned
 
-		time.Sleep(interval)
+			if err := syncRepoState(ctx, logger, db, locker, shardID, reposDir, gitServerAddrs, batchSize, perSecond, fullSync); err != nil {
+				return errors.Wrap(err, "syncing repo state")
+			}
+
+			return nil
+		}),
+		goroutine.WithName("gitserver.repo-state-syncer"),
+		goroutine.WithDescription("syncs repo state on disk with the gitserver_repos table"),
+		goroutine.WithInterval(interval),
+	)
+}
+
+func addrForRepo(ctx context.Context, repoName api.RepoName, gitServerAddrs gitserver.GitserverAddresses) string {
+	return gitServerAddrs.AddrForRepo(ctx, filepath.Base(os.Args[0]), repoName)
+}
+
+// NewClonePipeline creates a new pipeline that clones repos asynchronously. It
+// creates a producer-consumer pipeline that handles clone requests asychronously.
+func (s *Server) NewClonePipeline(logger log.Logger, cloneQueue *common.Queue[*cloneJob]) goroutine.BackgroundRoutine {
+	return &clonePipelineRoutine{
+		tasks:  make(chan *cloneTask),
+		logger: logger,
+		s:      s,
+		queue:  cloneQueue,
 	}
 }
 
-func (s *Server) addrForRepo(repoName api.RepoName, gitServerAddrs gitserver.GitserverAddresses) string {
-	return gitServerAddrs.AddrForRepo(filepath.Base(os.Args[0]), repoName)
+type clonePipelineRoutine struct {
+	logger log.Logger
+
+	tasks chan *cloneTask
+	// TODO: Get rid of this dependency.
+	s      *Server
+	queue  *common.Queue[*cloneJob]
+	cancel context.CancelFunc
 }
 
-// StartClonePipeline clones repos asynchronously. It creates a producer-consumer
-// pipeline.
-func (s *Server) StartClonePipeline(ctx context.Context) {
-	tasks := make(chan *cloneTask)
-
-	go s.cloneJobConsumer(ctx, tasks)
-	go s.cloneJobProducer(ctx, tasks)
+func (p *clonePipelineRoutine) Start() {
+	ctx, cancel := context.WithCancel(context.Background())
+	p.cancel = cancel
+	// Start a go routine for each the producer and the consumer.
+	go p.cloneJobConsumer(ctx, p.tasks)
+	go p.cloneJobProducer(ctx, p.tasks)
 }
 
-func (s *Server) cloneJobProducer(ctx context.Context, tasks chan<- *cloneTask) {
+func (p *clonePipelineRoutine) Stop() {
+	if p.cancel != nil {
+		p.cancel()
+	}
+}
+
+func (p *clonePipelineRoutine) cloneJobProducer(ctx context.Context, tasks chan<- *cloneTask) {
 	defer close(tasks)
 
 	for {
 		// Acquire the cond mutex lock and wait for a signal if the queue is empty.
-		s.CloneQueue.Mutex.Lock()
-		if s.CloneQueue.Empty() {
-			s.CloneQueue.Cond.Wait()
+		p.queue.Mutex.Lock()
+		if p.queue.Empty() {
+			// TODO: This should only wait if ctx is not canceled.
+			p.queue.Cond.Wait()
 		}
 
 		// The queue is not empty and we have a job to process! But don't forget to unlock the cond
 		// mutex here as we don't need to hold the lock beyond this point for now.
-		s.CloneQueue.Mutex.Unlock()
+		p.queue.Mutex.Unlock()
 
 		// Keep popping from the queue until the queue is empty again, in which case we start all
 		// over again from the top.
 		for {
-			job, doneFunc := s.CloneQueue.Pop()
+			job, doneFunc := p.queue.Pop()
 			if job == nil {
 				break
 			}
@@ -589,15 +530,15 @@ func (s *Server) cloneJobProducer(ctx context.Context, tasks chan<- *cloneTask) 
 				done:     doneFunc,
 			}:
 			case <-ctx.Done():
-				s.Logger.Error("cloneJobProducer: ", log.Error(ctx.Err()))
+				p.logger.Error("cloneJobProducer", log.Error(ctx.Err()))
 				return
 			}
 		}
 	}
 }
 
-func (s *Server) cloneJobConsumer(ctx context.Context, tasks <-chan *cloneTask) {
-	logger := s.Logger.Scoped("cloneJobConsumer", "process clone jobs")
+func (p *clonePipelineRoutine) cloneJobConsumer(ctx context.Context, tasks <-chan *cloneTask) {
+	logger := p.s.Logger.Scoped("cloneJobConsumer", "process clone jobs")
 
 	for task := range tasks {
 		logger := logger.With(log.String("job.repo", string(task.repo)))
@@ -609,7 +550,7 @@ func (s *Server) cloneJobConsumer(ctx context.Context, tasks <-chan *cloneTask) 
 		default:
 		}
 
-		ctx, cancel, err := s.acquireCloneLimiter(ctx)
+		ctx, cancel, err := p.s.acquireCloneLimiter(ctx)
 		if err != nil {
 			logger.Error("acquireCloneLimiter", log.Error(err))
 			continue
@@ -618,30 +559,15 @@ func (s *Server) cloneJobConsumer(ctx context.Context, tasks <-chan *cloneTask) 
 		go func(task *cloneTask) {
 			defer cancel()
 
-			err := s.doClone(ctx, task.repo, task.dir, task.syncer, task.lock, task.remoteURL, task.options)
+			err := p.s.doClone(ctx, task.repo, task.dir, task.syncer, task.lock, task.remoteURL, task.options)
 			if err != nil {
 				logger.Error("failed to clone repo", log.Error(err))
 			}
 			// Use a different context in case we failed because the original context failed.
-			s.setLastErrorNonFatal(s.ctx, task.repo, err)
+			p.s.setLastErrorNonFatal(p.s.ctx, task.repo, err)
 			_ = task.done()
 		}(task)
 	}
-}
-
-// hostnameMatch checks whether the hostname matches the given address.
-// If we don't find an exact match, we look at the initial prefix.
-func (s *Server) hostnameMatch(addr string) bool {
-	if !strings.HasPrefix(addr, s.Hostname) {
-		return false
-	}
-	if addr == s.Hostname {
-		return true
-	}
-	// We know that s.Hostname is shorter than addr so we can safely check the next
-	// char
-	next := addr[len(s.Hostname)]
-	return next == '.' || next == ':'
 }
 
 var (
@@ -667,8 +593,19 @@ var (
 	})
 )
 
-func (s *Server) syncRepoState(gitServerAddrs gitserver.GitserverAddresses, batchSize, perSecond int, fullSync bool) error {
-	s.Logger.Debug("starting syncRepoState", log.Bool("fullSync", fullSync))
+func syncRepoState(
+	ctx context.Context,
+	logger log.Logger,
+	db database.DB,
+	locker RepositoryLocker,
+	shardID string,
+	reposDir string,
+	gitServerAddrs gitserver.GitserverAddresses,
+	batchSize int,
+	perSecond int,
+	fullSync bool,
+) error {
+	logger.Debug("starting syncRepoState", log.Bool("fullSync", fullSync))
 	addrs := gitServerAddrs.Addresses
 
 	// When fullSync is true we'll scan all repos in the database and ensure we set
@@ -681,17 +618,14 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitserverAddresses, batc
 	// Sanity check our host exists in addrs before starting any work
 	var found bool
 	for _, a := range addrs {
-		if s.hostnameMatch(a) {
+		if hostnameMatch(shardID, a) {
 			found = true
 			break
 		}
 	}
 	if !found {
-		return errors.Errorf("gitserver hostname, %q, not found in list", s.Hostname)
+		return errors.Errorf("gitserver hostname, %q, not found in list", shardID)
 	}
-
-	ctx := s.ctx
-	store := s.DB.GitserverRepos()
 
 	// The rate limit should be enforced across all instances
 	perSecond = perSecond / len(addrs)
@@ -718,13 +652,13 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitserverAddresses, batc
 		}()
 		err := limiter.WaitN(ctx, len(batch))
 		if err != nil {
-			s.Logger.Error("Waiting for rate limiter", log.Error(err))
+			logger.Error("Waiting for rate limiter", log.Error(err))
 			return
 		}
 
-		if err := store.Update(ctx, batch...); err != nil {
+		if err := db.GitserverRepos().Update(ctx, batch...); err != nil {
 			repoStateUpsertCounter.WithLabelValues("false").Add(float64(len(batch)))
-			s.Logger.Error("Updating GitserverRepos", log.Error(err))
+			logger.Error("Updating GitserverRepos", log.Error(err))
 			return
 		}
 		repoStateUpsertCounter.WithLabelValues("true").Add(float64(len(batch)))
@@ -740,14 +674,12 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitserverAddresses, batc
 
 	options := database.IterateRepoGitserverStatusOptions{
 		// We also want to include deleted repos as they may still be cloned on disk
-		IncludeDeleted: true,
-		BatchSize:      iteratePageSize,
-	}
-	if !fullSync {
-		options.OnlyWithoutShard = true
+		IncludeDeleted:   true,
+		BatchSize:        iteratePageSize,
+		OnlyWithoutShard: !fullSync,
 	}
 	for {
-		repos, nextRepo, err := store.IterateRepoGitserverStatus(ctx, options)
+		repos, nextRepo, err := db.GitserverRepos().IterateRepoGitserverStatus(ctx, options)
 		if err != nil {
 			return err
 		}
@@ -760,20 +692,20 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitserverAddresses, batc
 			repo.Name = api.UndeletedRepoName(repo.Name)
 
 			// Ensure we're only dealing with repos we are responsible for.
-			addr := s.addrForRepo(repo.Name, gitServerAddrs)
-			if !s.hostnameMatch(addr) {
+			addr := addrForRepo(ctx, repo.Name, gitServerAddrs)
+			if !hostnameMatch(shardID, addr) {
 				repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 				continue
 			}
 			repoSyncStateCounter.WithLabelValues("this_shard").Inc()
 
-			dir := s.dir(repo.Name)
+			dir := repoDirFromName(reposDir, repo.Name)
 			cloned := repoCloned(dir)
-			_, cloning := s.locker.Status(dir)
+			_, cloning := locker.Status(dir)
 
 			var shouldUpdate bool
-			if repo.ShardID != s.Hostname {
-				repo.ShardID = s.Hostname
+			if repo.ShardID != shardID {
+				repo.ShardID = shardID
 				shouldUpdate = true
 			}
 			cloneStatus := cloneStatus(cloned, cloning)
@@ -854,10 +786,6 @@ func (s *Server) serverContext() (context.Context, context.CancelFunc) {
 }
 
 func (s *Server) getRemoteURL(ctx context.Context, name api.RepoName) (*vcs.URL, error) {
-	if s.GetRemoteURLFunc == nil {
-		return nil, errors.New("gitserver GetRemoteURLFunc is unset")
-	}
-
 	remoteURL, err := s.GetRemoteURLFunc(ctx, name)
 	if err != nil {
 		return nil, errors.Wrap(err, "GetRemoteURLFunc")
@@ -880,38 +808,29 @@ func (s *Server) acquireCloneableLimiter(ctx context.Context) (context.Context, 
 	return s.cloneableLimiter.Acquire(ctx)
 }
 
-// tempDir is a wrapper around os.MkdirTemp, but using the server's
-// temporary directory filepath.Join(s.ReposDir, tempDirName).
-//
-// This directory is cleaned up by gitserver and will be ignored by repository
-// listing operations.
-func (s *Server) tempDir(prefix string) (name string, err error) {
-	return tempDir(s.ReposDir, prefix)
-}
-
 // tempDir is a wrapper around os.MkdirTemp, but using the given reposDir
 // temporary directory filepath.Join(s.ReposDir, tempDirName).
 //
 // This directory is cleaned up by gitserver and will be ignored by repository
 // listing operations.
 func tempDir(reposDir, prefix string) (name string, err error) {
-	dir := filepath.Join(reposDir, tempDirName)
-
-	// Create tmpdir directory if doesn't exist yet.
-	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+	// TODO: At runtime, this directory always exists. We only need to ensure
+	// the directory exists here because tests use this function without creating
+	// the directory first. Ideally, we can remove this later.
+	tmp := filepath.Join(reposDir, TempDirName)
+	if err := os.MkdirAll(tmp, os.ModePerm); err != nil {
 		return "", err
 	}
-
-	return os.MkdirTemp(dir, prefix)
+	return os.MkdirTemp(tmp, prefix)
 }
 
-func (s *Server) ignorePath(path string) bool {
+func ignorePath(reposDir string, path string) bool {
 	// We ignore any path which starts with .tmp or .p4home in ReposDir
-	if filepath.Dir(path) != s.ReposDir {
+	if filepath.Dir(path) != reposDir {
 		return false
 	}
 	base := filepath.Base(path)
-	return strings.HasPrefix(base, tempDirName) || strings.HasPrefix(base, P4HomeName)
+	return strings.HasPrefix(base, TempDirName) || strings.HasPrefix(base, P4HomeName)
 }
 
 func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
@@ -925,8 +844,7 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "no Repo given", http.StatusBadRequest)
 		return
 	}
-	repo := api.RepoName(req.Repo)
-	resp, err := s.IsRepoCloneable(r.Context(), repo)
+	resp, err := s.isRepoCloneable(r.Context(), req.Repo)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -938,7 +856,7 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) IsRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error) {
+func (s *Server) isRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error) {
 	var syncer VCSSyncer
 	// We use an internal actor here as the repo may be private. It is safe since all
 	// we return is a bool indicating whether the repo is cloneable or not. Perhaps
@@ -961,9 +879,9 @@ func (s *Server) IsRepoCloneable(ctx context.Context, repo api.RepoName) (protoc
 	}
 
 	resp := protocol.IsRepoCloneableResponse{
-		Cloned: repoCloned(s.dir(repo)),
+		Cloned: repoCloned(repoDirFromName(s.ReposDir, repo)),
 	}
-	if err := syncer.IsCloneable(ctx, remoteURL); err == nil {
+	if err := syncer.IsCloneable(ctx, repo, remoteURL); err == nil {
 		resp.Cloneable = true
 	} else {
 		resp.Reason = err.Error()
@@ -995,7 +913,7 @@ func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdate
 	logger := s.Logger.Scoped("handleRepoUpdate", "synchronous http handler for repo updates")
 	var resp protocol.RepoUpdateResponse
 	req.Repo = protocol.NormalizeRepo(req.Repo)
-	dir := s.dir(req.Repo)
+	dir := repoDirFromName(s.ReposDir, req.Repo)
 
 	// despite the existence of a context on the request, we don't want to
 	// cancel the git commands partway through if the request terminates.
@@ -1004,13 +922,7 @@ func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdate
 	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 	defer cancel2()
 	if !repoCloned(dir) && !s.skipCloneForTests {
-		// We do not need to check if req.CloneFromShard is non-zero here since that has no effect on
-		// the code path at this point. Since the repo is already not cloned at this point, either
-		// this request was received for a repo migration or a regular clone - for both of which we
-		// want to go ahead and clone the repo. The responsibility of figuring out where to clone
-		// the repo from (upstream URL of the external service or the gitserver instance) lies with
-		// the implementation details of cloneRepo.
-		_, err := s.cloneRepo(ctx, req.Repo, &cloneOptions{Block: true, CloneFromShard: req.CloneFromShard})
+		_, err := s.CloneRepo(ctx, req.Repo, CloneOptions{Block: true})
 		if err != nil {
 			logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
 			resp.Error = err.Error()
@@ -1068,7 +980,7 @@ func (s *Server) handleRepoClone(w http.ResponseWriter, r *http.Request) {
 	var resp protocol.RepoCloneResponse
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 
-	_, err := s.cloneRepo(context.Background(), req.Repo, &cloneOptions{Block: false})
+	_, err := s.CloneRepo(context.Background(), req.Repo, CloneOptions{Block: false})
 	if err != nil {
 		logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
 		resp.Error = err.Error()
@@ -1140,8 +1052,8 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	logger := s.Logger.Scoped("handleSearch", "http handler for search")
-	tr, ctx := trace.New(r.Context(), "search", "")
-	defer tr.Finish()
+	tr, ctx := trace.New(r.Context(), "handleSearch")
+	defer tr.End()
 
 	// Decode the request
 	protocol.RegisterGob()
@@ -1218,14 +1130,14 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	matchesBuf.Flush()
 }
 
-func (s *Server) searchWithObservability(ctx context.Context, tr *trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
+func (s *Server) searchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
 	searchStart := time.Now()
 
 	searchRunning.Inc()
 	defer searchRunning.Dec()
 
 	tr.SetAttributes(
-		attribute.String("repo", string(args.Repo)),
+		args.Repo.Attr(),
 		attribute.Bool("include_diff", args.IncludeDiff),
 		attribute.String("query", args.Query.String()),
 		attribute.Int("limit", args.Limit),
@@ -1286,46 +1198,19 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMat
 		args.Limit = math.MaxInt32
 	}
 
-	dir := s.dir(args.Repo)
+	// We used to have an `ensureRevision`/`CloneRepo` calls here that were
+	// obsolete, because a search for an unknown revision of the repo (of an
+	// uncloned repo) won't make it to gitserver and fail with an ErrNoResolvedRepos
+	// and a related search alert before calling the gitserver.
+	//
+	// However, to protect for a weird case of getting an uncloned repo here (e.g.
+	// via a direct API call), we leave a `repoCloned` check and return an error if
+	// the repo is not cloned.
+	dir := repoDirFromName(s.ReposDir, args.Repo)
 	if !repoCloned(dir) {
-		if conf.Get().DisableAutoGitUpdates {
-			s.Logger.Debug("not cloning on demand as DisableAutoGitUpdates is set")
-			return false, &gitdomain.RepoNotExistError{
-				Repo: args.Repo,
-			}
-		}
-
-		cloneProgress, cloneInProgress := s.locker.Status(dir)
-		if cloneInProgress {
-			return false, &gitdomain.RepoNotExistError{
-				Repo:            args.Repo,
-				CloneInProgress: true,
-				CloneProgress:   cloneProgress,
-			}
-		}
-
-		cloneProgress, err := s.cloneRepo(ctx, args.Repo, nil)
-		if err != nil {
-			s.Logger.Debug("error starting repo clone", log.String("repo", string(args.Repo)), log.Error(err))
-			return false, &gitdomain.RepoNotExistError{
-				Repo:            args.Repo,
-				CloneInProgress: false,
-			}
-		}
-
+		s.Logger.Debug("attempted to search for a not cloned repo")
 		return false, &gitdomain.RepoNotExistError{
-			Repo:            args.Repo,
-			CloneInProgress: true,
-			CloneProgress:   cloneProgress,
-		}
-	}
-
-	for _, rev := range args.Revisions {
-		// TODO add result to trace
-		if rev.RevSpec != "" {
-			_ = s.ensureRevision(ctx, args.Repo, rev.RevSpec, dir)
-		} else if rev.RefGlob != "" {
-			_ = s.ensureRevision(ctx, args.Repo, rev.RefGlob, dir)
+			Repo: args.Repo,
 		}
 	}
 
@@ -1401,7 +1286,7 @@ func (s *Server) performGitLogCommand(ctx context.Context, repoCommit api.RepoCo
 		}})
 	}()
 
-	dir := s.dir(repoCommit.Repo)
+	dir := repoDirFromName(s.ReposDir, repoCommit.Repo)
 	if !repoCloned(dir) {
 		return "", false, nil
 	}
@@ -1414,7 +1299,7 @@ func (s *Server) performGitLogCommand(ctx context.Context, repoCommit api.RepoCo
 		return "", true, errors.New("commit ID starting with - is not allowed")
 	}
 
-	cmd := s.RecordingCommandFactory.Command(ctx, s.Logger, "git", "log", "-n", "1", "--name-only", format, commitId)
+	cmd := s.RecordingCommandFactory.Command(ctx, s.Logger, string(repoCommit.Repo), "git", "log", "-n", "1", "--name-only", format, commitId)
 	dir.Set(cmd.Unwrap())
 	cmd.Unwrap().Stdout = &buf
 
@@ -1589,7 +1474,11 @@ type execStatus struct {
 func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.ExecRequest, userAgent string, w io.Writer) (execStatus, error) {
 	// 🚨 SECURITY: Ensure that only commands in the allowed list are executed.
 	// See https://github.com/sourcegraph/security-issues/issues/213.
-	if !gitdomain.IsAllowedGitCmd(logger, req.Args) {
+
+	repoPath := string(protocol.NormalizeRepo(req.Repo))
+	repoDir := filepath.Join(s.ReposDir, filepath.FromSlash(repoPath))
+
+	if !gitdomain.IsAllowedGitCmd(logger, req.Args, repoDir) {
 		blockedCommandExecutedCounter.Inc()
 		return execStatus{}, ErrInvalidCommand
 	}
@@ -1609,6 +1498,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	ensureRevisionStatus := "noop"
 
 	req.Repo = protocol.NormalizeRepo(req.Repo)
+	repoName := req.Repo
 
 	// Instrumentation
 	{
@@ -1618,8 +1508,8 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 		}
 		args := strings.Join(req.Args, " ")
 
-		var tr *trace.Trace
-		tr, ctx = trace.New(ctx, "exec."+cmd, string(req.Repo))
+		var tr trace.Trace
+		tr, ctx = trace.New(ctx, "exec."+cmd, repoName.Attr())
 		tr.SetAttributes(
 			attribute.String("args", args),
 			attribute.String("ensure_revision", req.EnsureRevision),
@@ -1636,7 +1526,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 				attribute.String("ensure_revision_status", ensureRevisionStatus),
 			)
 			tr.SetError(execErr)
-			tr.Finish()
+			tr.End()
 
 			duration := time.Since(start)
 			execRunning.WithLabelValues(cmd).Dec()
@@ -1655,7 +1545,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 				act := actor.FromContext(ctx)
 				ev := honey.NewEvent("gitserver-exec")
 				ev.SetSampleRate(honeySampleRate(cmd, act))
-				ev.AddField("repo", req.Repo)
+				ev.AddField("repo", repoName)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
 				ev.AddField("actor", act.UIDString())
@@ -1698,7 +1588,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 		}()
 	}
 
-	if notFoundPayload, cloned := s.maybeStartClone(ctx, logger, req.Repo); !cloned {
+	if notFoundPayload, cloned := s.maybeStartClone(ctx, logger, repoName); !cloned {
 		if notFoundPayload.CloneInProgress {
 			status = "clone-in-progress"
 		} else {
@@ -1708,8 +1598,8 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 		return execStatus{}, &NotFoundError{notFoundPayload}
 	}
 
-	dir := s.dir(req.Repo)
-	if s.ensureRevision(ctx, req.Repo, req.EnsureRevision, dir) {
+	dir := repoDirFromName(s.ReposDir, repoName)
+	if s.ensureRevision(ctx, repoName, req.EnsureRevision, dir) {
 		ensureRevisionStatus = "fetched"
 	}
 
@@ -1738,7 +1628,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	stderrW := &writeCounter{w: &limitWriter{W: &stderrBuf, N: 1024}}
 
 	cmdStart = time.Now()
-	cmd := s.RecordingCommandFactory.Command(ctx, s.Logger, "git", req.Args...)
+	cmd := s.RecordingCommandFactory.Command(ctx, s.Logger, string(repoName), "git", req.Args...)
 	dir.Set(cmd.Unwrap())
 	cmd.Unwrap().Stdout = stdoutW
 	cmd.Unwrap().Stderr = stderrW
@@ -1751,7 +1641,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	stderrN = stderrW.n
 
 	stderr := stderrBuf.String()
-	s.logIfCorrupt(ctx, req.Repo, dir, stderr)
+	s.logIfCorrupt(ctx, repoName, dir, stderr)
 
 	return execStatus{
 		Err:        execErr,
@@ -1797,7 +1687,7 @@ func (s *Server) execHTTP(w http.ResponseWriter, r *http.Request, req *protocol.
 			// If it's not a well-known error, send the error text
 			// and a generic error code.
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
+			_, _ = w.Write([]byte(err.Error()))
 		}
 	}
 }
@@ -1890,8 +1780,8 @@ func (s *Server) p4Exec(ctx context.Context, logger log.Logger, req *protocol.P4
 		}
 		args := strings.Join(req.Args, " ")
 
-		var tr *trace.Trace
-		tr, ctx = trace.New(ctx, "p4exec."+cmd, req.P4Port)
+		var tr trace.Trace
+		tr, ctx = trace.New(ctx, "p4exec."+cmd, attribute.String("port", req.P4Port))
 		tr.SetAttributes(attribute.String("args", args))
 		logger = logger.WithTrace(trace.Context(ctx))
 
@@ -1903,7 +1793,7 @@ func (s *Server) p4Exec(ctx context.Context, logger log.Logger, req *protocol.P4
 				attribute.Int64("stderr", stderrN),
 			)
 			tr.SetError(execErr)
-			tr.Finish()
+			tr.End()
 
 			duration := time.Since(start)
 			execRunning.WithLabelValues(cmd).Dec()
@@ -1982,9 +1872,7 @@ func (s *Server) p4Exec(ctx context.Context, logger log.Logger, req *protocol.P4
 	}
 }
 
-func (s *Server) setLastFetched(ctx context.Context, name api.RepoName) error {
-	dir := s.dir(name)
-
+func setLastFetched(ctx context.Context, db database.DB, shardID string, dir common.GitDir, name api.RepoName) error {
 	lastFetched, err := repoLastFetched(dir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get last fetched for %s", name)
@@ -1995,10 +1883,10 @@ func (s *Server) setLastFetched(ctx context.Context, name api.RepoName) error {
 		return errors.Wrapf(err, "failed to get last changed for %s", name)
 	}
 
-	return s.DB.GitserverRepos().SetLastFetched(ctx, name, database.GitserverFetchData{
+	return db.GitserverRepos().SetLastFetched(ctx, name, database.GitserverFetchData{
 		LastFetched: lastFetched,
 		LastChanged: lastChanged,
-		ShardID:     s.Hostname,
+		ShardID:     shardID,
 	})
 }
 
@@ -2014,30 +1902,8 @@ func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, er
 	}
 }
 
-func (s *Server) setLastOutput(ctx context.Context, name api.RepoName, output string) {
-	if err := s.DB.GitserverRepos().SetLastOutput(ctx, name, output); err != nil {
-		s.Logger.Warn("Setting last output in DB", log.Error(err))
-	}
-}
-
-func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus) (err error) {
-	return s.DB.GitserverRepos().SetCloneStatus(ctx, name, status, s.Hostname)
-}
-
-// setCloneStatusNonFatal is the same as setCloneStatus but only logs errors
-func (s *Server) setCloneStatusNonFatal(ctx context.Context, name api.RepoName, status types.CloneStatus) {
-	if err := s.setCloneStatus(ctx, name, status); err != nil {
-		s.Logger.Warn("Setting clone status in DB", log.Error(err))
-	}
-}
-
-// setRepoSize calculates the size of the repo and stores it in the database.
-func (s *Server) setRepoSize(ctx context.Context, name api.RepoName) error {
-	return s.DB.GitserverRepos().SetRepoSize(ctx, name, dirSize(s.dir(name).Path(".")), s.Hostname)
-}
-
 func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, dir common.GitDir, stderr string) {
-	if checkMaybeCorruptRepo(s.Logger, repo, dir, stderr) {
+	if checkMaybeCorruptRepo(s.Logger, s.RecordingCommandFactory, repo, s.ReposDir, dir, stderr) {
 		reason := stderr
 		if err := s.DB.GitserverRepos().LogCorruption(ctx, repo, reason, s.Hostname); err != nil {
 			s.Logger.Warn("failed to log repo corruption", log.String("repo", string(repo)), log.Error(err))
@@ -2072,7 +1938,7 @@ func setGitAttributes(dir common.GitDir) error {
 var testRepoCorrupter func(ctx context.Context, tmpDir common.GitDir)
 
 // cloneOptions specify optional behaviour for the cloneRepo function.
-type cloneOptions struct {
+type CloneOptions struct {
 	// Block will wait for the clone to finish before returning. If the clone
 	// fails, the error will be returned. The passed in context is
 	// respected. When not blocking the clone is done with a server background
@@ -2081,57 +1947,40 @@ type cloneOptions struct {
 
 	// Overwrite will overwrite the existing clone.
 	Overwrite bool
-
-	// CloneFromShard is the hostname of the gitserver instance which is the current owner of the
-	// repository. If this is a non-zero string, then gitserver will attempt to clone the repo from
-	// that gitserver instance instead of the upstream repo URL of the external service.
-	CloneFromShard string
 }
 
-// cloneRepo performs a clone operation for the given repository. It is
+// CloneRepo performs a clone operation for the given repository. It is
 // non-blocking by default.
-func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOptions) (cloneProgress string, err error) {
+func (s *Server) CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error) {
 	if isAlwaysCloningTest(repo) {
 		return "This will never finish cloning", nil
 	}
 
-	// We always want to store whether there was an error cloning the repo
+	dir := repoDirFromName(s.ReposDir, repo)
+
+	// PERF: Before doing the network request to check if isCloneable, lets
+	// ensure we are not already cloning.
+	if progress, cloneInProgress := s.Locker.Status(dir); cloneInProgress {
+		return progress, nil
+	}
+
+	// We always want to store whether there was an error cloning the repo, but only
+	// after we checked if a clone is already in progress, otherwise we would race with
+	// the actual running clone for the DB state of last_error.
 	defer func() {
 		// Use a different context in case we failed because the original context failed.
 		s.setLastErrorNonFatal(s.ctx, repo, err)
 	}()
-
-	dir := s.dir(repo)
-
-	// PERF: Before doing the network request to check if isCloneable, lets
-	// ensure we are not already cloning.
-	if progress, cloneInProgress := s.locker.Status(dir); cloneInProgress {
-		return progress, nil
-	}
 
 	syncer, err := s.GetVCSSyncer(ctx, repo)
 	if err != nil {
 		return "", errors.Wrap(err, "get VCS syncer")
 	}
 
-	var remoteURL *vcs.URL
-	if opts != nil && opts.CloneFromShard != "" {
-		// are we cloning from the same gitserver instance?
-		if s.hostnameMatch(strings.TrimPrefix(opts.CloneFromShard, "http://")) {
-			return "", errors.Errorf("cannot clone from the same gitserver instance")
-		}
-
-		remoteURL, err = vcs.ParseURL(opts.CloneFromShard)
-		if err != nil {
-			return "", err
-		}
-		remoteURL = remoteURL.JoinPath("git", string(repo))
-	} else {
-		// We may be attempting to clone a private repo so we need an internal actor.
-		remoteURL, err = s.getRemoteURL(actor.WithInternalActor(ctx), repo)
-		if err != nil {
-			return "", err
-		}
+	// We may be attempting to clone a private repo so we need an internal actor.
+	remoteURL, err := s.getRemoteURL(actor.WithInternalActor(ctx), repo)
+	if err != nil {
+		return "", err
 	}
 
 	// isCloneable causes a network request, so we limit the number that can
@@ -2149,7 +1998,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", err
 	}
 
-	if err := syncer.IsCloneable(ctx, remoteURL); err != nil {
+	if err := syncer.IsCloneable(ctx, repo, remoteURL); err != nil {
 		redactedErr := newURLRedactor(remoteURL).redact(err.Error())
 		return "", errors.Errorf("error cloning repo: repo %s not cloneable: %s", repo, redactedErr)
 	}
@@ -2157,10 +2006,10 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// Mark this repo as currently being cloned. We have to check again if someone else isn't already
 	// cloning since we released the lock. We released the lock since isCloneable is a potentially
 	// slow operation.
-	lock, ok := s.locker.TryAcquire(dir, "starting clone")
+	lock, ok := s.Locker.TryAcquire(dir, "starting clone")
 	if !ok {
 		// Someone else beat us to it
-		status, _ := s.locker.Status(dir)
+		status, _ := s.Locker.Status(dir)
 		return status, nil
 	}
 
@@ -2169,10 +2018,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", nil
 	}
 
-	// We clone to a temporary location first to avoid having incomplete
-	// clones in the repo tree. This also avoids leaving behind corrupt clones
-	// if the clone is interrupted.
-	if opts != nil && opts.Block {
+	if opts.Block {
 		ctx, cancel, err := s.acquireCloneLimiter(ctx)
 		if err != nil {
 			return "", err
@@ -2200,7 +2046,15 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	return "", nil
 }
 
-func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitDir, syncer VCSSyncer, lock *RepositoryLock, remoteURL *vcs.URL, opts *cloneOptions) (err error) {
+func (s *Server) doClone(
+	ctx context.Context,
+	repo api.RepoName,
+	dir common.GitDir,
+	syncer VCSSyncer,
+	lock RepositoryLock,
+	remoteURL *vcs.URL,
+	opts CloneOptions,
+) (err error) {
 	logger := s.Logger.Scoped("doClone", "").With(log.String("repo", string(repo)))
 
 	defer lock.Release()
@@ -2212,12 +2066,11 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	if err := s.rpsLimiter.Wait(ctx); err != nil {
 		return err
 	}
-	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
-	defer cancel2()
+	ctx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
+	defer cancel()
 
 	dstPath := string(dir)
-	overwrite := opts != nil && opts.Overwrite
-	if !overwrite {
+	if !opts.Overwrite {
 		// We clone to a temporary directory first, so avoid wasting resources
 		// if the directory already exists.
 		if _, err := os.Stat(dstPath); err == nil {
@@ -2229,7 +2082,10 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 		}
 	}
 
-	tmpPath, err := s.tempDir("clone-")
+	// We clone to a temporary location first to avoid having incomplete
+	// clones in the repo tree. This also avoids leaving behind corrupt clones
+	// if the clone is interrupted.
+	tmpPath, err := tempDir(s.ReposDir, "clone-")
 	if err != nil {
 		return err
 	}
@@ -2239,11 +2095,15 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 	// It may already be cloned
 	if !repoCloned(dir) {
-		s.setCloneStatusNonFatal(ctx, repo, types.CloneStatusCloning)
+		if err := s.DB.GitserverRepos().SetCloneStatus(ctx, repo, types.CloneStatusCloning, s.Hostname); err != nil {
+			s.Logger.Warn("Setting clone status in DB", log.Error(err))
+		}
 	}
 	defer func() {
 		// Use a background context to ensure we still update the DB even if we time out
-		s.setCloneStatusNonFatal(context.Background(), repo, cloneStatus(repoCloned(dir), false))
+		if err := s.DB.GitserverRepos().SetCloneStatus(context.Background(), repo, cloneStatus(repoCloned(dir), false), s.Hostname); err != nil {
+			s.Logger.Warn("Setting clone status in DB", log.Error(err))
+		}
 	}()
 
 	cmd, err := syncer.CloneCommand(ctx, remoteURL, tmpPath)
@@ -2261,50 +2121,28 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	pr, pw := io.Pipe()
 	defer pw.Close()
 
-	redactor := newURLRedactor(remoteURL)
-
 	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
 
-	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw)
-
+	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, s.Logger, repo, cmd), true, pw)
+	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
 	// best-effort update the output of the clone
-	go s.setLastOutput(context.Background(), repo, redactor.redact(string(output)))
+	if err := s.DB.GitserverRepos().SetLastOutput(context.Background(), repo, redactedOutput); err != nil {
+		s.Logger.Warn("Setting last output in DB", log.Error(err))
+	}
 
 	if err != nil {
-		return errors.Wrapf(err, "clone failed. Output: %s", redactor.redact(string(output)))
+		return errors.Wrapf(err, "clone failed. Output: %s", redactedOutput)
 	}
 
 	if testRepoCorrupter != nil {
 		testRepoCorrupter(ctx, tmp)
 	}
 
-	removeBadRefs(ctx, tmp)
-
-	if err := setHEAD(ctx, logger, s.RecordingCommandFactory, tmp, syncer, remoteURL); err != nil {
-		logger.Warn("Failed to ensure HEAD exists", log.Error(err))
-		return errors.Wrap(err, "failed to ensure HEAD exists")
-	}
-
-	if err := setRepositoryType(tmp, syncer.Type()); err != nil {
-		return errors.Wrap(err, `git config set "sourcegraph.type"`)
-	}
-
-	// Update the last-changed stamp.
-	if err := setLastChanged(logger, tmp); err != nil {
-		return errors.Wrapf(err, "failed to update last changed time")
-	}
-
-	// Set gitattributes
-	if err := setGitAttributes(tmp); err != nil {
+	if err := postRepoFetchActions(ctx, logger, s.DB, s.Hostname, s.RecordingCommandFactory, s.ReposDir, repo, tmp, remoteURL, syncer); err != nil {
 		return err
 	}
 
-	// Set gc.auto depending on gitGCMode.
-	if err := gitSetAutoGC(tmp); err != nil {
-		return err
-	}
-
-	if overwrite {
+	if opts.Overwrite {
 		// remove the current repo by putting it into our temporary directory
 		err := fileutil.RenameAndSync(dstPath, filepath.Join(filepath.Dir(tmpPath), "old"))
 		if err != nil && !os.IsNotExist(err) {
@@ -2319,22 +2157,61 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 		return err
 	}
 
+	logger.Info("repo cloned")
+	repoClonedCounter.Inc()
+
+	s.Perforce.EnqueueChangelistMappingJob(perforce.NewChangelistMappingJob(repo, dir))
+
+	return nil
+}
+
+func postRepoFetchActions(
+	ctx context.Context,
+	logger log.Logger,
+	db database.DB,
+	shardID string,
+	rcf *wrexec.RecordingCommandFactory,
+	reposDir string,
+	repo api.RepoName,
+	dir common.GitDir,
+	remoteURL *vcs.URL,
+	syncer VCSSyncer,
+) error {
+	if err := removeBadRefs(ctx, dir); err != nil {
+		logger.Warn("failed to remove bad refs", log.String("repo", string(repo)), log.Error(err))
+	}
+
+	if err := setHEAD(ctx, logger, rcf, repo, dir, syncer, remoteURL); err != nil {
+		return errors.Wrapf(err, "failed to ensure HEAD exists for repo %q", repo)
+	}
+
+	if err := setRepositoryType(rcf, reposDir, dir, syncer.Type()); err != nil {
+		return errors.Wrapf(err, "failed to set repository type for repo %q", repo)
+	}
+
+	if err := setGitAttributes(dir); err != nil {
+		return errors.Wrap(err, "setting git attributes")
+	}
+
+	if err := gitSetAutoGC(rcf, reposDir, dir); err != nil {
+		return errors.Wrap(err, "setting git gc mode")
+	}
+
+	// Update the last-changed stamp on disk.
+	if err := setLastChanged(logger, dir); err != nil {
+		return errors.Wrap(err, "failed to update last changed time")
+	}
+
 	// Successfully updated, best-effort updating of db fetch state based on
 	// disk state.
-	if err := s.setLastFetched(ctx, repo); err != nil {
+	if err := setLastFetched(ctx, db, shardID, dir, repo); err != nil {
 		logger.Warn("failed setting last fetch in DB", log.Error(err))
 	}
 
 	// Successfully updated, best-effort calculation of the repo size.
-	if err := s.setRepoSize(ctx, repo); err != nil {
-		logger.Warn("failed setting repo size", log.Error(err))
-	}
-
-	logger.Info("repo cloned")
-	repoClonedCounter.Inc()
-
-	if err == nil {
-		s.Perforce.EnqueueChangelistMappingJob(perforce.NewChangelistMappingJob(repo, dir))
+	repoSizeBytes := dirSize(dir.Path("."))
+	if err := db.GitserverRepos().SetRepoSize(ctx, repo, repoSizeBytes, shardID); err != nil {
+		logger.Warn("failed to set repo size", log.Error(err))
 	}
 
 	return nil
@@ -2342,7 +2219,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
-func readCloneProgress(db database.DB, logger log.Logger, redactor *urlRedactor, lock *RepositoryLock, pr io.Reader, repo api.RepoName) {
+func readCloneProgress(db database.DB, logger log.Logger, redactor *urlRedactor, lock RepositoryLock, pr io.Reader, repo api.RepoName) {
 	// Use a background context to ensure we still update the DB even if we
 	// time out. IE we intentionally don't take an input ctx.
 	ctx := featureflag.WithFlags(context.Background(), db.FeatureFlags())
@@ -2462,10 +2339,6 @@ func scanCRLF(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	return 0, nil, nil
 }
 
-// testGitRepoExists is a test fixture that overrides the return value for
-// GitRepoSyncer.IsCloneable when it is set.
-var testGitRepoExists func(ctx context.Context, remoteURL *vcs.URL) error
-
 var (
 	execRunning = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_gitserver_exec_running",
@@ -2553,9 +2426,8 @@ func honeySampleRate(cmd string, actor *actor.Actor) uint {
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
 func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec string) (err error) {
-	tr, ctx := trace.New(ctx, "server", "doRepoUpdate",
-		attribute.String("repo", string(repo)))
-	defer tr.FinishWithErr(&err)
+	tr, ctx := trace.New(ctx, "doRepoUpdate", repo.Attr())
+	defer tr.EndWithErr(&err)
 
 	s.repoUpdateLocksMu.Lock()
 	l, ok := s.repoUpdateLocks[repo]
@@ -2596,7 +2468,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 				// The repo update might have failed due to the repo being corrupt
 				var gitErr *common.GitCommandError
 				if errors.As(err, &gitErr) {
-					s.logIfCorrupt(ctx, repo, s.dir(repo), gitErr.Output)
+					s.logIfCorrupt(ctx, repo, repoDirFromName(s.ReposDir, repo), gitErr.Output)
 				}
 			}
 			s.setLastErrorNonFatal(s.ctx, repo, err)
@@ -2641,7 +2513,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	}
 
 	repo = protocol.NormalizeRepo(repo)
-	dir := s.dir(repo)
+	dir := repoDirFromName(s.ReposDir, repo)
 
 	remoteURL, err := s.getRemoteURL(ctx, repo)
 	if err != nil {
@@ -2657,50 +2529,24 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	// return until this fetch has completed or definitely-failed,
 	// either way they can't still be in use. we don't care exactly
 	// when the cleanup happens, just that it does.
-	defer s.cleanTmpFiles(dir)
+	defer cleanTmpFiles(s.Logger, dir)
 
-	redactor := newURLRedactor(remoteURL)
-
-	output, err := syncer.Fetch(ctx, remoteURL, dir, revspec)
-
+	output, err := syncer.Fetch(ctx, remoteURL, repo, dir, revspec)
+	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
 	// best-effort update the output of the fetch
-	go s.setLastOutput(context.Background(), repo, redactor.redact(string(output)))
+	if err := s.DB.GitserverRepos().SetLastOutput(context.Background(), repo, redactedOutput); err != nil {
+		s.Logger.Warn("Setting last output in DB", log.Error(err))
+	}
 
 	if err != nil {
 		if output != nil {
-			return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, redactor.redact(string(output)))
+			return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, redactedOutput)
 		} else {
 			return errors.Wrapf(err, "failed to fetch repo %q", repo)
 		}
 	}
 
-	removeBadRefs(ctx, dir)
-
-	if err := setHEAD(ctx, logger, s.RecordingCommandFactory, dir, syncer, remoteURL); err != nil {
-		return errors.Wrapf(err, "failed to ensure HEAD exists for repo %q", repo)
-	}
-
-	if err := setRepositoryType(dir, syncer.Type()); err != nil {
-		return errors.Wrapf(err, "failed to set repository type for repo %q", repo)
-	}
-
-	// Update the last-changed stamp on disk.
-	if err := setLastChanged(logger, dir); err != nil {
-		logger.Warn("failed to update last changed time", log.Error(err))
-	}
-
-	// Successfully updated, best-effort updating of db fetch state based on
-	// disk state.
-	if err := s.setLastFetched(ctx, repo); err != nil {
-		logger.Warn("failed to set last_fetched in DB", log.Error(err))
-	}
-
-	// Successfully updated, best-effort calculation of the repo size.
-	if err := s.setRepoSize(ctx, repo); err != nil {
-		logger.Warn("failed to set repo size", log.Error(err))
-	}
-
-	return nil
+	return postRepoFetchActions(ctx, logger, s.DB, s.Hostname, s.RecordingCommandFactory, s.ReposDir, repo, dir, remoteURL, syncer)
 }
 
 // older versions of git do not remove tags case insensitively, so we generate
@@ -2728,34 +2574,56 @@ var badRefs = syncx.OnceValue(func() []string {
 //	warning: refname 'HEAD' is ambiguous.
 //
 // Instead we just remove this ref.
-func removeBadRefs(ctx context.Context, dir common.GitDir) {
+func removeBadRefs(ctx context.Context, dir common.GitDir) (errs error) {
 	args := append([]string{"branch", "-D"}, badRefs()...)
 	cmd := exec.CommandContext(ctx, "git", args...)
 	dir.Set(cmd)
-	_ = cmd.Run()
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		// We expect to get a 1 exit code here, because ideally none of the bad refs
+		// exist, this is fine. All other exit codes or errors are not.
+		if ex, ok := err.(*exec.ExitError); !ok || ex.ExitCode() != 1 {
+			errs = errors.Append(errs, errors.Wrap(err, string(out)))
+		}
+	}
 
 	args = append([]string{"tag", "-d"}, badRefs()...)
 	cmd = exec.CommandContext(ctx, "git", args...)
 	dir.Set(cmd)
-	_ = cmd.Run()
+	out, err = cmd.CombinedOutput()
+	if err != nil {
+		// We expect to get a 1 exit code here, because ideally none of the bad refs
+		// exist, this is fine. All other exit codes or errors are not.
+		if ex, ok := err.(*exec.ExitError); !ok || ex.ExitCode() != 1 {
+			errs = errors.Append(errs, errors.Wrap(err, string(out)))
+		}
+	}
+
+	return errs
 }
 
 // ensureHEAD verifies that there is a HEAD file within the repo, and that it
 // is of non-zero length. If either condition is met, we configure a
 // best-effort default.
-func ensureHEAD(dir common.GitDir) {
+func ensureHEAD(dir common.GitDir) error {
 	head, err := os.Stat(dir.Path("HEAD"))
-	if os.IsNotExist(err) || head.Size() == 0 {
-		os.WriteFile(dir.Path("HEAD"), []byte("ref: refs/heads/master"), 0o600)
+	if err != nil && !os.IsNotExist(err) {
+		return err
 	}
+	if os.IsNotExist(err) || head.Size() == 0 {
+		return os.WriteFile(dir.Path("HEAD"), []byte("ref: refs/heads/master"), 0o600)
+	}
+	return nil
 }
 
 // setHEAD configures git repo defaults (such as what HEAD is) which are
 // needed for git commands to work.
-func setHEAD(ctx context.Context, logger log.Logger, rf *wrexec.RecordingCommandFactory, dir common.GitDir, syncer VCSSyncer, remoteURL *vcs.URL) error {
+func setHEAD(ctx context.Context, logger log.Logger, rcf *wrexec.RecordingCommandFactory, repoName api.RepoName, dir common.GitDir, syncer VCSSyncer, remoteURL *vcs.URL) error {
 	// Verify that there is a HEAD file within the repo, and that it is of
 	// non-zero length.
-	ensureHEAD(dir)
+	if err := ensureHEAD(dir); err != nil {
+		logger.Error("failed to ensure HEAD exists", log.Error(err), log.String("repo", string(repoName)))
+	}
 
 	// Fallback to git's default branch name if git remote show fails.
 	headBranch := "master"
@@ -2766,7 +2634,7 @@ func setHEAD(ctx context.Context, logger log.Logger, rf *wrexec.RecordingCommand
 		return errors.Wrap(err, "get remote show command")
 	}
 	dir.Set(cmd)
-	output, err := runRemoteGitCommand(ctx, rf.Wrap(ctx, logger, cmd), true, nil)
+	output, err := runRemoteGitCommand(ctx, rcf.WrapWithRepoName(ctx, logger, repoName, cmd), true, nil)
 	if err != nil {
 		logger.Error("Failed to fetch remote info", log.Error(err), log.String("output", string(output)))
 		return errors.Wrap(err, "failed to fetch remote info")
@@ -2950,6 +2818,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 	}
 	cmd := exec.Command("git", "rev-parse", rev, "--")
 	repoDir.Set(cmd)
+	// TODO: Check here that it's actually been a rev-parse error, and not something else.
 	if err := cmd.Run(); err == nil {
 		return false
 	}
@@ -2957,6 +2826,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 	err := s.doRepoUpdate(ctx, repo, rev)
 	if err != nil {
 		s.Logger.Warn("failed to perform background repo update", log.Error(err), log.String("repo", string(repo)), log.String("rev", rev))
+		// TODO: Shouldn't we return false here?
 	}
 	return true
 }

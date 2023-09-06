@@ -1,66 +1,86 @@
 package com.sourcegraph.config;
 
+import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComponentValidator;
 import com.intellij.openapi.ui.ValidationInfo;
-import com.intellij.ui.IdeBorderFactory;
+import com.intellij.ui.*;
 import com.intellij.ui.components.ActionLink;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
+import com.intellij.ui.components.JBPasswordField;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.FormBuilder;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import com.jetbrains.jsonSchema.settings.mappings.JsonSchemaConfigurable;
 import com.sourcegraph.cody.localapp.LocalAppManager;
+import com.sourcegraph.cody.ui.PasswordFieldWithShowHideButton;
 import com.sourcegraph.common.AuthorizationUtil;
+import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.Enumeration;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Supports creating and managing a {@link JPanel} for the Settings Dialog. */
-public class SettingsComponent {
-  private final Project project;
+public class SettingsComponent implements Disposable {
   private final JPanel panel;
   private ButtonGroup instanceTypeButtonGroup;
   private JBTextField urlTextField;
-  private JBTextField enterpriseAccessTokenTextField;
-  private JBTextField dotComAccessTokenTextField;
+  private PasswordFieldWithShowHideButton enterpriseAccessTokenTextField;
+  private PasswordFieldWithShowHideButton dotComAccessTokenTextField;
   private JBLabel userDocsLinkComment;
   private JBLabel enterpriseAccessTokenLinkComment;
   private JBTextField customRequestHeadersTextField;
   private JBTextField defaultBranchNameTextField;
   private JBTextField remoteUrlReplacementsTextField;
   private JBCheckBox isUrlNotificationDismissedCheckBox;
-  private JBCheckBox areCompletionsEnabledCheckBox;
+  private JBCheckBox isCodyEnabledCheckBox;
+  private JBCheckBox isCodyAutocompleteEnabledCheckBox;
 
-  private JButton testCodyAppConnectionButton;
-  private JLabel testCodyAppConnectionLabel;
+  private ActionLink installLocalAppLink;
+  private JLabel installLocalAppComment;
+  private ActionLink runLocalAppLink;
+  private JLabel runLocalAppComment;
+  private JBCheckBox isCodyDebugEnabledCheckBox;
+  private JBCheckBox isCodyVerboseDebugEnabledCheckBox;
+  private JBCheckBox isCustomAutocompleteColorEnabledCheckBox;
+  private ColorPanel customAutocompleteColorPanel;
+
+  private final ScheduledExecutorService codyAppStateCheckerExecutorService =
+      Executors.newSingleThreadScheduledExecutor();
+  private final int colorPanelWidth = 62;
 
   public JComponent getPreferredFocusedComponent() {
     return defaultBranchNameTextField;
   }
 
   public SettingsComponent(@NotNull Project project) {
-    this.project = project;
-    JPanel userAuthenticationPanel = createAuthenticationPanel();
+    JPanel userAuthenticationPanel = createAuthenticationPanel(project);
     JPanel navigationSettingsPanel = createNavigationSettingsPanel();
     JPanel codySettingsPanel = createCodySettingsPanel();
 
     panel =
         FormBuilder.createFormBuilder()
             .addComponent(userAuthenticationPanel)
-            .addComponent(navigationSettingsPanel)
             .addComponent(codySettingsPanel)
+            .addComponent(navigationSettingsPanel)
             .addComponentFillVertically(new JPanel(), 0)
             .getPanel();
   }
@@ -104,7 +124,7 @@ public class SettingsComponent {
   }
 
   @NotNull
-  private JPanel createAuthenticationPanel() {
+  private JPanel createAuthenticationPanel(@NotNull Project project) {
     // Create URL field for the enterprise section
     JBLabel urlLabel = new JBLabel("Sourcegraph URL:");
     urlTextField = new JBTextField();
@@ -114,25 +134,30 @@ public class SettingsComponent {
     addValidation(
         urlTextField,
         () ->
-            urlTextField.getText().length() == 0
+            urlTextField.getText().isEmpty()
                 ? new ValidationInfo("Missing URL", urlTextField)
                 : (!JsonSchemaConfigurable.isValidURL(urlTextField.getText())
                     ? new ValidationInfo("This is an invalid URL", urlTextField)
                     : null));
-    addDocumentListener(urlTextField, e -> updateAccessTokenLinkCommentText());
+    addDocumentListener(
+        urlTextField, urlTextField.getDocument(), e -> updateAccessTokenLinkCommentText());
 
-    // Create access token field
+    // Create enterprise access token field
     JBLabel accessTokenLabel = new JBLabel("Access token:");
-    enterpriseAccessTokenTextField = new JBTextField();
-    enterpriseAccessTokenTextField.getEmptyText().setText("Paste your access token here");
+    enterpriseAccessTokenTextField =
+        new PasswordFieldWithShowHideButton(
+            new JBPasswordField(), () -> ConfigUtil.getEnterpriseAccessToken(project));
+    enterpriseAccessTokenTextField.setEmptyText("Paste your access token here");
     addValidation(
         enterpriseAccessTokenTextField,
-        () ->
-            !AuthorizationUtil.isValidAccessToken(enterpriseAccessTokenTextField.getText())
-                ? new ValidationInfo("Invalid access token", enterpriseAccessTokenTextField)
-                : null);
+        () -> {
+          String password = enterpriseAccessTokenTextField.getPassword();
+          return password != null && !AuthorizationUtil.isValidAccessToken(password)
+              ? new ValidationInfo("Invalid access token", enterpriseAccessTokenTextField)
+              : null;
+        });
 
-    // Create access token field
+    // Create dotcom access token field
     JBLabel dotComAccessTokenComment =
         new JBLabel(
                 "(optional) To use Cody, you will need an access token to sign in.",
@@ -140,14 +165,18 @@ public class SettingsComponent {
                 UIUtil.FontColor.BRIGHTER)
             .withBorder(JBUI.Borders.emptyLeft(10));
     JBLabel dotComAccessTokenLabel = new JBLabel("Access token:");
-    dotComAccessTokenTextField = new JBTextField();
-    dotComAccessTokenTextField.getEmptyText().setText("Paste your access token here");
+    dotComAccessTokenTextField =
+        new PasswordFieldWithShowHideButton(
+            new JBPasswordField(), () -> ConfigUtil.getDotComAccessToken(project));
+    dotComAccessTokenTextField.setEmptyText("Paste your access token here");
     addValidation(
         dotComAccessTokenTextField,
-        () ->
-            !AuthorizationUtil.isValidAccessToken(dotComAccessTokenTextField.getText())
-                ? new ValidationInfo("Invalid access token", dotComAccessTokenTextField)
-                : null);
+        () -> {
+          String password = dotComAccessTokenTextField.getPassword();
+          return password != null && !AuthorizationUtil.isValidAccessToken(password)
+              ? new ValidationInfo("Invalid access token", dotComAccessTokenTextField)
+              : null;
+        });
 
     // Create comments
     userDocsLinkComment =
@@ -168,7 +197,6 @@ public class SettingsComponent {
                     .orElse(getDefaultInstanceType()));
     boolean isLocalAppInstalled = LocalAppManager.isLocalAppInstalled();
     boolean isLocalAppAccessTokenConfigured = LocalAppManager.getLocalAppAccessToken().isPresent();
-    boolean isLocalAppRunning = LocalAppManager.isLocalAppRunning();
     boolean isLocalAppPlatformSupported = LocalAppManager.isPlatformSupported();
     JRadioButton codyAppRadioButton = new JRadioButton("Use the local Cody App");
     codyAppRadioButton.setMnemonic(KeyEvent.VK_A);
@@ -191,6 +219,7 @@ public class SettingsComponent {
     // Assemble the three main panels String platformName =
     String platformName =
         Optional.ofNullable(System.getProperty("os.name")).orElse("Your platform");
+    @SuppressWarnings("DialogTitleCapitalization")
     String codyAppCommentText =
         isLocalAppPlatformSupported
             ? "Use Sourcegraph through Cody App."
@@ -199,28 +228,26 @@ public class SettingsComponent {
     JBLabel codyAppComment =
         new JBLabel(codyAppCommentText, UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
     codyAppComment.setBorder(JBUI.Borders.emptyLeft(20));
-    boolean shouldShowInstallLocalAppLink = !isLocalAppInstalled && isLocalAppPlatformSupported;
-    JLabel installLocalAppComment =
+    installLocalAppComment =
         new JBLabel(
             "Cody App wasn't detected on this system, it seems it hasn't been installed yet.",
             UIUtil.ComponentStyle.SMALL,
             UIUtil.FontColor.BRIGHTER);
-    installLocalAppComment.setVisible(shouldShowInstallLocalAppLink);
+    installLocalAppComment.setVisible(false);
     installLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
-    ActionLink installLocalAppLink =
+    installLocalAppLink =
         simpleActionLink("Install Cody App...", LocalAppManager::browseLocalAppInstallPage);
-    installLocalAppLink.setVisible(shouldShowInstallLocalAppLink);
+    installLocalAppLink.setVisible(false);
     installLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
-    boolean shouldShowRunLocalAppLink = isLocalAppInstalled && !isLocalAppRunning;
-    ActionLink runLocalAppLink = simpleActionLink("Run Cody App...", LocalAppManager::runLocalApp);
-    runLocalAppLink.setVisible(shouldShowRunLocalAppLink);
+    runLocalAppLink = simpleActionLink("Run Cody App...", LocalAppManager::runLocalApp);
+    runLocalAppLink.setVisible(false);
     runLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
-    JLabel runLocalAppComment =
+    runLocalAppComment =
         new JBLabel(
             "Cody App seems to be installed, but it's not running, currently.",
             UIUtil.ComponentStyle.SMALL,
             UIUtil.FontColor.BRIGHTER);
-    runLocalAppComment.setVisible(shouldShowRunLocalAppLink);
+    runLocalAppComment.setVisible(false);
     runLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
     JPanel codyAppPanel =
         FormBuilder.createFormBuilder()
@@ -275,7 +302,7 @@ public class SettingsComponent {
     addValidation(
         customRequestHeadersTextField,
         () -> {
-          if (customRequestHeadersTextField.getText().length() == 0) {
+          if (customRequestHeadersTextField.getText().isEmpty()) {
             return null;
           }
           String[] pairs = customRequestHeadersTextField.getText().split(",");
@@ -306,9 +333,29 @@ public class SettingsComponent {
             .addTooltip("Whitespace around commas doesn't matter.")
             .getPanel();
     userAuthenticationPanel.setBorder(
-        IdeBorderFactory.createTitledBorder("User Authentication", true, JBUI.insetsTop(8)));
+        IdeBorderFactory.createTitledBorder("Authentication", true, JBUI.insetsTop(8)));
 
+    updateVisibilityOfHelperLinks();
+    codyAppStateCheckerExecutorService.scheduleWithFixedDelay(
+        this::updateVisibilityOfHelperLinks, 0, 1, TimeUnit.SECONDS);
     return userAuthenticationPanel;
+  }
+
+  private void updateVisibilityOfHelperLinks() {
+    boolean isLocalAppInstalled = LocalAppManager.isLocalAppInstalled();
+    boolean isLocalAppRunning = LocalAppManager.isLocalAppRunning();
+    boolean isLocalAppPlatformSupported = LocalAppManager.isPlatformSupported();
+    boolean shouldShowInstallLocalAppLink = !isLocalAppInstalled && isLocalAppPlatformSupported;
+    boolean shouldShowRunLocalAppLink = isLocalAppInstalled && !isLocalAppRunning;
+    ApplicationManager.getApplication()
+        .invokeLater(
+            () -> {
+              installLocalAppComment.setVisible(shouldShowInstallLocalAppLink);
+              installLocalAppLink.setVisible(shouldShowInstallLocalAppLink);
+              runLocalAppLink.setVisible(shouldShowRunLocalAppLink);
+              runLocalAppComment.setVisible(shouldShowRunLocalAppLink);
+            },
+            ModalityState.any());
   }
 
   @NotNull
@@ -320,22 +367,38 @@ public class SettingsComponent {
     urlTextField.setText(value != null ? value : "");
   }
 
-  @NotNull
+  /**
+   * @return Null means we don't know the token because it wasn't loaded from the secure storage. An
+   *     empty token means the user has explicitly set it to empty.
+   */
+  @Nullable
   public String getDotComAccessToken() {
-    return dotComAccessTokenTextField.getText();
+    return dotComAccessTokenTextField.getPassword();
   }
 
-  public void setDotComAccessToken(@NotNull String value) {
-    dotComAccessTokenTextField.setText(value);
+  public void resetDotComAccessToken() {
+    dotComAccessTokenTextField.resetUI();
   }
 
-  @NotNull
+  public boolean isDotComAccessTokenChanged() {
+    return dotComAccessTokenTextField.hasPasswordChanged();
+  }
+
+  /**
+   * @return Null means we don't know the token because it wasn't loaded from the secure storage. An
+   *     empty token means the user has explicitly set it to empty.
+   */
+  @Nullable
   public String getEnterpriseAccessToken() {
-    return enterpriseAccessTokenTextField.getText();
+    return enterpriseAccessTokenTextField.getPassword();
   }
 
-  public void setEnterpriseAccessToken(@NotNull String value) {
-    enterpriseAccessTokenTextField.setText(value);
+  public void resetEnterpriseAccessToken() {
+    enterpriseAccessTokenTextField.resetUI();
+  }
+
+  public boolean isEnterpriseAccessTokenChanged() {
+    return enterpriseAccessTokenTextField.hasPasswordChanged();
   }
 
   @NotNull
@@ -373,12 +436,58 @@ public class SettingsComponent {
     isUrlNotificationDismissedCheckBox.setSelected(value);
   }
 
-  public boolean areCodyCompletionsEnabled() {
-    return areCompletionsEnabledCheckBox.isSelected();
+  public boolean isCodyEnabled() {
+    return isCodyEnabledCheckBox.isSelected();
   }
 
-  public void setCodyCompletionsEnabled(boolean value) {
-    areCompletionsEnabledCheckBox.setSelected(value);
+  public void setCodyEnabled(boolean value) {
+    isCodyEnabledCheckBox.setSelected(value);
+    this.onDidCodyEnableSettingChange();
+    if (!value) {
+      setCodyAutocompleteEnabled(false);
+    }
+  }
+
+  public boolean isCodyAutocompleteEnabled() {
+    return isCodyAutocompleteEnabledCheckBox.isSelected();
+  }
+
+  public void setCodyAutocompleteEnabled(boolean value) {
+    isCodyAutocompleteEnabledCheckBox.setSelected(value);
+  }
+
+  public boolean isCodyDebugEnabled() {
+    return isCodyDebugEnabledCheckBox.isSelected();
+  }
+
+  public void setIsCodyDebugEnabled(boolean value) {
+    isCodyDebugEnabledCheckBox.setSelected(value);
+  }
+
+  public boolean isCodyVerboseDebugEnabled() {
+    return isCodyVerboseDebugEnabledCheckBox.isSelected();
+  }
+
+  public void setIsCodyVerboseDebugEnabled(boolean value) {
+    isCodyVerboseDebugEnabledCheckBox.setSelected(value);
+  }
+
+  public boolean isCustomAutocompleteColorEnabled() {
+    return isCustomAutocompleteColorEnabledCheckBox.isSelected();
+  }
+
+  public void setIsCustomAutocompleteColorEnabled(boolean value) {
+    isCustomAutocompleteColorEnabledCheckBox.setSelected(value);
+  }
+
+  public @NotNull Integer getCustomAutocompleteColorPanel() {
+    Color selectedColor = customAutocompleteColorPanel.getSelectedColor();
+    return Objects.requireNonNull(selectedColor).getRGB();
+  }
+
+  public void setCustomAutocompleteColorPanel(Integer value) {
+    Color c = new Color(value);
+    customAutocompleteColorPanel.setSelectedColor(c);
   }
 
   private void setInstanceSettingsEnabled(@NotNull InstanceType instanceType) {
@@ -413,33 +522,38 @@ public class SettingsComponent {
 
   private void addValidation(
       @NotNull JTextComponent component, @NotNull Supplier<ValidationInfo> validator) {
-    new ComponentValidator(project).withValidator(validator).installOn(component);
-    addDocumentListener(
-        component,
-        e -> ComponentValidator.getInstance(component).ifPresent(ComponentValidator::revalidate));
+    new ComponentValidator(this).withValidator(validator).installOn(component);
+    addDocumentListener(component, component.getDocument(), ComponentValidator::revalidate);
+  }
+
+  private void addValidation(
+      @NotNull PasswordFieldWithShowHideButton component,
+      @NotNull Supplier<ValidationInfo> validator) {
+    new ComponentValidator(this).withValidator(validator).installOn(component);
+    addDocumentListener(component, component.getDocument(), ComponentValidator::revalidate);
   }
 
   private void addDocumentListener(
-      @NotNull JTextComponent textComponent, @NotNull Consumer<ComponentValidator> function) {
-    textComponent
-        .getDocument()
-        .addDocumentListener(
-            new DocumentListener() {
-              @Override
-              public void insertUpdate(DocumentEvent e) {
-                ComponentValidator.getInstance(textComponent).ifPresent(function);
-              }
+      @NotNull JComponent component,
+      @NotNull Document document,
+      @NotNull Consumer<ComponentValidator> function) {
+    document.addDocumentListener(
+        new DocumentListener() {
+          @Override
+          public void insertUpdate(DocumentEvent e) {
+            ComponentValidator.getInstance(component).ifPresent(function);
+          }
 
-              @Override
-              public void removeUpdate(DocumentEvent e) {
-                ComponentValidator.getInstance(textComponent).ifPresent(function);
-              }
+          @Override
+          public void removeUpdate(DocumentEvent e) {
+            ComponentValidator.getInstance(component).ifPresent(function);
+          }
 
-              @Override
-              public void changedUpdate(DocumentEvent e) {
-                ComponentValidator.getInstance(textComponent).ifPresent(function);
-              }
-            });
+          @Override
+          public void changedUpdate(DocumentEvent e) {
+            ComponentValidator.getInstance(component).ifPresent(function);
+          }
+        });
   }
 
   private void updateAccessTokenLinkCommentText() {
@@ -477,7 +591,7 @@ public class SettingsComponent {
     addValidation(
         remoteUrlReplacementsTextField,
         () ->
-            (remoteUrlReplacementsTextField.getText().length() > 0
+            (!remoteUrlReplacementsTextField.getText().isEmpty()
                     && remoteUrlReplacementsTextField.getText().split(",").length % 2 != 0)
                 ? new ValidationInfo(
                     "Must be a comma-separated list of pairs", remoteUrlReplacementsTextField)
@@ -499,17 +613,63 @@ public class SettingsComponent {
             .addComponent(isUrlNotificationDismissedCheckBox, 10)
             .getPanel();
     navigationSettingsPanel.setBorder(
-        IdeBorderFactory.createTitledBorder("Navigation Settings", true, JBUI.insetsTop(8)));
+        IdeBorderFactory.createTitledBorder("Code Search", true, JBUI.insetsTop(8)));
     return navigationSettingsPanel;
   }
 
   @NotNull
   private JPanel createCodySettingsPanel() {
-    areCompletionsEnabledCheckBox = new JBCheckBox("Enable Cody completions");
+    //noinspection DialogTitleCapitalization
+    isCodyEnabledCheckBox = new JBCheckBox("Enable Cody");
+    isCodyAutocompleteEnabledCheckBox = new JBCheckBox("Enable Cody autocomplete");
+    isCodyDebugEnabledCheckBox = new JBCheckBox("Enable debug");
+    isCodyVerboseDebugEnabledCheckBox = new JBCheckBox("Verbose debug");
+
+    isCustomAutocompleteColorEnabledCheckBox = new JBCheckBox("Enable custom autocomplete color");
+
+    customAutocompleteColorPanel = new ColorPanel();
+    customAutocompleteColorPanel.setVisible(false);
+    isCustomAutocompleteColorEnabledCheckBox.addChangeListener(
+        e -> {
+          customAutocompleteColorPanel.setVisible(
+              isCustomAutocompleteColorEnabledCheckBox.isSelected());
+        });
+
+    JPanel customAutocompleteColorPanelWrapper = new JPanel(new FlowLayout(FlowLayout.LEFT));
+    customAutocompleteColorPanelWrapper.setBounds(
+        0, 0, colorPanelWidth, customAutocompleteColorPanel.getHeight());
+    customAutocompleteColorPanelWrapper.add(customAutocompleteColorPanel);
+
     JPanel codySettingsPanel =
-        FormBuilder.createFormBuilder().addComponent(areCompletionsEnabledCheckBox, 10).getPanel();
+        FormBuilder.createFormBuilder()
+            .addComponent(isCodyEnabledCheckBox, 10)
+            .addTooltip(
+                "Disable this to turn off all AI-based functionality of the plugin, including the Cody chat sidebar and autocomplete")
+            .addComponent(isCodyAutocompleteEnabledCheckBox, 5)
+            .addComponent(isCodyDebugEnabledCheckBox)
+            .addTooltip("Enables debug output visible in the idea.log")
+            .addComponent(isCodyVerboseDebugEnabledCheckBox)
+            .addLabeledComponent(
+                isCustomAutocompleteColorEnabledCheckBox, customAutocompleteColorPanelWrapper)
+            .getPanel();
     codySettingsPanel.setBorder(
-        IdeBorderFactory.createTitledBorder("Cody Settings", true, JBUI.insetsTop(8)));
+        IdeBorderFactory.createTitledBorder("Cody AI", true, JBUI.insetsTop(8)));
+
+    // Disable isCodyAutocompleteEnabledCheckBox if isCodyEnabledCheckBox is not selected
+    isCodyEnabledCheckBox.addActionListener(e -> this.onDidCodyEnableSettingChange());
+    this.onDidCodyEnableSettingChange();
+
     return codySettingsPanel;
   }
+
+  private void onDidCodyEnableSettingChange() {
+    isCodyAutocompleteEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
+    isCodyDebugEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
+    isCodyVerboseDebugEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
+    isCustomAutocompleteColorEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
+    customAutocompleteColorPanel.setEnabled(isCodyEnabledCheckBox.isSelected());
+  }
+
+  @Override
+  public void dispose() {}
 }

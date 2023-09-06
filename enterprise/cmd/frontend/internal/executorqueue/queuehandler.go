@@ -13,10 +13,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/batches"
 	codeintelqueue "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/codeintel"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/executor/store"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -40,7 +40,7 @@ func newExecutorQueuesHandler(
 	// queue names in ./metrics/queue_allocation.go, and register a metrics exporter
 	// in the worker.
 	//
-	// Note: In order register a new queue type please change the validate() check code in enterprise/cmd/executor/config.go
+	// Note: In order register a new queue type please change the validate() check code in cmd/executor/config.go
 	codeIntelQueueHandler := codeintelqueue.QueueHandler(observationCtx, db, accessToken)
 	batchesQueueHandler := batches.QueueHandler(observationCtx, db, accessToken)
 

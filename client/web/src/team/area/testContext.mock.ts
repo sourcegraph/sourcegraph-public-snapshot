@@ -1,6 +1,6 @@
 import { mockAuthenticatedUser } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 
-import { TeamAreaRouteContext } from './TeamArea'
+import type { TeamAreaRouteContext } from './TeamArea'
 
 export const testContext: TeamAreaRouteContext = {
     authenticatedUser: mockAuthenticatedUser,

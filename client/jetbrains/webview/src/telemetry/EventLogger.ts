@@ -3,9 +3,9 @@ import { bufferTime, catchError, concatMap } from 'rxjs/operators'
 
 import { gql } from '@sourcegraph/http-client'
 import { EventSource } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { Event, LogEventsResult, LogEventsVariables } from '../graphql-operations'
+import type { Event, LogEventsResult, LogEventsVariables } from '../graphql-operations'
 import { requestGraphQL } from '../search/lib/requestGraphQl'
 
 // Log events in batches.
@@ -94,8 +94,8 @@ export class EventLogger implements TelemetryService {
     ): void {
         this.tracker(
             eventName,
-            { ...eventProperties, ...this.editorInfo, ...this.extensionDetails },
-            { ...publicArgument, ...this.editorInfo, ...this.extensionDetails },
+            { ...eventProperties, ...this.editorInfo, extensionDetails: this.extensionDetails },
+            { ...publicArgument, ...this.editorInfo, extensionDetails: this.extensionDetails },
             uri
         )
     }

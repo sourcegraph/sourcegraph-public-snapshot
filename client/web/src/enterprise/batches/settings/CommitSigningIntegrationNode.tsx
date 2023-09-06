@@ -8,7 +8,7 @@ import { AnchorLink, Button, ButtonLink, H3, Icon, Link, Text } from '@sourcegra
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { AppLogo } from '../../../components/gitHubApps/AppLogo'
 import { RemoveGitHubAppModal } from '../../../components/gitHubApps/RemoveGitHubAppModal'
-import { BatchChangesCodeHostFields } from '../../../graphql-operations'
+import type { BatchChangesCodeHostFields } from '../../../graphql-operations'
 
 import styles from './CommitSigningIntegrationNode.module.scss'
 

@@ -3,7 +3,7 @@ import fs from 'fs'
 import path from 'path'
 
 import signale from 'signale'
-import { StatsCompilation } from 'webpack'
+import type { StatsCompilation } from 'webpack'
 
 import { ROOT_PATH } from '@sourcegraph/build-config'
 

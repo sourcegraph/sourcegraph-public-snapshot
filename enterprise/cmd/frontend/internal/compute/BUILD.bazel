@@ -9,7 +9,7 @@ go_library(
         "//cmd/frontend/enterprise",
         "//enterprise/cmd/frontend/internal/compute/resolvers",
         "//enterprise/cmd/frontend/internal/compute/streaming",
-        "//enterprise/internal/codeintel",
+        "//internal/codeintel",
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/observation",

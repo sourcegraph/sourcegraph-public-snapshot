@@ -6,25 +6,25 @@ import {
     mdiAccountEdit,
     mdiCheckboxBlankCircle,
     mdiChevronDown,
-    mdiChevronUp,
+    mdiChevronRight,
 } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
+import type { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { Button, Link, Alert, Icon, Tabs, TabList, TabPanels, TabPanel, Tab, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { InputTooltip } from '../../../../components/InputTooltip'
-import { ChangesetState, VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
+import { ChangesetState, type VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { PersonLink } from '../../../../person/PersonLink'
 import { Branch, BranchMerge } from '../../Branch'
 import { Description } from '../../Description'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
 import { ExternalChangesetTitle } from '../../detail/changesets/ExternalChangesetTitle'
-import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
+import type { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 import { checkPublishability } from '../utils'
 
-import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
+import type { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
 import { ChangesetSpecFileDiffConnection } from './ChangesetSpecFileDiffConnection'
 import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
 import { PreviewActions } from './PreviewActions'
@@ -66,7 +66,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
             </Button>
             {selectable ? (
                 <SelectBox node={node} selectable={selectable} />
@@ -171,7 +171,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                 outline={true}
                 variant="secondary"
             >
-                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />{' '}
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
             {isExpanded && (

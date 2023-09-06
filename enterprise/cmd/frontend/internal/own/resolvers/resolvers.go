@@ -10,31 +10,28 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-
-	"github.com/sourcegraph/sourcegraph/internal/rbac"
-
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
-	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/own"
+	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
+	"github.com/sourcegraph/sourcegraph/internal/rbac"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func New(db database.DB, gitserver gitserver.Client, logger log.Logger) graphqlbackend.OwnResolver {
 	return &ownResolver{
-		db:           edb.NewEnterpriseDB(db),
+		db:           db,
 		gitserver:    gitserver,
 		ownServiceFn: func() own.Service { return own.NewService(gitserver, db) },
 		logger:       logger,
@@ -43,7 +40,7 @@ func New(db database.DB, gitserver gitserver.Client, logger log.Logger) graphqlb
 
 func NewWithService(db database.DB, gitserver gitserver.Client, ownService own.Service, logger log.Logger) graphqlbackend.OwnResolver {
 	return &ownResolver{
-		db:           edb.NewEnterpriseDB(db),
+		db:           db,
 		gitserver:    gitserver,
 		ownServiceFn: func() own.Service { return ownService },
 		logger:       logger,
@@ -63,7 +60,7 @@ var (
 )
 
 type ownResolver struct {
-	db           edb.EnterpriseDB
+	db           database.DB
 	gitserver    gitserver.Client
 	ownServiceFn func() own.Service
 	logger       log.Logger
@@ -124,15 +121,17 @@ func (r *ownResolver) GitBlobOwnership(
 	blob *graphqlbackend.GitTreeEntryResolver,
 	args graphqlbackend.ListOwnershipArgs,
 ) (graphqlbackend.OwnershipConnectionResolver, error) {
+	if blob == nil {
+		return nil, errors.New("cannot resolve git tree")
+	}
 	var rrs []reasonAndReference
-
 	// Evaluate CODEOWNERS rules.
 	if args.IncludeReason(graphqlbackend.CodeownersFileEntry) {
-		codeowners, err := r.computeCodeowners(ctx, blob)
+		co, err := r.computeCodeowners(ctx, blob)
 		if err != nil {
 			return nil, err
 		}
-		rrs = append(rrs, codeowners...)
+		rrs = append(rrs, co...)
 	}
 
 	repoID := blob.Repository().IDInt32()
@@ -190,8 +189,10 @@ func (r *ownResolver) GitCommitOwnership(
 	commit *graphqlbackend.GitCommitResolver,
 	args graphqlbackend.ListOwnershipArgs,
 ) (graphqlbackend.OwnershipConnectionResolver, error) {
+	if commit == nil {
+		return nil, errors.New("cannot resolve git commit")
+	}
 	repoID := commit.Repository().IDInt32()
-
 	// Retrieve recent contributors signals.
 	rrs, err := computeRecentContributorSignals(ctx, r.db, repoRootPath, repoID)
 	if err != nil {
@@ -213,6 +214,9 @@ func (r *ownResolver) GitTreeOwnership(
 	tree *graphqlbackend.GitTreeEntryResolver,
 	args graphqlbackend.ListOwnershipArgs,
 ) (graphqlbackend.OwnershipConnectionResolver, error) {
+	if tree == nil {
+		return nil, errors.New("cannot resolve git tree")
+	}
 	// Retrieve recent contributors signals.
 	repoID := tree.Repository().IDInt32()
 	rrs, err := computeRecentContributorSignals(ctx, r.db, tree.Path(), repoID)
@@ -245,6 +249,9 @@ func (r *ownResolver) GitTreeOwnership(
 }
 
 func (r *ownResolver) GitTreeOwnershipStats(_ context.Context, tree *graphqlbackend.GitTreeEntryResolver) (graphqlbackend.OwnershipStatsResolver, error) {
+	if tree == nil {
+		return nil, errors.New("cannot resolve git tree")
+	}
 	return &ownStatsResolver{
 		db: r.db,
 		opts: database.TreeLocationOpts{
@@ -426,7 +433,7 @@ func (r *ownResolver) ownershipConnection(
 }
 
 type ownStatsResolver struct {
-	db           edb.EnterpriseDB
+	db           database.DB
 	opts         database.TreeLocationOpts
 	once         sync.Once
 	ownCounts    database.PathAggregateCounts
@@ -477,7 +484,7 @@ func (r *ownStatsResolver) UpdatedAt(ctx context.Context) (*gqlutil.DateTime, er
 }
 
 type ownershipConnectionResolver struct {
-	db          edb.EnterpriseDB
+	db          database.DB
 	total       int
 	totalOwners int
 	next        *string
@@ -515,7 +522,7 @@ func (r *ownershipConnectionResolver) Nodes(_ context.Context) ([]graphqlbackend
 }
 
 type ownershipResolver struct {
-	db            edb.EnterpriseDB
+	db            database.DB
 	gitserver     gitserver.Client
 	resolvedOwner codeowners.ResolvedOwner
 	path          string
@@ -523,7 +530,7 @@ type ownershipResolver struct {
 	reasons       []ownershipReason
 }
 
-func (r *ownershipResolver) Owner(ctx context.Context) (graphqlbackend.OwnerResolver, error) {
+func (r *ownershipResolver) Owner(_ context.Context) (graphqlbackend.OwnerResolver, error) {
 	return &ownerResolver{
 		db:            r.db,
 		resolvedOwner: r.resolvedOwner,
@@ -588,7 +595,7 @@ func (r *ownerResolver) ToPerson() (*graphqlbackend.PersonResolver, bool) {
 	if person.User != nil {
 		return graphqlbackend.NewPersonResolverFromUser(r.db, person.GetEmail(), person.User), true
 	}
-	includeUserInfo := true
+	const includeUserInfo = true
 	return graphqlbackend.NewPersonResolver(r.db, person.Handle, person.GetEmail(), includeUserInfo), true
 }
 

@@ -1,4 +1,5 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 go_library(
     name = "types",
@@ -8,4 +9,40 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/rbac/types",
     visibility = ["//:__subpackages__"],
+)
+
+GENERATED_FILES = [
+    "namespace.go",
+    "action.go",
+]
+
+genrule(
+    name = "generate_go",
+    srcs = [
+        "//internal/rbac:schema.yaml",
+    ],
+    outs = GENERATED_FILES,
+    # cmd assumes this order of the files
+    cmd = """
+    outs=($(OUTS))
+
+    $(location //internal/rbac/gen:type_gen) -i $< -o $${outs[0]} -lang go -kind namespace
+    $(location @go_sdk//:bin/gofmt) -s -w $${outs[0]}
+
+    $(location //internal/rbac/gen:type_gen) -i $< -o $${outs[1]} -lang go -kind action
+    $(location @go_sdk//:bin/gofmt) -s -w $${outs[1]}
+
+    """,
+    tools = [
+        "//internal/rbac/gen:type_gen",
+        "@go_sdk//:bin/gofmt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+write_generated_to_source_files(
+    name = "write_generated",
+    src = ":generate_go",
+    files = GENERATED_FILES,
+    tags = ["go_generate"],
 )

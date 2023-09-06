@@ -2,7 +2,7 @@ import * as assert from 'assert'
 
 import { createStubTextDocument } from '@sourcegraph/extension-api-stubs'
 
-import * as sourcegraph from '../api'
+import type * as sourcegraph from '../api'
 
 import { definitionQuery, referencesQuery } from './queries'
 

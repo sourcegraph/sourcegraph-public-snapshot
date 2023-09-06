@@ -4,35 +4,54 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
+import com.intellij.util.xmlb.annotations.Transient;
 import com.sourcegraph.find.Search;
+import java.awt.*;
 import java.util.Optional;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @State(
     name = "ApplicationConfig",
     storages = {@Storage("sourcegraph.xml")})
-public class CodyApplicationService
-    implements PersistentStateComponent<CodyApplicationService>, CodyService {
+public class CodyApplicationService implements PersistentStateComponent<CodyApplicationService> {
   @Nullable public String instanceType;
   @Nullable public String url;
 
+  // Remove this after 2024-08-01 when surely everyone migrated to the secure storage.
+  @Deprecated(since = "3.0.7")
   @Nullable
-  @Deprecated(since = "3.0.0-alpha.2", forRemoval = true)
-  public String accessToken; // kept for backwards compatibility
+  public String dotComAccessToken;
 
-  @Nullable public String dotComAccessToken;
-  @Nullable public String enterpriseAccessToken;
+  public boolean isDotComAccessTokenSet;
+
+  // Remove this after 2024-08-01 when surely everyone migrated to the secure storage.
+  @Deprecated(since = "3.0.7")
+  @Nullable
+  public String enterpriseAccessToken;
+
+  public boolean isEnterpriseAccessTokenSet;
   @Nullable public String customRequestHeaders;
   @Nullable public String defaultBranch;
   @Nullable public String remoteUrlReplacements;
   @Nullable public String anonymousUserId;
   public boolean isInstallEventLogged;
   public boolean isUrlNotificationDismissed;
-  @Nullable public Boolean areCodyCompletionsEnabled;
+
+  // Use isCodyAutocompleteEnabled instead. Remove this after 2024-01-01.
+  @Deprecated(since = "3.0.4")
+  @Nullable
+  public Boolean areCodyCompletionsEnabled; // kept for backwards compatibility
+
+  public boolean isCodyEnabled = true;
+  @Nullable public Boolean isCodyAutocompleteEnabled;
   public boolean isAccessTokenNotificationDismissed;
   @Nullable public Boolean authenticationFailedLastTime;
+  @Nullable public Boolean isCodyDebugEnabled;
+  @Nullable public Boolean isCodyVerboseDebugEnabled;
+  @Nullable public Boolean isCustomAutocompleteColorEnabled;
+  @Nullable public Integer customAutocompleteColor;
 
   @Nullable
   public String
@@ -55,9 +74,9 @@ public class CodyApplicationService
     return url;
   }
 
-  @Nullable
-  public String getDotComAccessToken() {
-    return dotComAccessToken;
+  @Transient
+  public void setSafeDotComAccessToken(@NotNull String accessToken) {
+    AccessTokenStorage.setApplicationDotComAccessToken(accessToken);
   }
 
   @Nullable
@@ -76,32 +95,15 @@ public class CodyApplicationService
     return remoteUrlReplacements;
   }
 
-  @Override
   @Nullable
   public Search getLastSearch() {
     // TODO
     return null;
   }
 
-  @Override
-  @Nullable
-  public String getEnterpriseAccessToken() {
-    // configuring enterpriseAccessToken overrides the deprecated accessToken field
-    String configuredEnterpriseAccessToken =
-        StringUtils.isEmpty(enterpriseAccessToken) ? accessToken : enterpriseAccessToken;
-    return configuredEnterpriseAccessToken;
-  }
-
-  @Override
-  public boolean areChatPredictionsEnabled() {
-    // TODO
-    return false;
-  }
-
-  @Override
-  public String getCodebase() {
-    // TODO
-    return null;
+  @Transient
+  public void setSafeEnterpriseAccessToken(@NotNull String accessToken) {
+    AccessTokenStorage.setApplicationEnterpriseAccessToken(accessToken);
   }
 
   @Nullable
@@ -117,12 +119,35 @@ public class CodyApplicationService
     return isUrlNotificationDismissed;
   }
 
-  public boolean areCodyCompletionsEnabled() {
-    return Optional.ofNullable(areCodyCompletionsEnabled).orElse(false);
+  public void setCodyEnabled(boolean enabled) {
+    isCodyEnabled = enabled;
+  }
+
+  public boolean isCodyAutocompleteEnabled() {
+    return Optional.ofNullable(isCodyAutocompleteEnabled) // the current key takes priority
+        .or(() -> Optional.ofNullable(areCodyCompletionsEnabled)) // fallback to the old key
+        .orElse(false);
+  }
+
+  public boolean isCodyDebugEnabled() {
+    return Optional.ofNullable(isCodyDebugEnabled).orElse(false);
+  }
+
+  public boolean isCodyVerboseDebugEnabled() {
+    return Optional.ofNullable(isCodyVerboseDebugEnabled).orElse(false);
   }
 
   public boolean isAccessTokenNotificationDismissed() {
     return isAccessTokenNotificationDismissed;
+  }
+
+  public boolean isCustomAutocompleteColorEnabled() {
+    return Optional.ofNullable(isCustomAutocompleteColorEnabled).orElse(false);
+  }
+
+  @Nullable
+  public Integer getCustomAutocompleteColor() {
+    return customAutocompleteColor;
   }
 
   @Nullable
@@ -144,17 +169,28 @@ public class CodyApplicationService
   public void loadState(@NotNull CodyApplicationService settings) {
     this.instanceType = settings.instanceType;
     this.url = settings.url;
-    this.accessToken = settings.accessToken;
     this.dotComAccessToken = settings.dotComAccessToken;
+    boolean loadedIsDotComAccessTokenSet = settings.isDotComAccessTokenSet;
+    this.isDotComAccessTokenSet =
+        loadedIsDotComAccessTokenSet || StringUtils.isNotEmpty(settings.dotComAccessToken);
     this.enterpriseAccessToken = settings.enterpriseAccessToken;
+    boolean loadedIsEnterpriseAccessTokenSet = settings.isEnterpriseAccessTokenSet;
+    this.isEnterpriseAccessTokenSet =
+        loadedIsEnterpriseAccessTokenSet || StringUtils.isNotEmpty(settings.enterpriseAccessToken);
     this.customRequestHeaders = settings.customRequestHeaders;
     this.defaultBranch = settings.defaultBranch;
     this.remoteUrlReplacements = settings.remoteUrlReplacements;
     this.anonymousUserId = settings.anonymousUserId;
     this.isUrlNotificationDismissed = settings.isUrlNotificationDismissed;
     this.areCodyCompletionsEnabled = settings.areCodyCompletionsEnabled;
+    this.isCodyEnabled = settings.isCodyEnabled;
+    this.isCodyAutocompleteEnabled = settings.isCodyAutocompleteEnabled;
     this.isAccessTokenNotificationDismissed = settings.isAccessTokenNotificationDismissed;
     this.authenticationFailedLastTime = settings.authenticationFailedLastTime;
     this.lastUpdateNotificationPluginVersion = settings.lastUpdateNotificationPluginVersion;
+    this.isCodyDebugEnabled = settings.isCodyDebugEnabled;
+    this.isCodyVerboseDebugEnabled = settings.isCodyVerboseDebugEnabled;
+    this.isCustomAutocompleteColorEnabled = settings.isCustomAutocompleteColorEnabled;
+    this.customAutocompleteColor = settings.customAutocompleteColor;
   }
 }

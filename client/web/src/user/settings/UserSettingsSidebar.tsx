@@ -1,18 +1,18 @@
-import { FC, useState, useCallback } from 'react'
+import { type FC, useState, useCallback } from 'react'
 
 import { mdiMenu, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
-import { ProductStatusBadge, Button, Link, Icon, ProductStatusType } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Button, Link, Icon, type ProductStatusType, Tooltip } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { BatchChangesProps } from '../../batches'
+import type { AuthenticatedUser } from '../../auth'
+import type { BatchChangesProps } from '../../batches'
 import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
-import { UserSettingsAreaUserFields } from '../../graphql-operations'
+import type { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
-import { NavItemDescriptor } from '../../util/contributions'
+import type { NavItemDescriptor } from '../../util/contributions'
 
-import { UserSettingsAreaRouteContext } from './UserSettingsArea'
+import type { UserSettingsAreaRouteContext } from './UserSettingsArea'
 
 import styles from './UserSettingsSidebar.module.scss'
 
@@ -92,7 +92,10 @@ export const UserSettingsSidebar: FC<UserSettingsSidebarProps> = props => {
                                     className="text-truncate text-nowrap align-items-center"
                                     onClick={collapseMobileSidebar}
                                 >
-                                    <OrgAvatar org={org.name} className="d-inline-flex mr-1" /> {org.name}
+                                    <OrgAvatar org={org.name} className="d-inline-flex mr-1" />
+                                    <Tooltip content={org.name}>
+                                        <span className="text-truncate overflow-hidden">{org.name}</span>
+                                    </Tooltip>
                                 </SidebarNavItem>
                             ))}
                             {!siteAdminViewingOtherUser &&

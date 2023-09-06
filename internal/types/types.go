@@ -84,6 +84,13 @@ type Repo struct {
 	KeyValuePairs map[string]*string `json:",omitempty"`
 }
 
+func (r *Repo) IDName() RepoIDName {
+	return RepoIDName{
+		ID:   r.ID,
+		Name: r.Name,
+	}
+}
+
 type GitHubAppDomain string
 
 func (s GitHubAppDomain) ToGraphQL() string { return strings.ToUpper(string(s)) }
@@ -577,7 +584,7 @@ func ParseCloneStatusFromGraphQL(s string) CloneStatus {
 	return ParseCloneStatus(strings.ToLower(s))
 }
 
-// GitserverRepo  represents the data gitserver knows about a repo
+// GitserverRepo represents the data gitserver knows about a repo
 type GitserverRepo struct {
 	RepoID api.RepoID
 	// Usually represented by a gitserver hostname
@@ -586,8 +593,6 @@ type GitserverRepo struct {
 	CloningProgress string
 	// The last error that occurred or empty if the last action was successful
 	LastError string
-	// the output of the most recent repo sync job
-	LastSyncOutput string
 	// The last time fetch was called.
 	LastFetched time.Time
 	// The last time a fetch updated the repository.
@@ -625,6 +630,7 @@ type ExternalService struct {
 	CloudDefault   bool       // Whether this external service is our default public service on Cloud
 	HasWebhooks    *bool      // Whether this external service has webhooks configured; calculated from Config
 	TokenExpiresAt *time.Time // Whether the token in this external services expires, nil indicates never expires.
+	CodeHostID     *int32
 }
 
 type ExternalServiceRepo struct {
@@ -852,6 +858,7 @@ type User struct {
 	BuiltinAuth           bool
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
+	CompletedPostSignup   bool
 	Searchable            bool
 	SCIMControlled        bool
 }
@@ -2055,4 +2062,17 @@ const (
 type PerforceChangelist struct {
 	CommitSHA    api.CommitID
 	ChangelistID int64
+}
+
+// CodeHost represents a signle code source, usually defined by url e.g. github.com, gitlab.com, bitbucket.sgdev.org.
+type CodeHost struct {
+	ID                          int32
+	Kind                        string
+	URL                         string
+	APIRateLimitQuota           *int32
+	APIRateLimitIntervalSeconds *int32
+	GitRateLimitQuota           *int32
+	GitRateLimitIntervalSeconds *int32
+	CreatedAt                   time.Time
+	UpdatedAt                   time.Time
 }

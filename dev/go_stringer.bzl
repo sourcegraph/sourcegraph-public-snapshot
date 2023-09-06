@@ -15,11 +15,19 @@ def go_stringer(src, typ, name, additional_args=[]):
         # result in absolute paths. To account for this, we resolve the
         # relative path returned by location to an absolute path.
         cmd = """\
-GO_REL_PATH=`dirname $(location @go_sdk//:bin/go)`
-GO_ABS_PATH=`cd $$GO_REL_PATH && pwd`
-# Set GOPATH to something to workaround https://github.com/golang/go/issues/43938
-env PATH=$$GO_ABS_PATH HOME=$(GENDIR) GOPATH=/nonexist-gopath \
-$(location @org_golang_x_tools//cmd/stringer:stringer) -output=$@ -type={typ} {args} $<; \
+GO_ABS_PATH=`cd $$(dirname $(location @go_sdk//:bin/go)) && pwd`
+GO_SDK_ABS_PATH=`dirname $$GO_ABS_PATH`
+
+env \
+    PATH=$$GO_ABS_PATH \
+    GOCACHE=$$(mktemp -d) \
+    GOROOT=$$GO_SDK_ABS_PATH \
+    $(location @org_golang_x_tools//cmd/stringer:stringer) \
+        -output=$@ \
+        -type={typ} \
+        {args} \
+        $<; \
+
 # Because stringer will add a comment on the file saying how it generated that file, we end up
 # in a delicate case, where the comment mentions the path the bazel sandbox, which varies
 # depending on your OS (like bazel-out/darwin-fastbuild or bazel-out/linux-fastbuild) which
@@ -34,6 +42,8 @@ sed -i'' -e 's=$@='`basename $@`'=' $@
         visibility = [":__pkg__", "//pkg/gen:__pkg__"],
         exec_tools = [
             "@go_sdk//:bin/go",
+            "@go_sdk//:srcs",
+            "@go_sdk//:tools",
             "@org_golang_x_tools//cmd/stringer",
         ],
     )

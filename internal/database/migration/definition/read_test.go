@@ -147,11 +147,13 @@ func TestReadDefinitions(t *testing.T) {
 
 	errConcurrentUnexpected := fmt.Sprintf("did not expect up query of migration at '%s/10002' to contain concurrent creation of an index", relativeWorkingDirectory)
 	errConcurrentExpected := fmt.Sprintf("expected up query of migration at '%s/10002' to contain concurrent creation of an index", relativeWorkingDirectory)
+	errConcurrentExtra := fmt.Sprintf(" did not expect up query of migration at '%s/10002' to contain additional statements", relativeWorkingDirectory)
 	errConcurrentDown := fmt.Sprintf("did not expect down query of migration at '%s/10002' to contain concurrent creation of an index", relativeWorkingDirectory)
 	errUnmarkedPrivilege := fmt.Sprintf("did not expect queries of migration at '%s/10001' to require elevated permissions", relativeWorkingDirectory)
 
 	t.Run("unexpected concurrent index creation", func(t *testing.T) { testReadDefinitionsError(t, "concurrent-unexpected", errConcurrentUnexpected) })
 	t.Run("missing concurrent index creation", func(t *testing.T) { testReadDefinitionsError(t, "concurrent-expected", errConcurrentExpected) })
+	t.Run("non-isolated concurrent index creation", func(t *testing.T) { testReadDefinitionsError(t, "concurrent-extra", errConcurrentExtra) })
 	t.Run("concurrent index creation down", func(t *testing.T) { testReadDefinitionsError(t, "concurrent-down", errConcurrentDown) })
 
 	t.Run("unmarked privilege", func(t *testing.T) { testReadDefinitionsError(t, "unmarked-privilege", errUnmarkedPrivilege) })

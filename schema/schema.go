@@ -626,6 +626,8 @@ type Dotcom struct {
 	AppNotifications []*AppNotifications `json:"app.notifications,omitempty"`
 	// CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
 	CodyGateway *CodyGateway `json:"codyGateway,omitempty"`
+	// MinimumExternalAccountAge description: The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com.
+	MinimumExternalAccountAge int `json:"minimumExternalAccountAge,omitempty"`
 	// SlackLicenseAnomallyWebhook description: Slack webhook for when there is an anomaly detected with license key usage.
 	SlackLicenseAnomallyWebhook string `json:"slackLicenseAnomallyWebhook,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
@@ -660,8 +662,12 @@ type Embeddings struct {
 	Enabled *bool `json:"enabled,omitempty"`
 	// Endpoint description: The endpoint under which to reach the provider. Sensible default will be used for each provider.
 	Endpoint string `json:"endpoint,omitempty"`
+	// ExcludeChunkOnError description: Whether to cancel indexing a repo if embedding a single file fails. If true, the chunk that cannot generate embeddings is not indexed and the remainder of the repository proceeds with indexing.
+	ExcludeChunkOnError *bool `json:"excludeChunkOnError,omitempty"`
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
+	// FileFilters description: Filters that allow you to specify which files in a repository should get embedded.
+	FileFilters *FileFilters `json:"fileFilters,omitempty"`
 	// Incremental description: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.
 	Incremental *bool `json:"incremental,omitempty"`
 	// MaxCodeEmbeddingsPerRepo description: The maximum number of embeddings for code files to generate per repo
@@ -979,6 +985,16 @@ type ExternalIdentity struct {
 	Type           string `json:"type"`
 }
 
+// FileFilters description: Filters that allow you to specify which files in a repository should get embedded.
+type FileFilters struct {
+	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
+	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
+	// IncludedFilePathPatterns description: A list of glob patterns that match file paths you want to include in embeddings. If specified, all files not matching these include patterns are excluded.
+	IncludedFilePathPatterns []string `json:"includedFilePathPatterns,omitempty"`
+	// MaxFileSizeBytes description: The maximum file size (in bytes) to include in embeddings. Must be between 0 and 100000 (1 MB).
+	MaxFileSizeBytes int `json:"maxFileSizeBytes,omitempty"`
+}
+
 // FusionClient description: Configuration for the experimental p4-fusion client
 type FusionClient struct {
 	// Enabled description: Enable the p4-fusion client for cloning and fetching repos
@@ -1208,6 +1224,8 @@ type GitLabAuthProvider struct {
 	DisplayPrefix *string `json:"displayPrefix,omitempty"`
 	Hidden        bool    `json:"hidden,omitempty"`
 	Order         int     `json:"order,omitempty"`
+	// SsoURL description: An alternate sign-in URL used to ease SSO sign-in flows, such as https://gitlab.com/groups/your-group/saml/sso?token=xxxxxx
+	SsoURL string `json:"ssoURL,omitempty"`
 	// TokenRefreshWindowMinutes description: Time in minutes before token expiry when we should attempt to refresh it
 	TokenRefreshWindowMinutes int    `json:"tokenRefreshWindowMinutes,omitempty"`
 	Type                      string `json:"type"`
@@ -1295,9 +1313,11 @@ type GitLabWebhook struct {
 	Secret string `json:"secret"`
 }
 
-// GitRecorder description: Record git operations that are executed on configured repositories. The following commands are not recorded: show, log, rev-parse and diff.
+// GitRecorder description: Record git operations that are executed on configured repositories.
 type GitRecorder struct {
-	// Repos description: List of repositories whose git operations should be recorded.
+	// IgnoredGitCommands description: List of git commands that should be ignored and not recorded.
+	IgnoredGitCommands []string `json:"ignoredGitCommands,omitempty"`
+	// Repos description: List of repositories whose git operations should be recorded. To record commands on all repositories, simply pass in an asterisk as the only item in the array.
 	Repos []string `json:"repos,omitempty"`
 	// Size description: Defines how many recordings to keep. Once this size is reached, the oldest entry will be removed.
 	Size int `json:"size,omitempty"`
@@ -1413,6 +1433,13 @@ type ImportChangesets struct {
 type JVMPackagesConnection struct {
 	// Maven description: Configuration for resolving from Maven repositories.
 	Maven Maven `json:"maven"`
+}
+
+// LinkStep description: Link step
+type LinkStep struct {
+	Type    any `json:"type"`
+	Value   any `json:"value"`
+	Variant any `json:"variant,omitempty"`
 }
 
 // LocalGitExternalService description: Configuration for integration local Git repositories.
@@ -1653,6 +1680,32 @@ type OnRepository struct {
 	Branches []string `json:"branches,omitempty"`
 	// Repository description: The name of the repository (as it is known to Sourcegraph).
 	Repository string `json:"repository"`
+}
+type OnboardingStep struct {
+	Action              any      `json:"action"`
+	CompleteAfterEvents []string `json:"completeAfterEvents,omitempty"`
+	// Id description: Unique step ID
+	Id   string `json:"id"`
+	Info string `json:"info,omitempty"`
+	// Label description: Label of the step shown to the user
+	Label string `json:"label"`
+	// Tooltip description: More information about this step
+	Tooltip string `json:"tooltip,omitempty"`
+}
+
+// OnboardingTask description: An onboarding task
+type OnboardingTask struct {
+	// DataAttributes description: Additional attributes to add to the task HTML element as data-* attributes
+	DataAttributes map[string]any `json:"dataAttributes,omitempty"`
+	// Steps description: Steps that need to be completed by the user
+	Steps []*OnboardingStep `json:"steps"`
+	// Title description: Title of this task
+	Title string `json:"title,omitempty"`
+}
+
+// OnboardingTourConfiguration description: Configuration for a onboarding tour.
+type OnboardingTourConfiguration struct {
+	Tasks []*OnboardingTask `json:"tasks"`
 }
 
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
@@ -1908,6 +1961,12 @@ type Responders struct {
 	Name     string `json:"name,omitempty"`
 	Type     string `json:"type,omitempty"`
 	Username string `json:"username,omitempty"`
+}
+
+// RestartStep description: Restart step
+type RestartStep struct {
+	Type  any    `json:"type"`
+	Value string `json:"value"`
 }
 
 // RubyPackagesConnection description: Configuration for a connection to Ruby packages
@@ -2259,6 +2318,8 @@ type SettingsExperimentalFeatures struct {
 	ProactiveSearchResultsAggregations *bool `json:"proactiveSearchResultsAggregations,omitempty"`
 	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
 	SearchContextsQuery *bool `json:"searchContextsQuery,omitempty"`
+	// SearchJobs description: Enables search jobs (long-running exhaustive) search feature and its UI
+	SearchJobs *bool `json:"searchJobs,omitempty"`
 	// SearchQueryInput description: Specify which version of the search query input to use
 	SearchQueryInput *string `json:"searchQueryInput,omitempty"`
 	// SearchResultsAggregations description: Display aggregations for your search results on the search screen.
@@ -2322,6 +2383,7 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "goCodeCheckerTemplates")
 	delete(m, "proactiveSearchResultsAggregations")
 	delete(m, "searchContextsQuery")
+	delete(m, "searchJobs")
 	delete(m, "searchQueryInput")
 	delete(m, "searchResultsAggregations")
 	delete(m, "showCodeMonitoringLogs")
@@ -2472,7 +2534,7 @@ type SiteConfiguration struct {
 	DisableFeedbackSurvey bool `json:"disableFeedbackSurvey,omitempty"`
 	// DisableNonCriticalTelemetry description: DEPRECATED. Has no effect.
 	DisableNonCriticalTelemetry bool `json:"disableNonCriticalTelemetry,omitempty"`
-	// DisablePublicRepoRedirects description: Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.
+	// DisablePublicRepoRedirects description: DEPRECATED! Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.
 	DisablePublicRepoRedirects bool `json:"disablePublicRepoRedirects,omitempty"`
 	// Dotcom description: Configuration options for Sourcegraph.com only.
 	Dotcom *Dotcom `json:"dotcom,omitempty"`
@@ -2490,7 +2552,7 @@ type SiteConfiguration struct {
 	Embeddings *Embeddings `json:"embeddings,omitempty"`
 	// EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
 	EncryptionKeys *EncryptionKeys `json:"encryption.keys,omitempty"`
-	// ExecutorsAccessToken description: The shared secret between Sourcegraph and executors.
+	// ExecutorsAccessToken description: The shared secret between Sourcegraph and executors. The value must contain at least 20 characters.
 	ExecutorsAccessToken string `json:"executors.accessToken,omitempty"`
 	// ExecutorsBatcheshelperImage description: The image to use for batch changes in executors. Use this value to pull from a custom image registry.
 	ExecutorsBatcheshelperImage string `json:"executors.batcheshelperImage,omitempty"`
@@ -2523,7 +2585,7 @@ type SiteConfiguration struct {
 	GitMaxCodehostRequestsPerSecond *int `json:"gitMaxCodehostRequestsPerSecond,omitempty"`
 	// GitMaxConcurrentClones description: Maximum number of git clone processes that will be run concurrently per gitserver to update repositories. Note: the global git update scheduler respects gitMaxConcurrentClones. However, we allow each gitserver to run upto gitMaxConcurrentClones to allow for urgent fetches. Urgent fetches are used when a user is browsing a PR and we do not have the commit yet.
 	GitMaxConcurrentClones int `json:"gitMaxConcurrentClones,omitempty"`
-	// GitRecorder description: Record git operations that are executed on configured repositories. The following commands are not recorded: show, log, rev-parse and diff.
+	// GitRecorder description: Record git operations that are executed on configured repositories.
 	GitRecorder *GitRecorder `json:"gitRecorder,omitempty"`
 	// GitUpdateInterval description: JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.
 	GitUpdateInterval []*UpdateIntervalRule `json:"gitUpdateInterval,omitempty"`
@@ -2623,7 +2685,7 @@ type SiteConfiguration struct {
 	RepoListUpdateInterval int `json:"repoListUpdateInterval,omitempty"`
 	// RepoPurgeWorker description: Configuration for repository purge worker.
 	RepoPurgeWorker *RepoPurgeWorker `json:"repoPurgeWorker,omitempty"`
-	// ScimAuthToken description: DISCLAIMER: UNDER DEVELOPMENT. THE ENDPOINT DOES NOT COMPLY WITH THE SCIM STANDARD YET. The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.
+	// ScimAuthToken description: The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.
 	ScimAuthToken string `json:"scim.authToken,omitempty"`
 	// ScimIdentityProvider description: Identity provider used for SCIM support.  "STANDARD" should be used unless a more specific value is available
 	ScimIdentityProvider string `json:"scim.identityProvider,omitempty"`
@@ -2908,6 +2970,12 @@ type UpdateIntervalRule struct {
 }
 type UsernameIdentity struct {
 	Type string `json:"type"`
+}
+
+// VideoStep description: Video step
+type VideoStep struct {
+	Type  any `json:"type"`
+	Value any `json:"value"`
 }
 
 // WebhookLogging description: Configuration for logging incoming webhooks.

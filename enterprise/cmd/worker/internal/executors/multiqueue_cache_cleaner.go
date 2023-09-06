@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gomodule/redigo/redis"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
@@ -53,6 +54,9 @@ func (m *multiqueueCacheCleaner) Handle(ctx context.Context) error {
 	for _, queueName := range m.queueNames {
 		all, err := m.cache.GetHashAll(queueName)
 		if err != nil {
+			if errors.Is(err, redis.ErrNil) {
+				return nil
+			}
 			return errors.Wrap(err, "multiqueue.cachecleaner")
 		}
 
@@ -91,7 +95,7 @@ func (m *multiqueueCacheCleaner) initMetrics(observationCtx *observation.Context
 		ConstLabels: constLabels,
 	}, func() float64 {
 		all, err := m.cache.GetHashAll(queue)
-		if err != nil {
+		if err != nil && !errors.Is(err, redis.ErrNil) {
 			logger.Error("Failed to get cache size", log.String("queue", queue), log.Error(err))
 			return 0
 		}

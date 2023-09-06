@@ -1,10 +1,10 @@
-import { FC, useCallback, useContext, useState } from 'react'
+import { type FC, useCallback, useContext, useState } from 'react'
 
 import classNames from 'classnames'
 
 import { Button, H1, Text, Tooltip } from '@sourcegraph/wildcard'
 
-import { FooterWidget, SetupStepsContext, StepComponentProps } from '../../../../setup-wizard/components'
+import { FooterWidget, SetupStepsContext, type StepComponentProps } from '../../../../setup-wizard/components'
 import { AppSetupProgressBar } from '../components/AppSetupProgressBar'
 
 import styles from './AppAllSetSetupStep.module.scss'
@@ -14,6 +14,7 @@ export const AppAllSetSetupStep: FC<StepComponentProps> = ({ className }) => {
     const [isProgressFinished, setProgressFinished] = useState(false)
 
     const handleOneRepositoryFinished = useCallback(() => {
+        localStorage.setItem('app.setup.finished', 'true')
         setProgressFinished(true)
     }, [])
 

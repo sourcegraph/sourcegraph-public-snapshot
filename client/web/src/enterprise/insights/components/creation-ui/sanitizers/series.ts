@@ -1,4 +1,4 @@
-import { SearchBasedInsightSeries } from '../../../core'
+import type { SearchBasedInsightSeries } from '../../../core'
 
 export function getSanitizedLine(line: SearchBasedInsightSeries): SearchBasedInsightSeries {
     return {

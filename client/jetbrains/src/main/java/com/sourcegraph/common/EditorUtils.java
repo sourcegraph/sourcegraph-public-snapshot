@@ -2,12 +2,17 @@ package com.sourcegraph.common;
 
 import com.intellij.application.options.CodeStyle;
 import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings;
+import com.sourcegraph.cody.vscode.Range;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
 public class EditorUtils {
+
+  public static final String VIM_EXIT_INSERT_MODE_ACTION = "VimInsertExitModeAction";
 
   /**
    * Returns a new String, using the given indentation settings to determine the tab size.
@@ -43,5 +48,17 @@ public class EditorUtils {
         () ->
             Optional.ofNullable(CodeStyle.getLanguageSettings(editor))
                 .orElse(CodeStyle.getDefaultSettings()));
+  }
+
+  public static @NotNull TextRange getTextRange(Document document, Range range) {
+    int start =
+        Math.min(
+            document.getLineEndOffset(range.start.line),
+            document.getLineStartOffset(range.start.line) + range.start.character);
+    int end =
+        Math.min(
+            document.getLineEndOffset(range.end.line),
+            document.getLineStartOffset(range.end.line) + range.end.character);
+    return TextRange.create(start, end);
   }
 }

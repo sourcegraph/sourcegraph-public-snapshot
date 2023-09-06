@@ -1,11 +1,13 @@
-import { HighlightedLinkProps } from '../components/fuzzyFinder/HighlightedLink'
+import type { FuzzyTabKey } from '../components/fuzzyFinder/FuzzyTabs'
+import type { HighlightedLinkProps } from '../components/fuzzyFinder/HighlightedLink'
 
-import { SearchValueRankingCache } from './SearchValueRankingCache'
+import type { SearchValueRankingCache } from './SearchValueRankingCache'
 
 export interface FuzzySearchParameters {
     query: string
     maxResults: number
     cache?: SearchValueRankingCache
+    fuzzyFinderTab?: FuzzyTabKey
 }
 
 export interface FuzzySearchResult {
@@ -48,4 +50,16 @@ export interface SearchReady {
 export abstract class FuzzySearch {
     public abstract totalFileCount: number
     public abstract search(parameters: FuzzySearchParameters): FuzzySearchResult
+}
+
+export interface FuzzySearchConstructorParameters {
+    createURL?: createUrlFunction
+    transformer?: FuzzySearchTransformer
+}
+
+export type createUrlFunction = undefined | ((value: string) => string)
+
+export interface FuzzySearchTransformer {
+    modifyQuery?: (query: string) => string
+    modifyURL?: (query: string, url: string) => string
 }

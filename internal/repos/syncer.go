@@ -9,18 +9,20 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/singleflight"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -51,13 +53,13 @@ type Syncer struct {
 // RunOptions contains options customizing Run behaviour.
 type RunOptions struct {
 	EnqueueInterval func() time.Duration // Defaults to 1 minute
-	IsCloud         bool                 // Defaults to false
+	IsDotCom        bool                 // Defaults to false
 	MinSyncInterval func() time.Duration // Defaults to 1 minute
 	DequeueInterval time.Duration        // Default to 10 seconds
 }
 
-// Run runs the Sync at the specified interval.
-func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
+// Routines returns the goroutines that run the Sync at the specified interval.
+func (s *Syncer) Routines(ctx context.Context, store Store, opts RunOptions) []goroutine.BackgroundRoutine {
 	if opts.EnqueueInterval == nil {
 		opts.EnqueueInterval = func() time.Duration { return time.Minute }
 	}
@@ -68,11 +70,11 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 		opts.DequeueInterval = 10 * time.Second
 	}
 
-	if !opts.IsCloud {
+	if !opts.IsDotCom {
 		s.initialUnmodifiedDiffFromStore(ctx, store)
 	}
 
-	worker, resetter := NewSyncWorker(ctx, observation.ContextWithLogger(s.ObsvCtx.Logger.Scoped("syncWorker", ""), s.ObsvCtx),
+	worker, resetter, syncerJanitor := NewSyncWorker(ctx, observation.ContextWithLogger(s.ObsvCtx.Logger.Scoped("syncWorker", ""), s.ObsvCtx),
 		store.Handle(),
 		&syncHandler{
 			syncer:          s,
@@ -85,23 +87,25 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 		},
 	)
 
-	go worker.Start()
-	defer worker.Stop()
-
-	go resetter.Start()
-	defer resetter.Stop()
-
-	for ctx.Err() == nil {
-		if !conf.Get().DisableAutoCodeHostSyncs {
-			err := store.EnqueueSyncJobs(ctx, opts.IsCloud)
-			if err != nil {
-				s.ObsvCtx.Logger.Error("enqueuing sync jobs", log.Error(err))
+	scheduler := goroutine.NewPeriodicGoroutine(
+		actor.WithInternalActor(ctx),
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			if conf.Get().DisableAutoCodeHostSyncs {
+				return nil
 			}
-		}
-		timeutil.SleepWithContext(ctx, opts.EnqueueInterval())
-	}
 
-	return ctx.Err()
+			if err := store.EnqueueSyncJobs(ctx, opts.IsDotCom); err != nil {
+				return errors.Wrap(err, "enqueueing sync jobs")
+			}
+
+			return nil
+		}),
+		goroutine.WithName("repo-updater.repo-sync-scheduler"),
+		goroutine.WithDescription("enqueues sync jobs for external service sync jobs"),
+		goroutine.WithIntervalFunc(opts.EnqueueInterval),
+	)
+
+	return []goroutine.BackgroundRoutine{worker, resetter, syncerJanitor, scheduler}
 }
 
 type syncHandler struct {
@@ -291,8 +295,8 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 
 	logger.Debug("SyncRepo started")
 
-	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", string(name))
-	defer tr.Finish()
+	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", name.Attr())
+	defer tr.End()
 
 	repo, err = s.Store.RepoStore().GetByName(ctx, name)
 	if err != nil && !errcode.IsNotFound(err) {
@@ -359,7 +363,7 @@ func (s *Syncer) syncRepo(
 	stored *types.Repo,
 ) (repo *types.Repo, err error) {
 	var svc *types.ExternalService
-	ctx, save := s.observeSync(ctx, "Syncer.syncRepo", string(name))
+	ctx, save := s.observeSync(ctx, "Syncer.syncRepo", name.Attr())
 	defer func() { save(svc, err) }()
 
 	svcs, err := s.Store.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{
@@ -505,7 +509,7 @@ func (s *Syncer) SyncExternalService(
 	ctx = metrics.ContextWithTask(ctx, "SyncExternalService")
 
 	var svc *types.ExternalService
-	ctx, save := s.observeSync(ctx, "Syncer.SyncExternalService", "")
+	ctx, save := s.observeSync(ctx, "Syncer.SyncExternalService")
 	defer func() { save(svc, err) }()
 
 	// We don't use tx here as the sourcing process below can be slow and we don't
@@ -525,10 +529,16 @@ func (s *Syncer) SyncExternalService(
 		now := s.Now()
 		interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, modified, err)
 
-		svc.NextSyncAt = now.Add(interval)
-		svc.LastSyncAt = now
+		nextSyncAt := now.Add(interval)
+		lastSyncAt := now
 
-		if err := s.Store.ExternalServiceStore().Upsert(ctx, svc); err != nil {
+		// We call Update here instead of Upsert, because upsert stores all fields of the external
+		// service, and syncs take a while so changes to the external service made while this sync
+		// was running would be overwritten again.
+		if err := s.Store.ExternalServiceStore().Update(ctx, nil, svc.ID, &database.ExternalServiceUpdate{
+			LastSyncAt: &lastSyncAt,
+			NextSyncAt: &nextSyncAt,
+		}); err != nil {
 			// We only want to log this error, not return it
 			logger.Error("upserting external service", log.Error(err))
 		}
@@ -876,10 +886,11 @@ func calcSyncInterval(
 
 func (s *Syncer) observeSync(
 	ctx context.Context,
-	family, title string,
+	name string,
+	attributes ...attribute.KeyValue,
 ) (context.Context, func(*types.ExternalService, error)) {
 	began := s.Now()
-	tr, ctx := trace.New(ctx, family, title)
+	tr, ctx := trace.New(ctx, name, attributes...)
 
 	return ctx, func(svc *types.ExternalService, err error) {
 		var owner string
@@ -889,22 +900,22 @@ func (s *Syncer) observeSync(
 			owner = ownerSite
 		}
 
-		syncStarted.WithLabelValues(family, owner).Inc()
+		syncStarted.WithLabelValues(name, owner).Inc()
 
 		now := s.Now()
 		took := now.Sub(began).Seconds()
 
-		lastSync.WithLabelValues(family).Set(float64(now.Unix()))
+		lastSync.WithLabelValues(name).Set(float64(now.Unix()))
 
 		success := err == nil
-		syncDuration.WithLabelValues(strconv.FormatBool(success), family).Observe(took)
+		syncDuration.WithLabelValues(strconv.FormatBool(success), name).Observe(took)
 
 		if !success {
 			tr.SetError(err)
-			syncErrors.WithLabelValues(family, owner, syncErrorReason(err)).Inc()
+			syncErrors.WithLabelValues(name, owner, syncErrorReason(err)).Inc()
 		}
 
-		tr.Finish()
+		tr.End()
 	}
 }
 

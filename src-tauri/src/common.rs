@@ -45,7 +45,8 @@ pub fn show_logs(app: &AppHandle) {
     if let Some(log_path_str) = log_dir_path.to_str() {
         let name = &app.package_info().name;
         let combined_path = format!("{}/{}.log", log_path_str, name);
-        shell::open(&app.shell_scope(), &combined_path, None).unwrap()
+        shell::open(&app.shell_scope(), &combined_path, None)
+            .unwrap_or_else(|e| eprintln!("Failed to open path: {:?}", e));
     }
 }
 

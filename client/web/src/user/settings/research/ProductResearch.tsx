@@ -2,10 +2,10 @@ import React, { useEffect } from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader, ButtonLink, Icon, Text } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import { PageTitle } from '../../../components/PageTitle'
 
 interface Props {

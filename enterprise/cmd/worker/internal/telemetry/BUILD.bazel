@@ -43,6 +43,7 @@ go_test(
         "//internal/conf/deploy",
         "//internal/database",
         "//internal/database/basestore",
+        "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/featureflag",
         "//internal/observation",

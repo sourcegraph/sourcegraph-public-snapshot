@@ -20,16 +20,16 @@ func MaybeEncrypt(ctx context.Context, key Key, data string) (_, keyIdent string
 		return data, "", nil
 	}
 
-	tr, trCtx := trace.New(ctx, "key", "Encrypt")
+	tr, trCtx := trace.New(ctx, "key.Encrypt")
 	encrypted, err := key.Encrypt(trCtx, []byte(data))
-	tr.FinishWithErr(&err)
+	tr.EndWithErr(&err)
 	if err != nil {
 		return "", "", err
 	}
 
-	tr, trCtx = trace.New(ctx, "key", "Version")
+	tr, trCtx = trace.New(ctx, "key.Version")
 	version, err := key.Version(trCtx)
-	tr.FinishWithErr(&err)
+	tr.EndWithErr(&err)
 	if err != nil {
 		return "", "", errors.Wrap(err, "failed to get encryption key version")
 	}
@@ -50,13 +50,13 @@ func MaybeDecrypt(ctx context.Context, key Key, data, keyIdent string) (string, 
 		return data, errors.Errorf("key mismatch: value is encrypted but no encryption key available in site-config")
 	}
 
-	tr, innerCtx := trace.New(ctx, "key", "Decrypt")
+	tr, innerCtx := trace.New(ctx, "key.Decrypt")
 	decrypted, err := key.Decrypt(innerCtx, []byte(data))
-	tr.FinishWithErr(&err)
+	tr.EndWithErr(&err)
 	if err != nil {
-		tr, innerCtx = trace.New(ctx, "key", "Version")
+		tr, innerCtx = trace.New(ctx, "key.Version")
 		version, versionErr := key.Version(innerCtx)
-		tr.FinishWithErr(&versionErr)
+		tr.EndWithErr(&versionErr)
 		if versionErr == nil && keyIdent != version.JSON() {
 			return "", errors.New("key mismatch: value is encrypted with an encryption key distinct from the one available in site-config")
 		}

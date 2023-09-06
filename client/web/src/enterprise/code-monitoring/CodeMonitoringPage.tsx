@@ -6,8 +6,8 @@ import { of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import {
     PageHeader,
     LoadingSpinner,
@@ -18,13 +18,14 @@ import {
     Icon,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import {
     fetchUserCodeMonitors as _fetchUserCodeMonitors,
+    fetchCodeMonitors as _fetchCodeMonitors,
     toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled,
 } from './backend'
 import { CodeMonitoringGettingStarted } from './CodeMonitoringGettingStarted'
@@ -34,6 +35,7 @@ import { CodeMonitorList } from './CodeMonitorList'
 export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings> {
     authenticatedUser: AuthenticatedUser | null
     fetchUserCodeMonitors?: typeof _fetchUserCodeMonitors
+    fetchCodeMonitors?: typeof _fetchCodeMonitors
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
     isSourcegraphApp: boolean
     // For testing purposes only
@@ -43,6 +45,7 @@ export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings> 
 export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren<CodeMonitoringPageProps>> = ({
     authenticatedUser,
     fetchUserCodeMonitors = _fetchUserCodeMonitors,
+    fetchCodeMonitors = _fetchCodeMonitors,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
     testForceTab,
     isSourcegraphApp,
@@ -199,6 +202,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                         <CodeMonitorList
                             authenticatedUser={authenticatedUser}
                             fetchUserCodeMonitors={fetchUserCodeMonitors}
+                            fetchCodeMonitors={fetchCodeMonitors}
                             toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
                         />
                     )}

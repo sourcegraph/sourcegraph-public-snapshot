@@ -9,7 +9,7 @@ func CodeIntelPolicies() *monitoring.Dashboard {
 	return &monitoring.Dashboard{
 		Name:        "codeintel-policies",
 		Title:       "Code Intelligence > Policies",
-		Description: "The service at `enterprise/internal/codeintel/policies`.",
+		Description: "The service at `internal/codeintel/policies`.",
 		Variables: []monitoring.ContainerVariable{
 			{
 				Label: "Source",

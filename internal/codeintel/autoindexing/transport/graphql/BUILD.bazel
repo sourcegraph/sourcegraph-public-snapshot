@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "graphql",
+    srcs = [
+        "iface.go",
+        "observability.go",
+        "root_resolver.go",
+        "root_resolver_configuration_inference.go",
+        "root_resolver_configuration_repository.go",
+        "root_resolver_inference.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/codeintel/autoindexing/internal/inference",
+        "//internal/codeintel/autoindexing/shared",
+        "//internal/codeintel/resolvers",
+        "//internal/codeintel/shared/resolvers",
+        "//internal/codeintel/shared/resolvers/gitresolvers",
+        "//internal/codeintel/uploads/shared",
+        "//internal/codeintel/uploads/transport/graphql",
+        "//internal/conf",
+        "//internal/metrics",
+        "//internal/observation",
+        "//lib/codeintel/autoindex/config",
+        "//lib/errors",
+        "//lib/pointers",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)

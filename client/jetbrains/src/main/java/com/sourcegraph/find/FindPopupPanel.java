@@ -82,7 +82,7 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
     }
     browserContainerForOptionalBorder.add(browserAndLoadingPanel, BorderLayout.CENTER);
 
-    HeaderPanel headerPanel = new HeaderPanel(project);
+    HeaderPanel headerPanel = new HeaderPanel();
 
     BorderLayoutPanel topPanel = new BorderLayoutPanel();
     topPanel.add(headerPanel, BorderLayout.NORTH);
@@ -105,8 +105,8 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
   private void showNoBrowserErrorNotification() {
     Notification notification =
         new Notification(
-            "Cody AI by Sourcegraph errors",
-            "Cody AI by Sourcegraph",
+            "Sourcegraph errors",
+            "Sourcegraph",
             "Your IDE doesn't support JCEF. You won't be able to use \"Find with Sourcegraph\". If you believe this is an error, please raise this at support@sourcegraph.com, specifying your OS and IDE version.",
             NotificationType.ERROR);
     AnAction copyEmailAddressAction =

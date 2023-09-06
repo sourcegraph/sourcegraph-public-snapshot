@@ -10,12 +10,12 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -70,7 +70,7 @@ func TestHandle_UnsupportedCodeHost(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	externalServices := database.NewMockExternalServiceStore()
+	externalServices := dbmocks.NewMockExternalServiceStore()
 	externalServices.GetByIDFunc.SetDefaultReturn(
 		&types.ExternalService{
 			ID:          1,
@@ -81,10 +81,10 @@ func TestHandle_UnsupportedCodeHost(t *testing.T) {
 		nil,
 	)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
-	handler := &bitbucketProjectPermissionsHandler{db: edb.NewEnterpriseDB(db)}
+	handler := &bitbucketProjectPermissionsHandler{db: db}
 	err := handler.Handle(ctx, logtest.Scoped(t), &types.BitbucketProjectPermissionJob{ExternalServiceID: 1})
 
 	require.True(t, errcode.IsNonRetryable(err))
@@ -97,7 +97,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
-	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	// create 3 users
 	users := db.Users()
@@ -284,7 +284,7 @@ func TestHandleRestricted(t *testing.T) {
 
 	ctx := context.Background()
 
-	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
@@ -398,7 +398,7 @@ func TestHandleUnrestricted(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
-	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}

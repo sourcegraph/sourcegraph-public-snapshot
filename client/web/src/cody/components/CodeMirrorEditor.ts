@@ -1,11 +1,12 @@
 import type { EditorView } from '@codemirror/view'
 
-import {
+import type {
     ActiveTextEditor,
+    ActiveTextEditorDiagnostic,
     ActiveTextEditorSelection,
     ActiveTextEditorVisibleContent,
     Editor,
-} from '@sourcegraph/cody-shared/src/editor'
+} from '@sourcegraph/cody-shared/dist/editor'
 
 export interface EditorStore {
     filename: string
@@ -113,6 +114,16 @@ export class CodeMirrorEditor implements Editor {
             }
         }
 
+        return null
+    }
+
+    public getWorkspaceRootUri(): null {
+        // Not implemented.
+        return null
+    }
+
+    public getActiveTextEditorDiagnosticsForRange(): ActiveTextEditorDiagnostic[] | null {
+        // Not implemented.
         return null
     }
 

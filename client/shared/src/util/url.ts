@@ -4,14 +4,14 @@ import {
     escapeRevspecForURL,
     findLineKeyInSearchParameters,
     formatSearchParameters,
-    LineOrPositionOrRange,
+    type LineOrPositionOrRange,
     toPositionOrRangeQueryParameter,
     toViewStateHash,
 } from '@sourcegraph/common'
-import { Position } from '@sourcegraph/extension-api-types'
+import type { Position } from '@sourcegraph/extension-api-types'
 
-import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
-import { SearchPatternType } from '../graphql-operations'
+import type { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
+import type { SearchPatternType } from '../graphql-operations'
 import { discreteValueAliases } from '../search/query/filters'
 import { findFilter, FilterKind } from '../search/query/query'
 import { appendContextFilter, omitFilter } from '../search/query/transformer'

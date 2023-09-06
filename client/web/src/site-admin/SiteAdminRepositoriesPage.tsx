@@ -4,7 +4,7 @@ import { useApolloClient } from '@apollo/client'
 import { useLocation } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, H4, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { LimitedAccessBanner } from '../components/LimitedAccessBanner'

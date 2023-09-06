@@ -1,5 +1,5 @@
 import { mdiCheck, mdiAlertCircle } from '@mdi/js'
-import { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, Story, DecoratorFn } from '@storybook/react'
 import { parseISO } from 'date-fns'
 
 import { Icon, Text } from '@sourcegraph/wildcard'

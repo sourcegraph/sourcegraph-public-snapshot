@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -7,14 +8,23 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
-        "//internal/api",
+        "//internal/api/internalapi/v1:internalapi",
         "//internal/conf/conftypes",
         "//internal/conf/deploy",
         "//internal/env",
+        "//internal/grpc/defaults",
         "//internal/httpcli",
-        "//internal/txemail/txtypes",
+        "//internal/syncx",
         "//lib/errors",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_log//:log",
     ],
+)
+
+go_test(
+    name = "internalapi_test",
+    srcs = ["client_test.go"],
+    embed = [":internalapi"],
+    deps = ["@com_github_google_go_cmp//cmp"],
 )

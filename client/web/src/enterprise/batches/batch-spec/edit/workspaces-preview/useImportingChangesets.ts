@@ -2,9 +2,9 @@ import { dataOrThrowErrors } from '@sourcegraph/http-client'
 
 import {
     useShowMorePagination,
-    UseShowMorePaginationResult,
+    type UseShowMorePaginationResult,
 } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
-import {
+import type {
     Scalars,
     PreviewBatchSpecImportingChangesetFields,
     BatchSpecImportingChangesetsResult,

@@ -1,12 +1,12 @@
 import React, { useCallback } from 'react'
 
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 
 import { H1, H2 } from '../..'
 import { BrandedStory } from '../../../stories/BrandedStory'
 import { Grid } from '../../Grid/Grid'
 
-import { Select, SelectProps } from './Select'
+import { Select, type SelectProps } from './Select'
 
 const config: Meta = {
     title: 'wildcard/Select',

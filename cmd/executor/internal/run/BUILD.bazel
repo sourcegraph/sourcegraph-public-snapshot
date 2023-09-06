@@ -1,0 +1,104 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "run",
+    srcs = [
+        "install.go",
+        "run.go",
+        "setup_ip_tables.go",
+        "setup_ip_tables_windows.go",
+        "testvm.go",
+        "util.go",
+        "validate.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/executor/internal/run",
+    visibility = ["//cmd/executor:__subpackages__"],
+    deps = [
+        "//cmd/executor/internal/apiclient",
+        "//cmd/executor/internal/apiclient/queue",
+        "//cmd/executor/internal/config",
+        "//cmd/executor/internal/ignite",
+        "//cmd/executor/internal/janitor",
+        "//cmd/executor/internal/util",
+        "//cmd/executor/internal/worker",
+        "//cmd/executor/internal/worker/cmdlogger",
+        "//cmd/executor/internal/worker/command",
+        "//cmd/executor/internal/worker/runner",
+        "//cmd/executor/internal/worker/workspace",
+        "//internal/conf/deploy",
+        "//internal/download",
+        "//internal/executor",
+        "//internal/executor/types",
+        "//internal/executor/util",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//internal/src-cli",
+        "//internal/version",
+        "//internal/workerutil",
+        "//lib/errors",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_urfave_cli_v2//:cli",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/resource",
+        "@io_k8s_utils//pointer",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:aix": [
+            "@com_github_coreos_go_iptables//iptables",
+        ],
+        "@io_bazel_rules_go//go/platform:android": [
+            "@com_github_coreos_go_iptables//iptables",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "@com_github_coreos_go_iptables//iptables",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            "@com_github_coreos_go_iptables//iptables",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            "@com_github_coreos_go_iptables//iptables",
+        ],
+        "@io_bazel_rules_go//go/platform:illumos": [
+            "@com_github_coreos_go_iptables//iptables",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "@com_github_coreos_go_iptables//iptables",
+        ],
+        "@io_bazel_rules_go//go/platform:js": [
+            "@com_github_coreos_go_iptables//iptables",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "@com_github_coreos_go_iptables//iptables",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            "@com_github_coreos_go_iptables//iptables",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            "@com_github_coreos_go_iptables//iptables",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9": [
+            "@com_github_coreos_go_iptables//iptables",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            "@com_github_coreos_go_iptables//iptables",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+go_test(
+    name = "run_test",
+    timeout = "short",
+    srcs = ["validate_test.go"],
+    embed = [":run"],
+    deps = [
+        "//cmd/executor/internal/apiclient",
+        "//cmd/executor/internal/config",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

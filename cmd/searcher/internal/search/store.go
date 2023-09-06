@@ -55,6 +55,9 @@ const maxFileSize = 2 << 20 // 2MB; match https://sourcegraph.com/search?q=repo:
 // (tar). We want to be able to support random concurrent access for reading,
 // so we store as a zip.
 type Store struct {
+	// GitserverClient is the client to interact with gitserver.
+	GitserverClient gitserver.Client
+
 	// FetchTar returns an io.ReadCloser to a tar archive of repo at commit.
 	// If the error implements "BadRequest() bool", it will be used to
 	// determine if the error is a bad request (eg invalid repo).
@@ -142,8 +145,8 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 }
 
 func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (path string, err error) {
-	tr, ctx := trace.New(ctx, "ArchiveStore", "PrepareZipPaths")
-	defer tr.FinishWithErr(&err)
+	tr, ctx := trace.New(ctx, "ArchiveStore.PrepareZipPaths")
+	defer tr.EndWithErr(&err)
 
 	var cacheHit bool
 	start := time.Now()
@@ -227,9 +230,9 @@ func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit a
 // not populate the in-memory cache. You should probably be calling
 // prepareZip.
 func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitID, filter *searchableFilter, paths []string) (rc io.ReadCloser, err error) {
-	tr, ctx := trace.New(ctx, "ArchiveStore", "fetch",
-		attribute.String("repo", string(repo)),
-		attribute.String("commit", string(commit)))
+	tr, ctx := trace.New(ctx, "ArchiveStore.fetch",
+		repo.Attr(),
+		commit.Attr())
 
 	metricFetchQueueSize.Inc()
 	ctx, releaseFetchLimiter, err := s.fetchLimiter.Acquire(ctx) // Acquire concurrent fetches semaphore
@@ -257,7 +260,7 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 			metricFetchFailed.Inc()
 		}
 		metricFetching.Dec()
-		defer tr.FinishWithErr(&err)
+		defer tr.EndWithErr(&err)
 	}
 	defer func() {
 		if rc == nil {
@@ -280,7 +283,7 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 
 	filter.CommitIgnore = func(hdr *tar.Header) bool { return false } // default: don't filter
 	if s.FilterTar != nil {
-		filter.CommitIgnore, err = s.FilterTar(ctx, gitserver.NewClient(), repo, commit)
+		filter.CommitIgnore, err = s.FilterTar(ctx, s.GitserverClient, repo, commit)
 		if err != nil {
 			return nil, errors.Errorf("error while calling FilterTar: %w", err)
 		}
@@ -438,7 +441,7 @@ func (s *Store) watchAndEvict() {
 func (s *Store) watchConfig() {
 	for {
 		// Allow roughly 10 fetches per gitserver
-		limit := 10 * len(gitserver.NewClient().Addrs())
+		limit := 10 * len(s.GitserverClient.Addrs())
 		if limit == 0 {
 			limit = 15
 		}

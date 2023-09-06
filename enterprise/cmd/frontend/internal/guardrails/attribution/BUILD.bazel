@@ -30,7 +30,7 @@ go_test(
     embed = [":attribution"],
     deps = [
         "//enterprise/cmd/frontend/internal/guardrails/dotcom",
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/observation",
         "//internal/search/backend",
         "//internal/search/client",

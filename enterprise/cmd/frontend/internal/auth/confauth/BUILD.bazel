@@ -8,7 +8,7 @@ go_library(
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/auth",
-        "//enterprise/internal/licensing",
+        "//internal/licensing",
     ],
 )
 
@@ -19,8 +19,8 @@ go_test(
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/external/session",
-        "//enterprise/internal/license",
-        "//enterprise/internal/licensing",
+        "//internal/license",
+        "//internal/licensing",
         "@com_github_stretchr_testify//require",
     ],
 )
