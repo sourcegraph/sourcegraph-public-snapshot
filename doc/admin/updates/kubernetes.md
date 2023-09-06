@@ -19,9 +19,15 @@ For upgrade procedures or general info about sourcegraph versioning see the link
 No applicable notes for unreleased versions.
 
 <!-- Add changes changes to this section before release. -->
+## v5.1.7 ➔ v5.1.8
+
+#### Notes:
+
 ## v5.1.6 ➔ v5.1.7
 
 #### Notes:
+
+- v5.1.7 of the [`deploy-sourcegraph-helm`](https://github.com/sourcegraph/deploy-sourcegraph-helm) repo was initially released with the precise-code-intel worker service unable to write to `/tmp`. The release was [overwritten](https://github.com/sourcegraph/deploy-sourcegraph-helm/pull/343/files), users who have not yet upgraded will be unaffected. Users who have already upgraded may ammend this issue by pulling in the fix with `helm repo update` and rerunning `helm upgrade`. 
 
 ## v5.1.5 ➔ v5.1.6
 

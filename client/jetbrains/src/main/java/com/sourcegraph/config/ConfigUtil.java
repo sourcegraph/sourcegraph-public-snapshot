@@ -3,15 +3,21 @@ package com.sourcegraph.config;
 import com.google.gson.JsonObject;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManagerCore;
+import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.extensions.PluginId;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
 import com.sourcegraph.cody.agent.ExtensionConfiguration;
 import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.find.Search;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -237,6 +243,14 @@ public class ConfigUtil {
     return getApplicationLevelConfig().isCodyAutocompleteEnabled();
   }
 
+  public static boolean isCustomAutocompleteColorEnabled() {
+    return getApplicationLevelConfig().isCustomAutocompleteColorEnabled();
+  }
+
+  public static Integer getCustomAutocompleteColor() {
+    return getApplicationLevelConfig().getCustomAutocompleteColor();
+  }
+
   public static boolean setCodyAutocompleteEnabled(boolean toggle) {
     return getApplicationLevelConfig().isCodyAutocompleteEnabled = toggle;
   }
@@ -362,5 +376,14 @@ public class ConfigUtil {
       getApplicationLevelConfig().dotComAccessToken = null;
     }
     return unsafeApplicationLevelAccessToken != null ? unsafeApplicationLevelAccessToken : "";
+  }
+
+  public static List<Editor> getAllEditors() {
+    Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
+    return Arrays.stream(openProjects)
+        .flatMap(project -> Arrays.stream(FileEditorManager.getInstance(project).getAllEditors()))
+        .filter(fileEditor -> fileEditor instanceof com.intellij.openapi.fileEditor.TextEditor)
+        .map(fileEditor -> ((com.intellij.openapi.fileEditor.TextEditor) fileEditor).getEditor())
+        .collect(Collectors.toList());
   }
 }

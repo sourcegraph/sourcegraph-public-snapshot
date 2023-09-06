@@ -320,13 +320,7 @@ func (h *ErrorHandler) Handle(w http.ResponseWriter, r *http.Request, status int
 	}
 	http.Error(w, displayErrBody, status)
 
-	if status < 200 || status >= 500 {
-		logger.Error("API HTTP handler error response",
-			sglog.String("method", r.Method),
-			sglog.String("request_uri", r.URL.RequestURI()),
-			sglog.Int("status_code", status),
-			sglog.Error(err))
-	}
+	// No need to log, as SetRequestErrorCause is consumed and logged.
 }
 
 func JsonMiddleware(errorHandler *ErrorHandler) func(func(http.ResponseWriter, *http.Request) error) http.Handler {

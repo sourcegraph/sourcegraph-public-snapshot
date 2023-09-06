@@ -1,8 +1,12 @@
 package search
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -52,6 +56,8 @@ func TestExhaustiveSearch(t *testing.T) {
 			WorkerInterval: 10 * time.Millisecond,
 		},
 	}
+
+	csvBuf = &concurrentWriter{writer: &bytes.Buffer{}}
 	routines, err := searchJob.Routines(ctx, observationCtx)
 	require.NoError(err)
 	for _, routine := range routines {
@@ -65,10 +71,36 @@ func TestExhaustiveSearch(t *testing.T) {
 	// We now validate by directly checking the entries are created that we
 	// want.
 	want := "1@spec 2@spec"
-	rows, err := s.Store.Query(ctx, sqlf.Sprintf("SELECT CONCAT(repo_id, '@', ref_spec) AS part FROM exhaustive_search_repo_jobs WHERE search_job_id = %d ORDER BY part ASC", jobID))
+	wantJobCount := 2
+	rows, err := s.Store.Query(ctx, sqlf.Sprintf("SELECT id, CONCAT(repo_id, '@', ref_spec) AS part FROM exhaustive_search_repo_jobs WHERE search_job_id = %d ORDER BY part ASC", jobID))
 	require.NoError(err)
 
 	var gotParts []string
+	var ids []int64
+	for rows.Next() {
+		var part string
+		var id int64
+		require.NoError(rows.Scan(&id, &part))
+		ids = append(ids, id)
+		gotParts = append(gotParts, part)
+	}
+	require.NoError(rows.Err())
+
+	// This check is not strictly required because the number of ids is implicitly
+	// checked by the format of "want". However, we check explicitly anyway to get a
+	// nice error message instead of a panic when accessing the ids by index later
+	// in the test.
+	require.Equal(wantJobCount, len(ids))
+
+	got := strings.Join(gotParts, " ")
+	require.Equal(want, got)
+
+	// Check that we created 3 repo revision jobs.
+	want = fmt.Sprintf("%[1]d:rev1 %[1]d:rev2 %[2]d:rev3", ids[0], ids[1])
+	rows, err = s.Store.Query(ctx, sqlf.Sprintf("SELECT CONCAT(search_repo_job_id, ':', revision) AS part FROM exhaustive_search_repo_revision_jobs WHERE search_repo_job_id IN (SELECT id from exhaustive_search_repo_jobs WHERE search_job_id = %d) ORDER BY PART ASC", jobID))
+	require.NoError(err)
+
+	gotParts = gotParts[:0]
 	for rows.Next() {
 		var part string
 		require.NoError(rows.Scan(&part))
@@ -76,8 +108,46 @@ func TestExhaustiveSearch(t *testing.T) {
 	}
 	require.NoError(rows.Err())
 
-	got := strings.Join(gotParts, " ")
+	got = strings.Join(gotParts, " ")
 	require.Equal(want, got)
+
+	require.Equal([][]string{
+		{
+			"repo,revspec,revision",
+			"1,spec,rev1",
+		},
+		{
+			"repo,revspec,revision",
+			"1,spec,rev2",
+		},
+		{
+			"repo,revspec,revision",
+			"2,spec,rev3",
+		},
+	}, parseCSV(csvBuf.(*concurrentWriter).String()))
+}
+
+func parseCSV(csv string) (o [][]string) {
+	rows := strings.Split(csv, "\n")
+	for i := 0; i < len(rows)-1; i += 2 {
+		o = append(o, []string{rows[i], rows[i+1]})
+	}
+	sort.Sort(byRow(o))
+	return
+}
+
+type byRow [][]string
+
+func (b byRow) Len() int {
+	return len(b)
+}
+
+func (b byRow) Less(i, j int) bool {
+	return b[i][1] < b[j][1]
+}
+
+func (b byRow) Swap(i, j int) {
+	b[i], b[j] = b[j], b[i]
 }
 
 // insertRow is a helper for inserting a row into a table. It assumes the
@@ -112,4 +182,21 @@ func tTimeout(t *testing.T, max time.Duration) time.Duration {
 		return max
 	}
 	return timeout
+}
+
+type concurrentWriter struct {
+	mu     sync.Mutex
+	writer *bytes.Buffer
+}
+
+func (w *concurrentWriter) String() string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.writer.String()
+}
+
+func (w *concurrentWriter) Write(p []byte) (n int, err error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.writer.Write(p)
 }

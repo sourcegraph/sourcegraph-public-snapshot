@@ -13,9 +13,9 @@ Use Sourcegraph Code Search and Sourcegraph’s AI assistant Cody directly from 
 
 ### 🤖 Ask Cody about anything in your codebase
 
-Cody combines the power of large language models (LLMs) with Sourcegraph’s Code Graph API, generating deep knowledge of all of your code—even the code you don’t have locally. Large monorepos, multiple languages, and complex codebases are no problem for Cody.
+**Cody understands your entire codebase — not just your open files. Ask questions, insert code, and use the built-in commands such as "Generate unit test" and "Improve variable names".**
 
-Cody understands your entire codebase—not just your open files. Ask questions, insert code, and use the built-in recipes such as "Summarize recent code changes" and "Improve variable names".
+Cody combines the power of large language models (LLMs) with Sourcegraph’s Code Graph API, generating deep knowledge of all of your code—even the code you don’t have locally. Large monorepos, multiple languages, and complex codebases are no problem for Cody.
 
 Example questions you can ask Cody:
 
@@ -33,20 +33,17 @@ Cody can provide real-time code autocompletions as you're typing. As you start c
 
 ![Example of using code autocomplete](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/AutoCompletion_IntelliJ_SS.jpg)
 
-## 🍳 Built-in recipes
+## 🍳 Built-in commands
 
-Select the recipes tab or right-click on a selection of code and choose one of the `Ask Cody > ...` recipes, such as:
+Select the commands tab or right-click on a selection of code and choose one of the `Ask Cody > ...` commands, such as:
 
 - Explain code
 - Generate unit test
 - Generate docstring
 - Improve variable names
-- Translate to different language
-- Summarize recent code changes
-- Detect code smells
-- Generate release notes
+- Smell code
 
-_We also welcome also pull request contributions for new, useful recipes!_
+_We also welcome also pull request contributions for new, useful commands!_
 
 ## Feedback
 

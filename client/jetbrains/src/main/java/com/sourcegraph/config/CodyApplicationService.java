@@ -6,6 +6,7 @@ import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.annotations.Transient;
 import com.sourcegraph.find.Search;
+import java.awt.*;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -49,6 +50,8 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
   @Nullable public Boolean authenticationFailedLastTime;
   @Nullable public Boolean isCodyDebugEnabled;
   @Nullable public Boolean isCodyVerboseDebugEnabled;
+  @Nullable public Boolean isCustomAutocompleteColorEnabled;
+  @Nullable public Integer customAutocompleteColor;
 
   @Nullable
   public String
@@ -138,6 +141,15 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     return isAccessTokenNotificationDismissed;
   }
 
+  public boolean isCustomAutocompleteColorEnabled() {
+    return Optional.ofNullable(isCustomAutocompleteColorEnabled).orElse(false);
+  }
+
+  @Nullable
+  public Integer getCustomAutocompleteColor() {
+    return customAutocompleteColor;
+  }
+
   @Nullable
   public Boolean getAuthenticationFailedLastTime() {
     return authenticationFailedLastTime;
@@ -178,5 +190,7 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     this.lastUpdateNotificationPluginVersion = settings.lastUpdateNotificationPluginVersion;
     this.isCodyDebugEnabled = settings.isCodyDebugEnabled;
     this.isCodyVerboseDebugEnabled = settings.isCodyVerboseDebugEnabled;
+    this.isCustomAutocompleteColorEnabled = settings.isCustomAutocompleteColorEnabled;
+    this.customAutocompleteColor = settings.customAutocompleteColor;
   }
 }
