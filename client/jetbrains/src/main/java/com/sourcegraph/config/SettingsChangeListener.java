@@ -17,7 +17,6 @@ import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus;
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService;
 import com.sourcegraph.find.browser.JavaToJSBridge;
 import com.sourcegraph.telemetry.GraphQlLogger;
-import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -32,15 +31,14 @@ public class SettingsChangeListener implements Disposable {
   public SettingsChangeListener(@NotNull Project project) {
     MessageBus bus = project.getMessageBus();
 
-    CodyApplicationSettings codyApplicationSettings = CodyApplicationSettings.getInstance();
-
     connection = bus.connect();
     connection.subscribe(
         PluginSettingChangeActionNotifier.TOPIC,
         new PluginSettingChangeActionNotifier() {
           @Override
-          public void beforeAction(@NotNull PluginSettingChangeContext context) {
-            if (!Objects.equals(context.oldUrl, context.newUrl)) {
+          public void beforeAction(boolean serverUrlChanged) {
+            CodyApplicationSettings codyApplicationSettings = CodyApplicationSettings.getInstance();
+            if (serverUrlChanged) {
               GraphQlLogger.logUninstallEvent(project);
               codyApplicationSettings.setInstallEventLogged(false);
             }
@@ -48,6 +46,7 @@ public class SettingsChangeListener implements Disposable {
 
           @Override
           public void afterAction(@NotNull PluginSettingChangeContext context) {
+            CodyApplicationSettings codyApplicationSettings = CodyApplicationSettings.getInstance();
             // Notify JCEF about the config changes
             if (javaToJSBridge != null) {
               javaToJSBridge.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project));
@@ -68,7 +67,7 @@ public class SettingsChangeListener implements Disposable {
             }
 
             // Log install events
-            if (!Objects.equals(context.oldUrl, context.newUrl)) {
+            if (context.serverUrlChanged) {
               GraphQlLogger.logInstallEvent(project)
                   .thenAccept(codyApplicationSettings::setInstallEventLogged);
             } else if (context.accessTokenChanged

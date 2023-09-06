@@ -1,29 +1,23 @@
 package com.sourcegraph.config;
 
-import org.jetbrains.annotations.NotNull;
-
 public class PluginSettingChangeContext {
-  @NotNull public final String oldUrl;
   public final boolean oldCodyEnabled;
   public final boolean oldCodyAutocompleteEnabled;
-
-  @NotNull public final String newUrl;
+  public final boolean serverUrlChanged;
   public final boolean newCodyEnabled;
   public final boolean newCodyAutocompleteEnabled;
   public boolean accessTokenChanged;
 
   public PluginSettingChangeContext(
+      boolean serverUrlChanged,
+      boolean accessTokenChanged,
       boolean oldCodyEnabled,
-      boolean oldCodyAutocompleteEnabled,
-      @NotNull String oldUrl,
-      @NotNull String newUrl,
       boolean newCodyEnabled,
-      boolean newCodyAutocompleteEnabled,
-      boolean accessTokenChanged) {
+      boolean oldCodyAutocompleteEnabled,
+      boolean newCodyAutocompleteEnabled) {
     this.oldCodyEnabled = oldCodyEnabled;
     this.oldCodyAutocompleteEnabled = oldCodyAutocompleteEnabled;
-    this.oldUrl = oldUrl;
-    this.newUrl = newUrl;
+    this.serverUrlChanged = serverUrlChanged;
     this.newCodyEnabled = newCodyEnabled;
     this.newCodyAutocompleteEnabled = newCodyAutocompleteEnabled;
     this.accessTokenChanged = accessTokenChanged;

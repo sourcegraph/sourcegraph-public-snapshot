@@ -15,7 +15,7 @@ enum class AccountType {
 }
 
 @Tag("account")
-class CodyAccount(
+data class CodyAccount(
     @NlsSafe @Attribute("name") override var name: String = "",
     @Property(style = Property.Style.ATTRIBUTE, surroundWithTag = false)
     override val server: SourcegraphServerPath = SourcegraphServerPath(ConfigUtil.DOTCOM_URL),

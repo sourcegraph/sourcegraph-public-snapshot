@@ -128,7 +128,8 @@ class SettingsConfigurable(private val project: Project) :
     settingsModel.isCodyAutocompleteEnabled = codyApplicationSettings.isCodyAutocompleteEnabled
     settingsModel.isCodyDebugEnabled = codyApplicationSettings.isCodyDebugEnabled
     settingsModel.isCodyVerboseDebugEnabled = codyApplicationSettings.isCodyVerboseDebugEnabled
-    settingsModel.isUrlNotificationDismissed = codyApplicationSettings.isDefaultDotcomAccountNotificationDismissed
+    settingsModel.isUrlNotificationDismissed =
+        codyApplicationSettings.isDefaultDotcomAccountNotificationDismissed
     settingsModel.defaultBranchName = codyProjectSettings.defaultBranchName
     settingsModel.remoteUrlReplacements = codyProjectSettings.remoteUrlReplacements
     dialogPanel.reset()
@@ -138,33 +139,33 @@ class SettingsConfigurable(private val project: Project) :
     val bus = project.messageBus
     val publisher = bus.syncPublisher(PluginSettingChangeActionNotifier.TOPIC)
 
-    val oldCodyEnabled = codyApplicationSettings.isCodyEnabled
-    val oldCodyAutocompleteEnabled = codyApplicationSettings.isCodyAutocompleteEnabled
     val oldDefaultAccount = defaultAccountHolder.account
     val oldUrl = oldDefaultAccount?.server?.url ?: ""
 
     var defaultAccount = accountsModel.defaultAccount
     val newAccessToken = defaultAccount?.let { accountsModel.newCredentials[it] }
-    val accessTokenChanged = newAccessToken != null
     val defaultAccountRemoved = !accountsModel.accounts.contains(defaultAccount)
     if (defaultAccountRemoved) {
       defaultAccount = accountsModel.accounts.getFirstAccountOrNull()
     }
+    val defaultAccountChanged = oldDefaultAccount != defaultAccount
+    val accessTokenChanged =
+        newAccessToken != null || defaultAccountRemoved || defaultAccountChanged
 
     val newUrl = defaultAccount?.server?.url ?: ""
-    val context =
-        PluginSettingChangeContext(
-            oldCodyEnabled,
-            oldCodyAutocompleteEnabled,
-            oldUrl,
-            newUrl,
-            settingsModel.isCodyEnabled,
-            settingsModel.isCodyAutocompleteEnabled,
-            accessTokenChanged)
 
-    publisher.beforeAction(context)
+    val serverUrlChanged = oldUrl != newUrl
+    publisher.beforeAction(serverUrlChanged)
 
     super.apply()
+    val context =
+        PluginSettingChangeContext(
+            serverUrlChanged,
+            accessTokenChanged,
+            codyApplicationSettings.isCodyEnabled,
+            settingsModel.isCodyEnabled,
+            codyApplicationSettings.isCodyAutocompleteEnabled,
+            settingsModel.isCodyAutocompleteEnabled)
     CodyAuthenticationManager.getInstance().setDefaultAccount(project, defaultAccount)
     accountsModel.defaultAccount = defaultAccount
     codyProjectSettings.defaultBranchName = settingsModel.defaultBranchName
@@ -173,7 +174,8 @@ class SettingsConfigurable(private val project: Project) :
     codyApplicationSettings.isCodyAutocompleteEnabled = settingsModel.isCodyAutocompleteEnabled
     codyApplicationSettings.isCodyDebugEnabled = settingsModel.isCodyDebugEnabled
     codyApplicationSettings.isCodyVerboseDebugEnabled = settingsModel.isCodyVerboseDebugEnabled
-    codyApplicationSettings.isDefaultDotcomAccountNotificationDismissed = settingsModel.isUrlNotificationDismissed
+    codyApplicationSettings.isDefaultDotcomAccountNotificationDismissed =
+        settingsModel.isUrlNotificationDismissed
 
     publisher.afterAction(context)
   }

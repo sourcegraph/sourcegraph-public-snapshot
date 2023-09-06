@@ -54,7 +54,7 @@ public class ConfigUtil {
   @NotNull
   public static SourcegraphServerPath getServerPath(@NotNull Project project) {
     CodyAccount defaultAccount = CodyAuthenticationManager.getInstance().getDefaultAccount(project);
-    ;
+
     return defaultAccount != null
         ? defaultAccount.getServer()
         : SourcegraphServerPath.from(DOTCOM_URL, "");
