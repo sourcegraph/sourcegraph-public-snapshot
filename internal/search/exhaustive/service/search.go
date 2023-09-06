@@ -90,7 +90,8 @@ func NewCSVWriterFake(w io.Writer) CSVWriter {
 }
 
 type csvWriterFake struct {
-	w *csv.Writer
+	header []string
+	w      *csv.Writer
 }
 
 func (c csvWriterFake) writeAndFlush(s []string) error {
@@ -103,6 +104,21 @@ func (c csvWriterFake) writeAndFlush(s []string) error {
 }
 
 func (c csvWriterFake) WriteHeader(s ...string) error {
+	// assert the header hasn't changed since the first call
+	if c.header == nil {
+		// first call to WriteHeader
+		c.header = s
+	} else {
+		if len(c.header) != len(s) {
+			return errors.Errorf("header mismatch: %v != %v", c.header, s)
+		}
+		for i := range c.header {
+			if c.header[i] != s[i] {
+				return errors.Errorf("header mismatch: %v != %v", c.header, s)
+			}
+		}
+	}
+
 	return c.writeAndFlush(s)
 }
 
