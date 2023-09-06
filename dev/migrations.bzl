@@ -20,7 +20,7 @@ chmod +x pg_wrapper_bin/createdb
 
 ## pg_dump is trickier, sg calls it with the full POSTGRESDSN, so we replace the dynamic port on the fly, to make it work
 ## because it's run inside the container, which has the default port.
-echo -e "#!/usr/bin/env bash\ndocker exec -e PGUSER=sg $container_id pg_dump $(\\$@ | sed \"s/$pg_port/5432/\")" > pg_wrapper_bin/pg_dump
+echo -e "#!/usr/bin/env bash\ndocker exec -e PGUSER=sg $container_id pg_dump \\$(echo \\$@ | sed \"s/$pg_port/5432/\")" > pg_wrapper_bin/pg_dump
 chmod +x pg_wrapper_bin/pg_dump
 
 export PATH="$(pwd)/pg_wrapper_bin:$PATH"
@@ -41,19 +41,17 @@ def _migration_impl(ctx):
         inputs = ctx.files.srcs,
         outputs = [ctx.outputs.out],
         progress_message = "Running squash migration for %s" % ctx.attr.db,
-        command = """
-        {wrap_postgres_script}
+        command = """{wrap_postgres_script}
 
         export HOME=$(pwd)
         export SG_FORCE_REPO_ROOT=$(pwd)
 
         {sg} migration squash-all -skip-teardown -db {db} -f {output_file}
         """.format(
-            wrap_postgres_script = WRAP_POSTGRES_UTILS,
+            wrap_postgres_script = WRAP_POSTGRES_UTILS.format(pg_image = ctx.file._pg_image.path),
             sg = ctx.executable._sg.path,
             db = ctx.attr.db,
             output_file = ctx.outputs.out.path,
-            pg_image = ctx.file._pg_image.path
         ),
         tools = [ctx.attr._sg[DefaultInfo].default_runfiles.files, ctx.file._pg_image],
     )
@@ -82,7 +80,7 @@ def _describe_impl(ctx):
 
         {sg} migration describe -db {db} --format={format} -force -out {output_file}
         """.format(
-            wrap_postgres_script = WRAP_POSTGRES_UTILS,
+            wrap_postgres_script = WRAP_POSTGRES_UTILS.format(pg_image = ctx.file._pg_image.path),
             sg = ctx.executable._sg.path,
             db = ctx.attr.db,
             format = ctx.attr.format,
