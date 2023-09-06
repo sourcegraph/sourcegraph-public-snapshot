@@ -7,6 +7,7 @@ webpack_binary(
 )
 
 exports_files(srcs = ["eslint-report-test.sh"])
+
 exports_files(srcs = glob(["*.tpl"]))
 
 write_source_files(

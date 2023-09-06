@@ -4,9 +4,9 @@ go_library(
     name = "migrations",
     srcs = ["embed.go"],
     embedsrcs = [
-        "//migrations/frontend:sql",
-        "//migrations/codeinsights:sql",
-        "//migrations/codeintel:sql",
+        "//migrations/frontend:sql",  # keep
+        "//migrations/codeinsights:sql",  # keep
+        "//migrations/codeintel:sql",  # keep
     ],
     importpath = "github.com/sourcegraph/sourcegraph/migrations",
     visibility = ["//visibility:public"],

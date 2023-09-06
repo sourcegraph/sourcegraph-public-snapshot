@@ -384,9 +384,9 @@ migration(
 describe(
     name = "frontend-describe",
     srcs = [
-        "//migrations/frontend:sql",
         "//migrations/codeinsights:sql",
-        "//migrations/codeintel:sql"
+        "//migrations/codeintel:sql",
+        "//migrations/frontend:sql",
     ],
     out = "schema.md",
     db = "frontend",
@@ -396,9 +396,9 @@ describe(
 describe(
     name = "codeinsights-describe",
     srcs = [
-        "//migrations/frontend:sql",
         "//migrations/codeinsights:sql",
-        "//migrations/codeintel:sql"
+        "//migrations/codeintel:sql",
+        "//migrations/frontend:sql",
     ],
     out = "schema.codeinsights.md",
     db = "codeinsights",
@@ -408,9 +408,9 @@ describe(
 describe(
     name = "codeintel-describe",
     srcs = [
-        "//migrations/frontend:sql",
         "//migrations/codeinsights:sql",
-        "//migrations/codeintel:sql"
+        "//migrations/codeintel:sql",
+        "//migrations/frontend:sql",
     ],
     out = "schema.codeintel.md",
     db = "codeintel",
@@ -426,5 +426,5 @@ build_test(
         "frontend-describe",
         "codeintel-describe",
         "codeinsights-describe",
-    ]
+    ],
 )

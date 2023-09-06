@@ -6,5 +6,8 @@ exports_files([
 
 filegroup(
     name = "files",
-    srcs = glob(["**"], ["*.bazel"]),
+    srcs = glob(
+        ["**"],
+        ["*.bazel"],
+    ),
 )
