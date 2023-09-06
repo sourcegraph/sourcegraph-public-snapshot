@@ -42,4 +42,3 @@ build --test_env=INCLUDE_ADMIN_ONBOARDING=false
 
 # Used for container_structure_tests
 build --test_env=DOCKER_HOST
-build --repo_env=DOCKER_HOST
