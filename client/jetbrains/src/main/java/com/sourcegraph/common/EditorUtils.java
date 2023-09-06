@@ -4,10 +4,16 @@ import com.intellij.application.options.CodeStyle;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.TextEditor;
+import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings;
 import com.sourcegraph.cody.vscode.Range;
+import java.util.Arrays;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
 public class EditorUtils {
@@ -60,5 +66,13 @@ public class EditorUtils {
             document.getLineEndOffset(range.end.line),
             document.getLineStartOffset(range.end.line) + range.end.character);
     return TextRange.create(start, end);
+  }
+
+  public static @NotNull Set<Editor> getAllOpenEditors() {
+    return Arrays.stream(ProjectManager.getInstance().getOpenProjects())
+        .flatMap(project -> Arrays.stream(FileEditorManager.getInstance(project).getAllEditors()))
+        .filter(fileEditor -> fileEditor instanceof TextEditor)
+        .map(fileEditor -> ((TextEditor) fileEditor).getEditor())
+        .collect(Collectors.toSet());
   }
 }

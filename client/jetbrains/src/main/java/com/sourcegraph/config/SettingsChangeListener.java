@@ -25,8 +25,10 @@ import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus;
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService;
 import com.sourcegraph.find.browser.JavaToJSBridge;
 import com.sourcegraph.telemetry.GraphQlLogger;
+import com.sourcegraph.utils.CollectionUtil;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.util.List;
 import java.util.Objects;
 import javax.swing.KeyStroke;
 import org.jetbrains.annotations.NotNull;
@@ -146,6 +148,15 @@ public class SettingsChangeListener implements Disposable {
               ConfigUtil.getAllEditors()
                   .forEach(AutocompleteRenderUtils::rerenderAllAutocompleteInlays);
             }
+
+            // clear autocomplete inlays for blacklisted language editors
+            List<String> languageIdsToClear =
+                CollectionUtil.Companion.diff(
+                    context.newBlacklistedAutocompleteLanguageIds,
+                    context.oldBlacklistedAutocompleteLanguageIds);
+            if (!languageIdsToClear.isEmpty())
+              CodyAutocompleteManager.getInstance()
+                  .clearAutocompleteSuggestionsForLanguageIds(languageIdsToClear);
           }
         });
   }
