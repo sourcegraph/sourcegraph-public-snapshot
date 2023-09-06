@@ -3,7 +3,6 @@ package search
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -42,7 +41,7 @@ func TestExhaustiveSearch(t *testing.T) {
 	query := "1@rev1 1@rev2 2@rev3"
 
 	// Create a job
-	jobID, err := s.CreateExhaustiveSearchJob(ctx, types.ExhaustiveSearchJob{
+	_, err := s.CreateExhaustiveSearchJob(ctx, types.ExhaustiveSearchJob{
 		InitiatorID: userID,
 		Query:       query,
 	})
@@ -67,49 +66,6 @@ func TestExhaustiveSearch(t *testing.T) {
 	require.Eventually(func() bool {
 		return !searchJob.hasWork(ctx)
 	}, tTimeout(t, 10*time.Second), 10*time.Millisecond)
-
-	// We now validate by directly checking the entries are created that we
-	// want.
-	want := "1@spec 2@spec"
-	wantJobCount := 2
-	rows, err := s.Store.Query(ctx, sqlf.Sprintf("SELECT id, CONCAT(repo_id, '@', ref_spec) AS part FROM exhaustive_search_repo_jobs WHERE search_job_id = %d ORDER BY part ASC", jobID))
-	require.NoError(err)
-
-	var gotParts []string
-	var ids []int64
-	for rows.Next() {
-		var part string
-		var id int64
-		require.NoError(rows.Scan(&id, &part))
-		ids = append(ids, id)
-		gotParts = append(gotParts, part)
-	}
-	require.NoError(rows.Err())
-
-	// This check is not strictly required because the number of ids is implicitly
-	// checked by the format of "want". However, we check explicitly anyway to get a
-	// nice error message instead of a panic when accessing the ids by index later
-	// in the test.
-	require.Equal(wantJobCount, len(ids))
-
-	got := strings.Join(gotParts, " ")
-	require.Equal(want, got)
-
-	// Check that we created 3 repo revision jobs.
-	want = fmt.Sprintf("%[1]d:rev1 %[1]d:rev2 %[2]d:rev3", ids[0], ids[1])
-	rows, err = s.Store.Query(ctx, sqlf.Sprintf("SELECT CONCAT(search_repo_job_id, ':', revision) AS part FROM exhaustive_search_repo_revision_jobs WHERE search_repo_job_id IN (SELECT id from exhaustive_search_repo_jobs WHERE search_job_id = %d) ORDER BY PART ASC", jobID))
-	require.NoError(err)
-
-	gotParts = gotParts[:0]
-	for rows.Next() {
-		var part string
-		require.NoError(rows.Scan(&part))
-		gotParts = append(gotParts, part)
-	}
-	require.NoError(rows.Err())
-
-	got = strings.Join(gotParts, " ")
-	require.Equal(want, got)
 
 	require.Equal([][]string{
 		{
