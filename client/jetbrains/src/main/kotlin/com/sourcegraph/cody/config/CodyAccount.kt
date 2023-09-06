@@ -5,10 +5,8 @@ import com.intellij.openapi.util.NlsSafe
 import com.intellij.util.xmlb.annotations.Attribute
 import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.Tag
-import com.intellij.util.xmlb.annotations.Transient
 import com.sourcegraph.cody.localapp.LocalAppManager
 import com.sourcegraph.config.ConfigUtil
-import java.util.UUID
 
 enum class AccountType {
   DOTCOM,
@@ -18,11 +16,10 @@ enum class AccountType {
 
 @Tag("account")
 class CodyAccount(
-    @set:Transient @NlsSafe @Attribute("name") override var name: String = "",
+    @NlsSafe @Attribute("name") override var name: String = "",
     @Property(style = Property.Style.ATTRIBUTE, surroundWithTag = false)
-    override val server: SourcegraphServerPath =
-        SourcegraphServerPath(LocalAppManager.DEFAULT_LOCAL_APP_URL),
-    @Attribute("id") override val id: String,
+    override val server: SourcegraphServerPath = SourcegraphServerPath(ConfigUtil.DOTCOM_URL),
+    @Attribute("id") override val id: String = generateId(),
 ) : ServerAccount() {
 
   fun isCodyApp(): Boolean {
@@ -47,7 +44,7 @@ class CodyAccount(
     fun create(
         name: String,
         server: SourcegraphServerPath,
-        id: String = UUID.randomUUID().toString(),
+        id: String = generateId(),
     ): CodyAccount {
       val username =
           if (id == LocalAppManager.LOCAL_APP_ID) {

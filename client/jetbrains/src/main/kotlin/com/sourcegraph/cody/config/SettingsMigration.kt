@@ -2,6 +2,7 @@ package com.sourcegraph.cody.config
 
 import com.intellij.collaboration.async.CompletableFutureUtil.submitIOTask
 import com.intellij.collaboration.async.CompletableFutureUtil.successOnEdt
+import com.intellij.collaboration.auth.Account
 import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.service
@@ -118,7 +119,7 @@ class SettingsMigration : StartupActivity, DumbAware {
       server: SourcegraphServerPath,
       requestExecutorFactory: SourcegraphApiRequestExecutor.Factory,
       progressIndicator: EmptyProgressIndicator,
-      id: String = UUID.randomUUID().toString(),
+      id: String = Account.generateId(),
   ) {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
       val codyAccount = CodyAccount.create(it.name, server, id)

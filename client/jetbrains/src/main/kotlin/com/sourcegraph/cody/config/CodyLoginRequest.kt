@@ -43,6 +43,6 @@ private fun BaseLoginDialog.getAuthData(): CodyAuthData? {
   DialogManager.show(this)
   return if (isOK)
       CodyAuthData(
-          CodyAccount.create(login, server, UUID.randomUUID().toString()), login, token)
+          CodyAccount.create(login, server), login, token)
   else null
 }
