@@ -48,7 +48,6 @@ type exhaustiveSearchRepoRevHandler struct {
 	logger      log.Logger
 	store       *store.Store
 	newSearcher service.NewSearcher
-	csvWriter   service.CSVWriter
 }
 
 var _ workerutil.Handler[*types.ExhaustiveSearchRepoRevisionJob] = &exhaustiveSearchRepoRevHandler{}

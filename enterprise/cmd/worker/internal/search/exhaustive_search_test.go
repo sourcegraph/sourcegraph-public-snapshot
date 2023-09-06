@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -56,7 +57,7 @@ func TestExhaustiveSearch(t *testing.T) {
 		},
 	}
 
-	csvBuf = &bytes.Buffer{}
+	csvBuf = &concurrentWriter{writer: &bytes.Buffer{}}
 	routines, err := searchJob.Routines(ctx, observationCtx)
 	require.NoError(err)
 	for _, routine := range routines {
@@ -123,7 +124,7 @@ func TestExhaustiveSearch(t *testing.T) {
 			"repo,revspec,revision",
 			"2,spec,rev3",
 		},
-	}, parseCSV(csvBuf.(*bytes.Buffer).String()))
+	}, parseCSV(csvBuf.(*concurrentWriter).String()))
 }
 
 func parseCSV(csv string) (o [][]string) {
@@ -181,4 +182,21 @@ func tTimeout(t *testing.T, max time.Duration) time.Duration {
 		return max
 	}
 	return timeout
+}
+
+type concurrentWriter struct {
+	mu     sync.Mutex
+	writer *bytes.Buffer
+}
+
+func (w *concurrentWriter) String() string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.writer.String()
+}
+
+func (w *concurrentWriter) Write(p []byte) (n int, err error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.writer.Write(p)
 }
