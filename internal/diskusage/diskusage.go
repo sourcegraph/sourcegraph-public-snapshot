@@ -5,7 +5,13 @@ import "syscall"
 
 type DiskUsage interface {
 	Free() uint64
+<<<<<<< HEAD
 	Size() uint64
+=======
+	Available() uint64
+	Size() uint64
+	Usage() float32
+>>>>>>> bf07edb3c3 (copy go-disk-usage lib)
 }
 
 // DiskUsage contains usage data and provides user-friendly access methods
@@ -31,4 +37,14 @@ func (du *diskUsage) Free() uint64 {
 // Size returns total size of the file system
 func (du *diskUsage) Size() uint64 {
 	return uint64(du.stat.Blocks) * uint64(du.stat.Bsize)
+}
+
+// Used returns total bytes used in file system
+func (du *diskUsage) used() uint64 {
+	return du.Size() - du.Free()
+}
+
+// Usage returns percentage of use on the file system
+func (du *diskUsage) Usage() float32 {
+	return float32(du.used()) / float32(du.Size())
 }
