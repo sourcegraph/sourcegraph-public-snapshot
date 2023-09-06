@@ -9,13 +9,14 @@ import { Card, Icon, Button } from '@sourcegraph/wildcard'
 import { ActionItem, type ActionItemComponentProps } from '../actions/ActionItem'
 import type { PlatformContextProps } from '../platform/context'
 import type { TelemetryProps } from '../telemetry/telemetryService'
+import type { TelemetryPropsV2 } from '../telemetry/telemetryServiceV2'
 
 import { CopyLinkIcon } from './CopyLinkIcon'
 import { toNativeEvent } from './helpers'
 import type { HoverContext, HoverOverlayBaseProps } from './HoverOverlay.types'
 import { HoverOverlayContents } from './HoverOverlayContents'
 import { HoverOverlayLogo } from './HoverOverlayLogo'
-import { useLogTelemetryEvent } from './useLogTelemetryEvent'
+import { useLogTelemetryEvent, useRecordTelemetryEvent } from './useLogTelemetryEvent'
 
 import hoverOverlayStyle from './HoverOverlay.module.scss'
 import style from './HoverOverlayContents.module.scss'
@@ -47,6 +48,7 @@ export interface HoverOverlayProps
         ActionItemComponentProps,
         HoverOverlayClassProps,
         TelemetryProps,
+        TelemetryPropsV2,
         PlatformContextProps<'settings'> {
     /** A ref callback to get the root overlay element. Use this to calculate the position. */
     hoverRef?: React.Ref<HTMLDivElement>
@@ -95,6 +97,7 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
         actionsOrError,
         platformContext,
         telemetryService,
+        telemetryServiceV2,
         extensionsController,
         pinOptions,
         location,
@@ -114,6 +117,7 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
     } = props
 
     useLogTelemetryEvent(props)
+    useRecordTelemetryEvent(props)
 
     const [copyLinkText, setCopyLinkText] = useState('Copy link')
 
@@ -192,6 +196,7 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
                                         showLoadingSpinnerDuringExecution={true}
                                         platformContext={platformContext}
                                         telemetryService={telemetryService}
+                                        // telemetryServiceV2={telemetryServiceV2}
                                         extensionsController={extensionsController}
                                         location={location}
                                         actionItemStyleProps={actionItemStyleProps}

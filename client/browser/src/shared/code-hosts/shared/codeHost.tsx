@@ -1,3 +1,5 @@
+import { Console } from 'console'
+
 import * as React from 'react'
 
 import classNames from 'classnames'
@@ -73,6 +75,7 @@ import {
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import type { PlatformContext, URLToFileContext } from '@sourcegraph/shared/src/platform/context'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryPropsV2 } from '@sourcegraph/shared/src/telemetry/telemetryServiceV2'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import {
     type FileSpec,
@@ -97,6 +100,7 @@ import { WildcardThemeProvider } from '../../components/WildcardThemeProvider'
 import { isExtension, isInPage } from '../../context'
 import type { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 import { resolveRevision, retryWhenCloneInProgressError, resolvePrivateRepo } from '../../repo/backend'
+import { ConditionalTelemetryV2Service, EventRecorder } from '../../telemetry/events'
 import { ConditionalTelemetryService, EventLogger } from '../../tracking/eventLogger'
 import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, isDefaultSourcegraphUrl } from '../../util/context'
 import { type MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
@@ -289,7 +293,7 @@ export interface FileInfoWithContent extends FileInfoWithRepoName {
     content?: string
 }
 
-export interface CodeIntelligenceProps extends TelemetryProps {
+export interface CodeIntelligenceProps extends TelemetryProps, TelemetryPropsV2 {
     platformContext: Pick<
         BrowserPlatformContext,
         'urlToFile' | 'requestGraphQL' | 'settings' | 'refreshSettings' | 'sourcegraphURL' | 'clientApplication'
@@ -321,8 +325,12 @@ function initCodeIntelligence({
     extensionsController,
     render,
     telemetryService,
+    telemetryServiceV2,
     repoSyncErrors,
-}: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'> & {
+}: Pick<
+    CodeIntelligenceProps,
+    'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService' | 'telemetryServiceV2'
+> & {
     render: Renderer
     mutations: Observable<MutationRecordLike[]>
     repoSyncErrors: Observable<boolean>
@@ -470,6 +478,7 @@ function initCodeIntelligence({
                         {...codeHost.hoverOverlayClassProps}
                         className={classNames(styles.hoverOverlay, codeHost.hoverOverlayClassProps?.className)}
                         telemetryService={telemetryService}
+                        telemetryServiceV2={telemetryServiceV2}
                         hoverRef={this.nextOverlayElement}
                         extensionsController={extensionsController}
                         platformContext={platformContext}
@@ -710,6 +719,7 @@ export async function handleCodeHost({
     extensionsController,
     platformContext,
     telemetryService,
+    telemetryServiceV2,
     render,
     minimalUI,
     hideActions,
@@ -777,6 +787,7 @@ export async function handleCodeHost({
         extensionsController,
         platformContext,
         telemetryService,
+        telemetryServiceV2,
         render,
         mutations,
         repoSyncErrors,
@@ -1352,6 +1363,12 @@ export function injectCodeIntelligenceToCodeHost(
     const telemetryService = new ConditionalTelemetryService(innerTelemetryService, isTelemetryEnabled)
     subscriptions.add(telemetryService)
 
+    const innerTelemetryServiceV2 = new EventRecorder(requestGraphQL, sourcegraphURL)
+    console.log('EventRecorder')
+    const telemetryServiceV2 = new ConditionalTelemetryV2Service(innerTelemetryServiceV2, isTelemetryEnabled)
+    console.log('ConditionalTelemetryService created')
+    subscriptions.add(telemetryServiceV2)
+
     let codeHostSubscription: Subscription
     // In the browser extension, observe whether the `disableExtension` storage flag is set.
     // In the native integration, this flag does not exist.
@@ -1390,6 +1407,7 @@ export function injectCodeIntelligenceToCodeHost(
                     extensionsController,
                     platformContext,
                     telemetryService,
+                    telemetryServiceV2,
                     render: renderWithThemeProvider as Renderer,
                     minimalUI,
                     hideActions,

@@ -23,6 +23,7 @@ import { urlForOpenPanel } from '../commands/commands'
 import type { ExtensionsControllerProps } from '../extensions/controller'
 import type { PlatformContextProps } from '../platform/context'
 import type { TelemetryProps } from '../telemetry/telemetryService'
+import type { TelemetryPropsV2 } from '../telemetry/telemetryServiceV2'
 
 import styles from './ActionItem.module.scss'
 
@@ -62,7 +63,7 @@ export interface ActionItemComponentProps
     actionItemStyleProps?: ActionItemStyleProps
 }
 
-export interface ActionItemProps extends ActionItemAction, ActionItemComponentProps, TelemetryProps {
+export interface ActionItemProps extends ActionItemAction, ActionItemComponentProps, TelemetryProps, TelemetryPropsV2 {
     variant?: 'actionItem'
 
     hideLabel?: boolean
@@ -353,6 +354,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
 
         // Record action ID (but not args, which might leak sensitive data).
         this.props.telemetryService.log(action.id)
+        this.props.telemetryServiceV2.record(action.id)
 
         const emitDidExecute = (): void => {
             if (this.props.onDidExecute) {

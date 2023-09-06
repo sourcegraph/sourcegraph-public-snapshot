@@ -10,6 +10,8 @@
  */
 export enum EventName {
     FooBar = 'FooBar',
+    hover = 'hover',
+    UserEventLogPage = 'UserEventLogPage',
 }
 
 /**
@@ -47,11 +49,11 @@ export enum MetadataKey {
  * Props interface that can be extended by React components depending on the
  * TelemetryV2Service.
  */
-export interface TelemetryV2Props {
+export interface TelemetryPropsV2 {
     /**
      * A telemetry service implementation to log events.
      */
-    telemetryService: TelemetryV2Service
+    telemetryServiceV2: TelemetryServiceV2
 }
 
 /**
@@ -87,10 +89,12 @@ export type EventParameters = {
  *
  * EXPERIMENTAL
  */
-export interface TelemetryV2Service {
+export interface TelemetryServiceV2 {
     /**
      * Record an event (by sending it to the server, which forwards it to
      * Sourcegraph).
      */
     record(name: EventName, parameters?: EventParameters): void
+
+    recordString(name: string, parameters?: EventParameters): void
 }

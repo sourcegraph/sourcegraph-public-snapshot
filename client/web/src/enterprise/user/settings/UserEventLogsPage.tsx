@@ -7,6 +7,8 @@ import { map } from 'rxjs/operators'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { EventName } from '@sourcegraph/shared/src/telemetry/telemetryServiceV2'
+import type { TelemetryPropsV2 } from '@sourcegraph/shared/src/telemetry/telemetryServiceV2'
 import { Container, PageHeader, Link, Code } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
@@ -57,7 +59,10 @@ export interface UserEventLogsPageProps
     extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'isSourcegraphDotCom'>,
         UserEventLogsPageContentProps {}
 
-export interface UserEventLogsPageContentProps extends Pick<UserSettingsAreaRouteContext, 'user'>, TelemetryProps {}
+export interface UserEventLogsPageContentProps
+    extends Pick<UserSettingsAreaRouteContext, 'user'>,
+        TelemetryProps,
+        TelemetryPropsV2 {}
 
 /**
  * A page displaying usage statistics for the site.
@@ -66,6 +71,7 @@ export const UserEventLogsPage: React.FunctionComponent<React.PropsWithChildren<
     isSourcegraphDotCom,
     authenticatedUser,
     telemetryService,
+    telemetryServiceV2,
     user,
 }) => {
     if (isSourcegraphDotCom && authenticatedUser && user.id !== authenticatedUser.id) {
@@ -75,15 +81,23 @@ export const UserEventLogsPage: React.FunctionComponent<React.PropsWithChildren<
             </SiteAdminAlert>
         )
     }
-    return <UserEventLogsPageContent telemetryService={telemetryService} user={user} />
+    return (
+        <UserEventLogsPageContent
+            telemetryService={telemetryService}
+            telemetryServiceV2={telemetryServiceV2}
+            user={user}
+        />
+    )
 }
 
 export const UserEventLogsPageContent: React.FunctionComponent<
     React.PropsWithChildren<UserEventLogsPageContentProps>
-> = ({ telemetryService, user }) => {
+> = ({ telemetryService, telemetryServiceV2, user }) => {
     useMemo(() => {
         telemetryService.logViewEvent('UserEventLogPage')
-    }, [telemetryService])
+        console.log(telemetryServiceV2)
+        // telemetryServiceV2.record(EventName.UserEventLogPage)
+    }, [telemetryService, telemetryServiceV2])
 
     const queryUserEventLogs = useCallback(
         (args: { first?: number }): Observable<UserEventLogsConnectionFields> =>

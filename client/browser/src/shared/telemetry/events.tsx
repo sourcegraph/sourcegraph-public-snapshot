@@ -2,7 +2,8 @@ import { noop } from 'lodash'
 import { type Observable, Subscription } from 'rxjs'
 import * as uuid from 'uuid'
 
-import { TelemetryV2Service, EventName, EventParameters } from '@sourcegraph/shared/src/telemetry/telemetryServiceV2'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { TelemetryServiceV2, EventName, EventParameters } from '@sourcegraph/shared/src/telemetry/telemetryServiceV2'
 
 import { storage } from '../../browser-extension/web-extension-api/storage'
 import { isInPage } from '../context'
@@ -16,14 +17,14 @@ const uidKey = 'sourcegraphAnonymousUid'
  *
  * EXPERIMENTAL
  */
-export class ConditionalTelemetryV2Service implements TelemetryV2Service {
+export class ConditionalTelemetryV2Service implements TelemetryServiceV2 {
     /** Log events are passed on to the inner TelemetryService */
     private subscription = new Subscription()
 
     /** The enabled state set by an observable, provided upon instantiation */
     private isEnabled = false
 
-    constructor(private innerTelemetryService: TelemetryV2Service, isEnabled: Observable<boolean>) {
+    constructor(private innerTelemetryService: TelemetryServiceV2, isEnabled: Observable<boolean>) {
         this.subscription.add(
             isEnabled.subscribe(value => {
                 this.isEnabled = value
@@ -40,6 +41,16 @@ export class ConditionalTelemetryV2Service implements TelemetryV2Service {
         })
     }
 
+    //going to delete this, just for testing
+    public recordString(eventName: string, parameters?: EventParameters): void {
+        // Wait for this.isEnabled to get a new value
+        setTimeout(() => {
+            if (this.isEnabled) {
+                this.innerTelemetryService.recordString(eventName, parameters)
+            }
+        })
+    }
+
     public unsubscribe(): void {
         // Reset initial state
         this.isEnabled = false
@@ -52,7 +63,7 @@ export class ConditionalTelemetryV2Service implements TelemetryV2Service {
  *
  * EXPERIMENTAL
  */
-export class EventRecorder implements TelemetryV2Service {
+export class EventRecorder implements TelemetryServiceV2 {
     private uid: string | null = null
 
     private platform = getPlatformName()
@@ -93,7 +104,7 @@ export class EventRecorder implements TelemetryV2Service {
         return sourcegraphAnonymousUid
     }
 
-    constructor() {
+    constructor(private requestGraphQL: PlatformContext['requestGraphQL'], private sourcegraphURL: string) {
         // Fetch user ID on initial load.
         this.getAnonUserID().catch(noop)
     }
@@ -103,5 +114,16 @@ export class EventRecorder implements TelemetryV2Service {
      *
      * This implementation currently no-ops.
      */
-    public record(eventName: EventName, parameters?: EventParameters): void {}
+    public record(eventName: EventName, parameters?: EventParameters): void {
+        console.log(eventName)
+    }
+
+    /**
+     * EXPERIMENTAL
+     *
+     * This implementation currently no-ops.
+     */
+    public recordString(eventName: string, parameters?: EventParameters): void {
+        console.log(eventName, this.requestGraphQL)
+    }
 }
