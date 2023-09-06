@@ -169,7 +169,7 @@ rm -rf ~/.sourcegraph-psql ~/Library/Application\ Support/com.sourcegraph.cody ~
 
 ## Get help give feedback
 
-Cody app is new and we're iterating on it quickly. If you run into any trouble or have ideas/feedback, you can reach out via the following:
+If you run into any trouble or have ideas/feedback, you can reach out via the following:
 
 <div class="socials">
   <a href="https://discord.com/invite/s2qDtYGnAE"><img alt="Discord" src="discord.svg"></img></a>
