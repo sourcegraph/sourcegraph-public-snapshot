@@ -11,6 +11,7 @@ import com.intellij.openapi.project.ProjectManager;
 import com.sourcegraph.cody.agent.ExtensionConfiguration;
 import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.find.Search;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

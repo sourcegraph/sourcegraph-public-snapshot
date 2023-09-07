@@ -110,9 +110,9 @@ public class SettingsConfigurable implements Configurable {
             oldUrl,
             oldCodyDebugEnabled,
             oldCodyVerboseDebugEnabled,
-            oldBlacklistedAutocompleteLanguageIds,
             oldCustomAutocompleteColor,
             oldIsCustomAutocompleteColorEnabled,
+            oldBlacklistedAutocompleteLanguageIds,
             newUrl,
             mySettingsComponent.isDotComAccessTokenChanged(),
             mySettingsComponent.isEnterpriseAccessTokenChanged(),
@@ -121,9 +121,9 @@ public class SettingsConfigurable implements Configurable {
             mySettingsComponent.isCodyAutocompleteEnabled(),
             mySettingsComponent.isCodyDebugEnabled(),
             mySettingsComponent.isCodyVerboseDebugEnabled(),
-            mySettingsComponent.getBlacklistedAutocompleteLanguageIds());
             mySettingsComponent.isCustomAutocompleteColorEnabled(),
-            mySettingsComponent.getCustomAutocompleteColorPanel());
+            mySettingsComponent.getCustomAutocompleteColorPanel(),
+            mySettingsComponent.getBlacklistedAutocompleteLanguageIds());
 
     publisher.beforeAction(context);
 

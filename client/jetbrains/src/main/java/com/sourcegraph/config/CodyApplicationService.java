@@ -7,7 +7,6 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.annotations.Transient;
 import com.sourcegraph.find.Search;
 import java.awt.*;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
