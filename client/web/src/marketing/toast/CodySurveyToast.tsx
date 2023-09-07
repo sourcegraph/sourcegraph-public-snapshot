@@ -24,7 +24,7 @@ import { resendVerificationEmail } from '../../user/settings/emails/UserEmail'
 
 import styles from './CodySurveyToast.module.scss'
 
-const SUBMIT_CODY_SURVEY = gql`
+export const SUBMIT_CODY_SURVEY = gql`
     mutation SubmitCodySurvey($isForWork: Boolean!, $isForPersonal: Boolean!) {
         submitCodySurvey(isForWork: $isForWork, isForPersonal: $isForPersonal) {
             alwaysNil
