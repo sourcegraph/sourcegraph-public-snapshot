@@ -4,6 +4,7 @@ def _migration_impl(ctx):
         outputs = [ctx.outputs.out],
         progress_message = "Running squash migration for %s" % ctx.attr.db,
         use_default_shell_env = True,
+        execution_requirements = {"requires-network": "1"},
         command = """
         export HOME=$(pwd)
         export SG_FORCE_REPO_ROOT=$(pwd)
@@ -32,7 +33,6 @@ migration = rule(
         "db": attr.string(mandatory = True),
         "out": attr.output(mandatory = True),
         "_sg": attr.label(executable = True, default = "//dev/sg:sg", cfg = "exec"),
-        "_pg_image": attr.label(allow_single_file = True, default = "//docker-images/postgres-12-alpine:image_tarball")
     },
 )
 
@@ -42,6 +42,7 @@ def _describe_impl(ctx):
         outputs = [ctx.outputs.out],
         progress_message = "Running describe migration for %s" % ctx.attr.db,
         use_default_shell_env = True,
+        execution_requirements = {"requires-network": "1"},
         command = """
         export HOME=$(pwd)
         export SG_FORCE_REPO_ROOT=$(pwd)
@@ -71,7 +72,6 @@ describe = rule(
         "format": attr.string(mandatory = True),
         "out": attr.output(mandatory = True),
         "_sg": attr.label(executable = True, default = "//dev/sg:sg", cfg = "exec"),
-        "_pg_image": attr.label(allow_single_file = True, default = "//docker-images/postgres-12-alpine:image_tarball")
     },
 )
 
