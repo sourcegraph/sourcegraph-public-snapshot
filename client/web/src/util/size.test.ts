@@ -14,7 +14,11 @@ describe('humanizeSize', () => {
     })
 
     it('returns GB size for values above 1GB', () => {
-        expect(humanizeSize(1234567890123)).toBe('1234.57GB')
+        expect(humanizeSize(123456789023)).toBe('123.46GB')
+    })
+
+    it('returns GB size for values above 1TB', () => {
+        expect(humanizeSize(1234567890123)).toBe('1234.57TB')
     })
 
     it('rounds decimal values to 2 places', () => {
