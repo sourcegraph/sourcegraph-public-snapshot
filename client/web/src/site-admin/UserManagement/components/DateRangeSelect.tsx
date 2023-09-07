@@ -97,20 +97,13 @@ export const DateRangeSelect: React.FunctionComponent<DateRangeSelectProps> = ({
         onChange?.(undefined, false)
         setIsOpen(false)
     }, [onChange])
-
-    const isApplyButtonDisabled = useMemo(() => {
-        // `isNegated` is true when we want to display users that don't meet a condition within
-        // the specified date range.
-        // Negation doesn't require the `Apply` button to be disabled because when no date range
-        // is selected we assume a date range from the beginning of time till the current time.
-        if (isNegated) {
-            return false
-        }
-
-        // If `isNegated` is false, we only need to disable the button if it is required and there
-        // is no date range selected.
-        return isRequired && !range
-    }, [isRequired, range, isNegated])
+    // `isNegated` is true when we want to display users that don't meet a condition within
+    // the specified date range.
+    // Negation doesn't require the `Apply` button to be disabled because when no date range
+    // is selected we assume a date range from the beginning of time till the current time.
+    // If `isNegated` is false, we only need to disable the button if it is required and there
+    // is no date range selected.
+    const isApplyButtonDisabled = isNegated ? false : isRequired && !range
 
     const { tooltip, label } = useMemo(() => {
         let tooltipText = ''
