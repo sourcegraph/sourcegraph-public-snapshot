@@ -5,7 +5,6 @@ import "syscall"
 
 type DiskUsage interface {
 	Free() uint64
-	Available() uint64
 	Size() uint64
 }
 
@@ -27,11 +26,6 @@ func New(volumePath string) (DiskUsage, error) {
 // Free returns total free bytes on file system
 func (du *diskUsage) Free() uint64 {
 	return du.stat.Bfree * uint64(du.stat.Bsize)
-}
-
-// Available return total available bytes on file system to an unprivileged user
-func (du *diskUsage) Available() uint64 {
-	return du.stat.Bavail * uint64(du.stat.Bsize)
 }
 
 // Size returns total size of the file system

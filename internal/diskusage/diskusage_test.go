@@ -26,9 +26,4 @@ func TestDiskUsage(t *testing.T) {
 		size := du.Size()
 		require.Equal(t, size, uint64(1024000))
 	})
-
-	t.Run("Available", func(t *testing.T) {
-		available := du.Available()
-		require.Equal(t, available, uint64(409600))
-	})
 }
