@@ -27,6 +27,8 @@ def _migration_impl(ctx):
         execution_requirements = {"requires-network": "1"},
         command = """{cmd_preamble}
 
+        trap "dropdb sg-squasher-{db} && echo 'temp db sg-squasher-{db} dropped'" EXIT
+
         {sg} migration squash-all -skip-teardown -db {db} -f {output_file}
         """.format(
             cmd_preamble = CMD_PREAMBLE,
