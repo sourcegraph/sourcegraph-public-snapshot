@@ -97,6 +97,7 @@ export const DateRangeSelect: React.FunctionComponent<DateRangeSelectProps> = ({
         onChange?.(undefined, false)
         setIsOpen(false)
     }, [onChange])
+
     // `isNegated` is true when we want to display users that don't meet a condition within
     // the specified date range.
     // Negation doesn't require the `Apply` button to be disabled because when no date range
