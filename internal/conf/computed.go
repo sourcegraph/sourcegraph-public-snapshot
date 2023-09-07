@@ -862,7 +862,7 @@ func GetAutocompleteConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Au
 		}
 
 		// Set the access token, either use the configured one, or generate one for the platform.
-		autocompleteConfig.AccessToken = getSourcegraphProviderAccessToken(completionsConfig.AccessToken, siteConfig)
+		autocompleteConfig.AccessToken = getSourcegraphProviderAccessToken(autocompleteConfig.AccessToken, siteConfig)
 		// If we weren't able to generate an access token of some sort, authing with
 		// Cody Gateway is not possible and we cannot use completions.
 		if autocompleteConfig.AccessToken == "" {

@@ -2,6 +2,12 @@ package conftypes
 
 import "time"
 
+type ProviderConfig interface {
+	ProviderName() CompletionsProviderName
+	ProviderEndpoint() string
+	ProviderAccessToken() string
+}
+
 type CompletionsConfig struct {
 	ChatModel          string
 	ChatModelMaxTokens int
@@ -19,6 +25,18 @@ type CompletionsConfig struct {
 	PerUserCodeCompletionsDailyLimit int
 }
 
+func (c *CompletionsConfig) ProviderName() CompletionsProviderName {
+	return c.Provider
+}
+
+func (c *CompletionsConfig) ProviderEndpoint() string {
+	return c.Endpoint
+}
+
+func (c *CompletionsConfig) ProviderAccessToken() string {
+	return c.AccessToken
+}
+
 type CompletionsProviderName string
 
 type AutocompleteConfig struct {
@@ -29,6 +47,18 @@ type AutocompleteConfig struct {
 	Provider          CompletionsProviderName
 	Endpoint          string
 	PerUserDailyLimit int
+}
+
+func (a *AutocompleteConfig) ProviderName() CompletionsProviderName {
+	return a.Provider
+}
+
+func (a *AutocompleteConfig) ProviderEndpoint() string {
+	return a.Endpoint
+}
+
+func (a *AutocompleteConfig) ProviderAccessToken() string {
+	return a.AccessToken
 }
 
 const (

@@ -1440,6 +1440,33 @@ func TestGetAutocompleteConfig(t *testing.T) {
 			},
 		},
 		{
+			name: "Sourcegraph autocomplete with azure chat",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+
+				Completions: &schema.Completions{
+					Provider:        "azure-openai",
+					AccessToken:     "fdsa",
+					Endpoint:        "https://acmecorp.openai.azure.com",
+					ChatModel:       "gpt4-deployment",
+					FastChatModel:   "gpt35-turbo-deployment",
+					CompletionModel: "gpt35-turbo-deployment",
+				},
+				Autocomplete: &schema.Autocomplete{
+					Provider:    "sourcegraph",
+					AccessToken: "mytoken",
+				},
+			},
+			wantConfig: &conftypes.AutocompleteConfig{
+				Model:          "anthropic/claude-instant-1",
+				ModelMaxTokens: 9000,
+				AccessToken:    "mytoken",
+				Provider:       "sourcegraph",
+				Endpoint:       "https://cody-gateway.sourcegraph.com",
+			},
+		},
+		{
 			name: "Autocomplete only default setup",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled:  pointers.Ptr(true),

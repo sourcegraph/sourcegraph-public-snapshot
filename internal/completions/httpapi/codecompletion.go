@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -17,19 +18,28 @@ import (
 func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 	logger = logger.Scoped("code", "code completions handler")
 	rl := NewRateLimiter(db, redispool.Store, types.CompletionsFeatureCode)
+	getConfig := func() conftypes.ProviderConfig {
+		return conf.GetAutocompleteConfig(conf.Get().SiteConfig())
+	}
+
 	return newCompletionsHandler(
 		logger,
 		types.CompletionsFeatureCode,
 		rl,
 		"code",
-		func(requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
+		getConfig,
+		func(requestParams types.CodyCompletionRequestParameters) (string, error) {
+			config := conf.GetAutocompleteConfig(conf.Get().SiteConfig())
+			if config == nil {
+				return "", errors.New("completions are not configured or disabled")
+			}
 			if isAllowedCustomModel(requestParams.Model) {
 				return requestParams.Model, nil
 			}
 			if requestParams.Model != "" {
 				return "", errors.New("Unsupported custom model")
 			}
-			return c.CompletionModel, nil
+			return config.Model, nil
 		},
 	)
 }

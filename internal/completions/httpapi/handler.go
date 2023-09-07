@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -28,7 +27,8 @@ func newCompletionsHandler(
 	feature types.CompletionsFeature,
 	rl RateLimiter,
 	traceFamily string,
-	getModel func(types.CodyCompletionRequestParameters, *conftypes.CompletionsConfig) (string, error),
+	getConfig func() conftypes.ProviderConfig,
+	getModel func(types.CodyCompletionRequestParameters) (string, error),
 ) http.Handler {
 	responseHandler := newSwitchingResponseHandler(logger, feature)
 
@@ -45,8 +45,8 @@ func newCompletionsHandler(
 			http.Error(w, "cody experimental feature flag is not enabled for current user", http.StatusUnauthorized)
 			return
 		}
+		completionsConfig := getConfig()
 
-		completionsConfig := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 		if completionsConfig == nil {
 			http.Error(w, "completions are not configured or disabled", http.StatusInternalServerError)
 		}
@@ -59,7 +59,7 @@ func newCompletionsHandler(
 
 		// TODO: Model is not configurable but technically allowed in the request body right now.
 		var err error
-		requestParams.Model, err = getModel(requestParams, completionsConfig)
+		requestParams.Model, err = getModel(requestParams)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -72,9 +72,9 @@ func newCompletionsHandler(
 		defer done()
 
 		completionClient, err := client.Get(
-			completionsConfig.Endpoint,
-			completionsConfig.Provider,
-			completionsConfig.AccessToken,
+			completionsConfig.ProviderEndpoint(),
+			completionsConfig.ProviderName(),
+			completionsConfig.ProviderAccessToken(),
 		)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -91,6 +91,8 @@ func newCompletionsHandler(
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		logger.Warn("handling completions request", log.String("feature", string(feature)), log.String("provider", string(completionsConfig.ProviderName())))
 
 		responseHandler(ctx, requestParams.CompletionRequestParameters, completionClient, w)
 	})
