@@ -86,10 +86,6 @@ func TestStore_CreateExhaustiveSearchRepoJob(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			t.Cleanup(func() {
-				cleanupRepoJobs(bs)
-			})
-
 			jobID, err := s.CreateExhaustiveSearchRepoJob(ctx, test.job)
 
 			if test.expectedErr != nil {

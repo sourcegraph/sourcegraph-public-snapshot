@@ -108,10 +108,6 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			t.Cleanup(func() {
-				cleanupSearchJobs(bs)
-			})
-
 			act := test.actor
 			if act == nil {
 				act = &actor.Actor{UID: userID}
