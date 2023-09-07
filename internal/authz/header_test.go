@@ -77,7 +77,7 @@ func TestParseAuthorizationHeader(t *testing.T) {
 		}, logs[0].Fields)
 	})
 
-	t.Run("empty does not raise sudo error on dotcom", func(t *testing.T) {
+	t.Run("empty token does not raise sudo error on dotcom", func(t *testing.T) {
 		envvar.MockSourcegraphDotComMode(true)
 		defer envvar.MockSourcegraphDotComMode(false)
 
