@@ -17,17 +17,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-var (
-	defaultAPIReplenishmentInterval = int32(3600)
-	defaultGitReplenishmentInterval = int32(1)
-)
-
 var _ goroutine.Handler = &handler{}
 
 type handler struct {
 	externalServiceStore database.ExternalServiceStore
-	// rateLimiter          ratelimit.CodeHostRateLimiter
-	logger log.Logger
+	logger               log.Logger
 }
 
 func (h *handler) Handle(ctx context.Context) (err error) {
@@ -60,7 +54,7 @@ func (h *handler) Handle(ctx context.Context) (err error) {
 	}
 
 	gitRL := ratelimit.NewGlobalRateLimiter(ratelimit.GitRPSLimiterBucketName)
-	if err := gitRL.SetTokenBucketConfig(ctx, defaultGitQuota, time.Duration(defaultGitReplenishmentInterval)*time.Second); err != nil {
+	if err := gitRL.SetTokenBucketConfig(ctx, defaultGitQuota, time.Second); err != nil {
 		return err
 	}
 
@@ -109,7 +103,7 @@ func getRateLimitConfigsOrDefaults(codeHost types.CodeHost, defaultGitQuota int3
 			defaultRateLimitAsInt = math.MaxInt32
 		}
 		configs.ApiQuota = defaultRateLimitAsInt
-		configs.ApiReplenishmentInterval = defaultAPIReplenishmentInterval
+		configs.ApiReplenishmentInterval = 3600
 	}
 
 	if codeHost.GitRateLimitQuota != nil && codeHost.GitRateLimitIntervalSeconds != nil {
@@ -118,7 +112,7 @@ func getRateLimitConfigsOrDefaults(codeHost types.CodeHost, defaultGitQuota int3
 	} else {
 		// defaults
 		configs.GitQuota = defaultGitQuota
-		configs.GitReplenishmentInterval = defaultGitReplenishmentInterval
+		configs.GitReplenishmentInterval = 3600
 	}
 
 	return configs
