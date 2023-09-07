@@ -5,13 +5,8 @@ import "syscall"
 
 type DiskUsage interface {
 	Free() uint64
-<<<<<<< HEAD
-	Size() uint64
-=======
-	Available() uint64
 	Size() uint64
 	Usage() float32
->>>>>>> bf07edb3c3 (copy go-disk-usage lib)
 }
 
 // DiskUsage contains usage data and provides user-friendly access methods
