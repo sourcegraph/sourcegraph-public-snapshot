@@ -50,8 +50,17 @@ def _describe_impl(ctx):
             PATH="$PG_UTILS_PATH:$PATH"
         fi
 
+        echo "$PGUSER"
         if [ -z "$PGUSER" ]; then
             export PGUSER="sourcegraph"
+        fi
+
+        if [ -z "$CODEINTEL_PGUSER" ]; then
+            export CODEINTEL_PGUSER="sourcegraph"
+        fi
+
+        if [ -z "$CODEINSIGHTS_PGUSER" ]; then
+            export CODEINSIGHTS_PGUSER="sourcegraph"
         fi
 
         {sg} migration describe -db {db} --format={format} -force -out {output_file}
