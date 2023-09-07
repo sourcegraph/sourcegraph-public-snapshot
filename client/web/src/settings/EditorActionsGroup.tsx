@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
 import type * as jsonc from 'jsonc-parser'
+import { useSearchParams } from 'react-router-dom'
 
 import { Button, Text } from '@sourcegraph/wildcard'
 
@@ -35,21 +36,37 @@ export interface EditorAction {
 export interface EditorActionsGroupProps {
     actions: EditorAction[]
     onClick: (id: string) => void
+    actionsAvailable: boolean
 }
 
-export const EditorActionsGroup: React.FunctionComponent<EditorActionsGroupProps> = ({ actions, onClick }) => (
-    <>
-        {actions.length > 0 && (
-            <Text className="mb-1">
-                <strong>Quick actions:</strong>
-            </Text>
-        )}
-        <div className={classNames(styles.actions, 'mb-2')}>
-            {actions.map(({ id, label }) => (
-                <Button key={id} onClick={() => onClick(id)} variant="secondary" outline={true} size="sm">
-                    {label}
-                </Button>
-            ))}
-        </div>
-    </>
-)
+export const EditorActionsGroup: React.FunctionComponent<EditorActionsGroupProps> = ({
+    actions,
+    onClick,
+    actionsAvailable,
+}) => {
+    const [queryParameters] = useSearchParams()
+    const id = queryParameters.get('id')
+
+    useEffect(() => {
+        if (id && actionsAvailable) {
+            onClick(id)
+        }
+    }, [id, actionsAvailable, onClick])
+
+    return (
+        <>
+            {actions.length > 0 && (
+                <Text className="mb-1">
+                    <strong>Quick actions:</strong>
+                </Text>
+            )}
+            <div className={classNames(styles.actions, 'mb-2')}>
+                {actions.map(({ id, label }) => (
+                    <Button key={id} onClick={() => onClick(id)} variant="secondary" outline={true} size="sm">
+                        {label}
+                    </Button>
+                ))}
+            </div>
+        </>
+    )
+}

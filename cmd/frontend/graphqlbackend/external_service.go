@@ -135,6 +135,10 @@ func (r *externalServiceResolver) Config(ctx context.Context) (JSONCString, erro
 	return JSONCString(redacted), nil
 }
 
+func (r *externalServiceResolver) UnrestrictedAccess() bool {
+	return r.externalService.Unrestricted
+}
+
 func (r *externalServiceResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.externalService.CreatedAt}
 }

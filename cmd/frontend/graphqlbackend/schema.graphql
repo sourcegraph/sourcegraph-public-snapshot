@@ -3240,6 +3240,11 @@ type ExternalService implements Node {
     config: JSONCString!
 
     """
+    Whether access to repositories belong to this external service is unrestricted.
+    """
+    unrestrictedAccess: Boolean!
+
+    """
     When the external service was created.
     """
     createdAt: DateTime!

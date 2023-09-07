@@ -91,6 +91,8 @@ func Init(
 		}}
 	})
 
+	// TODO: remove this alert once we have a better way to communicate this to the user.
+
 	// Warn about usage of authz providers that are not enabled by the license.
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
 		// Only site admins can act on this alert, so only show it to site admins.

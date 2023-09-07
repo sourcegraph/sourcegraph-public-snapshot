@@ -1,6 +1,6 @@
 import { type FC, type PropsWithChildren, useCallback, useState } from 'react'
 
-import { ApolloQueryResult } from '@apollo/client'
+import type { ApolloQueryResult } from '@apollo/client'
 import { mdiAlertCircle, mdiChevronDown, mdiCheckCircle, mdiCheckCircleOutline } from '@mdi/js'
 // eslint-disable-next-line id-length
 import cx from 'classnames'
@@ -144,6 +144,13 @@ const LicenseKeyModal: FC<LicenseKeyModalProps> = ({ licenseKey, config, id, ref
     const [licenseKeyInput, setLicenseKeyInput] = useState(licenseKey)
     const navigate = useNavigate()
 
+    const isOnboarding = localStorage.getItem('isOnboarding') === null
+
+    const onDismiss = useCallback(() => {
+        localStorage.setItem('isOnboarding', 'false')
+        setIsOpen(false)
+    }, [setIsOpen])
+
     const [updateLicenseKey, { error, loading }] = useUpdateLicenseKey()
 
     const onSubmit = useCallback(
@@ -158,27 +165,23 @@ const LicenseKeyModal: FC<LicenseKeyModalProps> = ({ licenseKey, config, id, ref
                 input = jsonc.applyEdits(config, editFunc(config))
             }
 
-            try {
-                await updateLicenseKey({ variables: { lastID: id, input: input } })
-                // console.log('here we go', { variables: { lastID: id, input } })
-                setIsOpen(false)
-                refetch()
-                navigate('site-admin/configuration')
-            } catch (error) {
-                console.log('error', error)
-            }
+            await updateLicenseKey({ variables: { lastID: id, input } })
+            setIsOpen(false)
+            localStorage.setItem('isOnboarding', 'false')
+            await refetch()
+            navigate('site-admin/configuration')
         },
-        [updateLicenseKey, licenseKeyInput, id, navigate]
+        [updateLicenseKey, licenseKeyInput, id, navigate, refetch, config]
     )
 
     return (
         <>
-            {isOpen && (
+            {isOpen && isOnboarding && (
                 <Modal
                     className={styles.modal}
                     containerClassName={styles.modalContainer}
                     onDismiss={() => setIsOpen(false)}
-                    aria-labelledby={'license-key'}
+                    aria-labelledby="license-key"
                 >
                     <H3 className="m-0 pb-4">Upgrade your license</H3>
                     <Text className="m-0 pb-3">Enter your license key to start your enterprise set up:</Text>
@@ -194,12 +197,7 @@ const LicenseKeyModal: FC<LicenseKeyModalProps> = ({ licenseKey, config, id, ref
                         />
                         <LicenseKey licenseKey={licenseKey} />
                         <div className="d-flex justify-content-end">
-                            <Button
-                                className="mr-2"
-                                onClick={() => setIsOpen(false)}
-                                outline={true}
-                                variant="secondary"
-                            >
+                            <Button className="mr-2" onClick={onDismiss} outline={true} variant="secondary">
                                 Skip for now
                             </Button>
                             <Button type="submit" disabled={licenseKeyInput === ''} variant="primary">
@@ -230,7 +228,7 @@ const LicenseKey: FC<LicenseKeyProps> = ({ licenseKey }): JSX.Element => {
                     {licenseKey ? (
                         <BrandLogo isLightTheme={isLightTheme} variant="symbol" />
                     ) : (
-                        <div className={styles.emptyLogo}></div>
+                        <div className={styles.emptyLogo} />
                     )}
                 </div>
                 <div>
