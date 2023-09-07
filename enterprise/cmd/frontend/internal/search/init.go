@@ -27,7 +27,7 @@ func Init(
 	svc := service.New(observationCtx, store)
 
 	enterpriseServices.SearchJobsResolver = resolvers.New(observationCtx.Logger, db, svc)
-	enterpriseServices.SearchJobsDataExportHandler = httpapi.ServeSearchJobDownload(store)
+	enterpriseServices.SearchJobsDataExportHandler = httpapi.ServeSearchJobDownload(svc)
 
 	return nil
 }
