@@ -76,6 +76,22 @@ func TestParseAuthorizationHeader(t *testing.T) {
 			"path":  ".api/graphql",
 		}, logs[0].Fields)
 	})
+
+	t.Run("empty token does not raise sudo error on dotcom", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(false)
+
+		r := &http.Request{
+			URL:  &url.URL{Path: ".api/graphql"},
+			Body: io.NopCloser(strings.NewReader("the body")),
+		}
+		_, _, err := ParseAuthorizationHeader(logtest.Scoped(t), r, `token`)
+		got := fmt.Sprintf("%v", err)
+		want := "no token value in the HTTP Authorization request header"
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
 }
 
 func TestParseHTTPCredentials(t *testing.T) {
