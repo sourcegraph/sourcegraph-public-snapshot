@@ -43,6 +43,7 @@ go_test(
         "//internal/database/basestore",
         "//internal/database/dbtest",
         "//internal/observation",
+        "//internal/search/exhaustive/service",
         "//internal/search/exhaustive/store",
         "//internal/search/exhaustive/types",
         "@com_github_keegancsmith_sqlf//:sqlf",

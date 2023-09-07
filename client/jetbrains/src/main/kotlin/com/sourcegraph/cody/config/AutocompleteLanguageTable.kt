@@ -15,6 +15,9 @@ class AutocompleteLanguageTable : ListTableWithButtons<LanguageEntry>() {
         setValues(LanguageEntry.getRegisteredLanguageEntries())
     }
 
+    /** Use this rather than the component directly when working with JetBrains Kotlin UI DSL */
+    val wrapperComponent: AutoCompleteLanguageTableWrapper = AutoCompleteLanguageTableWrapper(this)
+
     override fun createListModel(): ListTableModel<LanguageEntry> {
         val model = ListTableModel(
             arrayOf<ColumnInfo<*, *>>(LanguageCheckboxColumn(), LanguageEntryColumn()), listOf<LanguageEntry>(),

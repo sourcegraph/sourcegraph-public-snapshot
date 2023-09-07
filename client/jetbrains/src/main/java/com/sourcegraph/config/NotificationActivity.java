@@ -11,23 +11,17 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import com.sourcegraph.Icons;
+import com.sourcegraph.cody.config.AccountType;
+import com.sourcegraph.cody.config.CodyApplicationSettings;
+import com.sourcegraph.cody.config.CodyAuthenticationManager;
 import com.sourcegraph.common.BrowserOpener;
 import com.sourcegraph.find.FindService;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.util.Optional;
 import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
 
 public class NotificationActivity implements StartupActivity.DumbAware {
-  private static AnAction dumbAwareAction(String text, Runnable action) {
-    return new DumbAwareAction(text) {
-      @Override
-      public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-        action.run();
-      }
-    };
-  }
 
   @Override
   public void runActivity(@NotNull Project project) {
@@ -37,23 +31,24 @@ public class NotificationActivity implements StartupActivity.DumbAware {
         || lastNotifiedPluginVersion.compareTo(latestReleaseMilestoneVersion) < 0) {
       notifyAboutUpdate(project);
     } else {
-      String url = ConfigUtil.getEnterpriseUrl(project);
-      if (!ConfigUtil.isUrlNotificationDismissed()
-          && (url.length() == 0 || url.startsWith(ConfigUtil.DOTCOM_URL))) {
-        notifyAboutSourcegraphUrl();
+      AccountType defaultAccountType =
+          CodyAuthenticationManager.getInstance().getDefaultAccountType(project);
+      if (!ConfigUtil.isDefaultDotcomAccountNotificationDismissed()
+          && (defaultAccountType == AccountType.DOTCOM)) {
+        notifyAboutDefaultDotcomAccount();
       }
     }
   }
 
-  private void notifyAboutSourcegraphUrl() {
+  private void notifyAboutDefaultDotcomAccount() {
     // Display notification
     Notification notification =
         new Notification(
             "Sourcegraph: server access",
             "Sourcegraph",
-            "A custom Sourcegraph URL is not set for this project. You can only access public repos. Do you want to set your custom URL?",
+            "An enterprise Sourcegraph account is not set for this project. You can only access public repos. Do you want to set an enterprise account as the default one?",
             NotificationType.INFORMATION);
-    AnAction setUrlAction = new OpenPluginSettingsAction("Set URL");
+    AnAction setEnterpriseAccountAction = new OpenPluginSettingsAction("Set Enterprise Account");
     AnAction cancelAction =
         new DumbAwareAction("Do Not Set") {
           @Override
@@ -66,11 +61,12 @@ public class NotificationActivity implements StartupActivity.DumbAware {
           @Override
           public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
             notification.expire();
-            ConfigUtil.setUrlNotificationDismissed(true);
+            CodyApplicationSettings.getInstance()
+                .setDefaultDotcomAccountNotificationDismissed(true);
           }
         };
     notification.setIcon(Icons.CodyLogo);
-    notification.addAction(setUrlAction);
+    notification.addAction(setEnterpriseAccountAction);
     notification.addAction(cancelAction);
     notification.addAction(neverShowAgainAction);
     Notifications.Bus.notify(notification);
@@ -112,27 +108,5 @@ public class NotificationActivity implements StartupActivity.DumbAware {
     Notifications.Bus.notify(notification);
 
     ConfigUtil.setLastUpdateNotificationPluginVersionToCurrent();
-  }
-
-  public static void notifyAboutSourcegraphAccessToken(Optional<String> instanceUrl) {
-    String content =
-        instanceUrl
-                .map(url -> "A Sourcegraph Access Token for " + url + " has not been set.")
-                .orElse("A Sourcegraph Access Token has not been set.")
-            + " It is not possible to use Sourcegraph API and Cody without it.";
-    Notification notification =
-        new Notification(
-            "Sourcegraph: server access", "Sourcegraph", content, NotificationType.INFORMATION);
-    notification.setIcon(Icons.CodyLogo);
-    notification.addAction(new OpenPluginSettingsAction("Set Access Token"));
-    notification.addAction(dumbAwareAction("Do Not Set", notification::expire));
-    notification.addAction(
-        dumbAwareAction(
-            "Never Show Again",
-            () -> {
-              notification.expire();
-              ConfigUtil.setAccessTokenNotificationDismissed(true);
-            }));
-    Notifications.Bus.notify(notification);
   }
 }

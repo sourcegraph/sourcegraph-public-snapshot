@@ -6,14 +6,12 @@ import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.annotations.Transient;
 import com.sourcegraph.find.Search;
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@Deprecated(since = "3.1.0")
 @State(
     name = "ApplicationConfig",
     storages = {@Storage("sourcegraph.xml")})
@@ -52,16 +50,12 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
   @Nullable public Boolean authenticationFailedLastTime;
   @Nullable public Boolean isCodyDebugEnabled;
   @Nullable public Boolean isCodyVerboseDebugEnabled;
-  @Nullable public Boolean isCustomAutocompleteColorEnabled;
-  @Nullable public Integer customAutocompleteColor;
 
   @Nullable
   public String
       lastUpdateNotificationPluginVersion; // The version of the plugin that last notified the user
 
   // about an update
-
-  public List<String> blacklistedAutocompleteLanguageIds = new ArrayList<>();
 
   @NotNull
   public static CodyApplicationService getInstance() {
@@ -145,15 +139,6 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     return isAccessTokenNotificationDismissed;
   }
 
-  public boolean isCustomAutocompleteColorEnabled() {
-    return Optional.ofNullable(isCustomAutocompleteColorEnabled).orElse(false);
-  }
-
-  @Nullable
-  public Integer getCustomAutocompleteColor() {
-    return customAutocompleteColor;
-  }
-
   @Nullable
   public Boolean getAuthenticationFailedLastTime() {
     return authenticationFailedLastTime;
@@ -194,13 +179,5 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     this.lastUpdateNotificationPluginVersion = settings.lastUpdateNotificationPluginVersion;
     this.isCodyDebugEnabled = settings.isCodyDebugEnabled;
     this.isCodyVerboseDebugEnabled = settings.isCodyVerboseDebugEnabled;
-    this.blacklistedAutocompleteLanguageIds = settings.blacklistedAutocompleteLanguageIds;
-    this.isCustomAutocompleteColorEnabled = settings.isCustomAutocompleteColorEnabled;
-    this.customAutocompleteColor = settings.customAutocompleteColor;
-  }
-
-  public void setBlacklistedAutocompleteLanguageIds(
-      List<String> blacklistedAutocompleteLanguageIds) {
-    this.blacklistedAutocompleteLanguageIds = blacklistedAutocompleteLanguageIds;
   }
 }
