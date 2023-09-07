@@ -4,7 +4,7 @@ import { mdiServer } from '@mdi/js'
 import classNames from 'classnames'
 
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, H3, PageHeader, Text, ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
+import { H3, PageHeader, Text, ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { humanizeSize } from '../util/size'
@@ -23,7 +23,7 @@ export const SiteAdminGitserversPage: FC<GitserversPageProps> = ({ telemetryServ
     const { data, loading, error } = useGitserversConnection()
 
     return (
-        <Container>
+        <div>
             <PageTitle title="Gitservers" />
             <PageHeader
                 path={[{ icon: mdiServer }, { text: 'Gitservers' }]}
@@ -42,17 +42,17 @@ export const SiteAdminGitserversPage: FC<GitserversPageProps> = ({ telemetryServ
                             <li key={gitserverInfo.id} className={classNames('border', styles.node)}>
                                 <H3>{serverName}</H3>
                                 <div className="border-top mt-2">
-                                    <Text className="d-flex justify-content-between mt-2">
+                                    <Text className="d-flex justify-content-between mb-0 mt-3">
                                         <span className="font-weight-medium">Address</span>
                                         <span className="text-muted">{gitserverInfo.address}</span>
                                     </Text>
-                                    <Text className="d-flex justify-content-between">
+                                    <Text className="d-flex justify-content-between mb-0 mt-3">
                                         <span className="font-weight-medium">Free disk space</span>
                                         <span className="text-muted">
                                             {humanizeSize(Number(gitserverInfo.freeDiskSpaceBytes))}
                                         </span>
                                     </Text>
-                                    <Text className="d-flex justify-content-between mb-0">
+                                    <Text className="d-flex justify-content-between mb-0 mt-3">
                                         <span className="font-weight-medium">Total disk space</span>
                                         <span className="text-muted">
                                             {humanizeSize(Number(gitserverInfo.totalDiskSpaceBytes))}
@@ -64,6 +64,6 @@ export const SiteAdminGitserversPage: FC<GitserversPageProps> = ({ telemetryServ
                     })}
                 </ul>
             )}
-        </Container>
+        </div>
     )
 }

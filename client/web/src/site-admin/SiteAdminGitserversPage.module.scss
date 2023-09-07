@@ -1,6 +1,7 @@
 .node {
     border-radius: var(--border-radius);
-    padding: 1rem 2rem;
+    padding: 1rem;
+    background-color: var(--color-bg-1);
 
     &-wrapper {
         list-style: none;
