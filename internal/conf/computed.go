@@ -832,17 +832,15 @@ func GetAutocompleteConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Au
 	// If no autocomplete configuration is set at all, but cody is enabled,
 	// fall back to completions configuration or default values.
 	if autocompleteConfig == nil {
-		// if there is not autocomplete config and no completions config it must be disabled
+		// if there also no completions config it must be disabled
 		if completionsConfig == nil {
 			return nil
 		}
-		enabled := true
 		// there must be a completions config, so use that as the default
 		autocompleteConfig = &schema.Autocomplete{
 			Provider:          string(completionsConfig.Provider),
 			Model:             completionsConfig.CompletionModel,
 			AccessToken:       completionsConfig.AccessToken,
-			Enabled:           &enabled,
 			Endpoint:          completionsConfig.Endpoint,
 			ModelMaxTokens:    completionsConfig.CompletionModelMaxTokens,
 			PerUserDailyLimit: completionsConfig.PerUserCodeCompletionsDailyLimit,

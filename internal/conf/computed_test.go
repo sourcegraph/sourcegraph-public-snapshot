@@ -1218,7 +1218,6 @@ func TestGetAutocompleteConfig(t *testing.T) {
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 				Autocomplete: &schema.Autocomplete{
-					Enabled:     pointers.Ptr(true),
 					Provider:    "anthropic",
 					AccessToken: "asdf",
 					Model:       "claude-instant-1",
@@ -1345,20 +1344,18 @@ func TestGetAutocompleteConfig(t *testing.T) {
 		},
 		{
 			// Legacy support for completions.enabled
-			name: "legacy field autocomplete.enabled: zero-config cody gateway completions without license key",
+			name: "legacy field completions.enabled: zero-config cody gateway completions without license key",
 			siteConfig: schema.SiteConfiguration{
-				Autocomplete: &schema.Autocomplete{Enabled: pointers.Ptr(true)},
-				LicenseKey:   "",
+				Completions: &schema.Completions{Enabled: pointers.Ptr(true)},
+				LicenseKey:  "",
 			},
 			wantDisabled: true,
 		},
 		{
-			name: "legacy field autocomplete.enabled: zero-config cody gateway completions with license key",
+			name: "legacy field completions.enabled: zero-config cody gateway completions with license key",
 			siteConfig: schema.SiteConfiguration{
-				Autocomplete: &schema.Autocomplete{
-					Enabled: pointers.Ptr(true),
-				},
-				LicenseKey: licenseKey,
+				Completions: &schema.Completions{Enabled: pointers.Ptr(true)},
+				LicenseKey:  licenseKey,
 			},
 			// Not supported, zero-config is new and should be using the new
 			// config.
