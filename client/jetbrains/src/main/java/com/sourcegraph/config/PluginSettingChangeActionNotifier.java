@@ -10,7 +10,7 @@ public interface PluginSettingChangeActionNotifier {
           "Sourcegraph Cody + Code Search plugin settings have changed",
           PluginSettingChangeActionNotifier.class);
 
-  void beforeAction(@NotNull PluginSettingChangeContext context);
+  void beforeAction(boolean serverUrlChanged);
 
   void afterAction(@NotNull PluginSettingChangeContext context);
 }

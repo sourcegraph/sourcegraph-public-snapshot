@@ -15,6 +15,7 @@ const (
 	SCIPUploadExists = "scip.upload.exists"
 
 	SearchStream          = "search.stream"
+	SearchJob             = "search.job"
 	ComputeStream         = "compute.stream"
 	GitBlameStream        = "git.blame.stream"
 	ChatCompletionsStream = "completions.stream"
@@ -77,6 +78,7 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/scip/upload").Methods("POST").Name(SCIPUpload)
 	base.Path("/scip/upload").Methods("HEAD").Name(SCIPUploadExists)
 	base.Path("/search/stream").Methods("GET").Name(SearchStream)
+	base.Path("/search/export/{id}").Methods("GET").Name(SearchJob)
 	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
 	base.Path("/blame/" + routevar.Repo + routevar.RepoRevSuffix + "/stream/{Path:.*}").Methods("GET").Name(GitBlameStream)
 	base.Path("/src-cli/versions/{rest:.*}").Methods("GET", "POST").Name(SrcCliVersionCache)

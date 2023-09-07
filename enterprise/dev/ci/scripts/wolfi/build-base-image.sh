@@ -26,10 +26,10 @@ trap cleanup EXIT
   mkdir bin
 
   # Install apko from Sourcegraph cache
-  # Source: https://github.com/chainguard-dev/apko/releases/download/v0.6.0/apko_0.6.0_linux_amd64.tar.gz
-  wget https://storage.googleapis.com/package-repository/ci-binaries/apko_0.6.0_linux_amd64.tar.gz
-  tar zxf apko_0.6.0_linux_amd64.tar.gz
-  mv apko_0.6.0_linux_amd64/apko bin/apko
+  # Source: https://github.com/chainguard-dev/apko/releases/download/v0.10.0/apko_0.10.0_linux_amd64.tar.gz
+  wget https://storage.googleapis.com/package-repository/ci-binaries/apko_0.10.0_linux_amd64.tar.gz
+  tar zxf apko_0.10.0_linux_amd64.tar.gz
+  mv apko_0.10.0_linux_amd64/apko bin/apko
 
   # Install apk from Sourcegraph cache
   # Source: https://gitlab.alpinelinux.org/api/v4/projects/5/packages/generic//v2.12.11/x86_64/apk.static

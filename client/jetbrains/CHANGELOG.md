@@ -15,6 +15,7 @@
 - Improved settings UI [#55876](https://github.com/sourcegraph/sourcegraph/pull/55876)
 - Telemetry and other GraphQL requests are now sent through the agent [56001](https://github.com/sourcegraph/sourcegraph/pull/56001)
 - Use agent for recipes [#56196](https://github.com/sourcegraph/sourcegraph/pull/56196)
+- Authentication settings changed to accounts from three types of instance types to which user can connect [#56362](https://github.com/sourcegraph/sourcegraph/pull/56362)
 
 ### Deprecated
 
