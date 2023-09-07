@@ -10,7 +10,6 @@ import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.util.IconUtil
-import com.sourcegraph.cody.Icons
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphSecurityUtil
 import java.util.concurrent.CompletableFuture
@@ -19,11 +18,7 @@ class CodyAccounDetailsProvider(
     progressIndicatorsProvider: ProgressIndicatorsProvider,
     private val accountManager: CodyAccountManager,
     private val accountsModel: CodyAccountListModel
-) :
-    LoadingAccountsDetailsProvider<CodyAccount, CodyAccountDetails>(
-        progressIndicatorsProvider) {
-
-  override val defaultIcon = IconUtil.resizeSquared(Icons.CodyLogo, 40)
+) : LoadingAccountsDetailsProvider<CodyAccount, CodyAccountDetails>(progressIndicatorsProvider) {
 
   override fun scheduleLoad(
       account: CodyAccount,
@@ -43,9 +38,7 @@ class CodyAccounDetailsProvider(
                 SourcegraphSecurityUtil.loadCurrentUserDetails(executor, it, account.server)
             val image =
                 accountDetails.avatarURL?.let { url ->
-                  CachingCodyUserAvatarLoader.getInstance()
-                      .requestAvatar(executor, url)
-                      .join()
+                  CachingCodyUserAvatarLoader.getInstance().requestAvatar(executor, url).join()
                 }
             DetailsLoadingResult(accountDetails, image, null, false)
           }

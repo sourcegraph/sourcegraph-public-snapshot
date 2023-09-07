@@ -21,7 +21,7 @@ import com.intellij.ui.dsl.builder.selected
 import com.intellij.ui.dsl.builder.toMutableProperty
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
-import com.sourcegraph.cody.Icons
+import com.intellij.util.ui.EmptyIcon
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.config.PluginSettingChangeActionNotifier
 import com.sourcegraph.config.PluginSettingChangeContext
@@ -53,7 +53,7 @@ class SettingsConfigurable(private val project: Project) :
                   detailsProvider,
                   disposable!!,
                   true,
-                  Icons.CodyLogo)
+                  EmptyIcon.ICON_16)
               .horizontalAlign(HorizontalAlign.FILL)
               .verticalAlign(VerticalAlign.FILL)
               .also {
