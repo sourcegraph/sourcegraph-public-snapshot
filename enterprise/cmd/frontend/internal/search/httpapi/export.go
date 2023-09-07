@@ -37,7 +37,7 @@ func ServeSearchJobDownload(store *store.Store) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "text/csv")
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.csv\"", jobID))
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%d.csv\"", jobID))
 
 		// dummy data
 		csvWriter := csv.NewWriter(w)
