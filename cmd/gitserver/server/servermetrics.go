@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/log"
@@ -45,7 +46,11 @@ func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.
 		Name: "src_gitserver_disk_space_available",
 		Help: "Amount of free space disk space on the repos mount.",
 	}, func() float64 {
-		usage, _ := du.New(s.ReposDir)
+		usage, err := du.New(s.ReposDir)
+		if err != nil {
+			log15.Error("error getting disk usage info", err)
+			return 0
+		}
 		return float64(usage.Available())
 	})
 	prometheus.MustRegister(c)
@@ -54,7 +59,11 @@ func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.
 		Name: "src_gitserver_disk_space_total",
 		Help: "Amount of total disk space in the repos directory.",
 	}, func() float64 {
-		usage, _ := du.New(s.ReposDir)
+		usage, err := du.New(s.ReposDir)
+		if err != nil {
+			log15.Error("error getting disk usage info", err)
+			return 0
+		}
 		return float64(usage.Size())
 	})
 	prometheus.MustRegister(c)
