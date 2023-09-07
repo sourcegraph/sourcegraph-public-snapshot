@@ -92,8 +92,6 @@ func newCompletionsHandler(
 			return
 		}
 
-		logger.Warn("handling completions request", log.String("feature", string(feature)), log.String("provider", string(completionsConfig.ProviderName())))
-
 		responseHandler(ctx, requestParams.CompletionRequestParameters, completionClient, w)
 	})
 }
