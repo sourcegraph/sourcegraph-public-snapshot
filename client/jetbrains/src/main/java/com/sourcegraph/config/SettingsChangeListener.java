@@ -12,15 +12,14 @@ import com.sourcegraph.cody.CodyToolWindowFactory;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager;
-import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.cody.autocomplete.render.AutocompleteRenderUtils;
+import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus;
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService;
 import com.sourcegraph.find.browser.JavaToJSBridge;
 import com.sourcegraph.telemetry.GraphQlLogger;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Listens to changes in the plugin settings and: - notifies JCEF about them. - logs
