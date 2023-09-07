@@ -23,11 +23,25 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
-## Unreleased 5.1.8 (planned release date: September 6, 2023)
+## Unreleased 5.1.9 (planned release date: September 20, 2023)
 
 ### Added
 
 ### Changed
+
+### Fixed
+
+### Removed
+
+## 5.1.8
+
+### Added
+
+- Added experimental autocomplete support for Azure OpenAI [#56063](https://github.com/sourcegraph/sourcegraph/pull/56063)
+
+### Changed
+
+- Improved stability of gRPC connections [#56314](https://github.com/sourcegraph/sourcegraph/pull/56314), [#56302](https://github.com/sourcegraph/sourcegraph/pull/56302), [#56298](https://github.com/sourcegraph/sourcegraph/pull/56298), [#56217](https://github.com/sourcegraph/sourcegraph/pull/56217)
 
 ### Fixed
 

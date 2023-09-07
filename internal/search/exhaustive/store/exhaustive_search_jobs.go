@@ -75,16 +75,10 @@ func (s *Store) CreateExhaustiveSearchJob(ctx context.Context, job types.Exhaust
 		return 0, err
 	}
 
-	row := s.Store.QueryRow(
+	return basestore.ScanAny[int64](s.Store.QueryRow(
 		ctx,
 		sqlf.Sprintf(createExhaustiveSearchJobQueryFmtr, job.Query, job.InitiatorID),
-	)
-
-	var id int64
-	if err = row.Scan(&id); err != nil {
-		return 0, err
-	}
-	return id, nil
+	))
 }
 
 // MissingQueryErr is returned when a query is missing from a types.ExhaustiveSearchJob.
@@ -154,20 +148,7 @@ func (s *Store) ListExhaustiveSearchJobs(ctx context.Context) (jobs []*types.Exh
 		actor.UID,
 	)
 
-	rows, err := s.Store.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	for rows.Next() {
-		job, err := scanExhaustiveSearchJob(rows)
-		if err != nil {
-			return nil, err
-		}
-		jobs = append(jobs, job)
-	}
-
-	return jobs, rows.Err()
+	return scanExhaustiveSearchJobs(s.Store.Query(ctx, q))
 }
 
 const listExhaustiveSearchJobsQueryFmtStr = `
@@ -199,3 +180,5 @@ func scanExhaustiveSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, err
 		&job.UpdatedAt,
 	)
 }
+
+var scanExhaustiveSearchJobs = basestore.NewSliceScanner(scanExhaustiveSearchJob)

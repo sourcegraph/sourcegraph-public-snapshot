@@ -3,6 +3,7 @@ package ratelimit
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
@@ -17,8 +18,8 @@ type codeHostRateLimiter struct {
 }
 
 type CodeHostRateLimiter interface {
-	SetCodeHostAPIRateLimitConfig(ctx context.Context, codeHostURL string, apiQuota, apiReplenishmentIntervalSeconds int32) error
-	SetCodeHostGitRateLimitConfig(ctx context.Context, codeHostURL string, gitQuota, gitReplenishmentIntervalSeconds int32) error
+	SetCodeHostAPIRateLimitConfig(ctx context.Context, codeHostURL string, apiQuota int32, apiReplenishmentInterval time.Duration) error
+	SetCodeHostGitRateLimitConfig(ctx context.Context, codeHostURL string, gitQuota int32, gitReplenishmentInterval time.Duration) error
 }
 
 func NewCodeHostRateLimiter(rl redispool.RateLimiter) CodeHostRateLimiter {
@@ -27,14 +28,14 @@ func NewCodeHostRateLimiter(rl redispool.RateLimiter) CodeHostRateLimiter {
 	}
 }
 
-func (c *codeHostRateLimiter) SetCodeHostAPIRateLimitConfig(ctx context.Context, codeHostURL string, apiQuota, apiReplenishmentIntervalSeconds int32) error {
-	return c.setCodeHostRateLimitConfig(ctx, fmt.Sprintf("%s:%s", codeHostURL, codeHostAPITokenBucketSuffix), apiQuota, apiReplenishmentIntervalSeconds)
+func (c *codeHostRateLimiter) SetCodeHostAPIRateLimitConfig(ctx context.Context, codeHostURL string, apiQuota int32, apiReplenishmentInterval time.Duration) error {
+	return c.setCodeHostRateLimitConfig(ctx, fmt.Sprintf("%s:%s", codeHostURL, codeHostAPITokenBucketSuffix), apiQuota, apiReplenishmentInterval)
 }
 
-func (c *codeHostRateLimiter) SetCodeHostGitRateLimitConfig(ctx context.Context, codeHostURL string, gitQuota, gitReplenishmentIntervalSeconds int32) error {
-	return c.setCodeHostRateLimitConfig(ctx, fmt.Sprintf("%s:%s", codeHostURL, codeHostGitTokenBucketSuffix), gitQuota, gitReplenishmentIntervalSeconds)
+func (c *codeHostRateLimiter) SetCodeHostGitRateLimitConfig(ctx context.Context, codeHostURL string, gitQuota int32, gitReplenishmentInterval time.Duration) error {
+	return c.setCodeHostRateLimitConfig(ctx, fmt.Sprintf("%s:%s", codeHostURL, codeHostGitTokenBucketSuffix), gitQuota, gitReplenishmentInterval)
 }
 
-func (c *codeHostRateLimiter) setCodeHostRateLimitConfig(ctx context.Context, codeHostBucketName string, quota, replenishmentIntervalSeconds int32) error {
-	return c.rateLimiter.SetTokenBucketReplenishment(ctx, codeHostBucketName, quota, replenishmentIntervalSeconds)
+func (c *codeHostRateLimiter) setCodeHostRateLimitConfig(ctx context.Context, codeHostBucketName string, quota int32, replenishmentInterval time.Duration) error {
+	return c.rateLimiter.SetTokenBucketConfig(ctx, codeHostBucketName, quota, replenishmentInterval)
 }

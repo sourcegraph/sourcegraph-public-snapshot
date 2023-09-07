@@ -6,13 +6,14 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 // New returns a Service.
