@@ -507,33 +507,32 @@ func (c *clientImplementor) SystemInfo(ctx context.Context, addr string) (System
 	}, nil
 }
 
-func (c *clientImplementor) getDiskInfo(ctx context.Context, addr AddressWithClient) (*protocol.DiskInfoResponse, error) {
-	var resp protocol.DiskInfoResponse
+func (c *clientImplementor) getDiskInfo(ctx context.Context, addr AddressWithClient) (*proto.DiskInfoResponse, error) {
 	if conf.IsGRPCEnabled(ctx) {
 		client, err := addr.GRPCClient()
 		if err != nil {
 			return nil, err
 		}
-		rs, err := client.DiskInfo(ctx, &proto.DiskInfoRequest{})
+		resp, err := client.DiskInfo(ctx, &proto.DiskInfoRequest{})
 		if err != nil {
 			return nil, err
 		}
-		resp.FromProto(rs)
-	} else {
-		uri := fmt.Sprintf("http://%s/disk-info", addr.Address())
-		rs, err := c.do(ctx, "", uri, nil)
-		if err != nil {
-			return nil, err
-		}
-		defer rs.Body.Close()
-		if rs.StatusCode != http.StatusOK {
-			return nil, errors.Newf("http status %d: %s", rs.StatusCode, readResponseBody(io.LimitReader(rs.Body, 200)))
-		}
-		if err := json.NewDecoder(rs.Body).Decode(&resp); err != nil {
-			return nil, err
-		}
+		return resp, nil
 	}
 
+	uri := fmt.Sprintf("http://%s/disk-info", addr.Address())
+	rs, err := c.do(ctx, "", uri, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer rs.Body.Close()
+	if rs.StatusCode != http.StatusOK {
+		return nil, errors.Newf("http status %d: %s", rs.StatusCode, readResponseBody(io.LimitReader(rs.Body, 200)))
+	}
+	var resp proto.DiskInfoResponse
+	if err := json.NewDecoder(rs.Body).Decode(&resp); err != nil {
+		return nil, err
+	}
 	return &resp, nil
 }
 

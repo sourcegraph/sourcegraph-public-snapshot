@@ -101,8 +101,7 @@ func (gs *GRPCServer) CreateCommitFromPatchBinary(s proto.GitserverService_Creat
 }
 
 func (gs *GRPCServer) DiskInfo(_ context.Context, _ *proto.DiskInfoRequest) (*proto.DiskInfoResponse, error) {
-	di, err := getDiskInfo(gs.Server.ReposDir)
-	return di.ToProto(), err
+	return getDiskInfo(gs.Server.ReposDir)
 }
 
 func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_ExecServer) error {

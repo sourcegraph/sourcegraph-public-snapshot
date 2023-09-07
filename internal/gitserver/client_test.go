@@ -1486,7 +1486,7 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 
 func TestClient_SystemsInfo(t *testing.T) {
 	const gitserverAddr = "172.16.8.1:8080"
-	var mockResponse = &protocol.DiskInfoResponse{
+	var mockResponse = &proto.DiskInfoResponse{
 		FreeSpace:  102400,
 		TotalSpace: 409600,
 	}
@@ -1518,7 +1518,7 @@ func TestClient_SystemsInfo(t *testing.T) {
 			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 				mockDiskInfo := func(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error) {
 					called = true
-					return mockResponse.ToProto(), nil
+					return mockResponse, nil
 				}
 				return &mockClient{mockDiskInfo: mockDiskInfo}
 			}
@@ -1550,7 +1550,7 @@ func TestClient_SystemsInfo(t *testing.T) {
 			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 				mockDiskInfo := func(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error) {
 					called = true
-					return mockResponse.ToProto(), nil
+					return mockResponse, nil
 				}
 				return &mockClient{mockDiskInfo: mockDiskInfo}
 			}
@@ -1582,7 +1582,7 @@ func TestClient_SystemsInfo(t *testing.T) {
 
 func TestClient_SystemInfo(t *testing.T) {
 	const gitserverAddr = "172.16.8.1:8080"
-	var mockResponse = &protocol.DiskInfoResponse{
+	var mockResponse = &proto.DiskInfoResponse{
 		FreeSpace:  102400,
 		TotalSpace: 409600,
 	}
@@ -1613,7 +1613,7 @@ func TestClient_SystemInfo(t *testing.T) {
 			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 				mockDiskInfo := func(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error) {
 					called = true
-					return mockResponse.ToProto(), nil
+					return mockResponse, nil
 				}
 				return &mockClient{mockDiskInfo: mockDiskInfo}
 			}
@@ -1645,7 +1645,7 @@ func TestClient_SystemInfo(t *testing.T) {
 			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 				mockDiskInfo := func(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error) {
 					called = true
-					return mockResponse.ToProto(), nil
+					return mockResponse, nil
 				}
 				return &mockClient{mockDiskInfo: mockDiskInfo}
 			}
