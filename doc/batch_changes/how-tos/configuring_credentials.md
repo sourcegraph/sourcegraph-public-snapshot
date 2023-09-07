@@ -86,7 +86,7 @@ Adding a global service account token is done through the Batch Changes section 
 
 1. From any Sourcegraph page, click on your avatar at the top right of the page.
 1. Select **Site admin** from the dropdown menu.
-1. Click **Batch Changes** on the sidebar menu.
+1. Click **Settings** under the **Batch Changes** sub-heading on the sidebar menu.
 1. Click **Add credentials** and follow the steps to [create a new token](#creating-a-code-host-token) for the code host
 
 Code hosts with tokens configured are indicated by a green tick to the left of the code host name, while code hosts without tokens have an empty red circle next to them.

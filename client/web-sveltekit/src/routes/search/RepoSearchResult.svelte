@@ -9,15 +9,14 @@
 
     import SearchResult from './SearchResult.svelte'
     import { Badge } from '$lib/wildcard'
-    import { getContext } from 'svelte'
-    import type { SearchResultsContext } from './SearchResults.svelte'
+    import { getSearchResultsContext } from './SearchResults.svelte'
     import { limitDescription, getMetadata, buildSearchURLQueryForMeta, simplifyLineRange } from '$lib/search/results'
     import { highlightRanges } from '$lib/dom'
 
     export let result: RepositoryMatch
 
     const enableRepositoryMetadata = featureFlag('repository-metadata')
-    const queryState = getContext<SearchResultsContext>('search-results').queryState
+    const queryState = getSearchResultsContext().queryState
 
     $: repoAtRevisionURL = getRepoMatchUrl(result)
     $: metadata = $enableRepositoryMetadata ? getMetadata(result) : []

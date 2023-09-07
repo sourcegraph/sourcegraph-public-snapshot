@@ -92,10 +92,15 @@ func TestHandler_Handle(t *testing.T) {
 	}
 	err = h.Handle(ctx)
 	assert.NoError(t, err)
-	apiCapKey := fmt.Sprintf("%s:%s:%s:config:bucket_capacity", prefix, url, "api_tokens")
-	apiReplenishmentKey := fmt.Sprintf("%s:%s:%s:config:bucket_replenishment_interval_seconds", prefix, url, "api_tokens")
-	gitCapKey := fmt.Sprintf("%s:%s:%s:config:bucket_capacity", prefix, url, "git_tokens")
-	gitReplenishmentKey := fmt.Sprintf("%s:%s:%s:config:bucket_replenishment_interval_seconds", prefix, url, "git_tokens")
+
+	bucketTypeAPI := "api_tokens"
+	bucketTypeGit := "git_tokens"
+	configKeyBucketQuota := "config:bucket_quota"
+	configKeyReplenishmentIntervalSeconds := "config:bucket_replenishment_interval_seconds"
+	apiCapKey := fmt.Sprintf("%s:%s:%s:%s", prefix, url, bucketTypeAPI, configKeyBucketQuota)
+	apiReplenishmentKey := fmt.Sprintf("%s:%s:%s:%s", prefix, url, bucketTypeAPI, configKeyReplenishmentIntervalSeconds)
+	gitCapKey := fmt.Sprintf("%s:%s:%s:%s", prefix, url, bucketTypeGit, configKeyBucketQuota)
+	gitReplenishmentKey := fmt.Sprintf("%s:%s:%s:%s", prefix, url, bucketTypeGit, configKeyReplenishmentIntervalSeconds)
 	assertValFromRedis(kv, apiCapKey, rateLimitConfigValues)
 	assertValFromRedis(kv, apiReplenishmentKey, rateLimitConfigValues)
 	assertValFromRedis(kv, gitCapKey, rateLimitConfigValues)

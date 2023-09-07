@@ -3,8 +3,11 @@ package com.sourcegraph.config;
 import com.google.gson.JsonObject;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManagerCore;
+import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.extensions.PluginId;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
 import com.sourcegraph.cody.agent.ExtensionConfiguration;
 import com.sourcegraph.cody.config.CodyAccount;
 import com.sourcegraph.cody.config.CodyApplicationSettings;
@@ -12,8 +15,14 @@ import com.sourcegraph.cody.config.CodyAuthenticationManager;
 import com.sourcegraph.cody.config.ServerAuth;
 import com.sourcegraph.cody.config.ServerAuthLoader;
 import com.sourcegraph.cody.config.SourcegraphServerPath;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -99,6 +108,14 @@ public class ConfigUtil {
     return CodyApplicationSettings.getInstance().isCodyAutocompleteEnabled();
   }
 
+  public static boolean isCustomAutocompleteColorEnabled() {
+    return getApplicationLevelConfig().isCustomAutocompleteColorEnabled();
+  }
+
+  public static Integer getCustomAutocompleteColor() {
+    return getApplicationLevelConfig().getCustomAutocompleteColor();
+  }
+
   public static String getLastUpdateNotificationPluginVersion() {
     return CodyApplicationSettings.getInstance().getLastUpdateNotificationPluginVersion();
   }
@@ -117,5 +134,14 @@ public class ConfigUtil {
     // workspace root is not null, so we have to provide some default value. Feel free to change to
     // something else than the home directory if this is causing problems.
     return System.getProperty("user.home");
+  }
+
+  public static List<Editor> getAllEditors() {
+    Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
+    return Arrays.stream(openProjects)
+        .flatMap(project -> Arrays.stream(FileEditorManager.getInstance(project).getAllEditors()))
+        .filter(fileEditor -> fileEditor instanceof com.intellij.openapi.fileEditor.TextEditor)
+        .map(fileEditor -> ((com.intellij.openapi.fileEditor.TextEditor) fileEditor).getEditor())
+        .collect(Collectors.toList());
   }
 }
