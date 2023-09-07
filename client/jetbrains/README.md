@@ -18,6 +18,7 @@ Cody autocompletes single lines, or whole functions, in any programming language
 ![Example of using code autocomplete](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/AutoCompletion_IntelliJ_SS.jpg)
 
 ### Chat: Ask Cody about anything in your codebase
+
 Cody understands your entire codebase — not just your open files. Ask Cody any question about your code, and it will use Sourcegraph's code graph to answer using knowledge of your codebase.
 
 For example, you can ask Cody:
