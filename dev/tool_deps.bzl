@@ -67,7 +67,7 @@ def tool_deps():
 
     http_file(
         name = "universal-ctags-darwin-arm64",
-        sha256 = "51b3b7ea296455e00fc5a7aafea49bb89551e81770b3728c97a04a5614fde8c5",
+        sha256 = "269d9ae1d1dd39b8b266b31c4ad653b87ba004888bba8a8b9db23bfcc7ac503a",
         url = "https://storage.googleapis.com/universal_ctags/aarch64-darwin/bin/universal-ctags-{0}".format(CTAGS_VERSION),
         executable = True,
     )
