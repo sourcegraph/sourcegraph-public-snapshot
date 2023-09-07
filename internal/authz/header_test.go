@@ -85,8 +85,7 @@ func TestParseAuthorizationHeader(t *testing.T) {
 			URL:  &url.URL{Path: ".api/graphql"},
 			Body: io.NopCloser(strings.NewReader("the body")),
 		}
-		logger, _ := logtest.Captured(t)
-		_, _, err := ParseAuthorizationHeader(logger, r, `token`)
+		_, _, err := ParseAuthorizationHeader(logtest.Scoped(t), r, `token`)
 		got := fmt.Sprintf("%v", err)
 		want := "no token value in the HTTP Authorization request header"
 		if diff := cmp.Diff(want, got); diff != "" {
