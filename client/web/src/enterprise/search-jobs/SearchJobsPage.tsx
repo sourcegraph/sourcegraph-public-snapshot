@@ -296,8 +296,9 @@ const SearchJobBadge: FC<SearchJobBadgeProps> = props => {
         return (
             <div className={styles.jobProgress}>
                 <div
-                    className={styles.jobProgressBar}
+                    // eslint-disable-next-line react/forbid-dom-props
                     style={{ width: `${100 * (totalProcessedRepos / totalRepo)}%` }}
+                    className={styles.jobProgressBar}
                 />
             </div>
         )
