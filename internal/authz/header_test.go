@@ -2,11 +2,17 @@ package authz
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 )
@@ -31,7 +37,7 @@ func TestParseAuthorizationHeader(t *testing.T) {
 	}
 	for input, test := range tests {
 		t.Run(input, func(t *testing.T) {
-			token, sudoUser, err := ParseAuthorizationHeader(input)
+			token, sudoUser, err := ParseAuthorizationHeader(logtest.Scoped(t), nil, input)
 			if (err != nil) != test.err {
 				t.Errorf("got error %v, want error? %v", err, test.err)
 			}
@@ -51,12 +57,24 @@ func TestParseAuthorizationHeader(t *testing.T) {
 		envvar.MockSourcegraphDotComMode(true)
 		defer envvar.MockSourcegraphDotComMode(false)
 
-		_, _, err := ParseAuthorizationHeader(`token-sudo token="tok==", user="alice"`)
+		r := &http.Request{
+			URL:  &url.URL{Path: ".api/graphql"},
+			Body: io.NopCloser(strings.NewReader("the body")),
+		}
+		logger, captured := logtest.Captured(t)
+		_, _, err := ParseAuthorizationHeader(logger, r, `token-sudo token="tok==", user="alice"`)
 		got := fmt.Sprintf("%v", err)
 		want := "use of access tokens with sudo scope is disabled"
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
+		logs := captured()
+		require.Equal(t, []string{"saw request with sudo mode"}, logs.Messages())
+		require.Equal(t, map[string]any{
+			"body":  "the body",
+			"error": "<nil>",
+			"path":  ".api/graphql",
+		}, logs[0].Fields)
 	})
 }
 
