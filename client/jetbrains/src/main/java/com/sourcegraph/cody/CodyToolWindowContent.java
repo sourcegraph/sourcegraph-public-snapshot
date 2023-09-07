@@ -1,7 +1,7 @@
 package com.sourcegraph.cody;
 
 import static com.intellij.ui.SimpleTextAttributes.STYLE_PLAIN;
-import static java.awt.event.KeyEvent.VK_ENTER;
+import static java.awt.event.KeyEvent.*;
 import static javax.swing.KeyStroke.getKeyStroke;
 
 import com.intellij.icons.AllIcons;
@@ -42,6 +42,9 @@ import com.sourcegraph.cody.chat.ContextFilesMessage;
 import com.sourcegraph.cody.chat.MessagePanel;
 import com.sourcegraph.cody.chat.SignInWithSourcegraphPanel;
 import com.sourcegraph.cody.chat.Transcript;
+import com.sourcegraph.cody.chat.*;
+import com.sourcegraph.cody.config.AccountType;
+import com.sourcegraph.cody.config.AccountsHostProjectHolder;
 import com.sourcegraph.cody.config.CodyAccount;
 import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.cody.config.CodyAuthenticationManager;
@@ -75,6 +78,7 @@ public class CodyToolWindowContent implements UpdatableChat {
   public static final String SING_IN_WITH_SOURCEGRAPH_PANEL = "singInWithSourcegraphPanel";
   private static final int CHAT_TAB_INDEX = 0;
   private static final int RECIPES_TAB_INDEX = 1;
+  private static final int CHAT_MESSAGE_HISTORY_CAPACITY = 100;
   private final @NotNull CardLayout allContentLayout = new CardLayout();
   private final @NotNull JPanel allContentPanel = new JPanel(allContentLayout);
   private final @NotNull JBTabbedPane tabbedPane = new JBTabbedPane();
@@ -90,6 +94,8 @@ public class CodyToolWindowContent implements UpdatableChat {
   private @NotNull Transcript transcript = new Transcript();
   private boolean isChatVisible = false;
   private CodyOnboardingGuidancePanel codyOnboardingGuidancePanel;
+  private final @NotNull CodyChatMessageHistory chatMessageHistory =
+      new CodyChatMessageHistory(CHAT_MESSAGE_HISTORY_CAPACITY);
 
   public CodyToolWindowContent(@NotNull Project project) {
     this.project = project;
@@ -117,7 +123,28 @@ public class CodyToolWindowContent implements UpdatableChat {
     promptInput = autoGrowingTextArea.getTextArea();
     /* Submit on enter */
     KeyboardShortcut JUST_ENTER = new KeyboardShortcut(getKeyStroke(VK_ENTER, 0), null);
+    KeyboardShortcut UP = new KeyboardShortcut(getKeyStroke(VK_UP, 0), null);
+    KeyboardShortcut DOWN = new KeyboardShortcut(getKeyStroke(VK_DOWN, 0), null);
+
     ShortcutSet DEFAULT_SUBMIT_ACTION_SHORTCUT = new CustomShortcutSet(JUST_ENTER);
+    ShortcutSet POP_UPPER_MESSAGE_ACTION_SHORTCUT = new CustomShortcutSet(UP);
+    ShortcutSet POP_LOWER_MESSAGE_ACTION_SHORTCUT = new CustomShortcutSet(DOWN);
+
+    AnAction upperMessageAction =
+        new DumbAwareAction() {
+          @Override
+          public void actionPerformed(@NotNull AnActionEvent e) {
+            chatMessageHistory.popUpperMessage(promptInput);
+          }
+        };
+    AnAction lowerMessageAction =
+        new DumbAwareAction() {
+          @Override
+          public void actionPerformed(@NotNull AnActionEvent e) {
+            chatMessageHistory.popLowerMessage(promptInput);
+          }
+        };
+
     AnAction sendMessageAction =
         new DumbAwareAction() {
           @Override
@@ -126,7 +153,8 @@ public class CodyToolWindowContent implements UpdatableChat {
           }
         };
     sendMessageAction.registerCustomShortcutSet(DEFAULT_SUBMIT_ACTION_SHORTCUT, promptInput);
-
+    upperMessageAction.registerCustomShortcutSet(POP_UPPER_MESSAGE_ACTION_SHORTCUT, promptInput);
+    lowerMessageAction.registerCustomShortcutSet(POP_LOWER_MESSAGE_ACTION_SHORTCUT, promptInput);
     // Enable/disable the send button based on whether promptInput is empty
     promptInput
         .getDocument()
@@ -469,6 +497,7 @@ public class CodyToolWindowContent implements UpdatableChat {
               addWelcomeMessage();
               messagesPanel.revalidate();
               messagesPanel.repaint();
+              chatMessageHistory.clearHistory();
               CodyAgent.getInitializedServer(project).thenAccept(CodyAgentServer::transcriptReset);
             });
   }
@@ -487,6 +516,7 @@ public class CodyToolWindowContent implements UpdatableChat {
   @RequiresEdt
   private void sendChatMessage(@NotNull Project project) {
     String text = promptInput.getText();
+    chatMessageHistory.messageSent(promptInput);
     sendMessage(project, text, "chat-question");
     promptInput.setText("");
   }
