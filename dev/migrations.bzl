@@ -1,3 +1,23 @@
+CMD_PREAMBLE = """export HOME=$(pwd)
+export SG_FORCE_REPO_ROOT=$(pwd)
+
+if [ -n "$PG_UTILS_PATH" ]; then
+    PATH="$PG_UTILS_PATH:$PATH"
+fi
+
+if [ -z "$PGUSER" ]; then
+    export PGUSER="sourcegraph"
+fi
+
+if [ -z "$CODEINTEL_PGUSER" ]; then
+    export CODEINTEL_PGUSER="$PGUSER"
+fi
+
+if [ -z "$CODEINSIGHTS_PGUSER" ]; then
+    export CODEINSIGHTS_PGUSER="$PGUSER"
+fi
+"""
+
 def _migration_impl(ctx):
     ctx.actions.run_shell(
         inputs = ctx.files.srcs,
@@ -5,20 +25,11 @@ def _migration_impl(ctx):
         progress_message = "Running squash migration for %s" % ctx.attr.db,
         use_default_shell_env = True,
         execution_requirements = {"requires-network": "1"},
-        command = """
-        export HOME=$(pwd)
-        export SG_FORCE_REPO_ROOT=$(pwd)
-
-        if [ -n "$PG_UTILS_PATH" ]; then
-            PATH="$PG_UTILS_PATH:$PATH"
-        fi
-
-        if [ -z "$PGUSER" ]; then
-            export PGUSER="sourcegraph"
-        fi
+        command = """{cmd_preamble}
 
         {sg} migration squash-all -skip-teardown -db {db} -f {output_file}
         """.format(
+            cmd_preamble = CMD_PREAMBLE,
             sg = ctx.executable._sg.path,
             db = ctx.attr.db,
             output_file = ctx.outputs.out.path,
@@ -43,28 +54,11 @@ def _describe_impl(ctx):
         progress_message = "Running describe migration for %s" % ctx.attr.db,
         use_default_shell_env = True,
         execution_requirements = {"requires-network": "1"},
-        command = """
-        export HOME=$(pwd)
-        export SG_FORCE_REPO_ROOT=$(pwd)
-        if [ -n "$PG_UTILS_PATH" ]; then
-            PATH="$PG_UTILS_PATH:$PATH"
-        fi
-
-        echo "$PGUSER"
-        if [ -z "$PGUSER" ]; then
-            export PGUSER="sourcegraph"
-        fi
-
-        if [ -z "$CODEINTEL_PGUSER" ]; then
-            export CODEINTEL_PGUSER="$PGUSER"
-        fi
-
-        if [ -z "$CODEINSIGHTS_PGUSER" ]; then
-            export CODEINSIGHTS_PGUSER="$PGUSER"
-        fi
+        command = """{cmd_preamble}
 
         {sg} migration describe -db {db} --format={format} -force -out {output_file}
         """.format(
+            cmd_preamble = CMD_PREAMBLE,
             sg = ctx.executable._sg.path,
             db = ctx.attr.db,
             format = ctx.attr.format,
