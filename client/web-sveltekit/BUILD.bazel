@@ -63,6 +63,7 @@ SRCS = [
 BUILD_DEPS = [
     ":graphql_operations_ts",
     ":node_modules/@faker-js/faker",
+    ":node_modules/@melt-ui/svelte",
     ":node_modules/@popperjs/core",
     ":node_modules/@remix-run/router",
     ":node_modules/@sourcegraph/branded",
@@ -122,7 +123,7 @@ npm_link_all_packages(name = "node_modules")
 vite_bin.vite(
     name = "web-sveltekit",
     srcs = SRCS + BUILD_DEPS + CONFIGS,
-    outs = ["build"],
+    out_dirs= ["build"],
     args = [
         "build",
         "-c vite.config.ts",
@@ -130,8 +131,11 @@ vite_bin.vite(
     chdir = package_name(),
     env = {
         "BAZEL": "1",
+        "JS_BINARY__LOG_DEBUG": "1",
     },
     visibility = ["//ui/assets/enterprise:__pkg__"],
+    silent_on_success = False,
+    # tags = ["no-sandbox"]
 )
 
 # TODO: remove this once we have some tests.
