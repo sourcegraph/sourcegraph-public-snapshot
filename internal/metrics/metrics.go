@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
-	"github.com/ricochet2200/go-disk-usage/du"
+	du "github.com/sourcegraph/sourcegraph/internal/diskusage"
 )
 
 type testRegisterer struct{}
@@ -202,7 +202,7 @@ func (c *diskCollector) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (c *diskCollector) Collect(ch chan<- prometheus.Metric) {
-	usage := du.NewDiskUsage(c.path)
+	usage, _ := du.New(c.path)
 	ch <- prometheus.MustNewConstMetric(c.availableDesc, prometheus.GaugeValue, float64(usage.Available()))
 	ch <- prometheus.MustNewConstMetric(c.totalDesc, prometheus.GaugeValue, float64(usage.Size()))
 }

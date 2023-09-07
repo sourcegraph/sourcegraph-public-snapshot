@@ -19,7 +19,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/ricochet2200/go-disk-usage/du"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -28,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	du "github.com/sourcegraph/sourcegraph/internal/diskusage"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
@@ -635,12 +635,18 @@ func howManyBytesToFree(logger log.Logger, reposDir string, diskSizer DiskSizer,
 type StatDiskSizer struct{}
 
 func (s *StatDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
-	usage := du.NewDiskUsage(mountPoint)
+	usage, err := du.New(mountPoint)
+	if err != nil {
+		return 0, err
+	}
 	return usage.Available(), nil
 }
 
 func (s *StatDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
-	usage := du.NewDiskUsage(mountPoint)
+	usage, err := du.New(mountPoint)
+	if err != nil {
+		return 0, err
+	}
 	return usage.Size(), nil
 }
 

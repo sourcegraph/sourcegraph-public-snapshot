@@ -7,6 +7,7 @@ type DiskUsage interface {
 	Free() uint64
 	Size() uint64
 	Usage() float32
+	Available() uint64
 }
 
 // DiskUsage contains usage data and provides user-friendly access methods
@@ -42,4 +43,9 @@ func (du *diskUsage) used() uint64 {
 // Usage returns percentage of use on the file system
 func (du *diskUsage) Usage() float32 {
 	return float32(du.used()) / float32(du.Size())
+}
+
+// Available return total available bytes on file system to an unprivileged user
+func (du *diskUsage) Available() uint64 {
+	return du.stat.Bavail * uint64(du.stat.Bsize)
 }
