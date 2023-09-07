@@ -56,11 +56,11 @@ def _describe_impl(ctx):
         fi
 
         if [ -z "$CODEINTEL_PGUSER" ]; then
-            export CODEINTEL_PGUSER="sourcegraph"
+            export CODEINTEL_PGUSER="$PGUSER"
         fi
 
         if [ -z "$CODEINSIGHTS_PGUSER" ]; then
-            export CODEINSIGHTS_PGUSER="sourcegraph"
+            export CODEINSIGHTS_PGUSER="$PGUSER"
         fi
 
         {sg} migration describe -db {db} --format={format} -force -out {output_file}
