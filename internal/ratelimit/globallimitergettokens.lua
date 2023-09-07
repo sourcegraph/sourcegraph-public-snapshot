@@ -4,7 +4,7 @@ local bucket_rate_key = KEYS[3]
 local bucket_replenishment_interval_key = KEYS[4]
 local burst_key = KEYS[5]
 local current_time = tonumber(ARGV[1])
-local max_time_to_wait_for_token = tonumber(ARGV[2])
+local max_time_to_wait_for_tokens = tonumber(ARGV[2])
 local default_rate = tonumber(ARGV[3])
 local default_replenishment_interval = tonumber(ARGV[4])
 local default_burst = tonumber(ARGV[5])
@@ -69,16 +69,16 @@ local current_tokens = tonumber(redis.call('GET', bucket_key))
 if num_tokens_to_replenish > 0 then
     local available_capacity = burst - current_tokens
     if available_capacity > 0 then
-		-- The number of tokens we add is either the number of tokens we have replenished over
-		-- the last time_difference, or enough tokens to refill the bucket completely, whichever
-		-- is lower.
-		current_tokens = math.min(burst, current_tokens + num_tokens_to_replenish)
-    	redis.call('SET', bucket_key, math.min(burst, current_tokens))
+      -- The number of tokens we add is either the number of tokens we have replenished over
+      -- the last time_difference, or enough tokens to refill the bucket completely, whichever
+      -- is lower.
+		  current_tokens = math.min(burst, current_tokens + num_tokens_to_replenish)
+    	redis.call('SET', bucket_key, current_tokens)
     	redis.call('SET', last_replenishment_timestamp_key, current_time)
     end
 end
 
-local time_to_wait_for_token = 0
+local time_to_wait_for_tokens = 0
 -- This is for calculations with us removing a token.
 local tokens_after_consumption = current_tokens - tokens_to_grant
 
@@ -86,14 +86,15 @@ local tokens_after_consumption = current_tokens - tokens_to_grant
 -- i.e. if we are going to be at -15 tokens after this consumption, and the token replenishment
 -- rate is 0.33/s, then we need to wait 45.45 (46 because we round up) seconds before making the request.
 if tokens_after_consumption < 0 then
-    time_to_wait_for_token = math.ceil((tokens_after_consumption * -1) / replenishment_rate)
+    time_to_wait_for_tokens = math.ceil((tokens_after_consumption * -1) / replenishment_rate)
 end
 
-if time_to_wait_for_token >= max_time_to_wait_for_token then
-    return {-1, time_to_wait_for_token} -- Return -1 (token grant wait time exceeds limit)
+-- If the deadline is not infinite, and the wait time exceeds the deadline, return -1.
+if max_time_to_wait_for_tokens ~= -1 and time_to_wait_for_tokens >= max_time_to_wait_for_tokens then
+    return {-1, time_to_wait_for_tokens} -- Return -1 (token grant wait time exceeds limit)
 end
 
 -- Decrement the token bucket by tokens_to_grant, we are granted the tokens
 redis.call('DECRBY', bucket_key, tokens_to_grant)
 
-return {1, time_to_wait_for_token}
+return {1, time_to_wait_for_tokens}

@@ -101,10 +101,12 @@ func (r *rateLimiter) WaitN(ctx context.Context, n int) (err error) {
 	}
 
 	// Determine wait limit.
-	waitLimit := time.Duration(math.MaxInt32)
+	waitLimit := time.Duration(-1)
 	if deadline, ok := ctx.Deadline(); ok {
 		waitLimit = deadline.Sub(now)
 	}
+
+	fmt.Printf("WaitN n=%d waitLimit=%s\n", n, waitLimit)
 
 	// Reserve a token from the bucket.
 	timeToWait, err := r.waitn(ctx, n, now, waitLimit)
@@ -151,11 +153,15 @@ func (r *rateLimiter) waitn(ctx context.Context, n int, requestTime time.Time, m
 		fallbackRateLimit = rate.Limit(math.MaxInt32)
 	}
 
+	maxWaitTime := int32(-1)
+	if maxTimeToWait != -1 {
+		maxWaitTime = int32(maxTimeToWait.Seconds())
+	}
 	result, err := getTokensScript.DoContext(ctx,
 		connection,
 		keys.BucketKey, keys.LastReplenishmentTimestampKey, keys.RateKey, keys.ReplenishmentIntervalSecondsKey, keys.BurstKey,
 		requestTime.Unix(),
-		maxTimeToWait.Seconds(),
+		maxWaitTime,
 		int32(fallbackRateLimit),
 		1,
 		defaultBurst,
@@ -220,15 +226,15 @@ func (r *rateLimiter) SetTokenBucketConfig(ctx context.Context, bucketQuota int3
 
 func (r *rateLimiter) getRateLimiterKeys() rateLimitBucketConfigKeys {
 	var keys rateLimitBucketConfigKeys
-	// e.g. v2:rate_limiters:github.com:api_tokens
+	// e.g. v2:rate_limiters:github.com
 	keys.BucketKey = fmt.Sprintf("%s:%s", r.prefix, r.bucketName)
-	// e.g. v2:rate_limiters:github.com:api_tokens:config:bucket_rate
+	// e.g. v2:rate_limiters:github.com:config:bucket_rate
 	keys.RateKey = fmt.Sprintf("%s:%s", keys.BucketKey, bucketRateConfigKeySuffix)
-	// e.g.. v2:rate_limiters:github.com:api_tokens:config:bucket_replenishment_interval_seconds
+	// e.g.. v2:rate_limiters:github.com:config:bucket_replenishment_interval_seconds
 	keys.ReplenishmentIntervalSecondsKey = fmt.Sprintf("%s:%s", keys.BucketKey, bucketReplenishmentConfigKeySuffix)
-	// e.g.. v2:rate_limiters:github.com:api_tokens:last_replenishment_timestamp
+	// e.g.. v2:rate_limiters:github.com:last_replenishment_timestamp
 	keys.LastReplenishmentTimestampKey = fmt.Sprintf("%s:%s", keys.BucketKey, bucketLastReplenishmentTimestampKeySuffix)
-	// e.g.. v2:rate_limiters:github.com:api_tokens:allowed_burst
+	// e.g.. v2:rate_limiters:github.com:allowed_burst
 	keys.BurstKey = fmt.Sprintf("%s:%s", keys.BucketKey, bucketAllowedBurstKeySuffix)
 
 	return keys
