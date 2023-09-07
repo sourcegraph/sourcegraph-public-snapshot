@@ -379,6 +379,17 @@ write       group       Dev1    *    //depot/elm_proj/...
 			canReadAll: []string{"dev/productA/readme.txt"},
 		},
 		{
+			name:  "Rules that include a host are ignored",
+			depot: "//depot/",
+			protects: `
+write       group       Dev2    *    //depot/dev/...
+read        group       Dev1    *    //depot/dev/productA/...
+write       group       Dev1    *    //depot/elm_proj/...
+read		group		Dev1    192.168.10.1/24    -//depot/dev/productA/...
+`,
+			canReadAll: []string{"dev/productA/readme.txt"},
+		},
+		{
 			name:  "Exclusion overrides prior inclusion",
 			depot: "//depot/",
 			protects: `

@@ -217,13 +217,17 @@ func scanProtects(logger log.Logger, rc io.Reader, s *protectsScanner) error {
 		}
 
 		// Trim trailing comments
-		i := strings.Index(line, "##")
-		if i > -1 {
+		if i := strings.Index(line, "##"); i > -1 {
 			line = line[:i]
 		}
 
 		// Trim whitespace
 		line = strings.TrimSpace(line)
+
+		// Skip blank lines
+		if line == "" {
+			continue
+		}
 
 		logger.Debug("Scanning protects line", log.String("line", line))
 
@@ -231,6 +235,17 @@ func scanProtects(logger log.Logger, rc io.Reader, s *protectsScanner) error {
 		fields := strings.Fields(line)
 		if len(fields) < 5 {
 			logger.Debug("Line has less than 5 fields, discarding")
+			continue
+		}
+
+		// skip any rule that relies on particular client IP addresses or hostnames
+		// this is the initial approach to address wrong behaviors
+		// that are causing clients to need to disable sub-repo permissions
+		// GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/53374
+		// Subsequent approaches will need to add more sophisticated handling of hosts
+		// perhaps even capturing the browser IP address and comparing it to the host field.
+		if fields[3] != "*" {
+			logger.Debug("Skipping host-specific rule", log.String("line", line))
 			continue
 		}
 
