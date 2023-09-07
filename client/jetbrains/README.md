@@ -108,20 +108,14 @@ The plugin works with all JetBrains IDEs, including:
 
 ### List of in-app settings and how to use them
 
-- **Sourcegraph URL**: The URL of your Sourcegraph instance if you use a private instance.
-  - To use Sourcegraph.com and search in public repos, just choose "Use sourcegraph.com".
-- **Access token**:
-  - If you want to use your private Sourcegraph instance, you'll need an access token to authorize
-    yourself.
-  - If you use Sourcegraph.com, using an access token is optional (and only necessary to use Cody).
-  - The configuration for an access token to use with Sourcegraph.com & a private instance is separate,
-    you can switch between them on the fly.
-  - See our [user docs](https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token) for a video guide on how to
+- **Authorization**: List of accounts that can be used to interact with the plugin. Each account can be configured with:
+  - **Server**: The URL of your Sourcegraph instance. It can be configured with your private instance if you're adding an enterprise account.
+  - **Token**: See our [user docs](https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token) for a video guide on how to
     create an access token.
-- **Custom request headers**: Any custom headers to send with every request to Sourcegraph.
-  - Use any number of pairs: `header1, value1, header2, value2, ...`.
-  - Example: `Authorization, Bearer 1234567890, X-My-Header, My-Value`.
-  - Whitespace around commas doesn't matter.
+  - **Custom request headers**: Any custom headers to send with every request to Sourcegraph.
+    - Use any number of pairs: `header1, value1, header2, value2, ...`.
+    - Example: `Authorization, Bearer 1234567890, X-My-Header, My-Value`.
+    - Whitespace around commas doesn't matter.
 - **Default branch name**: The branch to use if the current branch is not yet pushed to the remote.
   - Usually "main" or "master", but can be any name
 - **Remote URL replacements**: You can replace specific strings in your repo's remote URL.
@@ -155,58 +149,8 @@ the name of `sourcegraph`. It will take priority when creating Sourcegraph links
 
 You can configure the plugin on three levels:
 
-1. **Project-level** settings take the highest priority.
-2. **Application-level** settings are second: For _each specific setting_, if the plugin finds no project-level value,
-   then the app-level setting is used.
-3. **User-level** (legacy) settings take the lowest priority. Also, note that only three of the settings are available
-   on the user level.
-
-Here is each level in detail.
-
-#### Project level
-
-These settings have the highest priority. You can set them in a less than intuitive way:
-
-1. Create a new file at `{project root}/.idea/sourcegraph.xml` if it doesn't exist, with this content:
-
-   ```xml
-   <?xml version="1.0" encoding="UTF-8"?>
-   <project version="4">
-     <component name="Config">
-       <option name="instanceType" value="DOTCOM" />
-       <option name="url" value="https://company.sourcegraph.com/" />
-       <option name="enterpriseAccessToken" value="" />
-       <option name="defaultBranch" value="main" />
-       <option name="remoteUrlReplacements" value="" />
-       <option name="isGlobbingEnabled" value="false" />
-     </component>
-   </project>
-   ```
-
-   If the file already exists, then just add the option lines next to the original ones.
-
-   **Replace `DOTCOM` with `ENTERPRISE` for private instanceType.**
-
-2. Reopen your project to let the IDE catch up with the changes. Now you have custom settings enabled for this project. In the future, when you have this project open, and you edit your settings in the Settings UI, they will be saved to the **project-level** file.
-3. To remove the project-level settings, open the XML again and remove the lines you want to set on the app level.
-
-**Storage location:** `{project root}/.idea/sourcegraph.xml`
-
-#### Application level
-
-This is what you edit when you go to Settings and make changes in the UI. That is, unless you have project-specific settings for your current project.
-
-**Storage location:** App-level settings are stored in a file called `sourcegraph.xml` together with the rest of the IDE settings. [This article](https://intellij-support.jetbrains.com/hc/en-us/articles/206544519-Directories-used-by-the-IDE-to-store-settings-caches-plugins-and-logs) will help you find it if you should need it for anything.
-
-#### User level – ⚠️ DEPRECATED ⚠️
-
-This type of settings take the lowest priority, and is something that's rarely used and is only kept for backwards compatibility, and might be removed in the future. So, the plugin is also configurable by removing all creating a file called `.sourcegraph-jetbrains.properties` in your home directory. Both the app-level and project-level XMLs override this, plus it only supports three settings:
-
-```
-url = https://sourcegraph.example.com
-defaultBranch = example-branch
-remoteUrlReplacements = git.example.com, git-web.example.com
-```
+1. **Project-level** On the project level you are able to configure your default account, default branch name and remote url replacements
+2. **Application-level** All other settings are stored here
 
 ## Managing Custom Keymaps
 

@@ -5,6 +5,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.jcef.JBCefJSQuery;
+import com.sourcegraph.cody.config.CodyProjectSettings;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.ThemeUtil;
 import com.sourcegraph.find.FindPopupPanel;
@@ -37,6 +38,7 @@ public class JSToJavaBridgeRequestHandler {
     String action = request.get("action").getAsString();
     JsonObject arguments;
     PreviewContent previewContent;
+    CodyProjectSettings codyProjectSettings = CodyProjectSettings.getInstance(project);
     try {
       switch (action) {
         case "getConfig":
@@ -65,11 +67,11 @@ public class JSToJavaBridgeRequestHandler {
           String patternType = arguments.get("patternType").getAsString();
           String selectedSearchContextSpec =
               arguments.get("selectedSearchContextSpec").getAsString();
-          ConfigUtil.setLastSearch(
-              project, new Search(query, caseSensitive, patternType, selectedSearchContextSpec));
+          codyProjectSettings.setLastSearch(
+              new Search(query, caseSensitive, patternType, selectedSearchContextSpec));
           return createSuccessResponse(new JsonObject());
         case "loadLastSearch":
-          Search lastSearch = ConfigUtil.getLastSearch(this.project);
+          Search lastSearch = codyProjectSettings.getLastSearch();
 
           if (lastSearch == null) {
             return createSuccessResponse(null);

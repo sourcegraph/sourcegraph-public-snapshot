@@ -19,15 +19,24 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <projectService serviceImplementation="com.sourcegraph.config.CodyProjectService"/>
+        <projectService serviceImplementation="com.sourcegraph.cody.config.CodyProjectSettings"/>
         <projectService serviceImplementation="com.sourcegraph.config.SettingsChangeListener"/>
+        <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyApplicationSettings"/>
         <applicationService serviceImplementation="com.sourcegraph.config.CodyApplicationService"/>
+        <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyAuthenticationManager"/>
+
         <projectConfigurable
             parentId="tools"
-            instance="com.sourcegraph.config.SettingsConfigurable"
-            id="com.sourcegraph.config.SettingsConfigurable"
+            instance="com.sourcegraph.cody.config.SettingsConfigurable"
+            id="com.sourcegraph.cody.config.SettingsConfigurable"
             displayName="Sourcegraph Cody + Code Search"
             nonDefaultProject="false"
         />
+
+        <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyPersisentAccounts"/>
+        <applicationService serviceImplementation="com.sourcegraph.cody.api.SourcegraphApiRequestExecutor$Factory"/>
+        <applicationService serviceImplementation="com.sourcegraph.cody.config.CachingCodyUserAvatarLoader"/>
+        <projectService serviceImplementation="com.sourcegraph.cody.config.CodyProjectDefaultAccountHolder"/>
         <notificationGroup id="Sourcegraph: server access" displayType="BALLOON"/>
         <notificationGroup id="Sourcegraph errors" displayType="BALLOON"/>
         <notificationGroup id="Sourcegraph: URL sharing" displayType="BALLOON"/>
@@ -35,6 +44,8 @@
         <projectService id="sourcegraph.findService" serviceImplementation="com.sourcegraph.find.FindService"/>
         <postStartupActivity implementation="com.sourcegraph.telemetry.PostStartupActivity"/>
         <postStartupActivity implementation="com.sourcegraph.config.NotificationActivity"/>
+        <postStartupActivity implementation="com.sourcegraph.cody.config.SettingsMigration"/>
+        <postStartupActivity implementation="com.sourcegraph.cody.config.NotifyAboutNoDefaultAccount"/>
 
         <!-- Cody -->
         <toolWindow
@@ -165,6 +176,8 @@
             text="Run Cody App"
             icon="/icons/codyLogoSm.svg"/>
 
+
+
         <action
             id="cody.enableCodyAutocomplete"
             class="com.sourcegraph.cody.statusbar.CodyEnableAutocompleteAction"
@@ -201,6 +214,16 @@
                class="com.sourcegraph.cody.statusbar.CodyStatusBarActionGroup">
             <reference ref="cody.enableCodyAutocomplete"/>
             <reference ref="cody.disableCodyAutocomplete"/>
+        </group>
+
+        <group id="Cody.Accounts.AddAccount">
+            <action id="Cody.Accounts.AddCodyAccountWithToken" text="Log In with Token to Sourcegraph"
+                    class="com.sourcegraph.cody.config.AddCodyAccountWithTokenAction"/>
+            <action id="Cody.Accounts.AddCodyEnterpriseAccount"
+                    text="Log In with Token to Sourcegraph Enterprise"
+                    class="com.sourcegraph.cody.config.AddCodyEnterpriseAccountAction"/>
+
+            <separator/>
         </group>
     </actions>
 

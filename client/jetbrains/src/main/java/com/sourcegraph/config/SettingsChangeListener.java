@@ -1,15 +1,7 @@
 package com.sourcegraph.config;
 
-import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationType;
-import com.intellij.notification.Notifications;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.KeyboardShortcut;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.keymap.KeymapUtil;
-import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
@@ -21,14 +13,12 @@ import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager;
 import com.sourcegraph.cody.autocomplete.render.AutocompleteRenderUtils;
+import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus;
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService;
 import com.sourcegraph.find.browser.JavaToJSBridge;
 import com.sourcegraph.telemetry.GraphQlLogger;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
 import java.util.Objects;
-import javax.swing.KeyStroke;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -48,15 +38,17 @@ public class SettingsChangeListener implements Disposable {
         PluginSettingChangeActionNotifier.TOPIC,
         new PluginSettingChangeActionNotifier() {
           @Override
-          public void beforeAction(@NotNull PluginSettingChangeContext context) {
-            if (!Objects.equals(context.oldUrl, context.newUrl)) {
+          public void beforeAction(boolean serverUrlChanged) {
+            CodyApplicationSettings codyApplicationSettings = CodyApplicationSettings.getInstance();
+            if (serverUrlChanged) {
               GraphQlLogger.logUninstallEvent(project);
-              ConfigUtil.setInstallEventLogged(false);
+              codyApplicationSettings.setInstallEventLogged(false);
             }
           }
 
           @Override
           public void afterAction(@NotNull PluginSettingChangeContext context) {
+            CodyApplicationSettings codyApplicationSettings = CodyApplicationSettings.getInstance();
             // Notify JCEF about the config changes
             if (javaToJSBridge != null) {
               javaToJSBridge.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project));
@@ -77,35 +69,13 @@ public class SettingsChangeListener implements Disposable {
             }
 
             // Log install events
-            boolean urlChanged = !Objects.equals(context.oldUrl, context.newUrl);
-            if (urlChanged) {
-              GraphQlLogger.logInstallEvent(project).thenAccept(ConfigUtil::setInstallEventLogged);
-            } else if ((context.isDotComAccessTokenChanged
-                    || context.isEnterpriseAccessTokenChanged)
-                && !ConfigUtil.isInstallEventLogged()) {
-              GraphQlLogger.logInstallEvent(project).thenAccept(ConfigUtil::setInstallEventLogged);
-            }
-
-            SettingsComponent.InstanceType instanceType = ConfigUtil.getInstanceType(project);
-            boolean accessTokenChanged =
-                (instanceType == SettingsComponent.InstanceType.DOTCOM
-                        && context.isDotComAccessTokenChanged)
-                    || (instanceType == SettingsComponent.InstanceType.ENTERPRISE
-                        && context.isEnterpriseAccessTokenChanged);
-
-            boolean connectionSettingsChanged = urlChanged || accessTokenChanged;
-            // Notify user about a successful connection
-            if (connectionSettingsChanged) {
-              String accessTokenToTest = ConfigUtil.getProjectAccessToken(project);
-              ApiAuthenticator.testConnection(project)
-                  .thenAccept(
-                      (status) -> {
-                        if (ConfigUtil.didAuthenticationFailLastTime()
-                            && status == ApiAuthenticator.ConnectionStatus.AUTHENTICATED) {
-                          notifyAboutSuccessfulConnection();
-                        }
-                        ConfigUtil.setAuthenticationFailedLastTime(true);
-                      });
+            if (context.serverUrlChanged) {
+              GraphQlLogger.logInstallEvent(project)
+                  .thenAccept(codyApplicationSettings::setInstallEventLogged);
+            } else if (context.accessTokenChanged
+                && !codyApplicationSettings.isInstallEventLogged()) {
+              GraphQlLogger.logInstallEvent(project)
+                  .thenAccept(codyApplicationSettings::setInstallEventLogged);
             }
 
             // clear autocomplete suggestions if freshly disabled
@@ -148,30 +118,6 @@ public class SettingsChangeListener implements Disposable {
             }
           }
         });
-  }
-
-  private void notifyAboutSuccessfulConnection() {
-    KeyboardShortcut altSShortcut =
-        new KeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.ALT_DOWN_MASK), null);
-    String altSShortcutText = KeymapUtil.getShortcutText(altSShortcut);
-    Notification notification =
-        new Notification(
-            "Sourcegraph: server access",
-            "Sourcegraph: auth success",
-            "Your Sourcegraph account has been connected to the Sourcegraph plugin. "
-                + "Open the Cody sidebar, or press "
-                + altSShortcutText
-                + " to open Sourcegraph.",
-            NotificationType.INFORMATION);
-    AnAction dismissAction =
-        new DumbAwareAction("Dismiss") {
-          @Override
-          public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-            notification.expire();
-          }
-        };
-    notification.addAction(dismissAction);
-    Notifications.Bus.notify(notification);
   }
 
   public void setJavaToJSBridge(JavaToJSBridge javaToJSBridge) {

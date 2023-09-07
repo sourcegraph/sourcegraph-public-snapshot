@@ -6,7 +6,7 @@ import com.intellij.ide.plugins.PluginStateListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import com.sourcegraph.cody.CodyAgentProjectListener;
-import com.sourcegraph.config.ConfigUtil;
+import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.config.SettingsChangeListener;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
@@ -24,8 +24,9 @@ public class PostStartupActivity implements StartupActivity.DumbAware {
     // When no anonymous user ID is set yet, we create a new one and treat this as an installation
     // event.
     // This likely means that the user has never started IntelliJ with our extension before
-    if (ConfigUtil.getAnonymousUserId() == null) {
-      ConfigUtil.setAnonymousUserId(generateAnonymousUserId());
+    CodyApplicationSettings codyApplicationSettings = CodyApplicationSettings.getInstance();
+    if (codyApplicationSettings.getAnonymousUserId() == null) {
+      codyApplicationSettings.setAnonymousUserId(generateAnonymousUserId());
     }
 
     PluginInstaller.addStateListener(
@@ -36,7 +37,7 @@ public class PostStartupActivity implements StartupActivity.DumbAware {
                 .thenAccept(
                     wasSuccessful -> {
                       if (wasSuccessful) {
-                        ConfigUtil.setInstallEventLogged(true);
+                        codyApplicationSettings.setInstallEventLogged(true);
                       }
                     });
           }
@@ -52,9 +53,8 @@ public class PostStartupActivity implements StartupActivity.DumbAware {
 
               // Clearing this so that we can detect a new installation if the user re-enables the
               // extension.
-              ConfigUtil.setAnonymousUserId(null);
-
-              ConfigUtil.setInstallEventLogged(false);
+              codyApplicationSettings.setAnonymousUserId(null);
+              codyApplicationSettings.setInstallEventLogged(false);
             }
           }
         });

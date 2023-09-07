@@ -8,7 +8,7 @@ import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.StatusText;
-import com.sourcegraph.config.SettingsConfigurable;
+import com.sourcegraph.cody.config.SettingsConfigurable;
 import java.awt.*;
 import javax.swing.*;
 import org.apache.commons.lang.SystemUtils;
