@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/sourcegraph/conc"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/go-diff/diff"
 	sglog "github.com/sourcegraph/log"
@@ -94,6 +95,9 @@ type ClientSource interface {
 	AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName) string
 	// Address the current list of gitserver addresses.
 	Addresses() []AddressWithClient
+	// GetAddressWithClient returns the address and client for a gitserver instance.
+	// It returns nil if there's no server with that address
+	GetAddressWithClient(addr string) AddressWithClient
 }
 
 // NewClient returns a new gitserver.Client.
@@ -447,7 +451,89 @@ type Client interface {
 	// onCommit function for each.
 	RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (bool, error)) error
 
+	// Addrs returns a list of gitserver addresses associated with the Sourcegraph instance.
 	Addrs() []string
+
+	// SystemsInfo returns information about all gitserver instances associated with a Sourcegraph instance.
+	SystemsInfo(ctx context.Context) ([]SystemInfo, error)
+
+	// SystemInfo returns information about the gitserver instance at the given address.
+	SystemInfo(ctx context.Context, addr string) (SystemInfo, error)
+}
+
+type SystemInfo struct {
+	Address    string
+	FreeSpace  uint64
+	TotalSpace uint64
+}
+
+func (c *clientImplementor) SystemsInfo(ctx context.Context) ([]SystemInfo, error) {
+	addresses := c.clientSource.Addresses()
+	infos := make([]SystemInfo, 0, len(addresses))
+	wg := conc.NewWaitGroup()
+	var errs errors.MultiError
+	for _, addr := range addresses {
+		addr := addr // capture addr
+		wg.Go(func() {
+			response, err := c.getDiskInfo(ctx, addr)
+			if err != nil {
+				errs = errors.Append(errs, err)
+				return
+			}
+			infos = append(infos, SystemInfo{
+				Address:    addr.Address(),
+				FreeSpace:  response.FreeSpace,
+				TotalSpace: response.TotalSpace,
+			})
+		})
+	}
+	wg.Wait()
+	return infos, errs
+}
+
+func (c *clientImplementor) SystemInfo(ctx context.Context, addr string) (SystemInfo, error) {
+	ac := c.clientSource.GetAddressWithClient(addr)
+	if ac == nil {
+		return SystemInfo{}, errors.Newf("no client for address: %s", addr)
+	}
+	response, err := c.getDiskInfo(ctx, ac)
+	if err != nil {
+		return SystemInfo{}, nil
+	}
+	return SystemInfo{
+		Address:    ac.Address(),
+		FreeSpace:  response.FreeSpace,
+		TotalSpace: response.TotalSpace,
+	}, nil
+}
+
+func (c *clientImplementor) getDiskInfo(ctx context.Context, addr AddressWithClient) (*proto.DiskInfoResponse, error) {
+	if conf.IsGRPCEnabled(ctx) {
+		client, err := addr.GRPCClient()
+		if err != nil {
+			return nil, err
+		}
+		resp, err := client.DiskInfo(ctx, &proto.DiskInfoRequest{})
+		if err != nil {
+			return nil, err
+		}
+		return resp, nil
+	}
+
+	uri := fmt.Sprintf("http://%s/disk-info", addr.Address())
+	rs, err := c.do(ctx, "", uri, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer rs.Body.Close()
+	if rs.StatusCode != http.StatusOK {
+		return nil, errors.Newf("http status %d: %s", rs.StatusCode, readResponseBody(io.LimitReader(rs.Body, 200)))
+	}
+	var resp proto.DiskInfoResponse
+	if err := json.NewDecoder(rs.Body).Decode(&resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
 }
 
 func (c *clientImplementor) Addrs() []string {
@@ -1300,9 +1386,7 @@ func (c *clientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoNa
 		}
 
 		resp.FromProto(r)
-
 	} else {
-
 		req := &protocol.IsRepoCloneableRequest{
 			Repo: repo,
 		}

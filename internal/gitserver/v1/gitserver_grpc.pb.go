@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	GitserverService_BatchLog_FullMethodName                    = "/gitserver.v1.GitserverService/BatchLog"
 	GitserverService_CreateCommitFromPatchBinary_FullMethodName = "/gitserver.v1.GitserverService/CreateCommitFromPatchBinary"
+	GitserverService_DiskInfo_FullMethodName                    = "/gitserver.v1.GitserverService/DiskInfo"
 	GitserverService_Exec_FullMethodName                        = "/gitserver.v1.GitserverService/Exec"
 	GitserverService_GetObject_FullMethodName                   = "/gitserver.v1.GitserverService/GetObject"
 	GitserverService_IsRepoCloneable_FullMethodName             = "/gitserver.v1.GitserverService/IsRepoCloneable"
@@ -41,6 +42,7 @@ const (
 type GitserverServiceClient interface {
 	BatchLog(ctx context.Context, in *BatchLogRequest, opts ...grpc.CallOption) (*BatchLogResponse, error)
 	CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (GitserverService_CreateCommitFromPatchBinaryClient, error)
+	DiskInfo(ctx context.Context, in *DiskInfoRequest, opts ...grpc.CallOption) (*DiskInfoResponse, error)
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
 	GetObject(ctx context.Context, in *GetObjectRequest, opts ...grpc.CallOption) (*GetObjectResponse, error)
 	IsRepoCloneable(ctx context.Context, in *IsRepoCloneableRequest, opts ...grpc.CallOption) (*IsRepoCloneableResponse, error)
@@ -105,6 +107,15 @@ func (x *gitserverServiceCreateCommitFromPatchBinaryClient) CloseAndRecv() (*Cre
 		return nil, err
 	}
 	return m, nil
+}
+
+func (c *gitserverServiceClient) DiskInfo(ctx context.Context, in *DiskInfoRequest, opts ...grpc.CallOption) (*DiskInfoResponse, error) {
+	out := new(DiskInfoResponse)
+	err := c.cc.Invoke(ctx, GitserverService_DiskInfo_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *gitserverServiceClient) Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error) {
@@ -313,6 +324,7 @@ func (c *gitserverServiceClient) ReposStats(ctx context.Context, in *ReposStatsR
 type GitserverServiceServer interface {
 	BatchLog(context.Context, *BatchLogRequest) (*BatchLogResponse, error)
 	CreateCommitFromPatchBinary(GitserverService_CreateCommitFromPatchBinaryServer) error
+	DiskInfo(context.Context, *DiskInfoRequest) (*DiskInfoResponse, error)
 	Exec(*ExecRequest, GitserverService_ExecServer) error
 	GetObject(context.Context, *GetObjectRequest) (*GetObjectResponse, error)
 	IsRepoCloneable(context.Context, *IsRepoCloneableRequest) (*IsRepoCloneableResponse, error)
@@ -338,6 +350,9 @@ func (UnimplementedGitserverServiceServer) BatchLog(context.Context, *BatchLogRe
 }
 func (UnimplementedGitserverServiceServer) CreateCommitFromPatchBinary(GitserverService_CreateCommitFromPatchBinaryServer) error {
 	return status.Errorf(codes.Unimplemented, "method CreateCommitFromPatchBinary not implemented")
+}
+func (UnimplementedGitserverServiceServer) DiskInfo(context.Context, *DiskInfoRequest) (*DiskInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DiskInfo not implemented")
 }
 func (UnimplementedGitserverServiceServer) Exec(*ExecRequest, GitserverService_ExecServer) error {
 	return status.Errorf(codes.Unimplemented, "method Exec not implemented")
@@ -430,6 +445,24 @@ func (x *gitserverServiceCreateCommitFromPatchBinaryServer) Recv() (*CreateCommi
 		return nil, err
 	}
 	return m, nil
+}
+
+func _GitserverService_DiskInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DiskInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).DiskInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_DiskInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).DiskInfo(ctx, req.(*DiskInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _GitserverService_Exec_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -670,6 +703,10 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "BatchLog",
 			Handler:    _GitserverService_BatchLog_Handler,
+		},
+		{
+			MethodName: "DiskInfo",
+			Handler:    _GitserverService_DiskInfo_Handler,
 		},
 		{
 			MethodName: "GetObject",

@@ -10,6 +10,7 @@ option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 service GitserverService {
   rpc BatchLog(BatchLogRequest) returns (BatchLogResponse) {}
   rpc CreateCommitFromPatchBinary(stream CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
+  rpc DiskInfo(DiskInfoRequest) returns (DiskInfoResponse) {}
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
   rpc GetObject(GetObjectRequest) returns (GetObjectResponse) {}
   rpc IsRepoCloneable(IsRepoCloneableRequest) returns (IsRepoCloneableResponse) {}
@@ -23,6 +24,18 @@ service GitserverService {
   rpc RepoUpdate(RepoUpdateRequest) returns (RepoUpdateResponse) {}
   // TODO: Remove this endpoint after 5.2, it is deprecated.
   rpc ReposStats(ReposStatsRequest) returns (ReposStatsResponse) {}
+}
+
+// DiskInfoRequest is a empty request for the DiskInfo RPC.
+message DiskInfoRequest {}
+
+// DiskInfoResponse contains the results of the DiskInfo RPC request.
+message DiskInfoResponse {
+  // free_space is the amount of space avaialable on a gitserver instance.
+  uint64 free_space = 1;
+
+  // total_space is the total amount of space on a gitserver instance.
+  uint64 total_space = 2;
 }
 
 // BatchLogRequest is a request to execute a `git log` command inside a set of

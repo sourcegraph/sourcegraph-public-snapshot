@@ -45,6 +45,7 @@ go_library(
         "@com_github_golang_groupcache//lru",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_conc//:conc",
         "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_go_diff//diff",
         "@com_github_sourcegraph_log//:log",
