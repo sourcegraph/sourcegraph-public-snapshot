@@ -24,13 +24,12 @@ public class ConfigUtil {
   public static ExtensionConfiguration getAgentConfiguration(@NotNull Project project) {
     return new ExtensionConfiguration()
         .setServerEndpoint(getSourcegraphUrl(project))
+        .setProxy(UserLevelConfig.getProxy())
         .setAccessToken(getProjectAccessToken(project))
         .setCustomHeaders(getCustomRequestHeadersAsMap(project))
         .setAutocompleteAdvancedProvider(
             UserLevelConfig.getAutocompleteProviderType().vscodeSettingString())
         .setAutocompleteAdvancedServerEndpoint(UserLevelConfig.getAutocompleteServerEndpoint())
-        .setAutocompleteAdvancedServerSocksProxy(
-            UserLevelConfig.getAutocompleteServerEndpointProxy())
         .setAutocompleteAdvancedAccessToken(UserLevelConfig.getAutocompleteAccessToken())
         .setAutocompleteAdvancedEmbeddings(UserLevelConfig.getAutocompleteAdvancedEmbeddings())
         .setDebug(isCodyDebugEnabled())

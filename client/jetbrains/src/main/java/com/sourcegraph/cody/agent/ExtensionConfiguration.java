@@ -5,11 +5,11 @@ import java.util.Map;
 public class ExtensionConfiguration {
 
   public String serverEndpoint;
+  public String proxy;
   public String accessToken;
   public Map<String, String> customHeaders;
   public String autocompleteAdvancedProvider;
   public String autocompleteAdvancedServerEndpoint;
-  public String autocompleteAdvancedServerSocksProxy;
   public String autocompleteAdvancedAccessToken;
   public boolean autocompleteAdvancedEmbeddings;
   public boolean debug;
@@ -18,6 +18,11 @@ public class ExtensionConfiguration {
 
   public ExtensionConfiguration setServerEndpoint(String serverEndpoint) {
     this.serverEndpoint = serverEndpoint;
+    return this;
+  }
+
+  public ExtensionConfiguration setProxy(String proxy) {
+    this.proxy = proxy;
     return this;
   }
 
@@ -40,12 +45,6 @@ public class ExtensionConfiguration {
   public ExtensionConfiguration setAutocompleteAdvancedServerEndpoint(
       String autocompleteAdvancedServerEndpoint) {
     this.autocompleteAdvancedServerEndpoint = autocompleteAdvancedServerEndpoint;
-    return this;
-  }
-
-  public ExtensionConfiguration setAutocompleteAdvancedServerSocksProxy(
-      String autocompleteAdvancedServerSocksProxy) {
-    this.autocompleteAdvancedServerSocksProxy = autocompleteAdvancedServerSocksProxy;
     return this;
   }
 
@@ -82,6 +81,9 @@ public class ExtensionConfiguration {
         + "serverEndpoint='"
         + serverEndpoint
         + '\''
+        + ", proxy='"
+        + proxy
+        + '\''
         + ", accessToken='"
         + accessToken
         + '\''
@@ -92,9 +94,6 @@ public class ExtensionConfiguration {
         + '\''
         + ", autocompleteAdvancedServerEndpoint='"
         + autocompleteAdvancedServerEndpoint
-        + '\''
-        + ", autocompleteAdvancedServerSocksProxy='"
-        + autocompleteAdvancedServerSocksProxy
         + '\''
         + ", autocompleteAdvancedAccessToken='"
         + autocompleteAdvancedAccessToken

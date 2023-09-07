@@ -52,15 +52,6 @@ public class UserLevelConfig {
         .orElse(properties.getProperty(oldKey, null)); // fallback to the old key
   }
 
-  /**
-   * SOCKS proxy endpoint to route traffic accessing `cody.autocomplete.advanced.serverEndpoint`.
-   * This is only supported with the `unstable-codegen` provider right now.
-   */
-  @Nullable
-  public static String getAutocompleteServerEndpointProxy() {
-    return readProperties().getProperty("cody.autocomplete.advanced.serverSocksProxy", null);
-  }
-
   @Nullable
   public static String getAutocompleteAccessToken() {
     Properties properties = readProperties();
@@ -77,6 +68,15 @@ public class UserLevelConfig {
   public static String getRemoteUrlReplacements() {
     Properties properties = readProperties();
     return properties.getProperty("remoteUrlReplacements", null);
+  }
+
+  /**
+   * The proxy endpoint to route traffic accessing `cody.autocomplete.advanced.serverEndpoint`.
+   * This is only supported with the `unstable-codegen` provider right now.
+   */
+  @Nullable
+  public static String getProxy() {
+    return readProperties().getProperty("cody.proxy", null);
   }
 
   @NotNull
