@@ -307,7 +307,7 @@ func TestCodyEnabled(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			Mock(&Unified{SiteConfiguration: test.sc})
-			have := CodyChatEnabled()
+			have := CodyEnabled()
 			assert.Equal(t, test.want, have)
 		})
 	}
@@ -1116,6 +1116,365 @@ func TestEmailSenderName(t *testing.T) {
 
 			if got, want := EmailSenderName(), tc.want; got != want {
 				t.Fatalf("EmailSenderName() = %v, want %v", got, want)
+			}
+		})
+	}
+}
+
+func TestGetAutocompleteConfig(t *testing.T) {
+	licenseKey := "theasdfkey"
+	licenseAccessToken := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
+	zeroConfigDefaultWithLicense := &conftypes.AutocompleteConfig{
+		Model:          "anthropic/claude-instant-1",
+		ModelMaxTokens: 9000,
+		AccessToken:    licenseAccessToken,
+		Provider:       "sourcegraph",
+		Endpoint:       "https://cody-gateway.sourcegraph.com",
+	}
+
+	testCases := []struct {
+		name         string
+		siteConfig   schema.SiteConfiguration
+		deployType   string
+		wantConfig   *conftypes.AutocompleteConfig
+		wantDisabled bool
+	}{
+		{
+			name: "Completions disabled",
+			siteConfig: schema.SiteConfiguration{
+				LicenseKey: licenseKey,
+				Completions: &schema.Completions{
+					Enabled: pointers.Ptr(false),
+				},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "Completions disabled, but Cody enabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Enabled: pointers.Ptr(false),
+				},
+			},
+			// cody.enabled=true and completions.enabled=false, the newer
+			// cody.enabled takes precedence and completions is enabled.
+			wantConfig: zeroConfigDefaultWithLicense,
+		},
+		{
+			name: "Autocomplete disabled, but Cody enabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Enabled: pointers.Ptr(false),
+				},
+			},
+			// cody.enabled=true and autocomplete.enabled=false, the newer
+			// cody.enabled takes precedence and completions is enabled.
+			wantConfig: zeroConfigDefaultWithLicense,
+		},
+		{
+			name: "cody.enabled and empty autocomplete object",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled:  pointers.Ptr(true),
+				LicenseKey:   licenseKey,
+				Autocomplete: &schema.Autocomplete{},
+			},
+			wantConfig: zeroConfigDefaultWithLicense,
+		},
+		{
+			name: "cody.enabled set false",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled:  pointers.Ptr(false),
+				Autocomplete: &schema.Autocomplete{},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "no cody config",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled:  nil,
+				Completions:  nil,
+				Autocomplete: nil,
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "Invalid provider",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Autocomplete: &schema.Autocomplete{
+					Provider: "invalid",
+				},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "anthropic autocomplete",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Autocomplete: &schema.Autocomplete{
+					Enabled:     pointers.Ptr(true),
+					Provider:    "anthropic",
+					AccessToken: "asdf",
+					Model:       "claude-instant-1",
+				},
+			},
+			wantConfig: &conftypes.AutocompleteConfig{
+				Model:          "claude-instant-1",
+				ModelMaxTokens: 9000,
+				AccessToken:    "asdf",
+				Provider:       "anthropic",
+				Endpoint:       "https://api.anthropic.com/v1/complete",
+			},
+		},
+		{
+			name: "sourcegraph autocomplete default from completions config",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider: "sourcegraph",
+				},
+			},
+			wantConfig: zeroConfigDefaultWithLicense,
+		},
+		{
+			name: "sourcegraph default from autocomplete config",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Autocomplete: &schema.Autocomplete{
+					Provider: "sourcegraph",
+				},
+			},
+			wantConfig: zeroConfigDefaultWithLicense,
+		},
+		{
+			name: "OpenAI autocomplete",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Autocomplete: &schema.Autocomplete{
+					Provider:    "openai",
+					AccessToken: "asdf",
+				},
+			},
+			wantConfig: &conftypes.AutocompleteConfig{
+				Model:          "gpt-3.5-turbo",
+				ModelMaxTokens: 4000,
+				AccessToken:    "asdf",
+				Provider:       "openai",
+				Endpoint:       "https://api.openai.com/v1/chat/completions",
+			},
+		},
+		{
+			name: "Azure OpenAI autocomplete",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Autocomplete: &schema.Autocomplete{
+					Provider:    "azure-openai",
+					AccessToken: "asdf",
+					Endpoint:    "https://acmecorp.openai.azure.com",
+					Model:       "gpt35-turbo-deployment",
+				},
+			},
+			wantConfig: &conftypes.AutocompleteConfig{
+				Model:          "gpt35-turbo-deployment",
+				ModelMaxTokens: 8000,
+				AccessToken:    "asdf",
+				Provider:       "azure-openai",
+				Endpoint:       "https://acmecorp.openai.azure.com",
+			},
+		},
+		{
+			name: "Fireworks autocomplete completions",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Autocomplete: &schema.Autocomplete{
+					Provider:    "fireworks",
+					AccessToken: "asdf",
+				},
+			},
+			wantConfig: &conftypes.AutocompleteConfig{
+				Model:          "accounts/fireworks/models/starcoder-7b-w8a16",
+				ModelMaxTokens: 6000,
+				AccessToken:    "asdf",
+				Provider:       "fireworks",
+				Endpoint:       "https://api.fireworks.ai/inference/v1/completions",
+			},
+		},
+		{
+			name: "zero-config cody gateway completions without license key",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  "",
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "zero-config cody gateway completions with license key",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+			},
+			wantConfig: zeroConfigDefaultWithLicense,
+		},
+		{
+			name: "zero-config cody gateway completions without provider",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Autocomplete: &schema.Autocomplete{
+					Model: "anthropic/claude-instant-1.3",
+				},
+			},
+			wantConfig: &conftypes.AutocompleteConfig{
+				Model:          "anthropic/claude-instant-1.3",
+				ModelMaxTokens: 9000,
+				AccessToken:    licenseAccessToken,
+				Provider:       "sourcegraph",
+				Endpoint:       "https://cody-gateway.sourcegraph.com",
+			},
+		},
+		{
+			// Legacy support for completions.enabled
+			name: "legacy field autocomplete.enabled: zero-config cody gateway completions without license key",
+			siteConfig: schema.SiteConfiguration{
+				Autocomplete: &schema.Autocomplete{Enabled: pointers.Ptr(true)},
+				LicenseKey:   "",
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "legacy field autocomplete.enabled: zero-config cody gateway completions with license key",
+			siteConfig: schema.SiteConfiguration{
+				Autocomplete: &schema.Autocomplete{
+					Enabled: pointers.Ptr(true),
+				},
+				LicenseKey: licenseKey,
+			},
+			// Not supported, zero-config is new and should be using the new
+			// config.
+			wantDisabled: true,
+		},
+		{
+			name:       "app zero-config cody gateway completions with dotcom token",
+			deployType: deploy.App,
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				App: &schema.App{
+					DotcomAuthToken: "TOKEN",
+				},
+			},
+			wantConfig: &conftypes.AutocompleteConfig{
+				AccessToken:    "sgd_5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456",
+				Model:          "anthropic/claude-instant-1",
+				ModelMaxTokens: 9000,
+				Endpoint:       "https://cody-gateway.sourcegraph.com",
+				Provider:       "sourcegraph",
+			},
+		},
+		{
+			name:       "app with custom configuration",
+			deployType: deploy.App,
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				Autocomplete: &schema.Autocomplete{
+					AccessToken: "CUSTOM_TOKEN",
+					Provider:    "anthropic",
+					Model:       "claude-instant-1",
+				},
+				App: &schema.App{
+					DotcomAuthToken: "TOKEN",
+				},
+			},
+			wantConfig: &conftypes.AutocompleteConfig{
+				AccessToken:    "CUSTOM_TOKEN",
+				Model:          "claude-instant-1",
+				ModelMaxTokens: 9000,
+				Provider:       "anthropic",
+				Endpoint:       "https://api.anthropic.com/v1/complete",
+			},
+		},
+		{
+			name:       "App but no dotcom username",
+			deployType: deploy.App,
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				App: &schema.App{
+					DotcomAuthToken: "",
+				},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "Fireworks autocomplete with azure chat",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+
+				Completions: &schema.Completions{
+					Provider:        "azure-openai",
+					AccessToken:     "fdsa",
+					Endpoint:        "https://acmecorp.openai.azure.com",
+					ChatModel:       "gpt4-deployment",
+					FastChatModel:   "gpt35-turbo-deployment",
+					CompletionModel: "gpt35-turbo-deployment",
+				},
+
+				Autocomplete: &schema.Autocomplete{
+					Provider:    "fireworks",
+					AccessToken: "asdf",
+				},
+			},
+			wantConfig: &conftypes.AutocompleteConfig{
+				Model:          "accounts/fireworks/models/starcoder-7b-w8a16",
+				ModelMaxTokens: 6000,
+				AccessToken:    "asdf",
+				Provider:       "fireworks",
+				Endpoint:       "https://api.fireworks.ai/inference/v1/completions",
+			},
+		},
+		{
+			name: "Autocomplete only default setup",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled:  pointers.Ptr(true),
+				LicenseKey:   licenseKey,
+				Completions:  nil,
+				Autocomplete: nil,
+			},
+			wantConfig: zeroConfigDefaultWithLicense,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			defaultDeploy := deploy.Type()
+			if tc.deployType != "" {
+				deploy.Mock(tc.deployType)
+			}
+			t.Cleanup(func() {
+				deploy.Mock(defaultDeploy)
+			})
+			conf := GetAutocompleteConfig(tc.siteConfig)
+			if tc.wantDisabled {
+				if conf != nil {
+					t.Fatalf("expected nil config but got non-nil: %+v", conf)
+				}
+			} else {
+				if conf == nil {
+					t.Fatal("unexpected nil config returned")
+				}
+				if diff := cmp.Diff(tc.wantConfig, conf); diff != "" {
+					t.Fatalf("unexpected config computed: %s", diff)
+				}
 			}
 		})
 	}

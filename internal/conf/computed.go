@@ -816,48 +816,45 @@ func GetAutocompleteConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Au
 		return nil
 	}
 
-	// Additionally, completions in App are disabled if there is no dotcom auth token
-	// and the user hasn't provided their own api token.
+	// completionsConfig contains the fallback values
+	completionsConfig := GetCompletionsConfig(siteConfig)
+
+	// Additionally, autocomplete in App are disabled if there is no dotcom auth token
+	// and the user hasn't provided their own token for autocomplete either via completions or autocomplete
 	if deploy.IsApp() {
 		if (siteConfig.App == nil || len(siteConfig.App.DotcomAuthToken) == 0) &&
-			((siteConfig.Completions == nil && siteConfig.Autocomplete == nil) || siteConfig.Completions.AccessToken == "") {
+			((completionsConfig == nil || completionsConfig.AccessToken == "") && (siteConfig.Autocomplete == nil || siteConfig.Autocomplete.AccessToken == "")) {
 			return nil
 		}
 	}
 
-	// completionsConfig contains the fallback values
-	completionsConfig := GetCompletionsConfig(siteConfig)
-
 	autocompleteConfig := siteConfig.Autocomplete
-	// If no completions configuration is set at all, but cody is enabled, assume
-	// a default configuration.
+	// If no autocomplete configuration is set at all, but cody is enabled,
+	// fall back to completions configuration or default values.
 	if autocompleteConfig == nil {
 		// if there is not autocomplete config and no completions config it must be disabled
 		if completionsConfig == nil {
 			return nil
 		}
+		enabled := true
+		// there must be a completions config, so use that as the default
 		autocompleteConfig = &schema.Autocomplete{
-			Provider: string(conftypes.CompletionsProviderNameSourcegraph),
-			Model:    "anthropic/claude-instant-1",
+			Provider:          string(completionsConfig.Provider),
+			Model:             completionsConfig.CompletionModel,
+			AccessToken:       completionsConfig.AccessToken,
+			Enabled:           &enabled,
+			Endpoint:          completionsConfig.Endpoint,
+			ModelMaxTokens:    completionsConfig.CompletionModelMaxTokens,
+			PerUserDailyLimit: completionsConfig.PerUserCodeCompletionsDailyLimit,
 		}
 	}
 
-	// If no provider is configured, we assume the Sourcegraph provider. Prior
-	// to provider becoming an optional field, provider was required, so unset
-	// provider is definitely with the understanding that the Sourcegraph
-	// provider is the default. Since this is new, we also enforce that the new
-	// CodyEnabled config is set (instead of relying on backcompat)
+	// If no provider is configured, we assume the Sourcegraph provider.
 	if autocompleteConfig.Provider == "" {
-		if !newCodyEnabled(siteConfig) {
+		if !codyEnabled(siteConfig) {
 			return nil
 		}
 		autocompleteConfig.Provider = string(conftypes.CompletionsProviderNameSourcegraph)
-	}
-
-	// If ChatModel is not set, fall back to the deprecated Model field.
-	// Note: It might also be empty.
-	if autocompleteConfig.Model == "" {
-		autocompleteConfig.Model = completionsConfig.CompletionModel
 	}
 
 	if autocompleteConfig.Provider == string(conftypes.CompletionsProviderNameSourcegraph) {
