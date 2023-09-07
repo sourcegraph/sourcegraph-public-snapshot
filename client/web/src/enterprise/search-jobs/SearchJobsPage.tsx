@@ -27,6 +27,7 @@ import {
     PageHeader,
     Select,
     Text,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
@@ -265,13 +266,21 @@ const SearchJob: FC<SearchJobProps> = props => {
             </span>
 
             <span className={styles.jobActions}>
-                <Button variant="link">ViewLogs</Button>
-                <Button variant="secondary" outline={true}>
-                    <Icon svgPath={mdiRefresh} aria-hidden={true} />
+                <Button variant="link" className={styles.jobViewLogs}>
+                    View logs
                 </Button>
-                <Button variant="danger" outline={true}>
-                    <Icon svgPath={mdiDelete} aria-hidden={true} />
-                </Button>
+
+                <Tooltip content="Rerun search job">
+                    <Button variant="secondary" outline={true} className={styles.jobSlimAction}>
+                        <Icon svgPath={mdiRefresh} aria-hidden={true} />
+                    </Button>
+                </Tooltip>
+
+                <Tooltip content="Delete search job">
+                    <Button variant="danger" outline={true} className={styles.jobSlimAction}>
+                        <Icon svgPath={mdiDelete} aria-hidden={true} />
+                    </Button>
+                </Tooltip>
             </span>
 
             <Button variant="secondary" className={styles.jobDownload}>

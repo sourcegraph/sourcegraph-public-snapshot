@@ -139,6 +139,19 @@
         align-self: center;
     }
 
+    &-slim-action {
+        border: none;
+        padding: 0.25rem;
+
+        &:hover {
+            background-color: var(--secondary-2) !important;
+        }
+    }
+
+    &-view-logs {
+        white-space: nowrap;
+    }
+
     &-download {
         display: flex;
         flex-wrap: nowrap;
