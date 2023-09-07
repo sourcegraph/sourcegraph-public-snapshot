@@ -4,6 +4,7 @@ import com.intellij.collaboration.async.CompletableFutureUtil.submitIOTask
 import com.intellij.collaboration.async.CompletableFutureUtil.successOnEdt
 import com.intellij.collaboration.auth.Account
 import com.intellij.ide.util.RunOnceUtil
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
@@ -12,6 +13,8 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
+import com.intellij.openapi.wm.ToolWindowManager
+import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphSecurityUtil
 import com.sourcegraph.config.AccessTokenStorage
@@ -32,6 +35,15 @@ class SettingsMigration : StartupActivity, DumbAware {
       migrateAccounts(project, customRequestHeaders)
     }
     RunOnceUtil.runOnceForApp("CodyApplicationSettingsMigration") { migrateApplicationSettings() }
+    RunOnceUtil.runOnceForApp("ToggleCodyToolWindowAfterMigration") {
+      ApplicationManager.getApplication().invokeLater { toggleCodyToolbarWindow(project) }
+    }
+  }
+
+  private fun toggleCodyToolbarWindow(project: Project) {
+    val toolWindowManager = ToolWindowManager.getInstance(project)
+    val toolWindow = toolWindowManager.getToolWindow(CodyToolWindowFactory.TOOL_WINDOW_ID)
+    toolWindow?.setAvailable(CodyApplicationSettings.getInstance().isCodyEnabled, null)
   }
 
   private fun migrateAccounts(project: Project, customRequestHeaders: String) {
