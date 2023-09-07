@@ -9,19 +9,23 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.setEmptyState
 import com.intellij.openapi.util.Disposer
+import com.intellij.ui.ColorPanel
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.MAX_LINE_LENGTH_NO_WRAP
+import com.intellij.ui.dsl.builder.Row
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.selected
+import com.intellij.ui.dsl.builder.toMutableProperty
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.sourcegraph.cody.Icons
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.config.PluginSettingChangeActionNotifier
 import com.sourcegraph.config.PluginSettingChangeContext
+import java.awt.Color
 
 class SettingsConfigurable(private val project: Project) :
     BoundConfigurable(ConfigUtil.SERVICE_DISPLAY_NAME) {
@@ -85,6 +89,18 @@ class SettingsConfigurable(private val project: Project) :
               .enabledIf(enableCodyCheckbox.selected)
               .bindSelected(settingsModel::isCodyVerboseDebugEnabled)
         }
+        row {
+          val enableCustomAutocompleteColor =
+              checkBox("Enable custom autocomplete color")
+                  .enabledIf(enableCodyCheckbox.selected)
+                  .bindSelected(settingsModel::isCustomAutocompleteColorEnabled)
+          colorPanel()
+              .bind(
+                  ColorPanel::getSelectedColor,
+                  ColorPanel::setSelectedColor,
+                  settingsModel::customAutocompleteColor.toMutableProperty())
+              .visibleIf(enableCustomAutocompleteColor.selected)
+        }
       }
       group("Code search") {
         row {
@@ -132,6 +148,10 @@ class SettingsConfigurable(private val project: Project) :
         codyApplicationSettings.isDefaultDotcomAccountNotificationDismissed
     settingsModel.defaultBranchName = codyProjectSettings.defaultBranchName
     settingsModel.remoteUrlReplacements = codyProjectSettings.remoteUrlReplacements
+    settingsModel.isCustomAutocompleteColorEnabled =
+        codyApplicationSettings.isCustomAutocompleteColorEnabled
+    settingsModel.customAutocompleteColor =
+        codyApplicationSettings.customAutocompleteColor?.let { Color(it) }
     dialogPanel.reset()
   }
 
@@ -165,7 +185,11 @@ class SettingsConfigurable(private val project: Project) :
             codyApplicationSettings.isCodyEnabled,
             settingsModel.isCodyEnabled,
             codyApplicationSettings.isCodyAutocompleteEnabled,
-            settingsModel.isCodyAutocompleteEnabled)
+            settingsModel.isCodyAutocompleteEnabled,
+            codyApplicationSettings.isCustomAutocompleteColorEnabled,
+            settingsModel.isCustomAutocompleteColorEnabled,
+            codyApplicationSettings.customAutocompleteColor,
+            settingsModel.customAutocompleteColor?.rgb)
     CodyAuthenticationManager.getInstance().setDefaultAccount(project, defaultAccount)
     accountsModel.defaultAccount = defaultAccount
     codyProjectSettings.defaultBranchName = settingsModel.defaultBranchName
@@ -176,7 +200,12 @@ class SettingsConfigurable(private val project: Project) :
     codyApplicationSettings.isCodyVerboseDebugEnabled = settingsModel.isCodyVerboseDebugEnabled
     codyApplicationSettings.isDefaultDotcomAccountNotificationDismissed =
         settingsModel.isUrlNotificationDismissed
+    codyApplicationSettings.isCustomAutocompleteColorEnabled =
+        settingsModel.isCustomAutocompleteColorEnabled
+    codyApplicationSettings.customAutocompleteColor = settingsModel.customAutocompleteColor?.rgb
 
     publisher.afterAction(context)
   }
 }
+
+fun Row.colorPanel() = cell(ColorPanel())

@@ -19,10 +19,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -109,11 +106,11 @@ public class ConfigUtil {
   }
 
   public static boolean isCustomAutocompleteColorEnabled() {
-    return getApplicationLevelConfig().isCustomAutocompleteColorEnabled();
+    return CodyApplicationSettings.getInstance().isCustomAutocompleteColorEnabled();
   }
 
   public static Integer getCustomAutocompleteColor() {
-    return getApplicationLevelConfig().getCustomAutocompleteColor();
+    return CodyApplicationSettings.getInstance().getCustomAutocompleteColor();
   }
 
   public static String getLastUpdateNotificationPluginVersion() {

@@ -21,18 +21,18 @@ public class PluginSettingChangeContext {
       boolean newCodyEnabled,
       boolean oldCodyAutocompleteEnabled,
       boolean newCodyAutocompleteEnabled,
-      @Nullable Integer oldCustomAutocompleteColor,
       boolean oldIsCustomAutocompleteColorEnabled,
       boolean isCustomAutocompleteColorEnabled,
+      @Nullable Integer oldCustomAutocompleteColor,
       @Nullable Integer customAutocompleteColor) {
-    this.oldCodyEnabled = oldCodyEnabled;
-    this.oldCodyAutocompleteEnabled = oldCodyAutocompleteEnabled;
     this.serverUrlChanged = serverUrlChanged;
-    this.newCodyEnabled = newCodyEnabled;
-    this.newCodyAutocompleteEnabled = newCodyAutocompleteEnabled;
     this.accessTokenChanged = accessTokenChanged;
-    this.isCustomAutocompleteColorEnabled = isCustomAutocompleteColorEnabled;
+    this.oldCodyEnabled = oldCodyEnabled;
+    this.newCodyEnabled = newCodyEnabled;
+    this.oldCodyAutocompleteEnabled = oldCodyAutocompleteEnabled;
+    this.newCodyAutocompleteEnabled = newCodyAutocompleteEnabled;
     this.oldIsCustomAutocompleteColorEnabled = oldIsCustomAutocompleteColorEnabled;
+    this.isCustomAutocompleteColorEnabled = isCustomAutocompleteColorEnabled;
     this.oldCustomAutocompleteColor = oldCustomAutocompleteColor;
     this.customAutocompleteColor = customAutocompleteColor;
   }
