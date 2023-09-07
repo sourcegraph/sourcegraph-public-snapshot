@@ -144,6 +144,9 @@ func (i *InstrumentedLimiter) WaitN(ctx context.Context, n int) error {
 
 	start := time.Now()
 	err := i.Limiter.WaitN(ctx, n)
+	if err != nil && errors.HasType(err, AllBlockedError{}) {
+		return ErrBlockAll
+	}
 	d := time.Since(start)
 	failedLabel := "false"
 	if err != nil {

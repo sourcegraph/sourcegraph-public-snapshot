@@ -59,7 +59,7 @@ func Test_GetToken_TimeToWaitExceedsLimit(t *testing.T) {
 
 	// Get a token from the bucket
 	err = rl.GetToken(ctxWithDeadline, testBucketName)
-	var expectedErr TokenGrantExceedsLimitError
+	var expectedErr WaitTimeExceedsDeadlineError
 	assert.NotNil(t, err)
 	assert.True(t, errors.As(err, &expectedErr))
 }

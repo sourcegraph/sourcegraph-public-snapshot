@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -30,7 +32,12 @@ func SyncServices(ctx context.Context, services []*types.ExternalService) error 
 		}
 
 		l := ratelimit.NewGlobalRateLimiter(svc.URN())
-		if err := l.SetTokenBucketConfig(ctx, int32(limit*3600), time.Hour); err != nil {
+		lim := int32(-1)
+		// rate.Inf should be stored as -1.
+		if limit != rate.Inf {
+			lim = int32(limit * 3600)
+		}
+		if err := l.SetTokenBucketConfig(ctx, lim, time.Hour); err != nil {
 			errs = errors.Append(errs, err)
 			continue
 		}
