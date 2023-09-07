@@ -17,7 +17,7 @@ describe('humanizeSize', () => {
         expect(humanizeSize(123456789023)).toBe('123.46GB')
     })
 
-    it('returns GB size for values above 1TB', () => {
+    it('returns TB size for values above 1TB', () => {
         expect(humanizeSize(1234567890123)).toBe('1234.57TB')
     })
 
