@@ -28,13 +28,6 @@ func TestStore_CreateExhaustiveSearchRepoRevisionJob(t *testing.T) {
 
 	bs := basestore.NewWithHandle(db.Handle())
 
-	t.Cleanup(func() {
-		cleanupUsers(bs)
-		cleanupRepos(bs)
-		cleanupSearchJobs(bs)
-		cleanupRepoJobs(bs)
-	})
-
 	userID, err := createUser(bs, "alice")
 	require.NoError(t, err)
 	repoID, err := createRepo(db, "repo-test")

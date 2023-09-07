@@ -30,10 +30,6 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 
 	bs := basestore.NewWithHandle(db.Handle())
 
-	t.Cleanup(func() {
-		cleanupUsers(bs)
-	})
-
 	userID, err := createUser(bs, "alice")
 	require.NoError(t, err)
 	malloryID, err := createUser(bs, "mallory")
