@@ -14,10 +14,7 @@ import (
 func createUser(store *basestore.Store, username string) (int32, error) {
 	admin := username == "admin"
 	q := sqlf.Sprintf(`INSERT INTO users(username, site_admin) VALUES(%s, %s) RETURNING id`, username, admin)
-	row := store.QueryRow(context.Background(), q)
-	var userID int32
-	err := row.Scan(&userID)
-	return userID, err
+	return basestore.ScanAny[int32](store.QueryRow(context.Background(), q))
 }
 
 func createRepo(db database.DB, name string) (api.RepoID, error) {
