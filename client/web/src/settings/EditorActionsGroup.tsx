@@ -49,9 +49,10 @@ export const EditorActionsGroup: React.FunctionComponent<EditorActionsGroupProps
 
     useEffect(() => {
         if (id && actionsAvailable) {
+            queryParameters.delete('id')
             onClick(id)
         }
-    }, [id, actionsAvailable, onClick])
+    }, [id, queryParameters, actionsAvailable, onClick])
 
     return (
         <>
