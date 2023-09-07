@@ -10880,6 +10880,12 @@ type MockGitserverClient struct {
 	// StreamBlameFileFunc is an instance of a mock function object
 	// controlling the behavior of the method StreamBlameFile.
 	StreamBlameFileFunc *GitserverClientStreamBlameFileFunc
+	// SystemInfoFunc is an instance of a mock function object controlling
+	// the behavior of the method SystemInfo.
+	SystemInfoFunc *GitserverClientSystemInfoFunc
+	// SystemsInfoFunc is an instance of a mock function object controlling
+	// the behavior of the method SystemsInfo.
+	SystemsInfoFunc *GitserverClientSystemsInfoFunc
 }
 
 // NewMockGitserverClient creates a new mock of the Client interface. All
@@ -11133,6 +11139,16 @@ func NewMockGitserverClient() *MockGitserverClient {
 		},
 		StreamBlameFileFunc: &GitserverClientStreamBlameFileFunc{
 			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string, *gitserver.BlameOptions) (r0 gitserver.HunkReader, r1 error) {
+				return
+			},
+		},
+		SystemInfoFunc: &GitserverClientSystemInfoFunc{
+			defaultHook: func(context.Context, string) (r0 gitserver.SystemInfo, r1 error) {
+				return
+			},
+		},
+		SystemsInfoFunc: &GitserverClientSystemsInfoFunc{
+			defaultHook: func(context.Context) (r0 []gitserver.SystemInfo, r1 error) {
 				return
 			},
 		},
@@ -11393,6 +11409,16 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.StreamBlameFile")
 			},
 		},
+		SystemInfoFunc: &GitserverClientSystemInfoFunc{
+			defaultHook: func(context.Context, string) (gitserver.SystemInfo, error) {
+				panic("unexpected invocation of MockGitserverClient.SystemInfo")
+			},
+		},
+		SystemsInfoFunc: &GitserverClientSystemsInfoFunc{
+			defaultHook: func(context.Context) ([]gitserver.SystemInfo, error) {
+				panic("unexpected invocation of MockGitserverClient.SystemsInfo")
+			},
+		},
 	}
 }
 
@@ -11550,6 +11576,12 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		},
 		StreamBlameFileFunc: &GitserverClientStreamBlameFileFunc{
 			defaultHook: i.StreamBlameFile,
+		},
+		SystemInfoFunc: &GitserverClientSystemInfoFunc{
+			defaultHook: i.SystemInfo,
+		},
+		SystemsInfoFunc: &GitserverClientSystemsInfoFunc{
+			defaultHook: i.SystemsInfo,
 		},
 	}
 }
@@ -17285,5 +17317,218 @@ func (c GitserverClientStreamBlameFileFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverClientStreamBlameFileFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverClientSystemInfoFunc describes the behavior when the SystemInfo
+// method of the parent MockGitserverClient instance is invoked.
+type GitserverClientSystemInfoFunc struct {
+	defaultHook func(context.Context, string) (gitserver.SystemInfo, error)
+	hooks       []func(context.Context, string) (gitserver.SystemInfo, error)
+	history     []GitserverClientSystemInfoFuncCall
+	mutex       sync.Mutex
+}
+
+// SystemInfo delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverClient) SystemInfo(v0 context.Context, v1 string) (gitserver.SystemInfo, error) {
+	r0, r1 := m.SystemInfoFunc.nextHook()(v0, v1)
+	m.SystemInfoFunc.appendCall(GitserverClientSystemInfoFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the SystemInfo method of
+// the parent MockGitserverClient instance is invoked and the hook queue is
+// empty.
+func (f *GitserverClientSystemInfoFunc) SetDefaultHook(hook func(context.Context, string) (gitserver.SystemInfo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SystemInfo method of the parent MockGitserverClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitserverClientSystemInfoFunc) PushHook(hook func(context.Context, string) (gitserver.SystemInfo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverClientSystemInfoFunc) SetDefaultReturn(r0 gitserver.SystemInfo, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (gitserver.SystemInfo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverClientSystemInfoFunc) PushReturn(r0 gitserver.SystemInfo, r1 error) {
+	f.PushHook(func(context.Context, string) (gitserver.SystemInfo, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverClientSystemInfoFunc) nextHook() func(context.Context, string) (gitserver.SystemInfo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverClientSystemInfoFunc) appendCall(r0 GitserverClientSystemInfoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverClientSystemInfoFuncCall objects
+// describing the invocations of this function.
+func (f *GitserverClientSystemInfoFunc) History() []GitserverClientSystemInfoFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverClientSystemInfoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverClientSystemInfoFuncCall is an object that describes an
+// invocation of method SystemInfo on an instance of MockGitserverClient.
+type GitserverClientSystemInfoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 gitserver.SystemInfo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverClientSystemInfoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverClientSystemInfoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverClientSystemsInfoFunc describes the behavior when the
+// SystemsInfo method of the parent MockGitserverClient instance is invoked.
+type GitserverClientSystemsInfoFunc struct {
+	defaultHook func(context.Context) ([]gitserver.SystemInfo, error)
+	hooks       []func(context.Context) ([]gitserver.SystemInfo, error)
+	history     []GitserverClientSystemsInfoFuncCall
+	mutex       sync.Mutex
+}
+
+// SystemsInfo delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverClient) SystemsInfo(v0 context.Context) ([]gitserver.SystemInfo, error) {
+	r0, r1 := m.SystemsInfoFunc.nextHook()(v0)
+	m.SystemsInfoFunc.appendCall(GitserverClientSystemsInfoFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the SystemsInfo method
+// of the parent MockGitserverClient instance is invoked and the hook queue
+// is empty.
+func (f *GitserverClientSystemsInfoFunc) SetDefaultHook(hook func(context.Context) ([]gitserver.SystemInfo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SystemsInfo method of the parent MockGitserverClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitserverClientSystemsInfoFunc) PushHook(hook func(context.Context) ([]gitserver.SystemInfo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverClientSystemsInfoFunc) SetDefaultReturn(r0 []gitserver.SystemInfo, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]gitserver.SystemInfo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverClientSystemsInfoFunc) PushReturn(r0 []gitserver.SystemInfo, r1 error) {
+	f.PushHook(func(context.Context) ([]gitserver.SystemInfo, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverClientSystemsInfoFunc) nextHook() func(context.Context) ([]gitserver.SystemInfo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverClientSystemsInfoFunc) appendCall(r0 GitserverClientSystemsInfoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverClientSystemsInfoFuncCall objects
+// describing the invocations of this function.
+func (f *GitserverClientSystemsInfoFunc) History() []GitserverClientSystemsInfoFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverClientSystemsInfoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverClientSystemsInfoFuncCall is an object that describes an
+// invocation of method SystemsInfo on an instance of MockGitserverClient.
+type GitserverClientSystemsInfoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []gitserver.SystemInfo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverClientSystemsInfoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverClientSystemsInfoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }

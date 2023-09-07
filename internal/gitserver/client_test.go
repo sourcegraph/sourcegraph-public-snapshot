@@ -1339,7 +1339,6 @@ func TestLocalGitCommand(t *testing.T) {
 }
 
 func TestClient_IsRepoCloneableGRPC(t *testing.T) {
-
 	type test struct {
 		name          string
 		repo          api.RepoName
@@ -1378,7 +1377,7 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 			wantErrString: "unable to clone repo (name=\"github.com/sourcegraph/sourcegraph\" notfound=false) because some other error",
 		},
 	}
-	runTests := func(t *testing.T, client gitserver.Client, tc test, called bool) {
+	runTests := func(t *testing.T, client gitserver.Client, tc test) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 			err := client.IsRepoCloneable(ctx, tc.repo)
@@ -1393,7 +1392,6 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 				t.Errorf("unexpected error: %s", err)
 			}
 		})
-
 	}
 
 	t.Run("GRPC", func(t *testing.T) {
@@ -1426,7 +1424,7 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 
 			client := gitserver.NewTestClient(http.DefaultClient, source)
 
-			runTests(t, client, tc, called)
+			runTests(t, client, tc)
 			if !called {
 				t.Fatal("IsRepoCloneable: grpc client not called")
 			}
@@ -1447,7 +1445,6 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 		expected := fmt.Sprintf("http://%s", gitserverAddr)
 
 		for _, tc := range testCases {
-
 			called := false
 			source := gitserver.NewTestClientSource(t, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
 				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
@@ -1479,18 +1476,209 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 				source,
 			)
 
-			runTests(t, client, tc, called)
+			runTests(t, client, tc)
 			if called {
 				t.Fatal("IsRepoCloneable: http client should be called")
 			}
 		}
 	})
+}
 
+func TestClient_SystemsInfo(t *testing.T) {
+	const gitserverAddr = "172.16.8.1:8080"
+	var mockResponse = &proto.DiskInfoResponse{
+		FreeSpace:  102400,
+		TotalSpace: 409600,
+	}
+
+	runTest := func(t *testing.T, client gitserver.Client) {
+		ctx := context.Background()
+		info, err := client.SystemsInfo(ctx)
+		require.NoError(t, err, "unexpected error")
+		require.Len(t, info, 1, "expected 1 disk info")
+		require.Equal(t, gitserverAddr, info[0].Address)
+		require.Equal(t, mockResponse.FreeSpace, info[0].FreeSpace)
+		require.Equal(t, mockResponse.TotalSpace, info[0].TotalSpace)
+	}
+
+	t.Run("GRPC", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EnableGRPC: true,
+				},
+			},
+		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
+
+		called := false
+		source := gitserver.NewTestClientSource(t, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				mockDiskInfo := func(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error) {
+					called = true
+					return mockResponse, nil
+				}
+				return &mockClient{mockDiskInfo: mockDiskInfo}
+			}
+		})
+
+		client := gitserver.NewTestClient(http.DefaultClient, source)
+
+		runTest(t, client)
+		if !called {
+			t.Fatal("DiskInfo: grpc client not called")
+		}
+	})
+
+	t.Run("HTTP", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EnableGRPC: false,
+				},
+			},
+		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
+		expected := fmt.Sprintf("http://%s", gitserverAddr)
+
+		called := false
+		source := gitserver.NewTestClientSource(t, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				mockDiskInfo := func(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error) {
+					called = true
+					return mockResponse, nil
+				}
+				return &mockClient{mockDiskInfo: mockDiskInfo}
+			}
+		})
+
+		client := gitserver.NewTestClient(
+			httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
+				switch r.URL.String() {
+				case expected + "/disk-info":
+					encoded, _ := json.Marshal(mockResponse)
+					body := io.NopCloser(strings.NewReader(strings.TrimSpace(string(encoded))))
+					return &http.Response{
+						StatusCode: 200,
+						Body:       body,
+					}, nil
+				default:
+					return nil, errors.Newf("unexpected URL: %q", r.URL.String())
+				}
+			}),
+			source,
+		)
+
+		runTest(t, client)
+		if called {
+			t.Fatal("DiskInfo: http client should be called")
+		}
+	})
+}
+
+func TestClient_SystemInfo(t *testing.T) {
+	const gitserverAddr = "172.16.8.1:8080"
+	var mockResponse = &proto.DiskInfoResponse{
+		FreeSpace:  102400,
+		TotalSpace: 409600,
+	}
+
+	runTest := func(t *testing.T, client gitserver.Client, addr string) {
+		ctx := context.Background()
+		info, err := client.SystemInfo(ctx, addr)
+		require.NoError(t, err, "unexpected error")
+		require.Equal(t, gitserverAddr, info.Address)
+		require.Equal(t, mockResponse.FreeSpace, info.FreeSpace)
+		require.Equal(t, mockResponse.TotalSpace, info.TotalSpace)
+	}
+
+	t.Run("GRPC", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EnableGRPC: true,
+				},
+			},
+		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
+
+		called := false
+		source := gitserver.NewTestClientSource(t, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				mockDiskInfo := func(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error) {
+					called = true
+					return mockResponse, nil
+				}
+				return &mockClient{mockDiskInfo: mockDiskInfo}
+			}
+		})
+
+		client := gitserver.NewTestClient(http.DefaultClient, source)
+
+		runTest(t, client, gitserverAddr)
+		if !called {
+			t.Fatal("DiskInfo: grpc client not called")
+		}
+	})
+
+	t.Run("HTTP", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EnableGRPC: false,
+				},
+			},
+		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
+		expected := fmt.Sprintf("http://%s", gitserverAddr)
+
+		called := false
+		source := gitserver.NewTestClientSource(t, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				mockDiskInfo := func(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error) {
+					called = true
+					return mockResponse, nil
+				}
+				return &mockClient{mockDiskInfo: mockDiskInfo}
+			}
+		})
+
+		client := gitserver.NewTestClient(
+			httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
+				switch r.URL.String() {
+				case expected + "/disk-info":
+					encoded, _ := json.Marshal(mockResponse)
+					body := io.NopCloser(strings.NewReader(strings.TrimSpace(string(encoded))))
+					return &http.Response{
+						StatusCode: 200,
+						Body:       body,
+					}, nil
+				default:
+					return nil, errors.Newf("unexpected URL: %q", r.URL.String())
+				}
+			}),
+			source,
+		)
+
+		runTest(t, client, gitserverAddr)
+		if called {
+			t.Fatal("DiskInfo: http client should be called")
+		}
+	})
 }
 
 type mockClient struct {
 	mockBatchLog                    func(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error)
 	mockCreateCommitFromPatchBinary func(ctx context.Context, opts ...grpc.CallOption) (proto.GitserverService_CreateCommitFromPatchBinaryClient, error)
+	mockDiskInfo                    func(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error)
 	mockExec                        func(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error)
 	mockGetObject                   func(ctx context.Context, in *proto.GetObjectRequest, opts ...grpc.CallOption) (*proto.GetObjectResponse, error)
 	mockIsRepoCloneable             func(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error)
@@ -1508,6 +1696,11 @@ type mockClient struct {
 // BatchLog implements v1.GitserverServiceClient.
 func (mc *mockClient) BatchLog(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error) {
 	return mc.mockBatchLog(ctx, in, opts...)
+}
+
+// DiskInfo implements v1.GitserverServiceClient.
+func (mc *mockClient) DiskInfo(ctx context.Context, in *proto.DiskInfoRequest, opts ...grpc.CallOption) (*proto.DiskInfoResponse, error) {
+	return mc.mockDiskInfo(ctx, in, opts...)
 }
 
 // GetObject implements v1.GitserverServiceClient.

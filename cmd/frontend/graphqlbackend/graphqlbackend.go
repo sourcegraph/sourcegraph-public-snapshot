@@ -385,6 +385,10 @@ func NewSchemaWithoutResolvers(db database.DB) (*graphql.Schema, error) {
 	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{})
 }
 
+func NewSchemaWithGitserverClient(db database.DB, gitserverClient gitserver.Client) (*graphql.Schema, error) {
+	return NewSchema(db, gitserverClient, []OptionalResolver{})
+}
+
 func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
 	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{NotebooksResolver: notebooks}})
 }
@@ -761,6 +765,9 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 		},
 		CodeHostKind: func(ctx context.Context, id graphql.ID) (Node, error) {
 			return CodeHostByID(ctx, r.db, id)
+		},
+		gitserverIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.gitserverByID(ctx, id)
 		},
 	}
 	return r

@@ -113,6 +113,15 @@ func (c *testGitserverConns) Addresses() []AddressWithClient {
 	return c.testAddresses
 }
 
+func (c *testGitserverConns) GetAddressWithClient(addr string) AddressWithClient {
+	for _, addrClient := range c.testAddresses {
+		if addrClient.Address() == addr {
+			return addrClient
+		}
+	}
+	return nil
+}
+
 // ClientForRepo returns a client or host for the given repo name.
 func (c *testGitserverConns) ClientForRepo(ctx context.Context, userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
 	conn, err := c.conns.ConnForRepo(ctx, userAgent, repo)
@@ -238,6 +247,19 @@ func (a *atomicGitServerConns) Addresses() []AddressWithClient {
 		})
 	}
 	return addrs
+}
+
+func (a *atomicGitServerConns) GetAddressWithClient(addr string) AddressWithClient {
+	conns := a.get()
+	addrConn, ok := conns.grpcConns[addr]
+	if ok {
+		return &connAndErr{
+			address: addr,
+			conn:    addrConn.conn,
+			err:     addrConn.err,
+		}
+	}
+	return nil
 }
 
 func (a *atomicGitServerConns) get() *GitserverConns {
