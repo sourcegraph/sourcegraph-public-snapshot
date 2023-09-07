@@ -2,7 +2,7 @@ import { FC, useState } from 'react'
 
 import { mdiRefresh, mdiDelete, mdiDownload } from '@mdi/js'
 import { upperFirst } from 'lodash'
-import FeatureSearchOutlineIcon from 'mdi-react/MapSearchOutlineIcon'
+import LayersSearchOutlineIcon from 'mdi-react/LayersSearchOutlineIcon'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
@@ -136,7 +136,7 @@ export const SearchJobsPage: FC = props => {
         <Page>
             <PageHeader
                 annotation={<FeedbackBadge status="experimental" feedback={{ mailto: 'support@sourcegraph.com' }} />}
-                path={[{ icon: FeatureSearchOutlineIcon, text: 'Search Jobs' }]}
+                path={[{ icon: LayersSearchOutlineIcon, text: 'Search Jobs' }]}
                 description={
                     <>
                         Run search queries over all repositories, branches, commit and revisions.{' '}
