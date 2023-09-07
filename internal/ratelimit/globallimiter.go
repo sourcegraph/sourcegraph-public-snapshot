@@ -10,6 +10,8 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -80,7 +82,15 @@ func (r *rateLimiter) Wait(ctx context.Context) error {
 	return r.WaitN(ctx, 1)
 }
 
-func (r *rateLimiter) WaitN(ctx context.Context, n int) error {
+func (r *rateLimiter) WaitN(ctx context.Context, n int) (err error) {
+	logger := log.Scoped("globalRateLimiter", "")
+	// TODO: Debugging, remove.
+	defer func() {
+		if err != nil {
+			logger.Warn("WaitN failed", log.Error(err))
+		}
+	}()
+
 	now := time.Now()
 
 	// Check if ctx is already cancelled.
@@ -106,6 +116,9 @@ func (r *rateLimiter) WaitN(ctx context.Context, n int) error {
 	if timeToWait == 0 {
 		return nil
 	}
+
+	// TODO: Debugging, remove.
+	logger.Info("Enforcing wait before token can be consumed", log.Int("timeToWait", int(timeToWait.Seconds())))
 
 	// Wait for the required time before the token can be used.
 	ch, stop := defaultRateLimitTimer(timeToWait)
