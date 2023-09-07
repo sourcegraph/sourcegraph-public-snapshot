@@ -50,7 +50,7 @@ func (h *handler) Handle(ctx context.Context) (err error) {
 	if siteCfg.GitMaxCodehostRequestsPerSecond != nil {
 		defaultGitQuota = int32(*siteCfg.GitMaxCodehostRequestsPerSecond)
 	} else {
-		defaultGitQuota = math.MaxInt32
+		defaultGitQuota = -1
 	}
 
 	gitRL := ratelimit.NewGlobalRateLimiter(ratelimit.GitRPSLimiterBucketName)
