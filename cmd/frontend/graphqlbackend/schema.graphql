@@ -2215,17 +2215,17 @@ type GitserverInstance implements Node {
     id: ID!
 
     """
-    The address of the Git server instance.
+    The address of the gitserver instance.
     """
     address: String!
 
     """
-    The amount of free space available on the Git server, in bytes.
+    The amount of free space available on the gitserver instance, in bytes.
     """
     freeDiskSpaceBytes: BigInt!
 
     """
-    The total amount of storage space on the Git server, in bytes.
+    The total amount of storage space on the gitserver instance, in bytes.
     """
     totalDiskSpaceBytes: BigInt!
 }
