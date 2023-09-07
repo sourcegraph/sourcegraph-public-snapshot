@@ -71,8 +71,8 @@ public class UserLevelConfig {
   }
 
   /**
-   * The proxy endpoint to route traffic accessing `cody.autocomplete.advanced.serverEndpoint`.
-   * This is only supported with the `unstable-codegen` provider right now.
+   * The proxy endpoint to route traffic accessing `cody.autocomplete.advanced.serverEndpoint`. This
+   * is only supported with the `unstable-codegen` provider right now.
    */
   @Nullable
   public static String getProxy() {
