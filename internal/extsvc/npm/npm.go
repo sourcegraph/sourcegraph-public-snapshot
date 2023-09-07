@@ -65,11 +65,12 @@ func NewHTTPClient(urn string, registryURL string, credentials string, httpfacto
 	if err != nil {
 		return nil, err
 	}
+
 	return &HTTPClient{
 		registryURL:    registryURL,
 		uncachedClient: uncached,
 		cachedClient:   cached,
-		limiter:        ratelimit.DefaultRegistry.Get(urn),
+		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(urn)),
 		credentials:    credentials,
 	}, nil
 }

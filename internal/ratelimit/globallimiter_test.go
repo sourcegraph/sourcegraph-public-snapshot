@@ -1,4 +1,4 @@
-package redispool
+package ratelimit
 
 import (
 	"context"
@@ -7,8 +7,9 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var testBucketName = "github.com:api_tokens"

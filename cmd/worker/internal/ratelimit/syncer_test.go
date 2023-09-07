@@ -1,53 +1,79 @@
-package repos
+package ratelimit
 
 import (
 	"context"
-	"strconv"
+	"encoding/json"
+	"fmt"
 	"testing"
+	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tj/assert"
 	"golang.org/x/time/rate"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestReposNamesSummary(t *testing.T) {
-	var rps types.Repos
+func TestSyncRateLimiters2(t *testing.T) {
+	t.Parallel()
+	store := getTestRepoStore(t)
 
-	eid := func(id int) api.ExternalRepoSpec {
-		return api.ExternalRepoSpec{
-			ID:          strconv.Itoa(id),
-			ServiceType: "fake",
-			ServiceID:   "https://fake.com",
+	clock := timeutil.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+	ctx := context.Background()
+	transact(ctx, store, func(t testing.TB, tx repos.Store) {
+		toCreate := 501 // Larger than default page size in order to test pagination
+		services := make([]*types.ExternalService, 0, toCreate)
+		for i := 0; i < toCreate; i++ {
+			svc := &types.ExternalService{
+				ID:          int64(i) + 1,
+				Kind:        "GITLAB",
+				DisplayName: "GitLab",
+				CreatedAt:   now,
+				UpdatedAt:   now,
+				DeletedAt:   time.Time{},
+				Config:      extsvc.NewEmptyConfig(),
+			}
+			config := schema.GitLabConnection{
+				Token: "abc",
+				Url:   fmt.Sprintf("http://example%d.com/", i),
+				RateLimit: &schema.GitLabRateLimit{
+					RequestsPerHour: 3600,
+					Enabled:         true,
+				},
+				ProjectQuery: []string{
+					"None",
+				},
+			}
+			data, err := json.Marshal(config)
+			if err != nil {
+				t.Fatal(err)
+			}
+			svc.Config.Set(string(data))
+			services = append(services, svc)
 		}
-	}
 
-	for i := 0; i < 5; i++ {
-		rps = append(rps, &types.Repo{Name: "bar", ExternalRepo: eid(i)})
-	}
+		if err := tx.ExternalServiceStore().Upsert(ctx, services...); err != nil {
+			t.Fatalf("failed to setup store: %v", err)
+		}
 
-	expected := "bar bar bar bar bar"
-	ns := rps.NamesSummary()
-	if ns != expected {
-		t.Errorf("expected %s, got %s", expected, ns)
-	}
-
-	rps = nil
-
-	for i := 0; i < 22; i++ {
-		rps = append(rps, &types.Repo{Name: "b", ExternalRepo: eid(i)})
-	}
-
-	expected = "b b b b b b b b b b b b b b b b b b b b..."
-	ns = rps.NamesSummary()
-	if ns != expected {
-		t.Errorf("expected %s, got %s", expected, ns)
-	}
+		registry := ratelimit.NewRegistry()
+		syncer := NewRateLimitSyncer(registry, tx.ExternalServiceStore(), RateLimitSyncerOpts{})
+		err := syncer.SyncRateLimiters(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		have := registry.Count()
+		if have != toCreate {
+			t.Fatalf("Want %d, got %d", toCreate, have)
+		}
+	})(t)
 }
 
 func TestSyncRateLimiters(t *testing.T) {

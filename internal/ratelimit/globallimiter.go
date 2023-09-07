@@ -1,4 +1,4 @@
-package redispool
+package ratelimit
 
 import (
 	"context"
@@ -7,8 +7,14 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"golang.org/x/time/rate"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+const GitRPSLimiterBucketName = "git-rps"
 
 var (
 	tokenBucketGlobalPrefix                   = "v2:rate_limiters"
@@ -18,46 +24,46 @@ var (
 	bucketMaxCapacity                         = 10
 )
 
-// RateLimiter is a Redis-backed rate limiter that utilizes lua scripts to manage rate limit token grants and token bucket replenishment.
+// GlobalLimiter is a Redis-backed rate limiter that implements the token bucket
+// algorithm.
 // NOTE: This limiter needs to be backed by a syncer that will dump its configurations into Redis.
 // See cmd/worker/internal/ratelimit/job.go for an example.
-type RateLimiter interface {
-	// GetToken gets a token from the specified rate limit token bucket, it is a synchronous operation
-	// and will wait until the token is permitted to be used or context is canceled before returning.
-	// bucketName: the name of the bucket where the tokens are, e.g. github.com:api_tokens
-	GetToken(ctx context.Context, bucketName string) error
+type GlobalLimiter interface {
+	// Wait is a shorthand for WaitN(ctx, 1).
+	Wait(ctx context.Context) error
+	// WaitN gets N tokens from the specified rate limit token bucket. It is a synchronous operation
+	// and will wait until the tokens are permitted to be used or context is canceled before returning.
+	WaitN(ctx context.Context, n int) error
 
 	// SetTokenBucketConfig sets the configuration for the specified token bucket.
 	// bucketName: the name of the bucket where the tokens are, e.g. github.com:api_tokens
 	// bucketQuota: the number of tokens to replenish over a bucketReplenishIntervalSeconds interval of time.
 	// bucketReplenishIntervalSeconds: how often (in seconds) the bucket should replenish bucketQuota tokens.
-	SetTokenBucketConfig(ctx context.Context, bucketName string, bucketQuota int32, bucketReplenishInterval time.Duration) error
+	SetTokenBucketConfig(ctx context.Context, bucketQuota int32, bucketReplenishInterval time.Duration) error
 }
 
 type rateLimiter struct {
-	prefix                 string
-	pool                   *redis.Pool
-	getTokensScript        redis.Script
-	setReplenishmentScript redis.Script
+	prefix     string
+	bucketName string
+	pool       *redis.Pool
 }
 
-func NewRateLimiter() (RateLimiter, error) {
-	pool, ok := Store.Pool()
+func NewGlobalRateLimiter(bucketName string) GlobalLimiter {
+	pool, ok := redispool.Store.Pool()
 	if !ok {
-		return nil, errors.New("unable to set default Redis pool")
+		// TODO: Return an in-memory limiter here.
+		return nil
 	}
 
 	return &rateLimiter{
-		prefix: tokenBucketGlobalPrefix,
-		pool:   pool,
-		// 3 is the key count, keys are arguments passed to the lua script that will be used to get values from Redis KV.
-		getTokensScript:        *redis.NewScript(4, getTokensFromBucketLuaScript),
-		setReplenishmentScript: *redis.NewScript(2, setTokenBucketReplenishmentLuaScript),
-	}, nil
+		prefix:     tokenBucketGlobalPrefix,
+		bucketName: bucketName,
+		pool:       pool,
+	}
 }
 
 // NewTestRateLimiterWithPoolAndPrefix same as NewRateLimiter but with configurable pool and prefix, used for testing
-func NewTestRateLimiterWithPoolAndPrefix(pool *redis.Pool, prefix string) (RateLimiter, error) {
+func NewTestRateLimiterWithPoolAndPrefix(pool *redis.Pool, prefix string) (GlobalLimiter, error) {
 	if pool == nil {
 		return nil, errors.New("Redis pool can't be nil")
 	}
@@ -65,13 +71,14 @@ func NewTestRateLimiterWithPoolAndPrefix(pool *redis.Pool, prefix string) (RateL
 	return &rateLimiter{
 		prefix: prefix,
 		pool:   pool,
-		// 3 is the key count, keys are arguments passed to the lua script that will be used to get values from Redis KV.
-		getTokensScript:        *redis.NewScript(4, getTokensFromBucketLuaScript),
-		setReplenishmentScript: *redis.NewScript(2, setTokenBucketReplenishmentLuaScript),
 	}, nil
 }
 
-func (r *rateLimiter) GetToken(ctx context.Context, bucketName string) error {
+func (r *rateLimiter) Wait(ctx context.Context) error {
+	return r.WaitN(ctx, 1)
+}
+
+func (r *rateLimiter) WaitN(ctx context.Context, n int) error {
 	now := time.Now()
 	// Check if ctx is already cancelled.
 	select {
@@ -87,9 +94,14 @@ func (r *rateLimiter) GetToken(ctx context.Context, bucketName string) error {
 	}
 
 	// Reserve a token from the bucket.
-	timeToWait, err := r.getToken(ctx, bucketName, now, waitLimit)
+	timeToWait, err := r.waitn(ctx, n, now, waitLimit)
 	if err != nil {
 		return err
+	}
+
+	// If no need to wait, return immediately.
+	if timeToWait == 0 {
+		return nil
 	}
 
 	// Wait for the required time before the token can be used.
@@ -104,12 +116,33 @@ func (r *rateLimiter) GetToken(ctx context.Context, bucketName string) error {
 	}
 }
 
-func (r *rateLimiter) getToken(ctx context.Context, bucketName string, requestTime time.Time, maxTimeToWait time.Duration) (timeToWait time.Duration, err error) {
-	keys := r.getRateLimiterKeys(bucketName)
+// TODO: Should support actually borrowing N, not just hard-coded 1.
+func (r *rateLimiter) waitn(ctx context.Context, n int, requestTime time.Time, maxTimeToWait time.Duration) (timeToWait time.Duration, err error) {
+	keys := r.getRateLimiterKeys()
 	connection := r.pool.Get()
 	defer connection.Close()
 
-	result, err := r.getTokensScript.DoContext(ctx, connection, keys.BucketKey, keys.LastReplenishmentTimestampKey, keys.QuotaKey, keys.ReplenishmentIntervalSecondsKey, bucketMaxCapacity, requestTime.Unix(), maxTimeToWait.Seconds())
+	defaultRateLimit := conf.Get().DefaultRateLimit
+	// the rate limit in the config is in requests per hour, whereas rate.Limit is in
+	// requests per second.
+	fallbackRateLimit := rate.Limit(defaultRateLimit / 3600.0)
+	if defaultRateLimit <= 0 {
+		fallbackRateLimit = rate.Inf
+	}
+	fallbackRateLimit *= 3600
+	if fallbackRateLimit >= math.MaxInt32 {
+		fallbackRateLimit = rate.Limit(math.MaxInt32)
+	}
+
+	result, err := getTokensScript.DoContext(ctx,
+		connection,
+		keys.BucketKey, keys.LastReplenishmentTimestampKey, keys.QuotaKey, keys.ReplenishmentIntervalSecondsKey,
+		bucketMaxCapacity,
+		requestTime.Unix(),
+		maxTimeToWait.Seconds(),
+		int32(fallbackRateLimit),
+		defaultBurst,
+	)
 	if err != nil {
 		return 0, errors.Wrapf(err, "error while getting tokens from bucket %s", keys.BucketKey)
 	}
@@ -130,10 +163,10 @@ func (r *rateLimiter) getToken(ctx context.Context, bucketName string, requestTi
 	}
 
 	timeToWait = time.Duration(timeToWaitSeconds) * time.Second
-	return timeToWait, getTokeBucketError(keys.BucketKey, getTokenGrantType(allowedInt), timeToWait)
+	return timeToWait, getTokenBucketError(keys.BucketKey, getTokenGrantType(allowedInt), timeToWait)
 }
 
-func getTokeBucketError(bucketKey string, allowed getTokenGrantType, timeToWait time.Duration) error {
+func getTokenBucketError(bucketKey string, allowed getTokenGrantType, timeToWait time.Duration) error {
 	switch allowed {
 	case tokenGranted:
 		return nil
@@ -142,8 +175,6 @@ func getTokeBucketError(bucketKey string, allowed getTokenGrantType, timeToWait 
 			timeToWait:     timeToWait,
 			tokenBucketKey: bucketKey,
 		}
-	case tokenBucketConfigsDontExist:
-		return TokenBucketConfigsDontExistError{tokenBucketKey: bucketKey}
 	case negativeTimeDifference:
 		return NegativeTimeDifferenceError{tokenBucketKey: bucketKey}
 	default:
@@ -158,19 +189,19 @@ func defaultRateLimitTimer(d time.Duration) (<-chan time.Time, func() bool) {
 	return timer.C, timer.Stop
 }
 
-func (r *rateLimiter) SetTokenBucketConfig(ctx context.Context, bucketName string, bucketQuota int32, bucketReplenishInterval time.Duration) error {
-	keys := r.getRateLimiterKeys(bucketName)
+func (r *rateLimiter) SetTokenBucketConfig(ctx context.Context, bucketQuota int32, bucketReplenishInterval time.Duration) error {
+	keys := r.getRateLimiterKeys()
 	connection := r.pool.Get()
 	defer connection.Close()
 
-	_, err := r.setReplenishmentScript.DoContext(ctx, connection, keys.QuotaKey, keys.ReplenishmentIntervalSecondsKey, bucketQuota, bucketReplenishInterval.Seconds())
-	return errors.Wrapf(err, "error while setting token bucket replenishment for bucket %s", bucketName)
+	_, err := setReplenishmentScript.DoContext(ctx, connection, keys.QuotaKey, keys.ReplenishmentIntervalSecondsKey, bucketQuota, bucketReplenishInterval.Seconds())
+	return errors.Wrapf(err, "error while setting token bucket replenishment for bucket %s", r.bucketName)
 }
 
-func (r *rateLimiter) getRateLimiterKeys(bucketName string) rateLimitBucketConfigKeys {
+func (r *rateLimiter) getRateLimiterKeys() rateLimitBucketConfigKeys {
 	var keys rateLimitBucketConfigKeys
 	// e.g. v2:rate_limiters:github.com:api_tokens
-	keys.BucketKey = fmt.Sprintf("%s:%s", r.prefix, bucketName)
+	keys.BucketKey = fmt.Sprintf("%s:%s", r.prefix, r.bucketName)
 	// e.g. v2:rate_limiters:github.com:api_tokens:config:bucket_quota
 	keys.QuotaKey = fmt.Sprintf("%s:%s", keys.BucketKey, bucketQuotaConfigKeySuffix)
 	// e.g.. v2:rate_limiters:github.com:api_tokens:config:bucket_replenishment_interval_seconds
@@ -180,6 +211,11 @@ func (r *rateLimiter) getRateLimiterKeys(bucketName string) rateLimitBucketConfi
 
 	return keys
 }
+
+var (
+	getTokensScript        = redis.NewScript(4, getTokensFromBucketLuaScript)
+	setReplenishmentScript = redis.NewScript(2, setTokenBucketReplenishmentLuaScript)
+)
 
 // getTokensFromBucketLuaScript gets a single token from the specified bucket.
 // bucket_key: the key in Redis that stores the bucket, under which all the bucket's tokens and rate limit configs are found, e.g. v2:rate_limiters:github.com:api_tokens.
@@ -196,6 +232,8 @@ local bucket_replenishment_interval_key = KEYS[4]
 local bucket_capacity = tonumber(ARGV[1])
 local current_time = tonumber(ARGV[2])
 local max_time_to_wait_for_token = tonumber(ARGV[3])
+local default_quota = tonumber(ARGV[4])
+local default_replenishment_interval = tonumber(ARGV[5])
 
 -- Check if the bucket exists.
 local bucket_exists = redis.call('EXISTS', bucket_key)
@@ -210,7 +248,9 @@ end
 local quota_exists = redis.call('EXISTS', bucket_quota_key)
 local bucket_replenishment_interval_exists = redis.call('EXISTS', bucket_replenishment_interval_key)
 if quota_exists == 0 or bucket_replenishment_interval_exists == 0 then
-	return {-1, 0} -- Return -1 (key not found)
+	-- Otherwise, use default values.
+	redis.call('SET', bucket_quota_key, default_quota)
+	redis.call('SET', bucket_replenishment_interval_key, default_replenishment_interval)
 end
 
 -- Calculate the time difference in seconds since last replenishment
@@ -276,10 +316,9 @@ redis.call('SET', replenish_interval_seconds_key, bucket_replenish_interval)`
 type getTokenGrantType int64
 
 var (
-	tokenGranted                getTokenGrantType = 1
-	tokenGrantExceedsLimit      getTokenGrantType = 0
-	tokenBucketConfigsDontExist getTokenGrantType = -1
-	negativeTimeDifference      getTokenGrantType = -2
+	tokenGranted           getTokenGrantType = 1
+	tokenGrantExceedsLimit getTokenGrantType = 0
+	negativeTimeDifference getTokenGrantType = -2
 )
 
 type rateLimitBucketConfigKeys struct {
@@ -287,14 +326,6 @@ type rateLimitBucketConfigKeys struct {
 	QuotaKey                        string
 	ReplenishmentIntervalSecondsKey string
 	LastReplenishmentTimestampKey   string
-}
-
-type TokenBucketConfigsDontExistError struct {
-	tokenBucketKey string
-}
-
-func (e TokenBucketConfigsDontExistError) Error() string {
-	return fmt.Sprintf("token bucket config not created for bucket key: %s", e.tokenBucketKey)
 }
 
 type TokenGrantExceedsLimitError struct {
