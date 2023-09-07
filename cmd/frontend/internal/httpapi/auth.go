@@ -54,7 +54,7 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 		if headerValue := r.Header.Get("Authorization"); headerValue != "" && token == "" {
 			// Handle Authorization header
 			var err error
-			token, sudoUser, err = authz.ParseAuthorizationHeader(headerValue)
+			token, sudoUser, err = authz.ParseAuthorizationHeader(logger, r, headerValue)
 			if err != nil {
 				if authz.IsUnrecognizedScheme(err) {
 					// Ignore Authorization headers that we don't handle.
