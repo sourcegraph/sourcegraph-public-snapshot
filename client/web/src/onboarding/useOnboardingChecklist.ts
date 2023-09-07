@@ -1,13 +1,21 @@
+import { MutationTuple, ApolloQueryResult } from '@apollo/client'
 import { parse } from 'jsonc-parser'
-import type { SiteConfigResult, SiteConfigVariables } from 'src/graphql-operations'
+import type {
+    SiteConfigResult,
+    SiteConfigVariables,
+    UpdateSiteConfigurationResult,
+    UpdateSiteConfigurationVariables,
+} from 'src/graphql-operations'
 
 import type { ErrorLike } from '@sourcegraph/common'
-import { useQuery } from '@sourcegraph/http-client'
+import { useQuery, useMutation } from '@sourcegraph/http-client'
 
-import { SITE_CONFIG_QUERY } from './queries'
+import { SITE_CONFIG_QUERY, LICENSE_KEY_MUTATION } from './queries'
 
 interface OnboardingChecklistResult {
     licenseKey: string
+    id: number
+    config: string
     checklistItem: OnboardingChecklistItem
 }
 
@@ -24,10 +32,11 @@ interface UseOnboardingChecklistResult {
     loading: boolean
     error?: ErrorLike
     data?: OnboardingChecklistResult
+    refetch: () => Promise<ApolloQueryResult<SiteConfigResult>>
 }
 
-export const useOnboardingChecklist = (): UseOnboardingChecklistResult => {
-    const { loading, error, data } = useQuery<SiteConfigResult, SiteConfigVariables>(SITE_CONFIG_QUERY, {
+export const useOnboardingChecklistQuery = (): UseOnboardingChecklistResult => {
+    const { loading, error, data, refetch } = useQuery<SiteConfigResult, SiteConfigVariables>(SITE_CONFIG_QUERY, {
         fetchPolicy: 'no-cache',
     })
 
@@ -35,6 +44,7 @@ export const useOnboardingChecklist = (): UseOnboardingChecklistResult => {
         loading,
         error,
         ...(data && { data: getChecklistItems(data) }),
+        refetch,
     }
 }
 
@@ -51,7 +61,9 @@ function getChecklistItems(data: SiteConfigResult): OnboardingChecklistResult {
     const config = parse(data.site.configuration.effectiveContents) as EffectiveContent
 
     return {
+        id: data.site.configuration.id,
         licenseKey: config.licenseKey,
+        config: data.site.configuration.effectiveContents,
         checklistItem: {
             licenseKey: config.licenseKey !== '',
             externalURL: config.externalURL !== '',
@@ -62,4 +74,11 @@ function getChecklistItems(data: SiteConfigResult): OnboardingChecklistResult {
                 data.externalServices?.nodes?.every(({ unrestrictedAccess }) => !unrestrictedAccess) ?? false,
         },
     }
+}
+
+export const useUpdateLicenseKey = (): MutationTuple<
+    UpdateSiteConfigurationResult,
+    UpdateSiteConfigurationVariables
+> => {
+    return useMutation(LICENSE_KEY_MUTATION)
 }

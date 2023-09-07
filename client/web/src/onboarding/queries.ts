@@ -4,6 +4,7 @@ export const SITE_CONFIG_QUERY = gql`
     query SiteConfig {
         site {
             configuration {
+                id
                 effectiveContents
             }
         }
@@ -15,5 +16,11 @@ export const SITE_CONFIG_QUERY = gql`
                 unrestrictedAccess
             }
         }
+    }
+`
+
+export const LICENSE_KEY_MUTATION = gql`
+    mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
+        updateSiteConfiguration(lastID: $lastID, input: $input)
     }
 `
