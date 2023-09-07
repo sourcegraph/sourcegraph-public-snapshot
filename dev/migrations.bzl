@@ -23,7 +23,7 @@ def _migration_impl(ctx):
             db = ctx.attr.db,
             output_file = ctx.outputs.out.path,
         ),
-        tools = [ctx.attr._sg[DefaultInfo].default_runfiles.files, ctx.file._pg_image],
+        tools = ctx.attr._sg[DefaultInfo].default_runfiles.files
     )
 
 migration = rule(
