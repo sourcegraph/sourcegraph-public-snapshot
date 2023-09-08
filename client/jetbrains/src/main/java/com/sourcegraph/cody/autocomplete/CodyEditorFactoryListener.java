@@ -26,6 +26,7 @@ import com.sourcegraph.cody.agent.protocol.TextDocument;
 import com.sourcegraph.cody.vscode.InlineAutocompleteTriggerKind;
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind;
 import com.sourcegraph.config.ConfigUtil;
+import com.sourcegraph.utils.CodyEditorUtil;
 import java.util.List;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
@@ -73,7 +74,7 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
       }
       informAgentAboutEditorChange(e.getEditor());
       CodyAutocompleteManager suggestions = CodyAutocompleteManager.getInstance();
-      if (suggestions.isEnabledForEditor(e.getEditor())
+      if (CodyEditorUtil.isEditorValidForAutocomplete(e.getEditor())
           && CodyEditorFactoryListener.isSelectedEditor(e.getEditor())) {
         suggestions.clearAutocompleteSuggestions(e.getEditor());
         suggestions.triggerAutocomplete(
@@ -92,7 +93,7 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
       }
       informAgentAboutEditorChange(e.getEditor());
       CodyAutocompleteManager suggestions = CodyAutocompleteManager.getInstance();
-      if (suggestions.isEnabledForEditor(e.getEditor())
+      if (CodyEditorUtil.isEditorValidForAutocomplete(e.getEditor())
           && CodyEditorFactoryListener.isSelectedEditor(e.getEditor())) {
         suggestions.clearAutocompleteSuggestions(e.getEditor());
       }
@@ -112,7 +113,7 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
       }
       CodyAutocompleteManager completions = CodyAutocompleteManager.getInstance();
       completions.clearAutocompleteSuggestions(this.editor);
-      if (completions.isEnabledForEditor(this.editor)
+      if (CodyEditorUtil.isEditorValidForAutocomplete(this.editor)
           && !CommandProcessor.getInstance().isUndoTransparentActionInProgress()) {
         informAgentAboutEditorChange(this.editor);
         int changeOffset = event.getOffset() + event.getNewLength();

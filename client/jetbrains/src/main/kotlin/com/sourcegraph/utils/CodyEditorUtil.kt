@@ -1,24 +1,34 @@
 package com.sourcegraph.utils
 
 import com.intellij.application.options.CodeStyle
+import com.intellij.injected.editor.EditorWindow
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.ex.EditorEx
+import com.intellij.openapi.editor.impl.ImaginaryEditor
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings.IndentOptions
+import com.intellij.util.concurrency.annotations.RequiresEdt
+import com.sourcegraph.cody.CodyCompatibility
 import com.sourcegraph.cody.vscode.Range
+import com.sourcegraph.config.ConfigUtil
 import java.util.*
 import java.util.stream.Collectors
 import kotlin.math.min
 
 object CodyEditorUtil {
     const val VIM_EXIT_INSERT_MODE_ACTION = "VimInsertExitModeAction"
+
+    @JvmStatic
+    private val KEY_EDITOR_SUPPORTED = Key.create<Boolean>("cody.editorSupported")
 
     /**
      * Returns a new String, using the given indentation settings to determine the tab size.
@@ -77,5 +87,41 @@ object CodyEditorUtil {
             .filter { fileEditor: FileEditor? -> fileEditor is TextEditor }
             .map { fileEditor: FileEditor -> (fileEditor as TextEditor).editor }
             .collect(Collectors.toSet())
+    }
+
+    @JvmStatic
+    fun isEditorInstanceSupported(editor: Editor): Boolean {
+        return editor.project != null && !editor.isViewer
+            && !editor.isOneLineMode
+            && editor !is EditorWindow
+            && editor !is ImaginaryEditor
+            && (editor !is EditorEx || !editor.isEmbeddedIntoDialogWrapper)
+    }
+
+    @JvmStatic
+    private fun isEditorSupported(editor: Editor): Boolean {
+        if (editor.isDisposed) {
+            return false
+        }
+        val fromCache = KEY_EDITOR_SUPPORTED[editor]
+        if (fromCache != null) {
+            return fromCache
+        }
+        val isSupported = (isEditorInstanceSupported(editor)
+            && CodyCompatibility.isSupportedProject(editor.project))
+        KEY_EDITOR_SUPPORTED[editor] = isSupported
+        return isSupported
+    }
+
+    @JvmStatic
+    @RequiresEdt
+    fun isEditorValidForAutocomplete(editor: Editor?): Boolean {
+        return ConfigUtil.isCodyEnabled()
+            && ConfigUtil.isCodyAutocompleteEnabled()
+            && editor != null
+            && !CodyLanguageUtil.isLanguageBlacklisted(editor)
+            && editor.document.isWritable
+            && ProjectUtil.isProjectAvailable(editor.project)
+            && isEditorSupported(editor)
     }
 }
