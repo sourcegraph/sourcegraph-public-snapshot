@@ -221,6 +221,7 @@ var siteConfigSecrets = []struct {
 	{readPath: `embeddings.accessToken`, editPaths: []string{"embeddings", "accessToken"}},
 	{readPath: `completions.accessToken`, editPaths: []string{"completions", "accessToken"}},
 	{readPath: `app.dotcomAuthToken`, editPaths: []string{"app", "dotcomAuthToken"}},
+	{readPath: `autocomplete.accessToken`, editPaths: []string{"autocomplete", "accessToken"}},
 }
 
 // UnredactSecrets unredacts unchanged secrets back to their original value for
