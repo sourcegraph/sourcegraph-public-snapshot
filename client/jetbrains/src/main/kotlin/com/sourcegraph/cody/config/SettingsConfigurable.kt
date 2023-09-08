@@ -26,6 +26,7 @@ import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.config.PluginSettingChangeActionNotifier
 import com.sourcegraph.config.PluginSettingChangeContext
 import java.awt.Color
+import java.awt.Dimension
 
 class SettingsConfigurable(private val project: Project) :
     BoundConfigurable(ConfigUtil.SERVICE_DISPLAY_NAME) {
@@ -56,6 +57,9 @@ class SettingsConfigurable(private val project: Project) :
                   EmptyIcon.ICON_16)
               .horizontalAlign(HorizontalAlign.FILL)
               .verticalAlign(VerticalAlign.FILL)
+              .applyToComponent {
+                  this.preferredSize = Dimension(Int.MAX_VALUE, 200)
+              }
               .also {
                 DataManager.registerDataProvider(it.component) { key ->
                   if (CodyAccountsHost.KEY.`is`(key)) accountsModel else null
