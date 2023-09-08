@@ -541,11 +541,11 @@ commands:
       done
     install: |
       if [[ $(uname) == "Linux" ]]; then
-        bazel build //enterprise/cmd/executor-kubernetes:image_tarball
-        docker load --input $(bazel cquery //enterprise/cmd/executor-kubernetes:image_tarball --output=files)
+        bazel build //cmd/executor-kubernetes:image_tarball
+        docker load --input $(bazel cquery //cmd/executor-kubernetes:image_tarball --output=files)
       else
-        bazel build //enterprise/cmd/executor-kubernetes:image_tarball --config darwin-docker
-        docker load --input $(bazel cquery //enterprise/cmd/executor-kubernetes:image_tarball --config darwin-docker --output=files)
+        bazel build //cmd/executor-kubernetes:image_tarball --config darwin-docker
+        docker load --input $(bazel cquery //cmd/executor-kubernetes:image_tarball --config darwin-docker --output=files)
       fi
 
     env:
