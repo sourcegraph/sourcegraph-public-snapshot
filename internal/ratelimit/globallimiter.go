@@ -4,12 +4,10 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	"math"
 	"strings"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
 
@@ -18,15 +16,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const GitRPSLimiterBucketName = "git-rps"
-
-var (
+const (
+	GitRPSLimiterBucketName                   = "git-rps"
 	tokenBucketGlobalPrefix                   = "v2:rate_limiters"
 	bucketLastReplenishmentTimestampKeySuffix = "last_replenishment_timestamp"
 	bucketAllowedBurstKeySuffix               = "allowed_burst"
 	bucketRateConfigKeySuffix                 = "config:bucket_rate"
 	bucketReplenishmentConfigKeySuffix        = "config:bucket_replenishment_interval_seconds"
-	// bucketMaxCapacity                         = 10
+	defaultBurst                              = 10
 )
 
 // GlobalLimiter is a Redis-backed rate limiter that implements the token bucket
@@ -47,10 +44,15 @@ type GlobalLimiter interface {
 	SetTokenBucketConfig(ctx context.Context, bucketQuota int32, bucketReplenishInterval time.Duration) error
 }
 
-type rateLimiter struct {
+type globalRateLimiter struct {
 	prefix     string
 	bucketName string
 	pool       *redis.Pool
+
+	// optionally used for tests
+	nowFunc func() time.Time
+	// optionally used for tests
+	timerFunc func(d time.Duration) (<-chan time.Time, func() bool)
 }
 
 func NewGlobalRateLimiter(bucketName string) GlobalLimiter {
@@ -60,30 +62,18 @@ func NewGlobalRateLimiter(bucketName string) GlobalLimiter {
 		return nil
 	}
 
-	return &rateLimiter{
+	return &globalRateLimiter{
 		prefix:     tokenBucketGlobalPrefix,
 		bucketName: bucketName,
 		pool:       pool,
 	}
 }
 
-// NewTestRateLimiterWithPoolAndPrefix same as NewRateLimiter but with configurable pool and prefix, used for testing
-func NewTestRateLimiterWithPoolAndPrefix(pool *redis.Pool, prefix string) (GlobalLimiter, error) {
-	if pool == nil {
-		return nil, errors.New("Redis pool can't be nil")
-	}
-
-	return &rateLimiter{
-		prefix: prefix,
-		pool:   pool,
-	}, nil
-}
-
-func (r *rateLimiter) Wait(ctx context.Context) error {
+func (r *globalRateLimiter) Wait(ctx context.Context) error {
 	return r.WaitN(ctx, 1)
 }
 
-func (r *rateLimiter) WaitN(ctx context.Context, n int) (err error) {
+func (r *globalRateLimiter) WaitN(ctx context.Context, n int) (err error) {
 	logger := log.Scoped("globalRateLimiter", "")
 	// TODO: Debugging, remove.
 	defer func() {
@@ -92,7 +82,7 @@ func (r *rateLimiter) WaitN(ctx context.Context, n int) (err error) {
 		}
 	}()
 
-	now := time.Now()
+	now := r.now()
 
 	// Check if ctx is already cancelled.
 	select {
@@ -106,8 +96,6 @@ func (r *rateLimiter) WaitN(ctx context.Context, n int) (err error) {
 	if deadline, ok := ctx.Deadline(); ok {
 		waitLimit = deadline.Sub(now)
 	}
-
-	fmt.Printf("WaitN n=%d waitLimit=%s\n", n, waitLimit)
 
 	// Reserve a token from the bucket.
 	timeToWait, err := r.waitn(ctx, n, now, waitLimit)
@@ -124,7 +112,7 @@ func (r *rateLimiter) WaitN(ctx context.Context, n int) (err error) {
 	logger.Info("Enforcing wait before token can be consumed", log.Int("timeToWait", int(timeToWait.Seconds())))
 
 	// Wait for the required time before the token can be used.
-	ch, stop := defaultRateLimitTimer(timeToWait)
+	ch, stop := r.newTimer(timeToWait)
 	defer stop()
 	select {
 	case <-ch:
@@ -137,7 +125,23 @@ func (r *rateLimiter) WaitN(ctx context.Context, n int) (err error) {
 	}
 }
 
-func (r *rateLimiter) waitn(ctx context.Context, n int, requestTime time.Time, maxTimeToWait time.Duration) (timeToWait time.Duration, err error) {
+func (r *globalRateLimiter) now() time.Time {
+	if r.nowFunc != nil {
+		return r.nowFunc()
+	}
+	return time.Now()
+}
+
+func (r *globalRateLimiter) newTimer(d time.Duration) (<-chan time.Time, func() bool) {
+	if r.timerFunc != nil {
+		return r.timerFunc(d)
+	}
+
+	timer := time.NewTimer(d)
+	return timer.C, timer.Stop
+}
+
+func (r *globalRateLimiter) waitn(ctx context.Context, n int, requestTime time.Time, maxTimeToWait time.Duration) (timeToWait time.Duration, err error) {
 	keys := getRateLimiterKeys(r.prefix, r.bucketName)
 	connection := r.pool.Get()
 	defer connection.Close()
@@ -145,13 +149,9 @@ func (r *rateLimiter) waitn(ctx context.Context, n int, requestTime time.Time, m
 	defaultRateLimit := conf.Get().DefaultRateLimit
 	// the rate limit in the config is in requests per hour, whereas rate.Limit is in
 	// requests per second.
-	fallbackRateLimit := rate.Limit(defaultRateLimit / 3600.0)
+	fallbackRateLimit := defaultRateLimit
 	if defaultRateLimit <= 0 {
-		fallbackRateLimit = rate.Inf
-	}
-	fallbackRateLimit *= 3600
-	if fallbackRateLimit >= math.MaxInt32 {
-		fallbackRateLimit = rate.Limit(math.MaxInt32)
+		fallbackRateLimit = -1 // equivalent of rate.Inf
 	}
 
 	maxWaitTime := int32(-1)
@@ -164,7 +164,7 @@ func (r *rateLimiter) waitn(ctx context.Context, n int, requestTime time.Time, m
 		requestTime.Unix(),
 		maxWaitTime,
 		int32(fallbackRateLimit),
-		1,
+		int32(time.Hour/time.Second),
 		defaultBurst,
 		n,
 	)
@@ -209,19 +209,12 @@ func getTokenBucketError(bucketKey string, allowed getTokenGrantType, timeToWait
 	}
 }
 
-// defaultRateLimitTimer returns the default timer used for rate limiting.
-// All non-test clients should use defaultRateLimitTimer.
-func defaultRateLimitTimer(d time.Duration) (<-chan time.Time, func() bool) {
-	timer := time.NewTimer(d)
-	return timer.C, timer.Stop
-}
-
-func (r *rateLimiter) SetTokenBucketConfig(ctx context.Context, bucketQuota int32, bucketReplenishInterval time.Duration) error {
+func (r *globalRateLimiter) SetTokenBucketConfig(ctx context.Context, bucketQuota int32, bucketReplenishInterval time.Duration) error {
 	keys := getRateLimiterKeys(r.prefix, r.bucketName)
 	connection := r.pool.Get()
 	defer connection.Close()
 
-	_, err := setReplenishmentScript.DoContext(ctx, connection, keys.RateKey, keys.ReplenishmentIntervalSecondsKey, bucketQuota, bucketReplenishInterval.Seconds())
+	_, err := setReplenishmentScript.DoContext(ctx, connection, keys.RateKey, keys.ReplenishmentIntervalSecondsKey, keys.BurstKey, bucketQuota, bucketReplenishInterval.Seconds(), defaultBurst)
 	return errors.Wrapf(err, "error while setting token bucket replenishment for bucket %s", r.bucketName)
 }
 
@@ -243,7 +236,7 @@ func getRateLimiterKeys(prefix, bucketName string) rateLimitBucketConfigKeys {
 
 var (
 	getTokensScript        = redis.NewScript(5, getTokensFromBucketLuaScript)
-	setReplenishmentScript = redis.NewScript(2, setTokenBucketReplenishmentLuaScript)
+	setReplenishmentScript = redis.NewScript(3, setTokenBucketReplenishmentLuaScript)
 )
 
 // getTokensFromBucketLuaScript gets a single token from the specified bucket.
@@ -258,13 +251,8 @@ var (
 //go:embed globallimitergettokens.lua
 var getTokensFromBucketLuaScript string
 
-const setTokenBucketReplenishmentLuaScript = `local bucket_quota_key = KEYS[1]
-local replenish_interval_seconds_key = KEYS[2]
-local bucket_quota = tonumber(ARGV[1])
-local bucket_replenish_interval = tonumber(ARGV[2])
-
-redis.call('SET', bucket_quota_key, bucket_quota)
-redis.call('SET', replenish_interval_seconds_key, bucket_replenish_interval)`
+//go:embed globallimitersettokenbucket.lua
+var setTokenBucketReplenishmentLuaScript string
 
 type getTokenGrantType int64
 
@@ -345,16 +333,20 @@ func GetGlobalLimiterState(ctx context.Context) (map[string]GlobalLimiterInfo, e
 		return nil, nil
 	}
 
+	return getGlobalLimiterStateFromPool(ctx, pool, tokenBucketGlobalPrefix)
+}
+
+func getGlobalLimiterStateFromPool(ctx context.Context, pool *redis.Pool, prefix string) (map[string]GlobalLimiterInfo, error) {
 	conn, err := pool.GetContext(ctx)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get connection")
 	}
 	defer conn.Close()
 
 	// First, find all known limiters in redis.
-	resp, err := conn.Do("KEYS", fmt.Sprintf("%s:*:%s", tokenBucketGlobalPrefix, bucketAllowedBurstKeySuffix))
+	resp, err := conn.Do("KEYS", fmt.Sprintf("%s:*:%s", prefix, bucketAllowedBurstKeySuffix))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to list keys")
 	}
 	keys, ok := resp.([]interface{})
 	if !ok {
@@ -368,32 +360,34 @@ func GetGlobalLimiterState(ctx context.Context) (map[string]GlobalLimiterInfo, e
 			return nil, errors.Newf("invalid response from redis keys command, expected string, got %T", k)
 		}
 		key := string(kchars)
-		limiterName := strings.TrimSuffix(strings.TrimPrefix(key, tokenBucketGlobalPrefix+":"), ":"+bucketAllowedBurstKeySuffix)
-		rlKeys := getRateLimiterKeys(tokenBucketGlobalPrefix, limiterName)
+		limiterName := strings.TrimSuffix(strings.TrimPrefix(key, prefix+":"), ":"+bucketAllowedBurstKeySuffix)
+		rlKeys := getRateLimiterKeys(prefix, limiterName)
 
-		currentCapacity, err := redispool.Store.Get(rlKeys.BucketKey).Int()
-		if err != nil {
-			return nil, err
+		rstore := redispool.RedisKeyValue(pool)
+
+		currentCapacity, err := rstore.Get(rlKeys.BucketKey).Int()
+		if err != nil && err != redis.ErrNil {
+			return nil, errors.Wrap(err, "failed to read current capacity")
 		}
 
-		burst, err := redispool.Store.Get(rlKeys.BurstKey).Int()
-		if err != nil {
-			return nil, err
+		burst, err := rstore.Get(rlKeys.BurstKey).Int()
+		if err != nil && err != redis.ErrNil {
+			return nil, errors.Wrap(err, "failed to read burst config")
 		}
 
-		rate, err := redispool.Store.Get(rlKeys.RateKey).Int()
-		if err != nil {
-			return nil, err
+		rate, err := rstore.Get(rlKeys.RateKey).Int()
+		if err != nil && err != redis.ErrNil {
+			return nil, errors.Wrap(err, "failed to read rate config")
 		}
 
-		intervalSeconds, err := redispool.Store.Get(rlKeys.ReplenishmentIntervalSecondsKey).Int()
-		if err != nil {
-			return nil, err
+		intervalSeconds, err := rstore.Get(rlKeys.ReplenishmentIntervalSecondsKey).Int()
+		if err != nil && err != redis.ErrNil {
+			return nil, errors.Wrap(err, "failed to read interval config")
 		}
 
-		lastReplenishment, err := redispool.Store.Get(rlKeys.LastReplenishmentTimestampKey).Int()
-		if err != nil {
-			return nil, err
+		lastReplenishment, err := rstore.Get(rlKeys.LastReplenishmentTimestampKey).Int()
+		if err != nil && err != redis.ErrNil {
+			return nil, errors.Wrap(err, "failed to read last replenishment")
 		}
 
 		info := GlobalLimiterInfo{

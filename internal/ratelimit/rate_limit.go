@@ -11,8 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const defaultBurst = 10
-
 type Limiter interface {
 	WaitN(context.Context, int) error
 }

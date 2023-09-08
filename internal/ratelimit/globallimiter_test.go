@@ -2,82 +2,283 @@ package ratelimit
 
 import (
 	"context"
-	"math"
+	"errors"
 	"testing"
 	"time"
 
+	"github.com/derision-test/glock"
 	"github.com/gomodule/redigo/redis"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var testBucketName = "github.com:api_tokens"
+var testBucketName = "extsvc:999:github"
 
-func Test_RateLimiter_BasicFunctionality(t *testing.T) {
+func TestGlobalRateLimiter(t *testing.T) {
 	// This test is verifying the basic functionality of the rate limiter.
 	// We should be able to get a token once the token bucket config is set.
 	prefix := "__test__" + t.Name()
 	pool := redisPoolForTest(t, prefix)
-	rl := getTestRateLimiter(prefix, pool)
+	rl := getTestRateLimiter(prefix, pool, testBucketName)
 
-	// Set up the test by initializing the bucket with some initial quota and replenishment interval
+	clock := glock.NewMockClock()
+	rl.nowFunc = clock.Now
+	timerFuncCalled := false
+	tickers := make(chan *glock.MockTicker)
+	t.Cleanup(func() { close(tickers) })
+	rl.timerFunc = func(d time.Duration) (<-chan time.Time, func() bool) {
+		timerFuncCalled = true
+		ticker := glock.NewMockTickerAt(clock.Now(), d)
+		tickers <- ticker
+		return ticker.Chan(), func() bool {
+			ticker.Stop()
+			return true
+		}
+	}
+
+	// Set up the test by initializing the bucket with some initial quota and replenishment interval.
 	ctx := context.Background()
 	bucketQuota := int32(100)
-	bucketReplenishInterval := time.Duration(100) * time.Second
-	err := rl.SetTokenBucketConfig(ctx, testBucketName, bucketQuota, bucketReplenishInterval)
+	bucketReplenishInterval := 100 * time.Second
+	// Rate is 100 / 100s, so 1/s.
+	err := rl.SetTokenBucketConfig(ctx, bucketQuota, bucketReplenishInterval)
 	assert.Nil(t, err)
 
-	// Get a token from the bucket
-	err = rl.GetToken(ctx, testBucketName)
-	assert.Nil(t, err)
+	// Get a token from the bucket.
+	{
+		require.NoError(t, rl.Wait(ctx))
+		assert.False(t, timerFuncCalled, "timerFunc should not be called when bucket is full")
+	}
+	// Exhaust the burst of the bucket entirely.
+	{
+		for i := 0; i < defaultBurst-1; i++ {
+			require.NoError(t, rl.Wait(ctx))
+			assert.False(t, timerFuncCalled, "timerFunc should not be called when bucket is full")
+		}
+	}
+
+	// The time has not advanced yet, so getting another token should make us wait for the
+	// replenishment timer to trigger.
+	// Spawn the wait in the background, it will be blocking.
+	{
+		waitReturn := make(chan struct{})
+		t.Cleanup(func() { close(waitReturn) })
+		go func() {
+			require.NoError(t, rl.Wait(ctx))
+			waitReturn <- struct{}{}
+		}()
+		select {
+		case ticker := <-tickers:
+			// After 500 milliseconds, nothing should happen yet.
+			ticker.Advance(500 * time.Millisecond)
+			// After another 500ms, 1s total has passed, and the replenishment should
+			// happen now.
+			select {
+			case <-waitReturn:
+				t.Fatal("returned too early")
+			default:
+			}
+			ticker.Advance(500 * time.Millisecond)
+			select {
+			case <-waitReturn:
+			case <-time.After(100 * time.Millisecond):
+				t.Fatal("timed out waiting for return")
+			}
+		case <-time.After(100 * time.Millisecond):
+			t.Fatal("timed out waiting for wait function")
+		}
+	}
+
+	// Move a second forward so the bucket capacity is 0 after replenishment again.
+	// It's -1 before this.
+	clock.Advance(time.Second)
+
+	// Now we claim multiple tokens, and need to wait longer for that.
+	{
+		waitReturn := make(chan struct{})
+		t.Cleanup(func() { close(waitReturn) })
+		go func() {
+			require.NoError(t, rl.WaitN(ctx, 5))
+			waitReturn <- struct{}{}
+		}()
+		select {
+		case ticker := <-tickers:
+			// After 4999 milliseconds, nothing should happen yet. We need to wait
+			// 5s.
+			ticker.Advance(4999 * time.Millisecond)
+			// After another 500ms, 1s total has passed, and the replenishment should
+			// happen now.
+			select {
+			case <-waitReturn:
+				t.Fatal("returned too early")
+			default:
+			}
+			ticker.Advance(1 * time.Millisecond)
+			select {
+			case <-waitReturn:
+			case <-time.After(100 * time.Millisecond):
+				t.Fatal("timed out waiting for return")
+			}
+		case <-time.After(100 * time.Millisecond):
+			t.Fatal("timed out waiting for wait function")
+		}
+	}
 }
 
-func Test_GetToken_TimeToWaitExceedsLimit(t *testing.T) {
+func TestGlobalRateLimiter_TimeToWaitExceedsLimit(t *testing.T) {
 	// This test is verifying that if the amount of time needed to wait for a token
 	// exceeds the context deadline, a TokenGrantExceedsLimitError is returned.
 	prefix := "__test__" + t.Name()
 	pool := redisPoolForTest(t, prefix)
-	rl := getTestRateLimiter(prefix, pool)
+	rl := getTestRateLimiter(prefix, pool, testBucketName)
+
+	clock := glock.NewMockClock()
+	rl.nowFunc = clock.Now
+	timerFuncCalled := false
+	rl.timerFunc = func(d time.Duration) (<-chan time.Time, func() bool) {
+		timerFuncCalled = true
+		ticker := glock.NewMockTickerAt(clock.Now(), d)
+		return ticker.Chan(), func() bool {
+			ticker.Stop()
+			return true
+		}
+	}
 
 	// Set up the test by initializing the bucket with some initial quota and replenishment interval
 	ctx := context.Background()
-	bucketQuota := int32(100)
-	bucketReplenishInterval := time.Duration(100) * time.Second
-	err := rl.SetTokenBucketConfig(ctx, testBucketName, bucketQuota, bucketReplenishInterval)
+	bucketQuota := int32(10)
+	bucketReplenishInterval := 100 * time.Second
+	// Rate 10/100 -> 0.1 tokens/second.
+	err := rl.SetTokenBucketConfig(ctx, bucketQuota, bucketReplenishInterval)
 	assert.Nil(t, err)
 
-	// Setting the max capacity to -10 means that the first token requester will have to wait 10s before using it.
-	oldBucketMaxCapacity := bucketMaxCapacity
-	bucketMaxCapacity = -10
-	t.Cleanup(func() {
-		bucketMaxCapacity = oldBucketMaxCapacity
-	})
-
 	// Ser a context with a deadline of 5s from now so that it can't wait the 10s to use the token.
-	ctxWithDeadline, _ := context.WithDeadline(ctx, time.Now().Add(5*time.Second))
+	ctxWithDeadline, cancel := context.WithDeadline(ctx, time.Now().Add(5*time.Second))
+	t.Cleanup(cancel)
 
-	// Get a token from the bucket
-	err = rl.GetToken(ctxWithDeadline, testBucketName)
+	// First, deplete the burst.
+	require.NoError(t, rl.WaitN(ctx, 10))
+
+	// Get a token from the bucket, expect that the deadline is hit.
+	err = rl.Wait(ctxWithDeadline)
 	var expectedErr WaitTimeExceedsDeadlineError
 	assert.NotNil(t, err)
 	assert.True(t, errors.As(err, &expectedErr))
+	assert.False(t, timerFuncCalled, "expected no timer to be spawned")
 }
 
-func Test_GetToken_BucketConfigDoesntExist(t *testing.T) {
-	// This test is verifying that if the configs for the token bucket are not set in Redis
-	// when GetToken is called, a TokenBucketConfigsDontExistError is returned.
+func TestGlobalRateLimiter_AllBlockedError(t *testing.T) {
+	// Verify that a limit of 0 means "block all".
 	prefix := "__test__" + t.Name()
 	pool := redisPoolForTest(t, prefix)
-	rl := getTestRateLimiter(prefix, pool)
+	rl := getTestRateLimiter(prefix, pool, testBucketName)
 
+	clock := glock.NewMockClock()
+	rl.nowFunc = clock.Now
+	timerFuncCalled := false
+	rl.timerFunc = func(d time.Duration) (<-chan time.Time, func() bool) {
+		timerFuncCalled = true
+		ticker := glock.NewMockTickerAt(clock.Now(), d)
+		return ticker.Chan(), func() bool {
+			ticker.Stop()
+			return true
+		}
+	}
+
+	// Set up the test by initializing the bucket with some initial quota and replenishment interval
+	// that doesn't ever allow anything.
 	ctx := context.Background()
+	err := rl.SetTokenBucketConfig(ctx, 0, time.Minute)
+	assert.Nil(t, err)
 
-	// Try to get a token before rate limiter config is set in Redis, should return an error.
-	var expectedErr TokenBucketConfigsDontExistError
-	err := rl.GetToken(ctx, testBucketName)
-	assert.NotNil(t, err)
-	assert.True(t, errors.As(err, &expectedErr))
+	// Try to get a token, it should fail.
+	require.Error(t, rl.Wait(ctx), AllBlockedError{})
+	assert.False(t, timerFuncCalled, "expected no timer to be spawned")
+}
+
+func TestGlobalRateLimiter_Inf(t *testing.T) {
+	// Verify that a rate of -1 means inf.
+	prefix := "__test__" + t.Name()
+	pool := redisPoolForTest(t, prefix)
+	rl := getTestRateLimiter(prefix, pool, testBucketName)
+
+	clock := glock.NewMockClock()
+	rl.nowFunc = clock.Now
+	timerFuncCalled := false
+	rl.timerFunc = func(d time.Duration) (<-chan time.Time, func() bool) {
+		timerFuncCalled = true
+		ticker := glock.NewMockTickerAt(clock.Now(), d)
+		return ticker.Chan(), func() bool {
+			ticker.Stop()
+			return true
+		}
+	}
+
+	// Set up the test by initializing the bucket with some initial quota and replenishment interval.
+	ctx := context.Background()
+	// Allow infinite requests.
+	err := rl.SetTokenBucketConfig(ctx, -1, time.Minute)
+	assert.Nil(t, err)
+
+	// Get many from the bucket.
+	require.NoError(t, rl.WaitN(ctx, 999999))
+	assert.False(t, timerFuncCalled, "timerFunc should not be called when bucket is full")
+}
+
+func TestGlobalRateLimiter_UnconfiguredLimiter(t *testing.T) {
+	// This test is verifying the basic functionality of the rate limiter.
+	// We should be able to get a token once the token bucket config is set.
+	prefix := "__test__" + t.Name()
+	pool := redisPoolForTest(t, prefix)
+	rl := getTestRateLimiter(prefix, pool, testBucketName)
+
+	clock := glock.NewMockClock()
+	rl.nowFunc = clock.Now
+	timerFuncCalled := false
+	waitDurations := make(chan time.Duration)
+	t.Cleanup(func() { close(waitDurations) })
+	rl.timerFunc = func(d time.Duration) (<-chan time.Time, func() bool) {
+		timerFuncCalled = true
+		waitDurations <- d
+		ticker := glock.NewMockTickerAt(clock.Now(), d)
+		return ticker.Chan(), func() bool {
+			ticker.Stop()
+			return true
+		}
+	}
+
+	// Set up the test by initializing the bucket with some initial quota and replenishment interval.
+	ctx := context.Background()
+	// We do NOT call SetTokenBucketConfig here. Instead, we set a sane default.
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			DefaultRateLimit: 10,
+		},
+	})
+	defer conf.Mock(nil)
+
+	// First, deplete the burst.
+	require.NoError(t, rl.WaitN(ctx, 10))
+	assert.False(t, timerFuncCalled, "timerFunc should not be called when bucket is full")
+
+	// Next, try to get another token. The bucket should be at capacity 0, and the
+	// rate is 10/h -> 360s for one token.
+	{
+		go func() {
+			require.NoError(t, rl.Wait(ctx))
+		}()
+		select {
+		case duration := <-waitDurations:
+			require.Equal(t, 360*time.Second, duration)
+		case <-time.After(100 * time.Millisecond):
+			t.Fatal("timed out waiting for wait function")
+		}
+	}
 }
 
 func Test_GetToken_CanceledContext(t *testing.T) {
@@ -85,104 +286,48 @@ func Test_GetToken_CanceledContext(t *testing.T) {
 	// already canceled, then we get back a context.Canceled error.
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	rl := rateLimiter{}
-	err := rl.GetToken(ctx, "doesnt_matter")
+	rl := globalRateLimiter{}
+	err := rl.Wait(ctx)
 	assert.NotNil(t, err)
 	assert.True(t, errors.Is(err, context.Canceled))
 }
 
-func Test_getToken_WaitTimes(t *testing.T) {
-	// This test is verifying that there are no wait times when the bucket capacity is above 0
-	// and increasing wait times when the bucket goes below 0.
-	prefix := "__test__" + t.Name()
-	pool := redisPoolForTest(t, prefix)
-	rl := getTestRateLimiter(prefix, pool)
+// func TestDefaultRateLimiter(t *testing.T) {
+// 	conf.Mock(&conf.Unified{
+// 		SiteConfiguration: schema.SiteConfiguration{
+// 			DefaultRateLimit: 7200,
+// 		},
+// 	})
+// 	defer conf.Mock(nil)
 
-	// Set up the test by initializing the bucket with some initial quota and replenishment interval
-	ctx := context.Background()
-	bucketQuota := int32(1)
-	// Setting the bucket replenishment to be really low so that we don't replenish any tokens during the test.
-	bucketReplenishInterval := time.Duration(10000) * time.Second
-	err := rl.SetTokenBucketConfig(ctx, testBucketName, bucketQuota, bucketReplenishInterval)
-	assert.Nil(t, err)
+// 	r := NewRegistry()
+// 	got := r.Get("unknown")
+// 	want := NewInstrumentedLimiter("unknown", rate.NewLimiter(rate.Limit(2), defaultBurst))
+// 	assert.Equal(t, want, got)
+// }
 
-	maxTimeToWait := time.Duration(math.MaxInt32) * time.Second
-	now := time.Now()
+// func TestRegistry(t *testing.T) {
+// 	r := NewRegistry()
 
-	// bucketMaxCapacity is 10, so the first 10 requests shouldn't need to wait any time
-	// before using the token.
-	for i := 0; i < 10; i++ {
-		waitTime, err := rl.getToken(ctx, testBucketName, now, maxTimeToWait)
-		assert.Nil(t, err)
-		assert.Equal(t, 0, int(waitTime.Seconds()))
-	}
-	waitTime, err := rl.getToken(ctx, testBucketName, now, maxTimeToWait)
-	assert.Nil(t, err)
-	// We want to assert here that the time we are told to wait is 10000 since
-	// 10000 is our replenishment interval, and there is -1 tokens in the bucket.
-	assert.Equal(t, bucketReplenishInterval.Seconds(), waitTime.Seconds())
+// 	got := r.Get("404")
+// 	want := NewInstrumentedLimiter("404", rate.NewLimiter(rate.Inf, defaultBurst))
+// 	assert.Equal(t, want, got)
 
-	waitTime, err = rl.getToken(ctx, testBucketName, now, maxTimeToWait)
-	assert.Nil(t, err)
-	// We want to assert here that the time we are told to wait is 20000 since
-	// 10000 is our replenishment interval, and there are now -2 tokens in the bucket.
-	assert.Equal(t, 2*bucketReplenishInterval.Seconds(), waitTime.Seconds())
-}
+// 	rl := NewInstrumentedLimiter("extsvc:github:1", rate.NewLimiter(10, 10))
+// 	got = r.getOrSet("extsvc:github:1", rl)
+// 	assert.Equal(t, rl, got)
 
-func Test_getToken_Replenishment(t *testing.T) {
-	// This test is verifying that with a token replenishment of 1 token/s
-	// the bucket replenishes the correct amount of tokens after a given period of time
-	// and therefore there is no wait time to use those tokens.
-	prefix := "__test__" + t.Name()
-	pool := redisPoolForTest(t, prefix)
-	rl := getTestRateLimiter(prefix, pool)
+// 	got = r.getOrSet("extsvc:github:1", NewInstrumentedLimiter("extsvc:githu:1", rate.NewLimiter(1000, 10)))
+// 	assert.Equal(t, rl, got)
 
-	// Set up the test by initializing the bucket with some initial quota and replenishment interval
-	ctx := context.Background()
-	bucketQuota := int32(1)
-	// Setting the bucket replenishment to be really low so that we don't replenish any tokens during the test.
-	bucketReplenishInterval := time.Duration(1) * time.Second
-	err := rl.SetTokenBucketConfig(ctx, testBucketName, bucketQuota, bucketReplenishInterval)
-	assert.Nil(t, err)
+// 	assert.Equal(t, 2, r.Count())
+// }
 
-	maxTimeToWait := time.Duration(math.MaxInt32) * time.Second
-	now := time.Now()
-
-	// Setting the max capacity to 1 means that each request would need to wait 1s after the first
-	oldBucketMaxCapacity := bucketMaxCapacity
-	bucketMaxCapacity = 3
-	t.Cleanup(func() {
-		bucketMaxCapacity = oldBucketMaxCapacity
-	})
-
-	// bucketMaxCapacity is 3, and replenishment is 1 token/s so the first 3 requests shouldn't need to wait any time
-	// before using the token.
-	for i := 0; i < 3; i++ {
-		waitTime, err := rl.getToken(ctx, testBucketName, now, maxTimeToWait)
-		assert.Nil(t, err)
-		assert.Equal(t, 0, int(waitTime.Seconds()))
-	}
-
-	// assert that after 2s the bucket has replenished 2 tokens, no need to wait to use them.
-	twoSecondFromNow := now.Add(2 * time.Second)
-	for i := 0; i < 2; i++ {
-		waitTime, err := rl.getToken(ctx, testBucketName, twoSecondFromNow, maxTimeToWait)
-		assert.Nil(t, err)
-		assert.Equal(t, 0, int(waitTime.Seconds()))
-	}
-
-	// assert that after claiming the 2 replenished tokens, the third token requires a wait of 1s.
-	waitTime, err := rl.getToken(ctx, testBucketName, twoSecondFromNow, maxTimeToWait)
-	assert.Nil(t, err)
-	assert.Equal(t, 1, int(waitTime.Seconds()))
-}
-
-func getTestRateLimiter(prefix string, pool *redis.Pool) rateLimiter {
-	return rateLimiter{
-		pool:                   pool,
-		prefix:                 prefix,
-		getTokensScript:        *redis.NewScript(4, getTokensFromBucketLuaScript),
-		setReplenishmentScript: *redis.NewScript(2, setTokenBucketReplenishmentLuaScript),
+func getTestRateLimiter(prefix string, pool *redis.Pool, bucketName string) globalRateLimiter {
+	return globalRateLimiter{
+		pool:       pool,
+		prefix:     prefix,
+		bucketName: bucketName,
 	}
 }
 
@@ -208,9 +353,86 @@ func redisPoolForTest(t *testing.T, prefix string) *redis.Pool {
 		_ = c.Close()
 	})
 
-	if err := DeleteAllKeysWithPrefix(c, prefix); err != nil {
+	if err := redispool.DeleteAllKeysWithPrefix(c, prefix); err != nil {
 		t.Logf("Could not clear test prefix name=%q prefix=%q error=%v", t.Name(), prefix, err)
 	}
 
 	return pool
+}
+
+func TestLimitInfo(t *testing.T) {
+	ctx := context.Background()
+	prefix := "__test__" + t.Name()
+	pool := redisPoolForTest(t, prefix)
+
+	r1 := getTestRateLimiter(prefix, pool, "extsvc:github:1")
+	// 1/s allowed.
+	require.NoError(t, r1.SetTokenBucketConfig(ctx, 3600, time.Hour))
+	r2 := getTestRateLimiter(prefix, pool, "extsvc:github:2")
+	// Infinite.
+	require.NoError(t, r2.SetTokenBucketConfig(ctx, -1, time.Hour))
+	r3 := getTestRateLimiter(prefix, pool, "extsvc:github:3")
+	// No requests allowed.
+	require.NoError(t, r3.SetTokenBucketConfig(ctx, 0, time.Hour))
+
+	info, err := getGlobalLimiterStateFromPool(ctx, pool, prefix)
+	require.NoError(t, err)
+
+	if diff := cmp.Diff(map[string]GlobalLimiterInfo{
+		"extsvc:github:1": {
+			Burst:             10,
+			Limit:             3600,
+			Interval:          time.Hour,
+			LastReplenishment: time.Unix(0, 0),
+		},
+		"extsvc:github:2": {
+			Burst:             10,
+			Limit:             0,
+			Infinite:          true,
+			Interval:          time.Hour,
+			LastReplenishment: time.Unix(0, 0),
+		},
+		"extsvc:github:3": {
+			Burst:             10,
+			Limit:             0,
+			Interval:          time.Hour,
+			LastReplenishment: time.Unix(0, 0),
+		},
+	}, info); diff != "" {
+		t.Fatal(diff)
+	}
+
+	now := time.Now().Truncate(time.Second)
+	r1.nowFunc = func() time.Time { return now }
+	// Now claim 3 tokens from the limiter.
+	require.NoError(t, r1.WaitN(ctx, 3))
+
+	info, err = getGlobalLimiterStateFromPool(ctx, pool, prefix)
+	require.NoError(t, err)
+
+	if diff := cmp.Diff(map[string]GlobalLimiterInfo{
+		"extsvc:github:1": {
+			// Used 3 tokens, so not at full burst anymore!
+			CurrentCapacity:   defaultBurst - 3,
+			Burst:             10,
+			Limit:             3600,
+			Interval:          time.Hour,
+			LastReplenishment: now,
+		},
+		"extsvc:github:2": {
+			Burst:             10,
+			Limit:             0,
+			Infinite:          true,
+			Interval:          time.Hour,
+			LastReplenishment: time.Unix(0, 0),
+		},
+		"extsvc:github:3": {
+			Burst:             10,
+			Limit:             0,
+			Interval:          time.Hour,
+			LastReplenishment: time.Unix(0, 0),
+		},
+	}, info); diff != "" {
+		t.Fatal(diff)
+	}
 }
