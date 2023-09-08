@@ -35,7 +35,12 @@ func (r *Resolver) CreateSearchJob(ctx context.Context, args *graphqlbackend.Cre
 }
 
 func (r *Resolver) CancelSearchJob(ctx context.Context, args *graphqlbackend.CancelSearchJobArgs) (*graphqlbackend.EmptyResponse, error) {
-	return nil, errors.New("not implemented")
+	jobID, err := UnmarshalSearchJobID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, r.svc.CancelSearchJob(ctx, jobID)
 }
 
 func (r *Resolver) DeleteSearchJob(ctx context.Context, args *graphqlbackend.DeleteSearchJobArgs) (*graphqlbackend.EmptyResponse, error) {
