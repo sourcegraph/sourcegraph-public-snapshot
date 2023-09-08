@@ -2,12 +2,15 @@ package dependencies
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
@@ -207,6 +210,51 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 					`psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"`,
 					`createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph`,
 				),
+			},
+			{
+				Name:        "Path to pg utilities (createdb, etc ...)",
+				Check:       checkUserBazelrc,
+				Description: ``,
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					// Check if we need to create a user.bazelrc or not
+					_, err := os.Stat(".aspect/bazelrc/user.bazelrc")
+					if err != nil {
+						if os.IsNotExist(err) {
+							f, err := os.Create(".aspect/bazelrc/user.bazelrc")
+							if err != nil {
+								return errors.Wrap(err, "cannot create user.bazelrc to inject PG_UTILS_PATH")
+							}
+							defer f.Close()
+							err, pgUtilsPath := guessPgUtilsPath(ctx)
+							if err != nil {
+								return err
+							}
+							_, err = fmt.Fprintf(f, "build --action_env=PG_UTILS_PATH=%s\n", pgUtilsPath)
+							cio.Write(fmt.Sprintf("Guessed PATH for pg utils (createdb,...) to be %q\nCreated .aspect/bazelrc/user.bazelrc.", pgUtilsPath))
+							return err
+						}
+						return errors.Wrap(err, "unexpected error with .aspect/bazelrc/user.bazelrc")
+					}
+
+					// If we didn't create it, open the existing one.
+					f, err := os.Open(".aspect/bazelrc/user.bazelrc")
+					if err != nil {
+						return errors.Wrap(err, "cannot open existing .aspect/bazelrc/user.bazelrc")
+					}
+					defer f.Close()
+
+					err, pgUtilsPath := parsePgUtilsPathInUserBazelrc(f)
+					if err != nil {
+						return err
+					}
+
+					err = checkPgUtilsPathIncludesBinaries(pgUtilsPath)
+					if err != nil {
+						cio.Write(fmt.Sprintf("PG_UTILS_PATH=%q defined in .aspect/bazelrc/user.bazelrc doesn't include createdb. Please correct the file manually.", pgUtilsPath))
+						return err
+					}
+					return nil
+				},
 			},
 		},
 	},
