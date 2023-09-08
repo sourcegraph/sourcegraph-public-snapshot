@@ -140,12 +140,13 @@ const DEFAULT_FORMAT_OPTIONS = {
         tabSize: 2,
     },
 }
+const DEBOUNCE_DELAY_MS = 500
 const LicenseKeyModal: FC<LicenseKeyModalProps> = ({ licenseKey, config, id, refetch }): JSX.Element => {
     const navigate = useNavigate()
     const [isOpen, setIsOpen] = useState(true)
     const [isValid, setIsValid] = useState(false)
     const [licenseKeyInput, setLicenseKeyInput] = useState(licenseKey)
-    const [debouncedValue] = useDebounce(licenseKeyInput, 500)
+    const [debouncedValue] = useDebounce(licenseKeyInput, DEBOUNCE_DELAY_MS)
 
     const isOnboarding = localStorage.getItem('isOnboarding') === null
 
