@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"testing"
 
@@ -13,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
+	"github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
 )
 
 func TestBackendFake(t *testing.T) {
@@ -95,4 +97,49 @@ func (c *csvBuffer) WriteRow(row ...string) error {
 	}
 	_, err := c.buf.WriteString(strings.Join(row, ",") + "\n")
 	return err
+}
+
+func TestBlobstoreCSVWriter(t *testing.T) {
+	// Each entry in bucket corresponds to one 1 uploaded csv file.
+	var bucket [][]byte
+	var keys []string
+
+	mockStore := mocks.NewMockStore()
+	mockStore.UploadFunc.SetDefaultHook(func(ctx context.Context, key string, r io.Reader) (int64, error) {
+		b, err := io.ReadAll(r)
+		if err != nil {
+			return 0, err
+		}
+
+		bucket = append(bucket, b)
+		keys = append(keys, key)
+
+		return int64(len(b)), nil
+	})
+
+	csvWriter := service.NewBlobstoreCSVWriter(
+		context.Background(),
+		"blob",
+		mockStore,
+		service.WithMaxBlobSizeBytes(12),
+	)
+
+	err := csvWriter.WriteHeader("h", "h", "h") // 3 "a" + 2 commas + 1 newline = 6 bytes
+	require.NoError(t, err)
+	err = csvWriter.WriteRow("a", "a", "a")
+	require.NoError(t, err)
+	err = csvWriter.WriteRow("b", "b", "b") // new file
+	require.NoError(t, err)
+
+	err = csvWriter.Close()
+	require.NoError(t, err)
+
+	wantFiles := 2
+	require.Equal(t, wantFiles, len(bucket))
+
+	require.Equal(t, "blob", keys[0])
+	require.Equal(t, "h,h,h\na,a,a\n", string(bucket[0]))
+
+	require.Equal(t, "blob-2", keys[1])
+	require.Equal(t, "h,h,h\nb,b,b\n", string(bucket[1]))
 }

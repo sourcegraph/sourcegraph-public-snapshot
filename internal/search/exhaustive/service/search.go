@@ -8,7 +8,10 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
+	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -83,48 +86,165 @@ type CSVWriter interface {
 	WriteRow(...string) error
 }
 
-func NewCSVWriterFake(w io.Writer) CSVWriter {
-	return csvWriterFake{
-		w: csv.NewWriter(w),
+type Options struct {
+	maxBlobSizeBytes int64
+}
+
+type Option func(*Options)
+
+func WithMaxBlobSizeBytes(n int64) Option {
+	return func(o *Options) {
+		o.maxBlobSizeBytes = n
 	}
 }
 
-type csvWriterFake struct {
-	header []string
-	w      *csv.Writer
+func NewBlobstoreCSVWriter(ctx context.Context, prefix string, store uploadstore.Store, opts ...Option) *BlobstoreCSVWriter {
+	options := Options{
+		maxBlobSizeBytes: 100 * 1024 * 1024,
+	}
+
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	c := &BlobstoreCSVWriter{
+		options: options,
+		ctx:     ctx,
+		prefix:  prefix,
+		store:   store,
+		shard:   1,
+	}
+
+	c.startNewFile(ctx, prefix)
+
+	return c
 }
 
-func (c csvWriterFake) writeAndFlush(s []string) error {
+type BlobstoreCSVWriter struct {
+	ctx context.Context
+
+	options Options
+
+	// blobs are named {prefix}-{shard} except for the first blob which is just
+	// {prefix}
+	prefix string
+
+	store uploadstore.Store
+	w     *csv.Writer
+
+	header []string
+
+	// close takes care of flushing the CSV writer and closing the upload.
+	close func() error
+
+	// n is the number of bytes written since the last flush
+	n int64
+
+	// shard is incremented each time we create a new shard.
+	shard int
+}
+
+func (c *BlobstoreCSVWriter) WriteHeader(s ...string) error {
+	if c.header == nil {
+		c.header = s
+	}
+
+	// return error if c.header doesn't match s
+	if len(c.header) != len(s) {
+		return errors.Errorf("header mismatch: %v != %v", c.header, s)
+	}
+	for i := range c.header {
+		if c.header[i] != s[i] {
+			return errors.Errorf("header mismatch: %v != %v", c.header, s)
+		}
+	}
+
+	err := c.write(s)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *BlobstoreCSVWriter) WriteRow(s ...string) error {
+	// Create new file if we've exceeded the max blob size.
+	if c.n >= c.options.maxBlobSizeBytes {
+		err := c.Close()
+		if err != nil {
+			return errors.Wrapf(err, "error closing upload")
+		}
+		c.shard++
+		c.startNewFile(c.ctx, fmt.Sprintf("%s-%d", c.prefix, c.shard))
+		err = c.WriteHeader(c.header...)
+		if err != nil {
+			return errors.Wrapf(err, "error writing header for new file")
+		}
+	}
+
+	err := c.write(s)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// startNewFile creates a new blob and sets up the CSV writer to write to it.
+//
+// The caller is expected to call Close() before calling startNewFile if a
+// previous file was open.
+func (c *BlobstoreCSVWriter) startNewFile(ctx context.Context, key string) {
+	pr, pw := io.Pipe()
+
+	csvWriter := csv.NewWriter(pw)
+
+	eg := errgroup.Group{}
+
+	// cleaned up goroutine by calling pw.Close()
+	eg.Go(func() error {
+		defer pr.Close()
+		n, err := c.store.Upload(ctx, key, pr)
+		fmt.Println("upload", key, n, err)
+		return err
+	})
+
+	closeFn := func() error {
+		csvWriter.Flush()
+		err := pw.Close()
+		if err2 := eg.Wait(); err2 != nil {
+			err = errors.Append(err, err2)
+		}
+		return err
+	}
+
+	c.w = csvWriter
+	c.close = closeFn
+
+	// reset count
+	c.n = 0
+}
+
+// write wraps Write to keep track of the number of bytes written. This is
+// mainly for test purposes: The CSV writer is buffered (default 4096 bytes),
+// and we don't have access to the number of bytes in the buffer. In practice,
+// we could just wrap the io.Pipe writer with a counter, ignore the buffer, and
+// accept that size of the blobs is off by a few kilobytes.
+func (c *BlobstoreCSVWriter) write(s []string) error {
 	err := c.w.Write(s)
 	if err != nil {
 		return err
 	}
-	c.w.Flush()
-	return c.w.Error()
-}
 
-func (c csvWriterFake) WriteHeader(s ...string) error {
-	// assert the header hasn't changed since the first call
-	if c.header == nil {
-		// first call to WriteHeader
-		c.header = s
-	} else {
-		if len(c.header) != len(s) {
-			return errors.Errorf("header mismatch: %v != %v", c.header, s)
-		}
-		for i := range c.header {
-			if c.header[i] != s[i] {
-				return errors.Errorf("header mismatch: %v != %v", c.header, s)
-			}
-		}
+	for _, field := range s {
+		c.n += int64(len(field))
 	}
-
-	return c.writeAndFlush(s)
+	c.n += 1             // for the newline
+	c.n += int64(len(s)) // for the commas
+	return nil
 }
 
-func (c csvWriterFake) WriteRow(s ...string) error {
-	return c.writeAndFlush(s)
-
+func (c *BlobstoreCSVWriter) Close() error {
+	return c.close()
 }
 
 // NewSearcherFake is a convenient working implementation of SearchQuery which
