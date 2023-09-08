@@ -212,7 +212,16 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
 
-	invCtx, err := InventoryContext(s.logger, repo.Name, s.gitserverClient, commitID, forceEnhancedLanguageDetection)
+	invCtx, err := InventoryContext(
+		s.logger,
+		types.MinimalRepo{
+			ID:   repo.ID,
+			Name: repo.Name,
+		},
+		s.gitserverClient,
+		commitID,
+		forceEnhancedLanguageDetection,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +235,7 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 	// tree. Compared to per-blob caching, this creates many fewer cache entries, which means fewer
 	// stores, fewer lookups, and less cache storage overhead. Compared to per-commit caching, this
 	// yields a higher cache hit rate because most trees are unchanged across commits.
-	inv, err := invCtx.Entries(ctx, root)
+	inv, err := invCtx.Entries(ctx, s.db, root)
 	if err != nil {
 		return nil, err
 	}

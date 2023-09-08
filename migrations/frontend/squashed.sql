@@ -2697,6 +2697,27 @@ COMMENT ON CONSTRAINT required_bool_fields ON feature_flags IS 'Checks that bool
 
 COMMENT ON CONSTRAINT required_rollout_fields ON feature_flags IS 'Checks that rollout is set IFF flag_type = rollout';
 
+CREATE TABLE file_metrics (
+    id integer NOT NULL,
+    repo_id integer NOT NULL,
+    file_path integer NOT NULL,
+    commit_sha bytea DEFAULT '\x48454144'::bytea NOT NULL,
+    size_in_bytes integer DEFAULT 0 NOT NULL,
+    line_count integer DEFAULT 0 NOT NULL,
+    word_count integer DEFAULT 0 NOT NULL,
+    languages text[]
+);
+
+CREATE SEQUENCE file_metrics_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE file_metrics_id_seq OWNED BY file_metrics.id;
+
 CREATE TABLE github_app_installs (
     id integer NOT NULL,
     app_id integer NOT NULL,
@@ -5149,6 +5170,8 @@ ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs ALTER COLUMN id SE
 
 ALTER TABLE ONLY external_services ALTER COLUMN id SET DEFAULT nextval('external_services_id_seq'::regclass);
 
+ALTER TABLE ONLY file_metrics ALTER COLUMN id SET DEFAULT nextval('file_metrics_id_seq'::regclass);
+
 ALTER TABLE ONLY github_app_installs ALTER COLUMN id SET DEFAULT nextval('github_app_installs_id_seq'::regclass);
 
 ALTER TABLE ONLY github_apps ALTER COLUMN id SET DEFAULT nextval('github_apps_id_seq'::regclass);
@@ -5524,6 +5547,9 @@ ALTER TABLE ONLY feature_flag_overrides
 
 ALTER TABLE ONLY feature_flags
     ADD CONSTRAINT feature_flags_pkey PRIMARY KEY (flag_name);
+
+ALTER TABLE ONLY file_metrics
+    ADD CONSTRAINT file_metrics_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY github_app_installs
     ADD CONSTRAINT github_app_installs_pkey PRIMARY KEY (id);
@@ -6050,6 +6076,8 @@ CREATE UNIQUE INDEX external_services_unique_kind_user_id ON external_services U
 CREATE INDEX feature_flag_overrides_org_id ON feature_flag_overrides USING btree (namespace_org_id) WHERE (namespace_org_id IS NOT NULL);
 
 CREATE INDEX feature_flag_overrides_user_id ON feature_flag_overrides USING btree (namespace_user_id) WHERE (namespace_user_id IS NOT NULL);
+
+CREATE UNIQUE INDEX file_metrics_id_unique ON file_metrics USING btree (repo_id, file_path, commit_sha);
 
 CREATE INDEX finished_at_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (finished_at);
 
@@ -6702,6 +6730,9 @@ ALTER TABLE ONLY feature_flag_overrides
 
 ALTER TABLE ONLY feature_flag_overrides
     ADD CONSTRAINT feature_flag_overrides_namespace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY file_metrics
+    ADD CONSTRAINT file_metrics_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY codeintel_initial_path_ranks_processed
     ADD CONSTRAINT fk_codeintel_initial_path_ranks FOREIGN KEY (codeintel_initial_path_ranks_id) REFERENCES codeintel_initial_path_ranks(id) ON DELETE CASCADE;

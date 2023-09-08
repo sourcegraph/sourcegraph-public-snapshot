@@ -38,6 +38,7 @@ type DB interface {
 	GitserverRepos() GitserverRepoStore
 	GitserverLocalClone() GitserverLocalCloneStore
 	GlobalState() GlobalStateStore
+	FileMetrics() FileMetricsStore
 	NamespacePermissions() NamespacePermissionStore
 	Namespaces() NamespaceStore
 	OrgInvitations() OrgInvitationStore
@@ -379,4 +380,8 @@ func (d *db) AssignedTeams() AssignedTeamsStore {
 
 func (d *db) OwnSignalConfigurations() SignalConfigurationStore {
 	return SignalConfigurationStoreWith(d.Store)
+}
+
+func (d *db) FileMetrics() FileMetricsStore {
+	return MapFileToLangWith(d.logger, d.Store)
 }

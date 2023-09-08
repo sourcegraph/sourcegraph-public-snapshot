@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -28,7 +29,7 @@ var inventoryCache = rcache.New(fmt.Sprintf("inv:v2:enhanced_%v", useEnhancedLan
 
 // InventoryContext returns the inventory context for computing the inventory for the repository at
 // the given commit.
-func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.Client, commitID api.CommitID, forceEnhancedLanguageDetection bool) (inventory.Context, error) {
+func InventoryContext(logger log.Logger, repo types.MinimalRepo, gsClient gitserver.Client, commitID api.CommitID, forceEnhancedLanguageDetection bool) (inventory.Context, error) {
 	if !gitserver.IsAbsoluteRevision(string(commitID)) {
 		return inventory.Context{}, errors.Errorf("refusing to compute inventory for non-absolute commit ID %q", commitID)
 	}
@@ -42,15 +43,15 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 	}
 
 	logger = logger.Scoped("InventoryContext", "returns the inventory context for computing the inventory for the repository at the given commit").
-		With(log.String("repo", string(repo)), log.String("commitID", string(commitID)))
+		With(log.String("repo", string(repo.Name)), log.String("commitID", string(commitID)))
 	invCtx := inventory.Context{
 		ReadTree: func(ctx context.Context, path string) ([]fs.FileInfo, error) {
 			// TODO: As a perf optimization, we could read multiple levels of the Git tree at once
 			// to avoid sequential tree traversal calls.
-			return gsClient.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, path, false)
+			return gsClient.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, path, false)
 		},
 		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
-			return gsClient.NewFileReader(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, path)
+			return gsClient.NewFileReader(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, path)
 		},
 		CacheGet: func(e fs.FileInfo) (inventory.Inventory, bool) {
 			cacheKey := cacheKey(e)
@@ -79,6 +80,8 @@ func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.C
 			}
 			inventoryCache.Set(cacheKey, b)
 		},
+		Repo:   repo,
+		Commit: commitID,
 	}
 
 	if !useEnhancedLanguageDetection && !forceEnhancedLanguageDetection {

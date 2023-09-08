@@ -5,26 +5,23 @@ import (
 	"io/fs"
 	"sort"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// fileReadBufferSize is the size of the buffer we'll use while reading file contents
-const fileReadBufferSize = 16 * 1024
 
 // Entries computes the inventory of languages for the given entries. It traverses trees recursively
 // and caches results for each subtree. Results for listed files are cached.
 //
 // If a file is referenced more than once (e.g., because it is a descendent of a subtree and it is
 // passed directly), it will be double-counted in the result.
-func (c *Context) Entries(ctx context.Context, entries ...fs.FileInfo) (inv Inventory, err error) {
-	buf := make([]byte, fileReadBufferSize)
-	return c.entries(ctx, entries, buf)
+func (c *Context) Entries(ctx context.Context, db database.DB, entries ...fs.FileInfo) (inv Inventory, err error) {
+	return c.entries(ctx, db, entries)
 }
 
-func (c *Context) entries(ctx context.Context, entries []fs.FileInfo, buf []byte) (Inventory, error) {
+func (c *Context) entries(ctx context.Context, db database.DB, entries []fs.FileInfo) (Inventory, error) {
 	invs := make([]Inventory, len(entries))
 	for i, entry := range entries {
-		var f func(context.Context, fs.FileInfo, []byte) (Inventory, error)
+		var f func(context.Context, database.DB, fs.FileInfo) (Inventory, error)
 		switch {
 		case entry.Mode().IsRegular():
 			f = c.file
@@ -36,7 +33,7 @@ func (c *Context) entries(ctx context.Context, entries []fs.FileInfo, buf []byte
 		}
 
 		var err error
-		invs[i], err = f(ctx, entry, buf)
+		invs[i], err = f(ctx, db, entry)
 		if err != nil {
 			return Inventory{}, err
 		}
@@ -45,7 +42,7 @@ func (c *Context) entries(ctx context.Context, entries []fs.FileInfo, buf []byte
 	return Sum(invs), nil
 }
 
-func (c *Context) tree(ctx context.Context, tree fs.FileInfo, buf []byte) (inv Inventory, err error) {
+func (c *Context) tree(ctx context.Context, db database.DB, tree fs.FileInfo) (inv Inventory, err error) {
 	// Get and set from the cache.
 	if c.CacheGet != nil {
 		if inv, ok := c.CacheGet(tree); ok {
@@ -71,14 +68,14 @@ func (c *Context) tree(ctx context.Context, tree fs.FileInfo, buf []byte) (inv I
 			// Don't individually cache files that we found during tree traversal. The hit rate for
 			// those cache entries is likely to be much lower than cache entries for files whose
 			// inventory was directly requested.
-			lang, err := getLang(ctx, e, buf, c.NewFileReader)
+			lang, err := getLang(ctx, db, c.Repo.ID, e, c.Commit, c.NewFileReader)
 			if err != nil {
 				return Inventory{}, errors.Wrapf(err, "inventory file %q", e.Name())
 			}
 			invs[i] = Inventory{Languages: []Lang{lang}}
 
 		case e.Mode().IsDir(): // subtree
-			subtreeInv, err := c.tree(ctx, e, buf)
+			subtreeInv, err := c.tree(ctx, db, e)
 			if err != nil {
 				return Inventory{}, errors.Wrapf(err, "inventory tree %q", e.Name())
 			}
@@ -92,7 +89,7 @@ func (c *Context) tree(ctx context.Context, tree fs.FileInfo, buf []byte) (inv I
 }
 
 // file computes the inventory of a single file. It caches the result.
-func (c *Context) file(ctx context.Context, file fs.FileInfo, buf []byte) (inv Inventory, err error) {
+func (c *Context) file(ctx context.Context, db database.DB, file fs.FileInfo) (inv Inventory, err error) {
 	// Get and set from the cache.
 	if c.CacheGet != nil {
 		if inv, ok := c.CacheGet(file); ok {
@@ -107,7 +104,7 @@ func (c *Context) file(ctx context.Context, file fs.FileInfo, buf []byte) (inv I
 		}()
 	}
 
-	lang, err := getLang(ctx, file, buf, c.NewFileReader)
+	lang, err := getLang(ctx, db, c.Repo.ID, file, c.Commit, c.NewFileReader)
 	if err != nil {
 		return Inventory{}, errors.Wrapf(err, "inventory file %q", file.Name())
 	}

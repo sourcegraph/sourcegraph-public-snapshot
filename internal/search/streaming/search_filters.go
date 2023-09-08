@@ -1,23 +1,27 @@
 package streaming
 
 import (
+	"context"
 	"fmt"
-	"path"
 	"strconv"
 	"strings"
 
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/inventory"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
+var languageCache = rcache.NewWithTTL("lang:v1:file_to_language", 300)
+
 // SearchFilters computes the filters to show a user based on results.
 //
-// Note: it currently live in graphqlbackend. However, once we have a non
+// Note: it currently lives in graphqlbackend. However, once we have a non-
 // resolver based SearchResult type it can be extracted. It lives in its own
 // file to make that more obvious. We already have the filter type extracted
 // (Filter).
@@ -65,8 +69,40 @@ var commonFileFilters = []struct {
 	},
 }
 
+func languageFromFile(fileMatch *result.FileMatch, db database.DB) string {
+
+	// FileMetrics maintains a dual-level cache: redis cache, backed by the database
+	metrics := db.FileMetrics().GetFileMetrics(context.TODO(), fileMatch.Repo.ID, fileMatch.Path, fileMatch.CommitID)
+
+	if metrics != nil {
+		return metrics.FirstLanguage()
+	}
+
+	// not in cache; thread out calculation and storage
+	// while continuing to process
+	go func() {
+		db.FileMetrics().CalculateAndStoreFileMetrics(context.TODO(), fileMatch.Repo, fileMatch.Path, fileMatch.CommitID)
+	}()
+
+	metrics = &fileutil.FileMetrics{}
+	metrics.LanguagesByFileNameAndExtension(fileMatch.Path)
+	if len(metrics.Languages) != 1 {
+		var content []byte
+		if fileMatch.ChunkMatches != nil && len(fileMatch.ChunkMatches) > 0 {
+			for _, c := range fileMatch.ChunkMatches {
+				content = append(content, []byte(c.Content)...)
+			}
+		}
+		if len(content) > 0 {
+			metrics.LanguagesByFileContent(fileMatch.Path, content)
+		}
+	}
+
+	return metrics.FirstLanguage()
+}
+
 // Update internal state for the results in event.
-func (s *SearchFilters) Update(event SearchEvent) {
+func (s *SearchFilters) Update(event SearchEvent, db database.DB) {
 	// Initialize state on first call.
 	if s.filters == nil {
 		s.filters = make(filters)
@@ -93,24 +129,17 @@ func (s *SearchFilters) Update(event SearchEvent) {
 		}
 	}
 
-	addLangFilter := func(fileMatch *result.FileMatch, lineMatchCount int32, limitHit bool) {
-		fileMatchPath := fileMatch.Path
-		if ext := path.Ext(fileMatchPath); ext != "" {
-			var content []byte
-			if fileMatch.ChunkMatches != nil && len(fileMatch.ChunkMatches) > 0 {
-				for _, c := range fileMatch.ChunkMatches {
-					content = append(content, []byte(c.Content)...)
-				}
+	addLangFilter := func(fileMatch *result.FileMatch, lineMatchCount int32, limitHit bool, db database.DB) {
+
+		rawLanguage := languageFromFile(fileMatch, db)
+
+		language := strings.ToLower(rawLanguage)
+		if language != "" {
+			if strings.Contains(language, " ") {
+				language = strconv.Quote(language)
 			}
-			rawLanguage := inventory.GetLanguage(fileMatchPath, content)
-			language := strings.ToLower(rawLanguage)
-			if language != "" {
-				if strings.Contains(language, " ") {
-					language = strconv.Quote(language)
-				}
-				value := fmt.Sprintf(`lang:%s`, language)
-				s.filters.Add(value, rawLanguage, lineMatchCount, limitHit, "lang")
-			}
+			value := fmt.Sprintf(`lang:%s`, language)
+			s.filters.Add(value, rawLanguage, lineMatchCount, limitHit, "lang")
 		}
 	}
 
@@ -132,7 +161,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			}
 			lines := int32(v.ResultCount())
 			addRepoFilter(v.Repo.Name, v.Repo.ID, rev, lines)
-			addLangFilter(v, lines, v.LimitHit)
+			addLangFilter(v, lines, v.LimitHit, db)
 			addFileFilter(v.Path, lines, v.LimitHit)
 		case *result.RepoMatch:
 			// It should be fine to leave this blank since revision specifiers

@@ -199,7 +199,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 	filters.Update(streaming.SearchEvent{
 		Results: sr.Matches,
 		Stats:   sr.Stats,
-	})
+	}, sr.db)
 
 	var resolvers []*searchFilterResolver
 	for _, f := range filters.Compute() {

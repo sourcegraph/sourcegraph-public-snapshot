@@ -3,16 +3,18 @@
 package inventory
 
 import (
-	"bytes"
 	"context"
 	"io"
 	"io/fs"
 	"log"
+	"math"
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/go-enry/go-enry/v2/data"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 )
 
 // Inventory summarizes a tree's contents (e.g., which programming
@@ -35,103 +37,47 @@ type Lang struct {
 	TotalLines uint64 `json:"TotalLines,omitempty"`
 }
 
-var newLine = []byte{'\n'}
-
-func getLang(ctx context.Context, file fs.FileInfo, buf []byte, getFileReader func(ctx context.Context, path string) (io.ReadCloser, error)) (Lang, error) {
+func getLang(ctx context.Context, db database.DB, repoID api.RepoID, file fs.FileInfo, commitID api.CommitID, getFileReader func(ctx context.Context, path string) (io.ReadCloser, error)) (lang Lang, err error) {
 	if file == nil {
 		return Lang{}, nil
 	}
 	if !file.Mode().IsRegular() || enry.IsVendor(file.Name()) {
 		return Lang{}, nil
 	}
-	rc, err := getFileReader(ctx, file.Name())
-	if err != nil {
-		return Lang{}, errors.Wrap(err, "getting file reader")
-	}
-	if rc != nil {
-		defer rc.Close()
+
+	// Check the cache first.
+	// It is a two-level cache: redis backed by the database.
+	metrics := db.FileMetrics().GetFileMetrics(ctx, repoID, file.Name(), commitID)
+
+	if metrics == nil {
+		// Nothing cached.
+		// Calculate the metrics and cache them.
+		metrics = &fileutil.FileMetrics{}
+
+		// this might be slow if `getFileReader` is set up to call `gitserver`
+		err = metrics.CalculateFileMetrics(ctx, file.Name(), getFileReader)
+
+		// don't make the client wait for the cache insert
+		bgCtx, cancel := context.WithCancel(ctx)
+		go func() {
+			defer cancel()
+			db.FileMetrics().PutFileMetrics(bgCtx, repoID, file.Name(), commitID, metrics, err == nil)
+		}()
 	}
 
-	var lang Lang
-	// In many cases, GetLanguageByFilename can detect the language conclusively just from the
-	// filename. If not, we pass a subset of the file contents for analysis.
-	matchedLang, safe := GetLanguageByFilename(file.Name())
-
-	// No content
-	if rc == nil {
-		lang.Name = matchedLang
-		lang.TotalBytes = uint64(file.Size())
-		return lang, nil
-	}
-
-	if !safe {
-		// Detect language from content
-		n, err := io.ReadFull(rc, buf)
-		if err == io.EOF {
-			// No bytes read, indicating an empty file
-			return Lang{}, nil
-		}
-		if err != nil && err != io.ErrUnexpectedEOF {
-			return lang, errors.Wrap(err, "reading initial file data")
-		}
-		matchedLang = enry.GetLanguage(file.Name(), buf[:n])
-		lang.TotalBytes += uint64(n)
-		lang.TotalLines += uint64(bytes.Count(buf[:n], newLine))
-		lang.Name = matchedLang
-		if err == io.ErrUnexpectedEOF {
-			// File is smaller than buf, we can exit early
-			if !bytes.HasSuffix(buf[:n], newLine) {
-				// Add final line
-				lang.TotalLines++
-			}
-			return lang, nil
-		}
-	}
-	lang.Name = matchedLang
-
-	lineCount, byteCount, err := countLines(rc, buf)
-	if err != nil {
-		return lang, err
-	}
-	lang.TotalLines += uint64(lineCount)
-	lang.TotalBytes += uint64(byteCount)
-	return lang, nil
-}
-
-// countLines counts the number of lines in the supplied reader
-// it uses buf as a temporary buffer
-func countLines(r io.Reader, buf []byte) (lineCount int, byteCount int, err error) {
-	var trailingNewLine bool
-	for {
-		n, err := r.Read(buf)
-		lineCount += bytes.Count(buf[:n], newLine)
-		byteCount += n
-		// We need this check because the last read will often
-		// return (0, io.EOF) and we want to look at the last
-		// valid read to determine if there was a trailing newline
-		if n > 0 {
-			trailingNewLine = bytes.HasSuffix(buf[:n], newLine)
-		}
-		if err == io.EOF {
-			if !trailingNewLine && byteCount > 0 {
-				// Add final line
-				lineCount++
-			}
-			break
-		}
-		if err != nil {
-			return 0, 0, errors.Wrap(err, "counting lines")
-		}
-	}
-	return lineCount, byteCount, nil
+	return Lang{
+		Name:       metrics.FirstLanguage(),
+		TotalBytes: uint64(math.Max(float64(file.Size()), float64(metrics.Bytes))),
+		TotalLines: metrics.Lines,
+	}, err
 }
 
 // GetLanguageByFilename returns the guessed language for the named file (and
 // safe == true if this is very likely to be correct).
 func GetLanguageByFilename(name string) (language string, safe bool) {
-	lang, safe := enry.GetLanguageByFilename(name)
-	if lang != "" {
-		return lang, safe
+	language, safe = enry.GetLanguageByFilename(name)
+	if language != "" {
+		return language, safe
 	}
 	return enry.GetLanguageByExtension(name)
 }

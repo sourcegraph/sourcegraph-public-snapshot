@@ -15,6 +15,8 @@ import (
 
 	"github.com/go-enry/go-enry/v2"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -64,8 +66,10 @@ func TestGetLang_language(t *testing.T) {
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
 			lang, err := getLang(context.Background(),
+				dbmocks.NewMockDB(),
+				api.RepoID(1),
 				test.file,
-				make([]byte, fileReadBufferSize),
+				api.CommitID("HEAD"),
 				makeFileReader(test.file.Contents))
 			if err != nil {
 				t.Fatal(err)
@@ -130,7 +134,7 @@ func TestGet_readFile(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.file.Name(), func(t *testing.T) {
 			fr := makeFileReader(test.file.(fi).Contents)
-			lang, err := getLang(context.Background(), test.file, make([]byte, fileReadBufferSize), fr)
+			lang, err := getLang(context.Background(), dbmocks.NewMockDB(), api.RepoID(1), test.file, api.CommitID("HEAD"), fr)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -160,12 +164,11 @@ func BenchmarkGetLang(b *testing.B) {
 		b.Fatal(err)
 	}
 	fr := newFileReader(files)
-	buf := make([]byte, fileReadBufferSize)
 	b.Logf("Calling Get on %d files.", len(files))
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		for _, file := range files {
-			_, err = getLang(context.Background(), file, buf, fr)
+			_, err := getLang(context.Background(), dbmocks.NewMockDB(), api.RepoID(1), file, api.CommitID("HEAD"), fr)
 			if err != nil {
 				b.Fatal(err)
 			}

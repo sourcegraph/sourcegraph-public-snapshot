@@ -151,13 +151,13 @@ func searchResultsStatsLanguages(ctx context.Context, logger log.Logger, db data
 		key := key_
 		work := work_
 		p.Go(func() error {
-			invCtx, err := backend.InventoryContext(logger, repos[key.repo].Name, gsClient, key.commitID, true)
+			invCtx, err := backend.InventoryContext(logger, repos[key.repo], gsClient, key.commitID, true)
 			if err != nil {
 				return err
 			}
 
 			// Inventory all full-entry (files and trees) matches together.
-			inv, err := invCtx.Entries(ctx, work.fullEntries...)
+			inv, err := invCtx.Entries(ctx, db, work.fullEntries...)
 			if err != nil {
 				return err
 			}
@@ -168,9 +168,7 @@ func searchResultsStatsLanguages(ctx context.Context, logger log.Logger, db data
 			// Separately inventory each partial-file match because we only increment the language lines
 			// by the number of matched lines in the file.
 			for partialFile, lines := range work.partialFiles {
-				inv, err := invCtx.Entries(ctx,
-					fileInfo{path: partialFile, isDir: false},
-				)
+				inv, err := invCtx.Entries(ctx, db, fileInfo{path: partialFile, isDir: false})
 				if err != nil {
 					return err
 				}

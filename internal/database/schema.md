@@ -1851,6 +1851,26 @@ Referenced by:
 
 **rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
 
+# Table "public.file_metrics"
+```
+    Column     |  Type   | Collation | Nullable |                 Default                  
+---------------+---------+-----------+----------+------------------------------------------
+ id            | integer |           | not null | nextval('file_metrics_id_seq'::regclass)
+ repo_id       | integer |           | not null | 
+ file_path     | integer |           | not null | 
+ commit_sha    | bytea   |           | not null | '\x48454144'::bytea
+ size_in_bytes | integer |           | not null | 0
+ line_count    | integer |           | not null | 0
+ word_count    | integer |           | not null | 0
+ languages     | text[]  |           |          | 
+Indexes:
+    "file_metrics_pkey" PRIMARY KEY, btree (id)
+    "file_metrics_id_unique" UNIQUE, btree (repo_id, file_path, commit_sha)
+Foreign-key constraints:
+    "file_metrics_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.github_app_installs"
 ```
        Column       |           Type           | Collation | Nullable |                     Default                     
@@ -3574,6 +3594,7 @@ Referenced by:
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "exhaustive_search_repo_jobs" CONSTRAINT "exhaustive_search_repo_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "file_metrics" CONSTRAINT "file_metrics_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "gitserver_repos" CONSTRAINT "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "gitserver_repos_sync_output" CONSTRAINT "gitserver_repos_sync_output_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE

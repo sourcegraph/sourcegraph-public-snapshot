@@ -4,6 +4,9 @@ import (
 	"context"
 	"io"
 	"io/fs"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // Context defines the environment in which the inventory is computed.
@@ -21,4 +24,10 @@ type Context struct {
 
 	// CacheSet, if set, stores the inventory in the cache for the given tree.
 	CacheSet func(fs.FileInfo, Inventory)
+
+	// to enable resolving files to langauges, while enabling a caching mechanism,
+	// we need the repo info and the commit id
+	Repo types.MinimalRepo
+
+	Commit api.CommitID
 }

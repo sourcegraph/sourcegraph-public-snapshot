@@ -5,12 +5,17 @@ go_library(
     name = "fileutil",
     srcs = [
         "fileinfo.go",
+        "filemetrics.go",
         "fileutil.go",
         "fileutil_posix.go",
         "fileutil_windows.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/fileutil",
     visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_go_enry_go_enry_v2//:go-enry",
+    ],
 )
 
 go_test(

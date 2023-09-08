@@ -2172,4 +2172,18 @@ func (rm ReposModified) ReposModified(modified RepoModifiedFields) Repos {
 	}
 
 	return repos
+// StoredFileMetrics is a record of a file in a repository at a particular commit, the programming language(s) it contains, and its size.
+// Languages plural because sometimes the language in a file can be too generic to determine
+// (.h with really generic contents, for example, can be C, C++, or even Objective-C)
+// Note that Path is numeric because it's being stored as the hash of the file path to save size in the index
+type StoredFileMetrics struct {
+	ID        int64
+	RepoID    api.RepoID
+	Path      int32
+	Bytes     uint32
+	Lines     uint32
+	Words     uint32
+	CommitSHA dbutil.CommitBytea
+	Languages []string
+	Complete  bool
 }

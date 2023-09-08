@@ -659,7 +659,7 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 	defer h.mu.Unlock()
 
 	h.progress.Update(event)
-	h.filters.Update(event)
+	h.filters.Update(event, h.db)
 
 	h.displayRemaining = event.Results.Limit(h.displayRemaining)
 

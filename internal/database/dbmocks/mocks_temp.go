@@ -14949,6 +14949,9 @@ type MockDB struct {
 	// FeatureFlagsFunc is an instance of a mock function object controlling
 	// the behavior of the method FeatureFlags.
 	FeatureFlagsFunc *DBFeatureFlagsFunc
+	// FileMetricsFunc is an instance of a mock function object controlling
+	// the behavior of the method FileMetrics.
+	FileMetricsFunc *DBFileMetricsFunc
 	// GitHubAppsFunc is an instance of a mock function object controlling
 	// the behavior of the method GitHubApps.
 	GitHubAppsFunc *DBGitHubAppsFunc
@@ -15188,6 +15191,11 @@ func NewMockDB() *MockDB {
 		},
 		FeatureFlagsFunc: &DBFeatureFlagsFunc{
 			defaultHook: func() (r0 database.FeatureFlagStore) {
+				return
+			},
+		},
+		FileMetricsFunc: &DBFileMetricsFunc{
+			defaultHook: func() (r0 database.FileMetricsStore) {
 				return
 			},
 		},
@@ -15528,6 +15536,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.FeatureFlags")
 			},
 		},
+		FileMetricsFunc: &DBFileMetricsFunc{
+			defaultHook: func() database.FileMetricsStore {
+				panic("unexpected invocation of MockDB.FileMetrics")
+			},
+		},
 		GitHubAppsFunc: &DBGitHubAppsFunc{
 			defaultHook: func() store.GitHubAppsStore {
 				panic("unexpected invocation of MockDB.GitHubApps")
@@ -15828,6 +15841,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		FeatureFlagsFunc: &DBFeatureFlagsFunc{
 			defaultHook: i.FeatureFlags,
+		},
+		FileMetricsFunc: &DBFileMetricsFunc{
+			defaultHook: i.FileMetrics,
 		},
 		GitHubAppsFunc: &DBGitHubAppsFunc{
 			defaultHook: i.GitHubApps,
@@ -17768,6 +17784,104 @@ func (c DBFeatureFlagsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBFeatureFlagsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBFileMetricsFunc describes the behavior when the FileMetrics method of
+// the parent MockDB instance is invoked.
+type DBFileMetricsFunc struct {
+	defaultHook func() database.FileMetricsStore
+	hooks       []func() database.FileMetricsStore
+	history     []DBFileMetricsFuncCall
+	mutex       sync.Mutex
+}
+
+// FileMetrics delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) FileMetrics() database.FileMetricsStore {
+	r0 := m.FileMetricsFunc.nextHook()()
+	m.FileMetricsFunc.appendCall(DBFileMetricsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the FileMetrics method
+// of the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBFileMetricsFunc) SetDefaultHook(hook func() database.FileMetricsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// FileMetrics method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBFileMetricsFunc) PushHook(hook func() database.FileMetricsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBFileMetricsFunc) SetDefaultReturn(r0 database.FileMetricsStore) {
+	f.SetDefaultHook(func() database.FileMetricsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBFileMetricsFunc) PushReturn(r0 database.FileMetricsStore) {
+	f.PushHook(func() database.FileMetricsStore {
+		return r0
+	})
+}
+
+func (f *DBFileMetricsFunc) nextHook() func() database.FileMetricsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBFileMetricsFunc) appendCall(r0 DBFileMetricsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBFileMetricsFuncCall objects describing
+// the invocations of this function.
+func (f *DBFileMetricsFunc) History() []DBFileMetricsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBFileMetricsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBFileMetricsFuncCall is an object that describes an invocation of method
+// FileMetrics on an instance of MockDB.
+type DBFileMetricsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.FileMetricsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBFileMetricsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBFileMetricsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

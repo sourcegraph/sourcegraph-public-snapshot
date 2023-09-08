@@ -3,6 +3,7 @@ package streaming
 import (
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -76,7 +77,7 @@ func TestSearchFiltersUpdate(t *testing.T) {
 
 			s := &SearchFilters{}
 			for _, event := range c.events {
-				s.Update(event)
+				s.Update(event, dbmocks.NewMockDB())
 			}
 
 			f, ok := s.filters[c.wantFilterName]
