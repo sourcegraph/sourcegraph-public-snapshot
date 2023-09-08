@@ -15,5 +15,6 @@ go_library(
         "//internal/observation",
         "//internal/search/exhaustive/service",
         "//internal/search/exhaustive/store",
+        "//internal/search/exhaustive/uploadstore",
     ],
 )

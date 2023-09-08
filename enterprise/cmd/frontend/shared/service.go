@@ -5,6 +5,7 @@ import (
 
 	frontend_shared "github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -22,6 +23,7 @@ func (svc) Name() string { return "frontend" }
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 	frontend_shared.CLILoadConfig()
 	codeintel.LoadConfig()
+	search.LoadConfig()
 	return nil, frontend_shared.GRPCWebUIDebugEndpoints()
 }
 
