@@ -15,6 +15,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -78,7 +79,7 @@ sg start --debug=gitserver --error=enterprise-worker,enterprise-frontend enterpr
 # View configuration for a commandset
 sg start -describe oss
 `,
-		Category: CategoryDev,
+		Category: category.Dev,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "describe",
