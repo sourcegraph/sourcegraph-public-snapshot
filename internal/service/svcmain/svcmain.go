@@ -35,8 +35,7 @@ type Config struct {
 	AfterConfigure func()
 }
 
-// Main is called from the `main` function of the `sourcegraph-oss` and
-// `sourcegraph` commands.
+// Main is called from the `main` function of `cmd/sourcegraph`.
 //
 // args is the commandline arguments (usually os.Args).
 func Main(services []sgservice.Service, config Config, args []string) {

@@ -209,7 +209,6 @@ Hello world example in go
 				Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				PatternInfo:  tc.Pattern,
 				FetchTimeout: fetchTimeoutForCI(t),
-				FeatHybrid:   true,
 			}
 
 			m, err := doSearch(ts.URL, &req)

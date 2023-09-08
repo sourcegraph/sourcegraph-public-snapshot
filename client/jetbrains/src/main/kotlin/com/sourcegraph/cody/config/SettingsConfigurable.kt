@@ -26,6 +26,7 @@ import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.config.PluginSettingChangeActionNotifier
 import com.sourcegraph.config.PluginSettingChangeContext
 import java.awt.Color
+import java.awt.Dimension
 
 class SettingsConfigurable(private val project: Project) :
     BoundConfigurable(ConfigUtil.SERVICE_DISPLAY_NAME) {
@@ -56,6 +57,9 @@ class SettingsConfigurable(private val project: Project) :
                   EmptyIcon.ICON_16)
               .horizontalAlign(HorizontalAlign.FILL)
               .verticalAlign(VerticalAlign.FILL)
+              .applyToComponent {
+                  this.preferredSize = Dimension(Int.MAX_VALUE, 200)
+              }
               .also {
                 DataManager.registerDataProvider(it.component) { key ->
                   if (CodyAccountsHost.KEY.`is`(key)) accountsModel else null
@@ -74,11 +78,6 @@ class SettingsConfigurable(private val project: Project) :
                   .bindSelected(settingsModel::isCodyEnabled)
         }
         row {
-          checkBox("Enable Cody autocomplete")
-              .enabledIf(enableCodyCheckbox.selected)
-              .bindSelected(settingsModel::isCodyAutocompleteEnabled)
-        }
-        row {
           checkBox("Enable debug")
               .comment("Enables debug output visible in the idea.log")
               .enabledIf(enableCodyCheckbox.selected)
@@ -89,17 +88,33 @@ class SettingsConfigurable(private val project: Project) :
               .enabledIf(enableCodyCheckbox.selected)
               .bindSelected(settingsModel::isCodyVerboseDebugEnabled)
         }
-        row {
-          val enableCustomAutocompleteColor =
-              checkBox("Enable custom autocomplete color")
-                  .enabledIf(enableCodyCheckbox.selected)
-                  .bindSelected(settingsModel::isCustomAutocompleteColorEnabled)
-          colorPanel()
-              .bind(
-                  ColorPanel::getSelectedColor,
-                  ColorPanel::setSelectedColor,
-                  settingsModel::customAutocompleteColor.toMutableProperty())
-              .visibleIf(enableCustomAutocompleteColor.selected)
+        group("Autocomplete") {
+            row {
+                val enableCustomAutocompleteColor =
+                    checkBox("Custom color for completions")
+                        .enabledIf(enableCodyCheckbox.selected)
+                        .bindSelected(settingsModel::isCustomAutocompleteColorEnabled)
+                colorPanel()
+                    .bind(
+                        ColorPanel::getSelectedColor,
+                        ColorPanel::setSelectedColor,
+                        settingsModel::customAutocompleteColor.toMutableProperty())
+                    .visibleIf(enableCustomAutocompleteColor.selected)
+            }
+            row {
+                checkBox("Automatically trigger completions")
+                    .enabledIf(enableCodyCheckbox.selected)
+                    .bindSelected(settingsModel::isCodyAutocompleteEnabled)
+            }
+            row {
+                autocompleteLanguageTable()
+                    .horizontalAlign(HorizontalAlign.FILL)
+                    .bind(
+                        AutoCompleteLanguageTableWrapper::getBlacklistedLanguageIds,
+                        AutoCompleteLanguageTableWrapper::setBlacklistedLanguageIds,
+                        settingsModel::blacklistedLanguageIds.toMutableProperty()
+                    )
+            }
         }
       }
       group("Code search") {
@@ -152,6 +167,8 @@ class SettingsConfigurable(private val project: Project) :
         codyApplicationSettings.isCustomAutocompleteColorEnabled
     settingsModel.customAutocompleteColor =
         codyApplicationSettings.customAutocompleteColor?.let { Color(it) }
+    settingsModel.blacklistedLanguageIds =
+        codyApplicationSettings.blacklistedLanguageIds
     dialogPanel.reset()
   }
 
@@ -189,7 +206,9 @@ class SettingsConfigurable(private val project: Project) :
             codyApplicationSettings.isCustomAutocompleteColorEnabled,
             settingsModel.isCustomAutocompleteColorEnabled,
             codyApplicationSettings.customAutocompleteColor,
-            settingsModel.customAutocompleteColor?.rgb)
+            settingsModel.customAutocompleteColor?.rgb,
+            codyApplicationSettings.blacklistedLanguageIds,
+            settingsModel.blacklistedLanguageIds)
     CodyAuthenticationManager.getInstance().setDefaultAccount(project, defaultAccount)
     accountsModel.defaultAccount = defaultAccount
     codyProjectSettings.defaultBranchName = settingsModel.defaultBranchName
@@ -203,9 +222,11 @@ class SettingsConfigurable(private val project: Project) :
     codyApplicationSettings.isCustomAutocompleteColorEnabled =
         settingsModel.isCustomAutocompleteColorEnabled
     codyApplicationSettings.customAutocompleteColor = settingsModel.customAutocompleteColor?.rgb
+    codyApplicationSettings.blacklistedLanguageIds = settingsModel.blacklistedLanguageIds
 
     publisher.afterAction(context)
   }
 }
 
 fun Row.colorPanel() = cell(ColorPanel())
+fun Row.autocompleteLanguageTable() = cell(AutocompleteLanguageTable().wrapperComponent)

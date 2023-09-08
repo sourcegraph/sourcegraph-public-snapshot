@@ -17,7 +17,7 @@ type Config struct {
 
 	InsecureDev bool
 
-	Address string
+	Port int
 
 	DiagnosticsSecret string
 
@@ -73,7 +73,7 @@ type OpenTelemetryConfig struct {
 
 func (c *Config) Load() {
 	c.InsecureDev = env.InsecureDev
-	c.Address = c.Get("CODY_GATEWAY_ADDR", ":9992", "Address to serve Cody Gateway on.")
+	c.Port = c.GetInt("PORT", "9992", "Port to serve Cody Gateway on, generally injected by Cloud Run.")
 	c.DiagnosticsSecret = c.Get("CODY_GATEWAY_DIAGNOSTICS_SECRET", "", "Secret for accessing diagnostics - "+
 		"should be used as 'Authorization: Bearer $secret' header when accessing diagnostics endpoints.")
 

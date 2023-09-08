@@ -141,4 +141,8 @@ public class ConfigUtil {
         .map(fileEditor -> ((com.intellij.openapi.fileEditor.TextEditor) fileEditor).getEditor())
         .collect(Collectors.toList());
   }
+
+  public static List<String> getBlacklistedAutocompleteLanguageIds() {
+    return CodyApplicationSettings.getInstance().getBlacklistedLanguageIds();
+  }
 }

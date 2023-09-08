@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
-	"github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss/osscmd"
+	"github.com/sourcegraph/sourcegraph/cmd/sourcegraph/osscmd"
 	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 

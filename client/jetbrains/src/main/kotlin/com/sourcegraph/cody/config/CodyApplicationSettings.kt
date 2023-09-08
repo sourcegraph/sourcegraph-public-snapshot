@@ -17,6 +17,7 @@ data class CodyApplicationSettings(
     var lastUpdateNotificationPluginVersion: String? = null,
     var isCustomAutocompleteColorEnabled: Boolean = false,
     var customAutocompleteColor: Int? = null,
+    var blacklistedLanguageIds: List<String> = listOf(),
 ) : PersistentStateComponent<CodyApplicationSettings> {
   override fun getState(): CodyApplicationSettings = this
 
@@ -32,6 +33,7 @@ data class CodyApplicationSettings(
     this.lastUpdateNotificationPluginVersion = state.lastUpdateNotificationPluginVersion
     this.isCustomAutocompleteColorEnabled = state.isCustomAutocompleteColorEnabled
     this.customAutocompleteColor = state.customAutocompleteColor
+    this.blacklistedLanguageIds = state.blacklistedLanguageIds
   }
 
   companion object {
