@@ -33,8 +33,8 @@ func (c CDKTF) Synthesize() error {
 	// attempt to capture them.
 	var catcher panics.Catcher
 	catcher.Try(c.app.Synth)
-	if err := catcher.Recovered().AsError(); err != nil {
-		return err
+	if recovered := catcher.Recovered(); recovered != nil {
+		return errors.Wrap(recovered, "failed to synthesize Terraform CDK app")
 	}
 
 	// Generate an asdf tool-version file for convenience to align Terraform
