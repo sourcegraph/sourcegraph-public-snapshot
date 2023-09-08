@@ -29,7 +29,7 @@ export const SiteAdminGitserversPage: FC<GitserversPageProps> = ({ telemetryServ
                 path={[{ icon: mdiServer }, { text: 'Gitservers' }]}
                 className="mb-3"
                 headingElement="h2"
-                description="Manage your Gitservers"
+                description="Overview of all gitserver instances, on which this Sourcegraph instance stores source code."
             />
 
             {error && <ErrorAlert error={error} />}
