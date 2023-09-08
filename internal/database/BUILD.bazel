@@ -391,6 +391,7 @@ describe(
 
 build_test(
     name = "schema_generation_tests",
+    tags = ["requires-network"],
     targets = [
         "frontend-migration",
         "codeintel-migration",
@@ -399,5 +400,4 @@ build_test(
         "codeintel-describe",
         "codeinsights-describe",
     ],
-    tags = ["requires-network"],
 )
