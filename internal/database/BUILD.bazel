@@ -332,34 +332,6 @@ go_test(
     ],
 )
 
-# genrule(
-#     name = "generate",
-#     srcs = ["//migrations/frontend:sql"],
-#     outs = [
-#         "migrations/frontend/squashed.sql",
-#         # "migrations/codeintel/squashed.sql",
-#         # "migrations/codeinsights/squashed.sql",
-#     ],
-#     cmd = """
-#     outs=($(OUTS))
-#     export HOME="$$(pwd)"
-#     export SG_FORCE_REPO_ROOT="$$(pwd)"
-#
-#     echo "____________"
-#     which createdb
-#     echo "____________"
-#     $(location //dev/sg:sg) migration squash-all -skip-teardown -db frontend -f $${outs[0]}
-#     touch $${outs[0]}
-#     """,
-#     tags = [
-#         "no-sandbox"
-#     ],
-#     tools = [
-#         "//dev/sg",
-#     ],
-#     visibility = ["//visibility:private"],
-# )
-#
 migration(
     name = "frontend-migration",
     srcs = ["//migrations/frontend:sql"],

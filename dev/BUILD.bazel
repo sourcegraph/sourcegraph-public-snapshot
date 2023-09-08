@@ -8,8 +8,6 @@ webpack_binary(
 
 exports_files(srcs = ["eslint-report-test.sh"])
 
-exports_files(srcs = glob(["*.tpl"]))
-
 write_source_files(
     name = "write_all_generated",
     additional_update_targets = [
