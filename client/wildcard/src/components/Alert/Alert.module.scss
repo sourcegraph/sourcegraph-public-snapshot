@@ -13,7 +13,8 @@
 
     /* Apply `background-color` and `padding` only to .alert-variants because we also use `.alert` elements without variants. */
     background-color: var(--alert-background-color);
-    padding: var(--alert-content-padding) var(--alert-content-padding) var(--alert-content-padding) calc(var(--alert-icon-block-width) + var(--alert-content-padding));
+    padding: var(--alert-content-padding) var(--alert-content-padding) var(--alert-content-padding)
+        calc(var(--alert-icon-block-width) + var(--alert-content-padding));
 
     &--with-no-icon {
         padding: var(--alert-content-padding);
