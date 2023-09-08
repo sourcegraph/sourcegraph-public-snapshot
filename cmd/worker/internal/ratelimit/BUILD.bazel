@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "handler.go",
         "job.go",
+        "syncer.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/ratelimit",
     visibility = ["//cmd/worker:__subpackages__"],
@@ -29,7 +30,10 @@ go_library(
 
 go_test(
     name = "ratelimit_test",
-    srcs = ["handler_test.go"],
+    srcs = [
+        "handler_test.go",
+        "syncer_test.go",
+    ],
     embed = [":ratelimit"],
     tags = [
         # Test requires localhost database
@@ -47,5 +51,7 @@ go_test(
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
+        "@com_github_tj_assert//:assert",
+        "@org_golang_x_time//rate",
     ],
 )
