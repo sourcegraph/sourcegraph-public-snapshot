@@ -25,7 +25,7 @@ export const AccessTokenCreatedAlert: React.FunctionComponent<
     return (
         <Alert className={classNames('access-token-created-alert', className)} variant="success">
             <Text>Copy the new access token now. You won't be able to see it again.</Text>
-            <CopyableText className="test-access-token" text={tokenSecret} size={48} />
+            <CopyableText className="test-access-token" text={tokenSecret} size={48} secret={true} />
             <H5 className="mt-4 mb-2">
                 <strong>Example usage</strong>
             </H5>

@@ -78,7 +78,7 @@ export class CopyableText extends React.PureComponent<Props, State> {
                         </Button>
                     </div>
                     {this.props.secret && (
-                        <div className="input-group-append flex-shrink-0">
+                        <div className="input-group-append flex-shrink-0 ml-1">
                             <Button
                                 onClick={this.onClickSecretButton}
                                 variant="secondary"
