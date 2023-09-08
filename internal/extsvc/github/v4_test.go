@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -127,22 +128,13 @@ func TestV4Client_RateLimitRetry(t *testing.T) {
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				numRequests++
 				if tt.secondaryLimitWasHit {
-					w.Header().Add("retry-after", "1")
-					w.WriteHeader(http.StatusForbidden)
-					w.Write([]byte(`{"message": "Secondary rate limit hit"}`))
-
+					simulateGitHubSecondaryRateLimitHit(w)
 					tt.secondaryLimitWasHit = false
 					return
 				}
 
 				if tt.primaryLimitWasHit {
-					w.Header().Add("x-ratelimit-remaining", "0")
-					w.Header().Add("x-ratelimit-limit", "5000")
-					resetTime := time.Now().Add(time.Second)
-					w.Header().Add("x-ratelimit-reset", strconv.Itoa(int(resetTime.Unix())))
-					w.WriteHeader(http.StatusForbidden)
-					w.Write([]byte(`{"message": "Primary rate limit hit"}`))
-
+					simulateGitHubPrimaryRateLimitHit(w)
 					tt.primaryLimitWasHit = false
 					return
 				}
@@ -168,6 +160,84 @@ func TestV4Client_RateLimitRetry(t *testing.T) {
 			assert.Equal(t, tt.succeeded, succeeded)
 		})
 	}
+}
+
+func simulateGitHubSecondaryRateLimitHit(w http.ResponseWriter) {
+	w.Header().Add("retry-after", "1")
+	w.WriteHeader(http.StatusForbidden)
+	w.Write([]byte(`{"message": "Secondary rate limit hit"}`))
+}
+
+func simulateGitHubPrimaryRateLimitHit(w http.ResponseWriter) {
+	w.Header().Add("x-ratelimit-remaining", "0")
+	w.Header().Add("x-ratelimit-limit", "5000")
+	resetTime := time.Now().Add(time.Second)
+	w.Header().Add("x-ratelimit-reset", strconv.Itoa(int(resetTime.Unix())))
+	w.WriteHeader(http.StatusForbidden)
+	w.Write([]byte(`{"message": "Primary rate limit hit"}`))
+}
+
+func TestV4Client_RequestGraphQL_RequestUnmutated(t *testing.T) {
+	rcache.SetupForTest(t)
+
+	query := `query Foobar { foobar }`
+	vars := map[string]any{}
+	result := struct{}{}
+
+	ctx := context.Background()
+
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.DisableKeepAlives = true // Disable keep-alives otherwise the read of the request body is cached
+	cli := &http.Client{Transport: transport}
+
+	numRequests := 0
+	requestPaths := []string{}
+	requestBodies := []string{}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		numRequests++
+
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		requestPaths = append(requestPaths, r.URL.Path)
+		requestBodies = append(requestBodies, string(body))
+
+		if numRequests == 1 {
+			simulateGitHubPrimaryRateLimitHit(w)
+			return
+		}
+
+		w.Write([]byte(`{"message": "Very nice"}`))
+	}))
+
+	t.Cleanup(srv.Close)
+
+	srvURL, err := url.Parse(srv.URL)
+	require.NoError(t, err)
+
+	// Now, this is IMPORTANT: we use `APIRoot` to simulate a real setup in which
+	// we append the "API path" to the base URL configured by an admin.
+	apiURL, _ := APIRoot(srvURL)
+
+	// Now we create a client to talk to our test server with the API path
+	// appended.
+	client := NewV4Client("test", apiURL, nil, cli)
+
+	// Now we send a request that should run into rate limiting error.
+	err = client.requestGraphQL(ctx, query, vars, &result)
+	require.NoError(t, err)
+
+	// Two requests should have been sent
+	assert.Equal(t, numRequests, 2)
+
+	// We want the same data to have been sent, twice
+	wantPath := "/api/graphql"
+	wantBody := `{"query":"query Foobar { foobar }","variables":{}}`
+	assert.Equal(t, []string{wantPath, wantPath}, requestPaths)
+	assert.Equal(t, []string{wantBody, wantBody}, requestBodies)
 }
 
 func TestV4Client_SearchRepos(t *testing.T) {
