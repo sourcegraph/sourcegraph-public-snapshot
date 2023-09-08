@@ -2,6 +2,7 @@ package com.sourcegraph.utils
 
 import com.intellij.application.options.CodeStyle
 import com.intellij.injected.editor.EditorWindow
+import com.intellij.lang.Language
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
@@ -124,6 +125,18 @@ object CodyEditorUtil {
     fun isImplicitAutocompleteEnabledForEditor(editor: Editor): Boolean {
         return ConfigUtil.isCodyEnabled()
             && ConfigUtil.isCodyAutocompleteEnabled()
-            && !CodyLanguageUtil.isLanguageBlacklisted(editor)
+            && !isLanguageBlacklisted(editor)
+    }
+
+    @JvmStatic
+    fun getLanguage(editor: Editor): Language? {
+        val project = editor.project ?: return null
+        return CodyLanguageUtil.getLanguage(project, editor.document)
+    }
+
+    @JvmStatic
+    fun isLanguageBlacklisted(editor: Editor): Boolean {
+        val language = getLanguage(editor) ?: return false
+        return ConfigUtil.getBlacklistedAutocompleteLanguageIds().contains(language.id)
     }
 }

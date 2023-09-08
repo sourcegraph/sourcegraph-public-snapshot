@@ -23,7 +23,6 @@ import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.UserLevelConfig;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import com.sourcegraph.utils.CodyEditorUtil;
-import com.sourcegraph.utils.CodyLanguageUtil;
 import difflib.Delta;
 import difflib.DiffUtils;
 import difflib.Patch;
@@ -99,7 +98,7 @@ public class CodyAutocompleteManager {
     CodyEditorUtil.getAllOpenEditors().stream()
         .filter(
             e ->
-                Optional.ofNullable(CodyLanguageUtil.Companion.getLanguage(e))
+                Optional.ofNullable(CodyEditorUtil.getLanguage(e))
                     .map(l -> languageIds.contains(l.getID()))
                     .orElse(false))
         .forEach(this::clearAutocompleteSuggestions);
@@ -130,8 +129,6 @@ public class CodyAutocompleteManager {
       return;
     } else if (!isTriggeredManually
         && !CodyEditorUtil.isImplicitAutocompleteEnabledForEditor(editor)) return;
-
-    logger.warn("triggered X");
 
     final Project project = editor.getProject();
     if (project == null) {
