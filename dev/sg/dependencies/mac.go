@@ -216,8 +216,13 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 				Check:       checkPGUtilsPath,
 				Description: `Bazel need to know where the createdb, pg_dump binaries are located, we need to ensure they are accessible\nand possibly indicate where they are located if non default.`,
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					_, err := root.RepositoryRoot()
+					if err != nil {
+						return errors.Wrap(err, "This check requires sg setup to be run inside sourcegraph/sourcegraph the repository.")
+					}
+
 					// Check if we need to create a user.bazelrc or not
-					_, err := os.Stat(userBazelRcPath)
+					_, err = os.Stat(userBazelRcPath)
 					if err != nil {
 						if os.IsNotExist(err) {
 							// It doesn't exist, so we create a new one.

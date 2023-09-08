@@ -19,6 +19,9 @@ func TestMacFix(t *testing.T) {
 		t.Skip("Skipping Mac sg setup tests")
 	}
 
+	// We need this for a bit of setup that covers pg utilities.
+	require.NoError(t, os.MkdirAll(".aspect/bazelrc/", 0666))
+
 	// Initialize context with user shell information
 	ctx, err := usershell.Context(context.Background())
 	require.NoError(t, err)
