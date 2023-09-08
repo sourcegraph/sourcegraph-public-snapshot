@@ -432,7 +432,7 @@ func forceASDFPluginAdd(ctx context.Context, plugin string, source string) error
 
 var pgUtilsPathRe = regexp.MustCompile(`build --action_env=PG_UTILS_PATH=(.*)$`)
 
-func checkUserBazelrc(ctx context.Context, out *std.Output, args CheckArgs) error {
+func checkPGUtilsPath(ctx context.Context, out *std.Output, args CheckArgs) error {
 	// Check for standard PATH location, that is available inside Bazel when
 	// inheriting the shell environment. That is just /usr/bin, not /usr/local/bin.
 	_, err := os.Stat("/usr/bin/createdb")
@@ -467,7 +467,7 @@ func checkUserBazelrc(ctx context.Context, out *std.Output, args CheckArgs) erro
 
 	// If the file exists, but doesn't reference PG_UTILS_PATH, that's an error as well.
 	if pgUtilsPath == "" {
-		return errors.New(".aspect/bazelrc/user.bazelrc doesn't define PG_UTILS_PATH doesn't include createdb")
+		return errors.New(".aspect/bazelrc/user.bazelrc doesn't define PG_UTILS_PATH")
 	}
 
 	// Check that this path contains createdb as expected.

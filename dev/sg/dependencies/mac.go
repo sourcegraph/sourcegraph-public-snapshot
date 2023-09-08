@@ -213,7 +213,7 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 			},
 			{
 				Name:        "Path to pg utilities (createdb, etc ...)",
-				Check:       checkUserBazelrc,
+				Check:       checkPGUtilsPath,
 				Description: ``,
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 					// Check if we need to create a user.bazelrc or not
@@ -243,14 +243,20 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 					}
 					defer f.Close()
 
+					// Parse the path it contains.
 					err, pgUtilsPath := parsePgUtilsPathInUserBazelrc(f)
 					if err != nil {
 						return err
 					}
 
+					// Ensure that path is correct, if not tell the user about it.
 					err = checkPgUtilsPathIncludesBinaries(pgUtilsPath)
 					if err != nil {
-						cio.Write(fmt.Sprintf("PG_UTILS_PATH=%q defined in .aspect/bazelrc/user.bazelrc doesn't include createdb. Please correct the file manually.", pgUtilsPath))
+						cio.Write("\n--- Manual action needed ---\n")
+						cio.Write(fmt.Sprintf("➡️  PG_UTILS_PATH=%q defined in .aspect/bazelrc/user.bazelrc doesn't include createdb. Please correct the file manually.", pgUtilsPath))
+						cio.Write("Please make sure that this file contains:\n")
+						cio.Write("`build --action_env=MOOPG_UTILS_PATH=[PATH TO PARENT FOLDER OF WHERE createdb IS LOCATED`")
+						cio.Write("\n--- Manual action needed ---\n")
 						return err
 					}
 					return nil
