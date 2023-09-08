@@ -89,7 +89,6 @@ go_library(
         "//lib/errors",
         "//lib/gitservice",
         "//schema",
-        "@com_github_inconshreveable_log15//:log15",
         "@com_github_mxk_go_flowrate//flowrate",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
