@@ -149,7 +149,6 @@ public class CodyAutocompleteManager {
       return;
     }
     currentAutocompleteTelemetry = AutocompleteTelemetry.createAndMarkTriggered();
-    GraphQlLogger.logCodyEvent(project, "completion", "started");
 
     TextDocument textDocument = new IntelliJTextDocument(editor, project);
     AutocompleteDocumentContext autoCompleteDocumentContext =
