@@ -76,11 +76,11 @@ input TelemetryEventParametersInput {
     """
     version: Int!
     """
-    Strictly typed metadata.
+    Strictly typed metadata that must not contain any sensitive data or PII.
     """
     metadata: [TelemetryEventMetadataInput!]
     """
-    Private metadata in JSON format. All keys and values must be strings.
+    Private metadata in JSON format.
 
     By default, this metadata is assumed to be unsafe for export from an instance.
     """
