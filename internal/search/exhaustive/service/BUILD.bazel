@@ -26,6 +26,7 @@ go_test(
     srcs = ["search_test.go"],
     deps = [
         ":service",
+        "//internal/search/exhaustive/types",
         "@com_github_stretchr_testify//require",
         "@org_golang_x_exp//slices",
     ],
