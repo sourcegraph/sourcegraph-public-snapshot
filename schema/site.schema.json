@@ -2914,6 +2914,13 @@
         "provider": {
           "type": "string",
           "description": "The external completions provider. Defaults to 'sourcegraph'.",
+          "default": "anthropic",
+          "enum": [
+            "anthropic",
+            "openai",
+            "sourcegraph",
+            "azure-openai"
+          ]
           "default": "sourcegraph",
           "enum": [
             "anthropic",
@@ -2988,7 +2995,6 @@
       },
       "examples": [
         {
-          "enabled": true,
           "model": "code-completion-model",
           "completionModel": "code-completion",
           "accessToken": "abc123",
