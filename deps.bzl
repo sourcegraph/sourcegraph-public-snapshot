@@ -5840,13 +5840,6 @@ def go_dependencies():
         sum = "h1:H0DJwybR6ryQE+Odi9eqkHuzjYAeJgtGcGtuBwOhsH8=",
         version = "v0.6.1",
     )
-    go_repository(
-        name = "com_github_ricochet2200_go_disk_usage_du",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/ricochet2200/go-disk-usage/du",
-        sum = "h1:d54EL9l+XteliUfUCGsEwwuk65dmmxX85VXF+9T6+50=",
-        version = "v0.0.0-20210707232629-ac9918953285",
-    )
 
     go_repository(
         name = "com_github_rivo_uniseg",
