@@ -74,13 +74,15 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
       }
       informAgentAboutEditorChange(e.getEditor());
       CodyAutocompleteManager suggestions = CodyAutocompleteManager.getInstance();
-      if (CodyEditorUtil.isEditorValidForAutocomplete(e.getEditor())
-          && CodyEditorFactoryListener.isSelectedEditor(e.getEditor())) {
+      Editor editor = e.getEditor();
+      if (CodyEditorUtil.isEditorValidForAutocomplete(editor)
+          && CodyEditorFactoryListener.isSelectedEditor(editor)) {
         suggestions.clearAutocompleteSuggestions(e.getEditor());
-        suggestions.triggerAutocomplete(
-            e.getEditor(),
-            e.getEditor().getCaretModel().getOffset(),
-            InlineCompletionTriggerKind.AUTOMATIC);
+        if (CodyEditorUtil.isImplicitAutocompleteEnabledForEditor(editor))
+          suggestions.triggerAutocomplete(
+              e.getEditor(),
+              e.getEditor().getCaretModel().getOffset(),
+              InlineCompletionTriggerKind.AUTOMATIC);
       }
     }
   }
@@ -91,12 +93,12 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
       if (!ConfigUtil.isCodyEnabled()) {
         return;
       }
-      informAgentAboutEditorChange(e.getEditor());
-      CodyAutocompleteManager suggestions = CodyAutocompleteManager.getInstance();
-      if (CodyEditorUtil.isEditorValidForAutocomplete(e.getEditor())
-          && CodyEditorFactoryListener.isSelectedEditor(e.getEditor())) {
-        suggestions.clearAutocompleteSuggestions(e.getEditor());
-      }
+      Editor editor = e.getEditor();
+      informAgentAboutEditorChange(editor);
+      if (CodyEditorUtil.isEditorValidForAutocomplete(editor)
+          && ConfigUtil.isCodyEnabled()
+          && CodyEditorFactoryListener.isSelectedEditor(editor))
+        CodyAutocompleteManager.getInstance().clearAutocompleteSuggestions(editor);
     }
   }
 
@@ -113,7 +115,8 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
       }
       CodyAutocompleteManager completions = CodyAutocompleteManager.getInstance();
       completions.clearAutocompleteSuggestions(this.editor);
-      if (CodyEditorUtil.isEditorValidForAutocomplete(this.editor)
+      if (CodyEditorUtil.isImplicitAutocompleteEnabledForEditor(this.editor)
+          && CodyEditorUtil.isEditorValidForAutocomplete(this.editor)
           && !CommandProcessor.getInstance().isUndoTransparentActionInProgress()) {
         informAgentAboutEditorChange(this.editor);
         int changeOffset = event.getOffset() + event.getNewLength();

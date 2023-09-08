@@ -114,12 +114,16 @@ object CodyEditorUtil {
     @JvmStatic
     @RequiresEdt
     fun isEditorValidForAutocomplete(editor: Editor?): Boolean {
-        return ConfigUtil.isCodyEnabled()
-            && ConfigUtil.isCodyAutocompleteEnabled()
-            && editor != null
-            && !CodyLanguageUtil.isLanguageBlacklisted(editor)
+        return editor != null
             && editor.document.isWritable
             && CodyProjectUtil.isProjectAvailable(editor.project)
             && isEditorSupported(editor)
+    }
+
+    @JvmStatic
+    fun isImplicitAutocompleteEnabledForEditor(editor: Editor): Boolean {
+        return ConfigUtil.isCodyEnabled()
+            && ConfigUtil.isCodyAutocompleteEnabled()
+            && !CodyLanguageUtil.isLanguageBlacklisted(editor)
     }
 }

@@ -19,6 +19,7 @@ import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus;
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService;
 import com.sourcegraph.cody.vscode.*;
 import com.sourcegraph.cody.vscode.InlineAutocompleteList;
+import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.UserLevelConfig;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import com.sourcegraph.utils.CodyEditorUtil;
@@ -122,12 +123,15 @@ public class CodyAutocompleteManager {
    */
   public void triggerAutocomplete(
       @NotNull Editor editor, int offset, InlineCompletionTriggerKind triggerKind) {
-    if (!CodyEditorUtil.isEditorValidForAutocomplete(editor)) {
-      if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)) {
-        logger.warn("triggered autocomplete with invalid editor " + editor);
-      }
+    boolean isTriggeredManually = triggerKind.equals(InlineCompletionTriggerKind.INVOKE);
+    if (!ConfigUtil.isCodyEnabled()) return;
+    else if (!CodyEditorUtil.isEditorValidForAutocomplete(editor)) {
+      if (isTriggeredManually) logger.warn("triggered autocomplete with invalid editor " + editor);
       return;
-    }
+    } else if (!isTriggeredManually
+        && !CodyEditorUtil.isImplicitAutocompleteEnabledForEditor(editor)) return;
+
+    logger.warn("triggered X");
 
     final Project project = editor.getProject();
     if (project == null) {
