@@ -4,7 +4,7 @@
 
 Use Sourcegraph’s AI assistant Cody and Sourcegraph Code Search directly from your JetBrains IDE.
 
-- [Cody](https://about.sourcegraph.com/cody) is a free and [open-source](https://github.com/sourcegraph/cody) AI coding assistant that can write, understand and fix your code. Cody is powered by Sourcegraph’s code graph, and has knowledge of your entire codebase. 
+- [Cody](https://about.sourcegraph.com/cody) is a free and [open-source](https://github.com/sourcegraph/cody) AI coding assistant that can write, understand and fix your code. Cody is powered by Sourcegraph’s code graph, and has knowledge of your entire codebase.
 - With [Code Search](https://about.sourcegraph.com/code-search), you can search code across all your repositories and code hosts—even the code you don’t have locally.
 
 **Cody for JetBrains IDEs is experimental right now. We’d love your [feedback](https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/jetbrains)**!
