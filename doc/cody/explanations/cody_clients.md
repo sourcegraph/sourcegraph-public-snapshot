@@ -14,7 +14,7 @@ Cody chat can be accessed directly in the Sourcegraph web app. This is available
 
 The Cody app also provides a chat interface for Cody. Use this interface to request information from Cody or paste code snippets into the interface. You can also select repositories that you'd like Cody to fetch context from.
 
-[See more information about the app](../../app/index.md).
+[See more information about the app][cody-app].
 
 ## Cody IDE extensions
 
@@ -40,16 +40,16 @@ Coming soon:
 - [Emacs](https://www.gnu.org/software/emacs/)
 - [Neovim](https://neovim.io/)
 
-See the full feature comparison for Cody IDE extensions: 
+See the full feature comparison for Cody IDE extensions:
 
-This represents the _current availability_. Notes on future availability and feature parity is coming soon.   
+This represents the _current availability_. Notes on future availability and feature parity is coming soon.
 
 | Subject                      | Description                                             | VS Code | JetBrains IDEs <span class="badge badge-experimental">Experimental</span> | Web UI | App |
 |-----------------------------|---------------------------------------------------------|:-:|:---------------:|:-:|:-:|
 |Chat                         | ChatGPT-like chat functionality                         |✅|        ✅        |✅|✅|
-|Code autocomplete                  | Start typing a line of code and Cody will suggest a completion|✅|        ✅        |✖️|✖️| 
-|Mutli-line code autocomplete      | Cody suggests multiple lines of a completion            |✅|       ✖️        |✖️|✖️| 
-|Inline chat                | Start chats and fix code from within the code editor                |✅|       ✖️        |✖️|✖️| 
+|Code autocomplete                  | Start typing a line of code and Cody will suggest a completion|✅|        ✅        |✖️|✖️|
+|Mutli-line code autocomplete      | Cody suggests multiple lines of a completion            |✅|       ✖️        |✖️|✖️|
+|Inline chat                | Start chats and fix code from within the code editor                |✅|       ✖️        |✖️|✖️|
 |Recipes                      | Predefined prompts |✅|        ✅        |✅|✖️|
 |Multi-repo context          | Prompts can gather context from up to 10 repositories |✖️|       ✖️        |✅|✅|
 |Context selection            | Specify repos you want the prompt to gather context from|✖️|       ✖️        |✅|✅|
@@ -61,3 +61,5 @@ Cody is accessible via the web interface for Sourcegraph Enterprise in 2 ways:
 
 - The "Cody AI" tab in the web app: Use the chat window to ask Cody questions or request Cody fix/analyze/write code snippets.
 - In the Sourcegraph blob view: Use the "Ask Cody" sidebar to ask Cody questions. Or, double-click on a symbol in the blob view to get a list of Cody commands including explaining code, translating code language, or providing code smells.
+
+[cody-app]: ../overview/app/index.md

@@ -30,6 +30,7 @@ go_test(
         "requires-network",
     ],
     deps = [
+        "//internal/redispool",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

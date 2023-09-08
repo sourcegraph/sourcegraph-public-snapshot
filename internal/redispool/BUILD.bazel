@@ -14,6 +14,7 @@ go_library(
         "redis_conn.go",
         "redispool.go",
         "sysreq.go",
+        "utils.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/redispool",
     visibility = ["//:__subpackages__"],

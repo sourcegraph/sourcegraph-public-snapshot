@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -26,7 +27,7 @@ const (
 )
 
 func TestCachedLocationResolver(t *testing.T) {
-	repos := database.NewStrictMockRepoStore()
+	repos := dbmocks.NewStrictMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
 		return &types.Repo{ID: id, CreatedAt: time.Now()}, nil
 	})
@@ -151,7 +152,7 @@ func TestCachedLocationResolver(t *testing.T) {
 }
 
 func TestCachedLocationResolverUnknownRepository(t *testing.T) {
-	repos := database.NewStrictMockRepoStore()
+	repos := dbmocks.NewStrictMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
 		return nil, &database.RepoNotFoundErr{ID: id}
 	})
@@ -181,7 +182,7 @@ func TestCachedLocationResolverUnknownRepository(t *testing.T) {
 }
 
 func TestCachedLocationResolverUnknownCommit(t *testing.T) {
-	repos := database.NewStrictMockRepoStore()
+	repos := dbmocks.NewStrictMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
 		return &types.Repo{ID: id}, nil
 	})

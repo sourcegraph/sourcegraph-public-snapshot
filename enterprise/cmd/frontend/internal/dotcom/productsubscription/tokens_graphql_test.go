@@ -18,7 +18,7 @@ func TestProductSubscriptionByAccessToken(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
-	r := ProductSubscriptionLicensingResolver{logger: logger, DB: db}
+	r := ProductSubscriptionLicensingResolver{Logger: logger, DB: db}
 
 	alice, err := db.Users().Create(ctx, database.NewUser{Username: "alice"})
 	require.NoError(t, err)

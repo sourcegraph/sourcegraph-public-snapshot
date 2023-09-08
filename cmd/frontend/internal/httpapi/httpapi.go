@@ -74,6 +74,9 @@ type Handlers struct {
 	// Code Insights
 	CodeInsightsDataExportHandler http.Handler
 
+	// Search jobs
+	SearchJobsDataExportHandler http.Handler
+
 	// Dotcom license check
 	NewDotcomLicenseCheckHandler enterprise.NewDotcomLicenseCheckHandler
 
@@ -178,11 +181,12 @@ func NewHandler(
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(logger, schema, rateLimiter, false))))
 
 	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(db)))
+	m.Get(apirouter.SearchJob).Handler(trace.Route(handlers.SearchJobsDataExportHandler))
 
 	// Return the minimum src-cli version that's compatible with this instance
 	m.Get(apirouter.SrcCli).Handler(trace.Route(newSrcCliVersionHandler(logger)))
 
-	gsClient := gitserver.NewClient(db)
+	gsClient := gitserver.NewClient()
 	m.Get(apirouter.GitBlameStream).Handler(trace.Route(handleStreamBlame(logger, db, gsClient)))
 
 	// Set up the src-cli version cache handler (this will effectively be a
@@ -226,7 +230,7 @@ func RegisterInternalServices(
 	})
 
 	// zoekt-indexserver endpoints
-	gsClient := gitserver.NewClient(db)
+	gsClient := gitserver.NewClient()
 	indexer := &searchIndexerServer{
 		db:              db,
 		logger:          logger.Scoped("searchIndexerServer", "zoekt-indexserver endpoints"),
@@ -320,13 +324,7 @@ func (h *ErrorHandler) Handle(w http.ResponseWriter, r *http.Request, status int
 	}
 	http.Error(w, displayErrBody, status)
 
-	if status < 200 || status >= 500 {
-		logger.Error("API HTTP handler error response",
-			sglog.String("method", r.Method),
-			sglog.String("request_uri", r.URL.RequestURI()),
-			sglog.Int("status_code", status),
-			sglog.Error(err))
-	}
+	// No need to log, as SetRequestErrorCause is consumed and logged.
 }
 
 func JsonMiddleware(errorHandler *ErrorHandler) func(func(http.ResponseWriter, *http.Request) error) http.Handler {

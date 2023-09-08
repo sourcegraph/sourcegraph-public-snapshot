@@ -14,7 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
@@ -114,7 +114,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 				return test.getFiles, nil
 			})
 
-			langs, err := searchResultsStatsLanguages(context.Background(), logger, database.NewMockDB(), gsClient, test.results)
+			langs, err := searchResultsStatsLanguages(context.Background(), logger, dbmocks.NewMockDB(), gsClient, test.results)
 			if err != nil {
 				t.Fatal(err)
 			}

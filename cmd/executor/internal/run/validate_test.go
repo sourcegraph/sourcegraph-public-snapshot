@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -59,11 +60,8 @@ func TestValidateAuthorizationToken(t *testing.T) {
 
 func newTestServerAndClient(t *testing.T, handlerFunc func(w http.ResponseWriter, r *http.Request)) (*httptest.Server, *apiclient.BaseClient) {
 	server := httptest.NewServer(http.HandlerFunc(handlerFunc))
-	client, err := apiclient.NewBaseClient(logtest.Scoped(t), apiclient.BaseClientOptions{
-		EndpointOptions: apiclient.EndpointOptions{
-			URL: server.URL,
-		},
-	})
+	testOpts := testOptions(&config.Config{FrontendURL: server.URL, FrontendAuthorizationToken: "hunter2hunter2"})
+	client, err := apiclient.NewBaseClient(logtest.Scoped(t), testOpts)
 	require.NoError(t, err)
 
 	return server, client

@@ -2,8 +2,9 @@ package jobutil
 
 import (
 	"context"
-	"github.com/grafana/regexp"
 	"sync"
+
+	"github.com/grafana/regexp"
 
 	"go.opentelemetry.io/otel/attribute"
 

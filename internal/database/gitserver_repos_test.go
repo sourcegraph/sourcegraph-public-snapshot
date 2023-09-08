@@ -372,6 +372,16 @@ func TestReposWithLastOutput(t *testing.T) {
 			if err := db.GitserverRepos().SetLastOutput(ctx, testRepo.Name, tr.lastOutput); err != nil {
 				t.Fatal(err)
 			}
+			haveOut, ok, err := db.GitserverRepos().GetLastSyncOutput(ctx, testRepo.Name)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tr.lastOutput == "" && ok {
+				t.Fatalf("last output is not empty")
+			}
+			if have, want := haveOut, tr.lastOutput; have != want {
+				t.Fatalf("wrong last output returned, have=%s want=%s", have, want)
+			}
 		})
 	}
 }
@@ -1042,63 +1052,6 @@ func TestSanitizeToUTF8(t *testing.T) {
 	}
 }
 
-func TestGitserverRepoListReposWithoutSize(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-
-	// Create one test repo
-	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo",
-		RepoSizeBytes: 0,
-	})
-
-	if _, err := db.Handle().ExecContext(ctx, fmt.Sprintf(
-		`update gitserver_repos set repo_size_bytes = null where repo_id = %d;`,
-		gitserverRepo.RepoID)); err != nil {
-		t.Fatalf("unexpected error while updating gitserver repo: %s", err)
-	}
-
-	// Get it back from the db
-	fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLogs")); diff != "" {
-		t.Fatal(diff)
-	}
-
-	// Check that this repo is returned from ListReposWithoutSize
-	if reposWithoutSize, err := db.GitserverRepos().ListReposWithoutSize(ctx); err != nil {
-		t.Fatal(err)
-	} else if len(reposWithoutSize) != 1 {
-		t.Fatal("One repo without size should be returned")
-	}
-
-	// Setting the size
-	gitserverRepo.RepoSizeBytes = 4040
-	if err := db.GitserverRepos().Update(ctx, gitserverRepo); err != nil {
-		t.Fatal(err)
-	}
-
-	// Check that this repo is not returned now from ListReposWithoutSize
-	if reposWithoutSize, err := db.GitserverRepos().ListReposWithoutSize(ctx); err != nil {
-		t.Fatal(err)
-	} else if len(reposWithoutSize) != 0 {
-		t.Fatal("There should be no repos without size")
-	}
-
-	// Check that nothing except UpdatedAt and RepoSizeBytes has been changed
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "RepoSizeBytes", "CorruptionLogs")); diff != "" {
-		t.Fatal(diff)
-	}
-}
-
 func TestGitserverUpdateRepoSizes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -1199,172 +1152,6 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	}
 }
 
-func TestGitserverRepos_UpdatePoolRepoID_And_GetPoolRepoName(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	t.Parallel()
-
-	logger := logtest.Scoped(t)
-	ctx := context.Background()
-
-	setupRepos := func() (DB, *types.Repo, *types.Repo) {
-		db := NewDB(logger, dbtest.NewDB(logger, t))
-		// Create a test parentRepo, whose ID will be used as pool_repo_id to establish a relationship
-		// between a fork and parent repo with deduplciation.
-		parentRepo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:          "internal.github.com/sourcegraph/repo",
-			URI:           "github.com/sourcegraph/repo",
-			CloneStatus:   types.CloneStatusNotCloned,
-			RepoSizeBytes: 100,
-		})
-
-		// Create a test forked repo.
-		forkedRepo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:          "internal.github.com/forked/repo",
-			URI:           "github.com/forked/repo",
-			Fork:          true,
-			CloneStatus:   types.CloneStatusNotCloned,
-			RepoSizeBytes: 100,
-		})
-
-		return db, parentRepo, forkedRepo
-	}
-
-	emptyPoolRepoName := api.RepoName("")
-
-	t.Run("no pool repo relation exists", func(t *testing.T) {
-		db, _, forkedRepo := setupRepos()
-		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
-		require.NoError(t, err)
-		require.False(t, ok)
-		require.Equal(t, api.RepoName(""), gotPoolRepoName)
-	})
-
-	t.Run("pool repo does not exist", func(t *testing.T) {
-		db, _, forkedRepo := setupRepos()
-		// Updating pool repo ID relation with a bogus poolRepoName.
-		err := db.GitserverRepos().UpdatePoolRepoID(ctx, api.RepoName("foo"), forkedRepo.Name)
-		require.NoError(t, err)
-
-		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
-		require.NoError(t, err)
-		require.False(t, ok)
-		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
-	})
-
-	t.Run("forked repo does not exist", func(t *testing.T) {
-		db, parentRepo, _ := setupRepos()
-		// Updating pool repo ID relation with a bogus forkedRepoName.
-		err := db.GitserverRepos().UpdatePoolRepoID(ctx, parentRepo.Name, api.RepoName("foo"))
-		require.NoError(t, err)
-
-		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, api.RepoName("foo"))
-		require.NoError(t, err)
-		require.False(t, ok)
-		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
-	})
-
-	t.Run("both pool and forked repo do not exist", func(t *testing.T) {
-		db, _, _ := setupRepos()
-
-		// Updating pool repo ID relation with a bogus poolRepoName a bogus forkedRepoName.
-		err := db.GitserverRepos().UpdatePoolRepoID(ctx, api.RepoName("foo"), api.RepoName("bar"))
-		require.NoError(t, err)
-
-		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, api.RepoName("bar"))
-		require.NoError(t, err)
-		require.False(t, ok)
-		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
-
-	})
-
-	t.Run("pool relation exists lookup parent repo", func(t *testing.T) {
-		db, parentRepo, forkedRepo := setupRepos()
-		// Updating pool repo ID relation with legitimate poolRepoName and forkedRepoName.
-		err := db.GitserverRepos().UpdatePoolRepoID(ctx, parentRepo.Name, forkedRepo.Name)
-		require.NoError(t, err)
-
-		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, parentRepo.Name)
-		require.NoError(t, err)
-		require.False(t, ok)
-		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
-	})
-
-	t.Run("pool relation exists lookup forked repo", func(t *testing.T) {
-		db, parentRepo, forkedRepo := setupRepos()
-		// Updating pool repo ID relation with legitimate poolRepoName and forkedRepoName.
-		err := db.GitserverRepos().UpdatePoolRepoID(ctx, parentRepo.Name, forkedRepo.Name)
-		require.NoError(t, err)
-
-		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
-		require.NoError(t, err)
-		require.True(t, ok)
-		require.Equal(t, parentRepo.Name, gotPoolRepoName)
-	})
-
-	t.Run("pool relation exists but parent repo is deleted, lookup parent repo", func(t *testing.T) {
-		db, parentRepo, forkedRepo := setupRepos()
-		// Updating pool repo ID relation with legitimate poolRepoName and forkedRepoName.
-		err := db.GitserverRepos().UpdatePoolRepoID(ctx, parentRepo.Name, forkedRepo.Name)
-		require.NoError(t, err)
-
-		err = db.Repos().Delete(ctx, parentRepo.ID)
-		require.NoError(t, err)
-
-		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, parentRepo.Name)
-		require.NoError(t, err)
-		require.False(t, ok)
-		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
-	})
-
-	t.Run("pool relation exists but parent repo is deleted, lookup forked repo", func(t *testing.T) {
-		db, parentRepo, forkedRepo := setupRepos()
-		// Updating pool repo ID relation with legitimate poolRepoName and forkedRepoName.
-		err := db.GitserverRepos().UpdatePoolRepoID(ctx, parentRepo.Name, forkedRepo.Name)
-		require.NoError(t, err)
-
-		err = db.Repos().Delete(ctx, parentRepo.ID)
-		require.NoError(t, err)
-
-		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
-		require.NoError(t, err)
-		require.False(t, ok)
-		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
-	})
-
-	t.Run("pool relation exists but forked repo is deleted, lookup parent repo", func(t *testing.T) {
-		db, parentRepo, forkedRepo := setupRepos()
-		// Updating pool repo ID relation with legitimate poolRepoName and forkedRepoName.
-		err := db.GitserverRepos().UpdatePoolRepoID(ctx, parentRepo.Name, forkedRepo.Name)
-		require.NoError(t, err)
-
-		err = db.Repos().Delete(ctx, forkedRepo.ID)
-		require.NoError(t, err)
-
-		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, parentRepo.Name)
-		require.NoError(t, err)
-		require.False(t, ok)
-		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
-	})
-
-	t.Run("pool relation exists but forked repo is deleted, lookup forked repo", func(t *testing.T) {
-		db, parentRepo, forkedRepo := setupRepos()
-		// Updating pool repo ID relation with legitimate poolRepoName and forkedRepoName.
-		err := db.GitserverRepos().UpdatePoolRepoID(ctx, parentRepo.Name, forkedRepo.Name)
-		require.NoError(t, err)
-
-		err = db.Repos().Delete(ctx, forkedRepo.ID)
-		require.NoError(t, err)
-
-		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
-		require.NoError(t, err)
-		require.False(t, ok)
-		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
-	})
-}
-
 func createTestRepo(ctx context.Context, t *testing.T, db DB, payload *createTestRepoPayload) (*types.Repo, *types.GitserverRepo) {
 	t.Helper()
 
@@ -1434,4 +1221,56 @@ func updateTestGitserverRepos(ctx context.Context, t *testing.T, db DB, hasLastE
 	if err := db.GitserverRepos().Update(ctx, gitserverRepo); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestGitserverRepos_GetGitserverGitDirSize(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	assertSize := func(want int64) {
+		t.Helper()
+
+		have, err := db.GitserverRepos().GetGitserverGitDirSize(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		require.Equal(t, want, have)
+	}
+
+	// Expect exactly 0 bytes used when no repos exist yet.
+	assertSize(0)
+
+	// Create one test repo.
+	repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name: "github.com/sourcegraph/repo",
+	})
+
+	// Now, we should see an uncloned test repo that takes no space.
+	assertSize(0)
+
+	// Set repo size and mark repo as cloned.
+	require.NoError(t, db.GitserverRepos().SetRepoSize(ctx, repo.Name, 200, "test-gitserver"))
+
+	// Now the total should be 200 bytes.
+	assertSize(200)
+
+	// Now add a second repo to make sure it aggregates properly.
+	repo2, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name: "github.com/sourcegraph/repo2",
+	})
+	require.NoError(t, db.GitserverRepos().SetRepoSize(ctx, repo2.Name, 500, "test-gitserver"))
+
+	// 200 from the first repo and another 500 from the newly created repo.
+	assertSize(700)
+
+	// Now mark the repo as uncloned, that should exclude it from statistics.
+	require.NoError(t, db.GitserverRepos().SetCloneStatus(ctx, repo.Name, types.CloneStatusNotCloned, "test-gitserver"))
+
+	// only repo2 which is 500 bytes should cont now.
+	assertSize(500)
 }

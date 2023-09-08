@@ -14,14 +14,15 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -47,11 +48,6 @@ type Syncer struct {
 	// Hooks for enterprise specific functionality. Ignored in OSS
 	EnterpriseCreateRepoHook func(context.Context, Store, *types.Repo) error
 	EnterpriseUpdateRepoHook func(context.Context, Store, *types.Repo, *types.Repo) error
-
-	// DeduplicatedForksSet is a set of all repos added to the deduplicateForks site config
-	// property. It exists only to aid in fast lookups instead of having to iterate through the list
-	// each time.
-	DeduplicatedForksSet *types.RepoURISet
 }
 
 // RunOptions contains options customizing Run behaviour.
@@ -62,8 +58,8 @@ type RunOptions struct {
 	DequeueInterval time.Duration        // Default to 10 seconds
 }
 
-// Run runs the Sync at the specified interval.
-func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
+// Routines returns the goroutines that run the Sync at the specified interval.
+func (s *Syncer) Routines(ctx context.Context, store Store, opts RunOptions) []goroutine.BackgroundRoutine {
 	if opts.EnqueueInterval == nil {
 		opts.EnqueueInterval = func() time.Duration { return time.Minute }
 	}
@@ -78,7 +74,7 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 		s.initialUnmodifiedDiffFromStore(ctx, store)
 	}
 
-	worker, resetter := NewSyncWorker(ctx, observation.ContextWithLogger(s.ObsvCtx.Logger.Scoped("syncWorker", ""), s.ObsvCtx),
+	worker, resetter, syncerJanitor := NewSyncWorker(ctx, observation.ContextWithLogger(s.ObsvCtx.Logger.Scoped("syncWorker", ""), s.ObsvCtx),
 		store.Handle(),
 		&syncHandler{
 			syncer:          s,
@@ -91,23 +87,25 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 		},
 	)
 
-	go worker.Start()
-	defer worker.Stop()
-
-	go resetter.Start()
-	defer resetter.Stop()
-
-	for ctx.Err() == nil {
-		if !conf.Get().DisableAutoCodeHostSyncs {
-			err := store.EnqueueSyncJobs(ctx, opts.IsDotCom)
-			if err != nil {
-				s.ObsvCtx.Logger.Error("enqueuing sync jobs", log.Error(err))
+	scheduler := goroutine.NewPeriodicGoroutine(
+		actor.WithInternalActor(ctx),
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			if conf.Get().DisableAutoCodeHostSyncs {
+				return nil
 			}
-		}
-		timeutil.SleepWithContext(ctx, opts.EnqueueInterval())
-	}
 
-	return ctx.Err()
+			if err := store.EnqueueSyncJobs(ctx, opts.IsDotCom); err != nil {
+				return errors.Wrap(err, "enqueueing sync jobs")
+			}
+
+			return nil
+		}),
+		goroutine.WithName("repo-updater.repo-sync-scheduler"),
+		goroutine.WithDescription("enqueues sync jobs for external service sync jobs"),
+		goroutine.WithIntervalFunc(opts.EnqueueInterval),
+	)
+
+	return []goroutine.BackgroundRoutine{worker, resetter, syncerJanitor, scheduler}
 }
 
 type syncHandler struct {

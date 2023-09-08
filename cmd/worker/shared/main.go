@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/licensecheck"
 	workermigrations "github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/outboundwebhooks"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/repostatistics"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/zoektrepos"
@@ -61,6 +62,7 @@ func LoadConfig(additionalJobs map[string]workerjob.Job, registerEnterpriseMigra
 		"outbound-webhook-sender":   outboundwebhooks.NewSender(),
 		"license-check":             licensecheck.NewJob(),
 		"cody-gateway-usage-check":  codygateway.NewUsageJob(),
+		"rate-limit-config":         ratelimit.NewRateLimitConfigJob(),
 	}
 
 	var config Config

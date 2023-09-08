@@ -22,7 +22,6 @@ go_library(
         "//internal/api",
         "//internal/conf",
         "//internal/ctags_config",
-        "//internal/featureflag",
         "//internal/grpc/defaults",
         "//internal/honey",
         "//internal/httpcli",

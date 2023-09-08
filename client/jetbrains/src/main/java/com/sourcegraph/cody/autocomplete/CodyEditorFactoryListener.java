@@ -1,7 +1,8 @@
 package com.sourcegraph.cody.autocomplete;
 
+import static com.sourcegraph.common.EditorUtils.VIM_EXIT_INSERT_MODE_ACTION;
+
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.editor.Editor;
@@ -18,13 +19,15 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.cody.agent.CodyAgent;
-import com.sourcegraph.cody.agent.CodyAgentServer;
+import com.sourcegraph.cody.agent.CodyAgentClient;
 import com.sourcegraph.cody.agent.protocol.Position;
 import com.sourcegraph.cody.agent.protocol.Range;
 import com.sourcegraph.cody.agent.protocol.TextDocument;
-import com.sourcegraph.cody.vscode.InlineAutoCompleteTriggerKind;
+import com.sourcegraph.cody.vscode.InlineAutocompleteTriggerKind;
+import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind;
 import com.sourcegraph.config.ConfigUtil;
 import java.util.List;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -64,12 +67,19 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
       if (!ConfigUtil.isCodyEnabled()) {
         return;
       }
+      String commandName = CommandProcessor.getInstance().getCurrentCommandName();
+      if (Objects.equals(commandName, VIM_EXIT_INSERT_MODE_ACTION)) {
+        return;
+      }
       informAgentAboutEditorChange(e.getEditor());
-      CodyAutoCompleteManager suggestions = CodyAutoCompleteManager.getInstance();
+      CodyAutocompleteManager suggestions = CodyAutocompleteManager.getInstance();
       if (suggestions.isEnabledForEditor(e.getEditor())
           && CodyEditorFactoryListener.isSelectedEditor(e.getEditor())) {
-        suggestions.clearAutoCompleteSuggestions(e.getEditor());
-        suggestions.triggerAutoComplete(e.getEditor(), e.getEditor().getCaretModel().getOffset());
+        suggestions.clearAutocompleteSuggestions(e.getEditor());
+        suggestions.triggerAutocomplete(
+            e.getEditor(),
+            e.getEditor().getCaretModel().getOffset(),
+            InlineCompletionTriggerKind.AUTOMATIC);
       }
     }
   }
@@ -77,12 +87,14 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
   private static class CodySelectionListener implements SelectionListener {
     @Override
     public void selectionChanged(@NotNull SelectionEvent e) {
-      if (CodyAutoCompleteManager.getInstance().isEnabledForEditor(e.getEditor())
+      if (!ConfigUtil.isCodyEnabled()) {
+        return;
+      }
+      informAgentAboutEditorChange(e.getEditor());
+      CodyAutocompleteManager suggestions = CodyAutocompleteManager.getInstance();
+      if (suggestions.isEnabledForEditor(e.getEditor())
           && CodyEditorFactoryListener.isSelectedEditor(e.getEditor())) {
-        informAgentAboutEditorChange(e.getEditor());
-        ApplicationManager.getApplication()
-            .getService(CodyAutoCompleteManager.class)
-            .clearAutoCompleteSuggestions(e.getEditor());
+        suggestions.clearAutocompleteSuggestions(e.getEditor());
       }
     }
   }
@@ -98,18 +110,19 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
       if (!CodyEditorFactoryListener.isSelectedEditor(this.editor)) {
         return;
       }
-      CodyAutoCompleteManager completions = CodyAutoCompleteManager.getInstance();
-      completions.clearAutoCompleteSuggestions(this.editor);
+      CodyAutocompleteManager completions = CodyAutocompleteManager.getInstance();
+      completions.clearAutocompleteSuggestions(this.editor);
       if (completions.isEnabledForEditor(this.editor)
           && !CommandProcessor.getInstance().isUndoTransparentActionInProgress()) {
         informAgentAboutEditorChange(this.editor);
         int changeOffset = event.getOffset() + event.getNewLength();
         if (this.editor.getCaretModel().getOffset() == changeOffset) {
-          InlineAutoCompleteTriggerKind requestType =
+          InlineAutocompleteTriggerKind requestType =
               event.getOldLength() != event.getNewLength()
-                  ? InlineAutoCompleteTriggerKind.Invoke
-                  : InlineAutoCompleteTriggerKind.Automatic;
-          completions.triggerAutoComplete(this.editor, changeOffset);
+                  ? InlineAutocompleteTriggerKind.Invoke
+                  : InlineAutocompleteTriggerKind.Automatic;
+          completions.triggerAutocomplete(
+              this.editor, changeOffset, InlineCompletionTriggerKind.AUTOMATIC);
         }
       }
     }
@@ -176,8 +189,11 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
     if (editor.getProject() == null) {
       return;
     }
-    CodyAgentServer server = CodyAgent.getServer(editor.getProject());
-    if (server == null) {
+    if (!CodyAgent.isConnected(editor.getProject())) {
+      return;
+    }
+    CodyAgentClient client = CodyAgent.getClient(editor.getProject());
+    if (client.server == null) {
       return;
     }
     VirtualFile file = FileDocumentManager.getInstance().getFile(editor.getDocument());
@@ -189,6 +205,11 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
             .setFilePath(file.getPath())
             .setContent(editor.getDocument().getText())
             .setSelection(getSelection(editor));
-    server.textDocumentDidChange(document);
+    client.server.textDocumentDidChange(document);
+
+    if (client.codebase == null) {
+      return;
+    }
+    client.codebase.handlePotentialCodebaseChange(editor.getProject(), file);
   }
 }

@@ -17,8 +17,8 @@ public class BrowserErrorNotification {
   public static void show(Project project, URI uri) {
     Notification notification =
         new Notification(
-            "Cody AI by Sourcegraph errors",
-            "Cody AI by Sourcegraph",
+            "Sourcegraph errors",
+            "Sourcegraph",
             "Opening an external browser is not supported. You can still copy the URL to your clipboard and open it manually.",
             NotificationType.WARNING);
     AnAction copyUrlAction =

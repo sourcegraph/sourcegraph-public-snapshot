@@ -17,10 +17,10 @@ trap cleanup EXIT
   mkdir bin
 
   # Install melange from Sourcegraph cache
-  # Source: https://github.com/chainguard-dev/melange/releases/download/v0.2.0/melange_0.2.0_linux_amd64.tar.gz
-  wget https://storage.googleapis.com/package-repository/ci-binaries/melange_0.2.0_linux_amd64.tar.gz
-  tar zxf melange_0.2.0_linux_amd64.tar.gz
-  mv melange_0.2.0_linux_amd64/melange bin/melange
+  # Source: https://github.com/chainguard-dev/melange/releases/download/v0.4.0/melange_0.4.0_linux_amd64.tar.gz
+  wget https://storage.googleapis.com/package-repository/ci-binaries/melange_0.4.0_linux_amd64.tar.gz
+  tar zxf melange_0.4.0_linux_amd64.tar.gz
+  mv melange_0.4.0_linux_amd64/melange bin/melange
 
   # Install apk from Sourcegraph cache
   # Source: https://gitlab.alpinelinux.org/api/v4/projects/5/packages/generic//v2.12.11/x86_64/apk.static
@@ -48,9 +48,10 @@ name=${1%/}
 
 pushd "wolfi-packages"
 
+# Soft-fail if file doesn't exist, as CI step is triggered whenever package configs are changed - including deletions/renames
 if [ ! -e "${name}.yaml" ]; then
   echo "File '$name.yaml' does not exist"
-  exit 1
+  exit 222
 fi
 
 # NOTE: Melange relies upon a more recent version of bubblewrap than ships with Ubuntu 20.04. We therefore build a recent
@@ -64,6 +65,7 @@ melange build "$name.yaml" --arch x86_64 --generate-index false
 # Upload package as build artifact
 buildkite-agent artifact upload packages/*/*
 
-# Upload package to repo
+# Upload package to repo, and finish with same exit code
 popd
 ./enterprise/dev/ci/scripts/wolfi/upload-package.sh
+exit $?

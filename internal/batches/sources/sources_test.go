@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -164,7 +165,7 @@ func TestLoadExternalService(t *testing.T) {
 		},
 	}
 
-	ess := database.NewMockExternalServiceStore()
+	ess := dbmocks.NewMockExternalServiceStore()
 	ess.ListFunc.SetDefaultHook(func(ctx context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		sources := make([]*types.ExternalService, 0)
 		if _, ok := repo.Sources[newerExternalService.URN()]; ok {
@@ -378,7 +379,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 		ch := &btypes.Changeset{ID: 2, OwnedByBatchChangeID: 1}
 
 		t.Run("with user credential", func(t *testing.T) {
-			credStore := database.NewMockUserCredentialsStore()
+			credStore := dbmocks.NewMockUserCredentialsStore()
 			credStore.GetByScopeFunc.SetDefaultHook(func(ctx context.Context, opts database.UserCredentialScope) (*database.UserCredential, error) {
 				assert.EqualValues(t, repo.ExternalRepo.ServiceID, opts.ExternalServiceID)
 				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
@@ -387,11 +388,11 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				cred.SetAuthenticator(ctx, userToken)
 				return cred, nil
 			})
-			extsvcStore := database.NewMockExternalServiceStore()
+			extsvcStore := dbmocks.NewMockExternalServiceStore()
 			extsvcStore.ListFunc.SetDefaultReturn([]*types.ExternalService{es}, nil)
 
 			tx := NewMockSourcerStore()
-			rs := database.NewMockRepoStore()
+			rs := dbmocks.NewMockRepoStore()
 			rs.GetFunc.SetDefaultReturn(repo, nil)
 			tx.ReposFunc.SetDefaultReturn(rs)
 			tx.GetBatchChangeFunc.SetDefaultHook(func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
@@ -414,18 +415,18 @@ func TestSourcer_ForChangeset(t *testing.T) {
 		})
 
 		t.Run("with site credential", func(t *testing.T) {
-			credStore := database.NewMockUserCredentialsStore()
+			credStore := dbmocks.NewMockUserCredentialsStore()
 			credStore.GetByScopeFunc.SetDefaultHook(func(ctx context.Context, opts database.UserCredentialScope) (*database.UserCredential, error) {
 				assert.EqualValues(t, repo.ExternalRepo.ServiceID, opts.ExternalServiceID)
 				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
 				assert.EqualValues(t, bc.LastApplierID, opts.UserID)
 				return nil, &errcode.Mock{IsNotFound: true}
 			})
-			extsvcStore := database.NewMockExternalServiceStore()
+			extsvcStore := dbmocks.NewMockExternalServiceStore()
 			extsvcStore.ListFunc.SetDefaultReturn([]*types.ExternalService{es}, nil)
 
 			tx := NewMockSourcerStore()
-			rs := database.NewMockRepoStore()
+			rs := dbmocks.NewMockRepoStore()
 			rs.GetFunc.SetDefaultReturn(repo, nil)
 			tx.ReposFunc.SetDefaultReturn(rs)
 			tx.GetBatchChangeFunc.SetDefaultHook(func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
@@ -457,18 +458,18 @@ func TestSourcer_ForChangeset(t *testing.T) {
 		t.Run("without site credential", func(t *testing.T) {
 			// When we remove the fallback to the external service
 			// configuration, this test is expected to fail.
-			credStore := database.NewMockUserCredentialsStore()
+			credStore := dbmocks.NewMockUserCredentialsStore()
 			credStore.GetByScopeFunc.SetDefaultHook(func(ctx context.Context, opts database.UserCredentialScope) (*database.UserCredential, error) {
 				assert.EqualValues(t, repo.ExternalRepo.ServiceID, opts.ExternalServiceID)
 				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
 				assert.EqualValues(t, bc.LastApplierID, opts.UserID)
 				return nil, &errcode.Mock{IsNotFound: true}
 			})
-			extsvcStore := database.NewMockExternalServiceStore()
+			extsvcStore := dbmocks.NewMockExternalServiceStore()
 			extsvcStore.ListFunc.SetDefaultReturn([]*types.ExternalService{es}, nil)
 
 			tx := NewMockSourcerStore()
-			rs := database.NewMockRepoStore()
+			rs := dbmocks.NewMockRepoStore()
 			rs.GetFunc.SetDefaultReturn(repo, nil)
 			tx.ReposFunc.SetDefaultReturn(rs)
 			tx.GetBatchChangeFunc.SetDefaultHook(func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
@@ -506,11 +507,11 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				assert.EqualValues(t, 1234, appId)
 				return 5678, nil
 			})
-			extsvcStore := database.NewMockExternalServiceStore()
+			extsvcStore := dbmocks.NewMockExternalServiceStore()
 			extsvcStore.ListFunc.SetDefaultReturn([]*types.ExternalService{es}, nil)
 
 			tx := NewMockSourcerStore()
-			rs := database.NewMockRepoStore()
+			rs := dbmocks.NewMockRepoStore()
 			rs.GetFunc.SetDefaultReturn(repo, nil)
 			tx.ReposFunc.SetDefaultReturn(rs)
 			tx.GetBatchChangeFunc.SetDefaultHook(func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
@@ -541,11 +542,11 @@ func TestSourcer_ForChangeset(t *testing.T) {
 		ch := &btypes.Changeset{ID: 2, OwnedByBatchChangeID: 0}
 
 		t.Run("with site credential", func(t *testing.T) {
-			extsvcStore := database.NewMockExternalServiceStore()
+			extsvcStore := dbmocks.NewMockExternalServiceStore()
 			extsvcStore.ListFunc.SetDefaultReturn([]*types.ExternalService{es}, nil)
 
 			tx := NewMockSourcerStore()
-			rs := database.NewMockRepoStore()
+			rs := dbmocks.NewMockRepoStore()
 			rs.GetFunc.SetDefaultReturn(repo, nil)
 			tx.ReposFunc.SetDefaultReturn(rs)
 			tx.GetSiteCredentialFunc.SetDefaultHook(func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
@@ -572,11 +573,11 @@ func TestSourcer_ForChangeset(t *testing.T) {
 		// When we remove the fallback to the external service configuration, this test is
 		// expected to fail.
 		t.Run("without site credential", func(t *testing.T) {
-			extsvcStore := database.NewMockExternalServiceStore()
+			extsvcStore := dbmocks.NewMockExternalServiceStore()
 			extsvcStore.ListFunc.SetDefaultReturn([]*types.ExternalService{es}, nil)
 
 			tx := NewMockSourcerStore()
-			rs := database.NewMockRepoStore()
+			rs := dbmocks.NewMockRepoStore()
 			rs.GetFunc.SetDefaultReturn(repo, nil)
 			tx.ReposFunc.SetDefaultReturn(rs)
 			tx.GetSiteCredentialFunc.SetDefaultHook(func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {

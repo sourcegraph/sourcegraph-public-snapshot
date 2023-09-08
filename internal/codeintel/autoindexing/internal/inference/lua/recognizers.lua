@@ -1,7 +1,6 @@
 local config = require("sg.autoindex.config").new {}
 
 for _, name in ipairs {
-  "clang",
   "go",
   "java",
   "python",

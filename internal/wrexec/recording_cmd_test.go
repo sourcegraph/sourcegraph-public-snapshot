@@ -292,5 +292,4 @@ func TestRecordingCmd(t *testing.T) {
 			t.Error("expected recording 1 and recording 2 to be different, but they're equal")
 		}
 	})
-
 }

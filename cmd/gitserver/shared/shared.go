@@ -5,6 +5,7 @@ import (
 	"container/list"
 	"context"
 	"database/sql"
+	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
@@ -25,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -32,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
@@ -40,6 +43,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/rubygems"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -52,15 +56,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type EnterpriseInit func(db database.DB, keyring keyring.Ring)
-
-func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config *Config, enterpriseInit EnterpriseInit) error {
+func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config *Config) error {
 	logger := observationCtx.Logger
 
 	// Load and validate configuration.
@@ -89,6 +90,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		if err := os.Setenv("TMP_DIR", tmpDir); err != nil {
 			return errors.Wrap(err, "setting TMP_DIR")
 		}
+
+		// Delete the old reposStats file, which was used on gitserver prior to
+		// 2023-08-14.
+		if err := os.Remove(filepath.Join(config.ReposDir, "repos-stats.json")); err != nil && !os.IsNotExist(err) {
+			logger.Error("failed to remove old reposStats file", log.Error(err))
+		}
 	}
 
 	// Create a database connection.
@@ -104,14 +111,15 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return errors.Wrap(err, "initializing keyring")
 	}
 
-	// Possibly run enterprise hooks.
-	if enterpriseInit != nil {
-		enterpriseInit(db, keyring.Default())
+	authz.DefaultSubRepoPermsChecker, err = subrepoperms.NewSubRepoPermsClient(db.SubRepoPerms())
+	if err != nil {
+		return errors.Wrap(err, "failed to create sub-repo client")
 	}
 
 	// Setup our server megastruct.
 	recordingCommandFactory := wrexec.NewRecordingCommandFactory(nil, 0)
 	cloneQueue := server.NewCloneQueue(observationCtx, list.New())
+	locker := server.NewRepositoryLocker()
 	gitserver := server.Server{
 		Logger:         logger,
 		ObservationCtx: observationCtx,
@@ -136,14 +144,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(config.BatchLogGlobalConcurrencyLimit)),
 		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
 		RecordingCommandFactory: recordingCommandFactory,
-		DeduplicatedForksSet:    types.NewRepoURICache(conf.GetDeduplicatedForksIndex()),
+		Locker:                  locker,
 	}
 
-	// Make sure we watch for config updates that affect DeduplicatedForksSet or
-	// the recordingCommandFactory.
+	// Make sure we watch for config updates that affect the recordingCommandFactory.
 	go conf.Watch(func() {
-		gitserver.DeduplicatedForksSet.Overwrite(conf.GetDeduplicatedForksIndex())
-
 		// We update the factory with a predicate func. Each subsequent recordable command will use this predicate
 		// to determine whether a command should be recorded or not.
 		recordingConf := conf.Get().SiteConfig().GitRecorder
@@ -180,7 +185,17 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		}),
 		gitserver.NewClonePipeline(logger, cloneQueue),
 		newRateLimitSyncer(ctx, db, config.RateLimitSyncerLimitPerSecond),
-		gitserver.NewRepoStateSyncer(ctx, config.SyncRepoStateInterval, config.SyncRepoStateBatchSize, config.SyncRepoStateUpdatePerSecond),
+		server.NewRepoStateSyncer(
+			ctx,
+			logger,
+			db,
+			locker,
+			gitserver.Hostname,
+			config.ReposDir,
+			config.SyncRepoStateInterval,
+			config.SyncRepoStateBatchSize,
+			config.SyncRepoStateUpdatePerSecond,
+		),
 	}
 
 	if runtime.GOOS == "windows" {
@@ -204,6 +219,20 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			),
 		)
 	}
+
+	// Register recorder in all routines that support it.
+	recorderCache := recorder.GetCache()
+	rec := recorder.New(observationCtx.Logger, env.MyName, recorderCache)
+	for _, r := range routines {
+		if recordable, ok := r.(recorder.Recordable); ok {
+			// Set the hostname to the shardID so we record the routines per
+			// gitserver instance.
+			recordable.SetJobName(fmt.Sprintf("gitserver %s", gitserver.Hostname))
+			recordable.RegisterRecorder(rec)
+			rec.Register(recordable)
+		}
+	}
+	rec.RegistrationDone()
 
 	logger.Info("git-server: listening", log.String("addr", config.ListenAddress))
 

@@ -161,6 +161,19 @@ func (c *Client) ListArtifactsByBuildNumber(ctx context.Context, pipeline string
 	return artifacts, nil
 }
 
+// ListArtifactsByJob queries the Buildkite API and retrieves all the artifacts for a particular job
+func (c *Client) ListArtifactsByJob(ctx context.Context, pipeline string, buildNumber string, jobID string) ([]buildkite.Artifact, error) {
+	artifacts, _, err := c.bk.Artifacts.ListByJob(BuildkiteOrg, pipeline, buildNumber, jobID, nil)
+	if err != nil {
+		if strings.Contains(err.Error(), "404 Not Found") {
+			return nil, errors.New("no artifacts because no build or job found")
+		}
+		return nil, err
+	}
+
+	return artifacts, nil
+}
+
 // DownloadArtifact downloads the Buildkite artifact into the provider io.Writer
 func (c *Client) DownloadArtifact(artifact buildkite.Artifact, w io.Writer) error {
 	url := artifact.DownloadURL

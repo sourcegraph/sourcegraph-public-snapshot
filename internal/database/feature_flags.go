@@ -146,6 +146,7 @@ func (f *featureFlagStore) UpdateFeatureFlag(ctx context.Context, flag *ff.Featu
 		rollout,
 		flag.Name,
 	))
+	clearRedisCache(flag.Name)
 	return scanFeatureFlag(row)
 }
 

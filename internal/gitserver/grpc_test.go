@@ -10,31 +10,22 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
-	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestClientSource_AddrMatchesTarget(t *testing.T) {
-	db := database.NewMockDB()
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetByNameFunc.SetDefaultReturn(nil, nil)
 
-	gs := database.NewMockGitserverRepoStore()
-	gs.GetPoolRepoNameFunc.SetDefaultReturn(api.RepoName(""), false, nil)
-
-	db.ReposFunc.SetDefaultReturn(repos)
-	db.GitserverReposFunc.SetDefaultReturn(gs)
-
-	source := NewTestClientSource(t, db, []string{"localhost:1234", "localhost:4321"})
+	source := NewTestClientSource(t, []string{"localhost:1234", "localhost:4321"})
 	testGitserverConns := source.(*testGitserverConns)
 	conns := GitserverConns(*testGitserverConns.conns)
-	conns.logger = logtest.Scoped(t)
 
 	ctx := context.Background()
 	for _, repo := range []api.RepoName{"a", "b", "c", "d"} {
@@ -90,7 +81,7 @@ func TestClient_GRPCRouting(t *testing.T) {
 		},
 	})
 
-	client := NewClient(database.NewMockDB())
+	client := NewClient()
 	_, _ = client.ResolveRevision(context.Background(), "a", "HEAD", ResolveRevisionOptions{})
 
 	if !(m1.called && !m2.called) {
@@ -106,17 +97,14 @@ func TestClient_GRPCRouting(t *testing.T) {
 }
 
 func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
-	db := database.NewMockDB()
-	client := NewClient(db)
+	client := NewClient()
 
 	cfg := newConfig(
 		[]string{"gitserver1", "gitserver2"},
 		map[string]string{"repo1": "gitserver2"},
 	)
 
-	logger := logtest.NoOp(t)
-
-	atomicConns := getAtomicGitserverConns(logger, db)
+	atomicConns := getAtomicGitserverConns()
 
 	atomicConns.update(cfg)
 

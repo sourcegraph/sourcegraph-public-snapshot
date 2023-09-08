@@ -451,66 +451,6 @@ CREATE FUNCTION invalidate_session_for_userid_on_password_change() RETURNS trigg
     END;
 $$;
 
-CREATE FUNCTION iscodyactiveevent(name text) RETURNS boolean
-    LANGUAGE plpgsql IMMUTABLE
-    AS $$
-BEGIN
-  RETURN
-    (name LIKE '%%cody%%' OR name LIKE '%%Cody%%')
-    AND name NOT IN (
-        '%completion:started%',
-        '%completion:suggested%',
-        '%cta%',
-        '%Cta%',
-        'CodyVSCodeExtension:CodySavedLogin:executed',
-        'web:codyChat:tryOnPublicCode',
-        'web:codyEditorWidget:viewed',
-        'web:codyChat:pageViewed',
-        'CodyConfigurationPageViewed',
-        'ClickedOnTryCodySearchCTA',
-        'TryCodyWebOnboardingDisplayed',
-        'AboutGetCodyPopover',
-        'TryCodyWeb',
-        'CodySurveyToastViewed',
-        'SiteAdminCodyPageViewed',
-        'CodyUninstalled',
-        'SpeakToACodyEngineerCTA'
-    );
-END;
-$$;
-
-CREATE FUNCTION iscodyexplanationevent(name text) RETURNS boolean
-    LANGUAGE plpgsql IMMUTABLE
-    AS $$
-BEGIN
-  RETURN name = ANY(ARRAY[
-    'CodyVSCodeExtension:recipe:explain-code-high-level:executed',
-    'CodyVSCodeExtension:recipe:explain-code-detailed:executed',
-    'CodyVSCodeExtension:recipe:find-code-smells:executed',
-    'CodyVSCodeExtension:recipe:git-history:executed',
-    'CodyVSCodeExtension:recipe:rate-code:executed'
-  ]);
-END;
-$$;
-
-CREATE FUNCTION iscodygenerationevent(name text) RETURNS boolean
-    LANGUAGE plpgsql IMMUTABLE
-    AS $$
-BEGIN
-  RETURN name = ANY(ARRAY[
-    'CodyVSCodeExtension:recipe:rewrite-to-functional:executed',
-    'CodyVSCodeExtension:recipe:improve-variable-names:executed',
-    'CodyVSCodeExtension:recipe:replace:executed',
-    'CodyVSCodeExtension:recipe:generate-docstring:executed',
-    'CodyVSCodeExtension:recipe:generate-unit-test:executed',
-    'CodyVSCodeExtension:recipe:rewrite-functional:executed',
-    'CodyVSCodeExtension:recipe:code-refactor:executed',
-    'CodyVSCodeExtension:recipe:fixup:executed',
-	'CodyVSCodeExtension:recipe:translate-to-language:executed'
-  ]);
-END;
-$$;
-
 CREATE FUNCTION merge_audit_log_transitions(internal hstore, arrayhstore hstore[]) RETURNS hstore
     LANGUAGE plpgsql IMMUTABLE
     AS $$
@@ -2494,6 +2434,97 @@ CREATE SEQUENCE executor_secrets_id_seq
 
 ALTER SEQUENCE executor_secrets_id_seq OWNED BY executor_secrets.id;
 
+CREATE TABLE exhaustive_search_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    initiator_id integer NOT NULL,
+    query text NOT NULL,
+    failure_message text,
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    queued_at timestamp with time zone DEFAULT now()
+);
+
+CREATE SEQUENCE exhaustive_search_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE exhaustive_search_jobs_id_seq OWNED BY exhaustive_search_jobs.id;
+
+CREATE TABLE exhaustive_search_repo_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    repo_id integer NOT NULL,
+    ref_spec text NOT NULL,
+    search_job_id integer NOT NULL,
+    failure_message text,
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    queued_at timestamp with time zone DEFAULT now()
+);
+
+CREATE SEQUENCE exhaustive_search_repo_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE exhaustive_search_repo_jobs_id_seq OWNED BY exhaustive_search_repo_jobs.id;
+
+CREATE TABLE exhaustive_search_repo_revision_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    search_repo_job_id integer NOT NULL,
+    revision text NOT NULL,
+    failure_message text,
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    queued_at timestamp with time zone DEFAULT now()
+);
+
+CREATE SEQUENCE exhaustive_search_repo_revision_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE exhaustive_search_repo_revision_jobs_id_seq OWNED BY exhaustive_search_repo_revision_jobs.id;
+
 CREATE TABLE explicit_permissions_bitbucket_projects_jobs (
     id integer NOT NULL,
     state text DEFAULT 'queued'::text,
@@ -2779,15 +2810,12 @@ CREATE TABLE gitserver_repos (
     repo_size_bytes bigint,
     corrupted_at timestamp with time zone,
     corruption_logs jsonb DEFAULT '[]'::jsonb NOT NULL,
-    cloning_progress text DEFAULT ''::text,
-    pool_repo_id integer
+    cloning_progress text DEFAULT ''::text
 );
 
 COMMENT ON COLUMN gitserver_repos.corrupted_at IS 'Timestamp of when repo corruption was detected';
 
 COMMENT ON COLUMN gitserver_repos.corruption_logs IS 'Log output of repo corruptions that have been detected - encoded as json';
-
-COMMENT ON COLUMN gitserver_repos.pool_repo_id IS 'This is used to refer to the pool repository for deduplicated repos';
 
 CREATE TABLE gitserver_repos_statistics (
     shard_id text NOT NULL,
@@ -4305,12 +4333,12 @@ CREATE TABLE repo_embedding_job_stats (
     code_files_embedded integer DEFAULT 0 NOT NULL,
     code_chunks_embedded integer DEFAULT 0 NOT NULL,
     code_files_skipped jsonb DEFAULT '{}'::jsonb NOT NULL,
-    code_bytes_embedded integer DEFAULT 0 NOT NULL,
+    code_bytes_embedded bigint DEFAULT 0 NOT NULL,
     text_files_total integer DEFAULT 0 NOT NULL,
     text_files_embedded integer DEFAULT 0 NOT NULL,
     text_chunks_embedded integer DEFAULT 0 NOT NULL,
     text_files_skipped jsonb DEFAULT '{}'::jsonb NOT NULL,
-    text_bytes_embedded integer DEFAULT 0 NOT NULL,
+    text_bytes_embedded bigint DEFAULT 0 NOT NULL,
     code_chunks_excluded integer DEFAULT 0 NOT NULL,
     text_chunks_excluded integer DEFAULT 0 NOT NULL
 );
@@ -4745,6 +4773,23 @@ CREATE SEQUENCE user_external_accounts_id_seq
 
 ALTER SEQUENCE user_external_accounts_id_seq OWNED BY user_external_accounts.id;
 
+CREATE TABLE user_onboarding_tour (
+    id integer NOT NULL,
+    raw_json text NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_by integer
+);
+
+CREATE SEQUENCE user_onboarding_tour_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE user_onboarding_tour_id_seq OWNED BY user_onboarding_tour.id;
+
 CREATE TABLE user_pending_permissions (
     id bigint NOT NULL,
     bind_id text NOT NULL,
@@ -5085,6 +5130,12 @@ ALTER TABLE ONLY executor_secret_access_logs ALTER COLUMN id SET DEFAULT nextval
 
 ALTER TABLE ONLY executor_secrets ALTER COLUMN id SET DEFAULT nextval('executor_secrets_id_seq'::regclass);
 
+ALTER TABLE ONLY exhaustive_search_jobs ALTER COLUMN id SET DEFAULT nextval('exhaustive_search_jobs_id_seq'::regclass);
+
+ALTER TABLE ONLY exhaustive_search_repo_jobs ALTER COLUMN id SET DEFAULT nextval('exhaustive_search_repo_jobs_id_seq'::regclass);
+
+ALTER TABLE ONLY exhaustive_search_repo_revision_jobs ALTER COLUMN id SET DEFAULT nextval('exhaustive_search_repo_revision_jobs_id_seq'::regclass);
+
 ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs ALTER COLUMN id SET DEFAULT nextval('explicit_permissions_bitbucket_projects_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY external_services ALTER COLUMN id SET DEFAULT nextval('external_services_id_seq'::regclass);
@@ -5198,6 +5249,8 @@ ALTER TABLE ONLY temporary_settings ALTER COLUMN id SET DEFAULT nextval('tempora
 ALTER TABLE ONLY user_credentials ALTER COLUMN id SET DEFAULT nextval('user_credentials_id_seq'::regclass);
 
 ALTER TABLE ONLY user_external_accounts ALTER COLUMN id SET DEFAULT nextval('user_external_accounts_id_seq'::regclass);
+
+ALTER TABLE ONLY user_onboarding_tour ALTER COLUMN id SET DEFAULT nextval('user_onboarding_tour_id_seq'::regclass);
 
 ALTER TABLE ONLY user_pending_permissions ALTER COLUMN id SET DEFAULT nextval('user_pending_permissions_id_seq'::regclass);
 
@@ -5435,6 +5488,15 @@ ALTER TABLE ONLY executor_secret_access_logs
 
 ALTER TABLE ONLY executor_secrets
     ADD CONSTRAINT executor_secrets_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY exhaustive_search_jobs
+    ADD CONSTRAINT exhaustive_search_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY exhaustive_search_repo_jobs
+    ADD CONSTRAINT exhaustive_search_repo_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY exhaustive_search_repo_revision_jobs
+    ADD CONSTRAINT exhaustive_search_repo_revision_jobs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs
     ADD CONSTRAINT explicit_permissions_bitbucket_projects_jobs_pkey PRIMARY KEY (id);
@@ -5721,6 +5783,9 @@ ALTER TABLE ONLY user_emails
 ALTER TABLE ONLY user_external_accounts
     ADD CONSTRAINT user_external_accounts_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY user_onboarding_tour
+    ADD CONSTRAINT user_onboarding_tour_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY user_pending_permissions
     ADD CONSTRAINT user_pending_permissions_service_perm_object_unique UNIQUE (service_type, service_id, permission, object_type, bind_id);
 
@@ -5925,12 +5990,6 @@ CREATE INDEX discussion_threads_target_repo_repo_id_path_idx ON discussion_threa
 CREATE INDEX event_logs_anonymous_user_id ON event_logs USING btree (anonymous_user_id);
 
 CREATE UNIQUE INDEX event_logs_export_allowlist_event_name_idx ON event_logs_export_allowlist USING btree (event_name);
-
-CREATE INDEX event_logs_name_is_cody_active_event ON event_logs USING btree (iscodyactiveevent(name));
-
-CREATE INDEX event_logs_name_is_cody_explanation_event ON event_logs USING btree (iscodyexplanationevent(name));
-
-CREATE INDEX event_logs_name_is_cody_generation_event ON event_logs USING btree (iscodygenerationevent(name));
 
 CREATE INDEX event_logs_name_timestamp ON event_logs USING btree (name, "timestamp" DESC);
 
@@ -6585,6 +6644,18 @@ ALTER TABLE ONLY executor_secrets
 ALTER TABLE ONLY executor_secrets
     ADD CONSTRAINT executor_secrets_namespace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY exhaustive_search_jobs
+    ADD CONSTRAINT exhaustive_search_jobs_initiator_id_fkey FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY exhaustive_search_repo_jobs
+    ADD CONSTRAINT exhaustive_search_repo_jobs_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY exhaustive_search_repo_jobs
+    ADD CONSTRAINT exhaustive_search_repo_jobs_search_job_id_fkey FOREIGN KEY (search_job_id) REFERENCES exhaustive_search_jobs(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY exhaustive_search_repo_revision_jobs
+    ADD CONSTRAINT exhaustive_search_repo_revision_jobs_search_repo_job_id_fkey FOREIGN KEY (search_repo_job_id) REFERENCES exhaustive_search_repo_jobs(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY external_service_repos
     ADD CONSTRAINT external_service_repos_external_service_id_fkey FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE;
 
@@ -6644,9 +6715,6 @@ ALTER TABLE ONLY github_app_installs
 
 ALTER TABLE ONLY github_apps
     ADD CONSTRAINT github_apps_webhook_id_fkey FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE SET NULL;
-
-ALTER TABLE ONLY gitserver_repos
-    ADD CONSTRAINT gitserver_repos_pool_repo_id_fkey FOREIGN KEY (pool_repo_id) REFERENCES repo(id);
 
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
@@ -6887,6 +6955,9 @@ ALTER TABLE ONLY user_emails
 
 ALTER TABLE ONLY user_external_accounts
     ADD CONSTRAINT user_external_accounts_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
+
+ALTER TABLE ONLY user_onboarding_tour
+    ADD CONSTRAINT user_onboarding_tour_users_fk FOREIGN KEY (updated_by) REFERENCES users(id);
 
 ALTER TABLE ONLY user_public_repos
     ADD CONSTRAINT user_public_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;

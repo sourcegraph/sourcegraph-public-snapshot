@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/authz/providers/github"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
@@ -61,10 +62,10 @@ func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 	t.Cleanup(licensing.TestingSkipFeatureChecks())
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -173,19 +174,19 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			globals.SetPermissionsUserMapping(test.config)
 
-			users := database.NewStrictMockUserStore()
+			users := dbmocks.NewStrictMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 			users.GetByUsernamesFunc.SetDefaultReturn(test.mockUsers, nil)
 
-			userEmails := database.NewStrictMockUserEmailsStore()
+			userEmails := dbmocks.NewStrictMockUserEmailsStore()
 			userEmails.GetVerifiedEmailsFunc.SetDefaultReturn(test.mockVerifiedEmails, nil)
 
-			repos := database.NewStrictMockRepoStore()
+			repos := dbmocks.NewStrictMockRepoStore()
 			repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
 				return &types.Repo{ID: id}, nil
 			})
 
-			perms := database.NewStrictMockPermsStore()
+			perms := dbmocks.NewStrictMockPermsStore()
 			perms.TransactFunc.SetDefaultReturn(perms, nil)
 			perms.DoneFunc.SetDefaultReturn(nil)
 			perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, ids []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error) {
@@ -228,7 +229,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 				return m, nil
 			})
 
-			db := database.NewStrictMockDB()
+			db := dbmocks.NewStrictMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 			db.UserEmailsFunc.SetDefaultReturn(userEmails)
 			db.ReposFunc.SetDefaultReturn(repos)
@@ -243,10 +244,10 @@ func TestResolver_SetRepositoryPermissionsUnrestricted(t *testing.T) {
 	// TODO: Factor out this common check
 	t.Cleanup(licensing.TestingSkipFeatureChecks())
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -262,16 +263,16 @@ func TestResolver_SetRepositoryPermissionsUnrestricted(t *testing.T) {
 	var haveIDs []int32
 	var haveUnrestricted bool
 
-	perms := database.NewMockPermsStore()
+	perms := dbmocks.NewMockPermsStore()
 	perms.SetRepoPermissionsUnrestrictedFunc.SetDefaultHook(func(ctx context.Context, ids []int32, unrestricted bool) error {
 		haveIDs = ids
 		haveUnrestricted = unrestricted
 		return nil
 	})
-	users := database.NewStrictMockUserStore()
+	users := dbmocks.NewStrictMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 	db.PermsFunc.SetDefaultReturn(perms)
 	db.UsersFunc.SetDefaultReturn(users)
 
@@ -307,10 +308,10 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		result, err := (&Resolver{db: db}).ScheduleRepositoryPermissionsSync(ctx, &graphqlbackend.RepositoryIDArgs{})
@@ -322,10 +323,10 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 		}
 	})
 
-	users := database.NewStrictMockUserStore()
+	users := dbmocks.NewStrictMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	r := &Resolver{db: db}
@@ -361,10 +362,10 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 123})
 
 	t.Run("authenticated as non-admin and not the same user", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 123}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		result, err := (&Resolver{db: db}).ScheduleUserPermissionsSync(ctx, &graphqlbackend.UserPermissionsSyncArgs{User: graphqlbackend.MarshalUserID(1)})
@@ -376,10 +377,10 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 		}
 	})
 
-	users := database.NewStrictMockUserStore()
+	users := dbmocks.NewStrictMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 123, SiteAdmin: true}, nil)
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	const userID = int32(1)
@@ -412,10 +413,10 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 
 	t.Run("queue the same user, not a site-admin", func(t *testing.T) {
 		userID := int32(123)
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: userID}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		r := &Resolver{db: db}
 
@@ -480,10 +481,10 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 	t.Run("disabled on dotcom", func(t *testing.T) {
 		envvar.MockSourcegraphDotComMode(true)
 
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db, logger: logger}
@@ -504,10 +505,10 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 	})
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db, logger: logger}
@@ -525,10 +526,10 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 	})
 
 	t.Run("invalid code host", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db, logger: logger}
@@ -552,13 +553,13 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 	})
 
 	t.Run("non-Bitbucket code host", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		extSvc := database.NewMockExternalServiceStore()
+		extSvc := dbmocks.NewMockExternalServiceStore()
 		extSvc.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) (*types.ExternalService, error) {
 			if id == 1 {
 				return &types.ExternalService{
@@ -588,17 +589,17 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 	})
 
 	t.Run("job enqueued", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		bb := database.NewMockBitbucketProjectPermissionsStore()
+		bb := dbmocks.NewMockBitbucketProjectPermissionsStore()
 		bb.EnqueueFunc.SetDefaultReturn(1, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.BitbucketProjectPermissionsFunc.SetDefaultReturn(bb)
 
-		extSvc := database.NewMockExternalServiceStore()
+		extSvc := dbmocks.NewMockExternalServiceStore()
 		extSvc.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) (*types.ExternalService, error) {
 			if id == 1 {
 				return &types.ExternalService{
@@ -667,10 +668,10 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 	t.Cleanup(licensing.TestingSkipFeatureChecks())
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db, logger: logger}
@@ -683,10 +684,10 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 	})
 
 	t.Run("invalid sync job ID", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db, logger: logger}
@@ -703,13 +704,13 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 	})
 
 	t.Run("sync job not found", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+		permissionSyncJobStore := dbmocks.NewMockPermissionSyncJobStore()
 		permissionSyncJobStore.CancelQueuedJobFunc.SetDefaultReturn(database.MockPermissionsSyncJobNotFoundErr)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
 
@@ -728,14 +729,14 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 	})
 
 	t.Run("SQL error", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+		permissionSyncJobStore := dbmocks.NewMockPermissionSyncJobStore()
 		const errorText = "oops"
 		permissionSyncJobStore.CancelQueuedJobFunc.SetDefaultReturn(errors.New(errorText))
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
 
@@ -754,13 +755,13 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 	})
 
 	t.Run("sync job successfully cancelled", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+		permissionSyncJobStore := dbmocks.NewMockPermissionSyncJobStore()
 		permissionSyncJobStore.CancelQueuedJobFunc.SetDefaultReturn(nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
 
@@ -782,10 +783,10 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 func TestResolver_CancelPermissionsSyncJob_GraphQLQuery(t *testing.T) {
 	t.Cleanup(licensing.TestingSkipFeatureChecks())
 
-	users := database.NewStrictMockUserStore()
+	users := dbmocks.NewStrictMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+	permissionSyncJobStore := dbmocks.NewMockPermissionSyncJobStore()
 	permissionSyncJobStore.CancelQueuedJobFunc.SetDefaultHook(func(_ context.Context, reason string, jobID int) error {
 		if jobID == 1 && reason == "because" {
 			return nil
@@ -793,7 +794,7 @@ func TestResolver_CancelPermissionsSyncJob_GraphQLQuery(t *testing.T) {
 		return database.MockPermissionsSyncJobNotFoundErr
 	})
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
 
@@ -838,10 +839,10 @@ func TestResolver_CancelPermissionsSyncJob_GraphQLQuery(t *testing.T) {
 
 func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -854,7 +855,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 		}
 	})
 
-	users := database.NewStrictMockUserStore()
+	users := dbmocks.NewStrictMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 	users.GetByVerifiedEmailFunc.SetDefaultHook(func(_ context.Context, email string) (*types.User, error) {
 		if email == "alice@example.com" {
@@ -869,7 +870,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 		return nil, database.MockUserNotFoundErr
 	})
 
-	repos := database.NewStrictMockRepoStore()
+	repos := dbmocks.NewStrictMockRepoStore()
 	repos.GetByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...api.RepoID) ([]*types.Repo, error) {
 		repos := make([]*types.Repo, len(ids))
 		for i, id := range ids {
@@ -878,7 +879,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 		return repos, nil
 	})
 
-	perms := database.NewStrictMockPermsStore()
+	perms := dbmocks.NewStrictMockPermsStore()
 	perms.LoadUserPermissionsFunc.SetDefaultHook(func(_ context.Context, userID int32) ([]authz.Permission, error) {
 		return []authz.Permission{{
 			UserID: userID,
@@ -890,7 +891,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 		return nil
 	})
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.PermsFunc.SetDefaultReturn(perms)
@@ -1107,10 +1108,10 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -1123,13 +1124,13 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 		}
 	})
 
-	users := database.NewStrictMockUserStore()
+	users := dbmocks.NewStrictMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	perms := database.NewStrictMockPermsStore()
+	perms := dbmocks.NewStrictMockPermsStore()
 	perms.ListPendingUsersFunc.SetDefaultReturn([]string{"alice", "bob"}, nil)
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.PermsFunc.SetDefaultReturn(perms)
 
@@ -1168,10 +1169,10 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 
 func TestResolver_AuthzProviderTypes(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -1185,12 +1186,12 @@ func TestResolver_AuthzProviderTypes(t *testing.T) {
 	})
 
 	t.Run("get authz provider types", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{
 			SiteAdmin: true,
 		}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -1213,10 +1214,10 @@ func mustURL(t *testing.T, u string) *url.URL {
 
 func TestResolver_AuthorizedUsers(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -1389,7 +1390,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			users := database.NewStrictMockUserStore()
+			users := dbmocks.NewStrictMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 			users.ListFunc.SetDefaultHook(func(_ context.Context, opt *database.UsersListOptions) ([]*types.User, error) {
 				users := make([]*types.User, len(opt.UserIDs))
@@ -1399,7 +1400,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 				return users, nil
 			})
 
-			repos := database.NewStrictMockRepoStore()
+			repos := dbmocks.NewStrictMockRepoStore()
 			repos.GetByNameFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName) (*types.Repo, error) {
 				return &types.Repo{ID: 1, Name: repo}, nil
 			})
@@ -1407,7 +1408,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 				return &types.Repo{ID: id}, nil
 			})
 
-			perms := database.NewStrictMockPermsStore()
+			perms := dbmocks.NewStrictMockPermsStore()
 			perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, repoID int32) ([]authz.Permission, error) {
 				permissions := make([]authz.Permission, len(test.usersWithAuthorization))
 				for i, userID := range test.usersWithAuthorization {
@@ -1420,7 +1421,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 				return permissions, nil
 			})
 
-			db := database.NewStrictMockDB()
+			db := dbmocks.NewStrictMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 			db.ReposFunc.SetDefaultReturn(repos)
 			db.PermsFunc.SetDefaultReturn(perms)
@@ -1435,10 +1436,10 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 
 func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -1451,10 +1452,10 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 		}
 	})
 
-	users := database.NewStrictMockUserStore()
+	users := dbmocks.NewStrictMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	repos := database.NewStrictMockRepoStore()
+	repos := dbmocks.NewStrictMockRepoStore()
 	repos.GetByNameFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName) (*types.Repo, error) {
 		return &types.Repo{ID: 1, Name: repo}, nil
 	})
@@ -1462,17 +1463,17 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 		return &types.Repo{ID: id}, nil
 	})
 
-	perms := database.NewStrictMockPermsStore()
+	perms := dbmocks.NewStrictMockPermsStore()
 	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, repoID int32) ([]authz.Permission, error) {
 		return []authz.Permission{{RepoID: repoID, UserID: 42, UpdatedAt: clock()}}, nil
 	})
 	perms.IsRepoUnrestrictedFunc.SetDefaultReturn(false, nil)
 	perms.ListRepoPermissionsFunc.SetDefaultReturn([]*database.RepoPermission{{User: &types.User{ID: 42}}}, nil)
 
-	syncJobs := database.NewStrictMockPermissionSyncJobStore()
+	syncJobs := dbmocks.NewStrictMockPermissionSyncJobStore()
 	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(&database.PermissionSyncJob{FinishedAt: clock()}, nil)
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.PermsFunc.SetDefaultReturn(perms)
@@ -1538,11 +1539,11 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 	t.Run("authenticated as non-admin, asking not for self", func(t *testing.T) {
 		user := &types.User{ID: 42}
 
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
 		users.GetByIDFunc.SetDefaultReturn(user, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user.ID})
@@ -1558,17 +1559,17 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 	t.Run("authenticated as non-admin, asking for self succeeds", func(t *testing.T) {
 		user := &types.User{ID: 42}
 
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
 		users.GetByIDFunc.SetDefaultReturn(user, nil)
 
-		perms := database.NewStrictMockPermsStore()
+		perms := dbmocks.NewStrictMockPermsStore()
 		perms.LoadUserPermissionsFunc.SetDefaultReturn([]authz.Permission{}, nil)
 
-		syncJobs := database.NewStrictMockPermissionSyncJobStore()
+		syncJobs := dbmocks.NewStrictMockPermissionSyncJobStore()
 		syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.PermsFunc.SetDefaultReturn(perms)
 		db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
@@ -1584,25 +1585,25 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 	})
 
 	userID := int32(9999)
-	users := database.NewStrictMockUserStore()
+	users := dbmocks.NewStrictMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: userID, SiteAdmin: true}, nil)
 	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id}, nil
 	})
 
-	perms := database.NewStrictMockPermsStore()
+	perms := dbmocks.NewStrictMockPermsStore()
 	perms.LoadUserPermissionsFunc.SetDefaultReturn([]authz.Permission{{UpdatedAt: clock(), Source: authz.SourceUserSync}}, nil)
 	perms.ListUserPermissionsFunc.SetDefaultReturn([]*database.UserPermission{{Repo: &types.Repo{ID: 42}}}, nil)
 
-	syncJobs := database.NewStrictMockPermissionSyncJobStore()
+	syncJobs := dbmocks.NewStrictMockPermissionSyncJobStore()
 	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(&database.PermissionSyncJob{FinishedAt: clock()}, nil)
 
-	repos := database.NewStrictMockRepoStore()
+	repos := dbmocks.NewStrictMockRepoStore()
 	repos.GetByNameFunc.SetDefaultHook(func(_ context.Context, name api.RepoName) (*types.Repo, error) {
 		return &types.Repo{Name: name}, nil
 	})
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.PermsFunc.SetDefaultReturn(perms)
 	db.ReposFunc.SetDefaultReturn(repos)
@@ -1667,13 +1668,13 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 	t.Cleanup(licensing.TestingSkipFeatureChecks())
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		subrepos := database.NewStrictMockSubRepoPermsStore()
+		subrepos := dbmocks.NewStrictMockSubRepoPermsStore()
 		subrepos.UpsertFunc.SetDefaultReturn(nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.SubRepoPermsFunc.SetDefaultReturn(subrepos)
 
@@ -1688,7 +1689,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 	})
 
 	t.Run("set sub-repo perms", func(t *testing.T) {
-		usersStore := database.NewStrictMockUserStore()
+		usersStore := dbmocks.NewStrictMockUserStore()
 		usersStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{
 			ID:        1,
 			SiteAdmin: true,
@@ -1696,13 +1697,13 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 		usersStore.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 1, Username: "foo"}, nil)
 		usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(&types.User{ID: 1, Username: "foo"}, nil)
 
-		subReposStore := database.NewStrictMockSubRepoPermsStore()
+		subReposStore := dbmocks.NewStrictMockSubRepoPermsStore()
 		subReposStore.UpsertFunc.SetDefaultReturn(nil)
 
-		reposStore := database.NewStrictMockRepoStore()
+		reposStore := dbmocks.NewStrictMockRepoStore()
 		reposStore.GetFunc.SetDefaultReturn(&types.Repo{ID: 1, Name: "foo"}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
 			return f(db)
 		})
@@ -1710,7 +1711,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 		db.SubRepoPermsFunc.SetDefaultReturn(subReposStore)
 		db.ReposFunc.SetDefaultReturn(reposStore)
 
-		perms := database.NewStrictMockPermsStore()
+		perms := dbmocks.NewStrictMockPermsStore()
 		perms.TransactFunc.SetDefaultReturn(perms, nil)
 		perms.DoneFunc.SetDefaultReturn(nil)
 		perms.MapUsersFunc.SetDefaultReturn(map[string]int32{"alice": 1}, nil)
@@ -1819,10 +1820,10 @@ func TestResolver_BitbucketProjectPermissionJobs(t *testing.T) {
 	t.Run("disabled on dotcom", func(t *testing.T) {
 		envvar.MockSourcegraphDotComMode(true)
 
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db}
@@ -1838,10 +1839,10 @@ func TestResolver_BitbucketProjectPermissionJobs(t *testing.T) {
 	})
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db}
@@ -1854,10 +1855,10 @@ func TestResolver_BitbucketProjectPermissionJobs(t *testing.T) {
 	})
 
 	t.Run("incorrect job status", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -1894,13 +1895,13 @@ query {
 	})
 
 	t.Run("all job fields successfully returned", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		bbProjects := database.NewMockBitbucketProjectPermissionsStore()
+		bbProjects := dbmocks.NewMockBitbucketProjectPermissionsStore()
 		entry := executor.ExecutionLogEntry{Key: "key", Command: []string{"command"}, StartTime: mustParseTime("2020-01-06"), ExitCode: pointers.Ptr(1), Out: "out", DurationMs: pointers.Ptr(1)}
 		bbProjects.ListJobsFunc.SetDefaultReturn([]*types.BitbucketProjectPermissionJob{
 			{
@@ -1992,11 +1993,11 @@ query {
 
 func TestResolverPermissionsSyncJobs(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByIDFunc.SetDefaultReturn(&types.User{}, nil)
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db}
@@ -2009,11 +2010,11 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 	})
 
 	t.Run("authenticated as non-admin with current user's ID as userID filter", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db}
@@ -2026,11 +2027,11 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 	})
 
 	t.Run("authenticated as non-admin with different user's ID as userID filter", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db}
@@ -2043,11 +2044,11 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 	})
 
 	t.Run("authenticated as admin with different user's ID as userID filter", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db}
@@ -2060,16 +2061,16 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 	})
 
 	// Mocking users database queries.
-	users := database.NewStrictMockUserStore()
+	users := dbmocks.NewStrictMockUserStore()
 	returnedUser := &types.User{ID: 1, SiteAdmin: true}
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(returnedUser, nil)
 	users.GetByIDFunc.SetDefaultReturn(returnedUser, nil)
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	// Mocking permission jobs database queries.
-	permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+	permissionSyncJobStore := dbmocks.NewMockPermissionSyncJobStore()
 	timeFormat := "2006-01-02T15:04:05Z"
 	queuedAt, err := time.Parse(timeFormat, "2023-03-02T15:04:05Z")
 	require.NoError(t, err)
@@ -2126,7 +2127,7 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 	db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
 
 	// Mocking repository database queries.
-	repoStore := database.NewMockRepoStore()
+	repoStore := dbmocks.NewMockRepoStore()
 	repoStore.GetFunc.SetDefaultReturn(&types.Repo{ID: 1}, nil)
 	db.ReposFunc.SetDefaultReturn(repoStore)
 
@@ -2294,16 +2295,16 @@ query {
 
 func TestResolverPermissionsSyncJobsFiltering(t *testing.T) {
 	// Mocking users database queries.
-	users := database.NewStrictMockUserStore()
+	users := dbmocks.NewStrictMockUserStore()
 	returnedUser := &types.User{ID: 1, SiteAdmin: true}
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(returnedUser, nil)
 	users.GetByIDFunc.SetDefaultReturn(returnedUser, nil)
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	// Mocking permission jobs database queries.
-	permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+	permissionSyncJobStore := dbmocks.NewMockPermissionSyncJobStore()
 
 	// One job has a user who triggered it, another doesn't.
 	jobs := []*database.PermissionSyncJob{
@@ -2371,7 +2372,7 @@ func TestResolverPermissionsSyncJobsFiltering(t *testing.T) {
 	db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
 
 	// Mocking repository database queries.
-	repoStore := database.NewMockRepoStore()
+	repoStore := dbmocks.NewMockRepoStore()
 	repoStore.GetFunc.SetDefaultReturn(&types.Repo{ID: 1}, nil)
 	db.ReposFunc.SetDefaultReturn(repoStore)
 
@@ -2482,16 +2483,16 @@ query {
 
 func TestResolverPermissionsSyncJobsSearching(t *testing.T) {
 	// Mocking users database queries.
-	users := database.NewStrictMockUserStore()
+	users := dbmocks.NewStrictMockUserStore()
 	returnedUser := &types.User{ID: 1, SiteAdmin: true}
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(returnedUser, nil)
 	users.GetByIDFunc.SetDefaultReturn(returnedUser, nil)
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	// Mocking permission jobs database queries.
-	permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+	permissionSyncJobStore := dbmocks.NewMockPermissionSyncJobStore()
 
 	// One job has a user who triggered it, another doesn't.
 	jobs := []*database.PermissionSyncJob{
@@ -2540,7 +2541,7 @@ func TestResolverPermissionsSyncJobsSearching(t *testing.T) {
 	db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
 
 	// Mocking repository database queries.
-	repoStore := database.NewMockRepoStore()
+	repoStore := dbmocks.NewMockRepoStore()
 	repoStore.GetFunc.SetDefaultReturn(&types.Repo{ID: 1}, nil)
 	db.ReposFunc.SetDefaultReturn(repoStore)
 
@@ -2633,11 +2634,11 @@ func TestResolver_PermissionsSyncingStats(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		user := &types.User{ID: 42}
 
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
 		users.GetByIDFunc.SetDefaultReturn(user, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user.ID})
@@ -2650,22 +2651,22 @@ func TestResolver_PermissionsSyncingStats(t *testing.T) {
 	t.Run("successfully query all permissionsSyncingStats", func(t *testing.T) {
 		user := &types.User{ID: 42, SiteAdmin: true}
 
-		users := database.NewStrictMockUserStore()
+		users := dbmocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
 		users.GetByIDFunc.SetDefaultReturn(user, nil)
 
-		permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
+		permissionSyncJobStore := dbmocks.NewMockPermissionSyncJobStore()
 		permissionSyncJobStore.CountFunc.SetDefaultReturn(2, nil)
 		permissionSyncJobStore.CountUsersWithFailingSyncJobFunc.SetDefaultReturn(3, nil)
 		permissionSyncJobStore.CountReposWithFailingSyncJobFunc.SetDefaultReturn(4, nil)
 
-		perms := database.NewStrictMockPermsStore()
+		perms := dbmocks.NewStrictMockPermsStore()
 		perms.CountUsersWithNoPermsFunc.SetDefaultReturn(5, nil)
 		perms.CountReposWithNoPermsFunc.SetDefaultReturn(6, nil)
 		perms.CountUsersWithStalePermsFunc.SetDefaultReturn(7, nil)
 		perms.CountReposWithStalePermsFunc.SetDefaultReturn(8, nil)
 
-		db := database.NewStrictMockDB()
+		db := dbmocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
 		db.PermsFunc.SetDefaultReturn(perms)

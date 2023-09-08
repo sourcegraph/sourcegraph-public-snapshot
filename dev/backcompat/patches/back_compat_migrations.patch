@@ -1,3 +1,0 @@
-diff --git a/failme b/failme
---- This patch to port new migrations onto old release needs to be generated to insert the back compat tests, see docs in dev backcompat
-+++ Read the docs in dev/backcompat

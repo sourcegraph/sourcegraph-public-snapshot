@@ -160,12 +160,15 @@ func (r *repositoryMirrorInfoResolver) LastError(ctx context.Context) (*string, 
 }
 
 func (r *repositoryMirrorInfoResolver) LastSyncOutput(ctx context.Context) (*string, error) {
-	info, err := r.computeGitserverRepo(ctx)
+	output, ok, err := r.db.GitserverRepos().GetLastSyncOutput(ctx, r.repository.innerRepo.Name)
 	if err != nil {
 		return nil, err
 	}
+	if !ok {
+		return nil, nil
+	}
 
-	return strptr(info.LastSyncOutput), nil
+	return &output, nil
 }
 
 func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*gqlutil.DateTime, error) {

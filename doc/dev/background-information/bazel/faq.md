@@ -21,7 +21,7 @@ By default, JetBrains IDEs such as GoLand will try and index the files in your p
 
 There is no reason to index these files, so you can just exclude them from indexing by right-clicking artifact directories, then choosing **Mark directory as** &rarr; **Excluded** from the context menu. A restart is required to stop the indexing process.
 
-### My local `bazel configure` or `./dev/ci/bazel-configure.sh` run has diff with a result of Bazel CI step
+### My local `bazel configure` or `./dev/ci/bazel-prechecks.sh` run has diff with a result of Bazel CI step
 
 This could happen when there are any files which are not tracked by Git. These files affect the run of `bazel configure` and typically add more items to `BUILD.bazel` file.
 

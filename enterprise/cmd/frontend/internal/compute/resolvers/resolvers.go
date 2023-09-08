@@ -185,6 +185,8 @@ func pathAndCommitFromResult(m result.Match) (string, string) {
 }
 
 func toResultResolverList(ctx context.Context, cmd compute.Command, matches []result.Match, db database.DB) ([]gql.ComputeResultResolver, error) {
+	gitserverClient := gitserver.NewClient()
+
 	type repoKey struct {
 		Name types.MinimalRepo
 		Rev  string
@@ -194,13 +196,11 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
 		}
-		resolver := gql.NewRepositoryResolver(db, gitserver.NewClient(db), repoName.ToRepo())
+		resolver := gql.NewRepositoryResolver(db, gitserverClient, repoName.ToRepo())
 		resolver.RepoMatch.Rev = rev
 		repoResolvers[repoKey{repoName, rev}] = resolver
 		return resolver
 	}
-
-	gitserverClient := gitserver.NewClient(db)
 
 	results := make([]gql.ComputeResultResolver, 0, len(matches))
 	for _, m := range matches {

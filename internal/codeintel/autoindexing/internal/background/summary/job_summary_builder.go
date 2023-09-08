@@ -56,14 +56,6 @@ func NewSummaryBuilder(
 
 						return err
 					}
-					// indexJobHints, err := jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repositoryWithCount.RepositoryID, commit)
-					// if err != nil {
-					// 	if errors.As(err, &inference.LimitError{}) {
-					// 		continue
-					// 	}
-
-					// 	return err
-					// }
 
 					// Create blocklist for indexes that have already been uploaded.
 					blocklist := map[string]struct{}{}

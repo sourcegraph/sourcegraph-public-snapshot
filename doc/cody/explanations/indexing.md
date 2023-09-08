@@ -1,6 +1,6 @@
 # Generate an Embeddings Index to Enable Codebase-Aware Answers
 
-These docs provide instructions on how to generate an index that enables codebase-aware answers for Cody. Codebase-aware answers leverage code graph context to enhance Cody's understanding of code from selected codebases. 
+These docs provide instructions on how to generate an index that enables codebase-aware answers for Cody. Codebase-aware answers leverage code graph context to enhance Cody's understanding of code from selected codebases.
 
 By following the steps outlined in this guide, you can configure the necessary prerequisites and enable Cody to provide more accurate and contextually relevant answers to your coding questions based on the codebase you are working in.
 
@@ -13,7 +13,7 @@ You can enhance Cody's understanding of existing code by embedding your code bas
 To embed your codebase and enable codebase-aware answers for Cody, your site admin must complete the following:
 
 - [Configure Code Graph Context](code_graph_context.md) for your Sourcegraph instance
-- [Enable Cody for your Sourcegraph instance](enabling_cody_enterprise.md#step-1-enable-cody-on-your-sourcegraph-instance)
+- [Enable Cody for your Sourcegraph instance](../overview/enable-cody-enterprise.md#step-1-enable-cody-on-your-sourcegraph-instance)
 - Embed your codebase by either
   - [scheduling a one-off embeddings job](schedule_one_off_embeddings_jobs.md), or
   - [creating an embeddings policy to automatically keep your index up-to-date](policies.md).
@@ -29,7 +29,7 @@ To embed your codebase and enable codebase-aware answers for Cody, your site adm
 
 When connected to the correct codebase, Cody provides accurate and relevant answers to your coding questions, taking into account the context of the codebase you are currently working in.
 
-Cody attempts to connect to the appropriate codebase automatically using Git, eliminating the need for manual configuration of the `Cody: Codebase` (`cody.codebase`) option. 
+Cody attempts to connect to the appropriate codebase automatically using Git, eliminating the need for manual configuration of the `Cody: Codebase` (`cody.codebase`) option.
 
 You only need to configure the `Cody: Codebase` (`cody.codebase`) setting if Cody displays `NOT INDEXED` below the chat window.
 
@@ -47,7 +47,7 @@ If this attempt fails and you see `NOT INDEXED` below your Cody chatbox, you can
 
 Follow these steps to manually configure the `codebase` setting for Cody via the [Extension Settings](https://code.visualstudio.com/docs/getstarted/settings#_extension-settings) in VS Code:
 
-1. Open the VS Code workspace settings by clicking: 
+1. Open the VS Code workspace settings by clicking:
    - Mac: `Code` > `Settings` > `Settings`
    - Windows & Linux: `File` > `Preferences (Settings)`
 2. Switch to the Workspace settings tab

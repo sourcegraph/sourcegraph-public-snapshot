@@ -23,7 +23,7 @@ const dataVersionToDelete = "v1"
 // DeleteOldCacheData deletes the rcache data in the given Redis instance
 // that's prefixed with dataVersionToDelete
 func DeleteOldCacheData(c redis.Conn) error {
-	return deleteAllKeysWithPrefix(c, dataVersionToDelete)
+	return redispool.DeleteAllKeysWithPrefix(c, dataVersionToDelete)
 }
 
 // Cache implements httpcache.Cache
@@ -196,40 +196,10 @@ func SetupForTest(t TB) {
 		}
 	}
 
-	err := deleteAllKeysWithPrefix(c, globalPrefix)
+	err := redispool.DeleteAllKeysWithPrefix(c, globalPrefix)
 	if err != nil {
 		log15.Error("Could not clear test prefix", "name", t.Name(), "globalPrefix", globalPrefix, "error", err)
 	}
-}
-
-// The number of keys to delete per batch.
-// The maximum number of keys that can be unpacked
-// is determined by the Lua config LUAI_MAXCSTACK
-// which is 8000 by default.
-// See https://www.lua.org/source/5.1/luaconf.h.html
-var deleteBatchSize = 5000
-
-func deleteAllKeysWithPrefix(c redis.Conn, prefix string) error {
-	const script = `
-redis.replicate_commands()
-local cursor = '0'
-local prefix = ARGV[1]
-local batchSize = ARGV[2]
-local result = ''
-repeat
-	local keys = redis.call('SCAN', cursor, 'MATCH', prefix, 'COUNT', batchSize)
-	if #keys[2] > 0
-	then
-		result = redis.call('DEL', unpack(keys[2]))
-	end
-
-	cursor = keys[1]
-until cursor == '0'
-return result
-`
-
-	_, err := c.Do("EVAL", script, 0, prefix+":*", deleteBatchSize)
-	return err
 }
 
 var kvMock redispool.KeyValue

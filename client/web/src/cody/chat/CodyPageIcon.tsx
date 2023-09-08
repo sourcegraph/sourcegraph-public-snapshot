@@ -437,3 +437,128 @@ export const CodyStartCoding: React.FunctionComponent<React.PropsWithChildren<SV
         </defs>
     </svg>
 )
+
+export const CodySpeechBubbleIcon: React.FunctionComponent<React.PropsWithChildren<SVGProps<SVGSVGElement>>> = (
+    props: SVGProps<SVGSVGElement>
+) => (
+    <svg width="135" height="59" viewBox="0 0 135 59" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+        <g filter="url(#filter0_d_2214_4473)">
+            <mask id="path-1-inside-1_2214_4473" fill="white">
+                <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M36.5 6C25.7304 6 17 14.7304 17 25.5C17 25.8498 17.0092 26.1975 17.0274 26.5428L17 26.5C17 26.5 17.6 39 10 45C12.7123 44.6986 18.8578 43.3074 23.5589 40.0872C27.0016 43.1437 31.534 45 36.5 45H104.726C115.495 45 124.226 36.2696 124.226 25.5C124.226 14.7304 115.495 6 104.726 6H36.5Z"
+                />
+            </mask>
+            <g filter="url(#filter1_i_2214_4473)">
+                <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M36.5 6C25.7304 6 17 14.7304 17 25.5C17 25.8498 17.0092 26.1975 17.0274 26.5428L17 26.5C17 26.5 17.6 39 10 45C12.7123 44.6986 18.8578 43.3074 23.5589 40.0872C27.0016 43.1437 31.534 45 36.5 45H104.726C115.495 45 124.226 36.2696 124.226 25.5C124.226 14.7304 115.495 6 104.726 6H36.5Z"
+                    fill="url(#paint0_linear_2214_4473)"
+                />
+                <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M36.5 6C25.7304 6 17 14.7304 17 25.5C17 25.8498 17.0092 26.1975 17.0274 26.5428L17 26.5C17 26.5 17.6 39 10 45C12.7123 44.6986 18.8578 43.3074 23.5589 40.0872C27.0016 43.1437 31.534 45 36.5 45H104.726C115.495 45 124.226 36.2696 124.226 25.5C124.226 14.7304 115.495 6 104.726 6H36.5Z"
+                    fill="url(#paint1_radial_2214_4473)"
+                />
+                <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M36.5 6C25.7304 6 17 14.7304 17 25.5C17 25.8498 17.0092 26.1975 17.0274 26.5428L17 26.5C17 26.5 17.6 39 10 45C12.7123 44.6986 18.8578 43.3074 23.5589 40.0872C27.0016 43.1437 31.534 45 36.5 45H104.726C115.495 45 124.226 36.2696 124.226 25.5C124.226 14.7304 115.495 6 104.726 6H36.5Z"
+                    fill="url(#paint2_radial_2214_4473)"
+                />
+            </g>
+            <path
+                d="M17.0274 26.5428L16.1851 27.0819L18.2252 30.2694L18.026 26.4902L17.0274 26.5428ZM17 26.5L17.8423 25.9609L15.8214 22.8034L16.0012 26.5479L17 26.5ZM10 45L9.38036 44.2151L6.63862 46.3796L10.1104 45.9939L10 45ZM23.5589 40.0872L24.2228 39.3393L23.6384 38.8205L22.9937 39.2622L23.5589 40.0872ZM18 25.5C18 15.2827 26.2827 7 36.5 7V5C25.1782 5 16 14.1782 16 25.5H18ZM18.026 26.4902C18.0087 26.1624 18 25.8323 18 25.5H16C16 25.8674 16.0097 26.2326 16.0288 26.5954L18.026 26.4902ZM16.1577 27.0391L16.1851 27.0819L17.8697 26.0038L17.8423 25.9609L16.1577 27.0391ZM10.6196 45.7849C14.6901 42.5714 16.5099 37.6716 17.3293 33.7022C17.7422 31.7026 17.9094 29.8997 17.9738 28.5962C18.006 27.9436 18.0126 27.4138 18.0109 27.0444C18.0101 26.8596 18.0072 26.7148 18.0045 26.6146C18.0031 26.5644 18.0018 26.5254 18.0008 26.4982C18.0003 26.4845 17.9998 26.4738 17.9995 26.4661C17.9993 26.4623 17.9992 26.4592 17.9991 26.4568C17.999 26.4556 17.999 26.4547 17.9989 26.4539C17.9989 26.4535 17.9989 26.453 17.9989 26.4528C17.9989 26.4524 17.9988 26.4521 17 26.5C16.0012 26.5479 16.0011 26.5477 16.0011 26.5475C16.0011 26.5475 16.0011 26.5473 16.0011 26.5473C16.0011 26.5473 16.0011 26.5474 16.0011 26.5478C16.0012 26.5484 16.0012 26.5499 16.0013 26.5521C16.0015 26.5564 16.0018 26.5637 16.0022 26.5739C16.003 26.5943 16.0041 26.6262 16.0053 26.6691C16.0076 26.7549 16.0102 26.8845 16.0109 27.0532C16.0124 27.3909 16.0065 27.8845 15.9762 28.4976C15.9156 29.7253 15.7578 31.4224 15.3707 33.2978C14.5901 37.0784 12.9099 41.4286 9.38036 44.2151L10.6196 45.7849ZM22.9937 39.2622C18.4755 42.3572 12.5073 43.7153 9.88957 44.0061L10.1104 45.9939C12.9173 45.682 19.2402 44.2575 24.124 40.9122L22.9937 39.2622ZM36.5 44C31.788 44 27.4896 42.2397 24.2228 39.3393L22.8949 40.835C26.5137 44.0477 31.28 46 36.5 46V44ZM104.726 44H36.5V46H104.726V44ZM123.226 25.5C123.226 35.7173 114.943 44 104.726 44V46C116.047 46 125.226 36.8218 125.226 25.5H123.226ZM104.726 7C114.943 7 123.226 15.2827 123.226 25.5H125.226C125.226 14.1782 116.047 5 104.726 5V7ZM36.5 7H104.726V5H36.5V7Z"
+                fill="black"
+                fillOpacity="0.1"
+                mask="url(#path-1-inside-1_2214_4473)"
+            />
+        </g>
+        <defs>
+            <filter
+                id="filter0_d_2214_4473"
+                x="0"
+                y="0"
+                width="134.226"
+                height="59"
+                filterUnits="userSpaceOnUse"
+                colorInterpolationFilters="sRGB"
+            >
+                <feFlood floodOpacity="0" result="BackgroundImageFix" />
+                <feColorMatrix
+                    in="SourceAlpha"
+                    type="matrix"
+                    values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+                    result="hardAlpha"
+                />
+                <feOffset dy="4" />
+                <feGaussianBlur stdDeviation="5" />
+                <feComposite in2="hardAlpha" operator="out" />
+                <feColorMatrix type="matrix" values="0 0 0 0 0.0125 0 0 0 0 0.0125 0 0 0 0 0.0125 0 0 0 0.15 0" />
+                <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_2214_4473" />
+                <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_2214_4473" result="shape" />
+            </filter>
+            <filter
+                id="filter1_i_2214_4473"
+                x="10"
+                y="6"
+                width="114.226"
+                height="39"
+                filterUnits="userSpaceOnUse"
+                colorInterpolationFilters="sRGB"
+            >
+                <feFlood floodOpacity="0" result="BackgroundImageFix" />
+                <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+                <feColorMatrix
+                    in="SourceAlpha"
+                    type="matrix"
+                    values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+                    result="hardAlpha"
+                />
+                <feOffset />
+                <feGaussianBlur stdDeviation="5.5" />
+                <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1" />
+                <feColorMatrix type="matrix" values="0 0 0 0 0.681482 0 0 0 0 0.266667 0 0 0 0 1 0 0 0 0.44 0" />
+                <feBlend mode="overlay" in2="shape" result="effect1_innerShadow_2214_4473" />
+            </filter>
+            <linearGradient
+                id="paint0_linear_2214_4473"
+                x1="60.5"
+                y1="6"
+                x2="60"
+                y2="50.5"
+                gradientUnits="userSpaceOnUse"
+            >
+                <stop stopColor="#B388D7" />
+                <stop offset="0.252189" stopColor="#890CDA" />
+                <stop offset="0.694648" stopColor="#7936B0" />
+                <stop offset="1" stopColor="#6214A2" />
+            </linearGradient>
+            <radialGradient
+                id="paint1_radial_2214_4473"
+                cx="0"
+                cy="0"
+                r="1"
+                gradientUnits="userSpaceOnUse"
+                gradientTransform="translate(180 -75.5) rotate(101.889) scale(174.748 380.5)"
+            >
+                <stop stopColor="#EE00FF" />
+                <stop offset="0.54373" stopColor="#F348FF" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient
+                id="paint2_radial_2214_4473"
+                cx="0"
+                cy="0"
+                r="1"
+                gradientUnits="userSpaceOnUse"
+                gradientTransform="translate(40.5 -118.5) rotate(64.1895) scale(237.715 517.604)"
+            >
+                <stop stopColor="#EE00FF" />
+                <stop offset="0.54373" stopColor="#F348FF" stopOpacity="0" />
+            </radialGradient>
+        </defs>
+    </svg>
+)

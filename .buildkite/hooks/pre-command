@@ -13,7 +13,7 @@ if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" != "bazel" && "$BUILDKITE_AGENT_META_DA
     if [[ "$BUILDKITE_STEP_KEY" == "pipeline-gen" ]]; then
         echo "pipeline-gen step: running go install only"
         asdf install golang
-    elif [[ "$BUILDKITE_STEP_KEY" == "pipeline-upload" ]]; then
+    elif [[ "$BUILDKITE_STEP_KEY" == "pipeline-upload" || "$BUILDKITE_LABEL" =~ "pipeline-upload" ]]; then
         echo "pipeline-upload step: skipping asdf install"
     elif [[ "${BUILDKITE_GROUP_KEY:=\"\"}" == "Publishimages" ]]; then
         if [[ "${BUILDKITE_STEP_KEY}" =~ "Publishexecutorimage" || "${BUILDKITE_STEP_KEY}" =~ "Publishdockerregistry" ]]; then
@@ -36,4 +36,13 @@ fi
 if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" == "bazel" ]]; then
     echo "~~~ Checking dangling docker containers"
     docker ps -a
+
+    if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then
+      SENTRY_DSN="$CI_SENTRY_DSN" sentry-cli send-event \
+        -m "Dangling containers detected" \
+        -e "job_name:$BUILDKITE_LABEL" \
+        -e "job_url:$BUILDKITE_BUILD_URL" \
+        -e "build_number:$BUILDKITE_BUILD_NUMBER" \
+        -e "agent_name:$BUILDKITE_AGENT_NAME"
+    fi
 fi

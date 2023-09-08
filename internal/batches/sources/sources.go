@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -451,7 +452,7 @@ func buildChangesetSource(ctx context.Context, tx SourcerStore, cf *httpcli.Fact
 	case extsvc.KindGerrit:
 		return NewGerritSource(ctx, externalService, cf)
 	case extsvc.KindPerforce:
-		return NewPerforceSource(ctx, gitserver.NewClient(tx.DatabaseDB()), externalService, cf)
+		return NewPerforceSource(ctx, gitserver.NewClient(), externalService, cf)
 	default:
 		return nil, errors.Errorf("unsupported external service type %q", extsvc.KindToType(externalService.Kind))
 	}

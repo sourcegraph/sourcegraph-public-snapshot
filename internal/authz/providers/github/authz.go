@@ -150,7 +150,7 @@ func newAuthzProvider(
 
 // ValidateAuthz validates the authorization fields of the given GitHub external
 // service config.
-func ValidateAuthz(c *types.GitHubConnection) error {
-	_, err := newAuthzProvider(context.Background(), nil, &ExternalConnection{GitHubConnection: c})
+func ValidateAuthz(db database.DB, c *types.GitHubConnection) error {
+	_, err := newAuthzProvider(context.Background(), db, &ExternalConnection{GitHubConnection: c})
 	return err
 }

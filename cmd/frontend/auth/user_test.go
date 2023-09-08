@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -440,27 +441,27 @@ func TestGetAndSaveUser(t *testing.T) {
 		errNotFound := &errcode.Mock{
 			IsNotFound: true,
 		}
-		gss := database.NewMockGlobalStateStore()
+		gss := dbmocks.NewMockGlobalStateStore()
 		gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
-		usersStore := database.NewMockUserStore()
+		usersStore := dbmocks.NewMockUserStore()
 		usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, errNotFound)
-		externalAccountsStore := database.NewMockUserExternalAccountsStore()
+		externalAccountsStore := dbmocks.NewMockUserExternalAccountsStore()
 		externalAccountsStore.LookupUserAndSaveFunc.SetDefaultReturn(0, errNotFound)
 		externalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, _ database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (*types.User, error) {
 			require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
 			return &types.User{ID: 1}, nil
 		})
-		eventLogsStore := database.NewMockEventLogStore()
+		eventLogsStore := dbmocks.NewMockEventLogStore()
 		eventLogsStore.BulkInsertFunc.SetDefaultHook(func(ctx context.Context, _ []*database.Event) error {
 			require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
 			return nil
 		})
-		permsSyncJobsStore := database.NewMockPermissionSyncJobStore()
-		db := database.NewMockDB()
+		permsSyncJobsStore := dbmocks.NewMockPermissionSyncJobStore()
+		db := dbmocks.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
 		db.UsersFunc.SetDefaultReturn(usersStore)
 		db.UserExternalAccountsFunc.SetDefaultReturn(externalAccountsStore)
-		db.AuthzFunc.SetDefaultReturn(database.NewMockAuthzStore())
+		db.AuthzFunc.SetDefaultReturn(dbmocks.NewMockAuthzStore())
 		db.EventLogsFunc.SetDefaultReturn(eventLogsStore)
 		db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncJobsStore)
 
@@ -533,12 +534,12 @@ func newMocks(t *testing.T, m mockParams) *mocks {
 func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
 	t.Parallel()
 
-	gss := database.NewMockGlobalStateStore()
+	gss := dbmocks.NewMockGlobalStateStore()
 	gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
 
 	user := &types.User{ID: 1, DisplayName: "", AvatarURL: ""}
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(user, nil)
 	users.UpdateFunc.SetDefaultHook(func(_ context.Context, userID int32, update database.UserUpdate) error {
 		user.DisplayName = *update.DisplayName
@@ -546,10 +547,10 @@ func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
 		return nil
 	})
 
-	externalAccounts := database.NewMockUserExternalAccountsStore()
+	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 	externalAccounts.LookupUserAndSaveFunc.SetDefaultReturn(user.ID, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.GlobalStateFunc.SetDefaultReturn(gss)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
@@ -638,32 +639,32 @@ type mocks struct {
 }
 
 func (m *mocks) DB() database.DB {
-	gss := database.NewMockGlobalStateStore()
+	gss := dbmocks.NewMockGlobalStateStore()
 	gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
 
-	externalAccounts := database.NewMockUserExternalAccountsStore()
+	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 	externalAccounts.LookupUserAndSaveFunc.SetDefaultHook(m.LookupUserAndSave)
 	externalAccounts.AssociateUserAndSaveFunc.SetDefaultHook(m.AssociateUserAndSave)
 	externalAccounts.CreateUserAndSaveFunc.SetDefaultHook(m.CreateUserAndSave)
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(m.GetByID)
 	users.GetByVerifiedEmailFunc.SetDefaultHook(m.GetByVerifiedEmail)
 	users.GetByUsernameFunc.SetDefaultHook(m.GetByUsername)
 	users.UpdateFunc.SetDefaultHook(m.Update)
 
-	authzStore := database.NewMockAuthzStore()
+	authzStore := dbmocks.NewMockAuthzStore()
 	authzStore.GrantPendingPermissionsFunc.SetDefaultHook(m.GrantPendingPermissions)
 
-	permsSyncStore := database.NewMockPermissionSyncJobStore()
+	permsSyncStore := dbmocks.NewMockPermissionSyncJobStore()
 	permsSyncStore.CreateUserSyncJobFunc.SetDefaultHook(m.CreateUserSyncJobFunc)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.GlobalStateFunc.SetDefaultReturn(gss)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.AuthzFunc.SetDefaultReturn(authzStore)
-	db.EventLogsFunc.SetDefaultReturn(database.NewMockEventLogStore())
+	db.EventLogsFunc.SetDefaultReturn(dbmocks.NewMockEventLogStore())
 	db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncStore)
 	return db
 }

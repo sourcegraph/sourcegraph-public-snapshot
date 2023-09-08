@@ -412,12 +412,16 @@ function normalizeLineRange(range: SelectedLineRange): SelectedLineRange {
  * outside of the editor viewport).
  */
 export function shouldScrollIntoView(view: EditorView, range: SelectedLineRange): boolean {
-    if (!range || !isValidLineRange(range, view.state.doc)) {
+    // Only consider start and end line when determining whether to scroll a line into view.
+    // Whether or not the character offset is valid doesn't matter in this case.
+    const normalizedRange: SelectedLineRange = range ? { line: range.line, endLine: range.endLine } : range
+
+    if (!normalizedRange || !isValidLineRange(normalizedRange, view.state.doc)) {
         return false
     }
 
-    const from = view.lineBlockAt(view.state.doc.line(range.line).from)
-    const to = range.endLine ? view.lineBlockAt(view.state.doc.line(range.endLine).to) : from
+    const from = view.lineBlockAt(view.state.doc.line(normalizedRange.line).from)
+    const to = normalizedRange.endLine ? view.lineBlockAt(view.state.doc.line(normalizedRange.endLine).to) : from
 
     return (
         from.top + from.height >= view.scrollDOM.scrollTop + view.scrollDOM.clientHeight ||

@@ -11,6 +11,9 @@ public class CodyAgentException extends Exception {
     super(message, e);
   }
 
+  public static CodyAgentException NOT_INITIALIZED =
+      new CodyAgentException("Cody agent is not initialized");
+
   @Override
   public Throwable fillInStackTrace() {
     // don't fill in stack trace

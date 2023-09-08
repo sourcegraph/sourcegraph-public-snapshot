@@ -39,6 +39,7 @@ go_test(
         "//internal/api",
         "//internal/authz",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/gitserver",
         "//internal/own",
         "//internal/search",

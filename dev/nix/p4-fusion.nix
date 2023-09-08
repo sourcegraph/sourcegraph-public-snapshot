@@ -9,7 +9,7 @@
 , patchelf
 , pkg-config
 , darwin
-, targetPlatform
+, hostPlatform
 }:
 let
   inherit (import ./util.nix { inherit lib; }) mkStatic unNixifyDylibs;
@@ -31,7 +31,7 @@ let
   # pkgsStatic.zlib.static doesn't exist on linux, but does on macos
   zlib-static = (pkgsStatic.zlib.static or pkgsStatic.zlib);
 in
-unNixifyDylibs pkgs (pkgsStatic.gccStdenv.mkDerivation rec {
+unNixifyDylibs { inherit pkgs; } (pkgsStatic.gccStdenv.mkDerivation rec {
   name = "p4-fusion";
   version = "v1.12";
 
@@ -44,8 +44,8 @@ unNixifyDylibs pkgs (pkgsStatic.gccStdenv.mkDerivation rec {
       hash = "sha256-rUXuBoXuOUanWxutd7dNgjn2vLFvHQ0IgCIn9vG5dgs=";
     })
     (
-      if targetPlatform.isMacOS then
-        if targetPlatform.isAarch64 then
+      if hostPlatform.isMacOS then
+        if hostPlatform.isAarch64 then
           fetchzip
             {
               name = "helix-core-api";
@@ -58,14 +58,14 @@ unNixifyDylibs pkgs (pkgsStatic.gccStdenv.mkDerivation rec {
             url = "https://cdist2.perforce.com/perforce/r22.2/bin.macosx12x86_64/p4api-openssl3.tgz";
             hash = "sha256-/Ia9R+H95Yx4Sx7+Grke0d3QskuZ2YtH4LZOS7vRMZc=";
           }
-      else if targetPlatform.isLinux then
+      else if hostPlatform.isLinux then
         fetchzip
           {
             name = "helix-core-api";
             url = "https://cdist2.perforce.com/perforce/r22.2/bin.linux26x86_64/p4api-glibc2.3-openssl3.tgz";
             hash = "sha256-tqWhdQQdOVAiGa6HiRajw4emoYRRRgZf6pZVEIf1qqU=";
           }
-      else throw "unsupported platform ${stdenv.targetPlatform.parsed.kernel.name}"
+      else throw "unsupported platform ${stdenv.hostPlatform.parsed.kernel.name}"
     )
   ];
 
@@ -82,7 +82,7 @@ unNixifyDylibs pkgs (pkgsStatic.gccStdenv.mkDerivation rec {
     http-parser-static
     pcre-static
     openssl-static
-  ] ++ lib.optional targetPlatform.isMacOS [
+  ] ++ lib.optional hostPlatform.isMacOS [
     # iconv is bundled with glibc and apparently only needed for osx
     # https://sourcegraph.com/github.com/salesforce/p4-fusion@3ee482466464c18e6a635ff4f09cd75a2e1bfe0f/-/blob/vendor/libgit2/README.md?L178:3
     libiconv-static
@@ -91,7 +91,7 @@ unNixifyDylibs pkgs (pkgsStatic.gccStdenv.mkDerivation rec {
   ];
 
   # copy helix-core-api stuff into the expected directories, and statically link libstdc++
-  preBuild = let dir = if targetPlatform.isMacOS then "mac" else "linux"; in
+  preBuild = let dir = if hostPlatform.isMacOS then "mac" else "linux"; in
     ''
       mkdir -p $NIX_BUILD_TOP/$sourceRoot/vendor/helix-core-api/${dir}
       cp -R $NIX_BUILD_TOP/helix-core-api/* $NIX_BUILD_TOP/$sourceRoot/vendor/helix-core-api/${dir}

@@ -6,7 +6,6 @@ load("//cmd/server:macro.bzl", "container_dependencies", "dependencies_tars")
 
 DEPS = [
     "//cmd/batcheshelper",
-    "//cmd/executor",
 ]
 
 container_dependencies(DEPS)
@@ -14,6 +13,13 @@ container_dependencies(DEPS)
 pkg_tar(
     name = "tar_src-cli",
     srcs = ["@src-cli-linux-amd64//:src-cli-linux-amd64"],
+    package_dir = "/usr/local/bin",
+)
+
+# Include the executor binary built with gotags
+pkg_tar(
+    name = "tar_executor",
+    srcs = ["//cmd/executor:executor_sh"],
     package_dir = "/usr/local/bin",
 )
 
@@ -30,7 +36,10 @@ oci_image(
         "EXECUTOR_MAXIMUM_NUM_JOBS": "1",  # Preconfigure bundled-executor to take 1 parallel job and restart afterwards, this is to keep the environment clean-ish
         "EXECUTOR_NUM_TOTAL_JOBS": "1",
     },
-    tars = dependencies_tars(DEPS) + [":tar_src-cli"],
+    tars = dependencies_tars(DEPS) + [
+        ":tar_executor",
+        ":tar_src-cli",
+    ],
     user = "sourcegraph",
 )
 

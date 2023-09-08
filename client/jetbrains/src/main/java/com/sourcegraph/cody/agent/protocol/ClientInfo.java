@@ -1,6 +1,6 @@
 package com.sourcegraph.cody.agent.protocol;
 
-import com.sourcegraph.cody.agent.ConnectionConfiguration;
+import com.sourcegraph.cody.agent.ExtensionConfiguration;
 import org.jetbrains.annotations.Nullable;
 
 public class ClientInfo {
@@ -8,7 +8,7 @@ public class ClientInfo {
   public String name;
   public String version;
   public String workspaceRootPath;
-  @Nullable public ConnectionConfiguration connectionConfiguration;
+  @Nullable public ExtensionConfiguration extensionConfiguration;
 
   public ClientInfo setName(String name) {
     this.name = name;
@@ -25,8 +25,8 @@ public class ClientInfo {
     return this;
   }
 
-  public ClientInfo setConnectionConfiguration(ConnectionConfiguration connectionConfiguration) {
-    this.connectionConfiguration = connectionConfiguration;
+  public ClientInfo setExtensionConfiguration(ExtensionConfiguration extensionConfiguration) {
+    this.extensionConfiguration = extensionConfiguration;
     return this;
   }
 }

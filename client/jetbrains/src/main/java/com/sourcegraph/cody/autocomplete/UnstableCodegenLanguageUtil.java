@@ -52,7 +52,7 @@ public class UnstableCodegenLanguageUtil {
         && !languageIdBasedOnIntelliJ.isEmpty()
         && !languageIdBasedOnExtension.equals(languageIdBasedOnIntelliJ)) {
       logger.warn( // logging the mismatch to make debugging easier
-          "Cody: AutoComplete: Detected mismatch between the code language detected by IntelliJ vs based on extension. "
+          "Cody: Autocomplete: Detected mismatch between the code language detected by IntelliJ vs based on extension. "
               + "IntelliJ detected: "
               + languageIdBasedOnIntelliJ
               + " and extension-based detection: "

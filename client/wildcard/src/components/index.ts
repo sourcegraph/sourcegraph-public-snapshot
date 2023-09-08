@@ -77,6 +77,7 @@ export {
     usePopoverContext,
     Flipping,
     Strategy,
+    Overlapping,
 } from './Popover'
 export { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
 export {

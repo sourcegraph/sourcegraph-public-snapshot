@@ -55,6 +55,9 @@ import type {
     WebhookPageHeaderVariables,
     WebhooksListResult,
     WebhooksListVariables,
+    GitserversVariables,
+    GitserversResult,
+    GitserverFields,
 } from '../graphql-operations'
 import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
 
@@ -1072,3 +1075,34 @@ export const SITE_CONFIGURATION_CHANGE_CONNECTION_QUERY = gql`
         createdAt
     }
 `
+
+const gitserverFieldsFragment = gql`
+    fragment GitserverFields on GitserverInstance {
+        id
+        address
+        freeDiskSpaceBytes
+        totalDiskSpaceBytes
+    }
+`
+
+export const GITSERVERS = gql`
+    query Gitservers {
+        gitservers {
+            nodes {
+                ...GitserverFields
+            }
+        }
+    }
+
+    ${gitserverFieldsFragment}
+`
+
+export const useGitserversConnection = (): UseShowMorePaginationResult<GitserversResult, GitserverFields> =>
+    useShowMorePagination<GitserversResult, GitserversVariables, GitserverFields>({
+        query: GITSERVERS,
+        variables: {},
+        getConnection: result => {
+            const { gitservers } = dataOrThrowErrors(result)
+            return gitservers
+        },
+    })

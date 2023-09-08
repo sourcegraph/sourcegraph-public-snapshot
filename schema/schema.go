@@ -626,6 +626,8 @@ type Dotcom struct {
 	AppNotifications []*AppNotifications `json:"app.notifications,omitempty"`
 	// CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
 	CodyGateway *CodyGateway `json:"codyGateway,omitempty"`
+	// MinimumExternalAccountAge description: The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com.
+	MinimumExternalAccountAge int `json:"minimumExternalAccountAge,omitempty"`
 	// SlackLicenseAnomallyWebhook description: Slack webhook for when there is an anomaly detected with license key usage.
 	SlackLicenseAnomallyWebhook string `json:"slackLicenseAnomallyWebhook,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
@@ -664,7 +666,7 @@ type Embeddings struct {
 	ExcludeChunkOnError *bool `json:"excludeChunkOnError,omitempty"`
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
-	// FileFilters description: Filters that will decode which files om a repository get embedded.
+	// FileFilters description: Filters that allow you to specify which files in a repository should get embedded.
 	FileFilters *FileFilters `json:"fileFilters,omitempty"`
 	// Incremental description: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.
 	Incremental *bool `json:"incremental,omitempty"`
@@ -889,10 +891,8 @@ type ExperimentalFeatures struct {
 	StructuralSearch   string              `json:"structuralSearch,omitempty"`
 	SubRepoPermissions *SubRepoPermissions `json:"subRepoPermissions,omitempty"`
 	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
-	TlsExternal *TlsExternal `json:"tls.external,omitempty"`
-	// UseGitserverAddressLookupCache description: (Internal development only) Short lived experimental flag to test the effect of caching vs no caching of repo address lookup
-	UseGitserverAddressLookupCache *bool          `json:"useGitserverAddressLookupCache,omitempty"`
-	Additional                     map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
+	TlsExternal *TlsExternal   `json:"tls.external,omitempty"`
+	Additional  map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
 }
 
 func (v ExperimentalFeatures) MarshalJSON() ([]byte, error) {
@@ -956,7 +956,6 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "structuralSearch")
 	delete(m, "subRepoPermissions")
 	delete(m, "tls.external")
-	delete(m, "useGitserverAddressLookupCache")
 	if len(m) > 0 {
 		v.Additional = make(map[string]any, len(m))
 	}
@@ -986,7 +985,7 @@ type ExternalIdentity struct {
 	Type           string `json:"type"`
 }
 
-// FileFilters description: Filters that will decode which files om a repository get embedded.
+// FileFilters description: Filters that allow you to specify which files in a repository should get embedded.
 type FileFilters struct {
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
@@ -1436,6 +1435,13 @@ type JVMPackagesConnection struct {
 	Maven Maven `json:"maven"`
 }
 
+// LinkStep description: Link step
+type LinkStep struct {
+	Type    any `json:"type"`
+	Value   any `json:"value"`
+	Variant any `json:"variant,omitempty"`
+}
+
 // LocalGitExternalService description: Configuration for integration local Git repositories.
 type LocalGitExternalService struct {
 	Repos []*LocalGitRepoPattern `json:"repos,omitempty"`
@@ -1674,6 +1680,32 @@ type OnRepository struct {
 	Branches []string `json:"branches,omitempty"`
 	// Repository description: The name of the repository (as it is known to Sourcegraph).
 	Repository string `json:"repository"`
+}
+type OnboardingStep struct {
+	Action              any      `json:"action"`
+	CompleteAfterEvents []string `json:"completeAfterEvents,omitempty"`
+	// Id description: Unique step ID
+	Id   string `json:"id"`
+	Info string `json:"info,omitempty"`
+	// Label description: Label of the step shown to the user
+	Label string `json:"label"`
+	// Tooltip description: More information about this step
+	Tooltip string `json:"tooltip,omitempty"`
+}
+
+// OnboardingTask description: An onboarding task
+type OnboardingTask struct {
+	// DataAttributes description: Additional attributes to add to the task HTML element as data-* attributes
+	DataAttributes map[string]any `json:"dataAttributes,omitempty"`
+	// Steps description: Steps that need to be completed by the user
+	Steps []*OnboardingStep `json:"steps"`
+	// Title description: Title of this task
+	Title string `json:"title,omitempty"`
+}
+
+// OnboardingTourConfiguration description: Configuration for a onboarding tour.
+type OnboardingTourConfiguration struct {
+	Tasks []*OnboardingTask `json:"tasks"`
 }
 
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
@@ -1917,12 +1949,6 @@ type Repos struct {
 	Path string `json:"path"`
 }
 
-// Repositories description: Top level configuration key for all things repositories.
-type Repositories struct {
-	// DeduplicateForks description: EXPERIMENTAL: A list of absolute paths of repositories whose forks will use deduplicated storage in gitserver
-	DeduplicateForks []string `json:"deduplicateForks,omitempty"`
-}
-
 // Repository description: The repository to get the latest version of.
 type Repository struct {
 	// Name description: The repository name.
@@ -1935,6 +1961,12 @@ type Responders struct {
 	Name     string `json:"name,omitempty"`
 	Type     string `json:"type,omitempty"`
 	Username string `json:"username,omitempty"`
+}
+
+// RestartStep description: Restart step
+type RestartStep struct {
+	Type  any    `json:"type"`
+	Value string `json:"value"`
 }
 
 // RubyPackagesConnection description: Configuration for a connection to Ruby packages
@@ -2286,6 +2318,8 @@ type SettingsExperimentalFeatures struct {
 	ProactiveSearchResultsAggregations *bool `json:"proactiveSearchResultsAggregations,omitempty"`
 	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
 	SearchContextsQuery *bool `json:"searchContextsQuery,omitempty"`
+	// SearchJobs description: Enables search jobs (long-running exhaustive) search feature and its UI
+	SearchJobs *bool `json:"searchJobs,omitempty"`
 	// SearchQueryInput description: Specify which version of the search query input to use
 	SearchQueryInput *string `json:"searchQueryInput,omitempty"`
 	// SearchResultsAggregations description: Display aggregations for your search results on the search screen.
@@ -2349,6 +2383,7 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "goCodeCheckerTemplates")
 	delete(m, "proactiveSearchResultsAggregations")
 	delete(m, "searchContextsQuery")
+	delete(m, "searchJobs")
 	delete(m, "searchQueryInput")
 	delete(m, "searchResultsAggregations")
 	delete(m, "showCodeMonitoringLogs")
@@ -2517,7 +2552,7 @@ type SiteConfiguration struct {
 	Embeddings *Embeddings `json:"embeddings,omitempty"`
 	// EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
 	EncryptionKeys *EncryptionKeys `json:"encryption.keys,omitempty"`
-	// ExecutorsAccessToken description: The shared secret between Sourcegraph and executors.
+	// ExecutorsAccessToken description: The shared secret between Sourcegraph and executors. The value must contain at least 20 characters.
 	ExecutorsAccessToken string `json:"executors.accessToken,omitempty"`
 	// ExecutorsBatcheshelperImage description: The image to use for batch changes in executors. Use this value to pull from a custom image registry.
 	ExecutorsBatcheshelperImage string `json:"executors.batcheshelperImage,omitempty"`
@@ -2650,8 +2685,6 @@ type SiteConfiguration struct {
 	RepoListUpdateInterval int `json:"repoListUpdateInterval,omitempty"`
 	// RepoPurgeWorker description: Configuration for repository purge worker.
 	RepoPurgeWorker *RepoPurgeWorker `json:"repoPurgeWorker,omitempty"`
-	// Repositories description: Top level configuration key for all things repositories.
-	Repositories *Repositories `json:"repositories,omitempty"`
 	// ScimAuthToken description: The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.
 	ScimAuthToken string `json:"scim.authToken,omitempty"`
 	// ScimIdentityProvider description: Identity provider used for SCIM support.  "STANDARD" should be used unless a more specific value is available
@@ -2822,7 +2855,6 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "repoConcurrentExternalServiceSyncers")
 	delete(m, "repoListUpdateInterval")
 	delete(m, "repoPurgeWorker")
-	delete(m, "repositories")
 	delete(m, "scim.authToken")
 	delete(m, "scim.identityProvider")
 	delete(m, "search.index.symbols.enabled")
@@ -2938,6 +2970,12 @@ type UpdateIntervalRule struct {
 }
 type UsernameIdentity struct {
 	Type string `json:"type"`
+}
+
+// VideoStep description: Video step
+type VideoStep struct {
+	Type  any `json:"type"`
+	Value any `json:"value"`
 }
 
 // WebhookLogging description: Configuration for logging incoming webhooks.

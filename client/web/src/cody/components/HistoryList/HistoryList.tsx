@@ -110,14 +110,16 @@ const HistoryListItem: React.FunctionComponent<{
                 <Text className="mb-1 text-muted" size="small">
                     <Timestamp date={safeTimestampToDate(lastInteractionTimestamp)} />
                 </Text>
-                <Tooltip content="Delete">
-                    <Icon
-                        aria-label="Delete"
-                        svgPath={mdiDelete}
-                        onClick={deleteItem}
-                        className={styles.deleteButton}
-                    />
-                </Tooltip>
+                {!!interactions.length && (
+                    <Tooltip content="Delete">
+                        <Icon
+                            aria-label="Delete"
+                            svgPath={mdiDelete}
+                            onClick={deleteItem}
+                            className={styles.deleteButton}
+                        />
+                    </Tooltip>
+                )}
             </div>
             <Text className="mb-0 truncate text-body">
                 {text.slice(0, truncateMessageLength)}

@@ -1,0 +1,23 @@
+include: ./sourcegraph-base.yaml
+
+contents:
+  packages:
+    # Included by existing SG base image
+    - tini
+    - mailcap
+
+    ## mi2 packages
+    - terraform=1.3.9-r2
+    - helm=3.11.3-r1
+    - kustomize=4.5.7-r0
+    - nodejs-18=18.17.1-r1
+
+accounts:
+  run-as: sourcegraph
+  groups:
+    - groupname: sourcegraph
+      gid: 101
+  users:
+    - username: sourcegraph
+      uid: 100
+      gid: 101

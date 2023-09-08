@@ -39,7 +39,7 @@ func (r repoEmbeddingSchedulerJob) Routines(_ context.Context, observationCtx *o
 
 	workCtx := actor.WithInternalActor(context.Background())
 	return []goroutine.BackgroundRoutine{
-		newRepoEmbeddingScheduler(workCtx, gitserver.NewClient(db), db, repo.NewRepoEmbeddingJobsStore(db)),
+		newRepoEmbeddingScheduler(workCtx, gitserver.NewClient(), db, repo.NewRepoEmbeddingJobsStore(db)),
 	}, nil
 }
 

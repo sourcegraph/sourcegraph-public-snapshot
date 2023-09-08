@@ -6,17 +6,16 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func TestAttachEmailVerificationToPasswordReset(t *testing.T) {
 	resetURL, err := url.Parse("/password-reset?code=foo&userID=42")
 	require.NoError(t, err)
 
-	db := database.NewMockUserEmailsStore()
+	db := dbmocks.NewMockUserEmailsStore()
 	db.SetLastVerificationFunc.SetDefaultReturn(nil)
 
 	newURL, err := AttachEmailVerificationToPasswordReset(context.Background(), db, *resetURL, 42, "foobar@bobheadxi.dev")

@@ -6,15 +6,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestNewAuthzProviders(t *testing.T) {
-	db := database.NewMockDB()
-	db.ExternalServicesFunc.SetDefaultReturn(database.NewMockExternalServiceStore())
+	db := dbmocks.NewMockDB()
+	db.ExternalServicesFunc.SetDefaultReturn(dbmocks.NewMockExternalServiceStore())
 	t.Run("no authorization", func(t *testing.T) {
 		initResults := NewAuthzProviders(
 			db,

@@ -34,7 +34,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 
 	type input struct {
 		description     string
-		glUser          *gitlab.User
+		glUser          *gitlab.AuthUser
 		glUserGroups    []*gitlab.Group
 		glUserGroupsErr error
 		allowSignup     *bool
@@ -50,7 +50,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 		{
 			inputs: []input{{
 				description: "glUser, allowSignup not set, defaults to true -> new user and session created",
-				glUser: &gitlab.User{
+				glUser: &gitlab.AuthUser{
 					ID:       int32(104),
 					Username: "dan",
 					Email:    "dan@example.com",
@@ -76,7 +76,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 			inputs: []input{{
 				description: "glUser, allowSignup set to false -> no new user nor session created",
 				allowSignup: signupNotAllowed,
-				glUser: &gitlab.User{
+				glUser: &gitlab.AuthUser{
 					ID:       int32(102),
 					Username: "bob",
 					Email:    "bob@example.com",
@@ -89,7 +89,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				description: "glUser, allowSignup set to false, allowedGroups list provided -> no new user nor session created",
 				allowSignup: signupNotAllowed,
 				allowGroups: []string{"group1"},
-				glUser: &gitlab.User{
+				glUser: &gitlab.AuthUser{
 					ID:       int32(102),
 					Username: "bob",
 					Email:    "bob@example.com",
@@ -104,7 +104,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 			inputs: []input{{
 				description: "glUser, allowSignup set true -> new user and session created",
 				allowSignup: signupAllowed,
-				glUser: &gitlab.User{
+				glUser: &gitlab.AuthUser{
 					ID:       int32(103),
 					Username: "cindy",
 					Email:    "cindy@example.com",
@@ -129,7 +129,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 		{
 			inputs: []input{{
 				description: "glUser, allowedGroups not set -> session created",
-				glUser: &gitlab.User{
+				glUser: &gitlab.AuthUser{
 					ID:       int32(101),
 					Username: "alice",
 					Email:    "alice@example.com",
@@ -155,7 +155,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 			inputs: []input{{
 				description: "glUser, not in allowed groups -> no session created",
 				allowGroups: []string{"group2"},
-				glUser: &gitlab.User{
+				glUser: &gitlab.AuthUser{
 					ID:       int32(101),
 					Username: "alice",
 					Email:    "alice@example.com",
@@ -170,7 +170,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 			inputs: []input{{
 				description: "glUser, in allowed groups, error getting user groups -> no session created",
 				allowGroups: []string{"group1"},
-				glUser: &gitlab.User{
+				glUser: &gitlab.AuthUser{
 					ID:       int32(101),
 					Username: "alice",
 					Email:    "alice@example.com",
@@ -187,7 +187,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 			inputs: []input{{
 				description: "glUser, in allowed groups -> session created",
 				allowGroups: []string{"group1"},
-				glUser: &gitlab.User{
+				glUser: &gitlab.AuthUser{
 					ID:       int32(101),
 					Username: "alice",
 					Email:    "alice@example.com",
@@ -217,7 +217,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 			inputs: []input{{
 				description: "glUser, not in allowed subgroup -> session not created",
 				allowGroups: []string{"group1/subgroup1"},
-				glUser: &gitlab.User{
+				glUser: &gitlab.AuthUser{
 					ID:       int32(101),
 					Username: "alice",
 					Email:    "alice@example.com",
@@ -232,7 +232,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 			inputs: []input{{
 				description: "glUser, in allowed subgroup  -> session created",
 				allowGroups: []string{"group1/subgroup2"},
-				glUser: &gitlab.User{
+				glUser: &gitlab.AuthUser{
 					ID:       int32(101),
 					Username: "alice",
 					Email:    "alice@example.com",

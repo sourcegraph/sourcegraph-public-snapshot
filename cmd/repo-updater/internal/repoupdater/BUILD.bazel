@@ -53,6 +53,7 @@ go_test(
         "//internal/api",
         "//internal/conf/reposource",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/extsvc",
         "//internal/extsvc/auth",

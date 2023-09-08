@@ -32,6 +32,8 @@ type Config struct {
 	OpenAIAccessToken          string
 	OpenAIOrgID                string
 	OpenAIAllowedModels        []string
+	FireworksAccessToken       string
+	FireworksAllowedModels     []string
 	EmbeddingsAllowedModels    []string
 }
 
@@ -41,6 +43,7 @@ var (
 	attributesAnthropicCompletions = newMetricAttributes("anthropic", "completions")
 	attributesOpenAICompletions    = newMetricAttributes("openai", "completions")
 	attributesOpenAIEmbeddings     = newMetricAttributes("openai", "embeddings")
+	attributesFireworksCompletions = newMetricAttributes("fireworks", "completions")
 )
 
 func NewHandler(
@@ -150,6 +153,31 @@ func NewHandler(
 									embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(httpClient, config.OpenAIAccessToken),
 								},
 								config.EmbeddingsAllowedModels,
+							),
+						),
+					),
+				),
+				otelhttp.WithPublicEndpoint(),
+			),
+		)
+	}
+	if config.FireworksAccessToken != "" {
+		v1router.Path("/completions/fireworks").Methods(http.MethodPost).Handler(
+			instrumentation.HTTPMiddleware("v1.completions.fireworks",
+				gaugeHandler(
+					counter,
+					attributesFireworksCompletions,
+					authr.Middleware(
+						requestlogger.Middleware(
+							logger,
+							completions.NewFireworksHandler(
+								logger,
+								eventLogger,
+								rs,
+								config.RateLimitNotifier,
+								httpClient,
+								config.FireworksAccessToken,
+								config.FireworksAllowedModels,
 							),
 						),
 					),

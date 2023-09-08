@@ -10,6 +10,19 @@ If Sourcegraph needs to operate in an air-gapped environment without an external
 
 License keys also need to be unique to a single instance of Sourcegraph. If the same license key is used across multiple instances, subsequent license checks will fail. If multiple license keys are required for dev/staging instances, contact customer support for additional license keys for these instances.
 
+## How to update your license key
+
+Any current Site Admin can update your license key by going to Site Admin -> [Site configuration](../config/site_config.md) 
+
+These settings live in the JSON object, and you will need to navigate to the _licenseKey_ section of that object.  
+
+Update the value of this with your new license key and click Save to apply your changes.
+
+Example:
+```
+  "licenseKey": "<your_key_here>",
+```
+
 ## Upgrading to Sourcegraph 5.1
 
 When upgrading to Sourcegraph 5.1 while using the same license key on multiple instances (e.g. dev and prod), the first instance to be upgraded will claim the license key.

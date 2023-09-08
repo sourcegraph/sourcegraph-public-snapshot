@@ -75,11 +75,8 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
 
     const isFullPageRoute = !!route?.handle?.isFullPage || isAuthTokenCallbackPage
 
-    const [isSetupChecklistEnabled, flagLoading] = useFeatureFlag('setup-checklist')
-    const [setupSkipped] = useLocalStorage('setup.skipped', false)
-    // navigate to setup wizard if not skipped and new setup-checklist is disabled
-    const wasSetupWizardSkipped = flagLoading || isSetupChecklistEnabled || setupSkipped
-
+    // eslint-disable-next-line no-restricted-syntax
+    const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
     const [wasAppSetupFinished] = useLocalStorage('app.setup.finished', false)
 
     const { fuzzyFinder } = useExperimentalFeatures(features => ({

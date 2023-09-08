@@ -42,6 +42,7 @@ go_test(
         "//cmd/frontend/webhooks",
         "//internal/api",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/extsvc",
         "//internal/extsvc/bitbucketcloud",

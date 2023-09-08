@@ -1,6 +1,6 @@
 package com.sourcegraph.config;
 
-import com.sourcegraph.cody.autocomplete.AutoCompleteProviderType;
+import com.sourcegraph.cody.autocomplete.AutocompleteProviderType;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -18,7 +18,7 @@ public class UserLevelConfig {
    * the moment are 'anthropic' (default) or 'unstable-codegen'.
    */
   @NotNull
-  public static AutoCompleteProviderType getAutoCompleteProviderType() {
+  public static AutocompleteProviderType getAutocompleteProviderType() {
     Properties properties = readProperties();
     String currentKey = "cody.autocomplete.advanced.provider";
     @Deprecated(since = "3.0.4")
@@ -28,8 +28,14 @@ public class UserLevelConfig {
             () ->
                 Optional.ofNullable(
                     properties.getProperty(oldKey, null))) // fallback to the old key
-        .flatMap(AutoCompleteProviderType::optionalValueOf)
-        .orElse(AutoCompleteProviderType.DEFAULT_AUTOCOMPLETE_PROVIDER_TYPE); // or default
+        .flatMap(AutocompleteProviderType::optionalValueOf)
+        .orElse(AutocompleteProviderType.DEFAULT_AUTOCOMPLETE_PROVIDER_TYPE); // or default
+  }
+
+  public static boolean getAutocompleteAdvancedEmbeddings() {
+    Properties properties = readProperties();
+    return Boolean.parseBoolean(
+        properties.getProperty("cody.autocomplete.advanced.embeddings", "true"));
   }
 
   /**
@@ -37,13 +43,19 @@ public class UserLevelConfig {
    * supported with the `unstable-codegen` provider right now.
    */
   @Nullable
-  public static String getAutoCompleteServerEndpoint() {
+  public static String getAutocompleteServerEndpoint() {
     Properties properties = readProperties();
     String currentKey = "cody.autocomplete.advanced.serverEndpoint";
     @Deprecated(since = "3.0.4")
-    String oldKey = "cody.completions.advanced.serverEndpoint";
+    String oldKey = "cody.autocomplete.advanced.serverEndpoint";
     return Optional.ofNullable(properties.getProperty(currentKey, null))
         .orElse(properties.getProperty(oldKey, null)); // fallback to the old key
+  }
+
+  @Nullable
+  public static String getAutocompleteAccessToken() {
+    Properties properties = readProperties();
+    return properties.getProperty("cody.autocomplete.advanced.accessToken", null);
   }
 
   @Nullable
@@ -94,5 +106,9 @@ public class UserLevelConfig {
     }
 
     return properties;
+  }
+
+  public static boolean isVerboseLoggingEnabled() {
+    return Boolean.getBoolean("sourcegraph.verbose-logging");
   }
 }

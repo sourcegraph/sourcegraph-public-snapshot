@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -106,7 +107,7 @@ func SetupPackageBuild(name string) (manifestBaseName string, buildDir string, e
 	}
 
 	// Create a temp dir
-	buildDir, err = os.MkdirTemp("/tmp", "sg-wolfi-package-tmp")
+	buildDir, err = os.MkdirTemp("", "sg-wolfi-package-tmp")
 	if err != nil {
 		return "", "", errors.Wrap(err, "unable to create temporary build directory")
 	}
@@ -145,16 +146,15 @@ func (c PackageRepoConfig) DoPackageBuild(name string, buildDir string) error {
 	)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if err != nil {
-		return errors.Wrap(err, "failed to build package")
-	}
+	cmdErr := cmd.Run()
 
 	std.Out.Write("")
 
-	if err := deleteBuildDir(buildDir); err != nil {
-		return err
+	if cmdErr != nil {
+		return errors.Wrapf(cmdErr, "failed to build package %s", name)
 	}
+
+	std.Out.Write("")
 
 	std.Out.WriteSuccessf("Successfully built package %s\n", name)
 	std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Use this package in local image builds by adding the package '%s@local' to the base image config\n", name))
@@ -162,15 +162,19 @@ func (c PackageRepoConfig) DoPackageBuild(name string, buildDir string) error {
 	return nil
 }
 
-// deleteTempDir deletes a build directory after checking that it's a temporary directory
-func deleteBuildDir(path string) error {
-	if !strings.HasPrefix(path, "/tmp/") {
-		return errors.New(fmt.Sprintf("directory '%s' is not a temporary directory - not cleaning up", path))
+// RemoveBuildDir recursively removes the temporary build directory if it is in the OS temp dir.
+// If the initial removal fails, it waits 50ms and tries again.
+// If all removal attempts fail, it prints a message to stdout.
+func RemoveBuildDir(path string) {
+	if !strings.HasPrefix(path, os.TempDir()) {
+		return
 	}
 
 	if err := os.RemoveAll(path); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("unable to remove build dir '%s'", path))
+		// wait a bit in case any build processes (I'm looking at you, Docker!) are still using the directory
+		time.Sleep(50 * time.Millisecond)
+		if err := os.RemoveAll(path); err != nil {
+			std.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleWarning, " Could not delete temp build dir %s because %s", path, err))
+		}
 	}
-
-	return nil
 }

@@ -58,6 +58,8 @@ export interface SiteAdminAreaRouteContext
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<{}>>[]
 
     codeInsightsEnabled: boolean
+
+    endUserOnboardingEnabled: boolean
 }
 
 export interface SiteAdminAreaRoute extends RouteV6Descriptor<SiteAdminAreaRouteContext> {}
@@ -86,6 +88,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
     const { data: externalAccounts, loading: isExternalAccountsLoading } = useUserExternalAccounts(
         props.authenticatedUser.username
     )
+    const [endUserOnboardingEnabled] = useFeatureFlag('end-user-onboarding')
     const [isSourcegraphOperatorSiteAdminHideMaintenance] = useFeatureFlag(
         'sourcegraph-operator-site-admin-hide-maintenance'
     )
@@ -134,6 +137,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         overviewComponents: props.overviewComponents,
         telemetryService: props.telemetryService,
         codeInsightsEnabled: props.codeInsightsEnabled,
+        endUserOnboardingEnabled,
     }
 
     return (
@@ -155,6 +159,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
                     batchChangesExecutionEnabled={props.batchChangesExecutionEnabled}
                     batchChangesWebhookLogsEnabled={props.batchChangesWebhookLogsEnabled}
                     codeInsightsEnabled={props.codeInsightsEnabled}
+                    endUserOnboardingEnabled={endUserOnboardingEnabled}
                 />
                 <div className="flex-bounded">
                     <React.Suspense fallback={<LoadingSpinner className="m-2" />}>

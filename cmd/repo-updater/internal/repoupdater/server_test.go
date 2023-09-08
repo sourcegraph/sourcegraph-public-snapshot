@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -191,7 +192,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 	testCases := []testCase{{
 		name: "returns an error on store failure",
 		init: func(realDB database.DB) repos.Store {
-			mockRepos := database.NewMockRepoStore()
+			mockRepos := dbmocks.NewMockRepoStore()
 			mockRepos.ListFunc.SetDefaultReturn(nil, errors.New("boom"))
 			realStore := initStore(realDB)
 			mockStore := repos.NewMockStoreFrom(realStore)
@@ -662,7 +663,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				ObsvCtx: observation.TestContextTB(t),
 			}
 
-			scheduler := repos.NewUpdateScheduler(logtest.Scoped(t), database.NewMockDB())
+			scheduler := repos.NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB())
 
 			s := &Server{
 				Logger:    logger,

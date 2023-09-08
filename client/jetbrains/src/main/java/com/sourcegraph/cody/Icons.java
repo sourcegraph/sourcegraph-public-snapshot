@@ -1,6 +1,7 @@
 package com.sourcegraph.cody;
 
 import com.intellij.openapi.util.IconLoader;
+import com.intellij.ui.AnimatedIcon;
 import javax.swing.*;
 
 public interface Icons {
@@ -13,5 +14,12 @@ public interface Icons {
 
   interface Actions {
     Icon Hide = IconLoader.getIcon("/icons/actions/hide.svg", Icons.class);
+  }
+
+  interface StatusBar {
+    Icon CompletionInProgress = new AnimatedIcon.Default();
+    Icon CodyAvailable = IconLoader.getIcon("/icons/codyLogoMonochromatic.svg", Icons.class);
+    Icon CodyAutocompleteDisabled =
+        IconLoader.getIcon("/icons/codyLogoMonochromaticMuted.svg", Icons.class);
   }
 }

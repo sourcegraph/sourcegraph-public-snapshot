@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/githubapps"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/own"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/search"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
@@ -74,6 +75,8 @@ var additionalJobs = map[string]job.Job{
 	"own-repo-indexing-queue": own.NewOwnRepoIndexingQueue(),
 
 	"github-apps-installation-validation-job": githubapps.NewGitHubApsInstallationJob(),
+
+	"exhaustive-search-job": search.NewSearchJob(),
 }
 
 // SetAuthzProviders waits for the database to be initialized, then periodically refreshes the

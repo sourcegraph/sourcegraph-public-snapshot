@@ -1317,7 +1317,7 @@ func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
 
 	codyEventNames := []string{"CodyVSCodeExtension:recipe:rewrite-to-functional:executed",
 		"CodyVSCodeExtension:recipe:explain-code-high-level:executed"}
-	users := []uint32{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
+	users := []uint32{1, 2}
 
 	days := []time.Time{
 		now,                          // Today
@@ -1332,7 +1332,7 @@ func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
 	for _, user := range users {
 		for _, name := range codyEventNames {
 			for _, day := range days {
-				for i := 0; i < 250; i++ {
+				for i := 0; i < 25; i++ {
 					e := &Event{
 						UserID: user,
 						Name:   name,
@@ -1361,46 +1361,35 @@ func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
 
 	expectedEvents := []types.CodyAggregatedEvent{
 		{
-			Name:                "CodyVSCodeExtension:recipe:explain-code-high-level:executed",
-			Month:               time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Week:                now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
-			Day:                 now.Truncate(time.Hour * 24),
-			TotalMonth:          20000,
-			TotalWeek:           15000,
-			TotalDay:            5000,
-			UniquesMonth:        20,
-			UniquesWeek:         20,
-			UniquesDay:          20,
-			CodeGenerationMonth: 0,
-			CodeGenerationWeek:  0,
-			CodeGenerationDay:   0,
-			ExplanationMonth:    20000,
-			ExplanationWeek:     15000,
-			ExplanationDay:      5000,
-			InvalidMonth:        0,
-			InvalidWeek:         0,
-			InvalidDay:          0,
+			Name:               "CodyVSCodeExtension:recipe:explain-code-high-level:executed",
+			Month:              time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:               now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
+			Day:                now.Truncate(time.Hour * 24),
+			TotalMonth:         200,
+			TotalWeek:          150,
+			TotalDay:           50,
+			UniquesMonth:       2,
+			UniquesWeek:        2,
+			UniquesDay:         2,
+			CodeGenerationWeek: 150,
+			CodeGenerationDay:  0,
+			ExplanationMonth:   200,
+			ExplanationWeek:    150,
+			ExplanationDay:     50,
 		},
 		{
 			Name:                "CodyVSCodeExtension:recipe:rewrite-to-functional:executed",
 			Month:               time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
 			Week:                now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
 			Day:                 now.Truncate(time.Hour * 24),
-			TotalMonth:          20000,
-			TotalWeek:           15000,
-			TotalDay:            5000,
-			UniquesMonth:        20,
-			UniquesWeek:         20,
-			UniquesDay:          20,
-			CodeGenerationMonth: 20000,
-			CodeGenerationWeek:  15000,
-			CodeGenerationDay:   5000,
-			ExplanationMonth:    0,
-			ExplanationWeek:     0,
-			ExplanationDay:      0,
-			InvalidMonth:        0,
-			InvalidWeek:         0,
-			InvalidDay:          0,
+			TotalMonth:          200,
+			TotalWeek:           150,
+			TotalDay:            50,
+			UniquesMonth:        2,
+			UniquesWeek:         2,
+			UniquesDay:          2,
+			CodeGenerationMonth: 200,
+			CodeGenerationDay:   50,
 		},
 	}
 

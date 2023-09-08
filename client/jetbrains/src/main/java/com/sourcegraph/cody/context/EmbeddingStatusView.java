@@ -10,14 +10,9 @@ import com.intellij.serviceContainer.AlreadyDisposedException;
 import com.intellij.ui.SimpleColoredComponent;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBLabel;
-import com.intellij.util.concurrency.EdtExecutorService;
 import com.intellij.util.ui.JBUI;
-import com.sourcegraph.cody.context.embeddings.EmbeddingsStatusLoader;
 import com.sourcegraph.cody.editor.EditorUtil;
-import com.sourcegraph.config.ConfigUtil;
-import com.sourcegraph.vcs.RepoUtil;
 import java.awt.FlowLayout;
-import java.util.concurrent.TimeUnit;
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.JPanel;
@@ -48,8 +43,7 @@ public class EmbeddingStatusView extends JPanel {
     innerPanel.setBorder(new EmptyBorder(JBUI.insets(TEXT_MARGIN, TEXT_MARGIN, 0, TEXT_MARGIN)));
     this.add(innerPanel);
 
-    EdtExecutorService.getScheduledExecutorInstance()
-        .scheduleWithFixedDelay(this::updateEmbeddingStatusView, 1, 10, TimeUnit.SECONDS);
+    this.setEmbeddingStatus(new NoGitRepositoryEmbeddingStatus());
     project
         .getMessageBus()
         .connect()
@@ -85,36 +79,7 @@ public class EmbeddingStatusView extends JPanel {
       return;
     }
 
-    ApplicationManager.getApplication()
-        .executeOnPooledThread(
-            () -> {
-              String repositoryName = RepoUtil.findRepositoryName(project, currentFile);
-              String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
-              String accessToken = ConfigUtil.getProjectAccessToken(project);
-
-              String accessTokenOrEmpty = accessToken != null ? accessToken : "";
-              String repoId =
-                  repositoryName != null
-                      ? new EmbeddingsStatusLoader(
-                              instanceUrl,
-                              accessTokenOrEmpty,
-                              ConfigUtil.getCustomRequestHeaders(project))
-                          .getRepoId(repositoryName)
-                      : null;
-              ApplicationManager.getApplication()
-                  .invokeLater(
-                      () -> {
-                        if (repositoryName == null) {
-                          this.setEmbeddingStatus(new NoGitRepositoryEmbeddingStatus());
-                        } else if (repoId == null) {
-                          this.setEmbeddingStatus(
-                              new RepositoryMissingEmbeddingStatus(repositoryName));
-                        } else {
-                          this.setEmbeddingStatus(
-                              new RepositoryIndexedEmbeddingStatus(repositoryName));
-                        }
-                      });
-            });
+    ApplicationManager.getApplication().executeOnPooledThread(() -> {});
   }
 
   public void setOpenedFileName(@NotNull String fileName, @Nullable String filePath) {

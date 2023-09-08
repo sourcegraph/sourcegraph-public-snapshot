@@ -35,7 +35,7 @@ go_test(
     srcs = ["sync_test.go"],
     embed = [":versions"],
     deps = [
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/extsvc",
         "//internal/repos",
         "//internal/types",

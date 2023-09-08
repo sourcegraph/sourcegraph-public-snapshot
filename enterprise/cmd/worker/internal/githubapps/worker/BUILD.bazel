@@ -22,7 +22,7 @@ go_test(
     srcs = ["installation_backfill_test.go"],
     embed = [":worker"],
     deps = [
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/github_apps/store",
         "//internal/github_apps/types",
         "//internal/types",

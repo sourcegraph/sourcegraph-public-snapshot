@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -118,14 +119,14 @@ func newOIDCIDServer(t *testing.T, code string, providerConfig *cloud.SchemaAuth
 type doRequestFunc func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response
 
 type mockDetails struct {
-	usersStore            *database.MockUserStore
-	externalAccountsStore *database.MockUserExternalAccountsStore
+	usersStore            *dbmocks.MockUserStore
+	externalAccountsStore *dbmocks.MockUserExternalAccountsStore
 	doRequest             doRequestFunc
 }
 
 func newMockDBAndRequester() mockDetails {
-	usersStore := database.NewMockUserStore()
-	userExternalAccountsStore := database.NewMockUserExternalAccountsStore()
+	usersStore := dbmocks.NewMockUserStore()
+	userExternalAccountsStore := dbmocks.NewMockUserExternalAccountsStore()
 	userExternalAccountsStore.ListFunc.SetDefaultReturn(
 		[]*extsvc.Account{
 			{
@@ -138,10 +139,10 @@ func newMockDBAndRequester() mockDetails {
 	)
 	usersStore.SetIsSiteAdminFunc.SetDefaultReturn(nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(usersStore)
 	db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccountsStore)
-	db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())
+	db.SecurityEventLogsFunc.SetDefaultReturn(dbmocks.NewMockSecurityEventLogsStore())
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	authedHandler := http.NewServeMux()

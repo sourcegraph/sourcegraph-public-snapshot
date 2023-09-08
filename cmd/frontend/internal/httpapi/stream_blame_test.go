@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -84,7 +85,7 @@ func TestStreamBlame(t *testing.T) {
 		},
 	}
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
 		if name == "github.com/bob/foo" {
 			return &types.Repo{Name: name}, nil
@@ -113,7 +114,7 @@ func TestStreamBlame(t *testing.T) {
 			return "", &gitdomain.RevisionNotFoundError{Repo: repo.Name}
 		}
 	}
-	usersStore := database.NewMockUserStore()
+	usersStore := dbmocks.NewMockUserStore()
 	errNotFound := &errcode.Mock{
 		IsNotFound: true,
 	}

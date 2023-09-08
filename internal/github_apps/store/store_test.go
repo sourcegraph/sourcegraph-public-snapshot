@@ -405,7 +405,7 @@ func TestGetByDomain(t *testing.T) {
 	require.Error(t, err)
 	notFoundErr, ok := err.(ErrNoGitHubAppFound)
 	require.Equal(t, ok, true)
-	require.Equal(t, notFoundErr.Error(), "no app exists matching criteria: 'domain = repos AND base_url = https://myCompany.github.com/'")
+	require.Equal(t, notFoundErr.Error(), "no app exists matching criteria: 'domain = repos AND trim(trailing '/' from base_url) = https://myCompany.github.com'")
 
 	domain = types.BatchesGitHubAppDomain
 	fetched, err = store.GetByDomain(ctx, domain, "https://github.com/")
@@ -800,4 +800,49 @@ func TestSyncInstallations(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestTrailingSlashesInBaseURL(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
+	ctx := context.Background()
+
+	app := &ghtypes.GitHubApp{
+		AppID:        1234,
+		Name:         "Test App 1",
+		Domain:       "repos",
+		Slug:         "test-app-1",
+		BaseURL:      "https://github.com",
+		ClientID:     "abc123",
+		ClientSecret: "secret",
+		PrivateKey:   "private-key",
+		Logo:         "logo.png",
+	}
+
+	id, err := store.Create(ctx, app)
+	require.NoError(t, err)
+
+	fetched, err := store.GetByAppID(ctx, 1234, "https://github.com")
+	require.NoError(t, err)
+	require.Equal(t, app.AppID, fetched.AppID)
+
+	fetched, err = store.GetByAppID(ctx, 1234, "https://github.com/")
+	require.NoError(t, err)
+	require.Equal(t, app.AppID, fetched.AppID)
+
+	fetched, err = store.GetByAppID(ctx, 1234, "https://github.com////")
+	require.NoError(t, err)
+	require.Equal(t, app.AppID, fetched.AppID)
+
+	// works the other way around as well
+	app.BaseURL = "https://github.com///"
+	_, err = store.Update(ctx, id, app)
+	require.NoError(t, err)
+
+	fetched, err = store.GetByAppID(ctx, 1234, "https://github.com")
+	require.NoError(t, err)
+	require.Equal(t, app.AppID, fetched.AppID)
 }

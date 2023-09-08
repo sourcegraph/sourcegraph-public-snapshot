@@ -240,7 +240,23 @@ func (s *userEmailsStore) SetVerified(ctx context.Context, userID int32, email s
 	var err error
 	if verified {
 		// Mark as verified.
-		res, err = s.Handle().ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=now() WHERE user_id=$1 AND email=$2", userID, email)
+		res, err = s.Handle().ExecContext(ctx,
+			`UPDATE user_emails
+			SET
+				verification_code=null,
+				verified_at=now(),
+				is_primary=(NOT EXISTS (
+					SELECT 1
+					FROM user_emails
+					WHERE
+						user_id=$1
+						AND email != $2
+						AND is_primary=TRUE
+				))
+			WHERE
+				user_id=$1
+				AND email=$2`,
+			userID, email)
 		if err != nil {
 			return errors.New("could not mark email as verified")
 		}

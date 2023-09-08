@@ -26,6 +26,7 @@ const render = () => (
         <H2>0 results, in progress</H2>
         <div className="d-flex align-items-center my-2">
             <StreamingProgress
+                query=""
                 progress={{
                     durationMs: 0,
                     matchCount: 0,
@@ -39,6 +40,7 @@ const render = () => (
         <H2>0 results, in progress, traced</H2>
         <div className="d-flex align-items-center  my-2">
             <StreamingProgress
+                query=""
                 progress={{
                     durationMs: 0,
                     matchCount: 0,
@@ -54,6 +56,7 @@ const render = () => (
         <H2>1 result from 1 repository, in progress</H2>
         <div className="d-flex align-items-center  my-2">
             <StreamingProgress
+                query=""
                 progress={{
                     durationMs: 500,
                     matchCount: 1,
@@ -68,6 +71,7 @@ const render = () => (
         <H2>Big numbers, done</H2>
         <div className="d-flex align-items-center my-2">
             <StreamingProgress
+                query=""
                 progress={{
                     durationMs: 52500,
                     matchCount: 1234567,
@@ -82,6 +86,7 @@ const render = () => (
         <H2>Big numbers, done, traced</H2>
         <div className="d-flex align-items-center my-2">
             <StreamingProgress
+                query=""
                 progress={{
                     durationMs: 52500,
                     matchCount: 1234567,
@@ -98,6 +103,7 @@ const render = () => (
         <H2>2 results from 2 repositories, complete, skipped with info</H2>
         <div className="d-flex align-items-center my-2">
             <StreamingProgress
+                query=""
                 progress={{
                     durationMs: 1500,
                     matchCount: 2,
@@ -133,6 +139,7 @@ const render = () => (
         <H2>2 results from 2 repositories, loading, skipped with info</H2>
         <div className="d-flex align-items-center my-2">
             <StreamingProgress
+                query=""
                 progress={{
                     durationMs: 1500,
                     matchCount: 2,
@@ -168,6 +175,7 @@ const render = () => (
         <H2>2 results from 2 repositories, complete, skipped with warning</H2>
         <div className="d-flex align-items-center my-2">
             <StreamingProgress
+                query=""
                 progress={{
                     durationMs: 1500,
                     matchCount: 2,
@@ -213,6 +221,7 @@ const render = () => (
         <H2>2 results from 2 repositories, complete, skipped with warning, limit hit, traced</H2>
         <div className="d-flex align-items-center my-2">
             <StreamingProgress
+                query=""
                 progress={{
                     durationMs: 1500,
                     matchCount: 2,
@@ -260,6 +269,7 @@ const render = () => (
         <H2>2 results from 2 repositories, loading, skipped with warning</H2>
         <div className="d-flex align-items-center my-2">
             <StreamingProgress
+                query=""
                 progress={{
                     durationMs: 1500,
                     matchCount: 2,

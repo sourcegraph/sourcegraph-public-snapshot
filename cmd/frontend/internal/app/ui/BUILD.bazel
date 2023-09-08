@@ -92,6 +92,7 @@ go_test(
         "//internal/authz",
         "//internal/conf",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/errcode",
         "//internal/extsvc",
         "//internal/fileutil",

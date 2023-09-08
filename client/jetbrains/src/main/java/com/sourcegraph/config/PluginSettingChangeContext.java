@@ -1,39 +1,47 @@
 package com.sourcegraph.config;
 
-import org.jetbrains.annotations.NotNull;
+import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 public class PluginSettingChangeContext {
-  @NotNull public final String oldUrl;
   public final boolean oldCodyEnabled;
-  public final boolean oldCodyAutoCompleteEnabled;
-
-  @NotNull public final String newUrl;
-  public final boolean isDotComAccessTokenChanged;
-  public final boolean isEnterpriseAccessTokenChanged;
-
-  @Nullable public final String newCustomRequestHeaders;
+  public final boolean oldCodyAutocompleteEnabled;
+  public final boolean serverUrlChanged;
   public final boolean newCodyEnabled;
-  public final boolean newCodyAutoCompleteEnabled;
+  public final boolean newCodyAutocompleteEnabled;
+  public boolean accessTokenChanged;
+  public final boolean oldIsCustomAutocompleteColorEnabled;
+  public final boolean isCustomAutocompleteColorEnabled;
+  @Nullable public final Integer oldCustomAutocompleteColor;
+  @Nullable public final Integer customAutocompleteColor;
+
+  public final List<String> oldBlacklistedAutocompleteLanguageIds;
+  public final List<String> newBlacklistedAutocompleteLanguageIds;
 
   public PluginSettingChangeContext(
+      boolean serverUrlChanged,
+      boolean accessTokenChanged,
       boolean oldCodyEnabled,
-      boolean oldCodyAutoCompleteEnabled,
-      @NotNull String oldUrl,
-      @NotNull String newUrl,
-      boolean isDotComAccessTokenChanged,
-      boolean isEnterpriseAccessTokenChanged,
-      @Nullable String newCustomRequestHeaders,
       boolean newCodyEnabled,
-      boolean newCodyAutoCompleteEnabled) {
+      boolean oldCodyAutocompleteEnabled,
+      boolean newCodyAutocompleteEnabled,
+      boolean oldIsCustomAutocompleteColorEnabled,
+      boolean isCustomAutocompleteColorEnabled,
+      @Nullable Integer oldCustomAutocompleteColor,
+      @Nullable Integer customAutocompleteColor,
+      List<String> oldBlacklistedAutocompleteLanguageIds,
+      List<String> newBlacklistedAutocompleteLanguageIds) {
+    this.serverUrlChanged = serverUrlChanged;
+    this.accessTokenChanged = accessTokenChanged;
     this.oldCodyEnabled = oldCodyEnabled;
-    this.oldCodyAutoCompleteEnabled = oldCodyAutoCompleteEnabled;
-    this.oldUrl = oldUrl;
-    this.newUrl = newUrl;
-    this.isDotComAccessTokenChanged = isDotComAccessTokenChanged;
-    this.isEnterpriseAccessTokenChanged = isEnterpriseAccessTokenChanged;
-    this.newCustomRequestHeaders = newCustomRequestHeaders;
     this.newCodyEnabled = newCodyEnabled;
-    this.newCodyAutoCompleteEnabled = newCodyAutoCompleteEnabled;
+    this.oldCodyAutocompleteEnabled = oldCodyAutocompleteEnabled;
+    this.newCodyAutocompleteEnabled = newCodyAutocompleteEnabled;
+    this.oldIsCustomAutocompleteColorEnabled = oldIsCustomAutocompleteColorEnabled;
+    this.isCustomAutocompleteColorEnabled = isCustomAutocompleteColorEnabled;
+    this.oldCustomAutocompleteColor = oldCustomAutocompleteColor;
+    this.customAutocompleteColor = customAutocompleteColor;
+    this.oldBlacklistedAutocompleteLanguageIds = oldBlacklistedAutocompleteLanguageIds;
+    this.newBlacklistedAutocompleteLanguageIds = newBlacklistedAutocompleteLanguageIds;
   }
 }

@@ -156,6 +156,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         setIsSidebarOpen: setIsCodySidebarOpen,
         scope,
         setEditorScope,
+        logTranscriptEvent,
     } = useCodySidebar()
 
     const { sidebarSize, setSidebarSize: setCodySidebarSize } = useSidebarSize()
@@ -395,10 +396,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                             !isCodySidebarOpen ? (
                                 <AskCodyButton
                                     onClick={() => {
-                                        props.telemetryService.log(EventName.CODY_SIDEBAR_CHAT_OPENED, {
-                                            repo,
-                                            path: filePath,
-                                        })
+                                        logTranscriptEvent(EventName.CODY_SIDEBAR_CHAT_OPENED, { repo, path: filePath })
                                         setIsCodySidebarOpen(true)
                                     }}
                                 />

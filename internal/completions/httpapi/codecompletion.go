@@ -1,55 +1,64 @@
 package httpapi
 
 import (
-	"context"
-	"encoding/json"
 	"net/http"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// NewCodeCompletionsHandler is an http handler which sends back code completion results
+// NewCodeCompletionsHandler is an http handler which sends back code completion results.
 func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 	logger = logger.Scoped("code", "code completions handler")
-
 	rl := NewRateLimiter(db, redispool.Store, types.CompletionsFeatureCode)
-	return newCompletionsHandler(rl, "code", func(requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) string {
-		// No user defined models for now.
-		// TODO(eseliger): Look into reviving this, but it was unused so far.
-		return c.CompletionModel
-	}, func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
-		completion, err := cc.Complete(ctx, types.CompletionsFeatureCode, requestParams)
-		if err != nil {
-			logFields := []log.Field{log.Error(err)}
-
-			// Propagate the upstream headers to the client if available.
-			if errNotOK, ok := types.IsErrStatusNotOK(err); ok {
-				errNotOK.WriteHeader(w)
-				if tc := errNotOK.SourceTraceContext; tc != nil {
-					logFields = append(logFields,
-						log.String("sourceTraceContext.traceID", tc.TraceID),
-						log.String("sourceTraceContext.spanID", tc.SpanID))
-				}
-			} else {
-				w.WriteHeader(http.StatusInternalServerError)
+	return newCompletionsHandler(
+		logger,
+		types.CompletionsFeatureCode,
+		rl,
+		"code",
+		func(requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
+			if isAllowedCustomModel(requestParams.Model) {
+				return requestParams.Model, nil
 			}
-			_, _ = w.Write([]byte(err.Error()))
+			if requestParams.Model != "" {
+				return "", errors.New("Unsupported custom model")
+			}
+			return c.CompletionModel, nil
+		},
+	)
+}
 
-			trace.Logger(ctx, logger).Error("error on completion", logFields...)
-			return
-		}
+// We only allow dotcom clients to select a custom code model and maintain an allowlist for which
+// custom values we support
+func isAllowedCustomModel(model string) bool {
+	if !(envvar.SourcegraphDotComMode()) {
+		return false
+	}
 
-		completionBytes, err := json.Marshal(completion)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		_, _ = w.Write(completionBytes)
-	})
+	switch model {
+	case "fireworks/accounts/fireworks/models/starcoder-16b-w8a16":
+		fallthrough
+	case "fireworks/accounts/fireworks/models/starcoder-7b-w8a16":
+		fallthrough
+	case "fireworks/accounts/fireworks/models/starcoder-3b-w8a16":
+		fallthrough
+	case "fireworks/accounts/fireworks/models/starcoder-1b-w8a16":
+		fallthrough
+	case "fireworks/accounts/fireworks/models/llama-v2-7b-code":
+		fallthrough
+	case "fireworks/accounts/fireworks/models/llama-v2-13b-code":
+		fallthrough
+	case "fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct":
+		fallthrough
+	case "fireworks/accounts/fireworks/models/wizardcoder-15b":
+		return true
+	}
+
+	return false
 }

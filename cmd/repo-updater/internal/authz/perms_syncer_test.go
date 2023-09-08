@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -78,12 +79,12 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		},
 	}
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id}, nil
 	})
 
-	mockRepos := database.NewMockRepoStore()
+	mockRepos := dbmocks.NewMockRepoStore()
 	mockRepos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if !opt.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
@@ -97,9 +98,9 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		return names, nil
 	})
 
-	userEmails := database.NewMockUserEmailsStore()
+	userEmails := dbmocks.NewMockUserEmailsStore()
 
-	externalAccounts := database.NewMockUserExternalAccountsStore()
+	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 	externalAccounts.ListFunc.SetDefaultHook(func(_ context.Context, opts database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
 		if opts.OnlyExpired {
 			return []*extsvc.Account{}, nil
@@ -107,12 +108,12 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		return []*extsvc.Account{&extAccount}, nil
 	})
 
-	featureFlags := database.NewMockFeatureFlagStore()
+	featureFlags := dbmocks.NewMockFeatureFlagStore()
 
-	syncJobs := database.NewMockPermissionSyncJobStore()
+	syncJobs := dbmocks.NewMockPermissionSyncJobStore()
 	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
@@ -123,7 +124,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-	perms := database.NewMockPermsStore()
+	perms := dbmocks.NewMockPermsStore()
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, _ authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		wantIDs := []int32{1, 2, 3, 4}
 		assert.Equal(t, wantIDs, repoIDs)
@@ -161,12 +162,12 @@ func TestPermsSyncer_syncUserPerms_listExternalAccountsError(t *testing.T) {
 		authz.SetProviders(true, nil)
 	})
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id}, nil
 	})
 
-	mockRepos := database.NewMockRepoStore()
+	mockRepos := dbmocks.NewMockRepoStore()
 	mockRepos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if !opt.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
@@ -180,18 +181,18 @@ func TestPermsSyncer_syncUserPerms_listExternalAccountsError(t *testing.T) {
 		return names, nil
 	})
 
-	externalAccounts := database.NewMockUserExternalAccountsStore()
+	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 	externalAccounts.ListFunc.SetDefaultHook(func(ctx context.Context, options database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
 		// Force an error here to bail out of fetchUserPermsViaExternalAccounts
 		return nil, errors.New("forced error")
 	})
 
-	userEmails := database.NewMockUserEmailsStore()
+	userEmails := dbmocks.NewMockUserEmailsStore()
 	userEmails.ListByUserFunc.SetDefaultHook(func(ctx context.Context, options database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		return []*database.UserEmail{}, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
@@ -200,7 +201,7 @@ func TestPermsSyncer_syncUserPerms_listExternalAccountsError(t *testing.T) {
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-	perms := database.NewMockPermsStore()
+	perms := dbmocks.NewMockPermsStore()
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		assert.Equal(t, []int32{1, 2, 3, 4, 5}, repoIDs)
 		return &database.SetPermissionsResult{}, nil
@@ -230,12 +231,12 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 		authz.SetProviders(true, nil)
 	})
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id}, nil
 	})
 
-	mockRepos := database.NewMockRepoStore()
+	mockRepos := dbmocks.NewMockRepoStore()
 	mockRepos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if !opt.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
@@ -249,7 +250,7 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 		return names, nil
 	})
 
-	externalAccounts := database.NewMockUserExternalAccountsStore()
+	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 	externalAccounts.ListFunc.SetDefaultHook(func(_ context.Context, opts database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
 		if opts.OnlyExpired {
 			return nil, nil
@@ -265,15 +266,15 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 		}}, nil
 	})
 
-	userEmails := database.NewMockUserEmailsStore()
+	userEmails := dbmocks.NewMockUserEmailsStore()
 	userEmails.ListByUserFunc.SetDefaultHook(func(ctx context.Context, options database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		return []*database.UserEmail{}, nil
 	})
 
-	permissionSyncJobs := database.NewMockPermissionSyncJobStore()
+	permissionSyncJobs := dbmocks.NewMockPermissionSyncJobStore()
 	permissionSyncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(&database.PermissionSyncJob{ID: 1, FinishedAt: timeutil.Now().Add(-1 * time.Hour)}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
@@ -283,7 +284,7 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-	perms := database.NewMockPermsStore()
+	perms := dbmocks.NewMockPermsStore()
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		return &database.SetPermissionsResult{
 			Added:   len(repoIDs),
@@ -407,12 +408,12 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 		},
 	}
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id}, nil
 	})
 
-	mockRepos := database.NewMockRepoStore()
+	mockRepos := dbmocks.NewMockRepoStore()
 	mockRepos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if !opt.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
@@ -426,24 +427,24 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 		return names, nil
 	})
 
-	userEmails := database.NewMockUserEmailsStore()
+	userEmails := dbmocks.NewMockUserEmailsStore()
 
-	externalAccounts := database.NewMockUserExternalAccountsStore()
+	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 	externalAccounts.ListFunc.SetDefaultHook(func(_ context.Context, opts database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
 		if opts.OnlyExpired {
 			return []*extsvc.Account{}, nil
 		}
 		return []*extsvc.Account{&extAccount}, nil
 	})
-	featureFlags := database.NewMockFeatureFlagStore()
+	featureFlags := dbmocks.NewMockFeatureFlagStore()
 
-	subRepoPerms := database.NewMockSubRepoPermsStore()
+	subRepoPerms := dbmocks.NewMockSubRepoPermsStore()
 	subRepoPerms.GetByUserAndServiceFunc.SetDefaultReturn(nil, nil)
 
-	syncJobs := database.NewMockPermissionSyncJobStore()
+	syncJobs := dbmocks.NewMockPermissionSyncJobStore()
 	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
@@ -455,7 +456,7 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-	perms := database.NewMockPermsStore()
+	perms := dbmocks.NewMockPermsStore()
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		assert.Equal(t, []int32{}, repoIDs)
 		return &database.SetPermissionsResult{}, nil
@@ -498,12 +499,12 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 		},
 	}
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id}, nil
 	})
 
-	mockRepos := database.NewMockRepoStore()
+	mockRepos := dbmocks.NewMockRepoStore()
 	mockRepos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if !opt.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
@@ -511,8 +512,8 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 		return []types.MinimalRepo{{ID: 1}}, nil
 	})
 
-	userEmails := database.NewMockUserEmailsStore()
-	externalAccounts := database.NewMockUserExternalAccountsStore()
+	userEmails := dbmocks.NewMockUserEmailsStore()
+	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 	// return only non expired accounts
 	externalAccounts.ListFunc.SetDefaultHook(func(_ context.Context, opts database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
 		if opts.ExcludeExpired {
@@ -521,12 +522,12 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 		return nil, nil
 	})
 
-	featureFlags := database.NewMockFeatureFlagStore()
+	featureFlags := dbmocks.NewMockFeatureFlagStore()
 
-	syncJobs := database.NewStrictMockPermissionSyncJobStore()
+	syncJobs := dbmocks.NewStrictMockPermissionSyncJobStore()
 	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
@@ -537,7 +538,7 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-	perms := database.NewMockPermsStore()
+	perms := dbmocks.NewMockPermsStore()
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		assert.Equal(t, int32(1), user.UserID)
 		assert.Equal(t, []int32{1}, repoIDs)
@@ -594,12 +595,12 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 		},
 	}
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id}, nil
 	})
 
-	mockRepos := database.NewMockRepoStore()
+	mockRepos := dbmocks.NewMockRepoStore()
 	mockRepos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if !opt.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
@@ -607,27 +608,27 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 		return []types.MinimalRepo{{ID: 1}}, nil
 	})
 
-	externalServices := database.NewMockExternalServiceStore()
-	userEmails := database.NewMockUserEmailsStore()
+	externalServices := dbmocks.NewMockExternalServiceStore()
+	userEmails := dbmocks.NewMockUserEmailsStore()
 
-	externalAccounts := database.NewMockUserExternalAccountsStore()
+	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 	externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 
-	syncJobs := database.NewStrictMockPermissionSyncJobStore()
+	syncJobs := dbmocks.NewStrictMockPermissionSyncJobStore()
 	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
-	db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
+	db.FeatureFlagsFunc.SetDefaultReturn(dbmocks.NewMockFeatureFlagStore())
 	db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
 
 	reposStore := repos.NewMockStore()
 
-	perms := database.NewMockPermsStore()
+	perms := dbmocks.NewMockPermsStore()
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 
 	t.Run("invalid token", func(t *testing.T) {
@@ -691,12 +692,12 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 		},
 	}
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id}, nil
 	})
 
-	mockRepos := database.NewMockRepoStore()
+	mockRepos := dbmocks.NewMockRepoStore()
 	mockRepos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if !opt.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
@@ -708,18 +709,18 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 		return []types.MinimalRepo{{ID: 1}}, nil
 	})
 
-	externalServices := database.NewMockExternalServiceStore()
-	userEmails := database.NewMockUserEmailsStore()
+	externalServices := dbmocks.NewMockExternalServiceStore()
+	userEmails := dbmocks.NewMockUserEmailsStore()
 
-	externalAccounts := database.NewMockUserExternalAccountsStore()
+	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 	externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 
-	featureFlags := database.NewMockFeatureFlagStore()
+	featureFlags := dbmocks.NewMockFeatureFlagStore()
 
-	syncJobs := database.NewStrictMockPermissionSyncJobStore()
+	syncJobs := dbmocks.NewStrictMockPermissionSyncJobStore()
 	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
@@ -732,7 +733,7 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 	reposStore.ExternalServiceStoreFunc.SetDefaultReturn(externalServices)
 
-	perms := database.NewMockPermsStore()
+	perms := dbmocks.NewMockPermsStore()
 
 	perms.SetUserExternalAccountPermsFunc.SetDefaultReturn(&database.SetPermissionsResult{}, nil)
 
@@ -768,12 +769,12 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 		},
 	}
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id}, nil
 	})
 
-	mockRepos := database.NewMockRepoStore()
+	mockRepos := dbmocks.NewMockRepoStore()
 	mockRepos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if !opt.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
@@ -785,20 +786,20 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 		return []types.MinimalRepo{{ID: 1}}, nil
 	})
 
-	externalServices := database.NewMockExternalServiceStore()
-	userEmails := database.NewMockUserEmailsStore()
+	externalServices := dbmocks.NewMockExternalServiceStore()
+	userEmails := dbmocks.NewMockUserEmailsStore()
 
-	externalAccounts := database.NewMockUserExternalAccountsStore()
+	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 	externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 
-	subRepoPerms := database.NewMockSubRepoPermsStore()
+	subRepoPerms := dbmocks.NewMockSubRepoPermsStore()
 
-	featureFlags := database.NewMockFeatureFlagStore()
+	featureFlags := dbmocks.NewMockFeatureFlagStore()
 
-	syncJobs := database.NewStrictMockPermissionSyncJobStore()
+	syncJobs := dbmocks.NewStrictMockPermissionSyncJobStore()
 	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
@@ -812,7 +813,7 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 	reposStore.ExternalServiceStoreFunc.SetDefaultReturn(externalServices)
 
-	perms := database.NewMockPermsStore()
+	perms := dbmocks.NewMockPermsStore()
 	perms.SetUserExternalAccountPermsFunc.SetDefaultReturn(&database.SetPermissionsResult{}, nil)
 
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
@@ -842,12 +843,12 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 }
 
 func TestPermsSyncer_syncRepoPerms(t *testing.T) {
-	mockRepos := database.NewMockRepoStore()
-	mockFeatureFlags := database.NewMockFeatureFlagStore()
-	mockSyncJobs := database.NewMockPermissionSyncJobStore()
+	mockRepos := dbmocks.NewMockRepoStore()
+	mockFeatureFlags := dbmocks.NewMockFeatureFlagStore()
+	mockSyncJobs := dbmocks.NewMockPermissionSyncJobStore()
 	mockSyncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(&database.PermissionSyncJob{FinishedAt: timeutil.Now()}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.FeatureFlagsFunc.SetDefaultReturn(mockFeatureFlags)
 	db.PermissionSyncJobsFunc.SetDefaultReturn(mockSyncJobs)
@@ -874,7 +875,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 		reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-		perms := database.NewMockPermsStore()
+		perms := dbmocks.NewMockPermsStore()
 		s := newPermsSyncer(reposStore, perms)
 
 		// error should be nil in this case
@@ -928,7 +929,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 		reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-		perms := database.NewMockPermsStore()
+		perms := dbmocks.NewMockPermsStore()
 		perms.TransactFunc.SetDefaultReturn(perms, nil)
 		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
 		perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error) {
@@ -960,7 +961,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 		reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-		perms := database.NewMockPermsStore()
+		perms := dbmocks.NewMockPermsStore()
 		perms.TransactFunc.SetDefaultReturn(perms, nil)
 		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
 		perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error) {
@@ -1011,7 +1012,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 		reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-		perms := database.NewMockPermsStore()
+		perms := dbmocks.NewMockPermsStore()
 		perms.TransactFunc.SetDefaultReturn(perms, nil)
 		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
 		perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error) {
@@ -1064,7 +1065,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-	perms := database.NewMockPermsStore()
+	perms := dbmocks.NewMockPermsStore()
 	perms.TransactFunc.SetDefaultReturn(perms, nil)
 	perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
 	perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error) {

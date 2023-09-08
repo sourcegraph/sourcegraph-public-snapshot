@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -eux
 
 [ -z "$PUBLISH_TOKEN" ] && echo "You must set a \$PUBLISH_TOKEN before running this script. You can generate a token in the JetBrains marketplace." && exit 1
 
@@ -14,6 +14,7 @@ popd > /dev/null || exit
 # Build the JavaScript artifacts
 pnpm build
 
+./gradlew -PforceAgentBuild=true clean buildPluginAndAssertAgentBinariesExist
 # Build the release candidate and publish it onto the registry
 ./gradlew -PforceAgentBuild=true publishPlugin
 

@@ -10,8 +10,10 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -81,6 +83,8 @@ func (c *codyGatewayClient) clientForParams(feature types.CompletionsFeature, re
 		return anthropic.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/anthropic"), "", ""), nil
 	case string(conftypes.CompletionsProviderNameOpenAI):
 		return openai.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/openai"), "", ""), nil
+	case string(conftypes.CompletionsProviderNameFireworks):
+		return fireworks.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/fireworks"), "", ""), nil
 	case "":
 		return nil, errors.Newf("no provider provided in model %s - a model in the format '$PROVIDER/$MODEL_NAME' is expected", model)
 	default:
@@ -99,6 +103,12 @@ func getProviderFromGatewayModel(gatewayModel string) (provider string, model st
 	return parts[0], parts[1]
 }
 
+type roundTripperFunc func(*http.Request) (*http.Response, error)
+
+func (rt roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return rt(req)
+}
+
 // gatewayDoer redirects requests to Cody Gateway with all prerequisite headers.
 func gatewayDoer(upstream httpcli.Doer, feature types.CompletionsFeature, gatewayURL *url.URL, accessToken, path string) httpcli.Doer {
 	return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
@@ -108,7 +118,14 @@ func gatewayDoer(upstream httpcli.Doer, feature types.CompletionsFeature, gatewa
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 		req.Header.Set(codygateway.FeatureHeaderName, string(feature))
 
-		resp, err := upstream.Do(req)
+		// HACK: Add actor transport directly. We tried adding the actor transport
+		// in https://github.com/sourcegraph/sourcegraph/commit/6b058221ca87f5558759d92c0d72436cede70dc4
+		// but it doesn't seem to work.
+		resp, err := (&actor.HTTPTransport{
+			RoundTripper: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+				return upstream.Do(req)
+			}),
+		}).RoundTrip(req)
 
 		// If we get a repsonse, record Cody Gateway's x-trace response header,
 		// so that we can link up to an event on our end if needed.

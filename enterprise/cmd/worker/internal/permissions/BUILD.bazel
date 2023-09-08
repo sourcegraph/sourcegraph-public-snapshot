@@ -67,6 +67,7 @@ go_test(
         "//internal/collections",
         "//internal/conf",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/errcode",
         "//internal/extsvc",

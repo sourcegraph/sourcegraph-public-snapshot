@@ -1,20 +1,40 @@
 #!/usr/bin/env bash
 
 set -eu
+EXIT_CODE=0
 
-bazelrc="--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc"
+bazelrc=(--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
 
-# We run :gazelle since currently `bazel configure` tries to execute something with go and it doesn't exist on the bazel agent
+#shellcheck disable=SC2317
+# generates and uploads all bazel diffs checked by this script
+# in a single buildkite artifact, to be applied by subsequent
+# buildkite steps.
+function generate_diff_artifact() {
+  if [[ $EXIT_CODE -ne 0 ]]; then
+    temp=$(mktemp -d -t "buildkite-$BUILDKITE_BUILD_NUMBER-XXXXXXXX")
+    trap 'rm -rf -- "$temp"' EXIT
+
+    mv ./annotations/* "$temp/"
+    git clean -ffdx
+
+    bazel "${bazelrc[@]}" configure >/dev/null 2>&1
+    bazel "${bazelrc[@]}" run //:gazelle-update-repos >/dev/null 2>&1
+
+    git diff > bazel-configure.diff
+
+    # restore annotations
+    mkdir -p ./annotations
+    mv "$temp"/* ./annotations/
+  fi
+}
+
+trap generate_diff_artifact EXIT
+
 echo "--- :bazel: Running bazel configure"
-bazel "${bazelrc}" configure
-
-# We disable exit on error here, since we want to catch the exit code and interpret it
-set +e
+bazel "${bazelrc[@]}" configure
 
 echo "--- Checking if BUILD.bazel files were updated"
-git diff --exit-code
-
-EXIT_CODE=$?
+git diff --exit-code || EXIT_CODE=$? # do not fail on non-zero exit
 
 # if we get a non-zero exit code, bazel configure updated files
 if [[ $EXIT_CODE -ne 0 ]]; then
@@ -28,13 +48,38 @@ if [[ $EXIT_CODE -ne 0 ]]; then
   bazel configure
   ```
 
-  #### For more information please see the [Bazel FAQ](https://docs.sourcegraph.com/dev/background-information/bazel#faq)
+  #### For more information please see the [Bazel FAQ](https://docs.sourcegraph.com/dev/background-information/bazel/faq)
 
 END
+  exit "$EXIT_CODE"
+fi
+
+echo "--- :bazel: Running bazel run //:gazelle-update-repos"
+bazel "${bazelrc[@]}" run //:gazelle-update-repos
+
+echo "--- Checking if deps.bzl was updated"
+git diff --exit-code || EXIT_CODE=$? # do not fail on non-zero exit
+
+# if we get a non-zero exit code, bazel configure updated files
+if [[ $EXIT_CODE -ne 0 ]]; then
+  mkdir -p ./annotations
+  cat <<-'END' > ./annotations/bazel-prechecks.md
+  #### Missing deps.bzl updates
+
+  `deps.bzl` needs to be updated to match the repository state. You should run the following command and commit the result
+
+  ```
+  bazel run //:gazelle-update-repos
+  ```
+
+  #### For more information please see the [Bazel FAQ](https://docs.sourcegraph.com/dev/background-information/bazel/faq)
+
+END
+  exit "$EXIT_CODE"
 fi
 
 echo "--- :bazel::go: Running gofmt"
-unformatted=$(bazel "${bazelrc}" run @go_sdk//:bin/gofmt -- -l .)
+unformatted=$(bazel "${bazelrc[@]}" run @go_sdk//:bin/gofmt -- -l .)
 
 if [[ ${unformatted} != "" ]]; then
   mkdir -p ./annotations
@@ -59,6 +104,5 @@ END
     EXIT_CODE=100
   fi
 fi
-
 
 exit "$EXIT_CODE"

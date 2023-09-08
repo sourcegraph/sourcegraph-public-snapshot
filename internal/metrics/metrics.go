@@ -35,10 +35,11 @@ type RequestMeter struct {
 }
 
 const (
-	labelCategory = "category"
-	labelCode     = "code"
-	labelHost     = "host"
-	labelTask     = "task"
+	labelCategory  = "category"
+	labelCode      = "code"
+	labelHost      = "host"
+	labelTask      = "task"
+	labelFromCache = "from_cache"
 )
 
 var taskKey struct{}
@@ -64,7 +65,7 @@ func NewRequestMeter(subsystem, help string) *RequestMeter {
 		Subsystem: subsystem,
 		Name:      "requests_total",
 		Help:      help,
-	}, []string{labelCategory, labelCode, labelHost, labelTask})
+	}, []string{labelCategory, labelCode, labelHost, labelTask, labelFromCache})
 	registerer.MustRegister(requestCounter)
 
 	// TODO(uwedeportivo):
@@ -136,12 +137,20 @@ func (t *requestCounterMiddleware) RoundTrip(r *http.Request) (resp *http.Respon
 		code = strconv.Itoa(resp.StatusCode)
 	}
 
+	// X-From-Cache=1 if the returned response is from the cache created by
+	// httpcli.NewCachedTransportOpt
+	var fromCache = "false"
+	if resp != nil && resp.Header.Get("X-From-Cache") != "" {
+		fromCache = "true"
+	}
+
 	d := time.Since(start)
 	t.meter.counter.With(map[string]string{
-		labelCategory: category,
-		labelCode:     code,
-		labelHost:     r.URL.Host,
-		labelTask:     TaskFromContext(r.Context()),
+		labelCategory:  category,
+		labelCode:      code,
+		labelHost:      r.URL.Host,
+		labelTask:      TaskFromContext(r.Context()),
+		labelFromCache: fromCache,
 	}).Inc()
 
 	t.meter.duration.WithLabelValues(category, code, r.URL.Host).Observe(d.Seconds())

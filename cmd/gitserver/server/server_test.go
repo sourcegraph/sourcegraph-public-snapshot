@@ -35,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -173,13 +174,14 @@ func TestExecRequest(t *testing.T) {
 		},
 	}
 
-	db := database.NewMockDB()
-	gr := database.NewMockGitserverRepoStore()
+	db := dbmocks.NewMockDB()
+	gr := dbmocks.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
+	reposDir := "/testroot"
 	s := &Server{
 		Logger:            logtest.Scoped(t),
 		ObservationCtx:    observation.TestContextTB(t),
-		ReposDir:          "/testroot",
+		ReposDir:          reposDir,
 		skipCloneForTests: true,
 		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 			return "https://" + string(name) + ".git", nil
@@ -189,12 +191,13 @@ func TestExecRequest(t *testing.T) {
 		},
 		DB:                      db,
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
+		Locker:                  NewRepositoryLocker(),
 	}
 	h := s.Handler()
 
 	origRepoCloned := repoCloned
 	repoCloned = func(dir common.GitDir) bool {
-		return dir == s.dir("github.com/gorilla/mux") || dir == s.dir("my-mux")
+		return dir == repoDirFromName(reposDir, "github.com/gorilla/mux") || dir == repoDirFromName(reposDir, "my-mux")
 	}
 	t.Cleanup(func() { repoCloned = origRepoCloned })
 
@@ -269,7 +272,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 		case "users":
 			_, _ = cmd.Stdout.Write([]byte("admin <admin@joe-perforce-server> (admin) accessed 2021/01/31"))
 			_, _ = cmd.Stderr.Write([]byte("teststderr"))
-			return 42, nil
+			return 42, errors.New("the answer to life the universe and everything")
 		}
 		return 0, nil
 	}
@@ -288,8 +291,9 @@ func TestServer_handleP4Exec(t *testing.T) {
 			ReposDir:                "/testroot",
 			ObservationCtx:          observation.TestContextTB(t),
 			skipCloneForTests:       true,
-			DB:                      database.NewMockDB(),
+			DB:                      dbmocks.NewMockDB(),
 			RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
+			Locker:                  NewRepositoryLocker(),
 		}
 
 		server := defaults.NewServer(logger)
@@ -318,11 +322,12 @@ func TestServer_handleP4Exec(t *testing.T) {
 			var buf bytes.Buffer
 			for {
 				resp, err := execClient.Recv()
+				if errors.Is(err, io.EOF) {
+					return buf.Bytes(), nil
+				}
+
 				if err != nil {
-					if err == io.EOF {
-						return buf.Bytes(), nil
-					}
-					return nil, err
+					return buf.Bytes(), err
 				}
 
 				_, err = buf.Write(resp.GetData())
@@ -332,22 +337,27 @@ func TestServer_handleP4Exec(t *testing.T) {
 			}
 		}
 
-		t.Run("success", func(t *testing.T) {
+		t.Run("users", func(t *testing.T) {
 			updateRunCommandMock(defaultMockRunCommand)
 
 			_, client, closeFunc := startServer(t)
 			t.Cleanup(closeFunc)
 
 			stream, err := client.P4Exec(context.Background(), &proto.P4ExecRequest{
-				Args: []string{"users"},
+				Args: [][]byte{[]byte("users")},
 			})
 			if err != nil {
 				t.Fatalf("failed to call P4Exec: %v", err)
 			}
 
 			data, err := readAll(stream)
-			if status.Code(err) != codes.OK {
-				t.Fatalf("expected no error, got %v", err)
+			s, ok := status.FromError(err)
+			if !ok {
+				t.Fatal("received non-status error from p4exec call")
+			}
+
+			if diff := cmp.Diff("the answer to life the universe and everything", s.Message()); diff != "" {
+				t.Fatalf("unexpected error in stream (-want +got):\n%s", diff)
 			}
 
 			expectedData := []byte("admin <admin@joe-perforce-server> (admin) accessed 2021/01/31")
@@ -382,7 +392,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 			t.Cleanup(closeFunc)
 
 			stream, err := client.P4Exec(context.Background(), &proto.P4ExecRequest{
-				Args: []string{"bad_command"},
+				Args: [][]byte{[]byte("bad_command")},
 			})
 			if err != nil {
 				t.Fatalf("failed to call P4Exec: %v", err)
@@ -408,7 +418,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 			t.Cleanup(closeFunc)
 
 			stream, err := client.P4Exec(ctx, &proto.P4ExecRequest{
-				Args: []string{"users"},
+				Args: [][]byte{[]byte("users")},
 			})
 			if err != nil {
 				t.Fatalf("failed to call P4Exec: %v", err)
@@ -431,7 +441,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 				ExpectedCode: http.StatusOK,
 				ExpectedBody: "admin <admin@joe-perforce-server> (admin) accessed 2021/01/31",
 				ExpectedTrailers: http.Header{
-					"X-Exec-Error":       {""},
+					"X-Exec-Error":       {"the answer to life the universe and everything"},
 					"X-Exec-Exit-Status": {"42"},
 					"X-Exec-Stderr":      {"teststderr"},
 				},
@@ -700,11 +710,11 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 	t.Helper()
 
 	if db == nil {
-		mDB := database.NewMockDB()
-		mDB.GitserverReposFunc.SetDefaultReturn(database.NewMockGitserverRepoStore())
-		mDB.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
+		mDB := dbmocks.NewMockDB()
+		mDB.GitserverReposFunc.SetDefaultReturn(dbmocks.NewMockGitserverRepoStore())
+		mDB.FeatureFlagsFunc.SetDefaultReturn(dbmocks.NewMockFeatureFlagStore())
 
-		repoStore := database.NewMockRepoStore()
+		repoStore := dbmocks.NewMockRepoStore()
 		repoStore.GetByNameFunc.SetDefaultReturn(nil, &database.RepoNotFoundErr{})
 
 		mDB.ReposFunc.SetDefaultReturn(repoStore)
@@ -727,13 +737,12 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		DB:                      db,
 		CloneQueue:              cloneQueue,
 		ctx:                     ctx,
-		locker:                  &RepositoryLocker{},
+		Locker:                  NewRepositoryLocker(),
 		cloneLimiter:            limiter.NewMutable(1),
 		cloneableLimiter:        limiter.NewMutable(1),
 		rpsLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 		RecordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
 		Perforce:                perforce.NewService(ctx, obctx, logger, db, list.New()),
-		DeduplicatedForksSet:    types.NewRepoURICache(nil),
 	}
 
 	p := s.NewClonePipeline(logtest.Scoped(t), cloneQueue)
@@ -746,7 +755,9 @@ func TestCloneRepo(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	remote := t.TempDir()
+
+	reposDir := t.TempDir()
+
 	repoName := api.RepoName("example.com/foo/bar")
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	if _, err := db.FeatureFlags().CreateBool(ctx, "clone-progress-logging", true); err != nil {
@@ -760,6 +771,7 @@ func TestCloneRepo(t *testing.T) {
 	if err := db.Repos().Create(ctx, dbRepo); err != nil {
 		t.Fatal(err)
 	}
+
 	assertRepoState := func(status types.CloneStatus, size int64, wantErr error) {
 		t.Helper()
 		fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
@@ -778,36 +790,40 @@ func TestCloneRepo(t *testing.T) {
 	// Verify the gitserver repo entry exists.
 	assertRepoState(types.CloneStatusNotCloned, 0, nil)
 
-	repo := remote
+	repoDir := repoDirFromName(reposDir, repoName)
+	remoteDir := filepath.Join(reposDir, "remote")
+	if err := os.Mkdir(remoteDir, os.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+	cmdExecDir := remoteDir
 	cmd := func(name string, arg ...string) string {
 		t.Helper()
-		return runCmd(t, repo, name, arg...)
+		return runCmd(t, cmdExecDir, name, arg...)
 	}
 	wantCommit := makeSingleCommitRepo(cmd)
 	// Add a bad tag
 	cmd("git", "tag", "HEAD")
 
-	reposDir := t.TempDir()
-	s := makeTestServer(ctx, t, reposDir, remote, db)
+	s := makeTestServer(ctx, t, reposDir, remoteDir, db)
 
+	// Enqueue repo clone.
 	_, err := s.CloneRepo(ctx, repoName, CloneOptions{})
 	require.NoError(t, err)
 
 	// Wait until the clone is done. Please do not use this code snippet
 	// outside of a test. We only know this works since our test only starts
 	// one clone and will have nothing else attempt to lock.
-	dst := s.dir(repoName)
 	for i := 0; i < 1000; i++ {
-		_, cloning := s.locker.Status(dst)
+		_, cloning := s.Locker.Status(repoDir)
 		if !cloning {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	wantRepoSize := dirSize(dst.Path("."))
+	wantRepoSize := dirSize(repoDir.Path("."))
 	assertRepoState(types.CloneStatusCloned, wantRepoSize, err)
 
-	repo = filepath.Dir(string(dst))
+	cmdExecDir = repoDir.Path(".")
 	gotCommit := cmd("git", "rev-parse", "HEAD")
 	if wantCommit != gotCommit {
 		t.Fatal("failed to clone:", gotCommit)
@@ -822,18 +838,17 @@ func TestCloneRepo(t *testing.T) {
 
 	// Test blocking with overwrite. First add random file to GIT_DIR. If the
 	// file is missing after cloning we know the directory was replaced
-	mkFiles(t, string(dst), "HELLO")
+	mkFiles(t, repoDir.Path("."), "HELLO")
 	_, err = s.CloneRepo(context.Background(), repoName, CloneOptions{Block: true, Overwrite: true})
 	if err != nil {
 		t.Fatal(err)
 	}
 	assertRepoState(types.CloneStatusCloned, wantRepoSize, err)
 
-	if _, err := os.Stat(dst.Path("HELLO")); !os.IsNotExist(err) {
+	if _, err := os.Stat(repoDir.Path("HELLO")); !os.IsNotExist(err) {
 		t.Fatalf("expected clone to be overwritten: %s", err)
 	}
 
-	repo = filepath.Dir(string(dst))
 	gotCommit = cmd("git", "rev-parse", "HEAD")
 	if wantCommit != gotCommit {
 		t.Fatal("failed to clone:", gotCommit)
@@ -932,7 +947,6 @@ var ignoreVolatileGitserverRepoFields = cmpopts.IgnoreFields(
 	"UpdatedAt",
 	"CorruptionLogs",
 	"CloningProgress",
-	"LastSyncOutput",
 )
 
 func TestHandleRepoDelete(t *testing.T) {
@@ -994,7 +1008,7 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 	req := newRequest("GET", "/repo-update", bytes.NewReader(body))
 	s.handleRepoUpdate(rr, req)
 
-	size := dirSize(s.dir(repoName).Path("."))
+	size := dirSize(repoDirFromName(s.ReposDir, repoName).Path("."))
 	want := &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
 		ShardID:       "",
@@ -1036,7 +1050,7 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 	req = newRequest("GET", "/delete", bytes.NewReader(body))
 	s.handleRepoDelete(rr, req)
 
-	size = dirSize(s.dir(repoName).Path("."))
+	size = dirSize(repoDirFromName(s.ReposDir, repoName).Path("."))
 	if size != 0 {
 		t.Fatalf("Size should be 0, got %d", size)
 	}
@@ -1111,7 +1125,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	req := newRequest("GET", "/repo-update", bytes.NewReader(body))
 	s.handleRepoUpdate(rr, req)
 
-	size := dirSize(s.dir(repoName).Path("."))
+	size := dirSize(repoDirFromName(s.ReposDir, repoName).Path("."))
 	want := &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
 		ShardID:       "",
@@ -1141,7 +1155,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	req = newRequest("GET", "/repo-update", bytes.NewReader(body))
 	s.handleRepoUpdate(rr, req)
 
-	size = dirSize(s.dir(repoName).Path("."))
+	size = dirSize(repoDirFromName(s.ReposDir, repoName).Path("."))
 	want = &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
 		ShardID:       "",
@@ -1197,7 +1211,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 		RepoID:        dbRepo.ID,
 		ShardID:       "",
 		CloneStatus:   types.CloneStatusCloned,
-		RepoSizeBytes: dirSize(s.dir(repoName).Path(".")), // we compute the new size
+		RepoSizeBytes: dirSize(repoDirFromName(s.ReposDir, repoName).Path(".")), // we compute the new size
 	}
 	fromDB, err = db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
@@ -1228,7 +1242,9 @@ func TestRemoveBadRefs(t *testing.T) {
 			t.Logf("WARNING: git tag %s failed to produce ambiguous output: %s", name, dontWant)
 		}
 
-		removeBadRefs(context.Background(), gitDir)
+		if err := removeBadRefs(context.Background(), gitDir); err != nil {
+			t.Fatal(err)
+		}
 
 		if got := cmd("git", "rev-parse", "HEAD"); got != wantCommit {
 			t.Fatalf("git tag %s failed to be removed: %s", name, got)
@@ -1243,7 +1259,9 @@ func TestRemoveBadRefs(t *testing.T) {
 			t.Logf("WARNING: git ref %s failed to produce ambiguous output: %s", name, dontWant)
 		}
 
-		removeBadRefs(context.Background(), gitDir)
+		if err := removeBadRefs(context.Background(), gitDir); err != nil {
+			t.Fatal(err)
+		}
 
 		if got := cmd("git", "rev-parse", "HEAD"); got != wantCommit {
 			t.Fatalf("git ref %s failed to be removed: %s", name, got)
@@ -1293,13 +1311,18 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 	})
 	t.Run("with no local HEAD file", func(t *testing.T) {
 		var (
-			remote   = t.TempDir()
 			reposDir = t.TempDir()
+			remote   = filepath.Join(reposDir, "remote")
 			cmd      = func(name string, arg ...string) string {
 				t.Helper()
 				return runCmd(t, remote, name, arg...)
 			}
+			repoName = api.RepoName("example.com/foo/bar")
 		)
+
+		if err := os.Mkdir(remote, os.ModePerm); err != nil {
+			t.Fatal(err)
+		}
 
 		_ = makeSingleCommitRepo(cmd)
 		s := makeTestServer(ctx, t, reposDir, remote, nil)
@@ -1310,13 +1333,15 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			}
 		}
 		t.Cleanup(func() { testRepoCorrupter = nil })
-		if _, err := s.CloneRepo(ctx, "example.com/foo/bar", CloneOptions{}); err != nil {
+		// Use block so we get clone errors right here and don't have to rely on the
+		// clone queue. There's no other reason for blocking here, just convenience/simplicity.
+		if _, err := s.CloneRepo(ctx, repoName, CloneOptions{Block: true}); err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		dst := s.dir("example.com/foo/bar")
+		dst := repoDirFromName(s.ReposDir, repoName)
 		for i := 0; i < 1000; i++ {
-			_, cloning := s.locker.Status(dst)
+			_, cloning := s.Locker.Status(dst)
 			if !cloning {
 				break
 			}
@@ -1353,9 +1378,9 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		}
 
 		// wait for repo to be cloned
-		dst := s.dir("example.com/foo/bar")
+		dst := repoDirFromName(s.ReposDir, "example.com/foo/bar")
 		for i := 0; i < 1000; i++ {
-			_, cloning := s.locker.Status(dst)
+			_, cloning := s.Locker.Status(dst)
 			if !cloning {
 				break
 			}
@@ -1422,13 +1447,7 @@ func TestHostnameMatch(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
-			s := Server{
-				Logger:         logtest.Scoped(t),
-				ObservationCtx: observation.TestContextTB(t),
-				Hostname:       tc.hostname,
-				DB:             database.NewMockDB(),
-			}
-			have := hostnameMatch(s.Hostname, tc.addr)
+			have := hostnameMatch(tc.hostname, tc.addr)
 			if have != tc.shouldMatch {
 				t.Fatalf("Want %v, got %v", tc.shouldMatch, have)
 			}
@@ -1485,7 +1504,7 @@ func TestSyncRepoState(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = s.syncRepoState(gitserver.GitserverAddresses{Addresses: []string{hostname}}, 10, 10, true)
+	err = syncRepoState(ctx, logger, db, s.Locker, hostname, reposDir, gitserver.GitserverAddresses{Addresses: []string{hostname}}, 10, 10, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1510,7 +1529,7 @@ func TestSyncRepoState(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = s.syncRepoState(gitserver.GitserverAddresses{Addresses: []string{hostname}}, 10, 10, true)
+		err = syncRepoState(ctx, logger, db, s.Locker, hostname, reposDir, gitserver.GitserverAddresses{Addresses: []string{hostname}}, 10, 10, true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1640,8 +1659,9 @@ func TestHandleBatchLog(t *testing.T) {
 				Logger:                  logtest.Scoped(t),
 				ObservationCtx:          observation.TestContextTB(t),
 				GlobalBatchLogSemaphore: semaphore.NewWeighted(8),
-				DB:                      database.NewMockDB(),
+				DB:                      dbmocks.NewMockDB(),
 				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
+				Locker:                  NewRepositoryLocker(),
 			}
 			h := server.Handler()
 
@@ -1669,7 +1689,6 @@ func TestHeaderXRequestedWithMiddleware(t *testing.T) {
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("success"))
 			w.WriteHeader(http.StatusOK)
-			return
 		}),
 	)
 
@@ -1800,7 +1819,7 @@ func TestLogIfCorrupt(t *testing.T) {
 
 		stdErr := "error: packfile .git/objects/pack/pack-e26c1fc0add58b7649a95f3e901e30f29395e174.pack does not match index"
 
-		s.logIfCorrupt(ctx, repoName, s.dir(repoName), stdErr)
+		s.logIfCorrupt(ctx, repoName, repoDirFromName(s.ReposDir, repoName), stdErr)
 
 		fromDB, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
 		assert.NoError(t, err)
@@ -1826,7 +1845,7 @@ func TestLogIfCorrupt(t *testing.T) {
 
 		stdErr := "Brought to you by Horsegraph"
 
-		s.logIfCorrupt(ctx, repoName, s.dir(repoName), stdErr)
+		s.logIfCorrupt(ctx, repoName, repoDirFromName(s.ReposDir, repoName), stdErr)
 
 		fromDB, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
 		assert.NoError(t, err)

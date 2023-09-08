@@ -1379,9 +1379,6 @@ Referenced by:
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
-    "event_logs_name_is_cody_active_event" btree (iscodyactiveevent(name))
-    "event_logs_name_is_cody_explanation_event" btree (iscodyexplanationevent(name))
-    "event_logs_name_is_cody_generation_event" btree (iscodygenerationevent(name))
     "event_logs_name_timestamp" btree (name, "timestamp" DESC)
     "event_logs_source" btree (source)
     "event_logs_timestamp" btree ("timestamp")
@@ -1560,6 +1557,96 @@ Referenced by:
 ```
 
 **creator_id**: NULL, if the user has been deleted.
+
+# Table "public.exhaustive_search_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                      Default                       
+-------------------+--------------------------+-----------+----------+----------------------------------------------------
+ id                | integer                  |           | not null | nextval('exhaustive_search_jobs_id_seq'::regclass)
+ state             | text                     |           |          | 'queued'::text
+ initiator_id      | integer                  |           | not null | 
+ query             | text                     |           | not null | 
+ failure_message   | text                     |           |          | 
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ cancel            | boolean                  |           | not null | false
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ queued_at         | timestamp with time zone |           |          | now()
+Indexes:
+    "exhaustive_search_jobs_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "exhaustive_search_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE
+Referenced by:
+    TABLE "exhaustive_search_repo_jobs" CONSTRAINT "exhaustive_search_repo_jobs_search_job_id_fkey" FOREIGN KEY (search_job_id) REFERENCES exhaustive_search_jobs(id) ON DELETE CASCADE
+
+```
+
+# Table "public.exhaustive_search_repo_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                         Default                         
+-------------------+--------------------------+-----------+----------+---------------------------------------------------------
+ id                | integer                  |           | not null | nextval('exhaustive_search_repo_jobs_id_seq'::regclass)
+ state             | text                     |           |          | 'queued'::text
+ repo_id           | integer                  |           | not null | 
+ ref_spec          | text                     |           | not null | 
+ search_job_id     | integer                  |           | not null | 
+ failure_message   | text                     |           |          | 
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ cancel            | boolean                  |           | not null | false
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ queued_at         | timestamp with time zone |           |          | now()
+Indexes:
+    "exhaustive_search_repo_jobs_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "exhaustive_search_repo_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    "exhaustive_search_repo_jobs_search_job_id_fkey" FOREIGN KEY (search_job_id) REFERENCES exhaustive_search_jobs(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "exhaustive_search_repo_revision_jobs" CONSTRAINT "exhaustive_search_repo_revision_jobs_search_repo_job_id_fkey" FOREIGN KEY (search_repo_job_id) REFERENCES exhaustive_search_repo_jobs(id) ON DELETE CASCADE
+
+```
+
+# Table "public.exhaustive_search_repo_revision_jobs"
+```
+       Column       |           Type           | Collation | Nullable |                             Default                              
+--------------------+--------------------------+-----------+----------+------------------------------------------------------------------
+ id                 | integer                  |           | not null | nextval('exhaustive_search_repo_revision_jobs_id_seq'::regclass)
+ state              | text                     |           |          | 'queued'::text
+ search_repo_job_id | integer                  |           | not null | 
+ revision           | text                     |           | not null | 
+ failure_message    | text                     |           |          | 
+ started_at         | timestamp with time zone |           |          | 
+ finished_at        | timestamp with time zone |           |          | 
+ process_after      | timestamp with time zone |           |          | 
+ num_resets         | integer                  |           | not null | 0
+ num_failures       | integer                  |           | not null | 0
+ last_heartbeat_at  | timestamp with time zone |           |          | 
+ execution_logs     | json[]                   |           |          | 
+ worker_hostname    | text                     |           | not null | ''::text
+ cancel             | boolean                  |           | not null | false
+ created_at         | timestamp with time zone |           | not null | now()
+ updated_at         | timestamp with time zone |           | not null | now()
+ queued_at          | timestamp with time zone |           |          | now()
+Indexes:
+    "exhaustive_search_repo_revision_jobs_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "exhaustive_search_repo_revision_jobs_search_repo_job_id_fkey" FOREIGN KEY (search_repo_job_id) REFERENCES exhaustive_search_repo_jobs(id) ON DELETE CASCADE
+
+```
 
 # Table "public.explicit_permissions_bitbucket_projects_jobs"
 ```
@@ -1860,7 +1947,6 @@ Indexes:
  corrupted_at     | timestamp with time zone |           |          | 
  corruption_logs  | jsonb                    |           | not null | '[]'::jsonb
  cloning_progress | text                     |           |          | ''::text
- pool_repo_id     | integer                  |           |          | 
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repo_size_bytes" btree (repo_size_bytes)
@@ -1872,7 +1958,6 @@ Indexes:
     "gitserver_repos_not_explicitly_cloned_idx" btree (repo_id) WHERE clone_status <> 'cloned'::text
     "gitserver_repos_shard_id" btree (shard_id, repo_id)
 Foreign-key constraints:
-    "gitserver_repos_pool_repo_id_fkey" FOREIGN KEY (pool_repo_id) REFERENCES repo(id)
     "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 Triggers:
     trig_recalc_gitserver_repos_statistics_on_delete AFTER DELETE ON gitserver_repos REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_delete()
@@ -1884,8 +1969,6 @@ Triggers:
 **corrupted_at**: Timestamp of when repo corruption was detected
 
 **corruption_logs**: Log output of repo corruptions that have been detected - encoded as json
-
-**pool_repo_id**: This is used to refer to the pool repository for deduplicated repos
 
 # Table "public.gitserver_repos_statistics"
 ```
@@ -3487,8 +3570,8 @@ Referenced by:
     TABLE "codeintel_autoindexing_exceptions" CONSTRAINT "codeintel_autoindexing_exceptions_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "codeowners" CONSTRAINT "codeowners_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "exhaustive_search_repo_jobs" CONSTRAINT "exhaustive_search_repo_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
-    TABLE "gitserver_repos" CONSTRAINT "gitserver_repos_pool_repo_id_fkey" FOREIGN KEY (pool_repo_id) REFERENCES repo(id)
     TABLE "gitserver_repos" CONSTRAINT "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "gitserver_repos_sync_output" CONSTRAINT "gitserver_repos_sync_output_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -3540,12 +3623,12 @@ Foreign-key constraints:
  code_files_embedded  | integer |           | not null | 0
  code_chunks_embedded | integer |           | not null | 0
  code_files_skipped   | jsonb   |           | not null | '{}'::jsonb
- code_bytes_embedded  | integer |           | not null | 0
+ code_bytes_embedded  | bigint  |           | not null | 0
  text_files_total     | integer |           | not null | 0
  text_files_embedded  | integer |           | not null | 0
  text_chunks_embedded | integer |           | not null | 0
  text_files_skipped   | jsonb   |           | not null | '{}'::jsonb
- text_bytes_embedded  | integer |           | not null | 0
+ text_bytes_embedded  | bigint  |           | not null | 0
  code_chunks_excluded | integer |           | not null | 0
  text_chunks_excluded | integer |           | not null | 0
 Indexes:
@@ -4077,6 +4160,21 @@ Triggers:
 
 ```
 
+# Table "public.user_onboarding_tour"
+```
+   Column   |            Type             | Collation | Nullable |                     Default                      
+------------+-----------------------------+-----------+----------+--------------------------------------------------
+ id         | integer                     |           | not null | nextval('user_onboarding_tour_id_seq'::regclass)
+ raw_json   | text                        |           | not null | 
+ created_at | timestamp without time zone |           | not null | now()
+ updated_by | integer                     |           |          | 
+Indexes:
+    "user_onboarding_tour_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "user_onboarding_tour_users_fk" FOREIGN KEY (updated_by) REFERENCES users(id)
+
+```
+
 # Table "public.user_pending_permissions"
 ```
      Column      |           Type           | Collation | Nullable |                       Default                        
@@ -4235,6 +4333,7 @@ Referenced by:
     TABLE "executor_secret_access_logs" CONSTRAINT "executor_secret_access_logs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "executor_secrets" CONSTRAINT "executor_secrets_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
     TABLE "executor_secrets" CONSTRAINT "executor_secrets_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "exhaustive_search_jobs" CONSTRAINT "exhaustive_search_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "external_services" CONSTRAINT "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -4269,6 +4368,7 @@ Referenced by:
     TABLE "user_credentials" CONSTRAINT "user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "user_onboarding_tour" CONSTRAINT "user_onboarding_tour_users_fk" FOREIGN KEY (updated_by) REFERENCES users(id)
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "user_repo_permissions" CONSTRAINT "user_repo_permissions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "user_roles" CONSTRAINT "user_roles_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE

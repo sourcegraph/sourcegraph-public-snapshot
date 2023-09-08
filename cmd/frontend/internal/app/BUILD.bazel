@@ -88,6 +88,7 @@ go_test(
         "//internal/api",
         "//internal/conf",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/extsvc",
         "//internal/src-prometheus",

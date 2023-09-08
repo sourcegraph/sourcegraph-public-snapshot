@@ -19,10 +19,6 @@ describe('gitHubAppConfig', () => {
     })
 
     describe('resolveExternalServiceCategory', () => {
-        test('returns undefined with no external service', () => {
-            expect(resolveExternalServiceCategory()).toEqual(undefined)
-        })
-
         test('parses config from JSONC if parsed config is not given', () => {
             const externalService = {
                 config: '{"url": "https://github.com"}',
@@ -47,7 +43,7 @@ describe('gitHubAppConfig', () => {
                 kind: ExternalServiceKind.GITHUB,
             } as ExternalServiceFieldsWithConfig
 
-            expect(resolveExternalServiceCategory(externalService)).toEqual(codeHostExternalServices.ghe)
+            expect(resolveExternalServiceCategory(externalService)).toEqual(codeHostExternalServices.github)
         })
 
         test('returns GitLab dotcom if GITLAB kind and gitlab.com URL', () => {
@@ -65,7 +61,7 @@ describe('gitHubAppConfig', () => {
                 parsedConfig: { url: 'https://gitlab.example.com' },
             } as ExternalServiceFieldsWithConfig
 
-            expect(resolveExternalServiceCategory(externalService)).toEqual(codeHostExternalServices.gitlab)
+            expect(resolveExternalServiceCategory(externalService)).toEqual(codeHostExternalServices.gitlabcom)
         })
 
         test('returns GitHub App category if config contains gitHubAppDetails', () => {

@@ -17,7 +17,6 @@ allowed_prefix=(
   github.com/sourcegraph/sourcegraph/cmd/repo-updater
   github.com/sourcegraph/sourcegraph/cmd/migrator
   github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
-  github.com/sourcegraph/sourcegraph/enterprise/cmd/gitserver
   github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
   github.com/sourcegraph/sourcegraph/enterprise/cmd/migrator
   github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker
@@ -27,6 +26,8 @@ allowed_prefix=(
   github.com/sourcegraph/sourcegraph/cmd/symbols
   # Transitively depends on zoekt package which imports but does not use DB
   github.com/sourcegraph/sourcegraph/cmd/searcher
+  # Transitively depends on updatecheck package which imports but does not use DB
+  github.com/sourcegraph/sourcegraph/cmd/pings
   # Main entrypoints for running all services, so they must be allowed to import it.
   github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss
   github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph

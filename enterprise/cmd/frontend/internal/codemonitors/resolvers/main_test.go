@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -147,7 +148,7 @@ func newTestResolver(t *testing.T, db database.DB) *Resolver {
 
 // newResolverWithClock is used in tests to set the clock manually.
 func newResolverWithClock(logger log.Logger, db database.DB, clock func() time.Time) *Resolver {
-	mockDB := database.NewMockDBFrom(db)
+	mockDB := dbmocks.NewMockDBFrom(db)
 	mockDB.CodeMonitorsFunc.SetDefaultReturn(database.CodeMonitorsWithClock(db, clock))
 	return &Resolver{logger: logger, db: mockDB}
 }

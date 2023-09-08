@@ -42,6 +42,7 @@ go_test(
         "//internal/auth/providers",
         "//internal/authz",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/extsvc",
         "//internal/gitserver",

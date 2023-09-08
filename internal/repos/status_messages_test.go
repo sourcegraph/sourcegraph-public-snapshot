@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -315,7 +316,7 @@ func TestStatusMessages(t *testing.T) {
 				Now:     clock.Now,
 			}
 
-			mockDB := database.NewMockDBFrom(db)
+			mockDB := dbmocks.NewMockDBFrom(db)
 			if tc.sourcerErr != nil {
 				sourcer := NewFakeSourcer(tc.sourcerErr, NewFakeSource(extSvc, nil))
 				syncer.Sourcer = sourcer
@@ -328,7 +329,7 @@ func TestStatusMessages(t *testing.T) {
 				// returned will be stored in the external_service_sync_jobs table, so we fake
 				// that here.
 				if err != nil {
-					externalServices := database.NewMockExternalServiceStore()
+					externalServices := dbmocks.NewMockExternalServiceStore()
 					externalServices.GetLatestSyncErrorsFunc.SetDefaultReturn(
 						[]*database.SyncError{
 							{ServiceID: extSvc.ID, Message: err.Error()},
@@ -340,7 +341,7 @@ func TestStatusMessages(t *testing.T) {
 			}
 
 			if len(tc.repos) < 1 && tc.sourcerErr == nil {
-				externalServices := database.NewMockExternalServiceStore()
+				externalServices := dbmocks.NewMockExternalServiceStore()
 				externalServices.GetLatestSyncErrorsFunc.SetDefaultReturn(
 					[]*database.SyncError{},
 					nil,

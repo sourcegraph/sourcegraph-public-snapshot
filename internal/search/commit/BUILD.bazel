@@ -33,6 +33,7 @@ go_test(
     embed = [":commit"],
     deps = [
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/gitserver/protocol",
         "//internal/search/query",
         "//internal/types",

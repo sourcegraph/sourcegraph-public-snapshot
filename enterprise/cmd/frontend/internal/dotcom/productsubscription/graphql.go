@@ -9,6 +9,6 @@ import (
 // ProductSubscriptionLicensingResolver implements the GraphQL Query and Mutation fields related to product
 // subscriptions and licensing.
 type ProductSubscriptionLicensingResolver struct {
-	logger log.Logger
+	Logger log.Logger
 	DB     database.DB
 }

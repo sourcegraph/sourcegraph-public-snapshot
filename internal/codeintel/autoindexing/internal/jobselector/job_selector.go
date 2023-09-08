@@ -85,23 +85,6 @@ func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context,
 	return result, nil
 }
 
-// inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobHints over all registered recognizers.
-func (s *JobSelector) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, repoName api.RepoName, commit string) ([]config.IndexJobHint, error) {
-	if _, canInfer, err := s.store.RepositoryExceptions(ctx, repositoryID); err != nil {
-		return nil, err
-	} else if !canInfer {
-		s.logger.Warn("Auto-indexing job inference for this repo is disabled", log.Int("repositoryID", repositoryID), log.String("repoName", string(repoName)))
-		return nil, nil
-	}
-
-	indexes, err := s.inferenceSvc.InferIndexJobHints(ctx, repoName, commit, overrideScript)
-	if err != nil {
-		return nil, err
-	}
-
-	return indexes, nil
-}
-
 type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]uploadsshared.Index, bool, error)
 
 // GetIndexRecords determines the set of index records that should be enqueued for the given commit.

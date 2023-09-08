@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -78,6 +79,12 @@ func TestCombinedOutput(t *testing.T) {
 		}
 	})
 
+	t.Run("output is correctly saved", func(t *testing.T) {
+		if diff := cmp.Diff(string(want), tc.cmd.GetExecutionOutput()); diff != "" {
+			t.Error(diff)
+		}
+	})
+
 	t.Run("before hooks are called", func(t *testing.T) {
 		if diff := cmp.Diff(1, tc.beforeCounter); diff != "" {
 			t.Error(diff)
@@ -128,6 +135,12 @@ func TestOutput(t *testing.T) {
 			t.Error(diff)
 		}
 		if diff := cmp.Diff(wantErr, gotErr); diff != "" {
+			t.Error(diff)
+		}
+	})
+
+	t.Run("output is correctly saved", func(t *testing.T) {
+		if diff := cmp.Diff(string(want), tc.cmd.GetExecutionOutput()); diff != "" {
 			t.Error(diff)
 		}
 	})

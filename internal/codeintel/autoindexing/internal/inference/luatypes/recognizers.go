@@ -155,14 +155,6 @@ func NamedRecognizersFromUserDataMap(value lua.LValue, allowFalseAsNil bool) (re
 	return
 }
 
-// RecognizersFromUserData decodes a single recognize or slice of recognizers from the
-// given Lua value.
-func RecognizersFromUserData(value lua.LValue) (recognizers []*Recognizer, err error) {
-	return util.MapSliceOrSingleton(value, func(value lua.LValue) (*Recognizer, error) {
-		return util.TypecheckUserData[*Recognizer](value, "*Recognizer")
-	})
-}
-
 // RecognizerFromTable decodes a single Lua table value into a recognizer instance.
 func RecognizerFromTable(table *lua.LTable) (*Recognizer, error) {
 	recognizer := &Recognizer{}

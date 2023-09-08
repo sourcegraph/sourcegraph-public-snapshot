@@ -34,6 +34,7 @@ func TestLog(t *testing.T) {
 			},
 			additionalContext: []log.Field{log.String("additional", "stuff")},
 			expectedEntry: autogold.Expect(map[string]interface{}{"additional": "stuff", "audit": map[string]interface{}{
+				"action": "test audit action",
 				"actor": map[string]interface{}{
 					"X-Forwarded-For": "192.168.0.1",
 					"actorUID":        "1",
@@ -54,6 +55,7 @@ func TestLog(t *testing.T) {
 			},
 			additionalContext: []log.Field{log.String("additional", "stuff")},
 			expectedEntry: autogold.Expect(map[string]interface{}{"additional": "stuff", "audit": map[string]interface{}{
+				"action": "test audit action",
 				"actor": map[string]interface{}{
 					"X-Forwarded-For": "192.168.0.1",
 					"actorUID":        "anonymous",
@@ -74,6 +76,7 @@ func TestLog(t *testing.T) {
 			},
 			additionalContext: []log.Field{log.String("additional", "stuff")},
 			expectedEntry: autogold.Expect(map[string]interface{}{"additional": "stuff", "audit": map[string]interface{}{
+				"action": "test audit action",
 				"actor": map[string]interface{}{
 					"X-Forwarded-For": "192.168.0.1",
 					"actorUID":        "unknown",
@@ -90,6 +93,7 @@ func TestLog(t *testing.T) {
 			client:            nil,
 			additionalContext: []log.Field{log.String("additional", "stuff")},
 			expectedEntry: autogold.Expect(map[string]interface{}{"additional": "stuff", "audit": map[string]interface{}{
+				"action": "test audit action",
 				"actor": map[string]interface{}{
 					"X-Forwarded-For": "unknown",
 					"actorUID":        "1",
@@ -110,9 +114,11 @@ func TestLog(t *testing.T) {
 			},
 			additionalContext: nil,
 			expectedEntry: autogold.Expect(map[string]interface{}{"audit": map[string]interface{}{
-				"actor": map[string]interface{}{
-					"X-Forwarded-For": "192.168.0.1", "actorUID": "1", "ip": "192.168.0.1",
-					"userAgent": "Foobar",
+				"action": "test audit action", "actor": map[string]interface{}{
+					"X-Forwarded-For": "192.168.0.1",
+					"actorUID":        "1",
+					"ip":              "192.168.0.1",
+					"userAgent":       "Foobar",
 				},
 				"auditId": "test-audit-id-1234",
 				"entity":  "test entity",

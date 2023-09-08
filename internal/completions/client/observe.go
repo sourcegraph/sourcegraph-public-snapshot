@@ -5,10 +5,11 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 func newObservedClient(inner types.CompletionsClient) *observedClient {
@@ -29,7 +30,7 @@ var _ types.CompletionsClient = (*observedClient)(nil)
 
 func (o *observedClient) Stream(ctx context.Context, feature types.CompletionsFeature, params types.CompletionRequestParameters, send types.SendCompletionEvent) (err error) {
 	ctx, tr, endObservation := o.ops.stream.With(ctx, &err, observation.Args{
-		Attrs:             append(params.Attrs(), attribute.String("feature", string(feature))),
+		Attrs:             append(params.Attrs(feature), attribute.String("feature", string(feature))),
 		MetricLabelValues: []string{params.Model},
 	})
 	defer endObservation(1, observation.Args{})
@@ -47,8 +48,8 @@ func (o *observedClient) Stream(ctx context.Context, feature types.CompletionsFe
 }
 
 func (o *observedClient) Complete(ctx context.Context, feature types.CompletionsFeature, params types.CompletionRequestParameters) (resp *types.CompletionResponse, err error) {
-	ctx, _, endObservation := o.ops.stream.With(ctx, &err, observation.Args{
-		Attrs:             append(params.Attrs(), attribute.String("feature", string(feature))),
+	ctx, _, endObservation := o.ops.complete.With(ctx, &err, observation.Args{
+		Attrs:             append(params.Attrs(feature), attribute.String("feature", string(feature))),
 		MetricLabelValues: []string{params.Model},
 	})
 	defer endObservation(1, observation.Args{})
@@ -83,7 +84,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		Name:    "completions.stream",
 	})
 	completeOp := observationCtx.Operation(observation.Op{
-		Metrics: streamMetrics,
+		Metrics: completeMetrics,
 		Name:    "completions.complete",
 	})
 	return &operations{

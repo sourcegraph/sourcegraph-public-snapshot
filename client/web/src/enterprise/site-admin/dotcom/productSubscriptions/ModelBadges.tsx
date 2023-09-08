@@ -36,11 +36,22 @@ function modelBadgeVariant(model: string, mode: 'completions' | 'embeddings'): '
             case 'anthropic/claude-instant-v1.0':
             case 'anthropic/claude-instant-v1.1':
             case 'anthropic/claude-instant-v1.1-100k':
+            case 'anthropic/claude-instant-v1.2':
             // See here: https://platform.openai.com/docs/models/model-endpoint-compatibility
             // for currently available Anthropic models. Note that we also need to
             // allow list the models on the Cody Gateway side.
             case 'openai/gpt-4':
             case 'openai/gpt-3.5-turbo':
+            // Bespoken models hosted for us by Fireworks. These are also allowed on the Cody
+            // Gateway side
+            case 'fireworks/accounts/fireworks/models/starcoder-16b-w8a16':
+            case 'fireworks/accounts/fireworks/models/starcoder-7b-w8a16':
+            case 'fireworks/accounts/fireworks/models/starcoder-3b-w8a16':
+            case 'fireworks/accounts/fireworks/models/starcoder-1b-w8a16':
+            case 'fireworks/accounts/fireworks/models/llama-v2-7b-code':
+            case 'fireworks/accounts/fireworks/models/llama-v2-13b-code':
+            case 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct':
+            case 'fireworks/accounts/fireworks/models/wizardcoder-15b':
                 return 'secondary'
             default:
                 return 'danger'

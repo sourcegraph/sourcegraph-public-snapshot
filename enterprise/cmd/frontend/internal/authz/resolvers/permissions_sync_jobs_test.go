@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/stretchr/testify/require"
 )
@@ -17,9 +18,9 @@ func TestPermissionSyncJobsResolver(t *testing.T) {
 	args := graphqlutil.ConnectionResolverArgs{First: &first}
 
 	t.Run("No jobs found", func(t *testing.T) {
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 
-		jobsStore := database.NewMockPermissionSyncJobStore()
+		jobsStore := dbmocks.NewMockPermissionSyncJobStore()
 		jobsStore.ListFunc.SetDefaultReturn([]*database.PermissionSyncJob{}, nil)
 
 		db.PermissionSyncJobsFunc.SetDefaultReturn(jobsStore)
@@ -32,11 +33,11 @@ func TestPermissionSyncJobsResolver(t *testing.T) {
 	})
 
 	t.Run("One job found", func(t *testing.T) {
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 
-		jobsStore := database.NewMockPermissionSyncJobStore()
+		jobsStore := dbmocks.NewMockPermissionSyncJobStore()
 		jobsStore.ListFunc.SetDefaultReturn([]*database.PermissionSyncJob{{ID: 1, RepositoryID: 1}}, nil)
-		repoStore := database.NewMockRepoStore()
+		repoStore := dbmocks.NewMockRepoStore()
 		repoStore.GetFunc.SetDefaultReturn(&types.Repo{ID: 1}, nil)
 
 		db.PermissionSyncJobsFunc.SetDefaultReturn(jobsStore)

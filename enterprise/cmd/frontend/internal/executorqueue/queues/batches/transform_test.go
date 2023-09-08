@@ -17,6 +17,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	apiclient "github.com/sourcegraph/sourcegraph/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -26,8 +27,8 @@ import (
 )
 
 func TestTransformRecord(t *testing.T) {
-	db := database.NewMockDB()
-	repos := database.NewMockRepoStore()
+	db := dbmocks.NewMockDB()
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 		return &types.Repo{ID: id, Name: "github.com/sourcegraph/sourcegraph"}, nil
 	})
@@ -38,7 +39,7 @@ func TestTransformRecord(t *testing.T) {
 		conf.Mock(nil)
 	})
 
-	secs := database.NewMockExecutorSecretStore()
+	secs := dbmocks.NewMockExecutorSecretStore()
 	secs.ListFunc.SetDefaultHook(func(ctx context.Context, ess database.ExecutorSecretScope, eslo database.ExecutorSecretsListOpts) ([]*database.ExecutorSecret, int, error) {
 		if len(eslo.Keys) == 1 && eslo.Keys[0] == "DOCKER_AUTH_CONFIG" {
 			return nil, 0, nil
@@ -53,7 +54,7 @@ func TestTransformRecord(t *testing.T) {
 	})
 	db.ExecutorSecretsFunc.SetDefaultReturn(secs)
 
-	sal := database.NewMockExecutorSecretAccessLogStore()
+	sal := dbmocks.NewMockExecutorSecretAccessLogStore()
 	db.ExecutorSecretAccessLogsFunc.SetDefaultReturn(sal)
 
 	spec := batcheslib.BatchSpec{}

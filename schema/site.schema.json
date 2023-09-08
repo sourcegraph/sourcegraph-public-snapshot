@@ -125,14 +125,6 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
-        "useGitserverAddressLookupCache": {
-          "description": "(Internal development only) Short lived experimental flag to test the effect of caching vs no caching of repo address lookup",
-          "type": "boolean",
-          "default": true,
-          "!go": {
-            "pointer": true
-          }
-        },
         "rateLimitAnonymous": {
           "description": "Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.",
           "type": "integer",
@@ -199,7 +191,8 @@
           "description": "Allow adding Perforce code host connections",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "enabled"
+          "default": "enabled",
+          "deprecationMessage": "Deprecated, Perforce is always enabled, setting is no longer used."
         },
         "perforceChangelistMapping": {
           "description": "Allow mapping of Perforce changelists to their commit SHAs in the DB",
@@ -869,21 +862,6 @@
       "default": -1,
       "group": "External services"
     },
-    "repositories": {
-      "description": "Top level configuration key for all things repositories.",
-      "type": "object",
-      "properties": {
-        "deduplicateForks": {
-          "type": "array",
-          "description": "EXPERIMENTAL: A list of absolute paths of repositories whose forks will use deduplicated storage in gitserver",
-          "items": {
-            "type": "string"
-          },
-          "examples": [["github.com/sourcegraph/sourcegraph"]],
-          "uniqueItems": true
-        }
-      }
-    },
     "syntaxHighlighting": {
       "title": "SyntaxHighlighting",
       "description": "Syntax highlighting configuration",
@@ -1408,9 +1386,9 @@
       "examples": ["4.1.0"]
     },
     "executors.accessToken": {
-      "description": "The shared secret between Sourcegraph and executors.",
+      "description": "The shared secret between Sourcegraph and executors. The value must contain at least 20 characters.",
       "type": "string",
-      "minLength": 20,
+      "pattern": "^(.{20,}|REDACTED)$",
       "examples": ["my-super-secret-access-token"]
     },
     "executors.multiqueue": {
@@ -1962,6 +1940,11 @@
       "description": "Configuration options for Sourcegraph.com only.",
       "type": "object",
       "properties": {
+        "minimumExternalAccountAge": {
+          "description": "The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com.",
+          "type": "integer",
+          "default": 0
+        },
         "app.notifications": {
           "description": "Notifications to display in the Sourcegraph app.",
           "type": "array",
@@ -2478,7 +2461,7 @@
           "format": "uri"
         },
         "fileFilters": {
-          "description": "Filters that will decode which files om a repository get embedded.",
+          "description": "Filters that allow you to specify which files in a repository should get embedded.",
           "type": "object",
           "properties": {
             "excludedFilePathPatterns": {

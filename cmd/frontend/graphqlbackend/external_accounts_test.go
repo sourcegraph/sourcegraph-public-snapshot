@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
@@ -40,7 +41,7 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		act := actor.Actor{UID: 1}
 		ctx := actor.WithActor(context.Background(), &act)
-		sr := newSchemaResolver(db, gitserver.NewClient(db))
+		sr := newSchemaResolver(db, gitserver.NewClient())
 
 		spec := extsvc.AccountSpec{
 			ServiceType: extsvc.TypeGitHub,
@@ -72,13 +73,13 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 }
 
 func TestExternalAccounts_AddExternalAccount(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	db.UsersFunc.SetDefaultReturn(users)
-	extservices := database.NewMockExternalServiceStore()
+	extservices := dbmocks.NewMockExternalServiceStore()
 	db.ExternalServicesFunc.SetDefaultReturn(extservices)
-	userextaccts := database.NewMockUserExternalAccountsStore()
+	userextaccts := dbmocks.NewMockUserExternalAccountsStore()
 	db.UserExternalAccountsFunc.SetDefaultReturn(userextaccts)
 
 	gerritURL := "https://gerrit.mycorp.com/"
@@ -171,7 +172,7 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 				ctx = actor.WithActor(ctx, &act)
 			}
 
-			sr := newSchemaResolver(db, gitserver.NewClient(db))
+			sr := newSchemaResolver(db, gitserver.NewClient())
 
 			args := struct {
 				ServiceType    string

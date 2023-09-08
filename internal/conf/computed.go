@@ -8,7 +8,6 @@ import (
 
 	"github.com/hashicorp/cronexpr"
 
-	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -573,18 +572,6 @@ func HashedLicenseKeyWithPrefix(licenseKey string, prefix string) string {
 	return hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(prefix + licenseKey)))
 }
 
-func GetDeduplicatedForksIndex() collections.Set[string] {
-	index := collections.NewSet[string]()
-
-	repoConf := Get().Repositories
-	if repoConf == nil {
-		return index
-	}
-
-	index.Add(repoConf.DeduplicateForks...)
-	return index
-}
-
 // GetCompletionsConfig evaluates a complete completions configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
 func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.CompletionsConfig) {
@@ -733,6 +720,31 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		// If not completions model is set, we cannot talk to Azure OpenAI. Bail.
 		if completionsConfig.CompletionModel == "" {
 			return nil
+		}
+	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameFireworks) {
+		// If no endpoint is configured, use a default value.
+		if completionsConfig.Endpoint == "" {
+			completionsConfig.Endpoint = "https://api.fireworks.ai/inference/v1/completions"
+		}
+
+		// If not access token is set, we cannot talk to Fireworks. Bail.
+		if completionsConfig.AccessToken == "" {
+			return nil
+		}
+
+		// Set a default chat model.
+		if completionsConfig.ChatModel == "" {
+			completionsConfig.ChatModel = "accounts/fireworks/models/llama-v2-7b"
+		}
+
+		// Set a default fast chat model.
+		if completionsConfig.FastChatModel == "" {
+			completionsConfig.FastChatModel = "accounts/fireworks/models/llama-v2-7b"
+		}
+
+		// Set a default completions model.
+		if completionsConfig.CompletionModel == "" {
+			completionsConfig.CompletionModel = "accounts/fireworks/models/starcoder-7b-w8a16"
 		}
 	}
 
@@ -1010,6 +1022,8 @@ func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model st
 		return anthropicDefaultMaxPromptTokens(model)
 	case conftypes.CompletionsProviderNameOpenAI:
 		return openaiDefaultMaxPromptTokens(model)
+	case conftypes.CompletionsProviderNameFireworks:
+		return fireworksDefaultMaxPromptTokens(model)
 	case conftypes.CompletionsProviderNameAzureOpenAI:
 		// We cannot know based on the model name what model is actually used,
 		// this is a sane default for GPT in general.
@@ -1047,4 +1061,18 @@ func openaiDefaultMaxPromptTokens(model string) int {
 	default:
 		return 4_000
 	}
+}
+
+func fireworksDefaultMaxPromptTokens(model string) int {
+	if strings.HasPrefix(model, "accounts/fireworks/models/llama-v2") {
+		// Llama 2 has a context window of 4000 tokens
+		return 3_000
+	}
+
+	if strings.HasPrefix(model, "accounts/fireworks/models/starcoder-") {
+		// StarCoder has a context window of 8192 tokens
+		return 6_000
+	}
+
+	return 4_000
 }

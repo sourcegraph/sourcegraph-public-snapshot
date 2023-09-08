@@ -8,7 +8,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.sourcegraph.cody.autocomplete.AutoCompleteDocumentContext;
+import com.sourcegraph.cody.autocomplete.AutocompleteDocumentContext;
 import java.net.URI;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -63,14 +63,14 @@ public class IntelliJTextDocument implements TextDocument {
   }
 
   @Override
-  public AutoCompleteDocumentContext getAutoCompleteContext(int offset) {
+  public AutocompleteDocumentContext getAutocompleteContext(int offset) {
     Document document = this.editor.getDocument();
     int line = document.getLineNumber(offset);
     int lineEndOffset = document.getLineEndOffset(line);
     String sameLineSuffix = document.getText(TextRange.create(offset, lineEndOffset));
     int lineStartOffset = document.getLineStartOffset(line);
     String sameLinePrefix = document.getText(TextRange.create(lineStartOffset, offset));
-    return new AutoCompleteDocumentContext(sameLinePrefix, sameLineSuffix);
+    return new AutocompleteDocumentContext(sameLinePrefix, sameLineSuffix);
   }
 
   @Override

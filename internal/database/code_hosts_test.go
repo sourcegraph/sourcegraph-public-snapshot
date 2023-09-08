@@ -173,7 +173,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			name: "get 1 by id",
 			listOpts: ListCodeHostsOpts{
 				ID: int32(1),
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -183,7 +183,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			name: "get 1 by url",
 			listOpts: ListCodeHostsOpts{
 				URL: "https://github.com/",
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -192,7 +192,7 @@ func TestCodeHostStore_List(t *testing.T) {
 		{
 			name: "get all, non-deleted",
 			listOpts: ListCodeHostsOpts{
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -202,7 +202,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			name: "get all, with deleted",
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -213,7 +213,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Search:         "gitlab",
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -224,7 +224,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Search:         "bitbucket",
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -235,7 +235,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Cursor:         int32(2),
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -246,7 +246,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Cursor:         int32(3),
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
@@ -256,7 +256,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			name: "cursor test, use next",
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
-				LimitOffset: LimitOffset{
+				LimitOffset: &LimitOffset{
 					Limit: 1,
 				},
 			},
@@ -283,6 +283,157 @@ func TestCodeHostStore_List(t *testing.T) {
 
 			if diff := cmp.Diff(result, test.results); diff != "" {
 				t.Fatalf("unexpected code host, got %+v\n", diff)
+			}
+		})
+	}
+}
+
+func TestCodeHostStore_Count(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	quotaOne := int32(10)
+	quotaTwo := int32(20)
+	confGet := func() *conf.Unified { return &conf.Unified{} }
+	codeHostOne := &types.CodeHost{
+		Kind:                        extsvc.KindGitHub,
+		URL:                         "https://github.com/",
+		APIRateLimitQuota:           &quotaOne,
+		APIRateLimitIntervalSeconds: &quotaOne,
+		GitRateLimitQuota:           &quotaOne,
+		GitRateLimitIntervalSeconds: &quotaOne,
+	}
+	codeHostTwo := &types.CodeHost{
+		Kind:                        extsvc.KindGitLab,
+		URL:                         "https://gitlab.com/",
+		APIRateLimitQuota:           &quotaTwo,
+		APIRateLimitIntervalSeconds: &quotaTwo,
+		GitRateLimitQuota:           &quotaTwo,
+		GitRateLimitIntervalSeconds: &quotaTwo,
+	}
+
+	extsvcConfig := extsvc.NewUnencryptedConfig(`{"url": "https://github.com/", "repositoryQuery": ["none"], "token": "abc"}`)
+	err := db.CodeHosts().Create(ctx, codeHostOne)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = db.CodeHosts().Create(ctx, codeHostTwo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create the external service so that the first code host appears when we GetByID after.
+	err = db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
+		CodeHostID: &codeHostOne.ID,
+		Kind:       codeHostOne.Kind,
+		Config:     extsvcConfig,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name        string
+		listOpts    ListCodeHostsOpts
+		wantResults int32
+	}{
+		{
+			name: "count with get 1 by id",
+			listOpts: ListCodeHostsOpts{
+				ID: int32(1),
+				LimitOffset: &LimitOffset{
+					Limit: 10,
+				},
+			},
+			wantResults: 1,
+		},
+		{
+			name: "count with get 1 by url",
+			listOpts: ListCodeHostsOpts{
+				URL: "https://github.com/",
+				LimitOffset: &LimitOffset{
+					Limit: 10,
+				},
+			},
+			wantResults: 1,
+		},
+		{
+			name: "count with get all, non-deleted",
+			listOpts: ListCodeHostsOpts{
+				LimitOffset: &LimitOffset{
+					Limit: 10,
+				},
+			},
+			wantResults: 1,
+		},
+		{
+			name: "count with get all, with deleted",
+			listOpts: ListCodeHostsOpts{
+				IncludeDeleted: true,
+				LimitOffset: &LimitOffset{
+					Limit: 10,
+				},
+			},
+			wantResults: 2,
+		},
+		{
+			name: "count with search",
+			listOpts: ListCodeHostsOpts{
+				IncludeDeleted: true,
+				Search:         "gitlab",
+				LimitOffset: &LimitOffset{
+					Limit: 10,
+				},
+			},
+			wantResults: 1,
+		},
+		{
+			name: "count with search matching none",
+			listOpts: ListCodeHostsOpts{
+				IncludeDeleted: true,
+				Search:         "bitbucket",
+				LimitOffset: &LimitOffset{
+					Limit: 10,
+				},
+			},
+			wantResults: 0,
+		},
+		{
+			name: "count with cursor",
+			listOpts: ListCodeHostsOpts{
+				IncludeDeleted: true,
+				Cursor:         int32(2),
+				LimitOffset: &LimitOffset{
+					Limit: 10,
+				},
+			},
+			wantResults: 1,
+		},
+		{
+			name: "count with cursor, no matches",
+			listOpts: ListCodeHostsOpts{
+				IncludeDeleted: true,
+				Cursor:         int32(3),
+				LimitOffset: &LimitOffset{
+					Limit: 10,
+				},
+			},
+			wantResults: 0,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			count, err := db.CodeHosts().Count(ctx, test.listOpts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if count != test.wantResults {
+				t.Fatalf("unexpected code host count, got %d, expected: %d\n", count, test.wantResults)
 			}
 		})
 	}

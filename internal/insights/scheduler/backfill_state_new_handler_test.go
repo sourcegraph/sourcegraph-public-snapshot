@@ -10,8 +10,8 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	edb "github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
@@ -26,13 +26,13 @@ func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.ListFunc.SetDefaultReturn([]*itypes.Repo{{ID: 1, Name: "repo1"}, {ID: 2, Name: "repo2"}}, nil)
 	now := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
 	clock := glock.NewMockClockAt(now)
 	bfs := newBackfillStoreWithClock(insightsDB, clock)
 	insightsStore := store.NewInsightStore(insightsDB)
-	permStore := store.NewInsightPermissionStore(database.NewMockDB())
+	permStore := store.NewInsightPermissionStore(dbmocks.NewMockDB())
 	seriesStore := store.New(insightsDB, permStore)
 	repoQueryExecutor := NewMockRepoQueryExecutor()
 	repoQueryExecutor.ExecuteRepoListFunc.SetDefaultReturn(nil, errors.New("repo query executor should not be called"))
@@ -102,13 +102,13 @@ func Test_MovesBackfillFromNewToProcessing_ScopedInsight(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.ListFunc.SetDefaultReturn([]*itypes.Repo{}, errors.New("the repo store should not be called"))
 	now := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
 	clock := glock.NewMockClockAt(now)
 	bfs := newBackfillStoreWithClock(insightsDB, clock)
 	insightsStore := store.NewInsightStore(insightsDB)
-	permStore := store.NewInsightPermissionStore(database.NewMockDB())
+	permStore := store.NewInsightPermissionStore(dbmocks.NewMockDB())
 	seriesStore := store.New(insightsDB, permStore)
 	repoQueryExecutor := NewMockRepoQueryExecutor()
 	repoQueryExecutor.ExecuteRepoListFunc.SetDefaultReturn([]itypes.MinimalRepo{{Name: "sourcegraph/sourcegraph", ID: 1}}, nil)

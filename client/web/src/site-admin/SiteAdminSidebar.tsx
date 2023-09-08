@@ -15,6 +15,7 @@ export interface SiteAdminSideBarGroupContext extends BatchChangesProps {
     isSourcegraphDotCom: boolean
     isSourcegraphApp: boolean
     codeInsightsEnabled: boolean
+    endUserOnboardingEnabled: boolean
 }
 
 export interface SiteAdminSideBarGroup extends NavGroupDescriptor<SiteAdminSideBarGroupContext> {}

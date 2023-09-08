@@ -152,6 +152,10 @@ func testGenerator(t *testing.T, testCase generatorTestCase) {
 		if err != nil {
 			t.Fatalf("unexpected error inferring jobs: %s", err)
 		}
+		// Test shouldn't fail on mismatch between nil vs empty slice
+		if len(testCase.expected) == 0 && len(result.IndexJobs) == 0 {
+			return
+		}
 		if diff := cmp.Diff(sortIndexJobs(testCase.expected), sortIndexJobs(result.IndexJobs)); diff != "" {
 			t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
 		}

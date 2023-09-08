@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
@@ -19,11 +20,13 @@ const KeyPrefix = "recording-cmd"
 
 // RecordedCommand stores a command record in Redis.
 type RecordedCommand struct {
-	Start    time.Time `json:"start"`
-	Duration float64   `json:"duration_seconds"`
-	Args     []string  `json:"args"`
-	Dir      string    `json:"dir"`
-	Path     string    `json:"path"`
+	Start     time.Time `json:"start"`
+	Duration  float64   `json:"duration_seconds"`
+	Args      []string  `json:"args"`
+	Dir       string    `json:"dir"`
+	Path      string    `json:"path"`
+	Output    string    `json:"output"`
+	IsSuccess bool      `json:"success"`
 }
 
 func UnmarshalCommand(rawCommand []byte) (RecordedCommand, error) {
@@ -112,6 +115,9 @@ func (rc *RecordingCmd) after(_ context.Context, logger log.Logger, cmd *exec.Cm
 		Args:     cmd.Args,
 		Dir:      cmd.Dir,
 		Path:     cmd.Path,
+
+		IsSuccess: cmd.ProcessState.Success(),
+		Output:    rc.Cmd.GetExecutionOutput(),
 	}
 
 	data, err := json.Marshal(&val)

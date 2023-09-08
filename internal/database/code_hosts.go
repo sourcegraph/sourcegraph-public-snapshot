@@ -12,7 +12,7 @@ import (
 )
 
 type ListCodeHostsOpts struct {
-	LimitOffset
+	*LimitOffset
 
 	// Only list code hosts with the given ID. This makes if effectively a getByID.
 	ID int32
@@ -34,6 +34,7 @@ type CodeHostStore interface {
 
 	With(other basestore.ShareableStore) CodeHostStore
 	WithTransact(context.Context, func(CodeHostStore) error) error
+	Count(ctx context.Context, opts ListCodeHostsOpts) (int32, error)
 
 	// GetByID gets the code host matching the specified ID.
 	GetByID(ctx context.Context, id int32) (*types.CodeHost, error)
@@ -107,7 +108,7 @@ func (errCodeHostNotFound) NotFound() bool {
 }
 
 func (s *codeHostStore) GetByID(ctx context.Context, id int32) (*types.CodeHost, error) {
-	chs, _, err := s.List(ctx, ListCodeHostsOpts{LimitOffset: LimitOffset{Limit: 1}, ID: id})
+	chs, _, err := s.List(ctx, ListCodeHostsOpts{LimitOffset: &LimitOffset{Limit: 1}, ID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +122,7 @@ func (s *codeHostStore) GetByURL(ctx context.Context, url string) (*types.CodeHo
 	// We would normally parse the URL here to verify its valid, but some code hosts have connections that
 	// have multiple URLs and in the code host table, they are represented by a code_hosts.url of:
 	// python/gomodules/etc...
-	chs, _, err := s.List(ctx, ListCodeHostsOpts{LimitOffset: LimitOffset{Limit: 1}, URL: url})
+	chs, _, err := s.List(ctx, ListCodeHostsOpts{LimitOffset: &LimitOffset{Limit: 1}, URL: url})
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +180,7 @@ func (s *codeHostStore) List(ctx context.Context, opts ListCodeHostsOpts) (chs [
 	}
 
 	// Set the next value if we were able to fetch Limit + 1
-	if opts.Limit > 0 && len(chs) == opts.Limit+1 {
+	if opts.LimitOffset != nil && opts.Limit > 0 && len(chs) == opts.Limit+1 {
 		next = chs[len(chs)-1].ID
 		chs = chs[:len(chs)-1]
 	}
@@ -187,40 +188,13 @@ func (s *codeHostStore) List(ctx context.Context, opts ListCodeHostsOpts) (chs [
 }
 
 func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
-	conds := []*sqlf.Query{}
-
-	if !opts.IncludeDeleted {
-		// Don't show code hosts for which all external services are soft-deleted or hard-deleted.
-		conds = append(conds, sqlf.Sprintf("(EXISTS (SELECT 1 FROM external_services WHERE external_services.code_host_id = code_hosts.id AND deleted_at IS NULL))"))
-	}
-
-	if opts.ID > 0 {
-		conds = append(conds, sqlf.Sprintf("code_hosts.id = %s", opts.ID))
-	}
-
-	if opts.URL != "" {
-		conds = append(conds, sqlf.Sprintf("code_hosts.url = %s", opts.URL))
-	}
-
-	if opts.Cursor > 0 {
-		conds = append(conds, sqlf.Sprintf("code_hosts.id >= %s", opts.Cursor))
-	}
-
-	if opts.Search != "" {
-		conds = append(conds, sqlf.Sprintf("(code_hosts.kind ILIKE %s OR code_hosts.url ILIKE %s)", "%"+opts.Search+"%", "%"+opts.Search+"%"))
-	}
-
 	// We fetch an extra one so that we have the `next` value
 	newLimitOffset := opts.LimitOffset
-	if newLimitOffset.Limit > 0 {
+	if newLimitOffset != nil && newLimitOffset.Limit > 0 {
 		newLimitOffset.Limit += 1
 	}
 
-	if len(conds) == 0 {
-		return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Join(codeHostColumnExpressions, ","), sqlf.Sprintf("TRUE"), newLimitOffset.SQL())
-	}
-
-	return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Join(codeHostColumnExpressions, ","), sqlf.Join(conds, "AND"), newLimitOffset.SQL())
+	return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Join(codeHostColumnExpressions, ","), listCodeHostsWhereQuery(opts), newLimitOffset.SQL())
 }
 
 const listCodeHostsQueryFmtstr = `
@@ -299,6 +273,55 @@ DELETE FROM code_hosts
 WHERE
 	id = %s
 `
+
+func (e *codeHostStore) Count(ctx context.Context, opts ListCodeHostsOpts) (int32, error) {
+	q := countCodeHostsQuery(opts)
+	count, _, err := basestore.ScanFirstInt(e.Query(ctx, q))
+	return int32(count), err
+}
+
+func countCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
+	return sqlf.Sprintf(countCodeHostsQueryFmtstr, listCodeHostsWhereQuery(opts))
+}
+
+const countCodeHostsQueryFmtstr = `
+SELECT
+	count(*)
+FROM
+	code_hosts
+WHERE
+	%s
+`
+
+func listCodeHostsWhereQuery(opts ListCodeHostsOpts) *sqlf.Query {
+	conds := []*sqlf.Query{}
+
+	if !opts.IncludeDeleted {
+		// Don't show code hosts for which all external services are soft-deleted or hard-deleted.
+		conds = append(conds, sqlf.Sprintf("(EXISTS (SELECT 1 FROM external_services WHERE external_services.code_host_id = code_hosts.id AND deleted_at IS NULL))"))
+	}
+
+	if opts.ID > 0 {
+		conds = append(conds, sqlf.Sprintf("code_hosts.id = %s", opts.ID))
+	}
+
+	if opts.URL != "" {
+		conds = append(conds, sqlf.Sprintf("code_hosts.url = %s", opts.URL))
+	}
+
+	if opts.Cursor > 0 {
+		conds = append(conds, sqlf.Sprintf("code_hosts.id >= %s", opts.Cursor))
+	}
+
+	if opts.Search != "" {
+		conds = append(conds, sqlf.Sprintf("(code_hosts.kind ILIKE %s OR code_hosts.url ILIKE %s)", "%"+opts.Search+"%", "%"+opts.Search+"%"))
+	}
+	if len(conds) == 0 {
+		return sqlf.Sprintf("TRUE")
+	}
+
+	return sqlf.Join(conds, "AND")
+}
 
 func scanCodeHosts(s dbutil.Scanner) (*types.CodeHost, error) {
 	var ch types.CodeHost

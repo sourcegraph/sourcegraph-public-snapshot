@@ -2,30 +2,35 @@
   description = "The Sourcegraph developer environment & packages Nix Flake";
 
   inputs = {
-    nixpkgs.url = "nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/e78d25df6f1036b3fa76750ed4603dd9d5fe90fc";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs = { self, nixpkgs, flake-utils }:
+    let
+      xcompileTargets = with nixpkgs.lib.systems.examples; {
+        "aarch64-darwin" = nixpkgs.legacyPackages.aarch64-darwin.pkgsx86_64Darwin;
+        "x86_64-darwin" = import nixpkgs { system = "x86_64-darwin"; crossSystem = aarch64-darwin; };
+      };
+      inherit (import ./dev/nix/util.nix { inherit (nixpkgs) lib; }) xcompilify;
+    in
     flake-utils.lib.eachDefaultSystem
       (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
           pkgs' = import nixpkgs { inherit system; overlays = builtins.attrValues self.overlays; };
+          pkgsX = xcompileTargets.${system} or null;
         in
         {
-          # We set legacyPackages to our custom static binaries so command
-          # like "nix build .#p4-fusion" work.
           legacyPackages = pkgs';
 
-          packages = {
-            ctags = pkgs.callPackage ./dev/nix/ctags.nix { };
-            comby = pkgs.callPackage ./dev/nix/comby.nix { };
+          packages = xcompilify { inherit pkgs pkgsX; }
+            (pkgs: {
+              ctags = pkgs.callPackage ./dev/nix/ctags.nix { };
+              comby = pkgs.callPackage ./dev/nix/comby.nix { };
+              p4-fusion = pkgs.callPackage ./dev/nix/p4-fusion.nix { };
+            }) // {
             nodejs-16_x = pkgs.callPackage ./dev/nix/nodejs.nix { };
-          }
-          # so we don't get `packages.aarch64-linux.p4-fusion` in nix `flake show` output
-          // pkgs.lib.optionalAttrs (pkgs.targetPlatform.system != "aarch64-linux") {
-            p4-fusion = pkgs.callPackage ./dev/nix/p4-fusion.nix { };
           };
 
           # We use pkgs (not pkgs') intentionally to avoid doing extra work of

@@ -42,10 +42,6 @@
 /cmd/frontend/internal/search/**/* @camdencheek
 /cmd/frontend/internal/search/**/* @jtibshirani
 
-/cmd/gitserver/server/* @indradhanush @sashaostrikov
-
-/cmd/repo-updater/* @indradhanush @sashaostrikov
-
 /cmd/searcher/**/* @keegancsmith
 
 /cmd/server/internal/goreman/** @keegancsmith
@@ -100,8 +96,6 @@
 /enterprise/cmd/migrator/**/* @efritz
 
 /cmd/precise-code-intel-worker/**/* @efritz
-
-/cmd/repo-updater/**/* @indradhanush
 
 /cmd/repo-updater/internal/authz/**/* @unknwon
 
@@ -178,8 +172,6 @@
 
 /internal/extsvc/auth/**/* @unknwon
 
-/internal/gitserver/* @indradhanush @sashaostrikov
-
 /internal/goroutine/**/* @efritz
 
 /internal/gqltestutil/**/* @unknwon
@@ -201,8 +193,6 @@
 /internal/rcache/** @keegancsmith
 
 /internal/redispool/** @keegancsmith
-
-/internal/repos/* @indradhanush @sashaostrikov
 
 /internal/search/**/* @keegancsmith @camdencheek
 

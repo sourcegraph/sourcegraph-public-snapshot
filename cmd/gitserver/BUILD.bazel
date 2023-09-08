@@ -1,7 +1,8 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
-load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:oci_defs.bzl", "image_repository")
 
 go_library(
     name = "gitserver_lib",
@@ -36,9 +37,9 @@ pkg_tar(
         "p4-fusion-wrapper-detect-kill.sh",
         "process-stats-watcher.sh",
     ],
-    package_dir = "/usr/local/bin",
     remap_paths = {
-        "/p4-fusion-wrapper-detect-kill.sh": "/p4-fusion",
+        "/p4-fusion-wrapper-detect-kill.sh": "/usr/local/bin/p4-fusion",
+        "/process-stats-watcher.sh": "/usr/local/bin/process-stats-watcher.sh",
     },
     visibility = ["//visibility:public"],
 )
@@ -75,4 +76,10 @@ container_structure_test(
         "exclusive",
         "requires-network",
     ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("gitserver"),
 )

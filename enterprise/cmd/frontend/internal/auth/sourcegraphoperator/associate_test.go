@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -37,9 +38,9 @@ func TestAddSourcegraphOperatorExternalAccountBinding(t *testing.T) {
 	t.Cleanup(func() { providers.Update(auth.SourcegraphOperatorProviderType, nil) })
 	// Assert handler is registered - we check this by making sure we get a site admin
 	// error instead of an "unimplemented" error.
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	err := sourcegraphoperator.AddSourcegraphOperatorExternalAccount(context.Background(), db, 1, "foo", "")
 	assert.ErrorIs(t, err, auth.ErrMustBeSiteAdmin)
@@ -53,11 +54,11 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 	serviceID := soap.ConfigID().ID
 
 	mockDB := func(siteAdmin bool) database.DB {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{
 			SiteAdmin: siteAdmin,
 		}, nil)
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		return db
 	}

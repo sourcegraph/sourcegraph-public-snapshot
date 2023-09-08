@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -533,8 +534,8 @@ func TestBuildBigQueryObject(t *testing.T) {
 func TestGetInstanceMetadata(t *testing.T) {
 	ctx := context.Background()
 
-	stateStore := database.NewMockGlobalStateStore()
-	userEmailStore := database.NewMockUserEmailsStore()
+	stateStore := dbmocks.NewMockGlobalStateStore()
+	userEmailStore := dbmocks.NewMockUserEmailsStore()
 	version.Mock("fake-Version-1")
 	confClient.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{LicenseKey: "mock-license"}})
 	deploy.Mock("fake-deploy-type")
@@ -706,9 +707,9 @@ func mockTelemetryHandler(t *testing.T, callbackFunc sendEventsCallbackFunc) *te
 
 	return &telemetryHandler{
 		logger:             logger,
-		eventLogStore:      database.NewMockEventLogStore(),
-		globalStateStore:   database.NewMockGlobalStateStore(),
-		userEmailsStore:    database.NewMockUserEmailsStore(),
+		eventLogStore:      dbmocks.NewMockEventLogStore(),
+		globalStateStore:   dbmocks.NewMockGlobalStateStore(),
+		userEmailsStore:    dbmocks.NewMockUserEmailsStore(),
 		bookmarkStore:      bms,
 		sendEventsCallback: callbackFunc,
 		metrics:            newHandlerMetrics(obsContext),

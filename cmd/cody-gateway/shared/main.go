@@ -147,6 +147,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		OpenAIAccessToken:          config.OpenAI.AccessToken,
 		OpenAIOrgID:                config.OpenAI.OrgID,
 		OpenAIAllowedModels:        config.OpenAI.AllowedModels,
+		FireworksAccessToken:       config.Fireworks.AccessToken,
+		FireworksAllowedModels:     config.Fireworks.AllowedModels,
 		EmbeddingsAllowedModels:    config.AllowedEmbeddingsModels,
 	})
 	if err != nil {
@@ -162,7 +164,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	handler = requestclient.ExternalHTTPMiddleware(handler, hasCloudflare)
 
 	// Initialize our server
-	server := httpserver.NewFromAddr(config.Address, &http.Server{
+	address := fmt.Sprintf(":%d", config.Port)
+	server := httpserver.NewFromAddr(address, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
 		Handler:      handler,
@@ -187,7 +190,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Mark health server as ready and go!
 	ready()
-	obctx.Logger.Info("service ready", log.String("address", config.Address))
+	obctx.Logger.Info("service ready", log.String("address", address))
 
 	// Collect background routines
 	backgroundRoutines := []goroutine.BackgroundRoutine{

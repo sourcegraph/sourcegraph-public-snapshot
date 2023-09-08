@@ -51,7 +51,12 @@ func Validate(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, con
 	}
 
 	// Validate frontend access token returns status 200.
-	if err = validateAuthorizationToken(cliCtx.Context, client); err != nil {
+	testOpts := testOptions(conf)
+	testClient, err := apiclient.NewBaseClient(logger, testOpts)
+	if err != nil {
+		return err
+	}
+	if err = validateAuthorizationToken(cliCtx.Context, testClient); err != nil {
 		return err
 	}
 
@@ -77,7 +82,7 @@ func Validate(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, con
 var authorizationFailedErr = errors.New("failed to authorize with frontend, is executors.accessToken set correctly in the site-config?")
 
 func validateAuthorizationToken(ctx context.Context, client *apiclient.BaseClient) error {
-	req, err := client.NewJSONRequest(http.MethodGet, ".executors/test/auth", nil)
+	req, err := client.NewJSONRequest(http.MethodGet, "auth", nil)
 	if err != nil {
 		return err
 	}

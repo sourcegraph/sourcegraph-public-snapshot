@@ -45,7 +45,7 @@ func TestCodeGatewayAccessResolverRateLimit(t *testing.T) {
 		sub, err := dbSubscriptions{db: db}.GetByID(ctx, subID)
 		require.NoError(t, err)
 
-		r := codyGatewayAccessResolver{sub: &productSubscription{v: sub, db: db}}
+		r := codyGatewayAccessResolver{sub: &productSubscription{logger: logger, v: sub, db: db}}
 		rateLimit, err := r.ChatCompletionsRateLimit(ctx)
 		require.NoError(t, err)
 
@@ -65,7 +65,7 @@ func TestCodeGatewayAccessResolverRateLimit(t *testing.T) {
 		sub, err := dbSubscriptions{db: db}.GetByID(ctx, subID)
 		require.NoError(t, err)
 
-		r := codyGatewayAccessResolver{sub: &productSubscription{v: sub, db: db}}
+		r := codyGatewayAccessResolver{sub: &productSubscription{logger: logger, v: sub, db: db}}
 		rateLimit, err := r.ChatCompletionsRateLimit(ctx)
 		require.NoError(t, err)
 

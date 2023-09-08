@@ -8,6 +8,8 @@ Feature flags, as opposed to experimental features, are intended to be strictly 
 They are designed to be useful for A/B testing, and the values of all active feature flags
 are added to every event log for the purpose of analytics.
 
+> Note: We allow feature flags to be overridden per-request by users. So do not use them to gate behaviour that needs to be controlled by an admin.
+
 ## How it works
 
 Each feature flag is either a boolean feature flag, or a "rollout" flag.
@@ -207,6 +209,12 @@ mutation CreateFeatureFlagOverride{
 ```
 
 The `namespace` argument is the graphql ID of either a user or an organization.
+
+### Override for a single request
+
+We also allow overriding the value for a specific request. This can be done by setting the header `X-Sourcegraph-Override-Feature` or the URL query parameter `feat`. For example `?feat=myFeatureFlag1&feat=-myFeatureFlag2` will set `myFeatureFlag1` to `true` and `myFeatureFlag2` to `false`.
+
+An example use of this is search has the feature flag `search-debug` which when enabled will enrich responses with debug information.
 
 ## Listing all feature flags
 

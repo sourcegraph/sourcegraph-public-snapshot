@@ -80,6 +80,11 @@ export const configurationGroup: SiteAdminSideBarGroup = {
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
+            label: 'End user onboarding',
+            to: '/site-admin/end-user-onboarding',
+            condition: ({ endUserOnboardingEnabled }) => endUserOnboardingEnabled,
+        },
+        {
             label: 'Feature flags',
             to: '/site-admin/feature-flags',
         },
@@ -105,6 +110,10 @@ export const repositoriesGroup: SiteAdminSideBarGroup = {
             label: 'Packages',
             to: '/site-admin/packages',
             condition: isPackagesEnabled,
+        },
+        {
+            label: 'Gitservers',
+            to: '/site-admin/gitservers',
         },
     ],
     condition: ({ isSourcegraphApp }) => !isSourcegraphApp,

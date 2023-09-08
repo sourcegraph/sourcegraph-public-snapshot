@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -19,7 +19,7 @@ import (
 )
 
 func TestGitTree(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	gsClient := setupGitserverClient(t)
 	tests := []*Test{
 		{
@@ -105,11 +105,11 @@ func setupGitserverClient(t *testing.T) gitserver.Client {
 	return gsClient
 }
 
-func testGitTree(t *testing.T, db *database.MockDB, tests []*Test) {
-	externalServices := database.NewMockExternalServiceStore()
+func testGitTree(t *testing.T, db *dbmocks.MockDB, tests []*Test) {
+	externalServices := dbmocks.NewMockExternalServiceStore()
 	externalServices.ListFunc.SetDefaultReturn(nil, nil)
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
 	repos.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
 

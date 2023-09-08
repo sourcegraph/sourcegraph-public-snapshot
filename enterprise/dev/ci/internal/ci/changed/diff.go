@@ -13,6 +13,7 @@ const (
 	None Diff = 0
 
 	Go Diff = 1 << iota
+	ClientJetbrains
 	Client
 	GraphQL
 	DatabaseSchema
@@ -92,7 +93,12 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 
 		// Client
 		if !strings.HasSuffix(p, ".md") && (isRootClientFile(p) || strings.HasPrefix(p, "client/")) {
-			diff |= Client
+			// We handle jetbrains different since we want certain jobs not to run with it
+			if strings.HasPrefix(p, "client/jetbrains/") {
+				diff |= ClientJetbrains
+			} else {
+				diff |= Client
+			}
 		}
 		if strings.HasSuffix(p, "dev/ci/pnpm-test.sh") {
 			diff |= Client
@@ -226,6 +232,8 @@ func (d Diff) String() string {
 		return "Go"
 	case Client:
 		return "Client"
+	case ClientJetbrains:
+		return "ClientJetbrains"
 	case GraphQL:
 		return "GraphQL"
 	case DatabaseSchema:
@@ -283,4 +291,13 @@ func (d Diff) Has(target Diff) bool {
 	default:
 		return d&target != 0
 	}
+}
+
+// Only checks that only the target Diff flag is set
+func (d Diff) Only(target Diff) bool {
+	// This line performs a bitwise AND between d and the inverted bits of target.
+	// It then compares the result to 0.
+	// This evaluates to true only if target is the only bit set in d.
+	// So it checks that target is the only flag set in d.
+	return d&^target == 0
 }

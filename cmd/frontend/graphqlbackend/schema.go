@@ -109,3 +109,13 @@ var gitHubAppsSchema string
 //
 //go:embed guardrails.graphql
 var guardrailsSchema string
+
+// contentLibrary is the Sourcegraph Content Library raw graphql schema.
+//
+//go:embed content_library.graphql
+var contentLibrary string
+
+// searchJobSchema is the Sourcegraph Search Job raw graphql schema.
+//
+//go:embed search_jobs.graphql
+var searchJobSchema string

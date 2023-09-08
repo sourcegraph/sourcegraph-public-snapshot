@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/slack"
@@ -25,7 +26,7 @@ import (
 
 func TestMaybeCheckAnomalies(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 
 	mockClient := &fakeSlackClient{}
 

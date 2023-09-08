@@ -28,7 +28,7 @@ type handler struct {
 	db                     database.DB
 	uploadStore            uploadstore.Store
 	gitserverClient        gitserver.Client
-	qdrantInserter         db.VectorInserter
+	getQdrantInserter      func() (db.VectorInserter, error)
 	contextService         embed.ContextService
 	repoEmbeddingJobsStore bgrepo.RepoEmbeddingJobsStore
 }
@@ -103,7 +103,12 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		return err
 	}
 
-	err = h.qdrantInserter.PrepareUpdate(ctx, modelID, uint64(modelDims))
+	qdrantInserter, err := h.getQdrantInserter()
+	if err != nil {
+		return err
+	}
+
+	err = qdrantInserter.PrepareUpdate(ctx, modelID, uint64(modelDims))
 	if err != nil {
 		return err
 	}
@@ -139,13 +144,13 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		logger.Info("found previous embeddings index. Attempting incremental update", log.String("old_revision", string(previousIndex.Revision)))
 		opts.IndexedRevision = previousIndex.Revision
 
-		hasPreviousIndex, err := h.qdrantInserter.HasIndex(ctx, modelID, repo.ID, previousIndex.Revision)
+		hasPreviousIndex, err := qdrantInserter.HasIndex(ctx, modelID, repo.ID, previousIndex.Revision)
 		if err != nil {
 			return err
 		}
 
 		if !hasPreviousIndex {
-			err = uploadPreviousIndex(ctx, modelID, h.qdrantInserter, repo.ID, previousIndex)
+			err = uploadPreviousIndex(ctx, modelID, qdrantInserter, repo.ID, previousIndex)
 			if err != nil {
 				return err
 			}
@@ -166,7 +171,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 	repoEmbeddingIndex, toRemove, stats, err := embed.EmbedRepo(
 		ctx,
 		embeddingsClient,
-		h.qdrantInserter,
+		qdrantInserter,
 		h.contextService,
 		fetcher,
 		repo.IDName(),
@@ -179,7 +184,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		return err
 	}
 
-	err = h.qdrantInserter.FinalizeUpdate(ctx, db.FinalizeUpdateParams{
+	err = qdrantInserter.FinalizeUpdate(ctx, db.FinalizeUpdateParams{
 		ModelID:       modelID,
 		RepoID:        repo.ID,
 		Revision:      record.Revision,
