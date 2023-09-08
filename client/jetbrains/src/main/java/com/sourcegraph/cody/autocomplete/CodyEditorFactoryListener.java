@@ -1,6 +1,6 @@
 package com.sourcegraph.cody.autocomplete;
 
-import static com.sourcegraph.common.EditorUtils.VIM_EXIT_INSERT_MODE_ACTION;
+import static com.sourcegraph.utils.CodyEditorUtil.VIM_EXIT_INSERT_MODE_ACTION;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.command.CommandProcessor;

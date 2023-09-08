@@ -24,10 +24,10 @@ import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus;
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService;
 import com.sourcegraph.cody.vscode.*;
 import com.sourcegraph.cody.vscode.InlineAutocompleteList;
-import com.sourcegraph.common.EditorUtils;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.UserLevelConfig;
 import com.sourcegraph.telemetry.GraphQlLogger;
+import com.sourcegraph.utils.CodyEditorUtil;
 import com.sourcegraph.utils.CodyLanguageUtil;
 import difflib.Delta;
 import difflib.DiffUtils;
@@ -97,12 +97,12 @@ public class CodyAutocompleteManager {
    */
   @RequiresEdt
   public void clearAutocompleteSuggestionsForAllProjects() {
-    EditorUtils.getAllOpenEditors().forEach(this::clearAutocompleteSuggestions);
+    CodyEditorUtil.getAllOpenEditors().forEach(this::clearAutocompleteSuggestions);
   }
 
   @RequiresEdt
   public void clearAutocompleteSuggestionsForLanguageIds(List<String> languageIds) {
-    EditorUtils.getAllOpenEditors().stream()
+    CodyEditorUtil.getAllOpenEditors().stream()
         .filter(
             e ->
                 Optional.ofNullable(CodyLanguageUtil.Companion.getLanguage(e))
@@ -297,7 +297,7 @@ public class CodyAutocompleteManager {
       InlineAutocompleteItem item,
       InlayModel inlayModel,
       InlineCompletionTriggerKind triggerKind) {
-    TextRange range = EditorUtils.getTextRange(editor.getDocument(), item.range);
+    TextRange range = CodyEditorUtil.getTextRange(editor.getDocument(), item.range);
     String originalText = editor.getDocument().getText(range);
     String insertTextFirstLine = item.insertText.lines().findFirst().orElse("");
     String multilineInsertText =
@@ -370,7 +370,7 @@ public class CodyAutocompleteManager {
       String indentation =
           item.insertText.substring(
               0, item.insertText.length() - withoutLeadingWhitespace.length());
-      String newIndentation = EditorUtils.tabsToSpaces(indentation, indentOptions);
+      String newIndentation = CodyEditorUtil.tabsToSpaces(indentation, indentOptions);
       String newInsertText = newIndentation + withoutLeadingWhitespace;
       int rangeDiff = item.insertText.length() - newInsertText.length();
       Range newRange =
