@@ -84,15 +84,10 @@ class SettingsConfigurable(private val project: Project) :
               .enabledIf(enableCodyCheckbox.selected)
               .bindSelected(settingsModel::isCodyVerboseDebugEnabled)
         }
-        group("Cody Autocomplete") {
-            row {
-                checkBox("Enable Cody autocomplete")
-                    .enabledIf(enableCodyCheckbox.selected)
-                    .bindSelected(settingsModel::isCodyAutocompleteEnabled)
-            }
+        group("Autocomplete") {
             row {
                 val enableCustomAutocompleteColor =
-                    checkBox("Enable custom autocomplete color")
+                    checkBox("Custom color for completions")
                         .enabledIf(enableCodyCheckbox.selected)
                         .bindSelected(settingsModel::isCustomAutocompleteColorEnabled)
                 colorPanel()
@@ -101,6 +96,11 @@ class SettingsConfigurable(private val project: Project) :
                         ColorPanel::setSelectedColor,
                         settingsModel::customAutocompleteColor.toMutableProperty())
                     .visibleIf(enableCustomAutocompleteColor.selected)
+            }
+            row {
+                checkBox("Automatically trigger completions")
+                    .enabledIf(enableCodyCheckbox.selected)
+                    .bindSelected(settingsModel::isCodyAutocompleteEnabled)
             }
             row {
                 autocompleteLanguageTable()
