@@ -213,6 +213,7 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 			},
 			{
 				Name:        "Path to pg utilities (createdb, etc ...)",
+				Enabled:     disableInCI(), // will never pass in CI.
 				Check:       checkPGUtilsPath,
 				Description: `Bazel need to know where the createdb, pg_dump binaries are located, we need to ensure they are accessible\nand possibly indicate where they are located if non default.`,
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
