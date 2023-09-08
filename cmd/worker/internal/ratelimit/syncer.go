@@ -12,9 +12,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// SyncServices syncs a know slice of external services with their rate limiters without
+// syncServices syncs a know slice of external services with their rate limiters without
 // fetching them from the database.
-func SyncServices(ctx context.Context, services []*types.ExternalService, newRateLimiterFunc func(bucketName string) ratelimit.GlobalLimiter) error {
+func syncServices(ctx context.Context, services []*types.ExternalService, newRateLimiterFunc func(bucketName string) ratelimit.GlobalLimiter) error {
 	var errs error
 	for _, svc := range services {
 		limit, err := extsvc.ExtractEncryptableRateLimit(ctx, svc.Config, svc.Kind)

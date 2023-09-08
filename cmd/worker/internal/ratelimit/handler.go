@@ -23,7 +23,9 @@ type handler struct {
 func (h *handler) Handle(ctx context.Context) (err error) {
 	defer func() {
 		// Be very vocal about these issues.
-		h.logger.Error("failed to sync rate limit configs to redis", log.Error(err))
+		if err != nil {
+			h.logger.Error("failed to sync rate limit configs to redis", log.Error(err))
+		}
 	}()
 
 	var defaultGitQuota int32
@@ -44,5 +46,5 @@ func (h *handler) Handle(ctx context.Context) (err error) {
 		return err
 	}
 
-	return SyncServices(ctx, svcs, h.newRateLimiterFunc)
+	return syncServices(ctx, svcs, h.newRateLimiterFunc)
 }

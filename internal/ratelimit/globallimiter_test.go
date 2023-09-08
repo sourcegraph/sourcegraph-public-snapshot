@@ -292,37 +292,6 @@ func Test_GetToken_CanceledContext(t *testing.T) {
 	assert.True(t, errors.Is(err, context.Canceled))
 }
 
-// func TestDefaultRateLimiter(t *testing.T) {
-// 	conf.Mock(&conf.Unified{
-// 		SiteConfiguration: schema.SiteConfiguration{
-// 			DefaultRateLimit: 7200,
-// 		},
-// 	})
-// 	defer conf.Mock(nil)
-
-// 	r := NewRegistry()
-// 	got := r.Get("unknown")
-// 	want := NewInstrumentedLimiter("unknown", rate.NewLimiter(rate.Limit(2), defaultBurst))
-// 	assert.Equal(t, want, got)
-// }
-
-// func TestRegistry(t *testing.T) {
-// 	r := NewRegistry()
-
-// 	got := r.Get("404")
-// 	want := NewInstrumentedLimiter("404", rate.NewLimiter(rate.Inf, defaultBurst))
-// 	assert.Equal(t, want, got)
-
-// 	rl := NewInstrumentedLimiter("extsvc:github:1", rate.NewLimiter(10, 10))
-// 	got = r.getOrSet("extsvc:github:1", rl)
-// 	assert.Equal(t, rl, got)
-
-// 	got = r.getOrSet("extsvc:github:1", NewInstrumentedLimiter("extsvc:githu:1", rate.NewLimiter(1000, 10)))
-// 	assert.Equal(t, rl, got)
-
-// 	assert.Equal(t, 2, r.Count())
-// }
-
 func getTestRateLimiter(prefix string, pool *redis.Pool, bucketName string) globalRateLimiter {
 	return globalRateLimiter{
 		pool:       pool,

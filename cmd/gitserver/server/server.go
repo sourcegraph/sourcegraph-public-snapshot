@@ -312,9 +312,6 @@ func (s *Server) Handler() http.Handler {
 		s.cloneableLimiter.SetLimit(limit)
 	})
 
-	// TODO: Add background worker that upserts the git code host requests per second
-	// thing from conf in redis.
-	// TODO: Also make sure that setting it to zero means NO requests are allowed.
 	s.rpsLimiter = ratelimit.NewInstrumentedLimiter(ratelimit.GitRPSLimiterBucketName, ratelimit.NewGlobalRateLimiter(ratelimit.GitRPSLimiterBucketName))
 
 	mux := http.NewServeMux()
