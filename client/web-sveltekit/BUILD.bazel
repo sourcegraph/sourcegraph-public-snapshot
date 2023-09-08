@@ -126,6 +126,7 @@ vite_bin.vite(
     out_dirs= ["build"],
     args = [
         "build",
+        "--force",
         "-c vite.config.ts",
     ],
     chdir = package_name(),
