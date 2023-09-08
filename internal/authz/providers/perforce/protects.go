@@ -185,12 +185,12 @@ func matchesAgainstDepot(match globMatch, depot string) bool {
 
 // PerformDebugScan will scan protections rules from r and log detailed
 // information about how each line was parsed.
-func PerformDebugScan(logger log.Logger, r io.Reader, depot extsvc.RepoID) (*authz.ExternalUserPermissions, error) {
+func PerformDebugScan(logger log.Logger, r io.Reader, depot extsvc.RepoID, ignoreHostRules bool) (*authz.ExternalUserPermissions, error) {
 	perms := &authz.ExternalUserPermissions{
 		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
 	}
 	scanner := fullRepoPermsScanner(logger, perms, []extsvc.RepoID{depot})
-	err := scanProtects(logger, r, scanner)
+	err := scanProtects(logger, r, scanner, ignoreHostRules)
 	return perms, err
 }
 
@@ -205,7 +205,7 @@ type protectsScanner struct {
 // scanProtects is a utility function for processing values from `p4 protects`.
 // It handles skipping comments, cleaning whitespace, parsing relevant fields, and
 // skipping entries that do not affect read access.
-func scanProtects(logger log.Logger, rc io.Reader, s *protectsScanner) error {
+func scanProtects(logger log.Logger, rc io.Reader, s *protectsScanner, ignoreHostRules bool) error {
 	logger = logger.Scoped("scanProtects", "")
 	scanner := bufio.NewScanner(rc)
 	for scanner.Scan() {
@@ -244,7 +244,7 @@ func scanProtects(logger log.Logger, rc io.Reader, s *protectsScanner) error {
 		// GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/53374
 		// Subsequent approaches will need to add more sophisticated handling of hosts
 		// perhaps even capturing the browser IP address and comparing it to the host field.
-		if fields[3] != "*" {
+		if ignoreHostRules && fields[3] != "*" {
 			logger.Debug("Skipping host-specific rule", log.String("line", line))
 			continue
 		}

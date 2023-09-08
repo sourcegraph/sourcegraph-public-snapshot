@@ -21,7 +21,7 @@ func TestPerformDebugScan(t *testing.T) {
 		}
 	})
 
-	run(logger, "//depot/main/", input)
+	run(logger, "//depot/main/", input, false)
 
 	logged := exporter()
 	// For now we'll just check that the count as well as first and last lines are

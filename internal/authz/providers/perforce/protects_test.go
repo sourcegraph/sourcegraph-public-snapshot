@@ -244,7 +244,7 @@ func TestScanFullRepoPermissions(t *testing.T) {
 	perms := &authz.ExternalUserPermissions{
 		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
 	}
-	if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots)); err != nil {
+	if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots), false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -325,7 +325,7 @@ func TestScanFullRepoPermissionsWithWildcardMatchingDepot(t *testing.T) {
 	perms := &authz.ExternalUserPermissions{
 		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
 	}
-	if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots)); err != nil {
+	if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots), false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -624,7 +624,7 @@ read    group   Dev1    *   //depot/main/.../*.go
 			perms := &authz.ExternalUserPermissions{
 				SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
 			}
-			if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots)); err != nil {
+			if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots), true); err != nil {
 				t.Fatal(err)
 			}
 			rules, ok := perms.SubRepoPermissions[extsvc.RepoID(tc.depot)]
@@ -691,7 +691,7 @@ func TestFullScanWildcardDepotMatching(t *testing.T) {
 	perms := &authz.ExternalUserPermissions{
 		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
 	}
-	if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots)); err != nil {
+	if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots), false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -844,7 +844,7 @@ func TestScanAllUsers(t *testing.T) {
 	}
 
 	users := make(map[string]struct{})
-	if err := scanProtects(logger, rc, allUsersScanner(ctx, p, users)); err != nil {
+	if err := scanProtects(logger, rc, allUsersScanner(ctx, p, users), false); err != nil {
 		t.Fatal(err)
 	}
 	want := map[string]struct{}{
