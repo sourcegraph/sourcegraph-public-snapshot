@@ -118,11 +118,6 @@ func (s *Service) CancelSearchJob(ctx context.Context, id int64) (err error) {
 	))
 	defer endObservation(1, observation.Args{})
 
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return errors.New("search jobs can only be canceled by an authenticated user")
-	}
-
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
 		return err
