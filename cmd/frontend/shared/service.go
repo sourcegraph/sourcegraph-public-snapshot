@@ -20,7 +20,7 @@ func (svc) Name() string { return "frontend" }
 
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 	CLILoadConfig()
-	return nil, GRPCWebUIDebugEndpoints()
+	return nil, CreateDebugServerEndpoints()
 }
 
 func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {

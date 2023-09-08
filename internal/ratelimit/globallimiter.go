@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
@@ -137,7 +138,7 @@ func (r *rateLimiter) WaitN(ctx context.Context, n int) (err error) {
 }
 
 func (r *rateLimiter) waitn(ctx context.Context, n int, requestTime time.Time, maxTimeToWait time.Duration) (timeToWait time.Duration, err error) {
-	keys := r.getRateLimiterKeys()
+	keys := getRateLimiterKeys(r.prefix, r.bucketName)
 	connection := r.pool.Get()
 	defer connection.Close()
 
@@ -216,7 +217,7 @@ func defaultRateLimitTimer(d time.Duration) (<-chan time.Time, func() bool) {
 }
 
 func (r *rateLimiter) SetTokenBucketConfig(ctx context.Context, bucketQuota int32, bucketReplenishInterval time.Duration) error {
-	keys := r.getRateLimiterKeys()
+	keys := getRateLimiterKeys(r.prefix, r.bucketName)
 	connection := r.pool.Get()
 	defer connection.Close()
 
@@ -224,10 +225,10 @@ func (r *rateLimiter) SetTokenBucketConfig(ctx context.Context, bucketQuota int3
 	return errors.Wrapf(err, "error while setting token bucket replenishment for bucket %s", r.bucketName)
 }
 
-func (r *rateLimiter) getRateLimiterKeys() rateLimitBucketConfigKeys {
+func getRateLimiterKeys(prefix, bucketName string) rateLimitBucketConfigKeys {
 	var keys rateLimitBucketConfigKeys
 	// e.g. v2:rate_limiters:github.com
-	keys.BucketKey = fmt.Sprintf("%s:%s", r.prefix, r.bucketName)
+	keys.BucketKey = fmt.Sprintf("%s:%s", prefix, bucketName)
 	// e.g. v2:rate_limiters:github.com:config:bucket_rate
 	keys.RateKey = fmt.Sprintf("%s:%s", keys.BucketKey, bucketRateConfigKeySuffix)
 	// e.g.. v2:rate_limiters:github.com:config:bucket_replenishment_interval_seconds
@@ -313,4 +314,101 @@ type UnexpectedRateLimitReturnError struct {
 
 func (e UnexpectedRateLimitReturnError) Error() string {
 	return fmt.Sprintf("bucket:%s, unexpected return code from rate limit script", e.tokenBucketKey)
+}
+
+type GlobalLimiterInfo struct {
+	// CurrentCapacity is the current number of tokens in the bucket.
+	CurrentCapacity int
+	// Burst is the maximum number of allowed burst.
+	Burst int
+	// Limit is the number of maximum allowed requests per interval. If the limit is
+	// infinite, Limit will be -1 and Infinite will be true.
+	Limit int
+	// Interval is the interval over which the number of requests can be made.
+	// For example: Limit: 3600, Interval: hour means 3600 requests per hour,
+	// expressed internally as 1/s.
+	Interval time.Duration
+	// LastReplenishment is the time the bucket has been last replenished. Replenishment
+	// only happens when borrowed from the bucket.
+	LastReplenishment time.Time
+	// Infinite is true if Limit is infinite. This is required since infinity cannot
+	// be marshalled in JSON.
+	Infinite bool
+}
+
+// GetGlobalLimiterState reports how all the existing rate limiters are configured,
+// keyed by bucket name.
+func GetGlobalLimiterState(ctx context.Context) (map[string]GlobalLimiterInfo, error) {
+	pool, ok := redispool.Store.Pool()
+	if !ok {
+		// In app, we don't have global limiters. Return.
+		return nil, nil
+	}
+
+	conn, err := pool.GetContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	// First, find all known limiters in redis.
+	resp, err := conn.Do("KEYS", fmt.Sprintf("%s:*:%s", tokenBucketGlobalPrefix, bucketAllowedBurstKeySuffix))
+	if err != nil {
+		return nil, err
+	}
+	keys, ok := resp.([]interface{})
+	if !ok {
+		return nil, errors.Newf("invalid response from redis keys command, expected []interface{}, got %T", resp)
+	}
+
+	m := make(map[string]GlobalLimiterInfo, len(keys))
+	for _, k := range keys {
+		kchars, ok := k.([]uint8)
+		if !ok {
+			return nil, errors.Newf("invalid response from redis keys command, expected string, got %T", k)
+		}
+		key := string(kchars)
+		limiterName := strings.TrimSuffix(strings.TrimPrefix(key, tokenBucketGlobalPrefix+":"), ":"+bucketAllowedBurstKeySuffix)
+		rlKeys := getRateLimiterKeys(tokenBucketGlobalPrefix, limiterName)
+
+		currentCapacity, err := redispool.Store.Get(rlKeys.BucketKey).Int()
+		if err != nil {
+			return nil, err
+		}
+
+		burst, err := redispool.Store.Get(rlKeys.BurstKey).Int()
+		if err != nil {
+			return nil, err
+		}
+
+		rate, err := redispool.Store.Get(rlKeys.RateKey).Int()
+		if err != nil {
+			return nil, err
+		}
+
+		intervalSeconds, err := redispool.Store.Get(rlKeys.ReplenishmentIntervalSecondsKey).Int()
+		if err != nil {
+			return nil, err
+		}
+
+		lastReplenishment, err := redispool.Store.Get(rlKeys.LastReplenishmentTimestampKey).Int()
+		if err != nil {
+			return nil, err
+		}
+
+		info := GlobalLimiterInfo{
+			CurrentCapacity:   currentCapacity,
+			Burst:             burst,
+			Limit:             rate,
+			LastReplenishment: time.Unix(int64(lastReplenishment), 0),
+			Interval:          time.Duration(intervalSeconds) * time.Second,
+		}
+		if rate == -1 {
+			info.Limit = 0
+			info.Infinite = true
+		}
+		m[limiterName] = info
+	}
+
+	return m, nil
 }

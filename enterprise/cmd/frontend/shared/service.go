@@ -24,7 +24,7 @@ func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 	frontend_shared.CLILoadConfig()
 	codeintel.LoadConfig()
 	search.LoadConfig()
-	return nil, frontend_shared.GRPCWebUIDebugEndpoints()
+	return nil, frontend_shared.CreateDebugServerEndpoints()
 }
 
 func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {
