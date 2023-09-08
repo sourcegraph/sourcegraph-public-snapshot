@@ -2,8 +2,18 @@
 
 set -u
 
-DOCKER_USER=${DOCKER_USER:?"No DOCKER_USER is set."}
-DOCKER_PASS=${DOCKER_PASS:?"No DOCKER_PASS is set."}
+if [ -z "${DOCKER_USER:-}" ]; then
+  echo "warning: DOCKER_USER is not set; may hit Docker rate limit"
+fi
+
+if [ -z "${DOCKER_PASS:-}" ]; then
+  if [ -n "${DOCKER_USER:-}" ]; then
+    echo "error: DOCKER_USER set but DOCKER_PASS was not set"
+    exit 1
+  fi
+fi
+
+SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
 for indexer in lsif-clang scip-go lsif-rust scip-rust scip-java scip-python scip-typescript scip-ruby; do
   tag="latest"
@@ -15,10 +25,10 @@ for indexer in lsif-clang scip-go lsif-rust scip-rust scip-java scip-python scip
 
   sed -i.bak \
     "s|\("'"'"sourcegraph/${indexer}"'"'":\).*|\1${sha},|g" \
-    indexes.go
+    "$SCRIPT_DIR/indexes.go"
 
   echo "Updated tag for ${indexer}"
-  rm indexes.go.bak
+  rm "$SCRIPT_DIR/indexes.go.bak"
 done
 
-go fmt indexes.go
+go fmt "$SCRIPT_DIR/indexes.go"
