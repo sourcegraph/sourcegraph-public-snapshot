@@ -17,7 +17,6 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings.IndentOptions
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import com.sourcegraph.cody.CodyCompatibility
 import com.sourcegraph.cody.vscode.Range
 import com.sourcegraph.config.ConfigUtil
 import java.util.*
@@ -107,8 +106,7 @@ object CodyEditorUtil {
         if (fromCache != null) {
             return fromCache
         }
-        val isSupported = (isEditorInstanceSupported(editor)
-            && CodyCompatibility.isSupportedProject(editor.project))
+        val isSupported = isEditorInstanceSupported(editor) && CodyProjectUtil.isProjectSupported(editor.project)
         KEY_EDITOR_SUPPORTED[editor] = isSupported
         return isSupported
     }
@@ -121,7 +119,7 @@ object CodyEditorUtil {
             && editor != null
             && !CodyLanguageUtil.isLanguageBlacklisted(editor)
             && editor.document.isWritable
-            && ProjectUtil.isProjectAvailable(editor.project)
+            && CodyProjectUtil.isProjectAvailable(editor.project)
             && isEditorSupported(editor)
     }
 }
