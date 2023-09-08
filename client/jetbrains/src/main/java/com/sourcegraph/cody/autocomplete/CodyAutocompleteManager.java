@@ -8,10 +8,7 @@ import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.editor.impl.ImaginaryEditor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.fileEditor.TextEditor;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.TextRange;
@@ -31,10 +28,10 @@ import com.sourcegraph.common.EditorUtils;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.UserLevelConfig;
 import com.sourcegraph.telemetry.GraphQlLogger;
+import com.sourcegraph.utils.CodyLanguageUtil;
 import difflib.Delta;
 import difflib.DiffUtils;
 import difflib.Patch;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -100,11 +97,17 @@ public class CodyAutocompleteManager {
    */
   @RequiresEdt
   public void clearAutocompleteSuggestionsForAllProjects() {
-    Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
-    Arrays.stream(openProjects)
-        .flatMap(project -> Arrays.stream(FileEditorManager.getInstance(project).getAllEditors()))
-        .filter(fileEditor -> fileEditor instanceof TextEditor)
-        .map(fileEditor -> ((TextEditor) fileEditor).getEditor())
+    EditorUtils.getAllOpenEditors().forEach(this::clearAutocompleteSuggestions);
+  }
+
+  @RequiresEdt
+  public void clearAutocompleteSuggestionsForLanguageIds(List<String> languageIds) {
+    EditorUtils.getAllOpenEditors().stream()
+        .filter(
+            e ->
+                Optional.ofNullable(CodyLanguageUtil.Companion.getLanguage(e))
+                    .map(l -> languageIds.contains(l.getID()))
+                    .orElse(false))
         .forEach(this::clearAutocompleteSuggestions);
   }
 
@@ -123,6 +126,7 @@ public class CodyAutocompleteManager {
     return ConfigUtil.isCodyEnabled()
         && ConfigUtil.isCodyAutocompleteEnabled()
         && editor != null
+        && !CodyLanguageUtil.Companion.isLanguageBlacklisted(editor)
         && editor.getDocument().isWritable()
         && isProjectAvailable(editor.getProject())
         && isEditorSupported(editor);

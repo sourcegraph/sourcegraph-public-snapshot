@@ -9,6 +9,7 @@
 - New alt-backslash shortcut to exlicitly trigger autocomplete [#55926](https://github.com/sourcegraph/sourcegraph/pull/55926)
 - Add visual hints about Cody status to status bar [#56046](https://github.com/sourcegraph/sourcegraph/pull/56046)
 - Added a status bar toggle for enabling/disabling Cody autocomplete [#56310](https://github.com/sourcegraph/sourcegraph/pull/56310)
+- New settings to enable/disable autocomplete for individual languages [#56411](https://github.com/sourcegraph/sourcegraph/pull/56411)
 
 ### Changed
 
