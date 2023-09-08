@@ -262,7 +262,7 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 						cio.Write("\n--- Manual action needed ---\n")
 						cio.Write(fmt.Sprintf("➡️  PG_UTILS_PATH=%q defined in %s doesn't include createdb. Please correct the file manually.", pgUtilsPath, userBazelRcPath))
 						cio.Write("Please make sure that this file contains:\n")
-						cio.Write("`build --action_env=MOOPG_UTILS_PATH=[PATH TO PARENT FOLDER OF WHERE createdb IS LOCATED`")
+						cio.Write("`build --action_env=PG_UTILS_PATH=[PATH TO PARENT FOLDER OF WHERE createdb IS LOCATED`")
 						cio.Write("\n--- Manual action needed ---\n")
 						return err
 					}
