@@ -41,15 +41,14 @@ import com.sourcegraph.cody.chat.ChatUIConstants;
 import com.sourcegraph.cody.chat.ContextFilesMessage;
 import com.sourcegraph.cody.chat.MessagePanel;
 import com.sourcegraph.cody.chat.Transcript;
+import com.sourcegraph.cody.config.AccountType;
+import com.sourcegraph.cody.config.CodyAuthenticationManager;
 import com.sourcegraph.cody.context.ContextMessage;
 import com.sourcegraph.cody.context.EmbeddingStatusView;
 import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.cody.ui.AutoGrowingTextArea;
 import com.sourcegraph.cody.ui.HtmlViewer;
 import com.sourcegraph.cody.vscode.CancellationToken;
-import com.sourcegraph.config.ConfigUtil;
-import com.sourcegraph.config.SettingsComponent;
-import com.sourcegraph.config.SettingsComponent.InstanceType;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
@@ -71,7 +70,6 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.plaf.ButtonUI;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 public class CodyToolWindowContent implements UpdatableChat {
@@ -292,7 +290,8 @@ public class CodyToolWindowContent implements UpdatableChat {
   @RequiresEdt
   private void updateVisibilityOfContentPanels() {
     if (LocalAppManager.isPlatformSupported()
-        && ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.LOCAL_APP) {
+        && CodyAuthenticationManager.getInstance().getDefaultAccountType(project)
+            == AccountType.LOCAL_APP) {
       if (!LocalAppManager.isLocalAppInstalled()) {
         allContentLayout.show(allContentPanel, "appNotInstalledPanel");
         isChatVisible = false;
@@ -366,21 +365,9 @@ public class CodyToolWindowContent implements UpdatableChat {
   }
 
   private void addWelcomeMessage() {
-    String accessToken = ConfigUtil.getProjectAccessToken(project);
     String welcomeText =
         "Hello! I'm Cody. I can write code and answer questions for you. See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.";
     addMessageToChat(ChatMessage.createAssistantMessage(welcomeText));
-    if (StringUtils.isEmpty(accessToken)) {
-      String noAccessTokenText =
-          "<p>It looks like you don't have Sourcegraph Access Token configured.</p>"
-              + "<p>See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> how to create one and configure it in the settings to use Cody.</p>";
-      AssistantMessageWithSettingsButton assistantMessageWithSettingsButton =
-          new AssistantMessageWithSettingsButton(noAccessTokenText);
-      var messageContentPanel = new JPanel(new BorderLayout());
-      messageContentPanel.add(assistantMessageWithSettingsButton);
-      ApplicationManager.getApplication()
-          .invokeLater(() -> addComponentToChat(messageContentPanel));
-    }
   }
 
   @NotNull
@@ -412,7 +399,7 @@ public class CodyToolWindowContent implements UpdatableChat {
             });
   }
 
-  private void addComponentToChat(@NotNull JPanel messageContent) {
+  public void addComponentToChat(@NotNull JPanel messageContent) {
 
     var wrapperPanel = new JPanel();
     wrapperPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
@@ -574,15 +561,16 @@ public class CodyToolWindowContent implements UpdatableChat {
   public void displayUsedContext(@NotNull List<ContextMessage> contextMessages) {
     // Use context
     if (contextMessages.isEmpty()) {
-      InstanceType instanceType = ConfigUtil.getInstanceType(project);
+      AccountType accountType =
+          CodyAuthenticationManager.getInstance().getDefaultAccountType(project);
 
       String report = "I found no context for your request.";
       String ask =
-          instanceType == InstanceType.ENTERPRISE
+          accountType == AccountType.ENTERPRISE
               ? "Please ensure this repository is added to your Sourcegraph Enterprise instance and that your access token and custom request headers are set up correctly."
-              : (instanceType == InstanceType.LOCAL_APP
+              : (accountType == AccountType.LOCAL_APP
                   ? "Please ensure this repository is configured in Cody App."
-                  : (instanceType == InstanceType.DOTCOM
+                  : (accountType == AccountType.DOTCOM
                       ? "As your current server setting is Sourcegraph.com, please ensure this repository is public and indexed on Sourcegraph.com and that your access token is valid."
                       : ""));
       String resolution = "I will try to answer without context.";

@@ -3,7 +3,6 @@ package search
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 )
@@ -30,23 +30,43 @@ func TestExhaustiveSearch(t *testing.T) {
 	observationCtx := observation.TestContextTB(t)
 	logger := observationCtx.Logger
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	s := store.New(db, observation.TestContextTB(t))
+	store := store.New(db, observation.TestContextTB(t))
+	svc := service.New(observationCtx, store)
 
-	ctx, cancel := context.WithCancel(actor.WithInternalActor(context.Background()))
-	defer cancel()
+	userID := insertRow(t, store.Store, "users", "username", "alice")
+	insertRow(t, store.Store, "repo", "id", 1, "name", "repoa")
+	insertRow(t, store.Store, "repo", "id", 2, "name", "repob")
 
-	userID := insertRow(t, s.Store, "users", "username", "alice")
-	insertRow(t, s.Store, "repo", "id", 1, "name", "repoa")
-	insertRow(t, s.Store, "repo", "id", 2, "name", "repob")
+	workerCtx, cancel1 := context.WithCancel(actor.WithInternalActor(context.Background()))
+	defer cancel1()
+	userCtx, cancel2 := context.WithCancel(actor.WithActor(context.Background(), actor.FromUser(userID)))
+	defer cancel2()
 
 	query := "1@rev1 1@rev2 2@rev3"
 
 	// Create a job
-	jobID, err := s.CreateExhaustiveSearchJob(ctx, types.ExhaustiveSearchJob{
-		InitiatorID: userID,
-		Query:       query,
-	})
+	job, err := svc.CreateSearchJob(userCtx, query)
 	require.NoError(err)
+
+	// Do some assertations on the job before it runs
+	{
+		require.Equal(userID, job.InitiatorID)
+		require.Equal(query, job.Query)
+		require.Equal(types.JobStateQueued, job.State)
+		require.NotZero(job.CreatedAt)
+		require.NotZero(job.UpdatedAt)
+		job2, err := svc.GetSearchJob(userCtx, job.ID)
+		require.NoError(err)
+		require.Equal(job, job2)
+	}
+
+	// TODO these sort of tests need to live somewhere that makes more sense.
+	// But for now we have a fully functioning setup here lets test List.
+	{
+		jobs, err := svc.ListSearchJobs(userCtx)
+		require.NoError(err)
+		require.Equal([]*types.ExhaustiveSearchJob{job}, jobs)
+	}
 
 	// Now that the job is created, we start up all the worker routines for
 	// exhaustive search and wait until there are no more jobs left.
@@ -58,59 +78,19 @@ func TestExhaustiveSearch(t *testing.T) {
 	}
 
 	csvBuf = &concurrentWriter{writer: &bytes.Buffer{}}
-	routines, err := searchJob.Routines(ctx, observationCtx)
+	routines, err := searchJob.Routines(workerCtx, observationCtx)
 	require.NoError(err)
 	for _, routine := range routines {
 		go routine.Start()
 		defer routine.Stop()
 	}
 	require.Eventually(func() bool {
-		return !searchJob.hasWork(ctx)
+		return !searchJob.hasWork(workerCtx)
 	}, tTimeout(t, 10*time.Second), 10*time.Millisecond)
 
-	// We now validate by directly checking the entries are created that we
-	// want.
-	want := "1@spec 2@spec"
-	wantJobCount := 2
-	rows, err := s.Store.Query(ctx, sqlf.Sprintf("SELECT id, CONCAT(repo_id, '@', ref_spec) AS part FROM exhaustive_search_repo_jobs WHERE search_job_id = %d ORDER BY part ASC", jobID))
-	require.NoError(err)
-
-	var gotParts []string
-	var ids []int64
-	for rows.Next() {
-		var part string
-		var id int64
-		require.NoError(rows.Scan(&id, &part))
-		ids = append(ids, id)
-		gotParts = append(gotParts, part)
-	}
-	require.NoError(rows.Err())
-
-	// This check is not strictly required because the number of ids is implicitly
-	// checked by the format of "want". However, we check explicitly anyway to get a
-	// nice error message instead of a panic when accessing the ids by index later
-	// in the test.
-	require.Equal(wantJobCount, len(ids))
-
-	got := strings.Join(gotParts, " ")
-	require.Equal(want, got)
-
-	// Check that we created 3 repo revision jobs.
-	want = fmt.Sprintf("%[1]d:rev1 %[1]d:rev2 %[2]d:rev3", ids[0], ids[1])
-	rows, err = s.Store.Query(ctx, sqlf.Sprintf("SELECT CONCAT(search_repo_job_id, ':', revision) AS part FROM exhaustive_search_repo_revision_jobs WHERE search_repo_job_id IN (SELECT id from exhaustive_search_repo_jobs WHERE search_job_id = %d) ORDER BY PART ASC", jobID))
-	require.NoError(err)
-
-	gotParts = gotParts[:0]
-	for rows.Next() {
-		var part string
-		require.NoError(rows.Scan(&part))
-		gotParts = append(gotParts, part)
-	}
-	require.NoError(rows.Err())
-
-	got = strings.Join(gotParts, " ")
-	require.Equal(want, got)
-
+	// Assert that we ended up writing the expected results. This validates
+	// that somehow the work happened (but doesn't dive into the guts of how
+	// we co-ordinate our workers)
 	require.Equal([][]string{
 		{
 			"repo,revspec,revision",
@@ -125,6 +105,27 @@ func TestExhaustiveSearch(t *testing.T) {
 			"2,spec,rev3",
 		},
 	}, parseCSV(csvBuf.(*concurrentWriter).String()))
+
+	// Minor assertion that the job is regarded as finished.
+	{
+		job2, err := svc.GetSearchJob(userCtx, job.ID)
+		require.NoError(err)
+		// Only the WorkerJob fields should change. And in that case we will
+		// only assert on State since the rest are non-deterministic.
+		require.Equal(types.JobStateCompleted, job2.State)
+		job2.WorkerJob = job.WorkerJob
+		require.Equal(job, job2)
+	}
+
+	// Assert that cancellation affects the number of rows we expect. This is a bit
+	// counterintuitive at this point because we have already completed the job.
+	// However, cancellation affects the rows independently of the job state.
+	{
+		wantCount := 6
+		gotCount, err := store.CancelSearchJob(userCtx, job.ID)
+		require.NoError(err)
+		require.Equal(wantCount, gotCount)
+	}
 }
 
 func parseCSV(csv string) (o [][]string) {

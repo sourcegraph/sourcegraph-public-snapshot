@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "schema",
+    srcs = ["schema.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/msp/schema",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev/managedservicesplatform/spec",
+        "//dev/sg/root",
+        "//lib/errors",
+        "@com_github_invopop_jsonschema//:jsonschema",
+    ],
+)

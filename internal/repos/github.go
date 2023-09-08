@@ -458,7 +458,7 @@ type repositoryPager func(page int) (repos []*github.Repository, hasNext bool, c
 // paginate returns all the repositories from the given repositoryPager.
 // It repeatedly calls `pager` with incrementing page count until it
 // returns false for hasNext.
-func (s *GitHubSource) paginate(ctx context.Context, results chan *githubResult, pager repositoryPager) {
+func paginate(ctx context.Context, results chan *githubResult, pager repositoryPager) {
 	hasNext := true
 	for page := 1; hasNext; page++ {
 		if err := ctx.Err(); err != nil {
@@ -504,7 +504,7 @@ func (s *GitHubSource) listOrg(ctx context.Context, org string, results chan *gi
 	getReposByType := func(tp string) error {
 		var oerr error
 
-		s.paginate(ctx, dedupC, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+		paginate(ctx, dedupC, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 			defer func() {
 				if page == 1 {
 					var e *github.APIError
@@ -576,7 +576,7 @@ func (s *GitHubSource) listOrg(ctx context.Context, org string, results chan *gi
 //
 // It returns an error if the request fails on the first page.
 func (s *GitHubSource) listUser(ctx context.Context, user string, results chan *githubResult) (fail error) {
-	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+	paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 		defer func() {
 			if err != nil && page == 1 {
 				fail, err = err, nil
@@ -602,7 +602,7 @@ func (s *GitHubSource) listUser(ctx context.Context, user string, results chan *
 //
 // It returns an error if the request fails on the first page.
 func (s *GitHubSource) listAppInstallation(ctx context.Context, results chan *githubResult) (fail error) {
-	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+	paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 		defer func() {
 			if err != nil && page == 1 {
 				fail, err = err, nil
@@ -754,7 +754,7 @@ func (s *GitHubSource) listPublicArchivedRepos(ctx context.Context, results chan
 // Affiliation is present if the user: (1) owns the repo, (2) is a part of an org that
 // the repo belongs to, or (3) is a collaborator.
 func (s *GitHubSource) listAffiliated(ctx context.Context, results chan *githubResult) {
-	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+	paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 		defer func() {
 			remaining, reset, retry, _ := s.v3Client.ExternalRateLimiter().Get()
 			s.logger.Debug(

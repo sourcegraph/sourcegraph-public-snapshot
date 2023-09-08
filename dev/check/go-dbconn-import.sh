@@ -28,9 +28,8 @@ allowed_prefix=(
   github.com/sourcegraph/sourcegraph/cmd/searcher
   # Transitively depends on updatecheck package which imports but does not use DB
   github.com/sourcegraph/sourcegraph/cmd/pings
-  # Main entrypoints for running all services, so they must be allowed to import it.
-  github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss
-  github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph
+  # Main entrypoint for running all services, so it must be allowed to import it.
+  github.com/sourcegraph/sourcegraph/cmd/sourcegraph
 )
 
 # Create regex ^(a|b|c)

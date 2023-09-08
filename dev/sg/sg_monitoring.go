@@ -7,6 +7,7 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -25,7 +26,7 @@ Also refer to the generated reference documentation available for site admins:
 - https://docs.sourcegraph.com/admin/observability/dashboards
 - https://docs.sourcegraph.com/admin/observability/alerts
 `,
-	Category: CategoryDev,
+	Category: category.Dev,
 	Subcommands: []*cli.Command{
 		monitoringcmd.Generate("sg monitoring", func() string {
 			root, _ := root.RepositoryRoot()
