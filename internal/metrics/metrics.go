@@ -7,8 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -176,6 +177,7 @@ type diskCollector struct {
 	path          string
 	availableDesc *prometheus.Desc
 	totalDesc     *prometheus.Desc
+	logger        log.Logger
 }
 
 func newDiskCollector(path string) prometheus.Collector {
@@ -194,6 +196,7 @@ func newDiskCollector(path string) prometheus.Collector {
 			nil,
 			constLabels,
 		),
+		logger: log.Scoped("diskCollector", ""),
 	}
 }
 
@@ -205,7 +208,7 @@ func (c *diskCollector) Describe(ch chan<- *prometheus.Desc) {
 func (c *diskCollector) Collect(ch chan<- prometheus.Metric) {
 	usage, err := du.New(c.path)
 	if err != nil {
-		log15.Error("error getting disk usage info", err)
+		c.logger.Error("error getting disk usage info", log.Error(err))
 		return
 	}
 	ch <- prometheus.MustNewConstMetric(c.availableDesc, prometheus.GaugeValue, float64(usage.Available()))

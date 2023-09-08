@@ -5,7 +5,6 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/log"
@@ -48,7 +47,7 @@ func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.
 	}, func() float64 {
 		usage, err := du.New(s.ReposDir)
 		if err != nil {
-			log15.Error("error getting disk usage info", err)
+			s.Logger.Error("error getting disk usage info", log.Error(err))
 			return 0
 		}
 		return float64(usage.Available())
@@ -61,7 +60,7 @@ func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.
 	}, func() float64 {
 		usage, err := du.New(s.ReposDir)
 		if err != nil {
-			log15.Error("error getting disk usage info", err)
+			s.Logger.Error("error getting disk usage info", log.Error(err))
 			return 0
 		}
 		return float64(usage.Size())
