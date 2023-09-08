@@ -593,10 +593,9 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	// a default configuration.
 	if completionsConfig == nil {
 		completionsConfig = &schema.Completions{
-			Provider:        string(conftypes.CompletionsProviderNameSourcegraph),
-			ChatModel:       "anthropic/claude-2",
-			FastChatModel:   "anthropic/claude-instant-1",
-			CompletionModel: "anthropic/claude-instant-1",
+			Provider:      string(conftypes.CompletionsProviderNameSourcegraph),
+			ChatModel:     "anthropic/claude-2",
+			FastChatModel: "anthropic/claude-instant-1",
 		}
 	}
 
@@ -641,11 +640,6 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		if completionsConfig.FastChatModel == "" {
 			completionsConfig.FastChatModel = "anthropic/claude-instant-1"
 		}
-
-		// Set a default completions model.
-		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "anthropic/claude-instant-1"
-		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameOpenAI) {
 		// If no endpoint is configured, use a default value.
 		if completionsConfig.Endpoint == "" {
@@ -665,11 +659,6 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		// Set a default fast chat model.
 		if completionsConfig.FastChatModel == "" {
 			completionsConfig.FastChatModel = "gpt-3.5-turbo"
-		}
-
-		// Set a default completions model.
-		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "gpt-3.5-turbo"
 		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAnthropic) {
 		// If no endpoint is configured, use a default value.
@@ -691,11 +680,6 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		if completionsConfig.FastChatModel == "" {
 			completionsConfig.FastChatModel = "claude-instant-1"
 		}
-
-		// Set a default completions model.
-		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "claude-instant-1"
-		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAzureOpenAI) {
 		// If no endpoint is configured, this provider is misconfigured.
 		if completionsConfig.Endpoint == "" {
@@ -715,11 +699,6 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		// If not fast chat model is set, we fall back to the Chat Model.
 		if completionsConfig.FastChatModel == "" {
 			completionsConfig.FastChatModel = completionsConfig.ChatModel
-		}
-
-		// If not completions model is set, we cannot talk to Azure OpenAI. Bail.
-		if completionsConfig.CompletionModel == "" {
-			return nil
 		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameFireworks) {
 		// If no endpoint is configured, use a default value.
@@ -775,7 +754,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 	// If after trying to set default we still have not all models configured, completions are
 	// not available.
-	if completionsConfig.ChatModel == "" || completionsConfig.FastChatModel == "" || completionsConfig.CompletionModel == "" {
+	if completionsConfig.ChatModel == "" || completionsConfig.FastChatModel == "" {
 		return nil
 	}
 
@@ -787,22 +766,15 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		completionsConfig.FastChatModelMaxTokens = defaultMaxPromptTokens(conftypes.CompletionsProviderName(completionsConfig.Provider), completionsConfig.FastChatModel)
 	}
 
-	if completionsConfig.CompletionModelMaxTokens == 0 {
-		completionsConfig.CompletionModelMaxTokens = defaultMaxPromptTokens(conftypes.CompletionsProviderName(completionsConfig.Provider), completionsConfig.CompletionModel)
-	}
-
 	computedConfig := &conftypes.CompletionsConfig{
-		Provider:                         conftypes.CompletionsProviderName(completionsConfig.Provider),
-		AccessToken:                      completionsConfig.AccessToken,
-		ChatModel:                        completionsConfig.ChatModel,
-		ChatModelMaxTokens:               completionsConfig.ChatModelMaxTokens,
-		FastChatModel:                    completionsConfig.FastChatModel,
-		FastChatModelMaxTokens:           completionsConfig.FastChatModelMaxTokens,
-		CompletionModel:                  completionsConfig.CompletionModel,
-		CompletionModelMaxTokens:         completionsConfig.CompletionModelMaxTokens,
-		Endpoint:                         completionsConfig.Endpoint,
-		PerUserDailyLimit:                completionsConfig.PerUserDailyLimit,
-		PerUserCodeCompletionsDailyLimit: completionsConfig.PerUserCodeCompletionsDailyLimit,
+		Provider:               conftypes.CompletionsProviderName(completionsConfig.Provider),
+		AccessToken:            completionsConfig.AccessToken,
+		ChatModel:              completionsConfig.ChatModel,
+		ChatModelMaxTokens:     completionsConfig.ChatModelMaxTokens,
+		FastChatModel:          completionsConfig.FastChatModel,
+		FastChatModelMaxTokens: completionsConfig.FastChatModelMaxTokens,
+		Endpoint:               completionsConfig.Endpoint,
+		PerUserDailyLimit:      completionsConfig.PerUserDailyLimit,
 	}
 
 	return computedConfig
@@ -816,14 +788,14 @@ func GetAutocompleteConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Au
 		return nil
 	}
 
-	// completionsConfig contains the fallback values
-	completionsConfig := GetCompletionsConfig(siteConfig)
+	// computedCompletionsConfig contains the fallback values for the provider and access token
+	computedCompletionsConfig := GetCompletionsConfig(siteConfig)
 
 	// Additionally, autocomplete in App are disabled if there is no dotcom auth token
 	// and the user hasn't provided their own token for autocomplete either via completions or autocomplete
 	if deploy.IsApp() {
 		if (siteConfig.App == nil || len(siteConfig.App.DotcomAuthToken) == 0) &&
-			((completionsConfig == nil || completionsConfig.AccessToken == "") && (siteConfig.Autocomplete == nil || siteConfig.Autocomplete.AccessToken == "")) {
+			((computedCompletionsConfig == nil || computedCompletionsConfig.AccessToken == "") && (siteConfig.Autocomplete == nil || siteConfig.Autocomplete.AccessToken == "")) {
 			return nil
 		}
 	}
@@ -833,17 +805,21 @@ func GetAutocompleteConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Au
 	// fall back to completions configuration or default values.
 	if autocompleteConfig == nil {
 		// if there also no completions config it must be disabled
-		if completionsConfig == nil {
+		if computedCompletionsConfig == nil {
 			return nil
+		}
+		rawCompletionsConfig := siteConfig.Completions
+		if rawCompletionsConfig == nil {
+			rawCompletionsConfig = &schema.Completions{}
 		}
 		// there must be a completions config, so use that as the default
 		autocompleteConfig = &schema.Autocomplete{
-			Provider:          string(completionsConfig.Provider),
-			Model:             completionsConfig.CompletionModel,
-			AccessToken:       completionsConfig.AccessToken,
-			Endpoint:          completionsConfig.Endpoint,
-			ModelMaxTokens:    completionsConfig.CompletionModelMaxTokens,
-			PerUserDailyLimit: completionsConfig.PerUserCodeCompletionsDailyLimit,
+			Provider:          string(computedCompletionsConfig.Provider),
+			Model:             rawCompletionsConfig.CompletionModel,
+			AccessToken:       computedCompletionsConfig.AccessToken,
+			Endpoint:          computedCompletionsConfig.Endpoint,
+			ModelMaxTokens:    rawCompletionsConfig.CompletionModelMaxTokens,
+			PerUserDailyLimit: rawCompletionsConfig.PerUserCodeCompletionsDailyLimit,
 		}
 	}
 

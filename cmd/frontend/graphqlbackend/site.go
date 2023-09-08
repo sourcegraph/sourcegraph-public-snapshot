@@ -567,9 +567,9 @@ func (r *siteResolver) PerUserCompletionsQuota() *int32 {
 }
 
 func (r *siteResolver) PerUserCodeCompletionsQuota() *int32 {
-	c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
-	if c != nil && c.PerUserCodeCompletionsDailyLimit > 0 {
-		i := int32(c.PerUserCodeCompletionsDailyLimit)
+	c := conf.GetAutocompleteConfig(conf.Get().SiteConfig())
+	if c != nil && c.PerUserDailyLimit > 0 {
+		i := int32(c.PerUserDailyLimit)
 		return &i
 	}
 	return nil
@@ -598,15 +598,17 @@ func (r *siteResolver) IsCodyEnabled(ctx context.Context) bool { return cody.IsC
 
 func (r *siteResolver) CodyLLMConfiguration(ctx context.Context) *codyLLMConfigurationResolver {
 	c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
-	if c == nil {
+	a := conf.GetAutocompleteConfig(conf.Get().SiteConfig())
+	if c == nil || a == nil {
 		return nil
 	}
 
-	return &codyLLMConfigurationResolver{config: c}
+	return &codyLLMConfigurationResolver{config: c, autoCompleteConfig: a}
 }
 
 type codyLLMConfigurationResolver struct {
-	config *conftypes.CompletionsConfig
+	config             *conftypes.CompletionsConfig
+	autoCompleteConfig *conftypes.AutocompleteConfig
 }
 
 func (c *codyLLMConfigurationResolver) ChatModel() string { return c.config.ChatModel }
@@ -630,8 +632,8 @@ func (c *codyLLMConfigurationResolver) FastChatModelMaxTokens() *int32 {
 func (c *codyLLMConfigurationResolver) Provider() string        { return string(c.config.Provider) }
 func (c *codyLLMConfigurationResolver) CompletionModel() string { return c.config.FastChatModel }
 func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
-	if c.config.CompletionModelMaxTokens != 0 {
-		max := int32(c.config.CompletionModelMaxTokens)
+	if c.autoCompleteConfig.ModelMaxTokens != 0 {
+		max := int32(c.autoCompleteConfig.ModelMaxTokens)
 		return &max
 	}
 	return nil

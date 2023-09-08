@@ -8,6 +8,8 @@ type ProviderConfig interface {
 	ProviderAccessToken() string
 }
 
+// CompletionsConfig contains configuration for use with Cody Chat
+// for autocomplete configuration use AutocompleteConfig
 type CompletionsConfig struct {
 	ChatModel          string
 	ChatModelMaxTokens int
@@ -15,17 +17,10 @@ type CompletionsConfig struct {
 	FastChatModel          string
 	FastChatModelMaxTokens int
 
-	// Deprecated: CompletionModel is deprecated, use AutocompleteConfig.Model
-	CompletionModel string
-	// Deprecated: CompletionModelMaxTokens is deprecated, use AutocompleteConfig.ModelMaxTokens
-	CompletionModelMaxTokens int
-
 	AccessToken       string
 	Provider          CompletionsProviderName
 	Endpoint          string
 	PerUserDailyLimit int
-	// Deprecated: PerUserCodeCompletionsDailyLimit is deprecated, use AutocompleteConfig.PerUserDailyLimit
-	PerUserCodeCompletionsDailyLimit int
 }
 
 func (c *CompletionsConfig) ProviderName() CompletionsProviderName {
@@ -42,6 +37,8 @@ func (c *CompletionsConfig) ProviderAccessToken() string {
 
 type CompletionsProviderName string
 
+// AutocompleteConfig contains configuration for use with Cody Autocomplete
+// for chat configuration use CompletionsConfig
 type AutocompleteConfig struct {
 	Model          string
 	ModelMaxTokens int
