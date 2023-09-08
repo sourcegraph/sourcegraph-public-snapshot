@@ -26,7 +26,7 @@ For example, you can ask Cody:
 - "How is our app's secret storage implemented on Linux?"
 - "Where is the CI config for the web integration tests?"
 - "Write a new GraphQL resolver for the AuditLog"
-- "Why is the USerConnectionResolver giving an "unknown user" error, and how do I fix it?"
+- "Why is the UserConnectionResolver giving an "unknown user" error, and how do I fix it?"
 - "Add helpful debug log statements"
 - "Make this work" _(seriously, it often works—try it!)_
 
