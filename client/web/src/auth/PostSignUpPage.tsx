@@ -6,7 +6,6 @@ import type { AuthenticatedUser } from '../auth'
 import { Page } from '../components/Page'
 import { PageTitle } from '../components/PageTitle'
 import { CodySurveyToast } from '../marketing/toast/CodySurveyToast'
-import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { getReturnTo } from './SignInSignUpCommon'
