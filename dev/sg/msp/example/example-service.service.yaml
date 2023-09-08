@@ -1,0 +1,39 @@
+build:
+  image: index.docker.io/sourcegraph/example-service
+  source:
+    dir: ""
+    repo: ""
+environments:
+- deploy:
+    manual: null
+    type: manual
+  domain:
+    cloudflare:
+      required: false
+      subdomain: example-service
+      zone: sgdev.org
+    type: cloudflare
+  env:
+    SRC_LOG_LEVEL: info
+  healtcheck:
+    livenessProbeInterval: null
+  id: dev
+  instances:
+    resources:
+      cpu: 1
+      memory: 512Mi
+    scaling:
+      maxCount: 1
+      maxRequestConcurrency: 0
+      minCount: 0
+  resources:
+    bigQueryTable: null
+    redis:
+      memoryGB: null
+      tier: null
+  secretEnv:
+    SUPER_SEKRET_VAR: SUPER_SEKRET_VAR
+service:
+  id: example-service
+  name: null
+  owners: null
