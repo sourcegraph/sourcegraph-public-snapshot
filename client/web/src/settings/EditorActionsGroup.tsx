@@ -44,15 +44,16 @@ export const EditorActionsGroup: React.FunctionComponent<EditorActionsGroupProps
     onClick,
     actionsAvailable,
 }) => {
-    const [queryParameters] = useSearchParams()
+    const [queryParameters, setSearchParams] = useSearchParams()
     const id = queryParameters.get('id')
 
     useEffect(() => {
         if (id && actionsAvailable) {
             queryParameters.delete('id')
+            setSearchParams(queryParameters.toString())
             onClick(id)
         }
-    }, [id, queryParameters, actionsAvailable, onClick])
+    }, [id, setSearchParams, queryParameters, actionsAvailable, onClick])
 
     return (
         <>

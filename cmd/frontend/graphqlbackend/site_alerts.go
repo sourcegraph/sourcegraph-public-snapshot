@@ -97,14 +97,8 @@ func init() {
 		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsApp() {
 			return nil
 		}
-		if c.SiteConfig().ExternalURL == "" {
-			problems = append(problems, conf.NewSiteProblem("`externalURL` is required to be set for many features of Sourcegraph to work correctly."))
-		}
 		return problems
 	})
-
-	// Warn if email sending is not configured.
-	AlertFuncs = append(AlertFuncs, emailSendingNotConfiguredAlert)
 
 	if !disableSecurity {
 		// Warn about Sourcegraph being out of date.
@@ -266,27 +260,6 @@ func isMinorUpdateAvailable(currentVersion, updateVersion string) bool {
 		return true
 	}
 	return cv.Major() != uv.Major() || cv.Minor() != uv.Minor()
-}
-
-func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
-	if !args.IsSiteAdmin || deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsApp() {
-		return nil
-	}
-	if conf.Get().EmailSmtp == nil || conf.Get().EmailSmtp.Host == "" {
-		return []*Alert{{
-			TypeValue:                 AlertTypeWarning,
-			MessageValue:              "Warning: Sourcegraph cannot send emails! [Configure `email.smtp`](/help/admin/config/email) so that features such as Code Monitors, password resets, and invitations work. [documentation](/help/admin/config/email)",
-			IsDismissibleWithKeyValue: "email-sending",
-		}}
-	}
-	if conf.Get().EmailAddress == "" {
-		return []*Alert{{
-			TypeValue:                 AlertTypeWarning,
-			MessageValue:              "Warning: Sourcegraph cannot send emails! [Configure `email.address`](/help/admin/config/email) so that features such as Code Monitors, password resets, and invitations work. [documentation](/help/admin/config/email)",
-			IsDismissibleWithKeyValue: "email-sending",
-		}}
-	}
-	return nil
 }
 
 func outOfDateAlert(args AlertFuncArgs) []*Alert {

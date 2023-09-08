@@ -43,6 +43,12 @@ $tertiary: #c92b2a;
     }
 }
 
+.submit {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 0.5rem;
+}
+
 :global(.theme-light) {
     .button:not(:disabled):not(.disabled):not([aria-disabled='true']) {
         box-shadow: none;

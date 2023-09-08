@@ -1,4 +1,4 @@
-import { type FC, type PropsWithChildren, useCallback, useState } from 'react'
+import { type FC, type PropsWithChildren, useCallback, useState, useEffect } from 'react'
 
 import type { ApolloQueryResult } from '@apollo/client'
 import { mdiAlertCircle, mdiChevronDown, mdiCheckCircle, mdiCheckCircleOutline } from '@mdi/js'
@@ -7,6 +7,7 @@ import cx from 'classnames'
 import * as jsonc from 'jsonc-parser'
 import { useNavigate } from 'react-router-dom'
 import type { SiteConfigResult } from 'src/graphql-operations'
+import { useDebounce } from 'use-debounce'
 
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
@@ -140,9 +141,11 @@ const DEFAULT_FORMAT_OPTIONS = {
     },
 }
 const LicenseKeyModal: FC<LicenseKeyModalProps> = ({ licenseKey, config, id, refetch }): JSX.Element => {
-    const [isOpen, setIsOpen] = useState(true)
-    const [licenseKeyInput, setLicenseKeyInput] = useState(licenseKey)
     const navigate = useNavigate()
+    const [isOpen, setIsOpen] = useState(true)
+    const [isValid, setIsValid] = useState(false)
+    const [licenseKeyInput, setLicenseKeyInput] = useState(licenseKey)
+    const [debouncedValue] = useDebounce(licenseKeyInput, 500)
 
     const isOnboarding = localStorage.getItem('isOnboarding') === null
 
@@ -153,12 +156,10 @@ const LicenseKeyModal: FC<LicenseKeyModalProps> = ({ licenseKey, config, id, ref
 
     const [updateLicenseKey, { error, loading }] = useUpdateLicenseKey()
 
-    const onSubmit = useCallback(
-        async (event?: React.FormEvent<HTMLFormElement>) => {
-            event?.preventDefault()
-
+    useEffect(() => {
+        const setLicenseKey = async (): Promise<void> => {
             const editFns = [
-                (contents: string) => jsonc.modify(contents, ['licenseKey'], licenseKeyInput, DEFAULT_FORMAT_OPTIONS),
+                (contents: string) => jsonc.modify(contents, ['licenseKey'], debouncedValue, DEFAULT_FORMAT_OPTIONS),
             ]
             let input = config
             for (const editFunc of editFns) {
@@ -166,17 +167,30 @@ const LicenseKeyModal: FC<LicenseKeyModalProps> = ({ licenseKey, config, id, ref
             }
 
             await updateLicenseKey({ variables: { lastID: id, input } })
-            setIsOpen(false)
-            localStorage.setItem('isOnboarding', 'false')
-            await refetch()
-            navigate('site-admin/configuration')
+            setIsValid(true)
+        }
+        if (debouncedValue.length > 10) {
+            setLicenseKey().catch(() => setIsValid(false))
+        }
+    }, [config, id, updateLicenseKey, debouncedValue, refetch])
+
+    const onSubmit = useCallback(
+        async (event?: React.FormEvent<HTMLFormElement>) => {
+            const submit = async (): Promise<void> => {
+                event?.preventDefault()
+                setIsOpen(false)
+                localStorage.setItem('isOnboarding', 'false')
+                navigate('site-admin/configuration')
+                await refetch()
+            }
+            await submit()
         },
-        [updateLicenseKey, licenseKeyInput, id, navigate, refetch, config]
+        [navigate, refetch]
     )
 
     return (
         <>
-            {isOpen && isOnboarding && (
+            {(isOpen || isOnboarding || licenseKey.length === 0) && (
                 <Modal
                     className={styles.modal}
                     containerClassName={styles.modalContainer}
@@ -195,12 +209,18 @@ const LicenseKeyModal: FC<LicenseKeyModalProps> = ({ licenseKey, config, id, ref
                             className="pb-4"
                             onChange={({ target: { value } }) => setLicenseKeyInput(value)}
                         />
-                        <LicenseKey licenseKey={licenseKey} />
+                        <LicenseKey isValid={isValid} />
                         <div className="d-flex justify-content-end">
-                            <Button className="mr-2" onClick={onDismiss} outline={true} variant="secondary">
+                            <Button
+                                className="mr-2"
+                                onClick={onDismiss}
+                                outline={true}
+                                variant="secondary"
+                                disabled={isValid}
+                            >
                                 Skip for now
                             </Button>
-                            <Button type="submit" disabled={licenseKeyInput === ''} variant="primary">
+                            <Button className={styles.submit} type="submit" disabled={!isValid} variant="primary">
                                 Upgrade and start set up
                                 {loading && (
                                     <div data-testid="action-item-spinner">
@@ -217,22 +237,22 @@ const LicenseKeyModal: FC<LicenseKeyModalProps> = ({ licenseKey, config, id, ref
 }
 
 interface LicenseKeyProps {
-    licenseKey: string
+    isValid: boolean
 }
-const LicenseKey: FC<LicenseKeyProps> = ({ licenseKey }): JSX.Element => {
+const LicenseKey: FC<LicenseKeyProps> = ({ isValid }): JSX.Element => {
     const isLightTheme = useIsLightTheme()
     return (
         <div className={cx(styles.keyWrapper, 'p-4 mb-4')}>
             <div className={styles.keyContainer}>
                 <div className={styles.logoContainer}>
-                    {licenseKey ? (
+                    {isValid ? (
                         <BrandLogo isLightTheme={isLightTheme} variant="symbol" />
                     ) : (
                         <div className={styles.emptyLogo} />
                     )}
                 </div>
                 <div>
-                    {licenseKey ? (
+                    {isValid ? (
                         <>
                             <Text className="mb-1">License</Text>
                             <H2 className="mb-1">Sourcegraph Enterprise (dev-only)</H2>

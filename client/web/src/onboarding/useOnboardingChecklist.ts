@@ -1,4 +1,4 @@
-import { MutationTuple, ApolloQueryResult } from '@apollo/client'
+import type { MutationTuple, ApolloQueryResult } from '@apollo/client'
 import { parse } from 'jsonc-parser'
 import type {
     SiteConfigResult,
@@ -67,8 +67,8 @@ function getChecklistItems(data: SiteConfigResult): OnboardingChecklistResult {
         checklistItem: {
             licenseKey: config.licenseKey !== '',
             externalURL: config.externalURL !== '',
-            emailSmtp: config['email.smtp'].host !== '',
-            authProviders: config['auth.providers'].length > 0,
+            emailSmtp: config['email.smtp']?.host !== '' || false,
+            authProviders: config['auth.providers'].length > 1,
             externalServices: data.externalServices?.nodes?.length > 0 || false,
             usersPermissions:
                 data.externalServices?.nodes?.every(({ unrestrictedAccess }) => !unrestrictedAccess) ?? false,
@@ -76,9 +76,5 @@ function getChecklistItems(data: SiteConfigResult): OnboardingChecklistResult {
     }
 }
 
-export const useUpdateLicenseKey = (): MutationTuple<
-    UpdateSiteConfigurationResult,
-    UpdateSiteConfigurationVariables
-> => {
-    return useMutation(LICENSE_KEY_MUTATION)
-}
+export const useUpdateLicenseKey = (): MutationTuple<UpdateSiteConfigurationResult, UpdateSiteConfigurationVariables> =>
+    useMutation(LICENSE_KEY_MUTATION)
