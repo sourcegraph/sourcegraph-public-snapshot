@@ -230,7 +230,7 @@ func dbConn(logger log.Logger, t testing.TB, cfg *url.URL, schemas ...*schemas.S
 	t.Helper()
 	db, err := connections.NewTestDB(t, logger, cfg.String(), schemas...)
 	if err != nil {
-		if strings.Contains(err.Error(), "connection refused") {
+		if strings.Contains(err.Error(), "connection refused") && os.Getenv("BAZEL_TEST") == "1" {
 			t.Fatalf(`failed to connect to database %q: %s
 PROTIP: Ensure the below is part of the go_test rule in BUILD.bazel
   tags = ["requires-network"]
