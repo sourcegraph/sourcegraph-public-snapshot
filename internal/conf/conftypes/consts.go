@@ -15,13 +15,16 @@ type CompletionsConfig struct {
 	FastChatModel          string
 	FastChatModelMaxTokens int
 
-	CompletionModel          string
+	// Deprecated: CompletionModel is deprecated, use AutocompleteConfig.Model
+	CompletionModel string
+	// Deprecated: CompletionModelMaxTokens is deprecated, use AutocompleteConfig.ModelMaxTokens
 	CompletionModelMaxTokens int
 
-	AccessToken                      string
-	Provider                         CompletionsProviderName
-	Endpoint                         string
-	PerUserDailyLimit                int
+	AccessToken       string
+	Provider          CompletionsProviderName
+	Endpoint          string
+	PerUserDailyLimit int
+	// Deprecated: PerUserCodeCompletionsDailyLimit is deprecated, use AutocompleteConfig.PerUserDailyLimit
 	PerUserCodeCompletionsDailyLimit int
 }
 
