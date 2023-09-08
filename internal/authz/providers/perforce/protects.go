@@ -211,6 +211,9 @@ func scanProtects(logger log.Logger, rc io.Reader, s *protectsScanner, ignoreHos
 	for scanner.Scan() {
 		line := scanner.Text()
 
+		// Trim whitespace
+		line = strings.TrimSpace(line)
+
 		// Skip comments
 		if strings.HasPrefix(line, "##") {
 			continue
@@ -220,9 +223,6 @@ func scanProtects(logger log.Logger, rc io.Reader, s *protectsScanner, ignoreHos
 		if i := strings.Index(line, "##"); i > -1 {
 			line = line[:i]
 		}
-
-		// Trim whitespace
-		line = strings.TrimSpace(line)
 
 		// Skip blank lines
 		if line == "" {
