@@ -76,15 +76,15 @@ More specifically, Cody can answer questions like:
   <a class="demo text-center" target="_blank" href="https://twitter.com/beyang/status/1647744307045228544">View Demo</a>
 </div>
 
-### Inline chat and code fixes
+### Inline chat and code edits
 
-You can also open Cody's chat inline in VS Code using the `+` icon. This opens a chat box that can be used for general chat questions, code fixes, and refactors. Select a code snippet to ask Cody for an inline code fix, then type `/fix` plus your desired code change. Cody will generate edits, which you can accept or reject with the `Apply` button.
+You can also open Cody's chat inline in VS Code using the `+` icon. This opens a chat box that can be used for general chat questions, code edits, and refactors. Select a code snippet to ask Cody for an inline code edit, then type `/edit` plus your desired code change. Cody will generate edits, which you can accept or reject with the `Apply` button.
 
 You can also use the or `/touch` command in the inline chat box if you'd like Cody to place its output in a new file.
 
 ![Example of Cody inline code fix ](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody_inline_June23-sm.gif)
 
-Examples of `/fix` instructions Cody can handle:
+Examples of `/edit` instructions Cody can handle:
 
 - Factor out any common helper functions (when multiple functions are selected)
 - Use the imported CSS module's class `n`
