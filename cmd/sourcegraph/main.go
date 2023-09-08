@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph/enterprisecmd"
+	"github.com/sourcegraph/sourcegraph/cmd/sourcegraph/osscmd"
 	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/service/localcodehost"
@@ -25,7 +25,7 @@ import (
 	_ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
 )
 
-// services is a list of services to run in the enterprise build.
+// services is a list of services to run.
 var services = []service.Service{
 	frontend_shared.Service,
 	gitserver_shared.Service,
@@ -47,5 +47,5 @@ func main() {
 	if os.Getenv("WEBPACK_DEV_SERVER") == "1" {
 		assets.UseDevAssetsProvider()
 	}
-	enterprisecmd.MainEnterprise(services, os.Args)
+	osscmd.MainOSS(services, os.Args)
 }
