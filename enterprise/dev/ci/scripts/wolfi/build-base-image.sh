@@ -61,10 +61,37 @@ apko build --debug "${name}.yaml" \
   (echo "*** Build failed ***" && exit 1)
 
 # Tag image and upload to GCP Artifact Registry
+echo " * Loading built image into docker daemon..."
 docker load <"$tarball"
 
-docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
+# https://github.com/chainguard-dev/apko/issues/529
+# there is an unexpcted behaviour in upstream
+# where the arch is always appended to the tag
+# hardcode for now as we only support linux/amd64 anyway
+local_image_name="$image_name:latest-amd64"
+
+# Push to internal dev repo
+echo " * Pushing image to internal dev repo..."
+docker tag "$local_image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
 docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
-# Temporary convenience during initial development, as this doesn't scale to multiple branches!
-docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:latest"
+docker tag "$local_image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:latest"
 docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:latest"
+
+# Push to Dockerhub only on main branch
+if [[ "$IS_MAIN" == "true" ]]; then
+  echo " * Pushing image to prod repo..."
+  docker tag "$local_image_name" "sourcegraph/wolfi-${name}-base:$tag"
+  docker push "sourcegraph/wolfi-${name}-base:$tag"
+  docker tag "$local_image_name" "sourcegraph/wolfi-${name}-base:latest"
+  docker push "sourcegraph/wolfi-${name}-base:latest"
+fi
+
+# Show image usage message on branches
+if [[ "$IS_MAIN" != "true" ]]; then
+  if [[ -n "$BUILDKITE" ]]; then
+    echo -e "Run the \`${name}\` base image locally using:
+\`\`\`
+docker pull us.gcr.io/sourcegraph-dev/wolfi-${name}-base:${tag}
+  \`\`\`" | "$REPO_DIR/enterprise/dev/ci/scripts/annotate.sh" -m -t "info"
+  fi
+fi
