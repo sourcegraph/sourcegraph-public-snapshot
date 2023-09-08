@@ -375,7 +375,7 @@ func TestLimitInfo(t *testing.T) {
 	// No requests allowed.
 	require.NoError(t, r3.SetTokenBucketConfig(ctx, 0, time.Hour))
 
-	info, err := getGlobalLimiterStateFromPool(ctx, pool, prefix)
+	info, err := GetGlobalLimiterStateFromPool(ctx, pool, prefix)
 	require.NoError(t, err)
 
 	if diff := cmp.Diff(map[string]GlobalLimiterInfo{
@@ -407,7 +407,7 @@ func TestLimitInfo(t *testing.T) {
 	// Now claim 3 tokens from the limiter.
 	require.NoError(t, r1.WaitN(ctx, 3))
 
-	info, err = getGlobalLimiterStateFromPool(ctx, pool, prefix)
+	info, err = GetGlobalLimiterStateFromPool(ctx, pool, prefix)
 	require.NoError(t, err)
 
 	if diff := cmp.Diff(map[string]GlobalLimiterInfo{

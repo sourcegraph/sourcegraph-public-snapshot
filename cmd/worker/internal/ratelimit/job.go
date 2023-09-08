@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
 
 type rateLimitConfigJob struct{}
@@ -33,6 +34,7 @@ func (s *rateLimitConfigJob) Routines(_ context.Context, observationCtx *observa
 	rlcWorker := makeRateLimitConfigWorker(&handler{
 		logger:               observationCtx.Logger.Scoped("Periodic rate limit config job", "Routine that periodically copies rate limit configurations to Redis."),
 		externalServiceStore: db.ExternalServices(),
+		newRateLimiterFunc:   ratelimit.NewGlobalRateLimiter,
 	})
 
 	return []goroutine.BackgroundRoutine{rlcWorker}, nil

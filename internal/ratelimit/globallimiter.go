@@ -9,8 +9,6 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -69,19 +67,19 @@ func NewGlobalRateLimiter(bucketName string) GlobalLimiter {
 	}
 }
 
+func NewTestGlobalRateLimiter(pool *redis.Pool, prefix, bucketName string) GlobalLimiter {
+	return &globalRateLimiter{
+		prefix:     prefix,
+		bucketName: bucketName,
+		pool:       pool,
+	}
+}
+
 func (r *globalRateLimiter) Wait(ctx context.Context) error {
 	return r.WaitN(ctx, 1)
 }
 
 func (r *globalRateLimiter) WaitN(ctx context.Context, n int) (err error) {
-	logger := log.Scoped("globalRateLimiter", "")
-	// TODO: Debugging, remove.
-	defer func() {
-		if err != nil {
-			logger.Warn("WaitN failed", log.Error(err))
-		}
-	}()
-
 	now := r.now()
 
 	// Check if ctx is already cancelled.
@@ -107,9 +105,6 @@ func (r *globalRateLimiter) WaitN(ctx context.Context, n int) (err error) {
 	if timeToWait == 0 {
 		return nil
 	}
-
-	// TODO: Debugging, remove.
-	logger.Info("Enforcing wait before token can be consumed", log.Int("timeToWait", int(timeToWait.Seconds())))
 
 	// Wait for the required time before the token can be used.
 	ch, stop := r.newTimer(timeToWait)
@@ -333,10 +328,10 @@ func GetGlobalLimiterState(ctx context.Context) (map[string]GlobalLimiterInfo, e
 		return nil, nil
 	}
 
-	return getGlobalLimiterStateFromPool(ctx, pool, tokenBucketGlobalPrefix)
+	return GetGlobalLimiterStateFromPool(ctx, pool, tokenBucketGlobalPrefix)
 }
 
-func getGlobalLimiterStateFromPool(ctx context.Context, pool *redis.Pool, prefix string) (map[string]GlobalLimiterInfo, error) {
+func GetGlobalLimiterStateFromPool(ctx context.Context, pool *redis.Pool, prefix string) (map[string]GlobalLimiterInfo, error) {
 	conn, err := pool.GetContext(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get connection")
