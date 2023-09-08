@@ -93,6 +93,8 @@ Examples of `/edit` instructions Cody can handle:
 - Add helpful debug log statements
 - Make this work (and yes, it often does work—give it a try!)
 
+> NOTE: Inline chat functionality is currently only available in the VS Code extension. The `/edit` command was called `/fix` prior to version 0.10.0 of the VS Code extension.
+
 <div class="getting-started">
   <a class="demo text-center" target="_blank" href="https://twitter.com/sqs/status/1647673013343780864">View Demo</a>
 </div>
