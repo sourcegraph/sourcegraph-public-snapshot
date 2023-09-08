@@ -9,7 +9,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/worker",
     visibility = ["//visibility:private"],
     deps = [
-        "//cmd/sourcegraph-oss/osscmd",
+        "//cmd/sourcegraph/osscmd",
         "//cmd/worker/shared",
         "//internal/sanitycheck",
     ],
