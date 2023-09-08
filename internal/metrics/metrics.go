@@ -206,6 +206,7 @@ func (c *diskCollector) Collect(ch chan<- prometheus.Metric) {
 	usage, err := du.New(c.path)
 	if err != nil {
 		log15.Error("error getting disk usage info", err)
+		return
 	}
 	ch <- prometheus.MustNewConstMetric(c.availableDesc, prometheus.GaugeValue, float64(usage.Available()))
 	ch <- prometheus.MustNewConstMetric(c.totalDesc, prometheus.GaugeValue, float64(usage.Size()))
