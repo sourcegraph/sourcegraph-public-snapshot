@@ -259,7 +259,7 @@ go_library(
         ":generate_gengql_yaml"
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/dotcom",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/httpcli",
         "//internal/trace",

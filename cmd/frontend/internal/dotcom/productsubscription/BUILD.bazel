@@ -22,7 +22,7 @@ go_library(
         "tokens_graphql.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/dotcom/productsubscription",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",

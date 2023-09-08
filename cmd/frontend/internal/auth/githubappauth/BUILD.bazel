@@ -9,7 +9,7 @@ go_library(
         "resolver.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/githubappauth",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/backend",

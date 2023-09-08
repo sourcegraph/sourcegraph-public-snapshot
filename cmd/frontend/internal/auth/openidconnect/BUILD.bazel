@@ -11,7 +11,7 @@ go_library(
         "user.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/openidconnect",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/external/globals",

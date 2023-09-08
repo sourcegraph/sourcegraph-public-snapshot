@@ -5,7 +5,7 @@ go_library(
     name = "webhooks",
     srcs = ["github.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz/webhooks",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/webhooks",
         "//internal/api",

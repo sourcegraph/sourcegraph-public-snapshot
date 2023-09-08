@@ -7,7 +7,7 @@ go_library(
         "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/rbac/resolvers/apitest",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/gqlutil",
         "//internal/jsonc",

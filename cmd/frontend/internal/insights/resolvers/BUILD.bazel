@@ -17,7 +17,7 @@ go_library(
         "validator.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/insights/resolvers",
-    visibility = ["//enterprise:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",

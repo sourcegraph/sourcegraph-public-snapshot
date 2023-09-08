@@ -7,7 +7,7 @@ go_library(
         "init.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codeintel",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",
         "//cmd/frontend/graphqlbackend",

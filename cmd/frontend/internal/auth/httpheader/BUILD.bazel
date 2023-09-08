@@ -9,7 +9,7 @@ go_library(
         "provider.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/httpheader",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/auth",
         "//internal/actor",

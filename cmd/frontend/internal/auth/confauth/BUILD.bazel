@@ -5,7 +5,7 @@ go_library(
     name = "confauth",
     srcs = ["middleware.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/confauth",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/auth",
         "//internal/licensing",

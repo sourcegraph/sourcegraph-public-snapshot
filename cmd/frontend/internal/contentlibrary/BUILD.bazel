@@ -4,7 +4,7 @@ go_library(
     name = "contentlibrary",
     srcs = ["init.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/contentlibrary",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",
         "//cmd/frontend/graphqlbackend",

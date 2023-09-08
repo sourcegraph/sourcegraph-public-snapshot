@@ -9,7 +9,7 @@ go_library(
         "search_jobs_connection.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/resolvers",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",

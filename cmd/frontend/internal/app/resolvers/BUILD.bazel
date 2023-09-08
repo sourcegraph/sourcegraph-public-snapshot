@@ -8,7 +8,7 @@ go_library(
         "progress.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/resolvers",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/envvar",

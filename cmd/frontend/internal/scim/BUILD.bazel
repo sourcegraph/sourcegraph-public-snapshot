@@ -4,7 +4,7 @@ go_library(
     name = "scim",
     srcs = ["scim.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/scim",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",
         "//internal/codeintel",

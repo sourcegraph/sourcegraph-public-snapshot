@@ -9,7 +9,7 @@ go_library(
         "stars_resolvers.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/notebooks/resolvers",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",

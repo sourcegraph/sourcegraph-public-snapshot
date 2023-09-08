@@ -9,7 +9,7 @@ go_library(
         "routes.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/executorqueue/handler",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/batches/types",
         "//internal/codeintel/uploads/shared",

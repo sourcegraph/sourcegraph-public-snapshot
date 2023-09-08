@@ -5,7 +5,7 @@ go_library(
     name = "gerrit",
     srcs = ["config.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/gerrit",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/auth/providers",
         "//internal/collections",

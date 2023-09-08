@@ -8,7 +8,7 @@ go_library(
         "observability.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/attribution",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/internal/guardrails/dotcom",
         "//internal/api",

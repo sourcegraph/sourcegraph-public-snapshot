@@ -10,7 +10,7 @@ go_library(
         "session.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/bitbucketcloudoauth",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/hubspot",

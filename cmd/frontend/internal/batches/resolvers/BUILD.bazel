@@ -37,7 +37,7 @@ go_library(
         "urls.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",
         "//cmd/frontend/globals",
