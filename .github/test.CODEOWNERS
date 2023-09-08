@@ -83,15 +83,15 @@
 
 /cmd/executor/**/* @efritz
 
-/enterprise/cmd/frontend/internal/auth/**/* @unknwon
+/cmd/frontend/internal/auth/**/* @unknwon
 
-/enterprise/cmd/frontend/internal/authz/**/* @unknwon
+/cmd/frontend/internal/authz/**/* @unknwon
 
-/enterprise/cmd/frontend/internal/codeintel/**/* @efritz
+/cmd/frontend/internal/codeintel/**/* @efritz
 
-/enterprise/cmd/frontend/internal/executorqueue/**/* @efritz @eseliger
+/cmd/frontend/internal/executorqueue/**/* @efritz @eseliger
 
-/enterprise/cmd/frontend/internal/licensing/**/* @unknwon
+/cmd/frontend/internal/licensing/**/* @unknwon
 
 /enterprise/cmd/migrator/**/* @efritz
 
@@ -228,7 +228,7 @@
 
 /enterprise/internal/own/ @sourcegraph/own
 /enterprise/internal/database/codeowners* @sourcegraph/own
-/enterprise/cmd/frontend/internal/own/ @sourcegraph/own
+/cmd/frontend/internal/own/ @sourcegraph/own
 /client/web/src/**/own/ @sourcegraph/own
 /cmd/frontend/graphqlbackend/own* @sourcegraph/own
 /internal/usagestats/own* @sourcegraph/own
