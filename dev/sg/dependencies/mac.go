@@ -214,32 +214,39 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 			{
 				Name:        "Path to pg utilities (createdb, etc ...)",
 				Check:       checkPGUtilsPath,
-				Description: ``,
+				Description: `Bazel need to know where the createdb, pg_dump binaries are located, we need to ensure they are accessible\nand possibly indicate where they are located if non default.`,
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 					// Check if we need to create a user.bazelrc or not
-					_, err := os.Stat(".aspect/bazelrc/user.bazelrc")
+					_, err := os.Stat(userBazelRcPath)
 					if err != nil {
 						if os.IsNotExist(err) {
+							// It doesn't exist, so we create a new one.
 							f, err := os.Create(".aspect/bazelrc/user.bazelrc")
 							if err != nil {
 								return errors.Wrap(err, "cannot create user.bazelrc to inject PG_UTILS_PATH")
 							}
 							defer f.Close()
+
+							// Try guessing the path to the createdb postgres utilities.
 							err, pgUtilsPath := guessPgUtilsPath(ctx)
 							if err != nil {
 								return err
 							}
 							_, err = fmt.Fprintf(f, "build --action_env=PG_UTILS_PATH=%s\n", pgUtilsPath)
-							cio.Write(fmt.Sprintf("Guessed PATH for pg utils (createdb,...) to be %q\nCreated .aspect/bazelrc/user.bazelrc.", pgUtilsPath))
+
+							// Inform the user of what happened, so it's not dark magic.
+							cio.Write(fmt.Sprintf("Guessed PATH for pg utils (createdb,...) to be %q\nCreated %s.", pgUtilsPath, userBazelRcPath))
 							return err
 						}
-						return errors.Wrap(err, "unexpected error with .aspect/bazelrc/user.bazelrc")
+
+						// File exists, but we got a different error. Can't continue, bubble up the error.
+						return errors.Wrapf(err, "unexpected error with %s", userBazelRcPath)
 					}
 
 					// If we didn't create it, open the existing one.
-					f, err := os.Open(".aspect/bazelrc/user.bazelrc")
+					f, err := os.Open(userBazelRcPath)
 					if err != nil {
-						return errors.Wrap(err, "cannot open existing .aspect/bazelrc/user.bazelrc")
+						return errors.Wrapf(err, "cannot open existing %s", userBazelRcPath)
 					}
 					defer f.Close()
 
@@ -253,7 +260,7 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 					err = checkPgUtilsPathIncludesBinaries(pgUtilsPath)
 					if err != nil {
 						cio.Write("\n--- Manual action needed ---\n")
-						cio.Write(fmt.Sprintf("➡️  PG_UTILS_PATH=%q defined in .aspect/bazelrc/user.bazelrc doesn't include createdb. Please correct the file manually.", pgUtilsPath))
+						cio.Write(fmt.Sprintf("➡️  PG_UTILS_PATH=%q defined in %s doesn't include createdb. Please correct the file manually.", pgUtilsPath, userBazelRcPath))
 						cio.Write("Please make sure that this file contains:\n")
 						cio.Write("`build --action_env=MOOPG_UTILS_PATH=[PATH TO PARENT FOLDER OF WHERE createdb IS LOCATED`")
 						cio.Write("\n--- Manual action needed ---\n")

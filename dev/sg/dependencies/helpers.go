@@ -430,8 +430,18 @@ func forceASDFPluginAdd(ctx context.Context, plugin string, source string) error
 	return errors.Wrap(err, "asdf plugin-add")
 }
 
+// pgUtilsPathRe is the regexp used to check what value user.bazelrc defines for
+// the PG_UTILS_PATH env var.
 var pgUtilsPathRe = regexp.MustCompile(`build --action_env=PG_UTILS_PATH=(.*)$`)
 
+// userBazelRcPath is the path to a git ignored file that contains Bazel flags
+// specific to the current machine that are required in certain cases.
+var userBazelRcPath = ".aspect/bazelrc/user.bazelrc"
+
+// checkPGUtilsPath ensures that a PG_UTILS_PATH is being defined in .aspect/bazelrc/user.bazelrc
+// if it's needed. For example, on Linux hosts, it's usually located in /usr/bin, which is
+// perfectly fine. But on Mac machines, it's either in the homebrew PATH or on a different
+// location if the user installed Posgres through the Postgresql desktop app.
 func checkPGUtilsPath(ctx context.Context, out *std.Output, args CheckArgs) error {
 	// Check for standard PATH location, that is available inside Bazel when
 	// inheriting the shell environment. That is just /usr/bin, not /usr/local/bin.
@@ -444,30 +454,30 @@ func checkPGUtilsPath(ctx context.Context, out *std.Output, args CheckArgs) erro
 	// Check for the presence of git ignored user.bazelrc, that is specific to local
 	// environment. Because createdb is not under /usr/bin, we have to create that file
 	// and define the PG_UTILS_PATH for migration rules.
-	_, err = os.Stat(".aspect/bazelrc/user.bazelrc")
+	_, err = os.Stat(userBazelRcPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return errors.Wrap(err, ".aspect/bazelrc/user.bazelrc doesn't exist")
+			return errors.Wrapf(err, "%s doesn't exist", userBazelRcPath)
 		}
-		return errors.Wrap(err, "unexpected error with .aspect/bazelrc/user.bazelrc")
+		return errors.Wrapf(err, "unexpected error with %s", userBazelRcPath)
 	}
 
 	// If it exists, we check if the inject PATH actually contains createdb as intended.
 	// If not, we'll raise an error for sg setup to correct.
-	f, err := os.Open(".aspect/bazelrc/user.bazelrc")
+	f, err := os.Open(userBazelRcPath)
 	if err != nil {
-		return errors.Wrap(err, "can't open .aspect/bazelrc/user.bazelrc")
+		return errors.Wrapf(err, "can't open %s", userBazelRcPath)
 	}
 	defer f.Close()
 
 	err, pgUtilsPath := parsePgUtilsPathInUserBazelrc(f)
 	if err != nil {
-		return errors.Wrap(err, "can't parse .aspect/bazelrc/user.bazelrc")
+		return errors.Wrapf(err, "can't parse %s", userBazelRcPath)
 	}
 
 	// If the file exists, but doesn't reference PG_UTILS_PATH, that's an error as well.
 	if pgUtilsPath == "" {
-		return errors.New(".aspect/bazelrc/user.bazelrc doesn't define PG_UTILS_PATH")
+		return errors.Newf("%s doesn't define PG_UTILS_PATH", userBazelRcPath)
 	}
 
 	// Check that this path contains createdb as expected.
@@ -478,6 +488,8 @@ func checkPGUtilsPath(ctx context.Context, out *std.Output, args CheckArgs) erro
 	return nil
 }
 
+// parsePgUtilsPathInUserBazelrc extracts the defined path to the createdb postgresql
+// utilities that are used in a the Bazel migration rules.
 func parsePgUtilsPathInUserBazelrc(r io.Reader) (error, string) {
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
@@ -502,6 +514,9 @@ func checkPgUtilsPathIncludesBinaries(pgUtilsPath string) error {
 	return nil
 }
 
+// guessPgUtilsPath infers from the environment where the createdb binary
+// is located and returns its parent folder, so it can be used to extend
+// PATH for the migrations Bazel rules.
 func guessPgUtilsPath(ctx context.Context) (error, string) {
 	str, err := usershell.Run(ctx, "which", "createdb").String()
 	if err != nil {
