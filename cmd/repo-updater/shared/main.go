@@ -115,6 +115,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		Logger:                logger,
 		ObservationCtx:        observationCtx,
 		Store:                 store,
+		Syncer:                syncer,
 		Scheduler:             updateScheduler,
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 		RateLimitSyncer:       repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore(), repos.RateLimitSyncerOpts{}),
