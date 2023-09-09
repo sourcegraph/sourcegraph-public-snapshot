@@ -1633,6 +1633,16 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 	return newHttpResponseState(resp.StatusCode, resp.Header), err
 }
 
+func canonicalizedURL(apiURL *url.URL) *url.URL {
+	if urlIsGitHubDotCom(apiURL) {
+		return &url.URL{
+			Scheme: "https",
+			Host:   "api.github.com",
+		}
+	}
+	return apiURL
+}
+
 func urlIsGitHubDotCom(apiURL *url.URL) bool {
 	hostname := strings.ToLower(apiURL.Hostname())
 	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com"

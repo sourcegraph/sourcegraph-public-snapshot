@@ -69,7 +69,7 @@ func NewGitHubRecorderFactory(t testing.TB, update bool, name string) (*httpcli.
 		t.Fatal(err)
 	}
 
-	hc := httpcli.NewFactory(nil, httpcli.CachedTransportOpt, NewRecorderOpt(rec))
+	hc := httpcli.NewFactory(httpcli.NewMiddleware(), httpcli.CachedTransportOpt, NewRecorderOpt(rec))
 
 	return hc, func() {
 		if err := rec.Stop(); err != nil {
