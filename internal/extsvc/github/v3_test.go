@@ -18,12 +18,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -38,7 +40,9 @@ func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli h
 	rcache.SetupForTest(t)
 
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
-	return NewV3Client(logtest.Scoped(t), "Test", apiURL, auth, cli)
+	c := NewV3Client(logtest.Scoped(t), "Test", apiURL, auth, cli)
+	c.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
+	return c
 }
 
 func TestListAffiliatedRepositories(t *testing.T) {
@@ -640,6 +644,7 @@ func TestListOrganizations(t *testing.T) {
 
 		uri, _ := url.Parse(testServer.URL)
 		testCli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, testServer.Client())
+		testCli.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
 
 		runTest := func(since int, expectedNextSince int, expectedOrgs []*Org) {
 			orgs, nextSince, err := testCli.ListOrganizations(context.Background(), since)
@@ -971,7 +976,10 @@ func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client(logtest.Scoped(t), "Test", uri, vcrToken, doer), save
+	cli := NewV3Client(logtest.Scoped(t), "Test", uri, vcrToken, doer)
+	cli.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
+
+	return cli, save
 }
 
 func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
@@ -988,7 +996,9 @@ func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, doer), save
+	cli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, doer)
+	cli.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
+	return cli, save
 }
 
 func TestClient_ListRepositoriesForSearch(t *testing.T) {
@@ -1069,12 +1079,14 @@ func TestSyncWebhook_CreateListFindDelete(t *testing.T) {
 	ctx := context.Background()
 
 	client, save := newV3TestClient(t, "CreateListFindDeleteWebhooks")
+	client.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
 	defer save()
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			token := os.Getenv(fmt.Sprintf("%s_ACCESS_TOKEN", name))
 			client = client.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
+			client.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
 
 			id, err := client.CreateSyncWebhook(ctx, tc.repoName, "https://target-url.com", "secret")
 			if err != nil {
@@ -1238,7 +1250,8 @@ func TestRateLimitRetry(t *testing.T) {
 		srvURL, err := url.Parse(srv.URL)
 		require.NoError(t, err)
 
-		testCase.client = NewV3Client(logtest.NoOp(t), "test", srvURL, nil, nil)
+		testCase.client = newV3Client(logtest.NoOp(t), "test", srvURL, nil, "", nil)
+		testCase.client.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
 		testCase.client.waitForRateLimit = true
 
 		return testCase
@@ -1321,6 +1334,7 @@ func TestListPublicRepositories(t *testing.T) {
 
 		uri, _ := url.Parse(testServer.URL)
 		testCli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, testServer.Client())
+		testCli.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
 
 		repositories, hasNextPage, err := testCli.ListPublicRepositories(context.Background(), 0)
 		if err != nil {

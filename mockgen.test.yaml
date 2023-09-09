@@ -400,6 +400,6 @@
     - KeyValue
 - filename: internal/ratelimit/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/internal/redispool
+    - path: github.com/sourcegraph/sourcegraph/internal/ratelimit
       interfaces:
-        - RateLimiter
+        - GlobalRateLimiter
