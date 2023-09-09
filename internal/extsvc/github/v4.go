@@ -70,7 +70,6 @@ type V4Client struct {
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // V4Client.apiURL.
 func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Client {
-	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
 	}

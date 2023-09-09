@@ -88,7 +88,6 @@ func NewV3SearchClient(logger log.Logger, urn string, apiURL *url.URL, a auth.Au
 }
 
 func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenticator, resource string, cli httpcli.Doer) *V3Client {
-	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
 	}
