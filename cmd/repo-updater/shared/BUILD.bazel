@@ -5,7 +5,6 @@ go_library(
     name = "shared",
     srcs = [
         "debug.go",
-        "licensing.go",
         "main.go",
         "service.go",
     ],
@@ -39,7 +38,6 @@ go_library(
         "//internal/httpcli",
         "//internal/httpserver",
         "//internal/instrumentation",
-        "//internal/licensing",
         "//internal/observation",
         "//internal/ratelimit",
         "//internal/repos",
@@ -62,16 +60,11 @@ go_library(
 go_test(
     name = "shared_test",
     timeout = "short",
-    srcs = [
-        "licensing_test.go",
-        "main_test.go",
-    ],
+    srcs = ["main_test.go"],
     embed = [":shared"],
     deps = [
         "//internal/database",
         "//internal/database/dbmocks",
-        "//internal/licensing",
-        "//internal/repos",
         "//internal/types",
         "@com_github_stretchr_testify//assert",
     ],
