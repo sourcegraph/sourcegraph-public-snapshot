@@ -36,7 +36,9 @@ go_test(
     deps = [
         "//internal/conf/reposource",
         "//internal/httptestutil",
+        "//internal/ratelimit",
         "//internal/unpack",
         "@com_github_stretchr_testify//require",
+        "@org_golang_x_time//rate",
     ],
 )

@@ -55,6 +55,7 @@ go_test(
         "//internal/extsvc/auth",
         "//internal/httpcli",
         "//internal/httptestutil",
+        "//internal/ratelimit",
         "//internal/rcache",
         "//internal/testutil",
         "//lib/errors",
@@ -66,5 +67,6 @@ go_test(
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
+        "@org_golang_x_time//rate",
     ],
 )
