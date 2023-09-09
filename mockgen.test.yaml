@@ -402,4 +402,4 @@
   sources:
     - path: github.com/sourcegraph/sourcegraph/internal/ratelimit
       interfaces:
-        - GlobalRateLimiter
+        - GlobalLimiter
