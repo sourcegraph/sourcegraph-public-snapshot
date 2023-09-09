@@ -99,6 +99,7 @@ genrule(
         "outputs/prometheus/embeddings_alert_rules.yml",
         "outputs/prometheus/executor_alert_rules.yml",
         "outputs/prometheus/frontend_alert_rules.yml",
+        "outputs/prometheus/github_alert_rules.yml",
         "outputs/prometheus/gitserver_alert_rules.yml",
         "outputs/prometheus/otel_collector_alert_rules.yml",
         "outputs/prometheus/postgres_alert_rules.yml",
