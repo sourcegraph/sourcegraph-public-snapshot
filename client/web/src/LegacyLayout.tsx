@@ -87,7 +87,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const isSetupWizardPage = location.pathname.startsWith(PageRoutes.SetupWizard)
 
     const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
-    const userHistory = useUserHistory(isRepositoryRelatedPage)
+    const userHistory = useUserHistory(props.authenticatedUser?.id, isRepositoryRelatedPage)
 
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
     const isCommunitySearchContextPage = communitySearchContextPaths.includes(location.pathname)

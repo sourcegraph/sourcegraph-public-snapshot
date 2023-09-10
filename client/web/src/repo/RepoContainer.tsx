@@ -510,7 +510,10 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                         storageKey="size-cache-cody-sidebar"
                         onResize={setCodySidebarSize}
                     >
-                        <CodySidebar onClose={() => setIsCodySidebarOpen(false)} />
+                        <CodySidebar
+                            onClose={() => setIsCodySidebarOpen(false)}
+                            authenticatedUser={props.authenticatedUser}
+                        />
                     </Panel>
                 )}
             </div>
