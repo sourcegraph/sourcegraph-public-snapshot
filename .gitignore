@@ -203,6 +203,6 @@ result
 result-*
 
 # Windows
-/enterprise/cmd/sourcegraph/__debug_bin.exe
+/cmd/sourcegraph/__debug_bin.exe
 
 /cody

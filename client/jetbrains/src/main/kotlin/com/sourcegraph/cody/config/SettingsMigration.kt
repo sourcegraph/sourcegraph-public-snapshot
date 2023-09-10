@@ -59,7 +59,7 @@ class SettingsMigration : StartupActivity, DumbAware {
   ) {
     val dotcomAccessToken = extractDotcomAccessToken(project)
     if (!dotcomAccessToken.isNullOrEmpty()) {
-      val server = SourcegraphServerPath(ConfigUtil.DOTCOM_URL, customRequestHeaders)
+      val server = SourcegraphServerPath.from(ConfigUtil.DOTCOM_URL, customRequestHeaders)
       val extractedAccountType = extractAccountType(project)
       val shouldSetAccountAsDefault =
           extractedAccountType == AccountType.DOTCOM ||

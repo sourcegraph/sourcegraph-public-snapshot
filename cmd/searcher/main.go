@@ -4,7 +4,7 @@ package main
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/shared"
-	"github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss/osscmd"
+	"github.com/sourcegraph/sourcegraph/cmd/sourcegraph/osscmd"
 	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
 )
 

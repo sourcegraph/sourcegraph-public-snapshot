@@ -12,4 +12,5 @@ data class SettingsModel(
     var isUrlNotificationDismissed: Boolean = false,
     var isCustomAutocompleteColorEnabled: Boolean = false,
     var customAutocompleteColor: Color? = null,
+    var blacklistedLanguageIds: List<String> = listOf(),
 )
