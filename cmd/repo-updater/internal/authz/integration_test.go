@@ -626,7 +626,7 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 				gotIDs[i] = perm.RepoID
 			}
 
-			wantIDs := []int32{1,2}
+			wantIDs := []int32{1, 2}
 			if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}

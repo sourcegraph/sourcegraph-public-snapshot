@@ -31,6 +31,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Fixed an issue where the "gitLabProjectVisibilityExperimental" feature flag would not be respected by the permissions syncer [#56492](https://github.com/sourcegraph/sourcegraph/pull/56492)
+
 ### Removed
 
 ## 5.1.8
