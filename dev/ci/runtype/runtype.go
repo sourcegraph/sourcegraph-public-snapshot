@@ -194,6 +194,8 @@ func (t RunType) String() string {
 		return "Manually Triggered External Build"
 	case ReleaseNightly:
 		return "Release branch nightly healthcheck build"
+	case ReleaseBazel:
+		return "TODO JH WILLIAM"
 	case BextNightly:
 		return "Browser extension nightly release build"
 	case VsceNightly:
