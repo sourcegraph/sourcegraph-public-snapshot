@@ -14,7 +14,6 @@ go_library(
         "//cmd/worker/job",
         "//cmd/worker/shared/init/db",
         "//internal/conf",
-        "//internal/conf/deploy",
         "//internal/database",
         "//internal/env",
         "//internal/extsvc",
