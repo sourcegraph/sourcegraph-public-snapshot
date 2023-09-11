@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "codeintel",
+    srcs = [
+        "config.go",
+        "init.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codeintel",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/enterprise",
+        "//cmd/frontend/graphqlbackend",
+        "//internal/codeintel",
+        "//internal/codeintel/autoindexing/transport/graphql",
+        "//internal/codeintel/codenav/transport/graphql",
+        "//internal/codeintel/policies/transport/graphql",
+        "//internal/codeintel/ranking/transport/graphql",
+        "//internal/codeintel/resolvers",
+        "//internal/codeintel/sentinel/transport/graphql",
+        "//internal/codeintel/shared/lsifuploadstore",
+        "//internal/codeintel/shared/resolvers",
+        "//internal/codeintel/shared/resolvers/gitresolvers",
+        "//internal/codeintel/uploads/transport/graphql",
+        "//internal/codeintel/uploads/transport/http",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/env",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

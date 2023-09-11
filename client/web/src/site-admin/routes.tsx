@@ -30,7 +30,7 @@ const AnalyticsNotebooksPage = lazyComponent(
     'AnalyticsNotebooksPage'
 )
 const SiteAdminConfigurationPage = lazyComponent(
-    () => import('./site-config/SiteAdminConfigurationPage'),
+    () => import('./SiteAdminConfigurationPage'),
     'SiteAdminConfigurationPage'
 )
 const SiteAdminSettingsPage = lazyComponent(() => import('./SiteAdminSettingsPage'), 'SiteAdminSettingsPage')
@@ -98,6 +98,7 @@ const SiteAdminWebhookUpdatePage = lazyComponent(
     'SiteAdminWebhookUpdatePage'
 )
 const SiteAdminPackagesPage = lazyComponent(() => import('./SiteAdminPackagesPage'), 'SiteAdminPackagesPage')
+const GitserversPageProps = lazyComponent(() => import('./SiteAdminGitserversPage'), 'SiteAdminGitserversPage')
 
 export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
@@ -135,7 +136,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
         render: () => <AnalyticsNotebooksPage />,
     },
     {
-        path: '/configuration/:tab?',
+        path: '/configuration',
         render: props => <SiteAdminConfigurationPage {...props} />,
     },
     {
@@ -252,6 +253,10 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/permissions-syncs',
         render: props => <PermissionsSyncJobsTable {...props} />,
+    },
+    {
+        path: '/gitservers',
+        render: props => <GitserversPageProps {...props} />,
     },
 ]
 

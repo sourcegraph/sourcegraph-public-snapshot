@@ -57,7 +57,7 @@
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "${workspaceFolder}/enterprise/cmd/sourcegraph",
+      "program": "${workspaceFolder}/cmd/sourcegraph",
       "env": {
         "DEPLOY_TYPE": "app",
         "INSECURE_DEV": "true"

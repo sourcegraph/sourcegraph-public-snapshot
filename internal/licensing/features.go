@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
-
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -17,9 +14,6 @@ type Feature interface {
 	// If applicable, it is recommended that Check modifies the feature in-place
 	// to reflect the license info (e.g., to set a limit on the number of changesets).
 	Check(*Info) error
-	// Name for displaying on the UI.
-	// Constructs name alongside additional info like like restrictions and limitations.
-	DisplayName() string
 }
 
 // BasicFeature is a product feature that is selectively activated based on the
@@ -58,26 +52,6 @@ func (f BasicFeature) Check(info *Info) error {
 		return newFeatureRequiresUpgradeError(f.FeatureName())
 	}
 	return nil
-}
-
-func (f BasicFeature) DisplayName() string {
-	switch f {
-	case FeatureACLs:
-		return "ACLS"
-	case FeatureSSO:
-		return "SSO"
-	case FeatureSCIM:
-		return "SCIM"
-	case FeatureExplicitPermissionsAPI:
-		return "Explicit permissions API"
-	case FeatureCody:
-		return "Cody (beta)"
-	case FeatureCodeInsights:
-		return "Code Insights"
-	default:
-		featureName := strings.ReplaceAll(string(f), "-", " ")
-		return cases.Title(language.English).String(featureName)
-	}
 }
 
 // FeatureBatchChanges is whether Batch Changes on this Sourcegraph instance has been purchased.
@@ -119,16 +93,6 @@ func (f *FeatureBatchChanges) Check(info *Info) error {
 	return newFeatureRequiresUpgradeError(f.FeatureName())
 }
 
-func (f FeatureBatchChanges) DisplayName() string {
-	text := "Batch Changes"
-	if f.Unrestricted {
-		text += " (unlimited number of changesets)"
-	} else {
-		text += fmt.Sprintf(" (%d changesets)", f.MaxNumChangesets)
-	}
-	return text
-}
-
 type FeaturePrivateRepositories struct {
 	// If true, there is no limit to the number of private repositories that can be
 	// added.
@@ -160,16 +124,6 @@ func (f *FeaturePrivateRepositories) Check(info *Info) error {
 	}
 
 	return newFeatureRequiresUpgradeError(f.FeatureName())
-}
-
-func (f FeaturePrivateRepositories) DisplayName() string {
-	text := "Private repositories"
-	if f.Unrestricted {
-		text += " (unlimited number of repositories)"
-	} else {
-		text += fmt.Sprintf(" (%d repositories)", f.MaxNumPrivateRepos)
-	}
-	return text
 }
 
 // Check checks whether the feature is activated based on the current license. If

@@ -24,6 +24,6 @@ GOOS=windows GOARCH=amd64 CGO_ENABLED=1 \
   -trimpath \
   -tags dist \
   -ldflags "$ldflags" \
-  ./enterprise/cmd/sourcegraph
+  ./cmd/sourcegraph
 
 pnpm tauri build

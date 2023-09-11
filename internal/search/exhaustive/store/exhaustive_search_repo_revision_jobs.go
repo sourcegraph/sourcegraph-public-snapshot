@@ -53,14 +53,6 @@ var revSearchJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("updated_at"),
 }
 
-// ExhaustiveSearchRepoRevisionJobStore is the interface for interacting with "exhaustive_search_repo_revision_jobs".
-type ExhaustiveSearchRepoRevisionJobStore interface {
-	// CreateExhaustiveSearchRepoRevisionJob creates a new types.ExhaustiveSearchRepoRevisionJob.
-	CreateExhaustiveSearchRepoRevisionJob(ctx context.Context, job types.ExhaustiveSearchRepoRevisionJob) (int64, error)
-}
-
-var _ ExhaustiveSearchRepoJobStore = &Store{}
-
 func (s *Store) CreateExhaustiveSearchRepoRevisionJob(ctx context.Context, job types.ExhaustiveSearchRepoRevisionJob) (int64, error) {
 	var err error
 	ctx, _, endObservation := s.operations.createExhaustiveSearchRepoJob.With(ctx, &err, observation.Args{})
@@ -97,6 +89,27 @@ VALUES (%s, %s)
 RETURNING id
 `
 
+const getRepoRevSpecFmtStr = `
+SELECT sj.query, srj.repo_id, srj.ref_spec
+FROM exhaustive_search_repo_jobs srj
+JOIN exhaustive_search_jobs sj ON srj.search_job_id = sj.id
+WHERE srj.id = %s
+`
+
+func (s *Store) GetQueryRepoRev(ctx context.Context, job *types.ExhaustiveSearchRepoRevisionJob) (
+	query string,
+	repoRev types.RepositoryRevision,
+	err error,
+) {
+	row := s.QueryRow(ctx, sqlf.Sprintf(getRepoRevSpecFmtStr, job.SearchRepoJobID))
+	err = row.Scan(&query, &repoRev.Repository, &repoRev.RevisionSpecifier)
+	if err != nil {
+		return "", types.RepositoryRevision{}, err
+	}
+	repoRev.Revision = job.Revision
+	return query, repoRev, nil
+}
+
 func scanRevSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchRepoRevisionJob, error) {
 	var job types.ExhaustiveSearchRepoRevisionJob
 	// required field for the sync worker, but
@@ -108,7 +121,7 @@ func scanRevSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchRepoRevisionJob
 		&job.State,
 		&job.SearchRepoJobID,
 		&job.Revision,
-		&dbutil.NullString{S: job.FailureMessage},
+		&dbutil.NullString{S: &job.FailureMessage},
 		&dbutil.NullTime{Time: &job.StartedAt},
 		&dbutil.NullTime{Time: &job.FinishedAt},
 		&dbutil.NullTime{Time: &job.ProcessAfter},

@@ -1,5 +1,8 @@
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
+load("//dev:migrations.bzl", "describe", "migration")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 
 go_library(
     name = "database",
@@ -322,5 +325,114 @@ go_test(
         "@org_golang_x_exp//slices",
         "@org_golang_x_sync//errgroup",
         "@tools_gotest//assert",
+    ],
+)
+
+migration(
+    name = "frontend-migration",
+    srcs = ["//migrations/frontend:sql"],
+    out = "migrations/frontend/squashed.sql",
+    db = "frontend",
+)
+
+migration(
+    name = "codeinsights-migration",
+    srcs = ["//migrations/codeinsights:sql"],
+    out = "migrations/codeinsights/squashed.sql",
+    db = "codeinsights",
+)
+
+migration(
+    name = "codeintel-migration",
+    srcs = ["//migrations/codeintel:sql"],
+    out = "migrations/codeintel/squashed.sql",
+    db = "codeintel",
+)
+
+describe(
+    name = "frontend-describe-md",
+    srcs = [
+        "//migrations/codeinsights:sql",
+        "//migrations/codeintel:sql",
+        "//migrations/frontend:sql",
+    ],
+    out = "schema.md",
+    db = "frontend",
+    format = "psql",
+)
+
+describe(
+    name = "codeinsights-describe-md",
+    srcs = [
+        "//migrations/codeinsights:sql",
+        "//migrations/codeintel:sql",
+        "//migrations/frontend:sql",
+    ],
+    out = "schema.codeinsights.md",
+    db = "codeinsights",
+    format = "psql",
+)
+
+describe(
+    name = "codeintel-describe-md",
+    srcs = [
+        "//migrations/codeinsights:sql",
+        "//migrations/codeintel:sql",
+        "//migrations/frontend:sql",
+    ],
+    out = "schema.codeintel.md",
+    db = "codeintel",
+    format = "psql",
+)
+
+describe(
+    name = "frontend-describe-json",
+    srcs = [
+        "//migrations/codeinsights:sql",
+        "//migrations/codeintel:sql",
+        "//migrations/frontend:sql",
+    ],
+    out = "schema.json",
+    db = "frontend",
+    format = "json",
+)
+
+describe(
+    name = "codeinsights-describe-json",
+    srcs = [
+        "//migrations/codeinsights:sql",
+        "//migrations/codeintel:sql",
+        "//migrations/frontend:sql",
+    ],
+    out = "schema.codeinsights.json",
+    db = "codeinsights",
+    format = "json",
+)
+
+describe(
+    name = "codeintel-describe-json",
+    srcs = [
+        "//migrations/codeinsights:sql",
+        "//migrations/codeintel:sql",
+        "//migrations/frontend:sql",
+    ],
+    out = "schema.codeintel.json",
+    db = "codeintel",
+    format = "json",
+)
+
+build_test(
+    name = "schema_generation_tests",
+    tags = ["requires-network"],
+    targets = [
+        "frontend-migration",
+        "codeintel-migration",
+        "codeinsights-migration",
+        "frontend-describe-md",
+        "codeintel-describe-md",
+        "codeinsights-describe-md",
+        "frontend-describe-json",
+        "codeintel-describe-json",
+        "codeinsights-describe-json",
     ],
 )

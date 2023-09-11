@@ -185,3 +185,9 @@ We recommend adding support for different features in the following order:
 1. Add support for implementation relationships, enabling Find implementations.
 1. (Optional) If the hover documentation uses markup in a format other than CommonMark,
    implement a conversion from the custom markup language to CommonMark.
+
+> NOTE: If implementing an indexer in C++, you need to careful about
+> very large indexes, as the default Protoc-generated code has a
+> 2GB implementation limit on message sizes. This limit can be worked
+> around by writing documents to disk one-by-one. For example,
+> this PR [adds support to scip-ruby for writing documents one-by-one](https://github.com/sourcegraph/scip-ruby/pull/190).

@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -28,6 +29,10 @@ func (s *rateLimitConfigJob) Config() []env.Config {
 }
 
 func (s *rateLimitConfigJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	//TODO: Allow this job to run once an in memory version is available
+	if deploy.IsApp() {
+		return nil, nil
+	}
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err

@@ -40,3 +40,9 @@ For more information, see [Generate Index to Enable Codebase-Aware Answers](expl
 ### Signin fails on each VS Code restart
 
 If you are automatically signed out of Cody upon every VS Code restart due to keychain authentication issues, please follow the suggested steps detailed in the official VS Code docs on [troubleshooting keychain issues](https://code.visualstudio.com/docs/editor/settings-sync#_troubleshooting-keychain-issues) to resolve this.
+
+### Autocomplete Rate limits
+
+Cody supports 1,000 suggested autocompletions per day, per user. For Sourcegraph Enterprise instances, this rate limit is pooled across all users.
+
+If you hit the rate limit, please wait a bit and try again later. You can also contact Sourcegraph Support to discuss increasing your rate limit for your use case.

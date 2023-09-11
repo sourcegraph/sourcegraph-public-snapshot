@@ -15,31 +15,39 @@ go_library(
         "//cmd/worker/job",
         "//cmd/worker/shared/init/db",
         "//internal/actor",
+        "//internal/database",
         "//internal/env",
         "//internal/goroutine",
         "//internal/observation",
+        "//internal/search/exhaustive/service",
         "//internal/search/exhaustive/store",
         "//internal/search/exhaustive/types",
+        "//internal/search/exhaustive/uploadstore",
         "//internal/workerutil",
         "//internal/workerutil/dbworker",
         "//internal/workerutil/dbworker/store",
-        "//lib/errors",
         "@com_github_sourcegraph_log//:log",
     ],
 )
 
 go_test(
     name = "search_test",
-    srcs = [
-        "exhaustive_search_repo_revision_test.go",
-        "exhaustive_search_repo_test.go",
-        "exhaustive_search_test.go",
-    ],
+    srcs = ["exhaustive_search_test.go"],
     embed = [":search"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
-        "//lib/errors",
-        "@com_github_sourcegraph_log//logtest",
-        "@com_github_stretchr_testify//assert",
+        "//internal/actor",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/database/dbtest",
+        "//internal/observation",
+        "//internal/search/exhaustive/service",
+        "//internal/search/exhaustive/store",
+        "//internal/search/exhaustive/types",
+        "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_stretchr_testify//require",
     ],
 )

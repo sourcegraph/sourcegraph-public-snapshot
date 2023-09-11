@@ -8,7 +8,7 @@ import (
 // WorkerJob contains the common fields for all worker jobs.
 type WorkerJob struct {
 	State           JobState
-	FailureMessage  *string
+	FailureMessage  string
 	StartedAt       time.Time
 	FinishedAt      time.Time
 	ProcessAfter    time.Time

@@ -55,7 +55,7 @@ Chat lets you ask Cody general programming questions or questions about your spe
 
 Cody uses several search methods (including keyword and semantic search) to find files in your codebase that are relevant to your chat questions. It then uses context from those files to provide an informed response based on your codebase. Cody also tells you which code files it reads to generate its responses.
 
-Context retrieval isn't perfect, and Cody occasionally uses incorrect context or hallucinates answers. When Cody returns an incorrect response, it is often worth asking the question again slightly differently to see if Cody can find better context the second time. 
+Context retrieval isn't perfect, and Cody occasionally uses incorrect context or hallucinates answers. When Cody returns an incorrect response, it is often worth asking the question again slightly differently to see if Cody can find better context the second time.
 
 Cody's chat function can handle use cases like:
 
@@ -70,19 +70,21 @@ More specifically, Cody can answer questions like:
 - Can you write a new GraphQL resolver for the AuditLog?
 - Why is the UserConnectionResolver giving an error `unknown user`, and how do I fix it?
 
+![Example of Cody chat. You see the user ask Cody to describe what a file does, and Cody returns an answers that explains how the file is working in the context of the project.](https://storage.googleapis.com/sourcegraph-assets/cody/Docs/Sept2023/Context_Chat_SM.gif)
+
 <div class="getting-started">
   <a class="demo text-center" target="_blank" href="https://twitter.com/beyang/status/1647744307045228544">View Demo</a>
 </div>
 
-### Inline chat and code fixes
+### Inline chat and code edits
 
-You can also open Cody's chat inline in VS Code using the `+` icon. This opens a chat box that can be used for general chat questions, code fixes, and refactors. Select a code snippet to ask Cody for an inline code fix, then type `/fix` plus your desired code change. Cody will generate edits, which you can accept or reject with the `Apply` button.
+You can also open Cody's chat inline in VS Code using the `+` icon. This opens a chat box that can be used for general chat questions, code edits, and refactors. Select a code snippet to ask Cody for an inline code edit, then type `/edit` plus your desired code change. Cody will generate edits, which you can accept or reject with the `Apply` button.
 
 You can also use the or `/touch` command in the inline chat box if you'd like Cody to place its output in a new file.
 
 ![Example of Cody inline code fix ](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody_inline_June23-sm.gif)
 
-Examples of `/fix` instructions Cody can handle:
+Examples of `/edit` instructions Cody can handle:
 
 - Factor out any common helper functions (when multiple functions are selected)
 - Use the imported CSS module's class `n`
@@ -90,6 +92,8 @@ Examples of `/fix` instructions Cody can handle:
 - Handle errors in this code better
 - Add helpful debug log statements
 - Make this work (and yes, it often does work—give it a try!)
+
+> NOTE: Inline chat functionality is currently only available in the VS Code extension. The `/edit` command was called `/fix` prior to version 0.10.0 of the VS Code extension.
 
 <div class="getting-started">
   <a class="demo text-center" target="_blank" href="https://twitter.com/sqs/status/1647673013343780864">View Demo</a>
@@ -106,6 +110,8 @@ The commands available in VS Code include:
 - Generate Unit Tests
 - Code Smell
 
+![Cody Commands in VS Code](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-commands.png)
+
 There are three ways to run a command in VS Code:
 
 1. Type `/` in the chat bar. Cody will then suggest a list of available commands
@@ -114,15 +120,17 @@ There are three ways to run a command in VS Code:
 
 > NOTE: This functionality is also available in the JetBrains extension under the name `Recipes`. To access it, navigate to the `Recipes` panel (next to the `Chat` panel), and you can find each available recipe as a button within the UI.
 
-![Cody Commands in VS Code](https://storage.googleapis.com/sourcegraph-assets/Docs/cody-commands.png)
+![Example of the Cody 'Explain Code' command. The user highlights a section of code, then uses the hotkey to open the commands menu, then selects the command.](https://storage.googleapis.com/sourcegraph-assets/cody/Docs/Sept2023/Explain_Code_SM.gif)
 
 ### Custom commands <span class="badge badge-experimental">Experimental</span>
 
 **Custom commands** let you save your quick actions and prompts for Cody based on your common workflows. They are defined in JSON format and allow you to call CLI tools, write custom prompts, and select context to be sent to Cody. This provides a flexible way to tailor Cody to your needs.
 
+![Cody Custom Commands in VS Code](https://storage.googleapis.com/sourcegraph-assets/Docs/create-custom-commands.png)
+
 You can invoke custom commands with the same hotkey as predefined commands. Alternatively, you can right-click the selected code, open the Cody context menu, and select the `Custom Commands (Experimental)` option.
 
-![Cody Custom Commands in VS Code](https://storage.googleapis.com/sourcegraph-assets/Docs/create-custom-commands.png)
+![Example of a user creating a custom "/Variables" command. The user creates a command that automatically makes the variable names in selected code more helpful.](https://storage.googleapis.com/sourcegraph-assets/cody/Docs/Sept2023/Custom_Command_SM.gif)
 
 ### Defining commands in the `cody.json` file
 
@@ -133,4 +141,3 @@ To make custom commands globally available across multiple projects, create a ne
 ## Language support
 
 Cody uses LLMs trained on broad code, and we've found it to support all common programming languages effectively. However, the quality of autocompletion and other features may vary based on how well the underlying LLM model was trained in a given language.
-

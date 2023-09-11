@@ -7,6 +7,7 @@ import (
 	"github.com/lib/pq"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -119,6 +120,8 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []shared.Index) (_ []
 		return nil, nil
 	}
 
+	actor := actor.FromContext(ctx)
+
 	values := make([]*sqlf.Query, 0, len(indexes))
 	for _, index := range indexes {
 		if index.DockerSteps == nil {
@@ -132,7 +135,7 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []shared.Index) (_ []
 		}
 
 		values = append(values, sqlf.Sprintf(
-			"(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+			"(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
 			index.State,
 			index.Commit,
 			index.RepositoryID,
@@ -144,6 +147,7 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []shared.Index) (_ []
 			index.Outfile,
 			pq.Array(index.ExecutionLogs),
 			pq.Array(index.RequestedEnvVars),
+			actor.UID,
 		))
 	}
 
@@ -185,7 +189,8 @@ INSERT INTO lsif_indexes (
 	indexer_args,
 	outfile,
 	execution_logs,
-	requested_envvars
+	requested_envvars,
+	enqueuer_user_id
 )
 VALUES %s
 RETURNING id
@@ -215,7 +220,8 @@ SELECT
 	u.local_steps,
 	(SELECT MAX(id) FROM lsif_uploads WHERE associated_index_id = u.id) AS associated_upload_id,
 	u.should_reindex,
-	u.requested_envvars
+	u.requested_envvars,
+	u.enqueuer_user_id
 FROM lsif_indexes u
 LEFT JOIN (
 	SELECT
@@ -259,6 +265,7 @@ func scanIndex(s dbutil.Scanner) (index shared.Index, err error) {
 		&index.AssociatedUploadID,
 		&index.ShouldReindex,
 		pq.Array(&index.RequestedEnvVars),
+		&index.EnqueuerUserID,
 	); err != nil {
 		return index, err
 	}

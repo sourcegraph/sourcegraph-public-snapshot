@@ -9,6 +9,7 @@ package ratelimit
 import (
 	"context"
 	"sync"
+	"time"
 
 	redispool "github.com/sourcegraph/sourcegraph/internal/redispool"
 )
@@ -17,26 +18,25 @@ import (
 // (from the package github.com/sourcegraph/sourcegraph/internal/redispool)
 // used for unit testing.
 type MockRateLimiter struct {
-	// GetTokensFromBucketFunc is an instance of a mock function object
-	// controlling the behavior of the method GetTokensFromBucket.
-	GetTokensFromBucketFunc *RateLimiterGetTokensFromBucketFunc
-	// SetTokenBucketReplenishmentFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// SetTokenBucketReplenishment.
-	SetTokenBucketReplenishmentFunc *RateLimiterSetTokenBucketReplenishmentFunc
+	// GetTokenFunc is an instance of a mock function object controlling the
+	// behavior of the method GetToken.
+	GetTokenFunc *RateLimiterGetTokenFunc
+	// SetTokenBucketConfigFunc is an instance of a mock function object
+	// controlling the behavior of the method SetTokenBucketConfig.
+	SetTokenBucketConfigFunc *RateLimiterSetTokenBucketConfigFunc
 }
 
 // NewMockRateLimiter creates a new mock of the RateLimiter interface. All
 // methods return zero values for all results, unless overwritten.
 func NewMockRateLimiter() *MockRateLimiter {
 	return &MockRateLimiter{
-		GetTokensFromBucketFunc: &RateLimiterGetTokensFromBucketFunc{
-			defaultHook: func(context.Context, string, int) (r0 bool, r1 int, r2 error) {
+		GetTokenFunc: &RateLimiterGetTokenFunc{
+			defaultHook: func(context.Context, string) (r0 error) {
 				return
 			},
 		},
-		SetTokenBucketReplenishmentFunc: &RateLimiterSetTokenBucketReplenishmentFunc{
-			defaultHook: func(context.Context, string, int32, int32) (r0 error) {
+		SetTokenBucketConfigFunc: &RateLimiterSetTokenBucketConfigFunc{
+			defaultHook: func(context.Context, string, int32, time.Duration) (r0 error) {
 				return
 			},
 		},
@@ -47,14 +47,14 @@ func NewMockRateLimiter() *MockRateLimiter {
 // All methods panic on invocation, unless overwritten.
 func NewStrictMockRateLimiter() *MockRateLimiter {
 	return &MockRateLimiter{
-		GetTokensFromBucketFunc: &RateLimiterGetTokensFromBucketFunc{
-			defaultHook: func(context.Context, string, int) (bool, int, error) {
-				panic("unexpected invocation of MockRateLimiter.GetTokensFromBucket")
+		GetTokenFunc: &RateLimiterGetTokenFunc{
+			defaultHook: func(context.Context, string) error {
+				panic("unexpected invocation of MockRateLimiter.GetToken")
 			},
 		},
-		SetTokenBucketReplenishmentFunc: &RateLimiterSetTokenBucketReplenishmentFunc{
-			defaultHook: func(context.Context, string, int32, int32) error {
-				panic("unexpected invocation of MockRateLimiter.SetTokenBucketReplenishment")
+		SetTokenBucketConfigFunc: &RateLimiterSetTokenBucketConfigFunc{
+			defaultHook: func(context.Context, string, int32, time.Duration) error {
+				panic("unexpected invocation of MockRateLimiter.SetTokenBucketConfig")
 			},
 		},
 	}
@@ -65,45 +65,44 @@ func NewStrictMockRateLimiter() *MockRateLimiter {
 // overwritten.
 func NewMockRateLimiterFrom(i redispool.RateLimiter) *MockRateLimiter {
 	return &MockRateLimiter{
-		GetTokensFromBucketFunc: &RateLimiterGetTokensFromBucketFunc{
-			defaultHook: i.GetTokensFromBucket,
+		GetTokenFunc: &RateLimiterGetTokenFunc{
+			defaultHook: i.GetToken,
 		},
-		SetTokenBucketReplenishmentFunc: &RateLimiterSetTokenBucketReplenishmentFunc{
-			defaultHook: i.SetTokenBucketReplenishment,
+		SetTokenBucketConfigFunc: &RateLimiterSetTokenBucketConfigFunc{
+			defaultHook: i.SetTokenBucketConfig,
 		},
 	}
 }
 
-// RateLimiterGetTokensFromBucketFunc describes the behavior when the
-// GetTokensFromBucket method of the parent MockRateLimiter instance is
-// invoked.
-type RateLimiterGetTokensFromBucketFunc struct {
-	defaultHook func(context.Context, string, int) (bool, int, error)
-	hooks       []func(context.Context, string, int) (bool, int, error)
-	history     []RateLimiterGetTokensFromBucketFuncCall
+// RateLimiterGetTokenFunc describes the behavior when the GetToken method
+// of the parent MockRateLimiter instance is invoked.
+type RateLimiterGetTokenFunc struct {
+	defaultHook func(context.Context, string) error
+	hooks       []func(context.Context, string) error
+	history     []RateLimiterGetTokenFuncCall
 	mutex       sync.Mutex
 }
 
-// GetTokensFromBucket delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockRateLimiter) GetTokensFromBucket(v0 context.Context, v1 string, v2 int) (bool, int, error) {
-	r0, r1, r2 := m.GetTokensFromBucketFunc.nextHook()(v0, v1, v2)
-	m.GetTokensFromBucketFunc.appendCall(RateLimiterGetTokensFromBucketFuncCall{v0, v1, v2, r0, r1, r2})
-	return r0, r1, r2
+// GetToken delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockRateLimiter) GetToken(v0 context.Context, v1 string) error {
+	r0 := m.GetTokenFunc.nextHook()(v0, v1)
+	m.GetTokenFunc.appendCall(RateLimiterGetTokenFuncCall{v0, v1, r0})
+	return r0
 }
 
-// SetDefaultHook sets function that is called when the GetTokensFromBucket
-// method of the parent MockRateLimiter instance is invoked and the hook
-// queue is empty.
-func (f *RateLimiterGetTokensFromBucketFunc) SetDefaultHook(hook func(context.Context, string, int) (bool, int, error)) {
+// SetDefaultHook sets function that is called when the GetToken method of
+// the parent MockRateLimiter instance is invoked and the hook queue is
+// empty.
+func (f *RateLimiterGetTokenFunc) SetDefaultHook(hook func(context.Context, string) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetTokensFromBucket method of the parent MockRateLimiter instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *RateLimiterGetTokensFromBucketFunc) PushHook(hook func(context.Context, string, int) (bool, int, error)) {
+// GetToken method of the parent MockRateLimiter instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *RateLimiterGetTokenFunc) PushHook(hook func(context.Context, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -111,20 +110,20 @@ func (f *RateLimiterGetTokensFromBucketFunc) PushHook(hook func(context.Context,
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *RateLimiterGetTokensFromBucketFunc) SetDefaultReturn(r0 bool, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, int) (bool, int, error) {
-		return r0, r1, r2
+func (f *RateLimiterGetTokenFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string) error {
+		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *RateLimiterGetTokensFromBucketFunc) PushReturn(r0 bool, r1 int, r2 error) {
-	f.PushHook(func(context.Context, string, int) (bool, int, error) {
-		return r0, r1, r2
+func (f *RateLimiterGetTokenFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string) error {
+		return r0
 	})
 }
 
-func (f *RateLimiterGetTokensFromBucketFunc) nextHook() func(context.Context, string, int) (bool, int, error) {
+func (f *RateLimiterGetTokenFunc) nextHook() func(context.Context, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -137,90 +136,80 @@ func (f *RateLimiterGetTokensFromBucketFunc) nextHook() func(context.Context, st
 	return hook
 }
 
-func (f *RateLimiterGetTokensFromBucketFunc) appendCall(r0 RateLimiterGetTokensFromBucketFuncCall) {
+func (f *RateLimiterGetTokenFunc) appendCall(r0 RateLimiterGetTokenFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of RateLimiterGetTokensFromBucketFuncCall
-// objects describing the invocations of this function.
-func (f *RateLimiterGetTokensFromBucketFunc) History() []RateLimiterGetTokensFromBucketFuncCall {
+// History returns a sequence of RateLimiterGetTokenFuncCall objects
+// describing the invocations of this function.
+func (f *RateLimiterGetTokenFunc) History() []RateLimiterGetTokenFuncCall {
 	f.mutex.Lock()
-	history := make([]RateLimiterGetTokensFromBucketFuncCall, len(f.history))
+	history := make([]RateLimiterGetTokenFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// RateLimiterGetTokensFromBucketFuncCall is an object that describes an
-// invocation of method GetTokensFromBucket on an instance of
-// MockRateLimiter.
-type RateLimiterGetTokensFromBucketFuncCall struct {
+// RateLimiterGetTokenFuncCall is an object that describes an invocation of
+// method GetToken on an instance of MockRateLimiter.
+type RateLimiterGetTokenFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 int
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
+	Result0 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c RateLimiterGetTokensFromBucketFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+func (c RateLimiterGetTokenFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c RateLimiterGetTokensFromBucketFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
+func (c RateLimiterGetTokenFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
-// RateLimiterSetTokenBucketReplenishmentFunc describes the behavior when
-// the SetTokenBucketReplenishment method of the parent MockRateLimiter
-// instance is invoked.
-type RateLimiterSetTokenBucketReplenishmentFunc struct {
-	defaultHook func(context.Context, string, int32, int32) error
-	hooks       []func(context.Context, string, int32, int32) error
-	history     []RateLimiterSetTokenBucketReplenishmentFuncCall
+// RateLimiterSetTokenBucketConfigFunc describes the behavior when the
+// SetTokenBucketConfig method of the parent MockRateLimiter instance is
+// invoked.
+type RateLimiterSetTokenBucketConfigFunc struct {
+	defaultHook func(context.Context, string, int32, time.Duration) error
+	hooks       []func(context.Context, string, int32, time.Duration) error
+	history     []RateLimiterSetTokenBucketConfigFuncCall
 	mutex       sync.Mutex
 }
 
-// SetTokenBucketReplenishment delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockRateLimiter) SetTokenBucketReplenishment(v0 context.Context, v1 string, v2 int32, v3 int32) error {
-	r0 := m.SetTokenBucketReplenishmentFunc.nextHook()(v0, v1, v2, v3)
-	m.SetTokenBucketReplenishmentFunc.appendCall(RateLimiterSetTokenBucketReplenishmentFuncCall{v0, v1, v2, v3, r0})
+// SetTokenBucketConfig delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockRateLimiter) SetTokenBucketConfig(v0 context.Context, v1 string, v2 int32, v3 time.Duration) error {
+	r0 := m.SetTokenBucketConfigFunc.nextHook()(v0, v1, v2, v3)
+	m.SetTokenBucketConfigFunc.appendCall(RateLimiterSetTokenBucketConfigFuncCall{v0, v1, v2, v3, r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the
-// SetTokenBucketReplenishment method of the parent MockRateLimiter instance
-// is invoked and the hook queue is empty.
-func (f *RateLimiterSetTokenBucketReplenishmentFunc) SetDefaultHook(hook func(context.Context, string, int32, int32) error) {
+// SetDefaultHook sets function that is called when the SetTokenBucketConfig
+// method of the parent MockRateLimiter instance is invoked and the hook
+// queue is empty.
+func (f *RateLimiterSetTokenBucketConfigFunc) SetDefaultHook(hook func(context.Context, string, int32, time.Duration) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// SetTokenBucketReplenishment method of the parent MockRateLimiter instance
+// SetTokenBucketConfig method of the parent MockRateLimiter instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *RateLimiterSetTokenBucketReplenishmentFunc) PushHook(hook func(context.Context, string, int32, int32) error) {
+func (f *RateLimiterSetTokenBucketConfigFunc) PushHook(hook func(context.Context, string, int32, time.Duration) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -228,20 +217,20 @@ func (f *RateLimiterSetTokenBucketReplenishmentFunc) PushHook(hook func(context.
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *RateLimiterSetTokenBucketReplenishmentFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, int32, int32) error {
+func (f *RateLimiterSetTokenBucketConfigFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string, int32, time.Duration) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *RateLimiterSetTokenBucketReplenishmentFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, int32, int32) error {
+func (f *RateLimiterSetTokenBucketConfigFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string, int32, time.Duration) error {
 		return r0
 	})
 }
 
-func (f *RateLimiterSetTokenBucketReplenishmentFunc) nextHook() func(context.Context, string, int32, int32) error {
+func (f *RateLimiterSetTokenBucketConfigFunc) nextHook() func(context.Context, string, int32, time.Duration) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -254,28 +243,27 @@ func (f *RateLimiterSetTokenBucketReplenishmentFunc) nextHook() func(context.Con
 	return hook
 }
 
-func (f *RateLimiterSetTokenBucketReplenishmentFunc) appendCall(r0 RateLimiterSetTokenBucketReplenishmentFuncCall) {
+func (f *RateLimiterSetTokenBucketConfigFunc) appendCall(r0 RateLimiterSetTokenBucketConfigFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of
-// RateLimiterSetTokenBucketReplenishmentFuncCall objects describing the
-// invocations of this function.
-func (f *RateLimiterSetTokenBucketReplenishmentFunc) History() []RateLimiterSetTokenBucketReplenishmentFuncCall {
+// History returns a sequence of RateLimiterSetTokenBucketConfigFuncCall
+// objects describing the invocations of this function.
+func (f *RateLimiterSetTokenBucketConfigFunc) History() []RateLimiterSetTokenBucketConfigFuncCall {
 	f.mutex.Lock()
-	history := make([]RateLimiterSetTokenBucketReplenishmentFuncCall, len(f.history))
+	history := make([]RateLimiterSetTokenBucketConfigFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// RateLimiterSetTokenBucketReplenishmentFuncCall is an object that
-// describes an invocation of method SetTokenBucketReplenishment on an
-// instance of MockRateLimiter.
-type RateLimiterSetTokenBucketReplenishmentFuncCall struct {
+// RateLimiterSetTokenBucketConfigFuncCall is an object that describes an
+// invocation of method SetTokenBucketConfig on an instance of
+// MockRateLimiter.
+type RateLimiterSetTokenBucketConfigFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -287,7 +275,7 @@ type RateLimiterSetTokenBucketReplenishmentFuncCall struct {
 	Arg2 int32
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 int32
+	Arg3 time.Duration
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -295,12 +283,12 @@ type RateLimiterSetTokenBucketReplenishmentFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c RateLimiterSetTokenBucketReplenishmentFuncCall) Args() []interface{} {
+func (c RateLimiterSetTokenBucketConfigFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c RateLimiterSetTokenBucketReplenishmentFuncCall) Results() []interface{} {
+func (c RateLimiterSetTokenBucketConfigFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }

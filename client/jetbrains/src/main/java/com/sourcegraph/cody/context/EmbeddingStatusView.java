@@ -2,16 +2,12 @@ package com.sourcegraph.cody.context;
 
 import static com.sourcegraph.cody.chat.ChatUIConstants.TEXT_MARGIN;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.serviceContainer.AlreadyDisposedException;
 import com.intellij.ui.SimpleColoredComponent;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.util.ui.JBUI;
-import com.sourcegraph.cody.editor.EditorUtil;
 import java.awt.FlowLayout;
 import javax.swing.Box;
 import javax.swing.Icon;
@@ -69,17 +65,6 @@ public class EmbeddingStatusView extends JPanel {
   public void setEmbeddingStatus(EmbeddingStatus embeddingStatus) {
     this.embeddingStatus = embeddingStatus;
     updateViewBasedOnStatus();
-  }
-
-  private void updateEmbeddingStatusView() {
-    VirtualFile currentFile;
-    try {
-      currentFile = EditorUtil.getCurrentFile(project);
-    } catch (AlreadyDisposedException e) {
-      return;
-    }
-
-    ApplicationManager.getApplication().executeOnPooledThread(() -> {});
   }
 
   public void setOpenedFileName(@NotNull String fileName, @Nullable String filePath) {

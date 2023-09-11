@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -65,7 +66,7 @@ sg db add-user -username=foo
 # Create an access token for the user created above.
 sg db add-access-token -username=foo
 `,
-		Category: CategoryDev,
+		Category: category.Dev,
 		Subcommands: []*cli.Command{
 			{
 				Name:   "delete-test-dbs",

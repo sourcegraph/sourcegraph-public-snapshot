@@ -6,7 +6,7 @@ import (
 )
 
 func Executor() *monitoring.Dashboard {
-	// sg_job value is hard-coded, see enterprise/cmd/frontend/internal/executorqueue/handler/routes.go
+	// sg_job value is hard-coded, see cmd/frontend/internal/executorqueue/handler/routes.go
 	const executorsJobName = "sourcegraph-executors"
 	const registryJobName = "sourcegraph-executors-registry"
 	// sg_instance for registry is hard-coded, see cmd/executor/internal/metrics/metrics.go

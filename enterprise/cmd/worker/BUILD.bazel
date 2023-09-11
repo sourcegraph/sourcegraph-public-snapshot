@@ -10,9 +10,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker",
     visibility = ["//visibility:private"],
     deps = [
-        "//enterprise/cmd/sourcegraph/enterprisecmd",
         "//enterprise/cmd/worker/shared",
         "//internal/sanitycheck",
+        "//internal/service/svcmain",
     ],
 )
 

@@ -8,12 +8,16 @@
 - Added ability to hide completion suggestions with ESC key [#55955](https://github.com/sourcegraph/sourcegraph/pull/55955)
 - New alt-backslash shortcut to exlicitly trigger autocomplete [#55926](https://github.com/sourcegraph/sourcegraph/pull/55926)
 - Add visual hints about Cody status to status bar [#56046](https://github.com/sourcegraph/sourcegraph/pull/56046)
+- Added a status bar toggle for enabling/disabling Cody autocomplete [#56310](https://github.com/sourcegraph/sourcegraph/pull/56310)
+- New settings to enable/disable autocomplete for individual languages [#56411](https://github.com/sourcegraph/sourcegraph/pull/56411)
 
 ### Changed
 
 - Improved settings UI [#55876](https://github.com/sourcegraph/sourcegraph/pull/55876)
 - Telemetry and other GraphQL requests are now sent through the agent [56001](https://github.com/sourcegraph/sourcegraph/pull/56001)
 - Use agent for recipes [#56196](https://github.com/sourcegraph/sourcegraph/pull/56196)
+- Authentication settings changed to accounts from three types of instance types to which user can connect [#56362](https://github.com/sourcegraph/sourcegraph/pull/56362)
+- Enabled manually triggering autocomplete even when implicit autocomplete is disabled (globally or for a language) [#56473](https://github.com/sourcegraph/sourcegraph/pull/56473)
 
 ### Deprecated
 
@@ -25,6 +29,7 @@
 
 ### Fixed
 
+- Removing autocomplete inlays when ESC key is pressed when using Cody alongside the IdeaVIM plugin [#56347](https://github.com/sourcegraph/sourcegraph/pull/56347)
 - Handle uncaught exception [#56048](https://github.com/sourcegraph/sourcegraph/pull/56048)
 - Start the agent process on Windows [#56055](https://github.com/sourcegraph/sourcegraph/pull/56055)
 - Internal: use `Autocomplete` instead of `AutoComplete` [#56106](https://github.com/sourcegraph/sourcegraph/pull/56106)
