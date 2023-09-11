@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/ricochet2200/go-disk-usage/du"
 
 	"github.com/sourcegraph/log"
 
@@ -14,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	du "github.com/sourcegraph/sourcegraph/internal/diskusage"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -45,7 +45,11 @@ func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.
 		Name: "src_gitserver_disk_space_available",
 		Help: "Amount of free space disk space on the repos mount.",
 	}, func() float64 {
-		usage := du.NewDiskUsage(s.ReposDir)
+		usage, err := du.New(s.ReposDir)
+		if err != nil {
+			s.Logger.Error("error getting disk usage info", log.Error(err))
+			return 0
+		}
 		return float64(usage.Available())
 	})
 	prometheus.MustRegister(c)
@@ -54,7 +58,11 @@ func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.
 		Name: "src_gitserver_disk_space_total",
 		Help: "Amount of total disk space in the repos directory.",
 	}, func() float64 {
-		usage := du.NewDiskUsage(s.ReposDir)
+		usage, err := du.New(s.ReposDir)
+		if err != nil {
+			s.Logger.Error("error getting disk usage info", log.Error(err))
+			return 0
+		}
 		return float64(usage.Size())
 	})
 	prometheus.MustRegister(c)

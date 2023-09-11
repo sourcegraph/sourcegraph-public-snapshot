@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"encoding/csv"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -24,47 +26,6 @@ type NewSearcher interface {
 	// Sourcegraph what is returned could change. This means we are not exactly
 	// safe across repeated calls.
 	NewSearch(ctx context.Context, q string) (SearchQuery, error)
-}
-
-// RepositoryRevSpec represents zero or more revisions we need to search in a
-// repository for a revision specifier. This can be inferred relatively
-// cheaply from parsing a query and the repos table.
-//
-// This type needs to be serializable so that we can persist it to a database
-// or queue.
-//
-// Note: this is like a search/repos.RepoRevSpecs except we store 1 revision
-// specifier per repository. It may be worth updating this to instead store a
-// slice of RevisionSpecifiers.
-type RepositoryRevSpec struct {
-	// Repository is the repository to search.
-	Repository api.RepoID
-
-	// RevisionSpecifier is something that still needs to be resolved on gitserver. This
-	// is a serialiazed version of query.RevisionSpecifier.
-	RevisionSpecifier string
-}
-
-func (r RepositoryRevSpec) String() string {
-	return fmt.Sprintf("RepositoryRevSpec{%d@%s}", r.Repository, r.RevisionSpecifier)
-}
-
-// RepositoryRevision represents the smallest unit we can search over, a
-// specific repository and revision.
-//
-// This type needs to be serializable so that we can persist it to a database
-// or queue.
-type RepositoryRevision struct {
-	// RepositoryRevSpec is where this RepositoryRevision got resolved from.
-	RepositoryRevSpec
-
-	// Revision is a resolved revision specifier. eg HEAD, branch-name,
-	// commit-hash, etc.
-	Revision string
-}
-
-func (r RepositoryRevision) String() string {
-	return fmt.Sprintf("RepositoryRevision{%d@%s}", r.Repository, r.Revision)
 }
 
 // SearchQuery represents a search in a way we can break up the work. The flow is
@@ -100,11 +61,11 @@ func (r RepositoryRevision) String() string {
 // a SearchQuery, but this makes it harder to make changes to search going
 // forward for what should be rare errors.
 type SearchQuery interface {
-	RepositoryRevSpecs(context.Context) ([]RepositoryRevSpec, error)
+	RepositoryRevSpecs(context.Context) ([]types.RepositoryRevSpec, error)
 
-	ResolveRepositoryRevSpec(context.Context, RepositoryRevSpec) ([]RepositoryRevision, error)
+	ResolveRepositoryRevSpec(context.Context, types.RepositoryRevSpec) ([]types.RepositoryRevision, error)
 
-	Search(context.Context, RepositoryRevision, CSVWriter) error
+	Search(context.Context, types.RepositoryRevision, CSVWriter) error
 }
 
 // CSVWriter makes it so we can avoid caring about search types and leave it
@@ -120,6 +81,50 @@ type CSVWriter interface {
 	// WriteRow should have the same number of values as WriteHeader and can be
 	// called zero or more times.
 	WriteRow(...string) error
+}
+
+func NewCSVWriterFake(w io.Writer) CSVWriter {
+	return csvWriterFake{
+		w: csv.NewWriter(w),
+	}
+}
+
+type csvWriterFake struct {
+	header []string
+	w      *csv.Writer
+}
+
+func (c csvWriterFake) writeAndFlush(s []string) error {
+	err := c.w.Write(s)
+	if err != nil {
+		return err
+	}
+	c.w.Flush()
+	return c.w.Error()
+}
+
+func (c csvWriterFake) WriteHeader(s ...string) error {
+	// assert the header hasn't changed since the first call
+	if c.header == nil {
+		// first call to WriteHeader
+		c.header = s
+	} else {
+		if len(c.header) != len(s) {
+			return errors.Errorf("header mismatch: %v != %v", c.header, s)
+		}
+		for i := range c.header {
+			if c.header[i] != s[i] {
+				return errors.Errorf("header mismatch: %v != %v", c.header, s)
+			}
+		}
+	}
+
+	return c.writeAndFlush(s)
+}
+
+func (c csvWriterFake) WriteRow(s ...string) error {
+	return c.writeAndFlush(s)
+
 }
 
 // NewSearcherFake is a convenient working implementation of SearchQuery which
@@ -140,9 +145,9 @@ func NewSearcherFake() NewSearcher {
 type backendFake struct{}
 
 func (backendFake) NewSearch(ctx context.Context, q string) (SearchQuery, error) {
-	var repoRevs []RepositoryRevision
+	var repoRevs []types.RepositoryRevision
 	for _, part := range strings.Fields(q) {
-		var r RepositoryRevision
+		var r types.RepositoryRevision
 		if n, err := fmt.Sscanf(part, "%d@%s", &r.Repository, &r.Revision); n != 2 || err != nil {
 			return nil, errors.Errorf("failed to parse repository revision %q", part)
 		}
@@ -154,12 +159,12 @@ func (backendFake) NewSearch(ctx context.Context, q string) (SearchQuery, error)
 }
 
 type searcherFake struct {
-	repoRevs []RepositoryRevision
+	repoRevs []types.RepositoryRevision
 }
 
-func (s searcherFake) RepositoryRevSpecs(context.Context) ([]RepositoryRevSpec, error) {
-	seen := map[RepositoryRevSpec]bool{}
-	var repoRevSpecs []RepositoryRevSpec
+func (s searcherFake) RepositoryRevSpecs(context.Context) ([]types.RepositoryRevSpec, error) {
+	seen := map[types.RepositoryRevSpec]bool{}
+	var repoRevSpecs []types.RepositoryRevSpec
 	for _, r := range s.repoRevs {
 		if seen[r.RepositoryRevSpec] {
 			continue
@@ -170,8 +175,8 @@ func (s searcherFake) RepositoryRevSpecs(context.Context) ([]RepositoryRevSpec, 
 	return repoRevSpecs, nil
 }
 
-func (s searcherFake) ResolveRepositoryRevSpec(_ context.Context, repoRevSpec RepositoryRevSpec) ([]RepositoryRevision, error) {
-	var repoRevs []RepositoryRevision
+func (s searcherFake) ResolveRepositoryRevSpec(_ context.Context, repoRevSpec types.RepositoryRevSpec) ([]types.RepositoryRevision, error) {
+	var repoRevs []types.RepositoryRevision
 	for _, r := range s.repoRevs {
 		if r.RepositoryRevSpec == repoRevSpec {
 			repoRevs = append(repoRevs, r)
@@ -180,7 +185,7 @@ func (s searcherFake) ResolveRepositoryRevSpec(_ context.Context, repoRevSpec Re
 	return repoRevs, nil
 }
 
-func (s searcherFake) Search(_ context.Context, r RepositoryRevision, w CSVWriter) error {
+func (s searcherFake) Search(_ context.Context, r types.RepositoryRevision, w CSVWriter) error {
 	if err := w.WriteHeader("repo", "revspec", "revision"); err != nil {
 		return err
 	}

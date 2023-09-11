@@ -14,6 +14,7 @@ import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/cont
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import type { SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, ButtonLink, Link, ProductStatusBadge, useWindowSize } from '@sourcegraph/wildcard'
@@ -153,6 +154,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const showBatchChanges = props.batchChangesEnabled && isLicensed && !isSourcegraphApp && !isSourcegraphDotCom
     const [codySearchEnabled] = useFeatureFlag('cody-web-search')
 
+    const isSearchJobsEnabled = useExperimentalFeatures(features => features.searchJobs)
     const [isSentinelEnabled] = useFeatureFlag('sentinel')
     // TODO: Include isSourcegraphDotCom in subsequent PR
     // const showSentinel = sentinelEnabled && isSourcegraphDotCom && props.authenticatedUser?.siteAdmin
@@ -186,9 +188,17 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     </>
                 ),
             },
+            !!isSearchJobsEnabled && {
+                path: EnterprisePageRoutes.SearchJobs,
+                content: (
+                    <>
+                        Search Jobs <ProductStatusBadge className="ml-2" status="experimental" />
+                    </>
+                ),
+            },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [ownEnabled, showSearchContext, codySearchEnabled])
+    }, [ownEnabled, showSearchContext, codySearchEnabled, isSearchJobsEnabled])
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 

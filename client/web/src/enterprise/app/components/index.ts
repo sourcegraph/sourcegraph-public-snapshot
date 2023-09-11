@@ -1,1 +1,1 @@
-export { AppNoItemsState, NoReposAddedState } from './zero-states/AppZeroStates'
+export { NoReposAddedState } from './zero-states/AppZeroStates'

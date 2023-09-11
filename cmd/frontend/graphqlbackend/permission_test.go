@@ -58,7 +58,7 @@ func TestPermissionResolver(t *testing.T) {
 		require.Equal(t, errs[0].Message, "must be site admin")
 	})
 
-	t.Run(" as site-administrator", func(t *testing.T) {
+	t.Run("as site-administrator", func(t *testing.T) {
 		want := apitest.Permission{
 			Typename:    "Permission",
 			ID:          mpid,

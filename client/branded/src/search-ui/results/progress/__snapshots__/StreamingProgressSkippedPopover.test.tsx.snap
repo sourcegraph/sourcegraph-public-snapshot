@@ -322,7 +322,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     />
   </div>
   <form
-    class="pb-3 px-3"
+    class="px-3 pb-3"
     data-testid="popover-form"
   >
     <div

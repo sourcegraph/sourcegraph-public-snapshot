@@ -8,6 +8,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/docker"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/images"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -22,7 +23,7 @@ var (
 		Name:        "ops",
 		Usage:       "Commands used by operations teams to perform common tasks",
 		Description: "Supports internal deploy-sourcegraph repos (non-customer facing)",
-		Category:    CategoryCompany,
+		Category:    category.Company,
 		Subcommands: []*cli.Command{
 			opsUpdateImagesCommand,
 			opsTagDetailsCommand,

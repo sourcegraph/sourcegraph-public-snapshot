@@ -6,13 +6,14 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 // New returns a Service.
@@ -41,6 +42,7 @@ type operations struct {
 	createSearchJob *observation.Operation
 	getSearchJob    *observation.Operation
 	listSearchJobs  *observation.Operation
+	cancelSearchJob *observation.Operation
 }
 
 var (
@@ -73,6 +75,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 			createSearchJob: op("CreateSearchJob"),
 			getSearchJob:    op("GetSearchJob"),
 			listSearchJobs:  op("ListSearchJobs"),
+			cancelSearchJob: op("CancelSearchJob"),
 		}
 	})
 	return singletonOperations
@@ -107,6 +110,22 @@ func (s *Service) CreateSearchJob(ctx context.Context, query string) (_ *types.E
 	}
 
 	return tx.GetExhaustiveSearchJob(ctx, jobID)
+}
+
+func (s *Service) CancelSearchJob(ctx context.Context, id int64) (err error) {
+	ctx, _, endObservation := s.operations.cancelSearchJob.With(ctx, &err, opAttrs(
+		attribute.Int64("id", id),
+	))
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	_, err = tx.CancelSearchJob(ctx, id)
+	return err
 }
 
 func (s *Service) GetSearchJob(ctx context.Context, id int64) (_ *types.ExhaustiveSearchJob, err error) {

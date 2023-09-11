@@ -3,6 +3,7 @@ package ratelimit
 import (
 	"context"
 	"math"
+	"time"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -61,9 +62,9 @@ func (h *handler) processCodeHost(ctx context.Context, codeHost types.CodeHost, 
 	// in oder to try to avoid any outages as much as possible.
 
 	// Set API token values
-	err := h.rateLimiter.SetCodeHostAPIRateLimitConfig(ctx, codeHost.URL, configs.ApiQuota, configs.ApiReplenishmentInterval)
+	err := h.rateLimiter.SetCodeHostAPIRateLimitConfig(ctx, codeHost.URL, configs.ApiQuota, time.Duration(configs.ApiReplenishmentInterval)*time.Second)
 	// Set Git token values
-	err2 := h.rateLimiter.SetCodeHostGitRateLimitConfig(ctx, codeHost.URL, configs.GitQuota, configs.GitReplenishmentInterval)
+	err2 := h.rateLimiter.SetCodeHostGitRateLimitConfig(ctx, codeHost.URL, configs.GitQuota, time.Duration(configs.GitReplenishmentInterval)*time.Second)
 
 	return errors.CombineErrors(err, err2)
 }
