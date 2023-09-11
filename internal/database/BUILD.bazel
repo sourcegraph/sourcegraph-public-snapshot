@@ -350,7 +350,7 @@ migration(
 )
 
 describe(
-    name = "frontend-describe",
+    name = "frontend-describe-md",
     srcs = [
         "//migrations/codeinsights:sql",
         "//migrations/codeintel:sql",
@@ -362,7 +362,7 @@ describe(
 )
 
 describe(
-    name = "codeinsights-describe",
+    name = "codeinsights-describe-md",
     srcs = [
         "//migrations/codeinsights:sql",
         "//migrations/codeintel:sql",
@@ -374,7 +374,7 @@ describe(
 )
 
 describe(
-    name = "codeintel-describe",
+    name = "codeintel-describe-md",
     srcs = [
         "//migrations/codeinsights:sql",
         "//migrations/codeintel:sql",
@@ -385,6 +385,42 @@ describe(
     format = "psql",
 )
 
+describe(
+    name = "frontend-describe-json",
+    srcs = [
+        "//migrations/codeinsights:sql",
+        "//migrations/codeintel:sql",
+        "//migrations/frontend:sql",
+    ],
+    out = "schema.json",
+    db = "frontend",
+    format = "json",
+)
+
+describe(
+    name = "codeinsights-describe-json",
+    srcs = [
+        "//migrations/codeinsights:sql",
+        "//migrations/codeintel:sql",
+        "//migrations/frontend:sql",
+    ],
+    out = "schema.codeinsights.json",
+    db = "codeinsights",
+    format = "json",
+)
+
+describe(
+    name = "codeintel-describe-json",
+    srcs = [
+        "//migrations/codeinsights:sql",
+        "//migrations/codeintel:sql",
+        "//migrations/frontend:sql",
+    ],
+    out = "schema.codeintel.json",
+    db = "codeintel",
+    format = "json",
+)
+
 build_test(
     name = "schema_generation_tests",
     tags = ["requires-network"],
@@ -392,8 +428,11 @@ build_test(
         "frontend-migration",
         "codeintel-migration",
         "codeinsights-migration",
-        "frontend-describe",
-        "codeintel-describe",
-        "codeinsights-describe",
+        "frontend-describe-md",
+        "codeintel-describe-md",
+        "codeinsights-describe-md",
+        "frontend-describe-json",
+        "codeintel-describe-json",
+        "codeinsights-describe-json",
     ],
 )
