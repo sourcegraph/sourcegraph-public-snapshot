@@ -145,6 +145,7 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 	if err != nil {
 		return err
 	}
+	urlCopy := *req.URL
 
 	// Enable Checks API
 	// https://developer.github.com/v4/previews/#checks
@@ -174,7 +175,14 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 
 	for c.waitForRateLimit && err != nil && numRetries < c.maxRateLimitRetries &&
 		errors.As(err, &apiError) && apiError.Code == http.StatusForbidden {
+		// Reset Body/URL to the originals, to ignore changes a previous
+		// `doRequest` might have made.
 		req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
+		// Create a copy of the URL, because this loop might execute
+		// multiple times.
+		reqURLCopy := urlCopy
+		req.URL = &reqURLCopy
+
 		// Because GitHub responds with http.StatusForbidden when a rate limit is hit, we cannot
 		// say with absolute certainty that a rate limit was hit. It might have been an honest
 		// http.StatusForbidden. So we use the externalRateLimiter's WaitForRateLimit function
