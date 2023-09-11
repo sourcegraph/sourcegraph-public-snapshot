@@ -1,4 +1,4 @@
-const ONE_KILO_BYTE = 1000
+const ONE_KILO_BYTE = 1_000
 const ONE_MEGA_BYTE = 1_000_000
 const ONE_GIGA_BYTE = 1_000_000_000
 const ONE_TERA_BYTE = 1_000_000_000_000
@@ -11,7 +11,7 @@ const ONE_TERA_BYTE = 1_000_000_000_000
  */
 export function humanizeSize(size: number): string {
     if (size > ONE_TERA_BYTE) {
-        const estimatedSize = size / ONE_GIGA_BYTE
+        const estimatedSize = size / ONE_TERA_BYTE
         return `${estimatedSize.toFixed(2)}TB`
     }
 
