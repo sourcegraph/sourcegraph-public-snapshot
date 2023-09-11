@@ -18,6 +18,5 @@ repos:
       entry: ./dev/check-tokens.sh
       language: script
       'types': [text]
-      # files: \.(js|json|ts|tsx|graphql|md|scss)
       args: []
       require_serial: false
