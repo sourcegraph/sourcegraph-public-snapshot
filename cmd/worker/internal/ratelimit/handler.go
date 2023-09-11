@@ -28,12 +28,10 @@ func (h *handler) Handle(ctx context.Context) (err error) {
 		}
 	}()
 
-	var defaultGitQuota int32
+	var defaultGitQuota int32 = -1 // rate.Inf
 	siteCfg := conf.Get()
 	if siteCfg.GitMaxCodehostRequestsPerSecond != nil {
 		defaultGitQuota = int32(*siteCfg.GitMaxCodehostRequestsPerSecond)
-	} else {
-		defaultGitQuota = -1
 	}
 
 	gitRL := h.newRateLimiterFunc(ratelimit.GitRPSLimiterBucketName)
