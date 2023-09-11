@@ -515,24 +515,41 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	newUser := database.NewUser{
+		Email:           "sourcegraph-vcr@sourcegraph.com",
+		Username:        "sourcegraph-vcr",
+		EmailIsVerified: true,
+	}
+
+	repo := types.Repo{
+		Name:    "gitlab.sgdev.org/petrissupercoolgroup/schwifty2",
+		Private: true,
+		URI:     "gitlab.sgdev.org/petrissupercoolgroup/schwifty2",
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "371335",
+			ServiceType: extsvc.TypeGitLab,
+			ServiceID:   "https://gitlab.sgdev.org/",
+		},
+		Sources: map[string]*types.SourceInfo{
+			svc.URN(): {
+				ID: svc.URN(),
+			},
+		},
+	}
+
+	authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
+
 	// This integration tests performs a repository-centric permissions syncing against
 	// https://github.com, then check if permissions are correctly granted for the test
 	// user "sourcegraph-vcr", who is a collaborator of "sourcegraph-vcr-repos/private-org-repo-1".
 	t.Run("user-centric", func(t *testing.T) {
-		newUser := database.NewUser{
-			Email:           "sourcegraph-vcr@sourcegraph.com",
-			Username:        "sourcegraph-vcr",
-			EmailIsVerified: true,
-		}
 		t.Run("featureflag-enabled", func(t *testing.T) {
 			name := t.Name()
 
 			cf, save := httptestutil.NewRecorderFactory(t, update(name), name)
 			defer save()
 			doer, err := cf.Doer()
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
 
 			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 
@@ -543,9 +560,7 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 			reposStore := repos.NewStore(logtest.Scoped(t), testDB)
 
 			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
 
 			provider := authzGitLab.NewOAuthProvider(authzGitLab.OAuthProviderOp{
 				BaseURL: uri,
@@ -555,42 +570,20 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 
 			authz.SetProviders(false, []authz.Provider{provider})
 			defer authz.SetProviders(true, nil)
-
-			repo := types.Repo{
-				Name:    "gitlab.sgdev.org/petrissupercoolgroup/schwifty2",
-				Private: true,
-				URI:     "gitlab.sgdev.org/petrissupercoolgroup/schwifty2",
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          "371335",
-					ServiceType: extsvc.TypeGitLab,
-					ServiceID:   "https://gitlab.sgdev.org/",
-				},
-				Sources: map[string]*types.SourceInfo{
-					svc.URN(): {
-						ID: svc.URN(),
-					},
-				},
-			}
 			err = reposStore.RepoStore().Create(ctx, &repo)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
 
-			authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
 			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
 				AuthData: extsvc.NewUnencryptedData(authData),
 			})
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
 
 			permsStore := database.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
 			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
+
 			assert.Equal(t, database.CodeHostStatusesSet{{
 				ProviderID:   "https://gitlab.sgdev.org/",
 				ProviderType: "gitlab",
@@ -599,9 +592,8 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 			}}, providerStates)
 
 			p, err := permsStore.LoadUserPermissions(ctx, user.ID)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
+
 			gotIDs := make([]int32, len(p))
 			for i, perm := range p {
 				gotIDs[i] = perm.RepoID
@@ -619,9 +611,7 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 			cf, save := httptestutil.NewRecorderFactory(t, update(name), name)
 			defer save()
 			doer, err := cf.Doer()
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
 
 			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 
@@ -643,41 +633,20 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 			authz.SetProviders(false, []authz.Provider{provider})
 			defer authz.SetProviders(true, nil)
 
-			repo := types.Repo{
-				Name:    "gitlab.sgdev.org/petrissupercoolgroup/schwifty2",
-				Private: true,
-				URI:     "gitlab.sgdev.org/petrissupercoolgroup/schwifty2",
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          "371335",
-					ServiceType: extsvc.TypeGitLab,
-					ServiceID:   "https://gitlab.sgdev.org/",
-				},
-				Sources: map[string]*types.SourceInfo{
-					svc.URN(): {
-						ID: svc.URN(),
-					},
-				},
-			}
 			err = reposStore.RepoStore().Create(ctx, &repo)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
 
-			authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
 			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
 				AuthData: extsvc.NewUnencryptedData(authData),
 			})
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
 
-			permsStore := database.Perms(logger, testDB, timeutil.Now)
+			permsStore := testDB.Perms()
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
 			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
+
 			assert.Equal(t, database.CodeHostStatusesSet{{
 				ProviderID:   "https://gitlab.sgdev.org/",
 				ProviderType: "gitlab",
@@ -686,9 +655,8 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 			}}, providerStates)
 
 			p, err := permsStore.LoadUserPermissions(ctx, user.ID)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
+
 			gotIDs := make([]int32, len(p))
 			for i, perm := range p {
 				gotIDs[i] = perm.RepoID
