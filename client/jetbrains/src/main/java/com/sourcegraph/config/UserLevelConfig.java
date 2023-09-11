@@ -15,7 +15,8 @@ import org.jetbrains.annotations.Nullable;
 public class UserLevelConfig {
   /**
    * Overrides the provider used for generating autocomplete suggestions. Only supported values at
-   * the moment are 'anthropic' (default), 'unstable-codegen', 'unstable-openai', or 'unstable-fireworks'.
+   * the moment are 'anthropic' (default), 'unstable-codegen', 'unstable-openai', or
+   * 'unstable-fireworks'.
    */
   @Nullable
   public static AutocompleteProviderType getAutocompleteProviderType() {

@@ -15,7 +15,6 @@ import com.sourcegraph.cody.config.CodyAuthenticationManager;
 import com.sourcegraph.cody.config.ServerAuth;
 import com.sourcegraph.cody.config.ServerAuthLoader;
 import com.sourcegraph.cody.config.SourcegraphServerPath;
-
 import java.util.*;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
@@ -29,19 +28,21 @@ public class ConfigUtil {
   @NotNull
   public static ExtensionConfiguration getAgentConfiguration(@NotNull Project project) {
     ServerAuth serverAuth = ServerAuthLoader.loadServerAuth(project);
-    ExtensionConfiguration config = new ExtensionConfiguration()
-        .setServerEndpoint(serverAuth.getInstanceUrl())
-        .setAccessToken(serverAuth.getAccessToken())
-        .setCustomHeaders(getCustomRequestHeadersAsMap(serverAuth.getCustomRequestHeaders()))
-        .setProxy(UserLevelConfig.getProxy())
-        .setAutocompleteAdvancedServerEndpoint(UserLevelConfig.getAutocompleteServerEndpoint())
-        .setAutocompleteAdvancedAccessToken(UserLevelConfig.getAutocompleteAccessToken())
-        .setAutocompleteAdvancedEmbeddings(UserLevelConfig.getAutocompleteAdvancedEmbeddings())
-        .setDebug(isCodyDebugEnabled())
-        .setVerboseDebug(isCodyVerboseDebugEnabled());
+    ExtensionConfiguration config =
+        new ExtensionConfiguration()
+            .setServerEndpoint(serverAuth.getInstanceUrl())
+            .setAccessToken(serverAuth.getAccessToken())
+            .setCustomHeaders(getCustomRequestHeadersAsMap(serverAuth.getCustomRequestHeaders()))
+            .setProxy(UserLevelConfig.getProxy())
+            .setAutocompleteAdvancedServerEndpoint(UserLevelConfig.getAutocompleteServerEndpoint())
+            .setAutocompleteAdvancedAccessToken(UserLevelConfig.getAutocompleteAccessToken())
+            .setAutocompleteAdvancedEmbeddings(UserLevelConfig.getAutocompleteAdvancedEmbeddings())
+            .setDebug(isCodyDebugEnabled())
+            .setVerboseDebug(isCodyVerboseDebugEnabled());
 
-    if (UserLevelConfig.getAutocompleteProviderType() != null){
-        config.setAutocompleteAdvancedProvider(UserLevelConfig.getAutocompleteProviderType().vscodeSettingString());
+    if (UserLevelConfig.getAutocompleteProviderType() != null) {
+      config.setAutocompleteAdvancedProvider(
+          UserLevelConfig.getAutocompleteProviderType().vscodeSettingString());
     }
     return config;
   }
