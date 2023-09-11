@@ -1,0 +1,123 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.sgdev.org/api/v4/projects?min_access_level=20&per_page=100&visibility=private
+    method: GET
+  response:
+    body: '[]'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 804eb2a91fb606eb-CPT
+      Content-Length:
+      - "2"
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 11 Sep 2023 08:56:31 GMT
+      Etag:
+      - W/"4f53cda18c2baa0c0354bb5f9a3ecbe5"
+      Link:
+      - <https://gitlab.sgdev.org/api/v4/projects?imported=false&membership=false&min_access_level=20&order_by=created_at&owned=false&page=1&per_page=100&repository_checksum_failed=false&simple=false&sort=desc&starred=false&statistics=false&visibility=private&wiki_checksum_failed=false&with_custom_attributes=false&with_issues_enabled=false&with_merge_requests_enabled=false>;
+        rel="first", <https://gitlab.sgdev.org/api/v4/projects?imported=false&membership=false&min_access_level=20&order_by=created_at&owned=false&page=1&per_page=100&repository_checksum_failed=false&simple=false&sort=desc&starred=false&statistics=false&visibility=private&wiki_checksum_failed=false&with_custom_attributes=false&with_issues_enabled=false&with_merge_requests_enabled=false>;
+        rel="last"
+      Server:
+      - cloudflare
+      Vary:
+      - Origin
+      Via:
+      - 1.1 google
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Next-Page:
+      - ""
+      X-Page:
+      - "1"
+      X-Per-Page:
+      - "100"
+      X-Prev-Page:
+      - ""
+      X-Request-Id:
+      - 01HA1Q9SJF8BC9ND2XP41F5NAA
+      X-Runtime:
+      - "0.043182"
+      X-Total:
+      - "0"
+      X-Total-Pages:
+      - "1"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.sgdev.org/api/v4/projects?min_access_level=20&per_page=100&visibility=internal
+    method: GET
+  response:
+    body: '[]'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 804eb2ab9c1106eb-CPT
+      Content-Length:
+      - "2"
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 11 Sep 2023 08:56:31 GMT
+      Etag:
+      - W/"4f53cda18c2baa0c0354bb5f9a3ecbe5"
+      Link:
+      - <https://gitlab.sgdev.org/api/v4/projects?imported=false&membership=false&min_access_level=20&order_by=created_at&owned=false&page=1&per_page=100&repository_checksum_failed=false&simple=false&sort=desc&starred=false&statistics=false&visibility=internal&wiki_checksum_failed=false&with_custom_attributes=false&with_issues_enabled=false&with_merge_requests_enabled=false>;
+        rel="first", <https://gitlab.sgdev.org/api/v4/projects?imported=false&membership=false&min_access_level=20&order_by=created_at&owned=false&page=1&per_page=100&repository_checksum_failed=false&simple=false&sort=desc&starred=false&statistics=false&visibility=internal&wiki_checksum_failed=false&with_custom_attributes=false&with_issues_enabled=false&with_merge_requests_enabled=false>;
+        rel="last"
+      Server:
+      - cloudflare
+      Vary:
+      - Origin
+      Via:
+      - 1.1 google
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Next-Page:
+      - ""
+      X-Page:
+      - "1"
+      X-Per-Page:
+      - "100"
+      X-Prev-Page:
+      - ""
+      X-Request-Id:
+      - 01HA1Q9SYT2P0NY0W76APM53PV
+      X-Runtime:
+      - "0.047155"
+      X-Total:
+      - "0"
+      X-Total-Pages:
+      - "1"
+    status: 200 OK
+    code: 200
+    duration: ""
