@@ -378,7 +378,7 @@ const SearchJobsInitialZeroState: FC<SearchJobsInitialZeroStateProps> = props =>
     return (
         <div className={classNames(props.className, styles.initialZeroState)}>
             <img
-                alt="Search jobs creation button UI image"
+                alt="Search jobs creation button UI"
                 width={384}
                 height={267}
                 src={`${assetsRoot}/img/no-jobs-state-${isLightTheme ? 'light' : 'dark'}.png`}
