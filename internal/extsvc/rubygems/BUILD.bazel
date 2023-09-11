@@ -25,6 +25,7 @@ go_test(
         "//internal/httptestutil",
         "//internal/unpack",
         "@com_github_stretchr_testify//require",
+        "@org_golang_x_time//rate",
     ],
 )
 
