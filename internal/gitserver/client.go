@@ -699,7 +699,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 			Stdin:     c.stdin,
 			NoTimeout: c.noTimeout,
 
-			// 🚨Warning🚨: There is no guarantee that EnsureRevision is a valid utf-8 string. It is
+			// 🚨Warning🚨: There is no guarantee that EnsureRevision is a valid utf-8 string.
 			EnsureRevision: []byte(c.EnsureRevision()),
 		}
 
