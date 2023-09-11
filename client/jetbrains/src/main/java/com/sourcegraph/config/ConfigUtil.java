@@ -28,8 +28,6 @@ public class ConfigUtil {
   public static final String DOTCOM_URL = "https://sourcegraph.com/";
   public static final String SERVICE_DISPLAY_NAME = "Sourcegraph Cody + Code Search";
 
-  private static final String VIM_MOTION_COMMAND = "Motion";
-
   @NotNull
   public static ExtensionConfiguration getAgentConfiguration(@NotNull Project project) {
     ServerAuth serverAuth = ServerAuthLoader.loadServerAuth(project);
@@ -147,9 +145,5 @@ public class ConfigUtil {
 
   public static List<String> getBlacklistedAutocompleteLanguageIds() {
     return CodyApplicationSettings.getInstance().getBlacklistedLanguageIds();
-  }
-
-  public static boolean isCommandInVimVisualMode(String command){
-    return command.contains(VIM_MOTION_COMMAND);
   }
 }
