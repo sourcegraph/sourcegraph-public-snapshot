@@ -147,6 +147,23 @@ Base pipeline (more steps might be included based on branch changes):
 - **End-to-end tests**: Executors E2E
 - **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
 
+### TODO JH WILLIAM
+
+The run type for branches matching `^wip_v[0-9]+\.[0-9]+\.[0-9]+$` (regexp match).
+
+Base pipeline (more steps might be included based on branch changes):
+
+- **Pipeline setup**: Trigger async
+- Perform bazel prechecks
+- Tests
+- Async BackCompat Tests
+- **Linters and static analysis**: Run sg lint
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+- **Security Scanning**: Sonarcloud Scan
+- **Publish candidate images**: Push candidate Images
+- **End-to-end tests**: Executors E2E
+- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
+
 ### Release branch nightly healthcheck build
 
 The run type for environment including `{"RELEASE_NIGHTLY":"true"}`.
