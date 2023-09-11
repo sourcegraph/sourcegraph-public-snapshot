@@ -172,6 +172,33 @@
     color: var(--text-muted);
 }
 
-.zero-state {
+.initial-zero-state {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
     grid-column: 1 / -1;
+    justify-self: center;
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    max-width: 48rem;
+
+    &-image {
+        max-width: 24rem;
+        object-fit: contain;
+    }
+
+    &-text {
+        flex-grow: 1;
+        flex-basis: 20rem;
+    }
+
+    &-heading {
+        margin-bottom: 1rem;
+    }
+}
+
+.zero-state-with-filters {
+    grid-column: 1 / -1;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
 }
