@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// syncServices syncs a know slice of external services with their rate limiters without
+// syncServices syncs a known slice of external services with their rate limiters without
 // fetching them from the database.
 func syncServices(ctx context.Context, services []*types.ExternalService, newRateLimiterFunc func(bucketName string) ratelimit.GlobalLimiter) error {
 	var errs error
