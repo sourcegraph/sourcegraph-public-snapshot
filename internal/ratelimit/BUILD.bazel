@@ -35,6 +35,9 @@ go_test(
         "mocks_test.go",
         "monitor_test.go",
     ],
+    tags = [
+        "requires-network",
+    ],
     embed = [":ratelimit"],
     deps = [
         "//internal/conf",
