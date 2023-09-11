@@ -307,10 +307,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(publishOpsDev)
 
 		// End-to-end tests
-		ops.Merge(operations.NewNamedSet("End-to-end tests",
-			executorsE2E(c.candidateImageTag()),
-			// testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
-		))
+		if !c.RunType.Is(runtype.ReleaseBazel) {
+			ops.Merge(operations.NewNamedSet("End-to-end tests",
+				executorsE2E(c.candidateImageTag()),
+				// testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
+			))
+		}
 
 		// Wolfi package and base images
 		addWolfiOps(c, ops)
@@ -321,8 +323,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Add final artifacts
 		publishOps := operations.NewNamedSet("Publish images")
 		// Add final artifacts
-		for _, dockerImage := range legacyDockerImages {
-			publishOps.Append(publishFinalDockerImage(c, dockerImage))
+		if !c.RunType.Is(runtype.ReleaseBazel) {
+			for _, dockerImage := range legacyDockerImages {
+				publishOps.Append(publishFinalDockerImage(c, dockerImage))
+			}
 		}
 		// Executor VM image
 		// TODO JH WILLIAM add release bazel runtype
