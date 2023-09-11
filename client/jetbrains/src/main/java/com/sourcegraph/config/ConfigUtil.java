@@ -35,6 +35,7 @@ public class ConfigUtil {
         .setServerEndpoint(serverAuth.getInstanceUrl())
         .setAccessToken(serverAuth.getAccessToken())
         .setCustomHeaders(getCustomRequestHeadersAsMap(serverAuth.getCustomRequestHeaders()))
+        .setProxy(UserLevelConfig.getProxy())
         .setAutocompleteAdvancedProvider(
             UserLevelConfig.getAutocompleteProviderType().vscodeSettingString())
         .setAutocompleteAdvancedServerEndpoint(UserLevelConfig.getAutocompleteServerEndpoint())
