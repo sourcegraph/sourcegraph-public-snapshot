@@ -81,3 +81,21 @@ git_versions=(
 for version in "${git_versions[@]}"; do
   download_github "${version}"
 done
+
+wip_git_versions=(
+  v5.1.100
+)
+
+function wip_download_github() {
+  local version
+  version="$1"
+  local github_url
+  github_url="https://raw.githubusercontent.com/sourcegraph/sourcegraph/wip_${version}/internal/database"
+
+  curl -fsSL "$github_url/schema.json" >"${OUTPUT}/schema-descriptions/${version}-internal_database_schema.json"
+  curl -fsSL "$github_url/schema.codeintel.json" >"${OUTPUT}/schema-descriptions/${version}-internal_database_schema.codeintel.json"
+  curl -fsSL "$github_url/schema.codeinsights.json" >"${OUTPUT}/schema-descriptions/${version}-internal_database_schema.codeinsights.json"
+}
+for version in "${wip_git_versions[@]}"; do
+  wip_download_github "${version}"
+done
