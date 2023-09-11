@@ -2180,6 +2180,32 @@ type Query {
     Site-admin only.
     """
     gitservers: GitserverInstanceConnection!
+
+    """
+    GetLanguageForFile uses enry with the file name and content if necessary
+    to figure out what programming language the file contains
+    """
+    getLanguageForFile(
+        """
+        The path of the file, relative to the repository root.
+        If only the path is supplied, the language will be derived from the file name
+        or the file name extension.
+        Because file names and extensions are shared between various languages,
+        deriving the language from the file name/extension can yield incorrect results.
+        """
+        Path: String!
+        """
+        A way to get a more accurate language from the file is to examine the contents.
+        If the file name/extension resolves to multiple languages,
+        and one of either Content or RepoName + CommitSHA are supplied, the file content will be used
+        to derive the language.
+        If Content is not supplied, but RepoName + CommitSHA is, the file content will be read from gitserver
+        """
+        Content: String!
+        RepoID: Int!
+        RepoName: String!
+        CommitSHA: String!
+    ): String!
 }
 
 """
@@ -2223,31 +2249,6 @@ type GitserverInstance implements Node {
     The total amount of storage space on the gitserver instance, in bytes.
     """
     totalDiskSpaceBytes: BigInt!
-    """
-    GetLanguageForFile uses enry with the file name and content if necessary
-    to figure out what programming language the file contains
-    """
-    getLanguageForFile(
-        """
-        The path of the file, relative to the repository root.
-        If only the path is supplied, the language will be derived from the file name
-        or the file name extension.
-        Because file names and extensions are shared between various languages,
-        deriving the language from the file name/extension can yield incorrect results.
-        """
-        Path: String!
-        """
-        A way to get a more accurate language from the file is to examine the contents.
-        If the file name/extension resolves to multiple languages,
-        and one of either Content or RepoName + CommitSHA are supplied, the file content will be used
-        to derive the language.
-        If Content is not supplied, but RepoName + CommitSHA is, the file content will be read from gitserver
-        """
-        Content: String!
-        RepoID: Int!
-        RepoName: String!
-        CommitSHA: String!
-    ): String!
 }
 
 """
