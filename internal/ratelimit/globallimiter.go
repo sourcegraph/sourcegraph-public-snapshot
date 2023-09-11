@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -14,9 +15,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// tokenBucketGlobalPrefix is the prefix used for all global rate limiter configurations in Redis,
+// it is overwritten in SetupForTest to allow unique namespacing.
+var tokenBucketGlobalPrefix = "v2:rate_limiters"
+
 const (
 	GitRPSLimiterBucketName                   = "git-rps"
-	tokenBucketGlobalPrefix                   = "v2:rate_limiters"
 	bucketLastReplenishmentTimestampKeySuffix = "last_replenishment_timestamp"
 	bucketAllowedBurstKeySuffix               = "allowed_burst"
 	bucketRateConfigKeySuffix                 = "config:bucket_rate"
@@ -54,7 +58,7 @@ type globalRateLimiter struct {
 }
 
 func NewGlobalRateLimiter(bucketName string) GlobalLimiter {
-	pool, ok := redispool.Store.Pool()
+	pool, ok := kv().Pool()
 	if !ok {
 		// TODO: Return an in-memory limiter here.
 		return nil
@@ -322,7 +326,7 @@ type GlobalLimiterInfo struct {
 // GetGlobalLimiterState reports how all the existing rate limiters are configured,
 // keyed by bucket name.
 func GetGlobalLimiterState(ctx context.Context) (map[string]GlobalLimiterInfo, error) {
-	pool, ok := redispool.Store.Pool()
+	pool, ok := kv().Pool()
 	if !ok {
 		// In app, we don't have global limiters. Return.
 		return nil, nil
@@ -400,4 +404,59 @@ func GetGlobalLimiterStateFromPool(ctx context.Context, pool *redis.Pool, prefix
 	}
 
 	return m, nil
+}
+
+// Below is setup code for testing:
+
+// TB is a subset of testing.TB
+type TB interface {
+	Name() string
+	Skip(args ...any)
+	Helper()
+	Fatalf(string, ...any)
+}
+
+// SetupForTest adjusts the tokenBucketGlobalPrefix and clears it out. You will have
+// conflicts if you do `t.Parallel()`.
+func SetupForTest(t TB) {
+	t.Helper()
+
+	pool := &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
+		Dial: func() (redis.Conn, error) {
+			return redis.Dial("tcp", "127.0.0.1:6379")
+		},
+		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+			_, err := c.Do("PING")
+			return err
+		},
+	}
+	kvMock = redispool.RedisKeyValue(pool)
+
+	tokenBucketGlobalPrefix = "__test__" + t.Name()
+	c := pool.Get()
+	defer c.Close()
+
+	// If we are not on CI, skip the test if our redis connection fails.
+	if os.Getenv("CI") == "" {
+		_, err := c.Do("PING")
+		if err != nil {
+			t.Skip("could not connect to redis", err)
+		}
+	}
+
+	err := redispool.DeleteAllKeysWithPrefix(c, tokenBucketGlobalPrefix)
+	if err != nil {
+		t.Fatalf("cold not clear test prefix: &v", err)
+	}
+}
+
+var kvMock redispool.KeyValue
+
+func kv() redispool.KeyValue {
+	if kvMock != nil {
+		return kvMock
+	}
+	return redispool.Store
 }

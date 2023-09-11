@@ -49,6 +49,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/service"
@@ -142,6 +143,10 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
 		RecordingCommandFactory: recordingCommandFactory,
 		Locker:                  locker,
+		RPSLimiter: ratelimit.NewInstrumentedLimiter(
+			ratelimit.GitRPSLimiterBucketName,
+			ratelimit.NewGlobalRateLimiter(ratelimit.GitRPSLimiterBucketName),
+		),
 	}
 
 	// Make sure we watch for config updates that affect the recordingCommandFactory.

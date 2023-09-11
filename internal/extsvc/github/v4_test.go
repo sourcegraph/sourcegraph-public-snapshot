@@ -98,6 +98,7 @@ func TestGetAuthenticatedUserV4(t *testing.T) {
 
 func TestV4Client_RateLimitRetry(t *testing.T) {
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 
 	ctx := context.Background()
 
@@ -182,6 +183,7 @@ func simulateGitHubPrimaryRateLimitHit(w http.ResponseWriter) {
 
 func TestV4Client_RequestGraphQL_RequestUnmutated(t *testing.T) {
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 
 	query := `query Foobar { foobar }`
 	vars := map[string]any{}
@@ -245,6 +247,7 @@ func TestV4Client_RequestGraphQL_RequestUnmutated(t *testing.T) {
 
 func TestV4Client_SearchRepos(t *testing.T) {
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 	cli, save := newV4Client(t, "SearchRepos")
 	t.Cleanup(save)
 

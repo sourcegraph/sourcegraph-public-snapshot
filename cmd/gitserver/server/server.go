@@ -184,9 +184,9 @@ type Server struct {
 	cloneLimiter     *limiter.MutableLimiter
 	cloneableLimiter *limiter.MutableLimiter
 
-	// rpsLimiter limits the remote code host git operations done per second
+	// RPSLimiter limits the remote code host git operations done per second
 	// per gitserver instance
-	rpsLimiter *ratelimit.InstrumentedLimiter
+	RPSLimiter *ratelimit.InstrumentedLimiter
 
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
 	repoUpdateLocks   map[api.RepoName]*locks
@@ -311,8 +311,6 @@ func (s *Server) Handler() http.Handler {
 		s.cloneLimiter.SetLimit(limit)
 		s.cloneableLimiter.SetLimit(limit)
 	})
-
-	s.rpsLimiter = ratelimit.NewInstrumentedLimiter(ratelimit.GitRPSLimiterBucketName, ratelimit.NewGlobalRateLimiter(ratelimit.GitRPSLimiterBucketName))
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/archive", trace.WithRouteName("archive", accesslog.HTTPMiddleware(
@@ -1975,7 +1973,7 @@ func (s *Server) CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOpt
 	}
 	defer cancel()
 
-	if err = s.rpsLimiter.Wait(ctx); err != nil {
+	if err = s.RPSLimiter.Wait(ctx); err != nil {
 		return "", err
 	}
 
@@ -2044,7 +2042,7 @@ func (s *Server) doClone(
 			repoCloneFailedCounter.Inc()
 		}
 	}()
-	if err := s.rpsLimiter.Wait(ctx); err != nil {
+	if err := s.RPSLimiter.Wait(ctx); err != nil {
 		return err
 	}
 	ctx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
@@ -2489,7 +2487,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	}
 	defer cancel2()
 
-	if err = s.rpsLimiter.Wait(ctx); err != nil {
+	if err = s.RPSLimiter.Wait(ctx); err != nil {
 		return err
 	}
 

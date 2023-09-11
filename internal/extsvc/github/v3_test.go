@@ -37,6 +37,7 @@ func newTestClient(t *testing.T, cli httpcli.Doer) *V3Client {
 
 func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli httpcli.Doer) *V3Client {
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
 	c := NewV3Client(logtest.Scoped(t), "Test", apiURL, auth, cli)
@@ -474,6 +475,7 @@ func TestGetOrganization(t *testing.T) {
 
 func TestGetRepository(t *testing.T) {
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 
 	cli, save := newV3TestClient(t, "GetRepository")
 	defer save()
@@ -557,6 +559,7 @@ func TestListOrganizations(t *testing.T) {
 	// way we do in TestGetRepository.
 	t.Run("enterprise-integration-cached-response", func(t *testing.T) {
 		rcache.SetupForTest(t)
+		ratelimit.SetupForTest(t)
 
 		cli, save := newV3TestEnterpriseClient(t, "ListOrganizations")
 		defer save()
@@ -603,6 +606,7 @@ func TestListOrganizations(t *testing.T) {
 
 	t.Run("enterprise-pagination", func(t *testing.T) {
 		rcache.SetupForTest(t)
+		ratelimit.SetupForTest(t)
 
 		mockOrgs := make([]*Org, 200)
 
@@ -1005,6 +1009,7 @@ func TestClient_ListRepositoriesForSearch(t *testing.T) {
 	defer save()
 
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 	reposPage, err := cli.ListRepositoriesForSearch(context.Background(), "org:sourcegraph-vcr-repos", 1)
 	if err != nil {
 		t.Fatal(err)
@@ -1199,6 +1204,7 @@ func TestResponseHasNextPage(t *testing.T) {
 
 func TestRateLimitRetry(t *testing.T) {
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 
 	ctx := context.Background()
 
@@ -1317,6 +1323,7 @@ func TestRateLimitRetry(t *testing.T) {
 
 func TestV3Client_Request_RequestUnmutated(t *testing.T) {
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 
 	payload := struct {
 		Name string `json:"name"`
