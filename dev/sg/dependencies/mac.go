@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 const (
@@ -265,11 +266,11 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 					// Ensure that path is correct, if not tell the user about it.
 					err = checkPgUtilsPathIncludesBinaries(pgUtilsPath)
 					if err != nil {
-						cio.Write("\n--- Manual action needed ---\n")
-						cio.Write(fmt.Sprintf("➡️  PG_UTILS_PATH=%q defined in %s doesn't include createdb. Please correct the file manually.", pgUtilsPath, userBazelRcPath))
-						cio.Write("Please make sure that this file contains:\n")
-						cio.Write("`build --action_env=PG_UTILS_PATH=[PATH TO PARENT FOLDER OF WHERE createdb IS LOCATED`")
-						cio.Write("\n--- Manual action needed ---\n")
+						cio.WriteLine(output.Styled(output.StyleWarning, "--- Manual action needed ---"))
+						cio.WriteLine(output.Styled(output.StyleYellow, fmt.Sprintf("➡️  PG_UTILS_PATH=%q defined in %s doesn't include createdb. Please correct the file manually.", pgUtilsPath, userBazelRcPath)))
+						cio.WriteLine(output.Styled(output.StyleWarning, "Please make sure that this file contains:"))
+						cio.WriteLine(output.Styled(output.StyleWarning, "`build --action_env=PG_UTILS_PATH=[PATH TO PARENT FOLDER OF WHERE createdb IS LOCATED`"))
+						cio.WriteLine(output.Styled(output.StyleWarning, "--- Manual action needed ---"))
 						return err
 					}
 					return nil
