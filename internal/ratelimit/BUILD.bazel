@@ -32,7 +32,6 @@ go_test(
     timeout = "short",
     srcs = [
         "globallimiter_test.go",
-        "mocks_test.go",
         "monitor_test.go",
     ],
     embed = [":ratelimit"],
