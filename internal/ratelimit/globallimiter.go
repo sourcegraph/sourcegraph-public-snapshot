@@ -326,6 +326,7 @@ type GlobalLimiterInfo struct {
 
 // GetGlobalLimiterState reports how all the existing rate limiters are configured,
 // keyed by bucket name.
+// On instances without a proper redis (currently only App), this will return nil.
 func GetGlobalLimiterState(ctx context.Context) (map[string]GlobalLimiterInfo, error) {
 	pool, ok := kv().Pool()
 	if !ok {
