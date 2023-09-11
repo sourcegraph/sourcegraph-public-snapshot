@@ -137,7 +137,7 @@ func versionFromTag(runType runtype.RunType, tag string, commit string, buildNum
 
 	// TODO JH WILLIAM
 	if runType.Is(runtype.ReleaseBazel) {
-		return strings.TrimPrefix(tag, "wip_v")
+		return strings.TrimPrefix(branch, "wip_v")
 	}
 
 	// "main" branch is used for continuous deployment and has a special-case format
