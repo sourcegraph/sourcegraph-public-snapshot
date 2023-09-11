@@ -6,7 +6,7 @@
 </p>
 </aside>
 
-Custom Commands allow you to define reusable prompts and configurable context data, tailored for your own needs. Custom Commands are supported by Cody for VS Code v0.8+.
+Custom Commands allow you to define reusable prompts tailored for your own needs. 
 
 ```json
 {
@@ -22,12 +22,14 @@ Custom Commands allow you to define reusable prompts and configurable context da
 }
 ```
 
+Custom Commands are supported by [Cody for VS Code](overview/install-vscode) v0.8+.
+
 ### Use cases
 
 * Integrate with your build system to suggest fixes for errors/warnings in the latest build
 * Read in test command failures to explain and suggest fixes
 * Analyze software dependencies output to explain compatibility or suggest upgrades
-* Explain code quality output like linter warnings enables
+* Explain code quality output like linter warnings
 
 ## Configuration
 
@@ -80,7 +82,9 @@ Which context data should be generated and passed to Cody. *(Optional)*
 
 ## Creating a Command
 
-You can can create a custom command directly in JSON, or by using command builder within VS Code (accessible from "Configure Custom Commands..." → "New Custom Command...":
+You can can create a custom command by editing the [configuration JSON file](#file-paths), or by using command builder within VS Code.
+
+To access the command builder within VS Code, open the Cody commands menu (⌥C on Mac or Alt-C on Windows/Linux) → "Configure Custom Commands..." → "New Custom Command..."
 
 ![Cody Custom Command Setup in VS Code](https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/custom-command-setup-1.png)
 
@@ -90,14 +94,12 @@ You can can create a custom command directly in JSON, or by using command builde
 
 ```json
 {
-  "commands": {
-    "commit-message": {
-      "description": "Commit message for current changes",
-      "prompt": "Suggest an informative commit message by summarizing code changes from the shared command output. The commit message should follow the conventional commit format and provide meaningful context for future readers.",
-      "context": {
-        "selection": false,
-        "command": "git diff"
-      }
+  "commit-message": {
+    "description": "Commit message for current changes",
+    "prompt": "Suggest an informative commit message by summarizing code changes from the shared command output. The commit message should follow the conventional commit format and provide meaningful context for future readers.",
+    "context": {
+      "selection": false,
+      "command": "git diff"
     }
   }
 }
@@ -107,14 +109,12 @@ You can can create a custom command directly in JSON, or by using command builde
 
 ```json
 {
-  "commands": {
-    "compare-tabs": {
-      "description": "Compare files in opened tabs",
-      "prompt": "Examine the shared code snippets from my opened tabs. Then explain the relationship between the code samples by answering these questions: 1. What are the main tasks or functions the code is performing? 2. Are there any similarities in functions or logic across the samples? 3. Does one code snippet call or import another? If so, how do they interact? 4. Are there any notable differences in how they approach similar problems? 5. Overall, how are the code snippets related - do they work together as part of a larger program, solve variants of the same problem, or serve entirely different purposes?",
-      "context": {
-        "openTabs": true,
-        "selection": false
-      }
+  "compare-tabs": {
+    "description": "Compare files in opened tabs",
+    "prompt": "Examine the shared code snippets from my opened tabs. Then explain the relationship between the code samples by answering these questions: 1. What are the main tasks or functions the code is performing? 2. Are there any similarities in functions or logic across the samples? 3. Does one code snippet call or import another? If so, how do they interact? 4. Are there any notable differences in how they approach similar problems? 5. Overall, how are the code snippets related - do they work together as part of a larger program, solve variants of the same problem, or serve entirely different purposes?",
+    "context": {
+      "openTabs": true,
+      "selection": false
     }
   }
 }
@@ -124,15 +124,12 @@ You can can create a custom command directly in JSON, or by using command builde
 
 ```json
 {
-  "commands": {
-    "current-dir": {
-        "description": "Explain current directory",
-        "prompt": "At a high level, explain what this directory is used for.",
-        "context": {
-            "currentDir": true,
-            "seleection": false
-        }
-      }
+  "current-dir": {
+    "description": "Explain current directory",
+    "prompt": "At a high level, explain what this directory is used for.",
+    "context": {
+      "currentDir": true,
+      "seleection": false
     }
   }
 }
@@ -142,14 +139,12 @@ You can can create a custom command directly in JSON, or by using command builde
 
 ```json
 {
-  "commands": {
-    "/latest-cody-release": {
-      "description": "Summarize the latest Cody release",
-      "prompt": "What is the latest stable version of Cody? Briefly summarize the changes that were included in that release based on this CHANGELOG excerpt.",
-      "context": {
-        "selection": false,
-        "command": "curl https://raw.githubusercontent.com/sourcegraph/cody/main/vscode/CHANGELOG.md | head -n 50"
-      }
+  "latest-cody-release": {
+    "description": "Summarize latest Cody release",
+    "prompt": "What is the latest stable version of Cody? Briefly summarize the changes that were included in that release based on this CHANGELOG excerpt.",
+    "context": {
+      "selection": false,
+      "command": "curl https://raw.githubusercontent.com/sourcegraph/cody/main/vscode/CHANGELOG.md | head -n 50"
     }
   }
 }
@@ -159,14 +154,12 @@ You can can create a custom command directly in JSON, or by using command builde
 
 ```json
 {
-  "commands": {
-    "readme": {
-      "description": "Create a README.md for directory",
-      "prompt": "Write a detailed README.md file to document the code located in the same directory as my current selection. Summarize what the code in this directory is meant to accomplish. Explain the key files, functions, classes, and features. Use Markdown formatting for headings, code blocks, lists, etc. to make the it organized and readable. Aim for a beginner-friendly explanation that gives a developer unfamiliar with the code a good starting point to understand it. Make sure to include: - Overview of directory purpose - Functionality explanations - Relevant diagrams or visuals if helpful. Write the README content clearly and concisely using complete sentences and paragraphs based on the shared context. Use proper spelling, grammar, and punctuation throughout. Surround your full README text with triple backticks so it renders properly as a code block. Do not make assumptions or fabricating additional details.",
-      "context": {
-        "currentDir": true,
-        "selection": true
-      }
+  "readme": {
+    "description": "Readme for current dir",
+    "prompt": "Write a detailed README.md file to document the code located in the same directory as my current selection. Summarize what the code in this directory is meant to accomplish. Explain the key files, functions, classes, and features. Use Markdown formatting for headings, code blocks, lists, etc. to make the it organized and readable. Aim for a beginner-friendly explanation that gives a developer unfamiliar with the code a good starting point to understand it. Make sure to include: - Overview of directory purpose - Functionality explanations - Relevant diagrams or visuals if helpful. Write the README content clearly and concisely using complete sentences and paragraphs based on the shared context. Use proper spelling, grammar, and punctuation throughout. Surround your full README text with triple backticks so it renders properly as a code block. Do not make assumptions or fabricating additional details.",
+    "context": {
+      "currentDir": true,
+      "selection": true
     }
   }
 }
@@ -176,14 +169,12 @@ You can can create a custom command directly in JSON, or by using command builde
 
 ```json
 {
-  "commands": {
-    "recent-git-changes" {
-      "description": "Summarize recent git changes",
-      "prompt": "Summarize the given git changes in 3-5 sentences",
-      "context": {
-        "command": "git log -10 --pretty=format:'%h - %an: %s' --stat",
-        "selection": false
-      }
+  "recent-git-changes": {
+    "description": "Summarize recent changes",
+    "prompt": "Summarize the given git changes in 3-5 sentences",
+    "context": {
+      "command": "git log -10 --pretty=format:'%h - %an: %s' --stat",
+      "selection": false
     }
   }
 }
