@@ -521,6 +521,14 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 		EmailIsVerified: true,
 	}
 
+	// These tests require two repos to be set up:
+	// Both schwifty2 and getschwifty are internal projects.
+	// The user is an explicit collaborator on getschwifty, so
+	// should have access to getschwifty regardless of the feature flag.
+	// The user does not have explicit access to schwifty2, however
+	// schwifty2 is configured so that anyone on the instance has read
+	// access, so when the feature flag is enabled, the user should
+	// see this repo as well.
 	testRepos := []types.Repo{
 		{
 			Name:    "gitlab.sgdev.org/petrissupercoolgroup/schwifty2",
@@ -556,9 +564,9 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 
 	authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
 
-	// This integration tests performs a repository-centric permissions syncing against
-	// https://github.com, then check if permissions are correctly granted for the test
-	// user "sourcegraph-vcr", who is a collaborator of "sourcegraph-vcr-repos/private-org-repo-1".
+	// This integration tests performs a user-centric permissions syncing against
+	// https://gitlab.sgdev.org, then check if permissions are correctly granted for the test
+	// user "sourcegraph-vcr".
 	t.Run("user-centric", func(t *testing.T) {
 		t.Run("featureflag-enabled", func(t *testing.T) {
 			name := t.Name()
