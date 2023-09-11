@@ -373,6 +373,7 @@ interface SearchJobsInitialZeroStateProps {
 
 const SearchJobsInitialZeroState: FC<SearchJobsInitialZeroStateProps> = props => {
     const isLightTheme = useIsLightTheme()
+    const assetsRoot = window.context?.assetsRoot || ''
 
     return (
         <div className={classNames(props.className, styles.initialZeroState)}>
@@ -380,9 +381,7 @@ const SearchJobsInitialZeroState: FC<SearchJobsInitialZeroStateProps> = props =>
                 alt="Search jobs creation button UI image"
                 width={384}
                 height={267}
-                src={`https://storage.googleapis.com/sourcegraph-assets/search-jobs/no-jobs-state-${
-                    isLightTheme ? 'light' : 'dark'
-                }.png`}
+                src={`${assetsRoot}/img/no-jobs-state-${isLightTheme ? 'light' : 'dark'}.png`}
                 className={styles.initialZeroStateImage}
             />
             <div className={styles.initialZeroStateText}>
