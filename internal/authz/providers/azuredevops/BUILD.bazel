@@ -33,6 +33,7 @@ go_test(
         "//internal/extsvc",
         "//internal/extsvc/azuredevops",
         "//internal/licensing",
+        "//internal/ratelimit",
         "//internal/rcache",
         "//internal/types",
         "//lib/errors",

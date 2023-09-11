@@ -43,6 +43,7 @@ go_test(
         "//internal/extsvc/github",
         "//internal/httpcli",
         "//internal/httptestutil",
+        "//internal/ratelimit",
         "//internal/testutil",
         "//lib/errors",
         "//schema",

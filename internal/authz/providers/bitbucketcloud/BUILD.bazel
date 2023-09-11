@@ -39,6 +39,7 @@ go_test(
         "//internal/extsvc",
         "//internal/extsvc/bitbucketcloud",
         "//internal/licensing",
+        "//internal/ratelimit",
         "//internal/types",
         "//schema",
         "@com_github_google_go_cmp//cmp",

@@ -48,6 +48,7 @@ go_test(
         "//internal/extsvc/gitlab",
         "//internal/featureflag",
         "//internal/oauthutil",
+        "//internal/ratelimit",
         "//internal/rcache",
         "//internal/types",
         "//lib/errors",
