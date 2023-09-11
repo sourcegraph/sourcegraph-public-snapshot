@@ -53,6 +53,8 @@ type Request struct {
 	// structural search because it will query Zoekt for indexed structural search.
 	Indexed bool
 
+	// NOTE: This field is no longer read. It is always assumed to be true.
+	//
 	// FeatHybrid is a feature flag which enables hybrid search. Hybrid search
 	// will only search what has changed since Zoekt has indexed as well as
 	// including Zoekt results.

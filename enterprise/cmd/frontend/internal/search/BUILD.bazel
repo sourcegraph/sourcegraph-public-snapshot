@@ -7,6 +7,7 @@ go_library(
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",
+        "//enterprise/cmd/frontend/internal/search/httpapi",
         "//enterprise/cmd/frontend/internal/search/resolvers",
         "//internal/codeintel",
         "//internal/conf/conftypes",
@@ -14,5 +15,6 @@ go_library(
         "//internal/observation",
         "//internal/search/exhaustive/service",
         "//internal/search/exhaustive/store",
+        "//internal/search/exhaustive/uploadstore",
     ],
 )

@@ -85,6 +85,7 @@ const (
 	routeCody                    = "cody"
 	routeCodyChat                = "cody-chat"
 	routeGetCody                 = "get-cody"
+	routePostSignUp              = "post-sign-up"
 
 	routeSearchStream  = "search.stream"
 	routeSearchConsole = "search.console"
@@ -185,6 +186,7 @@ func newRouter() *mux.Router {
 	r.Path("/app/auth/callback").Methods("GET").Name(routeAppAuthCallback)
 	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
 	r.Path("/get-cody").Methods("GET").Name(routeGetCody)
+	r.Path("/post-sign-up").Methods("GET").Name(routePostSignUp)
 	r.Path("/cody").Methods("GET").Name(routeCody)
 	r.Path("/cody/{chatID}").Methods("GET").Name(routeCodyChat)
 
@@ -306,6 +308,7 @@ func initRouter(db database.DB, router *mux.Router) {
 	router.Get(routeCody).Handler(brandedNoIndex("Cody"))
 	router.Get(routeCodyChat).Handler(brandedNoIndex("Cody"))
 	router.Get(routeGetCody).Handler(brandedNoIndex("Cody"))
+	router.Get(routePostSignUp).Handler(brandedNoIndex("Cody"))
 
 	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
 	// Any changes to the embedding route could have security implications. Please consult the security team

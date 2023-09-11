@@ -2,11 +2,14 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
@@ -16,7 +19,7 @@ import (
 
 const searchJobIDKind = "SearchJob"
 
-func unmarshalSearchJobID(id graphql.ID) (int64, error) {
+func UnmarshalSearchJobID(id graphql.ID) (int64, error) {
 	var v int64
 	err := relay.UnmarshalSpec(id, &v)
 	return v, err
@@ -63,7 +66,11 @@ func (r searchJobResolver) FinishedAt(ctx context.Context) *gqlutil.DateTime {
 
 func (r searchJobResolver) URL(ctx context.Context) (*string, error) {
 	if r.Job.State == types.JobStateCompleted {
-		return pointers.Ptr("https://www.youtube.com/watch?v=dQw4w9WgXcQ"), nil
+		exportPath, err := url.JoinPath(conf.Get().ExternalURL, fmt.Sprintf("/.api/search/export/%d", r.Job.ID))
+		if err != nil {
+			return nil, err
+		}
+		return pointers.Ptr(exportPath), nil
 	}
 	return nil, nil
 }

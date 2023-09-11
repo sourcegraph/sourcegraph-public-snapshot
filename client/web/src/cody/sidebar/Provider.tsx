@@ -1,5 +1,6 @@
 import React, { useContext, useState, useCallback, useMemo } from 'react'
 
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 
 import { useCodyChat, type CodyChatStore, codyChatStoreMock } from '../useCodyChat'
@@ -25,9 +26,10 @@ const CodySidebarContext = React.createContext<CodySidebarStore | null>({
 
 interface ICodySidebarStoreProviderProps {
     children?: React.ReactNode
+    authenticatedUser: AuthenticatedUser | null
 }
 
-export const CodySidebarStoreProvider: React.FC<ICodySidebarStoreProviderProps> = ({ children }) => {
+export const CodySidebarStoreProvider: React.FC<ICodySidebarStoreProviderProps> = ({ authenticatedUser, children }) => {
     const [isSidebarOpen, setIsSidebarOpenState] = useTemporarySetting('cody.showSidebar', false)
     const [inputNeedsFocus, setInputNeedsFocus] = useState(false)
     const { setSidebarSize } = useSidebarSize()
@@ -46,7 +48,7 @@ export const CodySidebarStoreProvider: React.FC<ICodySidebarStoreProviderProps> 
 
     const onEvent = useCallback(() => setIsSidebarOpen(true), [setIsSidebarOpen])
 
-    const codyChatStore = useCodyChat({ onEvent })
+    const codyChatStore = useCodyChat({ userID: authenticatedUser?.id, onEvent })
 
     const state = useMemo<CodySidebarStore>(
         () => ({

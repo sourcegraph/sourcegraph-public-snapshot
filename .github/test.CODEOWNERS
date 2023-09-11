@@ -17,13 +17,13 @@
 
 /client/shared/src/search/query/**/* @fkling
 
-/client/web/src/enterprise/batches/**/* @eseliger @courier-new @BolajiOlajide
+/client/web/src/enterprise/batches/**/* @eseliger @BolajiOlajide
 
 /client/web/src/enterprise/codeintel/**/* @efritz
 
 /client/web/src/enterprise/executors/**/* @efritz @eseliger
 
-/client/web/src/integration/batches* @eseliger @courier-new @BolajiOlajide
+/client/web/src/integration/batches* @eseliger @BolajiOlajide
 
 /client/web/src/search/**/* @fkling
 
@@ -33,7 +33,7 @@
 /cmd/frontend/graphqlbackend/site_monitoring.go @bobheadxi
 /cmd/frontend/graphqlbackend/*search*.go @keegancsmith
 /cmd/frontend/graphqlbackend/*zoekt*.go @keegancsmith
-/cmd/frontend/graphqlbackend/batches.go @eseliger @courier-new
+/cmd/frontend/graphqlbackend/batches.go @eseliger
 /cmd/frontend/graphqlbackend/insights.go @sourcegraph/code-insights-backend
 /cmd/frontend/graphqlbackend/codeintel.go @efritz
 /cmd/frontend/graphqlbackend/oobmigrations.go @efritz
@@ -63,7 +63,7 @@
 /doc/**/admin/** @sourcegraph/delivery
 /doc/dev/background-information/adding_ping_data.md @ebrodymoore @dadlerj
 
-/doc/batch_changes/**/* @eseliger @courier-new
+/doc/batch_changes/**/* @eseliger
 
 /doc/code_navigation/**/* @efritz
 
@@ -196,7 +196,7 @@
 
 /internal/search/**/* @keegancsmith @camdencheek
 
-/internal/src-cli/**/* @eseliger @BolajiOlajide @courier-new
+/internal/src-cli/**/* @eseliger @BolajiOlajide
 
 /internal/symbols/** @keegancsmith
 

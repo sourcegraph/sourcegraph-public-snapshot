@@ -1581,8 +1581,8 @@ importers:
         specifier: workspace:*
         version: link:../codeintellify
       '@sourcegraph/cody-shared':
-        specifier: ^0.0.5
-        version: 0.0.5
+        specifier: ^0.0.6
+        version: 0.0.6
       '@sourcegraph/cody-ui':
         specifier: ^0.0.7
         version: 0.0.7
@@ -9345,6 +9345,21 @@ packages:
 
   /@sourcegraph/cody-shared@0.0.5:
     resolution: {integrity: sha512-xwNHKsE9NPEUcQoEqJMYuU86D3NRqBn/V6Fjc09FlkgNQUcouJhGZuVntpOuBa3g8aEqOVT+bI/QcX0Oy1QGfQ==}
+    dependencies:
+      '@microsoft/fetch-event-source': 2.0.1
+      dompurify: 3.0.4
+      highlight.js: 10.7.3
+      isomorphic-fetch: 3.0.0
+      lodash: 4.17.21
+      marked: 4.0.16
+      vscode-uri: 3.0.7
+      x2js: 3.4.4
+    transitivePeerDependencies:
+      - encoding
+    dev: false
+
+  /@sourcegraph/cody-shared@0.0.6:
+    resolution: {integrity: sha512-Lnc/E8ooH3O2FuvvqLM2T+Vy3a0fPrFh1o4LsTYvMBdekcTz7g2ENyRcEEMwqcbn83TlnO5OqYIPqq/2DJFKLg==}
     dependencies:
       '@microsoft/fetch-event-source': 2.0.1
       dompurify: 3.0.4

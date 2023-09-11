@@ -277,10 +277,16 @@ func (s *store) DeleteExternalServiceRepo(ctx context.Context, svc *types.Extern
 	}(time.Now())
 
 	if !s.InTransaction() {
-		s, err = s.transact(ctx)
+		tx, err := s.transact(ctx)
 		if err != nil {
 			return errors.Wrap(err, "DeleteExternalServiceRepo")
 		}
+
+		// We replace the current store with the transactional store for the rest of the method.
+		// We don't assign the store return value from `s.transact` so as to avoid nil panics when
+		// executing the deferred functions that utilize the store since `s.transact` returns a nil
+		// store when there's an error.
+		s = tx
 		defer func() { err = s.Done(err) }()
 	}
 
