@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -60,8 +62,7 @@ type globalRateLimiter struct {
 func NewGlobalRateLimiter(bucketName string) GlobalLimiter {
 	pool, ok := kv().Pool()
 	if !ok {
-		// TODO: Return an in-memory limiter here.
-		return nil
+		return getInMemoryLimiter(bucketName)
 	}
 
 	return &globalRateLimiter{
@@ -404,6 +405,53 @@ func GetGlobalLimiterStateFromPool(ctx context.Context, pool *redis.Pool, prefix
 	}
 
 	return m, nil
+}
+
+var (
+	// inMemoryLimitersMapMu protects access to inMemoryLimitersMap.
+	inMemoryLimitersMapMu sync.Mutex
+	// inMemoryLimitersMap contains all the in-memory rate limiters keyed by name.
+	inMemoryLimitersMap = make(map[string]GlobalLimiter)
+)
+
+// getInMemoryLimiter in app mode, we don't have a working redis, so our limiters
+// are in memory instead. Since we only have a single binary in app, this is actually
+// just as global as it is in multi-container deployments with redis as the backing
+// store.
+func getInMemoryLimiter(name string) GlobalLimiter {
+	inMemoryLimitersMapMu.Lock()
+	l, ok := inMemoryLimitersMap[name]
+	if !ok {
+		drl := conf.Get().DefaultRateLimit
+		r := rate.Limit(drl / 3600)
+		if drl < 0 {
+			r = rate.Inf
+		}
+		l = &inMemoryLimiter{rl: rate.NewLimiter(r, defaultBurst)}
+		inMemoryLimitersMap[name] = l
+	}
+	inMemoryLimitersMapMu.Unlock()
+	return l
+}
+
+type inMemoryLimiter struct {
+	rl *rate.Limiter
+}
+
+func (rl *inMemoryLimiter) Wait(ctx context.Context) error {
+	return rl.rl.Wait(ctx)
+}
+
+func (rl *inMemoryLimiter) WaitN(ctx context.Context, n int) error {
+	return rl.rl.WaitN(ctx, n)
+}
+
+func (rl *inMemoryLimiter) SetTokenBucketConfig(ctx context.Context, bucketQuota int32, bucketReplenishInterval time.Duration) error {
+	rate := rate.Limit(bucketQuota) / rate.Limit(bucketReplenishInterval.Seconds())
+	rl.rl.SetLimit(rate)
+	rl.rl.SetBurst(defaultBurst)
+
+	return nil
 }
 
 // Below is setup code for testing:
