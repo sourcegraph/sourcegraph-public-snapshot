@@ -566,7 +566,7 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 	// This integration tests performs a user-centric permissions syncing against
 	// https://gitlab.sgdev.org, then check if permissions are correctly granted for the test
 	// user "sourcegraph-vcr".
-	t.Run("test feature flag", func(t *testing.T) {
+	t.Run("test gitLabProjectVisibilityExperimental feature flag", func(t *testing.T) {
 		name := t.Name()
 
 		cf, save := httptestutil.NewRecorderFactory(t, update(name), name)
@@ -629,15 +629,13 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 			}
 		}
 
-		t.Run("feature-flag disabled", func(t *testing.T) {
-			assertUserPermissions(t, []int32{2})
-		})
+		// With the feature flag disabled (default state) the user should only have access to one repo
+		assertUserPermissions(t, []int32{2})
 
-		t.Run("feature-flag enabled", func(t *testing.T) {
-			_, err = testDB.FeatureFlags().CreateBool(ctx, "gitLabProjectVisibilityExperimental", true)
-			require.NoError(t, err, "feature flag creation failed")
+		// With the feature flag enabled the user should have access to both repositories
+		_, err = testDB.FeatureFlags().CreateBool(ctx, "gitLabProjectVisibilityExperimental", true)
+		require.NoError(t, err, "feature flag creation failed")
 
-			assertUserPermissions(t, []int32{1, 2})
-		})
+		assertUserPermissions(t, []int32{1, 2})
 	})
 }
