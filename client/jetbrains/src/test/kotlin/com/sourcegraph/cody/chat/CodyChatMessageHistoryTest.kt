@@ -49,9 +49,11 @@ class CodyChatMessageHistoryTest {
 
         history.popUpperMessage(textArea)
         assertThat(textArea.text).isEqualTo("test 2")
+        history.popUpperMessage(textArea)
+        assertThat(textArea.text).isEqualTo("test 1")
 
         history.popLowerMessage(textArea)
-        assertThat(textArea.text).isEmpty()
+        assertThat(textArea.text).isEqualTo("test 2")
     }
 
     @Test
@@ -67,10 +69,11 @@ class CodyChatMessageHistoryTest {
     }
 
     @Test
-    fun `popLowerMessage stops at empty string`() {
+    fun `popLowerMessage stops at last message in stack`() {
         val textArea = JBTextArea()
         textArea.text = "test 1"
         history.messageSent(textArea)
+        textArea.text = ""
         history.popUpperMessage(textArea)
         history.popLowerMessage(textArea)
 

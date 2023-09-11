@@ -13,7 +13,7 @@ class CodyChatMessageHistory(
     fun popUpperMessage(promptInput: JBTextArea) {
         if (upperStack.isNotEmpty()) {
             val pop = upperStack.pop()
-            lowerStack.push(currentValue)
+            lowerStack.push(promptInput.text)
             promptInput.text = pop
             currentValue = pop
         }
@@ -22,7 +22,7 @@ class CodyChatMessageHistory(
     fun popLowerMessage(promptInput: JBTextArea) {
         if (lowerStack.isNotEmpty()) {
             val pop = lowerStack.pop()
-            upperStack.push(currentValue)
+            upperStack.push(promptInput.text)
             promptInput.text = pop
             currentValue = pop
         }
