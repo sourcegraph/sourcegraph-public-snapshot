@@ -31,6 +31,19 @@ using the `jetbrains-ide` & `team/integrations` labels.
 | Reformat Java and Kotlin sources                             | `./gradlew spotlessApply`                                                |
 | Debug agent JSON-RPC communication                           | `tail -f build/sourcegraph/cody-agent-trace.json`                        |
 
+## Using Alpha channel releases
+
+We occasionally publish plugins to the "Alpha" channel instead of the default
+"Stable" channel. The alpha channel is primarily intended to publish
+pre-releases for internal (within Sourcegraph) testing.
+
+- Open Settings
+- Open "Plugins"
+- Click on cogwheel in the top bar, select "Manage plugin repositories"
+- Add the URL https://plugins.jetbrains.com/plugins/list?channel=alpha&pluginId=9682
+
+Remove the URL from the plugin repository list to go back to the stable channel.
+
 ### Wiring unstable-codegen via SOCKS proxy
 
 **INTERNAL ONLY** This section is only relevant for Sourcegraph engineers.
