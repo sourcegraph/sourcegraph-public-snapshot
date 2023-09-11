@@ -14,7 +14,6 @@ package search
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math"
 	"net"
 	"net/http"
@@ -143,14 +142,10 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	defer metricRunning.Dec()
 
 	var tr *trace.Trace
-	tr, ctx = trace.New(ctx, "search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
-	defer tr.Finish()
-
-	tr.LazyPrintf("%s", p.Pattern)
-	tr.SetAttributes(
-		attribute.String("repo", string(p.Repo)),
+	tr, ctx = trace.New(ctx, "search",
+		p.Repo.Attr(),
+		p.Commit.Attr(),
 		attribute.String("url", p.URL),
-		attribute.String("commit", string(p.Commit)),
 		attribute.String("pattern", p.Pattern),
 		attribute.Bool("isRegExp", p.IsRegExp),
 		attribute.StringSlice("languages", p.Languages),
@@ -160,8 +155,8 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		attribute.Int("limit", p.Limit),
 		attribute.Bool("patternMatchesContent", p.PatternMatchesContent),
 		attribute.Bool("patternMatchesPath", p.PatternMatchesPath),
-		attribute.String("select", p.Select),
-	)
+		attribute.String("select", p.Select))
+	defer tr.Finish()
 	defer func(start time.Time) {
 		code := "200"
 		// We often have canceled and timed out requests. We do not want to
@@ -179,10 +174,12 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 				code = "500"
 			}
 		}
-		tr.LazyPrintf("code=%s matches=%d limitHit=%v", code, sender.SentCount(), sender.LimitHit())
 		metricRequestTotal.WithLabelValues(code).Inc()
-		tr.AddEvent("matches", attribute.Int("matches.len", sender.SentCount()))
-		tr.SetAttributes(attribute.Bool("limitHit", sender.LimitHit()))
+		tr.AddEvent("done",
+			attribute.String("code", code),
+			attribute.Int("matches.len", sender.SentCount()),
+			attribute.Bool("limitHit", sender.LimitHit()),
+		)
 		s.Log.Debug("search request",
 			log.String("repo", string(p.Repo)),
 			log.String("commit", string(p.Commit)),

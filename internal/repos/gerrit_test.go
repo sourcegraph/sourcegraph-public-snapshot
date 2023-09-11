@@ -21,12 +21,12 @@ func TestGerritSource_ListRepos(t *testing.T) {
 			Username: os.Getenv("GERRIT_USERNAME"),
 			Password: os.Getenv("GERRIT_PASSWORD"),
 		}
-		cf, save := newClientFactory(t, cfName)
+		cf, save := NewClientFactory(t, cfName)
 		defer save(t)
 
 		svc := &types.ExternalService{
 			Kind:   extsvc.KindGerrit,
-			Config: extsvc.NewUnencryptedConfig(marshalJSON(t, conf)),
+			Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, conf)),
 		}
 
 		ctx := context.Background()
@@ -35,10 +35,10 @@ func TestGerritSource_ListRepos(t *testing.T) {
 
 		src.perPage = 25
 
-		repos, err := listAll(ctx, src)
+		repos, err := ListAll(ctx, src)
 		require.NoError(t, err)
 
-		testutil.AssertGolden(t, "testdata/sources/GERRIT/"+t.Name(), update(t.Name()), repos)
+		testutil.AssertGolden(t, "testdata/sources/GERRIT/"+t.Name(), Update(t.Name()), repos)
 	})
 
 	t.Run("with filtering", func(t *testing.T) {
@@ -50,12 +50,12 @@ func TestGerritSource_ListRepos(t *testing.T) {
 			Username: os.Getenv("GERRIT_USERNAME"),
 			Password: os.Getenv("GERRIT_PASSWORD"),
 		}
-		cf, save := newClientFactory(t, cfName)
+		cf, save := NewClientFactory(t, cfName)
 		defer save(t)
 
 		svc := &types.ExternalService{
 			Kind:   extsvc.KindGerrit,
-			Config: extsvc.NewUnencryptedConfig(marshalJSON(t, conf)),
+			Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, conf)),
 		}
 
 		ctx := context.Background()
@@ -64,7 +64,7 @@ func TestGerritSource_ListRepos(t *testing.T) {
 
 		src.perPage = 25
 
-		repos, err := listAll(ctx, src)
+		repos, err := ListAll(ctx, src)
 		require.NoError(t, err)
 
 		assert.Len(t, repos, 1)

@@ -241,6 +241,7 @@ type PullRequest struct {
 	HeadRefName    string
 	BaseRefName    string
 	Number         int64
+	ReviewDecision string
 	Author         Actor
 	BaseRepository PullRequestRepo
 	HeadRepository PullRequestRepo
@@ -882,7 +883,6 @@ func (c *V4Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
 	if err != nil {
 		return err
 	}
-
 	version := c.determineGitHubVersion(ctx)
 
 	prFragment, err := pullRequestFragments(version)
@@ -1464,6 +1464,7 @@ fragment pr on PullRequest {
   baseRefOid
   headRefName
   baseRefName
+  reviewDecision
   %s
   author {
     ...actor
@@ -1594,7 +1595,7 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 
 	var resp *http.Response
 
-	tr, ctx := trace.New(ctx, "GitHub", "",
+	tr, ctx := trace.New(ctx, "GitHub",
 		attribute.Stringer("url", req.URL))
 	defer func() {
 		if resp != nil {

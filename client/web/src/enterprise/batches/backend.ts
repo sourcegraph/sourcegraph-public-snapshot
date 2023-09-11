@@ -209,7 +209,7 @@ export const generateFileDownloadLink = async (fileUrl: string): Promise<string>
 export const BATCH_CHANGES_SITE_CONFIGURATION = gql`
     query BatchChangesSiteConfiguration {
         site {
-            configuration {
+            configuration(returnSafeConfigsOnly: true) {
                 effectiveContents
             }
         }

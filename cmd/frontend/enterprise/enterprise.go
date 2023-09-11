@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 )
 
 // Services is a bag of HTTP handlers and factory functions that are registered by the
@@ -56,7 +55,6 @@ type Services struct {
 	NewExecutorProxyHandler   NewExecutorProxyHandler
 	NewGitHubAppSetupHandler  NewGitHubAppSetupHandler
 	NewComputeStreamHandler   NewComputeStreamHandler
-	EnterpriseSearchJobs      jobutil.EnterpriseJobs
 	graphqlbackend.OptionalResolver
 }
 
@@ -118,7 +116,6 @@ func DefaultServices() Services {
 		NewDotcomLicenseCheckHandler:    func() http.Handler { return makeNotFoundHandler("dotcom license check handler") },
 		NewChatCompletionsStreamHandler: func() http.Handler { return makeNotFoundHandler("chat completions streaming endpoint") },
 		NewCodeCompletionsHandler:       func() http.Handler { return makeNotFoundHandler("code completions streaming endpoint") },
-		EnterpriseSearchJobs:            jobutil.NewUnimplementedEnterpriseJobs(),
 	}
 }
 

@@ -3,7 +3,7 @@
 
 package:
   name: jaeger
-  version: 1.42.0
+  version: 1.45.0 # Keep in sync with version in sg.config.yaml
   epoch: 1
   description: "Distributed Tracing Platform"
   target-architecture:
@@ -29,7 +29,7 @@ pipeline:
   - uses: fetch
     with:
       uri: https://github.com/jaegertracing/jaeger/releases/download/v${{package.version}}/jaeger-${{package.version}}-linux-amd64.tar.gz
-      expected-sha256: fa34c3065a9a244aca60c4c52cc34e327882d149e90a4327fe92074b4bfc6584
+      expected-sha256: c139b7ec4b9e5b7ace2e3966e6187e1cb3292325192685793ab038c2c9c5d2e1
       extract: true
       strip-components: 0
 

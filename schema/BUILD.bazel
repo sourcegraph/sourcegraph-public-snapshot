@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
@@ -93,4 +94,16 @@ js_library(
 npm_package(
     name = "schema_pkg",
     srcs = ["package.json"],
+)
+
+go_test(
+    name = "schema_test",
+    srcs = ["validation_test.go"],
+    embed = [":schema"],
+    deps = [
+        "//internal/jsonc",
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_xeipuuv_gojsonschema//:gojsonschema",
+    ],
 )

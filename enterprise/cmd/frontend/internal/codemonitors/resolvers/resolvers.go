@@ -11,28 +11,25 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/codemonitors"
+	"github.com/sourcegraph/sourcegraph/internal/codemonitors/background"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // NewResolver returns a new Resolver that uses the given database
-func NewResolver(logger log.Logger, db edb.EnterpriseDB, enterpriseJobs jobutil.EnterpriseJobs) graphqlbackend.CodeMonitorsResolver {
-	return &Resolver{logger: logger, db: db, enterpriseJobs: enterpriseJobs}
+func NewResolver(logger log.Logger, db database.DB) graphqlbackend.CodeMonitorsResolver {
+	return &Resolver{logger: logger, db: db}
 }
 
 type Resolver struct {
-	logger         log.Logger
-	db             edb.EnterpriseDB
-	enterpriseJobs jobutil.EnterpriseJobs
+	logger log.Logger
+	db     database.DB
 }
 
 func (r *Resolver) Now() time.Time {
@@ -70,7 +67,7 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 		return nil, err
 	}
 
-	ms, err := r.db.CodeMonitors().ListMonitors(ctx, edb.ListMonitorsOpts{
+	ms, err := r.db.CodeMonitors().ListMonitors(ctx, database.ListMonitorsOpts{
 		UserID: &userID,
 		First:  pointers.Ptr(int(newArgs.First)),
 		After:  intPtrToInt64Ptr(after),
@@ -126,7 +123,7 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	}
 
 	// Start transaction.
-	var newMonitor *edb.Monitor
+	var newMonitor *database.Monitor
 	err = r.withTransact(ctx, func(tx *Resolver) error {
 		userID, orgID, err := graphqlbackend.UnmarshalNamespaceToIDs(args.Monitor.Namespace)
 		if err != nil {
@@ -134,7 +131,7 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 		}
 
 		// Create monitor.
-		m, err := tx.db.CodeMonitors().CreateMonitor(ctx, edb.MonitorArgs{
+		m, err := tx.db.CodeMonitors().CreateMonitor(ctx, database.MonitorArgs{
 			Description:     args.Monitor.Description,
 			Enabled:         args.Monitor.Enabled,
 			NamespaceUserID: userID,
@@ -153,7 +150,7 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 		if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
 			// Snapshot the state of the searched repos when the monitor is created so that
 			// we can distinguish new repos.
-			err = codemonitors.Snapshot(ctx, r.logger, tx.db, r.enterpriseJobs, args.Trigger.Query, m.ID)
+			err = codemonitors.Snapshot(ctx, r.logger, tx.db, args.Trigger.Query, m.ID)
 			if err != nil {
 				return err
 			}
@@ -269,7 +266,7 @@ func (r *Resolver) createActions(ctx context.Context, monitorID int64, args []*g
 	for _, a := range args {
 		switch {
 		case a.Email != nil:
-			e, err := r.db.CodeMonitors().CreateEmailAction(ctx, monitorID, &edb.EmailActionArgs{
+			e, err := r.db.CodeMonitors().CreateEmailAction(ctx, monitorID, &database.EmailActionArgs{
 				Enabled:        a.Email.Enabled,
 				IncludeResults: a.Email.IncludeResults,
 				Priority:       a.Email.Priority,
@@ -433,7 +430,7 @@ func sendTestEmail(ctx context.Context, db database.DB, recipient graphql.ID, de
 }
 
 func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int64) ([]graphql.ID, error) {
-	opts := edb.ListActionsOpts{MonitorID: &monitorID}
+	opts := database.ListActionsOpts{MonitorID: &monitorID}
 	emailActions, err := r.db.CodeMonitors().ListEmailActions(ctx, opts)
 	if err != nil {
 		return nil, err
@@ -522,7 +519,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		return nil, err
 	}
 
-	mo, err := r.db.CodeMonitors().UpdateMonitor(ctx, monitorID, edb.MonitorArgs{
+	mo, err := r.db.CodeMonitors().UpdateMonitor(ctx, monitorID, database.MonitorArgs{
 		Description:     args.Monitor.Update.Description,
 		Enabled:         args.Monitor.Update.Enabled,
 		NamespaceUserID: userID,
@@ -548,7 +545,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		if currentTrigger.QueryString != args.Trigger.Update.Query {
 			// Snapshot the state of the searched repos when the monitor is created so that
 			// we can distinguish new repos.
-			err = codemonitors.Snapshot(ctx, r.logger, r.db, r.enterpriseJobs, args.Trigger.Update.Query, monitorID)
+			err = codemonitors.Snapshot(ctx, r.logger, r.db, args.Trigger.Update.Query, monitorID)
 			if err != nil {
 				return nil, err
 			}
@@ -602,7 +599,7 @@ func (r *Resolver) updateEmailAction(ctx context.Context, args graphqlbackend.Ed
 		return err
 	}
 
-	e, err := r.db.CodeMonitors().UpdateEmailAction(ctx, emailID, &edb.EmailActionArgs{
+	e, err := r.db.CodeMonitors().UpdateEmailAction(ctx, emailID, &database.EmailActionArgs{
 		Enabled:        args.Update.Enabled,
 		IncludeResults: args.Update.IncludeResults,
 		Priority:       args.Update.Priority,
@@ -640,7 +637,7 @@ func (r *Resolver) withTransact(ctx context.Context, f func(*Resolver) error) er
 	return r.db.WithTransact(ctx, func(tx database.DB) error {
 		return f(&Resolver{
 			logger: r.logger,
-			db:     edb.NewEnterpriseDB(tx),
+			db:     tx,
 		})
 	})
 
@@ -757,7 +754,7 @@ func unmarshalAfter(after *string) (*int, error) {
 // Monitor
 type monitor struct {
 	*Resolver
-	*edb.Monitor
+	*database.Monitor
 }
 
 func (m *monitor) ID() graphql.ID {
@@ -798,7 +795,7 @@ func (m *monitor) Actions(ctx context.Context, args *graphqlbackend.ListActionAr
 }
 
 func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, triggerEventID *int32, monitorID int64, args *graphqlbackend.ListActionArgs) (graphqlbackend.MonitorActionConnectionResolver, error) {
-	opts := edb.ListActionsOpts{MonitorID: &monitorID}
+	opts := database.ListActionsOpts{MonitorID: &monitorID}
 
 	es, err := r.db.CodeMonitors().ListEmailActions(ctx, opts)
 	if err != nil {
@@ -873,7 +870,7 @@ func (t *monitorTrigger) ToMonitorQuery() (graphqlbackend.MonitorQueryResolver, 
 // Query
 type monitorQuery struct {
 	*Resolver
-	*edb.QueryTrigger
+	*database.QueryTrigger
 }
 
 func (q *monitorQuery) ID() graphql.ID {
@@ -889,7 +886,7 @@ func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEven
 	if err != nil {
 		return nil, err
 	}
-	es, err := q.db.CodeMonitors().ListQueryTriggerJobs(ctx, edb.ListTriggerJobsOpts{
+	es, err := q.db.CodeMonitors().ListQueryTriggerJobs(ctx, database.ListTriggerJobsOpts{
 		QueryID: &q.QueryTrigger.ID,
 		First:   pointers.Ptr(int(args.First)),
 		After:   intPtrToInt64Ptr(after),
@@ -937,7 +934,7 @@ func (a *monitorTriggerEventConnection) PageInfo() *graphqlutil.PageInfo {
 // MonitorTriggerEvent
 type monitorTriggerEvent struct {
 	*Resolver
-	*edb.TriggerJob
+	*database.TriggerJob
 	monitorID int64
 }
 
@@ -1049,7 +1046,7 @@ func (a *action) ToMonitorSlackWebhook() (graphqlbackend.MonitorSlackWebhookReso
 // Email
 type monitorEmail struct {
 	*Resolver
-	*edb.EmailAction
+	*database.EmailAction
 
 	// If triggerEventID == nil, all events of this action will be returned.
 	// Otherwise, only those events of this action which are related to the specified
@@ -1062,7 +1059,7 @@ func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.List
 	if err != nil {
 		return nil, err
 	}
-	ms, err := m.db.CodeMonitors().ListRecipients(ctx, edb.ListRecipientsOpts{
+	ms, err := m.db.CodeMonitors().ListRecipients(ctx, database.ListRecipientsOpts{
 		EmailID: &m.EmailAction.ID,
 		First:   pointers.Ptr(int(args.First)),
 		After:   intPtrToInt64Ptr(after),
@@ -1125,7 +1122,7 @@ func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEven
 		return nil, err
 	}
 
-	ajs, err := m.db.CodeMonitors().ListActionJobs(ctx, edb.ListActionJobsOpts{
+	ajs, err := m.db.CodeMonitors().ListActionJobs(ctx, database.ListActionJobsOpts{
 		EmailID:        pointers.Ptr(int(m.EmailAction.ID)),
 		TriggerEventID: m.triggerEventID,
 		First:          pointers.Ptr(int(args.First)),
@@ -1135,7 +1132,7 @@ func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEven
 		return nil, err
 	}
 
-	totalCount, err := m.db.CodeMonitors().CountActionJobs(ctx, edb.ListActionJobsOpts{
+	totalCount, err := m.db.CodeMonitors().CountActionJobs(ctx, database.ListActionJobsOpts{
 		EmailID:        pointers.Ptr(int(m.EmailAction.ID)),
 		TriggerEventID: m.triggerEventID,
 	})
@@ -1151,7 +1148,7 @@ func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEven
 
 type monitorWebhook struct {
 	*Resolver
-	*edb.WebhookAction
+	*database.WebhookAction
 
 	// If triggerEventID == nil, all events of this action will be returned.
 	// Otherwise, only those events of this action which are related to the specified
@@ -1181,7 +1178,7 @@ func (m *monitorWebhook) Events(ctx context.Context, args *graphqlbackend.ListEv
 		return nil, err
 	}
 
-	ajs, err := m.db.CodeMonitors().ListActionJobs(ctx, edb.ListActionJobsOpts{
+	ajs, err := m.db.CodeMonitors().ListActionJobs(ctx, database.ListActionJobsOpts{
 		WebhookID:      pointers.Ptr(int(m.WebhookAction.ID)),
 		TriggerEventID: m.triggerEventID,
 		First:          pointers.Ptr(int(args.First)),
@@ -1191,7 +1188,7 @@ func (m *monitorWebhook) Events(ctx context.Context, args *graphqlbackend.ListEv
 		return nil, err
 	}
 
-	totalCount, err := m.db.CodeMonitors().CountActionJobs(ctx, edb.ListActionJobsOpts{
+	totalCount, err := m.db.CodeMonitors().CountActionJobs(ctx, database.ListActionJobsOpts{
 		WebhookID:      pointers.Ptr(int(m.WebhookAction.ID)),
 		TriggerEventID: m.triggerEventID,
 	})
@@ -1207,7 +1204,7 @@ func (m *monitorWebhook) Events(ctx context.Context, args *graphqlbackend.ListEv
 
 type monitorSlackWebhook struct {
 	*Resolver
-	*edb.SlackWebhookAction
+	*database.SlackWebhookAction
 
 	// If triggerEventID == nil, all events of this action will be returned.
 	// Otherwise, only those events of this action which are related to the specified
@@ -1237,7 +1234,7 @@ func (m *monitorSlackWebhook) Events(ctx context.Context, args *graphqlbackend.L
 		return nil, err
 	}
 
-	ajs, err := m.db.CodeMonitors().ListActionJobs(ctx, edb.ListActionJobsOpts{
+	ajs, err := m.db.CodeMonitors().ListActionJobs(ctx, database.ListActionJobsOpts{
 		SlackWebhookID: pointers.Ptr(int(m.SlackWebhookAction.ID)),
 		TriggerEventID: m.triggerEventID,
 		First:          pointers.Ptr(int(args.First)),
@@ -1247,7 +1244,7 @@ func (m *monitorSlackWebhook) Events(ctx context.Context, args *graphqlbackend.L
 		return nil, err
 	}
 
-	totalCount, err := m.db.CodeMonitors().CountActionJobs(ctx, edb.ListActionJobsOpts{
+	totalCount, err := m.db.CodeMonitors().CountActionJobs(ctx, database.ListActionJobsOpts{
 		SlackWebhookID: pointers.Ptr(int(m.SlackWebhookAction.ID)),
 		TriggerEventID: m.triggerEventID,
 	})
@@ -1315,7 +1312,7 @@ func (a *monitorActionEventConnection) PageInfo() *graphqlutil.PageInfo {
 // MonitorEvent
 type monitorActionEvent struct {
 	*Resolver
-	*edb.ActionJob
+	*database.ActionJob
 }
 
 func (m *monitorActionEvent) ID() graphql.ID {

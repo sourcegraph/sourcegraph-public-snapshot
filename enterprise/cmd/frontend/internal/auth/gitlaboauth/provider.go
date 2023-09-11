@@ -51,6 +51,12 @@ func parseProvider(logger log.Logger, db database.DB, callbackURL string, p *sch
 		ServiceID:    codeHost.ServiceID,
 		ServiceType:  codeHost.ServiceType,
 		Login: func(oauth2Cfg oauth2.Config) http.Handler {
+			// If p.SsoURL is set, we want to use our own SSOLoginHandler
+			// that takes care of GitLab SSO sign-in redirects.
+			if p.SsoURL != "" {
+				return SSOLoginHandler(&oauth2Cfg, nil, p.SsoURL)
+			}
+			// Otherwise use the normal LoginHandler
 			return LoginHandler(&oauth2Cfg, nil)
 		},
 		Callback: func(oauth2Cfg oauth2.Config) http.Handler {

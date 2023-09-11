@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	gha "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 )
 
 // DB is an interface that embeds dbutil.DB, adding methods to
@@ -24,11 +26,14 @@ type DB interface {
 	AccessTokens() AccessTokenStore
 	Authz() AuthzStore
 	BitbucketProjectPermissions() BitbucketProjectPermissionsStore
+	CodeMonitors() CodeMonitorStore
+	Codeowners() CodeownersStore
 	Conf() ConfStore
 	EventLogs() EventLogStore
 	SecurityEventLogs() SecurityEventLogsStore
 	ExternalServices() ExternalServiceStore
 	FeatureFlags() FeatureFlagStore
+	GitHubApps() gha.GitHubAppsStore
 	GitserverRepos() GitserverRepoStore
 	GitserverLocalClone() GitserverLocalCloneStore
 	GlobalState() GlobalStateStore
@@ -42,6 +47,7 @@ type DB interface {
 	OutboundWebhookLogs(encryption.Key) OutboundWebhookLogStore
 	OwnershipStats() OwnershipStatsStore
 	RecentContributionSignals() RecentContributionSignalStore
+	Perms() PermsStore
 	Permissions() PermissionStore
 	PermissionSyncJobs() PermissionSyncJobStore
 	Phabricator() PhabricatorStore
@@ -55,6 +61,7 @@ type DB interface {
 	SavedSearches() SavedSearchStore
 	SearchContexts() SearchContextsStore
 	Settings() SettingsStore
+	SubRepoPerms() SubRepoPermsStore
 	TemporarySettings() TemporarySettingsStore
 	UserCredentials(encryption.Key) UserCredentialsStore
 	UserEmails() UserEmailsStore
@@ -141,6 +148,14 @@ func (d *db) Authz() AuthzStore {
 	return AuthzWith(d.Store)
 }
 
+func (d *db) CodeMonitors() CodeMonitorStore {
+	return CodeMonitorsWith(d.Store)
+}
+
+func (d *db) Codeowners() CodeownersStore {
+	return CodeownersWith(basestore.NewWithHandle(d.Handle()))
+}
+
 func (d *db) Conf() ConfStore {
 	return &confStore{
 		Store:  basestore.NewWithHandle(d.Handle()),
@@ -162,6 +177,10 @@ func (d *db) ExternalServices() ExternalServiceStore {
 
 func (d *db) FeatureFlags() FeatureFlagStore {
 	return FeatureFlagsWith(d.Store)
+}
+
+func (d *db) GitHubApps() gha.GitHubAppsStore {
+	return gha.GitHubAppsWith(d.Store)
 }
 
 func (d *db) GitserverRepos() GitserverRepoStore {
@@ -220,6 +239,10 @@ func (d *db) Permissions() PermissionStore {
 	return PermissionsWith(d.Store)
 }
 
+func (d *db) Perms() PermsStore {
+	return PermsWith(d.logger, d.Store, time.Now)
+}
+
 func (d *db) PermissionSyncJobs() PermissionSyncJobStore {
 	return PermissionSyncJobsWith(d.logger, d.Store)
 }
@@ -266,6 +289,10 @@ func (d *db) SearchContexts() SearchContextsStore {
 
 func (d *db) Settings() SettingsStore {
 	return SettingsWith(d.Store)
+}
+
+func (d *db) SubRepoPerms() SubRepoPermsStore {
+	return SubRepoPermsWith(basestore.NewWithHandle(d.Handle()))
 }
 
 func (d *db) TemporarySettings() TemporarySettingsStore {

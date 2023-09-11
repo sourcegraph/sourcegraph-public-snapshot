@@ -53,6 +53,16 @@ query Repositories($names: [String!]!, $first: Int!) {
 	}
 }`
 
+export const REPOSITORY_NAMES_QUERY = `
+query Repositories($first: Int!) {
+	repositories(first: $first) {
+                nodes {
+		        id
+                        name
+                }
+	}
+}`
+
 export const REPOSITORY_EMBEDDING_EXISTS_QUERY = `
 query Repository($name: String!) {
 	repository(name: $name) {

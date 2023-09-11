@@ -34,7 +34,7 @@ var MockGetRegisteredEventTypes func() []EventType
 // be invoked before init().
 //
 // For an example of how to register events, see
-// enterprise/internal/batches/webhooks/event_types.go.
+// internal/batches/webhooks/event_types.go.
 func RegisterEventType(eventType EventType) {
 	registeredEventTypes.Lock()
 	defer registeredEventTypes.Unlock()

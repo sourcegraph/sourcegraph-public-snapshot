@@ -66,6 +66,7 @@ const JOB_REASON_TO_READABLE_REASON: Record<PermissionsSyncJobReason, string> = 
     REASON_USER_NO_PERMS: 'User had no permissions',
     REASON_USER_OUTDATED_PERMS: 'Regular refresh of user permissions',
     REASON_USER_REMOVED_FROM_ORG: 'User removed from organization',
+    REASON_USER_ADDED: 'New user added',
     REASON_EXTERNAL_ACCOUNT_ADDED: 'Third-party login service added for the user',
     REASON_EXTERNAL_ACCOUNT_DELETED: 'Third-party login service removed for the user',
 }

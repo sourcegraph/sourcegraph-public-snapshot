@@ -10,7 +10,7 @@ how to define them.
 The final result is the definition of a @sourcegraph_back_compat target, whose test targets are exactly
 the same as back then, but with instead a new schema.
 
-Example: `bazel test @sourcegraph_back_compat//enterprise/internal/batches/...`.
+Example: `bazel test @sourcegraph_back_compat//internal/batches/...`.
 
 See https://sourcegraph.com/search?q=context:global+dev/backcompat/patches/back_compat_migrations.patch+repo:github.com/sourcegraph/sourcegraph+lang:Go&patternType=standard&sm=0&groupBy=repo
 for the command generating the mandatory patch file in CI for these tests to run.
@@ -21,7 +21,6 @@ eventuality of someone running those locally).
 
 load("test_release_version.bzl", "MINIMUM_UPGRADEABLE_VERSION", "MINIMUM_UPGRADEABLE_VERSION_REF")
 load("flakes.bzl", "FLAKES")
-
 load("@bazel_gazelle//:deps.bzl", "go_repository")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
@@ -32,26 +31,44 @@ PATCH_GO_TEST = """_sed_binary="sed"
 if [ "$(uname)" == "Darwin" ]; then
     _sed_binary="gsed"
 fi
-$_sed_binary -i "s/func {}/func _{}/g" {}/*.go
+
+if [ -a "{}" ]; then
+    $_sed_binary -i "s/func {}/func _{}/g" {}/*.go
+fi
 """
 
 # Assemble go test patches, based on the currently defined version.
 # See //dev/backcompat:test_release_version.bzl for the version definition.
 PATCH_GO_TEST_CMDS = [
-    PATCH_GO_TEST.format(test["prefix"], test["prefix"], test["path"], test["prefix"], test["reason"])
+    PATCH_GO_TEST.format(test["path"], test["prefix"], test["prefix"], test["path"])
     for test in FLAKES[MINIMUM_UPGRADEABLE_VERSION]
 ]
 
 # Join all individual go test patches into a single shell snippet.
 PATCH_ALL_GO_TESTS_CMD = "\n".join(PATCH_GO_TEST_CMDS)
 
-# Replaces all occurences of @com_github_sourcegraph_(scip|conc) by @back_compat_com_github_sourcegraph_(scip|conc).
+# Replaces all occurences of @com_github_sourcegraph_(scip|conc) and zoekt by @back_compat_com_github_sourcegraph_(scip|conc).
+# We need to do this, because the backcompat share the same deps as the current HEAD, so we need to handle deviations manually here.
+# It's annoying, but that's how we get cached back compat tests.
 PATCH_BUILD_FIXES_CMD = """_sed_binary="sed"
 if [ "$(uname)" == "Darwin" ]; then
     _sed_binary="gsed"
 fi
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_conc|@back_compat_com_github_sourcegraph_conc|g' {} +
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_scip|@back_compat_com_github_sourcegraph_scip|g' {} +
+find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_zoekt|@back_compat_com_github_sourcegraph_zoekt|g' {} +
+find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_throttled_throttled_v2|@back_compat_com_github_throttled_throttled_v2|g' {} +
+"""
+
+# https://github.com/sourcegraph/sourcegraph/pull/54000 changes dependencies to reflect otel package changes,
+# which break old buildfiles.
+PATCH_OTEL_CMD = """_sed_binary="sed"
+if [ "$(uname)" == "Darwin" ]; then
+    _sed_binary="gsed"
+fi
+
+$_sed_binary -i 's|@io_opentelemetry_go_collector//exporter|@io_opentelemetry_go_collector_exporter//:exporter|' cmd/frontend/internal/app/otlpadapter/BUILD.bazel
+$_sed_binary -i 's|@io_opentelemetry_go_collector//receiver|@io_opentelemetry_go_collector_receiver//:receiver|' cmd/frontend/internal/app/otlpadapter/BUILD.bazel
 """
 
 def back_compat_defs():
@@ -86,8 +103,8 @@ def back_compat_defs():
         ],
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/scip",
-        sum = "h1:fWPxLkDObzzKTGe9vb6wpzK0FYkwcfSxmxUBvAOc8aw=", # Need to be manually updated when bumping the back compat release target.
-        version = "v0.2.4-0.20221213205653-aa0e511dcfef", # Need to be manually updated when bumping the back compat release target.
+        sum = "h1:fWPxLkDObzzKTGe9vb6wpzK0FYkwcfSxmxUBvAOc8aw=",  # Need to be manually updated when bumping the back compat release target.
+        version = "v0.2.4-0.20221213205653-aa0e511dcfef",  # Need to be manually updated when bumping the back compat release target.
     )
 
     # Same logic for this repository.
@@ -97,11 +114,27 @@ def back_compat_defs():
             "gazelle:resolve go github.com/sourcegraph/sourcegraph/lib/errors @sourcegraph_back_compat//lib/errors",
         ],
         build_file_proto_mode = "disable_global",
-        importpath = "github.com/sourcegraph/conc",
-        sum = "h1:96VpOCAtXDCQ8Oycz0ftHqdPyMi8w12ltN4L2noYg7s=", # Need to be manually updated when bumping the back compat release target.
-        version = "v0.2.0", # Need to be manually updated when bumping the back compat release target.
+        importpath =
+            "github.com/sourcegraph/conc",
+        sum = "h1:96VpOCAtXDCQ8Oycz0ftHqdPyMi8w12ltN4L2noYg7s=",  # Need to be manually updated when bumping the back compat release target.
+        version = "v0.2.0",  # Need to be manually updated when bumping the back compat release target.
     )
 
+    go_repository(
+        name = "back_compat_com_github_sourcegraph_zoekt",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/sourcegraph/zoekt",
+        sum = "h1:zFLcZUQ74dCV/oIiQT3+db8kFPstAnvFDm7pd+tjZ+8=",
+        version = "v0.0.0-20230620185637-63241cb1b17a",
+    )
+
+    go_repository(
+        name = "back_compat_com_github_throttled_throttled_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/throttled/throttled/v2",
+        sum = "h1:IezKE1uHlYC/0Al05oZV6Ar+uN/znw3cy9J8banxhEY=",
+        version = "v2.12.0",
+    )
 
     # Now that we have declared a replacement for the two problematic go packages that
     # @sourcegraph_back_compat depends on, we can define the repository itself. Because it
@@ -111,7 +144,12 @@ def back_compat_defs():
     git_repository(
         name = "sourcegraph_back_compat",
         remote = "https://github.com/sourcegraph/sourcegraph.git",
-        patches = ["//dev/backcompat/patches:back_compat_migrations.patch"],
+        patches = [
+            "//dev/backcompat/patches:back_compat_migrations.patch",
+            "//dev/backcompat/patches:back_compat_internal_instrumentation.patch",
+            "//dev/backcompat/patches:back_compat_otlp_adapter.patch",
+            "//dev/backcompat/patches:back_compat_throttled.patch", # See https://github.com/sourcegraph/sourcegraph/commit/9195b1fe8aaa379111d1be60813a14cdc8c58e5d
+        ],
         patch_args = ["-p1"],
         commit = MINIMUM_UPGRADEABLE_VERSION_REF,
         patch_cmds = [
@@ -126,6 +164,8 @@ def back_compat_defs():
             # "rm -Rf client",
             PATCH_ALL_GO_TESTS_CMD,
             PATCH_BUILD_FIXES_CMD,
+            PATCH_OTEL_CMD,
+
             # Seems to be affecting the root workspace somehow.
             # TODO(JH) Look into bzlmod.
             "rm .bazelversion",

@@ -11,7 +11,7 @@ go_library(
         "//enterprise/cmd/frontend/internal/guardrails/attribution",
         "//enterprise/cmd/frontend/internal/guardrails/dotcom",
         "//enterprise/cmd/frontend/internal/guardrails/resolvers",
-        "//enterprise/internal/codeintel",
+        "//internal/codeintel",
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/httpcli",

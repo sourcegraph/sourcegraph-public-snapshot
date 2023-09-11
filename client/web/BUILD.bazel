@@ -224,6 +224,7 @@ ts_project(
         "src/cody/components/HistoryList/HistoryList.tsx",
         "src/cody/components/HistoryList/index.tsx",
         "src/cody/components/RepoContainerEditor.ts",
+        "src/cody/components/ScopeSelector/Callout.tsx",
         "src/cody/components/ScopeSelector/RepositoriesSelectorPopover.tsx",
         "src/cody/components/ScopeSelector/ScopeSelector.tsx",
         "src/cody/components/ScopeSelector/backend.ts",
@@ -357,6 +358,7 @@ ts_project(
         "src/components/fuzzyFinder/FuzzyTabs.tsx",
         "src/components/fuzzyFinder/HighlightedLink.tsx",
         "src/components/fuzzyFinder/LazyFuzzyFinder.tsx",
+        "src/components/gitHubApps/AppLogo.tsx",
         "src/components/gitHubApps/AuthProviderMessage.tsx",
         "src/components/gitHubApps/CreateGitHubAppPage.tsx",
         "src/components/gitHubApps/GitHubAppCard.tsx",
@@ -1852,6 +1854,7 @@ ts_project(
         "src/components/diff/DiffStat.test.tsx",
         "src/components/externalServices/ExternalServiceForm.test.tsx",
         "src/components/externalServices/externalServices.test.tsx",
+        "src/components/fuzzyFinder/FuzzyFiles.test.ts",
         "src/components/fuzzyFinder/FuzzyFinder.mocks.tsx",
         "src/components/fuzzyFinder/FuzzyFinder.test.tsx",
         "src/components/legacyLayoutRouteContext.mock.ts",
@@ -1945,6 +1948,7 @@ ts_project(
         "src/tour/components/Tour/useTour.test.tsx",
         "src/tracking/util.test.ts",
         "src/user/index.test.ts",
+        "src/user/settings/auth/ExternalAccount.test.tsx",
         "src/user/settings/profile/UserSettingsProfilePage.test.tsx",
         "src/user/settings/research/ProductResearch.test.tsx",
         "src/util/checkRequestAccessAllowed.test.ts",
@@ -1985,6 +1989,7 @@ ts_project(
         "//:node_modules/graphql",
         "//:node_modules/history",
         "//:node_modules/lodash",
+        "//:node_modules/mdi-react",
         "//:node_modules/react",
         "//:node_modules/react-dom",
         "//:node_modules/react-router-dom",
@@ -2059,9 +2064,6 @@ BUNDLE_DATA_DEPS = [
 ]
 
 ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
-    # static assets imported in .ts
-    "src/enterprise/productSubscription/ProductCertificate-background.png",
-
     # TODO(bazel): this is already in the main ts_project(srcs). Why also here?
     "src/enterprise/codeintel/configuration/schema.json",
     ":enterprise-yaml",

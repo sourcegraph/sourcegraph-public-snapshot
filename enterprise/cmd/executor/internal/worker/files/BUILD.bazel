@@ -7,7 +7,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files",
     visibility = ["//enterprise/cmd/executor:__subpackages__"],
     deps = [
-        "//enterprise/internal/executor/types",
+        "//internal/executor/types",
         "//lib/errors",
     ],
 )
@@ -20,7 +20,7 @@ go_test(
     ],
     embed = [":files"],
     deps = [
-        "//enterprise/internal/executor/types",
+        "//internal/executor/types",
         "//lib/errors",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

@@ -11,20 +11,20 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
-	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
-	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
+	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -62,7 +62,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 
-	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(edb.NewEnterpriseDB(db).SubRepoPerms())
+	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(db.SubRepoPerms())
 	if err != nil {
 		return errors.Wrap(err, "creating sub-repo client")
 	}
@@ -70,8 +70,8 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	indexGetter, err := NewCachedEmbeddingIndexGetter(
 		repoStore,
 		repoEmbeddingJobsStore,
-		func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
-			return embeddings.DownloadRepoEmbeddingIndex(ctx, uploadStore, string(repoEmbeddingIndexName))
+		func(ctx context.Context, repoID api.RepoID, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
+			return embeddings.DownloadRepoEmbeddingIndex(ctx, uploadStore, repoID, repoName)
 		},
 		config.EmbeddingsCacheSize,
 	)
@@ -176,11 +176,15 @@ func getQueryEmbedding(ctx context.Context, query string) ([]float32, string, er
 		return nil, "", errors.Wrap(err, "getting embeddings client")
 	}
 
-	floatQuery, err := client.GetEmbeddingsWithRetries(ctx, []string{query}, queryEmbeddingRetries)
+	embeddings, err := client.GetQueryEmbedding(ctx, query)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "getting query embedding")
 	}
-	return floatQuery, client.GetModelIdentifier(), nil
+	if len(embeddings.Failed) > 0 {
+		return nil, "", errors.Newf("failed to get embeddings for query %s", query)
+	}
+
+	return embeddings.Embeddings, client.GetModelIdentifier(), nil
 }
 
 func mustInitializeFrontendDB(observationCtx *observation.Context) *sql.DB {
@@ -204,8 +208,8 @@ func setAuthzProviders(ctx context.Context, db database.DB) {
 	// authz also relies on UserMappings being setup.
 	globals.WatchPermissionsUserMapping()
 
-	for range time.NewTicker(eiauthz.RefreshInterval()).C {
-		allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
+	for range time.NewTicker(providers.RefreshInterval()).C {
+		allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	}
 }

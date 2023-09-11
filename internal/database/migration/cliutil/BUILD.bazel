@@ -31,7 +31,6 @@ go_library(
         "//internal/database/migration/runner",
         "//internal/database/migration/schemas",
         "//internal/database/migration/store",
-        "//internal/env",
         "//internal/observation",
         "//internal/oobmigration",
         "//internal/oobmigration/migrations",

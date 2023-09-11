@@ -101,7 +101,7 @@ type ChangeReviewComment struct {
 	Comments      map[string]string `json:"comments,omitempty"`
 }
 
-// Approvals
+// CodeReviewKey
 // Score represents the status of a review on Gerrit. Here are possible values for Vote:
 //
 //	+2 : approved, can be merged
@@ -109,16 +109,14 @@ type ChangeReviewComment struct {
 //	 0 : no score
 //	-1 : needs changes
 //	-2 : rejected
-type Approvals struct {
-	CodeReview string `json:"Code-Review"`
-}
+const CodeReviewKey = "Code-Review"
 
 type Reviewer struct {
-	Approvals Approvals `json:"approvals"`
-	AccountID int       `json:"_account_id"`
-	Name      string    `json:"name"`
-	Email     string    `json:"email"`
-	Username  string    `json:"username,omitempty"`
+	Approvals map[string]string `json:"approvals"`
+	AccountID int               `json:"_account_id"`
+	Name      string            `json:"name"`
+	Email     string            `json:"email"`
+	Username  string            `json:"username,omitempty"`
 }
 
 type NotifyDetails struct {
@@ -158,11 +156,29 @@ type Label struct {
 	DefaultValue string            `json:"default_value"`
 }
 
+type MoveChangePayload struct {
+	DestinationBranch string `json:"destination_branch"`
+}
+
+type SetCommitMessagePayload struct {
+	Message string `json:"message"`
+}
+
 type Pagination struct {
 	PerPage int
 	// Either Skip or Page should be set. If Skip is non-zero, it takes precedence.
 	Page int
 	Skip int
+}
+
+// MultipleChangesError is returned by GetChange in
+// the fringe situation that multiple
+type MultipleChangesError struct {
+	ID string
+}
+
+func (e MultipleChangesError) Error() string {
+	return fmt.Sprintf("Multiple changes found with ID %s not found", e.ID)
 }
 
 type httpError struct {

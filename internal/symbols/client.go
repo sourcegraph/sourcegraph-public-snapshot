@@ -20,9 +20,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
@@ -89,7 +89,7 @@ func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_
 	c.langMappingOnce.Do(func() {
 		var mappings map[string][]string
 
-		if internalgrpc.IsGRPCEnabled(ctx) {
+		if conf.IsGRPCEnabled(ctx) {
 			mappings, err = c.listLanguageMappingsGRPC(ctx, repo)
 		} else {
 			mappings, err = c.listLanguageMappingsJSON(ctx, repo)
@@ -172,14 +172,14 @@ func (c *Client) listLanguageMappingsJSON(ctx context.Context, repository api.Re
 
 // Search performs a symbol search on the symbols service.
 func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (symbols result.Symbols, err error) {
-	tr, ctx := trace.New(ctx, "symbols", "Search",
-		attribute.String("repo", string(args.Repo)),
-		attribute.String("commitID", string(args.CommitID)))
+	tr, ctx := trace.New(ctx, "symbols.Search",
+		args.Repo.Attr(),
+		args.CommitID.Attr())
 	defer tr.FinishWithErr(&err)
 
 	var response search.SymbolsResponse
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		response, err = c.searchGRPC(ctx, args)
 	} else {
 		response, err = c.searchJSON(ctx, args)
@@ -272,12 +272,12 @@ func (c *Client) searchJSON(ctx context.Context, args search.SymbolsParameters) 
 }
 
 func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
-	tr, ctx := trace.New(ctx, "symbols", "LocalCodeIntel",
-		attribute.String("repo", string(args.Repo)),
-		attribute.String("commitID", string(args.Commit)))
+	tr, ctx := trace.New(ctx, "symbols.LocalCodeIntel",
+		attribute.String("repo", args.Repo),
+		attribute.String("commitID", args.Commit))
 	defer tr.FinishWithErr(&err)
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		return c.localCodeIntelGRPC(ctx, args)
 	}
 
@@ -296,7 +296,8 @@ func (c *Client) localCodeIntelGRPC(ctx context.Context, path types.RepoCommitPa
 	rcp.FromInternal(&path)
 
 	protoArgs := proto.LocalCodeIntelRequest{RepoCommitPath: &rcp}
-	protoResponse, err := grpcClient.LocalCodeIntel(ctx, &protoArgs)
+
+	client, err := grpcClient.LocalCodeIntel(ctx, &protoArgs)
 	if err != nil {
 		if status.Code(err) == codes.Unimplemented {
 			// This ignores errors from LocalCodeIntel to match the behavior found here:
@@ -308,7 +309,30 @@ func (c *Client) localCodeIntelGRPC(ctx context.Context, path types.RepoCommitPa
 		return nil, translateGRPCError(err)
 	}
 
-	return protoResponse.ToInternal(), nil
+	var out types.LocalCodeIntelPayload
+	for {
+		resp, err := client.Recv()
+		if err != nil {
+			if errors.Is(err, io.EOF) { // end of stream
+				return &out, nil
+			}
+
+			if status.Code(err) == codes.Unimplemented {
+				// This ignores errors from LocalCodeIntel to match the behavior found here:
+				// https://sourcegraph.com/github.com/sourcegraph/sourcegraph@a1631d58604815917096acc3356447c55baebf22/-/blob/cmd/symbols/squirrel/http_handlers.go?L57-57
+				//
+				// This is weird, and maybe not intentional, but things break if we return an error.
+				return nil, nil
+			}
+
+			return nil, translateGRPCError(err)
+		}
+
+		partial := resp.ToInternal()
+		if partial != nil {
+			out.Symbols = append(out.Symbols, partial.Symbols...)
+		}
+	}
 }
 
 func (c *Client) localCodeIntelJSON(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
@@ -337,12 +361,12 @@ func (c *Client) localCodeIntelJSON(ctx context.Context, args types.RepoCommitPa
 }
 
 func (c *Client) SymbolInfo(ctx context.Context, args types.RepoCommitPathPoint) (result *types.SymbolInfo, err error) {
-	tr, ctx := trace.New(ctx, "squirrel", "SymbolInfo",
-		attribute.String("repo", string(args.Repo)),
-		attribute.String("commitID", string(args.Commit)))
+	tr, ctx := trace.New(ctx, "squirrel.SymbolInfo",
+		attribute.String("repo", args.Repo),
+		attribute.String("commitID", args.Commit))
 	defer tr.FinishWithErr(&err)
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		result, err = c.symbolInfoGRPC(ctx, args)
 	} else {
 		result, err = c.symbolInfoJSON(ctx, args)
@@ -442,9 +466,9 @@ func (c *Client) httpPost(
 	repo api.RepoName,
 	payload any,
 ) (resp *http.Response, err error) {
-	tr, ctx := trace.New(ctx, "symbols", "httpPost",
+	tr, ctx := trace.New(ctx, "symbols.httpPost",
 		attribute.String("method", method),
-		attribute.String("repo", string(repo)))
+		repo.Attr())
 	defer tr.FinishWithErr(&err)
 
 	symbolsURL, err := c.url(repo)

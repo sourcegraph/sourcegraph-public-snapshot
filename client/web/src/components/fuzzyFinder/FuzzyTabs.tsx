@@ -217,6 +217,7 @@ export interface FuzzyTabsProps {
     initialQuery?: string
     isVisible: boolean
     userHistory: UserHistory
+    defaultActiveTab?: FuzzyTabKey
 }
 
 export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {
@@ -227,6 +228,7 @@ export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {
         client: apolloClient,
         settingsCascade,
         userHistory,
+        defaultActiveTab,
     } = props
     let {
         repoName = '',
@@ -254,7 +256,7 @@ export function useFuzzyState(props: FuzzyTabsProps): FuzzyState {
     const { fuzzyFinderAll, fuzzyFinderActions, fuzzyFinderRepositories, fuzzyFinderSymbols } =
         useFuzzyFinderFeatureFlags()
 
-    const [activeTab, setActiveTab] = useState<FuzzyTabKey>('all')
+    const [activeTab, setActiveTab] = useState<FuzzyTabKey>(defaultActiveTab || 'all')
 
     // NOTE: the query is cached in session storage to mimic the file pickers in
     // IntelliJ (by default) and VS Code (when "Workbench > Quick Open >

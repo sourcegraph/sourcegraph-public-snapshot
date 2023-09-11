@@ -20,6 +20,7 @@ describe('SignUpPage', () => {
             serviceType: 'builtin',
             authenticationURL: '',
             serviceID: '',
+            clientID: '',
         },
         {
             serviceType: 'github',
@@ -27,6 +28,7 @@ describe('SignUpPage', () => {
             isBuiltin: false,
             authenticationURL: '/.auth/github/login?pc=f00bar',
             serviceID: 'https://github.com',
+            clientID: '1234',
         },
     ]
 

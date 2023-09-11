@@ -14,10 +14,10 @@ import (
 	"github.com/prometheus/common/expfmt"
 	"github.com/sourcegraph/log"
 
-	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
-	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
+	executorstore "github.com/sourcegraph/sourcegraph/internal/executor/store"
+	executortypes "github.com/sourcegraph/sourcegraph/internal/executor/types"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -127,7 +127,7 @@ func (h *handler[T]) dequeue(ctx context.Context, queueName string, metadata exe
 		var err error
 		version2Supported, err = api.CheckSourcegraphVersion(metadata.version, "4.3.0-0", "2022-11-24")
 		if err != nil {
-			return executortypes.Job{}, false, err
+			return executortypes.Job{}, false, errors.Wrapf(err, "failed to check version %q", metadata.version)
 		}
 	}
 

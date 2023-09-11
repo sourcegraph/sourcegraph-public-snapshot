@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -28,6 +29,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -138,6 +140,13 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			kind:    extsvc.KindBitbucketCloud,
 			config:  `{"url": "https://bitbucket.org", "username": "ceo", "appPassword": "abc"}`,
 			wantErr: "<nil>",
+		},
+		{
+			name: "1 error - Bitbucket.org",
+			kind: extsvc.KindBitbucketCloud,
+			// Invalid UUID, using + instead of -
+			config:  `{"url": "https://bitbucket.org", "username": "ceo", "appPassword": "abc", "exclude": [{"uuid":"{fceb73c7+cef6-4abe-956d-e471281126bd}"}]}`,
+			wantErr: `exclude.0.uuid: Does not match pattern '^\{[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}$'`,
 		},
 		{
 			name:    "1 error",
@@ -386,6 +395,8 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
+	now := timeutil.Now()
+
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(false)
 
@@ -411,6 +422,8 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		wantCloudDefault   bool
 		wantHasWebhooks    bool
 		wantTokenExpiresAt bool
+		wantLastSyncAt     time.Time
+		wantNextSyncAt     time.Time
 		wantError          bool
 	}{
 		{
@@ -491,6 +504,29 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			},
 			wantError: true,
 		},
+		{
+			name: "update last_sync_at",
+			update: &ExternalServiceUpdate{
+				DisplayName: strptr("GITHUB (updated) #6"),
+				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+				LastSyncAt:  pointers.Ptr(now),
+			},
+			wantCloudDefault:   true,
+			wantTokenExpiresAt: true,
+			wantLastSyncAt:     now,
+		},
+		{
+			name: "update next_sync_at",
+			update: &ExternalServiceUpdate{
+				DisplayName: strptr("GITHUB (updated) #7"),
+				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+				LastSyncAt:  pointers.Ptr(now),
+				NextSyncAt:  pointers.Ptr(now),
+			},
+			wantCloudDefault:   true,
+			wantTokenExpiresAt: true,
+			wantNextSyncAt:     now,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -543,6 +579,14 @@ func TestExternalServicesStore_Update(t *testing.T) {
 
 			if test.wantCloudDefault != got.CloudDefault {
 				t.Fatalf("Want cloud_default = %v, but got %v", test.wantCloudDefault, got.CloudDefault)
+			}
+
+			if !test.wantLastSyncAt.IsZero() && !test.wantLastSyncAt.Equal(got.LastSyncAt) {
+				t.Fatalf("Want last_sync_at = %v, but got %v", test.wantLastSyncAt, got.LastSyncAt)
+			}
+
+			if !test.wantNextSyncAt.IsZero() && !test.wantNextSyncAt.Equal(got.NextSyncAt) {
+				t.Fatalf("Want last_sync_at = %v, but got %v", test.wantNextSyncAt, got.NextSyncAt)
 			}
 
 			if got.HasWebhooks == nil {
@@ -2387,6 +2431,61 @@ func TestConfigurationHasWebhooks(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestExternalServiceStore_recalculateFields(t *testing.T) {
+	tests := map[string]struct {
+		explicitPermsEnabled bool
+		authorizationSet     bool
+		expectUnrestricted   bool
+	}{
+		"default state": {
+			expectUnrestricted: true,
+		},
+		"explicit perms set": {
+			explicitPermsEnabled: true,
+			expectUnrestricted:   false,
+		},
+		"authorization set": {
+			authorizationSet:   true,
+			expectUnrestricted: false,
+		},
+		"authorization and explicit perms set": {
+			explicitPermsEnabled: true,
+			authorizationSet:     true,
+			expectUnrestricted:   false,
+		},
+	}
+
+	e := &externalServiceStore{logger: logtest.NoOp(t)}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			pmu := globals.PermissionsUserMapping()
+			t.Cleanup(func() {
+				globals.SetPermissionsUserMapping(pmu)
+			})
+
+			es := &types.ExternalService{}
+
+			if tc.explicitPermsEnabled {
+				globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{
+					BindID:  "email",
+					Enabled: true,
+				})
+			}
+			rawConfig := "{}"
+			var err error
+			if tc.authorizationSet {
+				rawConfig, err = jsonc.Edit(rawConfig, struct{}{}, "authorization")
+				require.NoError(t, err)
+			}
+
+			require.NoError(t, e.recalculateFields(es, rawConfig))
+
+			require.Equal(t, es.Unrestricted, tc.expectUnrestricted)
+		})
+	}
 }
 
 func TestExternalServiceStore_ListRepos(t *testing.T) {

@@ -13,6 +13,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// DefaultSchemaFactories is a list of schema factories to be used in
+// non-exceptional cases.
+var DefaultSchemaFactories = []ExpectedSchemaFactory{
+	LocalExpectedSchemaFactory,
+	GitHubExpectedSchemaFactory,
+	GCSExpectedSchemaFactory,
+}
+
 // ExpectedSchemaFactory converts the given filename and version into a schema description, calling on some
 // external persistent source. When invoked, this function should return a self-describing name, which notably
 // should include _where_ the factory looked for easier debugging on failure, the schema description, and any

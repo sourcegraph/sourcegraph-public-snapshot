@@ -12,6 +12,7 @@ go_library(
     deps = [
         "//internal/gitserver/v1:gitserver",
         "//internal/lazyregexp",
+        "//lib/errors",
         "@io_opentelemetry_go_otel//attribute",
     ],
 )
@@ -21,4 +22,5 @@ go_test(
     timeout = "short",
     srcs = ["api_test.go"],
     embed = [":api"],
+    deps = ["@com_github_stretchr_testify//require"],
 )

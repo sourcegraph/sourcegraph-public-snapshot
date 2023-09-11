@@ -38,7 +38,7 @@ interactions:
       20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
       repo on Repository {\n  id\n  name\n  owner {\n    login\n  }\n}\n\nfragment
-      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
+      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  reviewDecision\n  isDraft\n  author
       {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
       {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
       100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
@@ -62,7 +62,7 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"createPullRequest":null},"errors":[{"type":"UNPROCESSABLE","path":["createPullRequest"],"locations":[{"line":315,"column":3}],"message":"Repository
+    body: '{"data":{"createPullRequest":null},"errors":[{"type":"UNPROCESSABLE","path":["createPullRequest"],"locations":[{"line":316,"column":3}],"message":"Repository
       was archived so is read-only"}]}'
     headers:
       Access-Control-Allow-Origin:
@@ -77,7 +77,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 07 Feb 2023 07:47:45 GMT
+      - Fri, 23 Jun 2023 19:25:00 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -93,17 +93,17 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - 1463:5E1F:CE2192:D229D9:63E2021F
+      - E125:4AB7:158BAD0:2BE6A0E:6495F18A
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4969"
+      - "4914"
       X-Ratelimit-Reset:
-      - "1675759612"
+      - "1687551677"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "31"
+      - "86"
       X-Xss-Protection:
       - "0"
     status: 200 OK

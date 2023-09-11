@@ -10,17 +10,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewOpenAIClient(accessToken string) EmbeddingsClient {
+func NewOpenAIClient(httpClient *http.Client, accessToken string) EmbeddingsClient {
 	return &openaiClient{
+		httpClient:  httpClient,
 		accessToken: accessToken,
 	}
 }
 
 type openaiClient struct {
+	httpClient  *http.Client
 	accessToken string
 }
 
@@ -35,55 +36,15 @@ func (c *openaiClient) GenerateEmbeddings(ctx context.Context, input codygateway
 		}
 	}
 
-	openAIModel, ok := openAIModelMappings[input.Model]
+	model, ok := openAIModelMappings[input.Model]
 	if !ok {
 		return nil, 0, response.NewHTTPStatusCodeError(http.StatusBadRequest, errors.Newf("no OpenAI model found for %q", input.Model))
 	}
 
-	request := openaiEmbeddingsRequest{
-		Model: openAIModel.upstreamName,
-		Input: input.Input,
-		// TODO: Maybe set user.
-	}
-
-	bodyBytes, err := json.Marshal(request)
+	response, err := c.requestEmbeddings(ctx, model, input.Input)
 	if err != nil {
 		return nil, 0, err
 	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL, bytes.NewReader(bodyBytes))
-	if err != nil {
-		return nil, 0, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.accessToken)
-
-	resp, err := httpcli.ExternalDoer.Do(req)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 300 || resp.StatusCode < 200 {
-		// If we are being rate limited by OpenAI, we don't want to forward that error and instead
-		// return a 503 to the client. It's not them being limited, it's us and that an operations
-		// error on our side.
-		if resp.StatusCode == http.StatusTooManyRequests {
-			return nil, 0, response.NewHTTPStatusCodeError(http.StatusServiceUnavailable, errors.Newf("we're facing too much load at the moment, please retry"))
-		}
-		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-		// We don't forward the status code here, everything but 429 should turn into a 500 error.
-		return nil, 0, errors.Errorf("embeddings: %s %q: failed with status %d: %s", req.Method, req.URL.String(), resp.StatusCode, string(respBody))
-	}
-
-	var response openaiEmbeddingsResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		// Although we might've incurred cost at this point, we don't want to count
-		// that towards the rate limit of the requester, so return 0 for the consumed
-		// token count.
-		return nil, 0, err
-	}
-
 	// Ensure embedding responses are sorted in the original order.
 	sort.Slice(response.Data, func(i, j int) bool {
 		return response.Data[i].Index < response.Data[j].Index
@@ -100,8 +61,56 @@ func (c *openaiClient) GenerateEmbeddings(ctx context.Context, input codygateway
 	return &codygateway.EmbeddingsResponse{
 		Embeddings:      embeddings,
 		Model:           response.Model,
-		ModelDimensions: openAIModel.dimensions,
+		ModelDimensions: model.dimensions,
 	}, response.Usage.TotalTokens, nil
+}
+
+func (c *openaiClient) requestEmbeddings(ctx context.Context, model openAIModel, input []string) (*openaiEmbeddingsResponse, error) {
+	request := openaiEmbeddingsRequest{
+		Model: model.upstreamName,
+		Input: input,
+		// TODO: Maybe set user.
+	}
+
+	bodyBytes, err := json.Marshal(request)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+c.accessToken)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 300 || resp.StatusCode < 200 {
+		// If we are being rate limited by OpenAI, we don't want to forward that error and instead
+		// return a 503 to the client. It's not them being limited, it's us and that an operations
+		// error on our side.
+		if resp.StatusCode == http.StatusTooManyRequests {
+			return nil, response.NewHTTPStatusCodeError(http.StatusServiceUnavailable, errors.Newf("we're facing too much load at the moment, please retry"))
+		}
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
+		// We don't forward the status code here, everything but 429 should turn into a 500 error.
+		return nil, errors.Errorf("embeddings: %s %q: failed with status %d: %s", req.Method, req.URL.String(), resp.StatusCode, string(respBody))
+	}
+
+	var response openaiEmbeddingsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		// Although we might've incurred cost at this point, we don't want to count
+		// that towards the rate limit of the requester, so return 0 for the consumed
+		// token count.
+		return nil, err
+	}
+
+	return &response, nil
 }
 
 type openaiEmbeddingsRequest struct {

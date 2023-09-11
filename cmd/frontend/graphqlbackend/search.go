@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -25,8 +24,8 @@ type SearchImplementer interface {
 }
 
 // NewBatchSearchImplementer returns a SearchImplementer that provides search results and suggestions.
-func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs, args *SearchArgs) (_ SearchImplementer, err error) {
-	cli := client.New(logger, db, enterpriseJobs)
+func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db database.DB, args *SearchArgs) (_ SearchImplementer, err error) {
+	cli := client.New(logger, db)
 	inputs, err := cli.Plan(
 		ctx,
 		args.Version,
@@ -44,23 +43,21 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 	}
 
 	return &searchResolver{
-		logger:         logger.Scoped("BatchSearchSearchImplementer", "provides search results and suggestions"),
-		client:         cli,
-		db:             db,
-		SearchInputs:   inputs,
-		enterpriseJobs: enterpriseJobs,
+		logger:       logger.Scoped("BatchSearchSearchImplementer", "provides search results and suggestions"),
+		client:       cli,
+		db:           db,
+		SearchInputs: inputs,
 	}, nil
 }
 
 func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
-	return NewBatchSearchImplementer(ctx, r.logger, r.db, r.enterpriseSearchJobs, args)
+	return NewBatchSearchImplementer(ctx, r.logger, r.db, args)
 }
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	logger         log.Logger
-	client         client.SearchClient
-	SearchInputs   *search.Inputs
-	db             database.DB
-	enterpriseJobs jobutil.EnterpriseJobs
+	logger       log.Logger
+	client       client.SearchClient
+	SearchInputs *search.Inputs
+	db           database.DB
 }

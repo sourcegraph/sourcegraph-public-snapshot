@@ -119,7 +119,56 @@ func TestParseConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "Azure Dev Ops config with duplicate config",
+			name: "Azure Dev Ops config with duplicate client ID config",
+			config: newUnifiedConfig(schema.SiteConfiguration{
+				ExternalURL: "https://example.com",
+				AuthProviders: []schema.AuthProviders{
+					{
+						AzureDevOps: &schema.AzureDevOpsAuthProvider{
+							ClientID:     "myclientid",
+							ClientSecret: "myclientsecret",
+							DisplayName:  "Azure Dev Ops",
+							Type:         extsvc.TypeAzureDevOps,
+						},
+					},
+					{
+						AzureDevOps: &schema.AzureDevOpsAuthProvider{
+							ClientID:     "myclientid",
+							ClientSecret: "myclientsecret",
+							DisplayName:  "Azure Dev Ops The Second",
+							Type:         extsvc.TypeAzureDevOps,
+						},
+					},
+				},
+			}),
+			wantProviders: []Provider{
+				{
+					AzureDevOpsAuthProvider: &schema.AzureDevOpsAuthProvider{
+						ClientID:     "myclientid",
+						ClientSecret: "myclientsecret",
+						DisplayName:  "Azure Dev Ops",
+						Type:         extsvc.TypeAzureDevOps,
+						ApiScope:     "vso.code,vso.identity,vso.project",
+					},
+					Provider: newOauthProvider(oauth2.Config{
+						ClientID:     "myclientid",
+						ClientSecret: "myclientsecret",
+						Endpoint: oauth2.Endpoint{
+							AuthURL:   "https://app.vssps.visualstudio.com/oauth2/authorize",
+							TokenURL:  "https://app.vssps.visualstudio.com/oauth2/token",
+							AuthStyle: oauth2.AuthStyleInParams,
+						},
+						Scopes:      []string{"vso.code", "vso.identity", "vso.project"},
+						RedirectURL: "https://example.com/.auth/azuredevops/callback",
+					}),
+				},
+			},
+			wantProblems: []string{
+				"Cannot have more than one auth provider for Azure Dev Ops with Client ID \"myclientid\", only the first one will be used",
+			},
+		},
+		{
+			name: "Azure Dev Ops config with separate client ID config",
 			config: newUnifiedConfig(schema.SiteConfiguration{
 				ExternalURL: "https://example.com",
 				AuthProviders: []schema.AuthProviders{
@@ -162,9 +211,26 @@ func TestParseConfig(t *testing.T) {
 						RedirectURL: "https://example.com/.auth/azuredevops/callback",
 					}),
 				},
-			},
-			wantProblems: []string{
-				"Cannot have more than one auth provider for Azure Dev Ops, only the first one will be used",
+				{
+					AzureDevOpsAuthProvider: &schema.AzureDevOpsAuthProvider{
+						ClientID:     "myclientid-second",
+						ClientSecret: "myclientsecret",
+						DisplayName:  "Azure Dev Ops The Second",
+						Type:         extsvc.TypeAzureDevOps,
+						ApiScope:     "vso.code,vso.identity,vso.project",
+					},
+					Provider: newOauthProvider(oauth2.Config{
+						ClientID:     "myclientid-second",
+						ClientSecret: "myclientsecret",
+						Endpoint: oauth2.Endpoint{
+							AuthURL:   "https://app.vssps.visualstudio.com/oauth2/authorize",
+							TokenURL:  "https://app.vssps.visualstudio.com/oauth2/token",
+							AuthStyle: oauth2.AuthStyleInParams,
+						},
+						Scopes:      []string{"vso.code", "vso.identity", "vso.project"},
+						RedirectURL: "https://example.com/.auth/azuredevops/callback",
+					}),
+				},
 			},
 		},
 	}

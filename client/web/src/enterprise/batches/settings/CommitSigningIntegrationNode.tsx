@@ -6,6 +6,7 @@ import classNames from 'classnames'
 import { AnchorLink, Button, ButtonLink, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
+import { AppLogo } from '../../../components/gitHubApps/AppLogo'
 import { RemoveGitHubAppModal } from '../../../components/gitHubApps/RemoveGitHubAppModal'
 import { BatchChangesCodeHostFields } from '../../../graphql-operations'
 
@@ -77,7 +78,8 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
                 <RemoveGitHubAppModal onCancel={() => setRemoveModalOpen(false)} afterDelete={refetch} app={config} />
             )}
             <div className="d-flex align-items-center">
-                <img className={styles.appLogoLarge} src={config.logo} alt="app logo" aria-hidden={true} />
+                <AppLogo src={config.logo} name={config.name} className={classNames(styles.appLogoLarge, 'mr-2')} />
+
                 <div className={styles.appDetailsColumn}>
                     <Text size="small" className="font-weight-bold mb-0">
                         {config.name}

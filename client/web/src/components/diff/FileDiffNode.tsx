@@ -10,6 +10,7 @@ import { Button, Badge, Link, Icon, Text, createLinkUrl, Tooltip } from '@source
 
 import { FileDiffFields } from '../../graphql-operations'
 import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
+import { isPerforceChangelistMappingEnabled } from '../../repo/utils'
 
 import { DiffStat, DiffStatSquares } from './DiffStat'
 import { FileDiffHunks } from './FileDiffHunks'
@@ -81,7 +82,7 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
     const anchor = `diff-${node.internalID}`
 
     const gitBlobURL =
-        window.context.experimentalFeatures.perforceChangelistMapping &&
+        isPerforceChangelistMappingEnabled() &&
         node.mostRelevantFile.__typename === 'GitBlob' &&
         node.mostRelevantFile.changelistURL
             ? node.mostRelevantFile.changelistURL

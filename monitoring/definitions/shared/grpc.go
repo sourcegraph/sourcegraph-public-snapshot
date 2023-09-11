@@ -13,10 +13,10 @@ type GRPCServerMetricsOptions struct {
 	// Example: "gitserver"
 	HumanServiceName string
 
-	// MetricNamespace is the (optional) namespace that the service uses to prefix its grpc server metrics.
+	// RawGRPCServiceName is the full, dot-separated, code-generated gRPC service name that we're gathering metrics for.
 	//
-	// Example: "gitserver"
-	MetricNamespace string
+	// Example: "gitserver.v1.GitserverService"
+	RawGRPCServiceName string
 
 	// MethodFilterRegex is the PromQL regex that's used to filter the
 	// GRPC server metrics to only those emitted by the method(s) that were interested in.
@@ -37,9 +37,8 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 	metric := func(base string, labelFilters ...string) string {
 		metric := base
 
-		if opts.MetricNamespace != "" {
-			metric = opts.MetricNamespace + "_" + base
-		}
+		serverLabelFilter := fmt.Sprintf("grpc_service=~%q", opts.RawGRPCServiceName)
+		labelFilters = append(labelFilters, serverLabelFilter)
 
 		if len(labelFilters) > 0 {
 			metric = fmt.Sprintf("%s{%s}", metric, strings.Join(labelFilters, ","))
@@ -159,6 +158,82 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 					Owner:          owner,
 					NoAlert:        true,
 					Interpretation: "The 75th percentile response time per method, aggregated across all instances.",
+				},
+			},
+
+			// Track total response size per method
+
+			{
+				monitoring.Observable{
+					Name:        fmt.Sprintf("%s_p99_9_response_size_per_method", opts.HumanServiceName),
+					Description: "99.9th percentile total response size per method over 2m",
+					Query:       fmt.Sprintf("histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(%s[2m])))", metric("src_grpc_server_sent_bytes_per_rpc_bucket", methodLabelFilter, instanceLabelFilter)),
+					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+						Unit(monitoring.Bytes).
+						With(monitoring.PanelOptions.LegendOnRight()),
+					Owner:          owner,
+					NoAlert:        true,
+					Interpretation: "The 99.9th percentile total per-RPC response size per method, aggregated across all instances.",
+				},
+				monitoring.Observable{
+					Name:        fmt.Sprintf("%s_p90_response_size_per_method", opts.HumanServiceName),
+					Description: "90th percentile total response size per method over 2m",
+					Query:       fmt.Sprintf("histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(%s[2m])))", metric("src_grpc_server_sent_bytes_per_rpc_bucket", methodLabelFilter, instanceLabelFilter)),
+					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+						Unit(monitoring.Bytes).
+						With(monitoring.PanelOptions.LegendOnRight()),
+					Owner:          owner,
+					NoAlert:        true,
+					Interpretation: "The 90th percentile total per-RPC response size per method, aggregated across all instances.",
+				},
+				monitoring.Observable{
+					Name:        fmt.Sprintf("%s_p75_response_size_per_method", opts.HumanServiceName),
+					Description: "75th percentile total response size per method over 2m",
+					Query:       fmt.Sprintf("histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(%s[2m])))", metric("src_grpc_server_sent_bytes_per_rpc_bucket", methodLabelFilter, instanceLabelFilter)),
+					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+						Unit(monitoring.Bytes).
+						With(monitoring.PanelOptions.LegendOnRight()),
+					Owner:          owner,
+					NoAlert:        true,
+					Interpretation: "The 75th percentile total per-RPC response size per method, aggregated across all instances.",
+				},
+			},
+
+			// Track individual message size per method
+
+			{
+				monitoring.Observable{
+					Name:        fmt.Sprintf("%s_p99_9_invididual_sent_message_size_per_method", opts.HumanServiceName),
+					Description: "99.9th percentile individual sent message size per method over 2m",
+					Query:       fmt.Sprintf("histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(%s[2m])))", metric("src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket", methodLabelFilter, instanceLabelFilter)),
+					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+						Unit(monitoring.Bytes).
+						With(monitoring.PanelOptions.LegendOnRight()),
+					Owner:          owner,
+					NoAlert:        true,
+					Interpretation: "The 99.9th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.",
+				},
+				monitoring.Observable{
+					Name:        fmt.Sprintf("%s_p90_invididual_sent_message_size_per_method", opts.HumanServiceName),
+					Description: "90th percentile individual sent message size per method over 2m",
+					Query:       fmt.Sprintf("histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(%s[2m])))", metric("src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket", methodLabelFilter, instanceLabelFilter)),
+					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+						Unit(monitoring.Bytes).
+						With(monitoring.PanelOptions.LegendOnRight()),
+					Owner:          owner,
+					NoAlert:        true,
+					Interpretation: "The 90th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.",
+				},
+				monitoring.Observable{
+					Name:        fmt.Sprintf("%s_p75_invididual_sent_message_size_per_method", opts.HumanServiceName),
+					Description: "75th percentile individual sent message size per method over 2m",
+					Query:       fmt.Sprintf("histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(%s[2m])))", metric("src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket", methodLabelFilter, instanceLabelFilter)),
+					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+						Unit(monitoring.Bytes).
+						With(monitoring.PanelOptions.LegendOnRight()),
+					Owner:          owner,
+					NoAlert:        true,
+					Interpretation: "The 75th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.",
 				},
 			},
 
@@ -370,11 +445,12 @@ func NewGRPCInternalErrorMetricsGroup(opts GRPCInternalErrorMetricsOptions, owne
 
 // GRPCMethodVariable creates a container variable that contains all the gRPC methods
 // exposed by the given service.
-func GRPCMethodVariable(serviceNamespace string) monitoring.ContainerVariable {
-	query := "grpc_server_started_total"
-	if serviceNamespace != "" {
-		query = fmt.Sprintf("%s_%s", serviceNamespace, query)
-	}
+//
+// services is a list of the full, dot-separated, code-generated gRPC service names that we're gathering metrics for
+// (e.g. "gitserver.v1.GitserverService").
+func GRPCMethodVariable(services ...string) monitoring.ContainerVariable {
+	servicesRegex := fmt.Sprintf(`(%s)`, strings.Join(services, "|"))
+	query := fmt.Sprintf("grpc_server_started_total{grpc_service=~`%s`}", servicesRegex)
 
 	return monitoring.ContainerVariable{
 		Label: "RPC Method",
@@ -384,6 +460,7 @@ func GRPCMethodVariable(serviceNamespace string) monitoring.ContainerVariable {
 			LabelName:     "grpc_method",
 			ExampleOption: "Exec",
 		},
+
 		Multi: true,
 	}
 }

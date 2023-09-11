@@ -9,14 +9,9 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend",
     visibility = ["//visibility:private"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
     deps = [
         "//enterprise/cmd/frontend/shared",
         "//internal/conf",
-        "//internal/oobmigration",
         "//internal/sanitycheck",
         "//internal/service/svcmain",
         "//internal/tracer",
@@ -29,6 +24,10 @@ go_binary(
     name = "frontend",
     embed = [":frontend_lib"],
     visibility = ["//visibility:public"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
 )
 
 pkg_tar(

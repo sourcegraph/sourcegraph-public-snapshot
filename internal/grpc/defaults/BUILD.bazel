@@ -11,8 +11,8 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
-        "//internal/env",
         "//internal/grpc",
+        "//internal/grpc/contextconv",
         "//internal/grpc/internalerrs",
         "//internal/grpc/messagesize",
         "//internal/grpc/propagator",

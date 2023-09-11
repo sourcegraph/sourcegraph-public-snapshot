@@ -1,7 +1,9 @@
 package internalerrs
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 	"testing"
@@ -328,53 +330,38 @@ func TestGRPCPrefixChecker(t *testing.T) {
 	}
 }
 
-func TestSplitMethodName(t *testing.T) {
-	testCases := []struct {
-		name string
-
-		fullMethod  string
-		wantService string
-		wantMethod  string
+func TestGRPCUnexpectedContentTypeChecker(t *testing.T) {
+	tests := []struct {
+		name   string
+		status *status.Status
+		want   bool
 	}{
 		{
-			name: "full method with service and method",
-
-			fullMethod:  "/package.service/method",
-			wantService: "package.service",
-			wantMethod:  "method",
+			name:   "gRPC error with OK status",
+			status: status.New(codes.OK, "transport: received unexpected content-type"),
+			want:   false,
 		},
 		{
-			name: "method without leading slash",
-
-			fullMethod:  "package.service/method",
-			wantService: "package.service",
-			wantMethod:  "method",
+			name:   "gRPC error without unexpected content-type message",
+			status: status.New(codes.Internal, "some random error"),
+			want:   false,
 		},
 		{
-			name: "service without method",
-
-			fullMethod:  "/package.service/",
-			wantService: "package.service",
-			wantMethod:  "",
+			name:   "gRPC error with unexpected content-type message",
+			status: status.Newf(codes.Internal, "transport: received unexpected content-type %q", "application/octet-stream"),
+			want:   true,
 		},
 		{
-			name: "empty input",
-
-			fullMethod:  "",
-			wantService: "unknown",
-			wantMethod:  "unknown",
+			name:   "gRPC error with unexpected content-type message as part of chain",
+			status: status.Newf(codes.Unknown, "transport: malformed grpc-status %q; transport: received unexpected content-type %q", "random-status", "application/octet-stream"),
+			want:   true,
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			service, method := splitMethodName(tc.fullMethod)
-			if diff := cmp.Diff(service, tc.wantService); diff != "" {
-				t.Errorf("splitMethodName(%q) service (-want +got):\n%s", tc.fullMethod, diff)
-			}
-
-			if diff := cmp.Diff(method, tc.wantMethod); diff != "" {
-				t.Errorf("splitMethodName(%q) method (-want +got):\n%s", tc.fullMethod, diff)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := gRPCUnexpectedContentTypeChecker(tt.status); got != tt.want {
+				t.Errorf("gRPCUnexpectedContentTypeChecker() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -442,6 +429,62 @@ func TestFindNonUTF8StringFields(t *testing.T) {
 
 			if diff := cmp.Diff(tt.expectedPaths, invalidFields, cmpopts.EquateEmpty()); diff != "" {
 				t.Fatalf("unexpected invalid fields (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestMassageIntoStatusErr(t *testing.T) {
+	testCases := []struct {
+		description string
+		input       error
+		expected    *status.Status
+		expectedOk  bool
+	}{
+		{
+			description: "nil error",
+			input:       nil,
+			expected:    nil,
+			expectedOk:  false,
+		},
+		{
+			description: "status error",
+			input:       status.Errorf(codes.InvalidArgument, "invalid argument"),
+			expected:    status.New(codes.InvalidArgument, "invalid argument"),
+			expectedOk:  true,
+		},
+		{
+			description: "context.Canceled error",
+			input:       context.Canceled,
+			expected:    status.New(codes.Canceled, "context canceled"),
+			expectedOk:  true,
+		},
+		{
+			description: "context.DeadlineExceeded error",
+			input:       context.DeadlineExceeded,
+			expected:    status.New(codes.DeadlineExceeded, "context deadline exceeded"),
+			expectedOk:  true,
+		},
+		{
+			description: "non-status error",
+			input:       errors.New("non-status error"),
+			expected:    nil,
+			expectedOk:  false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			result, ok := massageIntoStatusErr(tc.input)
+			if ok != tc.expectedOk {
+				t.Errorf("Expected ok to be %v, but got %v", tc.expectedOk, ok)
+			}
+
+			expectedStatusString := fmt.Sprintf("%s", tc.expected)
+			actualStatusString := fmt.Sprintf("%s", result)
+
+			if diff := cmp.Diff(expectedStatusString, actualStatusString); diff != "" {
+				t.Fatalf("Unexpected status string (-want +got):\n%s", diff)
 			}
 		})
 	}

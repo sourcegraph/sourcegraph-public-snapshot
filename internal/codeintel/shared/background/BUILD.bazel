@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "background",
+    srcs = [
+        "janitor_job.go",
+        "pipeline_job.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/background",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/goroutine",
+        "//internal/metrics",
+        "//internal/observation",
+        "@com_github_prometheus_client_golang//prometheus",
+    ],
+)

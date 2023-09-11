@@ -31,10 +31,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -584,7 +586,7 @@ func (e badRequestError) BadRequest() bool { return true }
 func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	ctx, _, endObservation := c.execOp.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(c.repo)),
+		c.repo.Attr(),
 		attribute.StringSlice("args", c.args[1:]),
 	}})
 	done := func() {
@@ -605,7 +607,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 		return nil, err
 	}
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.execer.ClientForRepo(repoName)
 		if err != nil {
 			return nil, err
@@ -614,7 +616,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 		req := &proto.ExecRequest{
 			Repo:           string(repoName),
 			EnsureRevision: c.EnsureRevision(),
-			Args:           c.args[1:],
+			Args:           stringsToByteSlices(c.args[1:]),
 			Stdin:          c.stdin,
 			NoTimeout:      c.noTimeout,
 		}
@@ -699,6 +701,10 @@ func convertGRPCErrorToGitDomainError(err error) error {
 		return context.Canceled
 	}
 
+	if st.Code() == codes.DeadlineExceeded {
+		return context.DeadlineExceeded
+	}
+
 	for _, detail := range st.Details() {
 		switch payload := detail.(type) {
 
@@ -749,7 +755,7 @@ func isRevisionNotFound(err string) bool {
 
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
 	ctx, _, endObservation := c.operations.search.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(args.Repo)),
+		args.Repo.Attr(),
 		attribute.Stringer("query", args.Query),
 		attribute.Bool("diff", args.IncludeDiff),
 		attribute.Int("limit", args.Limit),
@@ -758,8 +764,9 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 
 	repoName := protocol.NormalizeRepo(args.Repo)
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(repoName)
+
 		if err != nil {
 			return false, err
 		}
@@ -879,7 +886,8 @@ func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password str
 		P4Passwd: password,
 		Args:     args,
 	}
-	if internalgrpc.IsGRPCEnabled(ctx) {
+
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo("")
 		if err != nil {
 			return nil, nil, err
@@ -893,11 +901,47 @@ func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password str
 			return nil, nil, err
 		}
 
+		// We need to check the first message from the gRPC errors to see if we get an argument or permisison related
+		// error before continuing to read the rest of the stream. If the first message is an error, we cancel the stream and
+		// forward the error.
+		//
+		// This is necessary to provide parity between the REST and gRPC implementations of
+		// P4Exec. Users of cli.P4Exec may assume error handling occurs immediately,
+		// as is the case with the HTTP implementation where these kinds of errors are returned as soon as the
+		// function returns. gRPC is asynchronous, so we have to start consuming messages from
+		// the stream to see any errors from the server. Reading the first message ensures we
+		// handle any errors synchronously, similar to the HTTP implementation.
+
+		firstMessage, firstError := stream.Recv()
+		switch status.Code(firstError) {
+		case codes.InvalidArgument, codes.PermissionDenied:
+			cancel()
+			return nil, nil, convertGitserverError(firstError)
+		}
+
+		firstMessageRead := false
 		r := streamio.NewReader(func() ([]byte, error) {
+			// Check if we've read the first message yet. If not, read it and return.
+			if !firstMessageRead {
+				firstMessageRead = true
+
+				if firstError != nil {
+					return nil, firstError
+				}
+
+				return firstMessage.GetData(), nil
+			}
+
 			msg, err := stream.Recv()
-			if status.Code(err) == codes.Canceled {
-				return nil, context.Canceled
-			} else if err != nil {
+			if err != nil {
+				if status.Code(err) == codes.Canceled {
+					return nil, context.Canceled
+				}
+
+				if status.Code(err) == codes.DeadlineExceeded {
+					return nil, context.DeadlineExceeded
+				}
+
 				return nil, err
 			}
 			return msg.GetData(), nil
@@ -966,10 +1010,15 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 	ctx, _, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	defer endObservation(1, observation.Args{})
 
+	type clientAndError struct {
+		client  proto.GitserverServiceClient
+		dialErr error // non-nil if there was an error dialing the client
+	}
+
 	// Make a request to a single gitserver shard and feed the results to the user-supplied
 	// callback. This function is invoked multiple times (and concurrently) in the loops below
 	// this function definition.
-	performLogRequestToShard := func(ctx context.Context, addr string, repoCommits []api.RepoCommit) (err error) {
+	performLogRequestToShard := func(ctx context.Context, addr string, grpcClient clientAndError, repoCommits []api.RepoCommit) (err error) {
 		var numProcessed int
 		repoNames := repoNamesFromRepoCommits(repoCommits)
 
@@ -988,9 +1037,6 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 			})
 		}()
 
-		uri := "http://" + addr + "/batch-log"
-		repoName := api.RepoName(strings.Join(repoNames, ",")) // only used to label spans
-
 		request := protocol.BatchLogRequest{
 			RepoCommits: repoCommits,
 			Format:      opts.Format,
@@ -998,8 +1044,8 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 
 		var response protocol.BatchLogResponse
 
-		if internalgrpc.IsGRPCEnabled(ctx) {
-			client, err := c.ClientForRepo(repoName)
+		if conf.IsGRPCEnabled(ctx) {
+			client, err := grpcClient.client, grpcClient.dialErr
 			if err != nil {
 				return err
 			}
@@ -1011,15 +1057,14 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 
 			response.FromProto(resp)
 			logger.AddEvent("read response", attribute.Int("numResults", len(response.Results)))
-
 		} else {
-
 			var buf bytes.Buffer
 			if err := json.NewEncoder(&buf).Encode(request); err != nil {
 				return err
 			}
 
-			resp, err := c.do(ctx, repoName, "POST", uri, buf.Bytes())
+			uri := "http://" + addr + "/batch-log"
+			resp, err := c.do(ctx, api.RepoName(strings.Join(repoNames, ",")), "POST", uri, buf.Bytes())
 			if err != nil {
 				return err
 			}
@@ -1101,10 +1146,17 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 			return err
 		}
 
+		client, err := c.ClientForRepo(repoCommits[0].Repo)
+		if err != nil {
+			err = errors.Wrapf(err, "getting gRPC client for repository %q", repoCommits[0].Repo)
+		}
+
+		ce := clientAndError{client: client, dialErr: err}
+
 		g.Go(func() (err error) {
 			defer sem.Release(1)
 
-			return performLogRequestToShard(ctx, addr, repoCommits)
+			return performLogRequestToShard(ctx, addr, ce, repoCommits)
 		})
 	}
 
@@ -1149,8 +1201,9 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 		Since: since,
 	}
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(repo)
+
 		if err != nil {
 			return nil, err
 		}
@@ -1187,7 +1240,7 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 
 // RequestRepoClone requests that the gitserver does an asynchronous clone of the repository.
 func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoName) (*protocol.RepoCloneResponse, error) {
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(repo)
 		if err != nil {
 			return nil, err
@@ -1240,7 +1293,7 @@ func (c *clientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoNa
 
 	var resp protocol.IsRepoCloneableResponse
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(repo)
 		if err != nil {
 			return err
@@ -1318,7 +1371,7 @@ func (e *RepoNotCloneableErr) Error() string {
 func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
 	numPossibleShards := len(c.Addrs())
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		shards := make(map[proto.GitserverServiceClient]*proto.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 		for _, r := range repos {
 			client, err := c.ClientForRepo(r)
@@ -1440,7 +1493,7 @@ func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protoco
 	stats := map[string]*protocol.ReposStats{}
 	var allErr error
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		for _, addr := range c.clientSource.Addresses() {
 			client, err := addr.GRPCClient()
 			if err != nil {
@@ -1492,7 +1545,7 @@ func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) error
 	// In case the repo has already been deleted from the database we need to pass
 	// the old name in order to land on the correct gitserver instance
 	repo = api.UndeletedRepoName(repo)
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(repo)
 		if err != nil {
 			return err
@@ -1548,16 +1601,16 @@ func (c *clientImplementor) httpPost(ctx context.Context, repo api.RepoName, op 
 // do performs a request to a gitserver instance based on the address in the uri
 // argument.
 //
-// Repo parameter is optional. If it is provided, then "repo" attribute is added
+// repoForTracing parameter is optional. If it is provided, then "repo" attribute is added
 // to trace span.
-func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
+func (c *clientImplementor) do(ctx context.Context, repoForTracing api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
 	parsedURL, err := url.ParseRequestURI(uri)
 	if err != nil {
 		return nil, errors.Wrap(err, "do")
 	}
 
 	ctx, trLogger, endObservation := c.operations.do.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(repo)),
+		repoForTracing.Attr(),
 		attribute.String("method", method),
 		attribute.String("path", parsedURL.Path),
 	}})
@@ -1583,7 +1636,7 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 }
 
 func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(req.Repo)
 		if err != nil {
 			return nil, err
@@ -1638,7 +1691,8 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 		Repo:       repo,
 		ObjectName: objectName,
 	}
-	if internalgrpc.IsGRPCEnabled(ctx) {
+
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(req.Repo)
 		if err != nil {
 			return nil, err
@@ -1749,4 +1803,17 @@ func readResponseBody(body io.Reader) string {
 	// strings.TrimSpace, see attached screenshots in this pull request:
 	// https://github.com/sourcegraph/sourcegraph/pull/39358.
 	return strings.TrimSpace(string(content))
+}
+
+type clientAndError struct {
+	client proto.GitserverServiceClient
+	err    error
+}
+
+func stringsToByteSlices(in []string) [][]byte {
+	res := make([][]byte, len(in))
+	for i, s := range in {
+		res[i] = []byte(s)
+	}
+	return res
 }

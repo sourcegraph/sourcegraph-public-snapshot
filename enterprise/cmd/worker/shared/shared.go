@@ -22,10 +22,9 @@ import (
 	workerinsights "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/permissions"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/telemetry"
-	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
-	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
+	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
@@ -92,18 +91,16 @@ func setAuthzProviders(ctx context.Context, observationCtx *observation.Context)
 	// authz also relies on UserMappings being setup.
 	globals.WatchPermissionsUserMapping()
 
-	for range time.NewTicker(eiauthz.RefreshInterval()).C {
-		allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
+	for range time.NewTicker(providers.RefreshInterval()).C {
+		allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	}
 }
 
 func getEnterpriseInit(logger log.Logger) func(database.DB) {
-	return func(ossDB database.DB) {
-		enterpriseDB := edb.NewEnterpriseDB(ossDB)
-
+	return func(db database.DB) {
 		var err error
-		authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(enterpriseDB.SubRepoPerms())
+		authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(db.SubRepoPerms())
 		if err != nil {
 			logger.Fatal("Failed to create sub-repo client", log.Error(err))
 		}

@@ -1,0 +1,45 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"message":"New commit message\n\nChange-Id: I8a43a17e679cf4ee3ba862e875746be2ed2215ec\n"}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json
+    url: https://gerrit.sgdev.org/a/changes/I8a43a17e679cf4ee3ba862e875746be2ed2215ec/message
+    method: PUT
+  response:
+    body: |
+      )]}'
+      "ok"
+    headers:
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 7db660567ef2a223-YYZ
+      Content-Disposition:
+      - attachment
+      Content-Length:
+      - "10"
+      Content-Type:
+      - application/json;charset=utf-8
+      Date:
+      - Thu, 22 Jun 2023 17:57:54 GMT
+      Expires:
+      - Mon, 01 Jan 1990 00:00:00 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15724800; includeSubDomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+    status: 200 OK
+    code: 200
+    duration: ""

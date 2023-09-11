@@ -1,6 +1,7 @@
 package internalerrs
 
 import (
+	"context"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -161,6 +162,7 @@ type internalGRPCErrorChecker func(*status.Status) bool
 var allCheckers = []internalGRPCErrorChecker{
 	gRPCPrefixChecker,
 	gRPCResourceExhaustedChecker,
+	gRPCUnexpectedContentTypeChecker,
 }
 
 // gRPCPrefixChecker checks if a gRPC status likely represents an error that comes from the go-grpc library, by checking if the error message
@@ -176,15 +178,11 @@ func gRPCResourceExhaustedChecker(s *status.Status) bool {
 	return s.Code() == codes.ResourceExhausted && strings.HasPrefix(s.Message(), "trying to send message larger than max (")
 }
 
-// splitMethodName splits a full gRPC method name in to its components (service, method)
-//
-// Copied from github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/reporter.go
-func splitMethodName(fullMethod string) (string, string) {
-	fullMethod = strings.TrimPrefix(fullMethod, "/") // remove leading slash
-	if i := strings.Index(fullMethod, "/"); i >= 0 {
-		return fullMethod[:i], fullMethod[i+1:]
-	}
-	return "unknown", "unknown"
+// gRPCUnexpectedContentTypeChecker checks if a gRPC status likely represents an error that comes from the go-grpc library, by checking if the error message
+// is prefixed with "transport: received unexpected content-type".
+func gRPCUnexpectedContentTypeChecker(s *status.Status) bool {
+	// Observed from https://github.com/grpc/grpc-go/blob/2997e84fd8d18ddb000ac6736129b48b3c9773ec/internal/transport/http2_client.go#L1415-L1417
+	return s.Code() != codes.OK && strings.Contains(s.Message(), "transport: received unexpected content-type")
 }
 
 // findNonUTF8StringFields returns a list of field names that contain invalid UTF-8 strings
@@ -213,4 +211,26 @@ func findNonUTF8StringFields(m proto.Message) ([]string, error) {
 	}
 
 	return fields, nil
+}
+
+// massageIntoStatusErr converts an error into a status.Status if possible.
+func massageIntoStatusErr(err error) (s *status.Status, ok bool) {
+	if err == nil {
+		return nil, false
+	}
+
+	if s, ok := status.FromError(err); ok {
+		return s, true
+	}
+
+	if errors.Is(err, context.Canceled) {
+		return status.New(codes.Canceled, context.Canceled.Error()), true
+
+	}
+
+	if errors.Is(err, context.DeadlineExceeded) {
+		return status.New(codes.DeadlineExceeded, context.DeadlineExceeded.Error()), true
+	}
+
+	return nil, false
 }

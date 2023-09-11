@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
@@ -17,26 +18,23 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	owntypes "github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	rbactypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/own/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/own"
+	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
+	owntypes "github.com/sourcegraph/sourcegraph/internal/own/types"
+	rbactypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	enterprisedb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 )
 
 const (
@@ -177,7 +175,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 		return "deadbeef", nil
 	}
 	git := fakeGitserver{}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -294,7 +292,7 @@ func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 		return "deadbeef", nil
 	}
 	git := fakeGitserver{}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -342,7 +340,7 @@ func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 											"description": "Owner is associated with a rule in a CODEOWNERS file.",
 											"codeownersFile": {
 												"__typename": "VirtualFile",
-												"url": "/github.com/sourcegraph/own/-/own"
+												"url": "/github.com/sourcegraph/own/-/own/edit"
 											},
 											"ruleLineMatch": 1
 										}
@@ -374,10 +372,10 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 		},
 	}
 	fakeDB := fakedb.New()
-	db := enterprisedb.NewMockEnterpriseDB()
+	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeDB.TeamStore)
 	db.UsersFunc.SetDefaultReturn(fakeDB.UserStore)
-	db.CodeownersFunc.SetDefaultReturn(enterprisedb.NewMockCodeownersStore())
+	db.CodeownersFunc.SetDefaultReturn(database.NewMockCodeownersStore())
 	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 	db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
@@ -397,7 +395,7 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 	if _, err := fakeDB.TeamStore.CreateTeam(ctx, team); err != nil {
 		t.Fatalf("failed to create fake team: %s", err)
 	}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -461,10 +459,10 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 		},
 	}
 	fakeDB := fakedb.New()
-	db := enterprisedb.NewMockEnterpriseDB()
+	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(fakeDB.UserStore)
 	db.TeamsFunc.SetDefaultReturn(fakeDB.TeamStore)
-	db.CodeownersFunc.SetDefaultReturn(enterprisedb.NewMockCodeownersStore())
+	db.CodeownersFunc.SetDefaultReturn(database.NewMockCodeownersStore())
 	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 	db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
@@ -481,7 +479,7 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 		}
 		return resolvedRevision, nil
 	}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -702,7 +700,7 @@ func TestOwnershipPagination(t *testing.T) {
 		return "42", nil
 	}
 	git := fakeGitserver{}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -819,7 +817,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 		return "deadbeef", nil
 	}
 	git := fakeGitserver{}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -890,7 +888,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 											"description": "Owner is associated with a rule in a CODEOWNERS file.",
 											"codeownersFile": {
 												"__typename": "VirtualFile",
-												"url": "/github.com/sourcegraph/own/-/own"
+												"url": "/github.com/sourcegraph/own/-/own/edit"
 											},
 											"ruleLineMatch": 1
 										}
@@ -904,7 +902,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 									"reasons": [
 										{
 											"title": "recent contributor",
-											"description": "Owner is associated because they have contributed to this file in the last 90 days."
+											"description": "Associated because they have contributed to this file in the last 90 days."
 										}
 									]
 								},
@@ -916,7 +914,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 									"reasons": [
 										{
 											"title": "recent view",
-											"description": "Owner is associated because they have viewed this file in the last 90 days."
+											"description": "Associated because they have viewed this file in the last 90 days."
 										}
 									]
 								}
@@ -1000,7 +998,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 			}: "some JS code",
 		},
 	}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1055,7 +1053,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 									"reasons": [
 										{
 											"title": "recent contributor",
-											"description": "Owner is associated because they have contributed to this file in the last 90 days."
+											"description": "Associated because they have contributed to this file in the last 90 days."
 										}
 									]
 								},
@@ -1067,7 +1065,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 									"reasons": [
 										{
 											"title": "recent view",
-											"description": "Owner is associated because they have viewed this file in the last 90 days."
+											"description": "Associated because they have viewed this file in the last 90 days."
 										}
 									]
 								}
@@ -1110,7 +1108,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 									"reasons": [
 										{
 											"title": "recent view",
-											"description": "Owner is associated because they have viewed this file in the last 90 days."
+											"description": "Associated because they have viewed this file in the last 90 days."
 										}
 									]
 								}
@@ -1148,7 +1146,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 									"reasons": [
 										{
 											"title": "recent contributor",
-											"description": "Owner is associated because they have contributed to this file in the last 90 days."
+											"description": "Associated because they have contributed to this file in the last 90 days."
 										}
 									]
 								}
@@ -1188,7 +1186,7 @@ func TestCommitOwnershipSignals(t *testing.T) {
 	}
 	git := fakeGitserver{}
 	own := fakeOwnService{}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1233,7 +1231,7 @@ func TestCommitOwnershipSignals(t *testing.T) {
 								"reasons": [
 									{
 										"title": "recent contributor",
-										"description": "Owner is associated because they have contributed to this file in the last 90 days."
+										"description": "Associated because they have contributed to this file in the last 90 days."
 									}
 								]
 							}
@@ -1262,7 +1260,7 @@ func Test_SignalConfigurations(t *testing.T) {
 	user, err := db.Users().Create(ctx, database.NewUser{Username: "non-admin"})
 	require.NoError(t, err)
 
-	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1466,7 +1464,7 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 	}
 	db.UserExternalAccountsFunc.SetDefaultReturn(database.NewMockUserExternalAccountsStore())
 	git := fakeGitserver{}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1590,7 +1588,7 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 											"description": "Owner is associated with a rule in a CODEOWNERS file.",
 											"codeownersFile": {
 												"__typename": "VirtualFile",
-												"url": "/github.com/sourcegraph/own/-/own"
+												"url": "/github.com/sourcegraph/own/-/own/edit"
 											},
 											"ruleLineMatch": 1
 										}
@@ -1731,7 +1729,7 @@ func TestAssignOwner(t *testing.T) {
 	})
 	require.NoError(t, err)
 	// RBAC stuff finished. Creating a GraphQL schema.
-	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1860,7 +1858,7 @@ func TestDeleteAssignedOwner(t *testing.T) {
 	})
 	require.NoError(t, err)
 	// RBAC stuff finished. Creating a GraphQL schema.
-	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1997,7 +1995,7 @@ func TestAssignTeam(t *testing.T) {
 	})
 	require.NoError(t, err)
 	// RBAC stuff finished. Creating a GraphQL schema.
-	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2128,7 +2126,7 @@ func TestDeleteAssignedTeam(t *testing.T) {
 	})
 	require.NoError(t, err)
 	// RBAC stuff finished. Creating a GraphQL schema.
-	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2235,15 +2233,17 @@ func TestDisplayOwnershipStats(t *testing.T) {
 	fakeRepoPaths.AggregateFileCountFunc.SetDefaultReturn(350000, nil)
 	db.RepoPathsFunc.SetDefaultReturn(fakeRepoPaths)
 	fakeOwnershipStats := database.NewMockOwnershipStatsStore()
+	updateTime := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
 	fakeOwnershipStats.QueryAggregateCountsFunc.SetDefaultReturn(
 		database.PathAggregateCounts{
 			CodeownedFileCount:         150000,
 			AssignedOwnershipFileCount: 20000,
 			TotalOwnedFileCount:        165000,
+			UpdatedAt:                  updateTime,
 		}, nil)
 	db.OwnershipStatsFunc.SetDefaultReturn(fakeOwnershipStats)
 	ctx := context.Background()
-	schema, err := graphqlbackend.NewSchema(db, nil, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, nil, nil, logtest.NoOp(t))}})
+	schema, err := graphqlbackend.NewSchema(db, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, nil, nil, logtest.NoOp(t))}})
 	require.NoError(t, err)
 	graphqlbackend.RunTest(t, &graphqlbackend.Test{
 		Schema:  schema,
@@ -2255,15 +2255,17 @@ func TestDisplayOwnershipStats(t *testing.T) {
 					totalCodeownedFiles
 					totalOwnedFiles
 					totalAssignedOwnershipFiles
+					updatedAt
 				}
 			}`,
 		ExpectedResult: `
 			{
 				"instanceOwnershipStats": {
 					"totalFiles": 350000,
-					"totalCodeownedFiles" : 150000,
-					"totalOwnedFiles" : 165000,
-					"totalAssignedOwnershipFiles" : 20000
+					"totalCodeownedFiles": 150000,
+					"totalOwnedFiles": 165000,
+					"totalAssignedOwnershipFiles": 20000,
+					"updatedAt": "2023-01-01T00:00:00Z"
 				}
 			}`,
 	})

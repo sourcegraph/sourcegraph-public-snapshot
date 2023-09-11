@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/squirrel"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/chunk"
 	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -26,24 +27,45 @@ func addHandlers(
 }
 
 // LocalCodeIntel returns local code intelligence for the given file and commit
-func (s *grpcService) LocalCodeIntel(ctx context.Context, request *proto.LocalCodeIntelRequest) (*proto.LocalCodeIntelResponse, error) {
+func (s *grpcService) LocalCodeIntel(request *proto.LocalCodeIntelRequest, ss proto.SymbolsService_LocalCodeIntelServer) error {
 	squirrelService := squirrel.New(s.readFileFunc, nil)
 	defer squirrelService.Close()
 
 	args := request.GetRepoCommitPath().ToInternal()
 
+	ctx := ss.Context()
 	payload, err := squirrelService.LocalCodeIntel(ctx, args)
 	if err != nil {
 		if errors.Is(err, squirrel.UnsupportedLanguageError) {
-			return nil, status.Error(codes.Unimplemented, err.Error())
+			return status.Error(codes.Unimplemented, err.Error())
 		}
-		return nil, err
+
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return status.FromContextError(ctxErr).Err()
+		}
+
+		return err
 	}
 
 	var response proto.LocalCodeIntelResponse
 	response.FromInternal(payload)
 
-	return &response, nil
+	sendFunc := func(symbols []*proto.LocalCodeIntelResponse_Symbol) error {
+		return ss.Send(&proto.LocalCodeIntelResponse{Symbols: symbols})
+	}
+
+	chunker := chunk.New[*proto.LocalCodeIntelResponse_Symbol](sendFunc)
+	err = chunker.Send(response.GetSymbols()...)
+	if err != nil {
+		return errors.Wrap(err, "sending response")
+	}
+
+	err = chunker.Flush()
+	if err != nil {
+		return errors.Wrap(err, "flushing response stream")
+	}
+
+	return nil
 }
 
 // SymbolInfo returns information about the symbols specified by the given request.
@@ -61,6 +83,11 @@ func (s *grpcService) SymbolInfo(ctx context.Context, request *proto.SymbolInfoR
 		if errors.Is(err, squirrel.UnsupportedLanguageError) {
 			return nil, status.Error(codes.Unimplemented, err.Error())
 		}
+
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, status.FromContextError(ctxErr).Err()
+		}
+
 		return nil, err
 	}
 

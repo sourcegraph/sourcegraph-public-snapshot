@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/requestlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 )
 
@@ -93,7 +94,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 							rs,
 							config.RateLimitNotifier,
 							embeddings.ModelFactoryMap{
-								embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(config.OpenAIAccessToken),
+								embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(httpcli.ExternalClient, config.OpenAIAccessToken),
 							},
 							config.EmbeddingsAllowedModels,
 						),

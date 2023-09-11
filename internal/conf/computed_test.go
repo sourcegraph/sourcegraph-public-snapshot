@@ -7,9 +7,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -387,12 +387,15 @@ func TestGetCompletionsConfig(t *testing.T) {
 	licenseKey := "theasdfkey"
 	licenseAccessToken := licensing.GenerateLicenseKeyBasedAccessToken(licenseKey)
 	zeroConfigDefaultWithLicense := &conftypes.CompletionsConfig{
-		ChatModel:       "anthropic/claude-v1",
-		FastChatModel:   "anthropic/claude-instant-v1",
-		CompletionModel: "anthropic/claude-instant-v1",
-		AccessToken:     licenseAccessToken,
-		Provider:        "sourcegraph",
-		Endpoint:        "https://cody-gateway.sourcegraph.com",
+		ChatModel:                "anthropic/claude-2",
+		ChatModelMaxTokens:       12000,
+		FastChatModel:            "anthropic/claude-instant-1",
+		FastChatModelMaxTokens:   9000,
+		CompletionModel:          "anthropic/claude-instant-1",
+		CompletionModelMaxTokens: 9000,
+		AccessToken:              licenseAccessToken,
+		Provider:                 "sourcegraph",
+		Endpoint:                 "https://cody-gateway.sourcegraph.com",
 	}
 
 	testCases := []struct {
@@ -473,12 +476,15 @@ func TestGetCompletionsConfig(t *testing.T) {
 				},
 			},
 			wantConfig: &conftypes.CompletionsConfig{
-				ChatModel:       "claude-v1",
-				FastChatModel:   "claude-instant-v1",
-				CompletionModel: "claude-instant-v1",
-				AccessToken:     "asdf",
-				Provider:        "anthropic",
-				Endpoint:        "https://api.anthropic.com/v1/complete",
+				ChatModel:                "claude-2",
+				ChatModelMaxTokens:       12000,
+				FastChatModel:            "claude-instant-1",
+				FastChatModelMaxTokens:   9000,
+				CompletionModel:          "claude-instant-1",
+				CompletionModelMaxTokens: 9000,
+				AccessToken:              "asdf",
+				Provider:                 "anthropic",
+				Endpoint:                 "https://api.anthropic.com/v1/complete",
 			},
 		},
 		{
@@ -491,16 +497,19 @@ func TestGetCompletionsConfig(t *testing.T) {
 					Provider:        "anthropic",
 					AccessToken:     "asdf",
 					ChatModel:       "claude-v1",
-					CompletionModel: "claude-instant-v1",
+					CompletionModel: "claude-instant-1",
 				},
 			},
 			wantConfig: &conftypes.CompletionsConfig{
-				ChatModel:       "claude-v1",
-				FastChatModel:   "claude-instant-v1",
-				CompletionModel: "claude-instant-v1",
-				AccessToken:     "asdf",
-				Provider:        "anthropic",
-				Endpoint:        "https://api.anthropic.com/v1/complete",
+				ChatModel:                "claude-v1",
+				ChatModelMaxTokens:       9000,
+				FastChatModel:            "claude-instant-1",
+				FastChatModelMaxTokens:   9000,
+				CompletionModel:          "claude-instant-1",
+				CompletionModelMaxTokens: 9000,
+				AccessToken:              "asdf",
+				Provider:                 "anthropic",
+				Endpoint:                 "https://api.anthropic.com/v1/complete",
 			},
 		},
 		{
@@ -525,12 +534,41 @@ func TestGetCompletionsConfig(t *testing.T) {
 				},
 			},
 			wantConfig: &conftypes.CompletionsConfig{
-				ChatModel:       "gpt-4",
-				FastChatModel:   "gpt-3.5-turbo",
-				CompletionModel: "gpt-3.5-turbo",
-				AccessToken:     "asdf",
-				Provider:        "openai",
-				Endpoint:        "https://api.openai.com/v1/chat/completions",
+				ChatModel:                "gpt-4",
+				ChatModelMaxTokens:       8000,
+				FastChatModel:            "gpt-3.5-turbo",
+				FastChatModelMaxTokens:   4000,
+				CompletionModel:          "gpt-3.5-turbo",
+				CompletionModelMaxTokens: 4000,
+				AccessToken:              "asdf",
+				Provider:                 "openai",
+				Endpoint:                 "https://api.openai.com/v1/chat/completions",
+			},
+		},
+		{
+			name: "Azure OpenAI completions completions",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider:        "azure-openai",
+					AccessToken:     "asdf",
+					Endpoint:        "https://acmecorp.openai.azure.com",
+					ChatModel:       "gpt4-deployment",
+					FastChatModel:   "gpt35-turbo-deployment",
+					CompletionModel: "gpt35-turbo-deployment",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:                "gpt4-deployment",
+				ChatModelMaxTokens:       8000,
+				FastChatModel:            "gpt35-turbo-deployment",
+				FastChatModelMaxTokens:   8000,
+				CompletionModel:          "gpt35-turbo-deployment",
+				CompletionModelMaxTokens: 8000,
+				AccessToken:              "asdf",
+				Provider:                 "azure-openai",
+				Endpoint:                 "https://acmecorp.openai.azure.com",
 			},
 		},
 		{
@@ -556,17 +594,20 @@ func TestGetCompletionsConfig(t *testing.T) {
 				LicenseKey:  licenseKey,
 				Completions: &schema.Completions{
 					ChatModel:       "anthropic/claude-v1.3",
-					FastChatModel:   "anthropic/claude-instant-v1.3",
-					CompletionModel: "anthropic/claude-instant-v1.3",
+					FastChatModel:   "anthropic/claude-instant-1.3",
+					CompletionModel: "anthropic/claude-instant-1.3",
 				},
 			},
 			wantConfig: &conftypes.CompletionsConfig{
-				ChatModel:       "anthropic/claude-v1.3",
-				FastChatModel:   "anthropic/claude-instant-v1.3",
-				CompletionModel: "anthropic/claude-instant-v1.3",
-				AccessToken:     licenseAccessToken,
-				Provider:        "sourcegraph",
-				Endpoint:        "https://cody-gateway.sourcegraph.com",
+				ChatModel:                "anthropic/claude-v1.3",
+				ChatModelMaxTokens:       9000,
+				FastChatModel:            "anthropic/claude-instant-1.3",
+				FastChatModelMaxTokens:   9000,
+				CompletionModel:          "anthropic/claude-instant-1.3",
+				CompletionModelMaxTokens: 9000,
+				AccessToken:              licenseAccessToken,
+				Provider:                 "sourcegraph",
+				Endpoint:                 "https://cody-gateway.sourcegraph.com",
 			},
 		},
 		{
@@ -600,12 +641,15 @@ func TestGetCompletionsConfig(t *testing.T) {
 				},
 			},
 			wantConfig: &conftypes.CompletionsConfig{
-				AccessToken:     "sgd_5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456",
-				ChatModel:       "anthropic/claude-v1",
-				FastChatModel:   "anthropic/claude-instant-v1",
-				CompletionModel: "anthropic/claude-instant-v1",
-				Endpoint:        "https://cody-gateway.sourcegraph.com",
-				Provider:        "sourcegraph",
+				AccessToken:              "sgd_5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456",
+				ChatModel:                "anthropic/claude-2",
+				ChatModelMaxTokens:       12000,
+				FastChatModel:            "anthropic/claude-instant-1",
+				FastChatModelMaxTokens:   9000,
+				CompletionModel:          "anthropic/claude-instant-1",
+				CompletionModelMaxTokens: 9000,
+				Endpoint:                 "https://cody-gateway.sourcegraph.com",
+				Provider:                 "sourcegraph",
 			},
 		},
 		{
@@ -617,20 +661,23 @@ func TestGetCompletionsConfig(t *testing.T) {
 					AccessToken:     "CUSTOM_TOKEN",
 					Provider:        "anthropic",
 					ChatModel:       "claude-v1",
-					FastChatModel:   "claude-instant-v1",
-					CompletionModel: "claude-instant-v1",
+					FastChatModel:   "claude-instant-1",
+					CompletionModel: "claude-instant-1",
 				},
 				App: &schema.App{
 					DotcomAuthToken: "TOKEN",
 				},
 			},
 			wantConfig: &conftypes.CompletionsConfig{
-				AccessToken:     "CUSTOM_TOKEN",
-				ChatModel:       "claude-v1",
-				CompletionModel: "claude-instant-v1",
-				FastChatModel:   "claude-instant-v1",
-				Provider:        "anthropic",
-				Endpoint:        "https://api.anthropic.com/v1/complete",
+				AccessToken:              "CUSTOM_TOKEN",
+				ChatModel:                "claude-v1",
+				ChatModelMaxTokens:       9000,
+				CompletionModel:          "claude-instant-1",
+				FastChatModelMaxTokens:   9000,
+				FastChatModel:            "claude-instant-1",
+				CompletionModelMaxTokens: 9000,
+				Provider:                 "anthropic",
+				Endpoint:                 "https://api.anthropic.com/v1/complete",
 			},
 		},
 		{
@@ -686,6 +733,10 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 		MaxCodeEmbeddingsPerRepo:   3_072_000,
 		MaxTextEmbeddingsPerRepo:   512_000,
 		PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+		FileFilters: conftypes.EmbeddingsFileFilters{
+			MaxFileSizeBytes: 1000000,
+		},
+		ExcludeChunkOnError: true,
 	}
 
 	testCases := []struct {
@@ -762,6 +813,73 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 			wantConfig: zeroConfigDefaultWithLicense,
 		},
 		{
+			name: "File filters",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+					FileFilters: &schema.FileFilters{
+						MaxFileSizeBytes:         200,
+						IncludedFilePathPatterns: []string{"*.go"},
+						ExcludedFilePathPatterns: []string{"*.java"},
+					},
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegraph",
+				AccessToken:                licenseAccessToken,
+				Model:                      "openai/text-embedding-ada-002",
+				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes:         200,
+					IncludedFilePathPatterns: []string{"*.go"},
+					ExcludedFilePathPatterns: []string{"*.java"},
+				},
+				ExcludeChunkOnError: true,
+			},
+		},
+		{
+			name: "Disable exclude failed chunk during indexing",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+					FileFilters: &schema.FileFilters{
+						MaxFileSizeBytes:         200,
+						IncludedFilePathPatterns: []string{"*.go"},
+						ExcludedFilePathPatterns: []string{"*.java"},
+					},
+					ExcludeChunkOnError: pointers.Ptr(false),
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegraph",
+				AccessToken:                licenseAccessToken,
+				Model:                      "openai/text-embedding-ada-002",
+				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes:         200,
+					IncludedFilePathPatterns: []string{"*.go"},
+					ExcludedFilePathPatterns: []string{"*.java"},
+				},
+				ExcludeChunkOnError: false,
+			},
+		},
+		{
 			name: "No provider and no token, assume Sourcegraph",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
@@ -781,6 +899,10 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MaxCodeEmbeddingsPerRepo:   3_072_000,
 				MaxTextEmbeddingsPerRepo:   512_000,
 				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes: 1000000,
+				},
+				ExcludeChunkOnError: true,
 			},
 		},
 		{
@@ -815,6 +937,10 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MaxCodeEmbeddingsPerRepo:   3_072_000,
 				MaxTextEmbeddingsPerRepo:   512_000,
 				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes: 1000000,
+				},
+				ExcludeChunkOnError: true,
 			},
 		},
 		{
@@ -827,6 +953,36 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				},
 			},
 			wantDisabled: true,
+		},
+		{
+			name: "Azure OpenAI provider",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider:    "azure-openai",
+					AccessToken: "asdf",
+					Endpoint:    "https://acmecorp.openai.azure.com",
+					Dimensions:  1536,
+					Model:       "the-model",
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "azure-openai",
+				AccessToken:                "asdf",
+				Model:                      "the-model",
+				Endpoint:                   "https://acmecorp.openai.azure.com",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes: 1000000,
+				},
+				ExcludeChunkOnError: true,
+			},
 		},
 		{
 			name:       "App default config",
@@ -848,6 +1004,10 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MaxCodeEmbeddingsPerRepo:   3_072_000,
 				MaxTextEmbeddingsPerRepo:   512_000,
 				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes: 1000000,
+				},
+				ExcludeChunkOnError: true,
 			},
 		},
 		{
@@ -883,6 +1043,10 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MaxCodeEmbeddingsPerRepo:   3_072_000,
 				MaxTextEmbeddingsPerRepo:   512_000,
 				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes: 1000000,
+				},
+				ExcludeChunkOnError: true,
 			},
 		},
 		{
@@ -906,6 +1070,10 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MaxCodeEmbeddingsPerRepo:   3_072_000,
 				MaxTextEmbeddingsPerRepo:   512_000,
 				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes: 1000000,
+				},
+				ExcludeChunkOnError: true,
 			},
 		},
 		{

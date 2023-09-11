@@ -16,6 +16,7 @@ export interface UseShowMorePaginationResult<TResult, TData> {
     error?: ApolloError
     fetchMore: () => void
     refetchAll: () => void
+    refetchFirst: () => void
     loading: boolean
     hasNextPage: boolean
     /**
@@ -198,6 +199,7 @@ export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
         })
     }
 
+    // Refetch the current nodes
     const refetchAll = useCallback(async (): Promise<void> => {
         const first = connection?.nodes.length || firstReference.current.actual
 
@@ -206,6 +208,15 @@ export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
             first,
         })
     }, [connection?.nodes.length, refetch, variables])
+
+    // Refetch the first page. Use this function if the number of nodes in the
+    // connection might have changed have changed since the last refetch.
+    const refetchFirst = useCallback(async (): Promise<void> => {
+        await refetch({
+            ...variables,
+            first,
+        })
+    }, [first, refetch, variables])
 
     // We use `refetchAll` to poll for all the nodes currently loaded in the
     // connection, vs. just providing a `pollInterval` to the underlying `useQuery`, which
@@ -218,6 +229,7 @@ export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
         loading,
         error,
         fetchMore: fetchMoreData,
+        refetchFirst,
         refetchAll,
         hasNextPage: connection ? hasNextPage(connection) : false,
         startPolling: startExecution,

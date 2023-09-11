@@ -1,5 +1,7 @@
 import { useState, useCallback, useMemo } from 'react'
 
+import { isErrorLike } from '@sourcegraph/common'
+
 import { CodebaseContext } from '../codebase-context'
 import { ConfigurationWithAccessToken } from '../configuration'
 import { Editor, NoopEditor } from '../editor'
@@ -69,6 +71,7 @@ export interface CodyClient {
     toggleIncludeInferredRepository: () => void
     toggleIncludeInferredFile: () => void
     abortMessageInProgress: () => void
+    fetchRepositoryNames: (count: number) => Promise<string[]>
 }
 
 interface CodyClientProps {
@@ -127,19 +130,6 @@ export const useClient = ({
     }, [])
 
     const [config, setConfig] = useState<CodyClientConfig>(initialConfig)
-
-    const initializeNewChat = useCallback((): Transcript | null => {
-        if (config.needsEmailVerification) {
-            return transcript
-        }
-        const newTranscript = new Transcript()
-        setIsMessageInProgressState(false)
-        setTranscriptState(newTranscript)
-        setChatMessagesState(newTranscript.toChat())
-        onEvent?.('initializedNewChat')
-
-        return newTranscript
-    }, [onEvent, config.needsEmailVerification, transcript])
 
     const { graphqlClient, chatClient, intentDetector } = useMemo(() => {
         const completionsClient = new SourcegraphBrowserCompletionsClient(config)
@@ -214,6 +204,41 @@ export const useClient = ({
 
         return results.map(({ id }) => id)
     }, [codebases, graphqlClient])
+
+    const fetchRepositoryNames = useCallback(
+        async (count: number): Promise<string[]> =>
+            graphqlClient
+                .getRepoNames(count)
+                .then(repositories => (isErrorLike(repositories) ? [] : repositories))
+                .catch(error => {
+                    console.error(
+                        `Cody could not fetch the list of repositories on your Sourcegraph instance. Details: ${error}`
+                    )
+
+                    return []
+                }),
+        [graphqlClient]
+    )
+
+    const initializeNewChat = useCallback((): Transcript | null => {
+        if (config.needsEmailVerification) {
+            return transcript
+        }
+        const newTranscript = new Transcript()
+        setIsMessageInProgressState(false)
+        setTranscriptState(newTranscript)
+        setChatMessagesState(newTranscript.toChat())
+        setScopeState(scope => ({
+            includeInferredRepository: true,
+            includeInferredFile: true,
+            repositories: [],
+            editor: scope.editor,
+        }))
+
+        onEvent?.('initializedNewChat')
+
+        return newTranscript
+    }, [onEvent, config.needsEmailVerification, transcript])
 
     const executeRecipe = useCallback(
         async (
@@ -404,6 +429,7 @@ export const useClient = ({
             toggleIncludeInferredRepository,
             toggleIncludeInferredFile,
             abortMessageInProgress,
+            fetchRepositoryNames,
         }),
         [
             transcript,
@@ -423,6 +449,7 @@ export const useClient = ({
             toggleIncludeInferredRepository,
             toggleIncludeInferredFile,
             abortMessageInProgress,
+            fetchRepositoryNames,
         ]
     )
 }

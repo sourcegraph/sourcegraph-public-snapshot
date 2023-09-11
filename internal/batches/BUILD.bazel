@@ -2,8 +2,21 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "batches",
-    srcs = ["syncer.go"],
+    srcs = [
+        "background.go",
+        "doc.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/batches",
     visibility = ["//:__subpackages__"],
-    deps = ["//internal/api"],
+    deps = [
+        "//internal/actor",
+        "//internal/batches/store",
+        "//internal/batches/syncer",
+        "//internal/database",
+        "//internal/encryption",
+        "//internal/goroutine",
+        "//internal/httpcli",
+        "//internal/observation",
+        "@com_github_sourcegraph_log//:log",
+    ],
 )

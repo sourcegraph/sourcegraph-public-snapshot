@@ -2760,7 +2760,7 @@ CREATE TABLE insights_query_runner_jobs (
     trace_id text
 );
 
-COMMENT ON TABLE insights_query_runner_jobs IS 'See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)';
+COMMENT ON TABLE insights_query_runner_jobs IS 'See [internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)';
 
 COMMENT ON COLUMN insights_query_runner_jobs.priority IS 'Integer representing a category of priority for this query. Priority in this context is ambiguously defined for consumers to decide an interpretation.';
 
@@ -4220,7 +4220,9 @@ CREATE TABLE repo_embedding_job_stats (
     text_files_embedded integer DEFAULT 0 NOT NULL,
     text_chunks_embedded integer DEFAULT 0 NOT NULL,
     text_files_skipped jsonb DEFAULT '{}'::jsonb NOT NULL,
-    text_bytes_embedded integer DEFAULT 0 NOT NULL
+    text_bytes_embedded integer DEFAULT 0 NOT NULL,
+    code_chunks_excluded integer DEFAULT 0 NOT NULL,
+    text_chunks_excluded integer DEFAULT 0 NOT NULL
 );
 
 CREATE TABLE repo_embedding_jobs (

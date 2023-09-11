@@ -37,7 +37,7 @@ func TestPythonPackagesSource_ListRepos(t *testing.T) {
 
 	svc := types.ExternalService{
 		Kind: extsvc.KindPythonPackages,
-		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.PythonPackagesConnection{
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.PythonPackagesConnection{
 			Urls: []string{
 				"https://pypi.org/simple",
 			},
@@ -50,7 +50,7 @@ func TestPythonPackagesSource_ListRepos(t *testing.T) {
 		})),
 	}
 
-	cf, save := newClientFactory(t, t.Name())
+	cf, save := NewClientFactory(t, t.Name())
 	t.Cleanup(func() { save(t) })
 
 	src, err := NewPythonPackagesSource(ctx, &svc, cf)
@@ -60,7 +60,7 @@ func TestPythonPackagesSource_ListRepos(t *testing.T) {
 
 	src.SetDependenciesService(depsSvc)
 
-	repos, err := listAll(ctx, src)
+	repos, err := ListAll(ctx, src)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,5 +69,5 @@ func TestPythonPackagesSource_ListRepos(t *testing.T) {
 		return repos[i].Name < repos[j].Name
 	})
 
-	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), update(t.Name()), repos)
+	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), Update(t.Name()), repos)
 }

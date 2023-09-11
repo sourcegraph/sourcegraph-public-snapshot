@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold/v2"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
+	"github.com/sourcegraph/sourcegraph/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )

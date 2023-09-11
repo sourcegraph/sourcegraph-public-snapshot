@@ -210,7 +210,7 @@ const VersionFilterSummary: React.FunctionComponent<VersionFilterSummaryProps> =
                 </span>
                 {versions.length < totalCount && (
                     <Button variant="link" className="p-0 mr-3" onClick={() => setVersionFetchLimit(nextFetchLimit)}>
-                        <>Show {nextFetchLimit === totalCount ? 'all ' : { nextFetchLimit }}</>
+                        <>Show {nextFetchLimit === totalCount ? 'all ' : nextFetchLimit.toString()}</>
                     </Button>
                 )}
             </div>

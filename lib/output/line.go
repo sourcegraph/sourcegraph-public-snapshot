@@ -42,12 +42,12 @@ func Linef(emoji string, style Style, format string, a ...any) FancyLine {
 
 // Emoji creates a new FancyLine with an emoji prefix.
 func Emoji(emoji string, s string) FancyLine {
-	return Line(emoji, nil, s)
+	return Line(emoji, StyleReset, s)
 }
 
 // Emoji creates a new FancyLine with an emoji prefix and style.
 func Emojif(emoji string, s string, a ...any) FancyLine {
-	return Linef(emoji, nil, s, a...)
+	return Linef(emoji, StyleReset, s, a...)
 }
 
 // Styled creates a new FancyLine with style.
@@ -66,10 +66,6 @@ func (fl FancyLine) write(w io.Writer, caps capabilities) {
 	}
 	if fl.emoji != "" {
 		fmt.Fprint(w, fl.emoji+" ")
-	}
-
-	if fl.style == nil {
-		fl.style = StyleReset
 	}
 
 	fmt.Fprintf(w, "%s"+fl.format+"%s", caps.formatArgs(append(append([]any{fl.style}, fl.args...), StyleReset))...)

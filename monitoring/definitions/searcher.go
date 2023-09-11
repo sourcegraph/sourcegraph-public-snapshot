@@ -10,9 +10,12 @@ import (
 )
 
 func Searcher() *monitoring.Dashboard {
-	const containerName = "searcher"
+	const (
+		containerName   = "searcher"
+		grpcServiceName = "searcher.v1.SearcherService"
+	)
 
-	grpcMethodVariable := shared.GRPCMethodVariable(containerName)
+	grpcMethodVariable := shared.GRPCMethodVariable(grpcServiceName)
 
 	// instanceSelector is a helper for inserting the instance selector.
 	// Should be used on strings created via `` since you can't escape in
@@ -220,8 +223,9 @@ regularly above 0 it is a sign for further investigation.`,
 
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
-					HumanServiceName:  "searcher",
-					MetricNamespace:   "searcher",
+					HumanServiceName:   "searcher",
+					RawGRPCServiceName: grpcServiceName,
+
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 
 					InstanceFilterRegex: `${instance:regex}`,
@@ -230,7 +234,7 @@ regularly above 0 it is a sign for further investigation.`,
 			shared.NewGRPCInternalErrorMetricsGroup(
 				shared.GRPCInternalErrorMetricsOptions{
 					HumanServiceName:   "searcher",
-					RawGRPCServiceName: "searcher.v1.SearcherService",
+					RawGRPCServiceName: grpcServiceName,
 
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSearchCore),

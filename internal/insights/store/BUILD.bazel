@@ -1,0 +1,70 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "store",
+    srcs = [
+        "dashboard_store.go",
+        "insight_store.go",
+        "mocks_temp.go",
+        "permissions.go",
+        "search_contexts.go",
+        "settings_migration_jobs_store.go",
+        "store.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/insights/store",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/api",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/database/batch",
+        "//internal/insights/timeseries",
+        "//internal/insights/types",
+        "//internal/search/query",
+        "//internal/search/searchcontexts",
+        "//internal/timeutil",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_lib_pq//:pq",
+        "@com_github_roaringbitmap_roaring//:roaring",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "store_test",
+    timeout = "moderate",
+    srcs = [
+        "dashboard_store_test.go",
+        "insight_store_test.go",
+        "mocks_test.go",
+        "store_benchs_test.go",
+        "store_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":store"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
+    deps = [
+        "//internal/api",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/database/dbtest",
+        "//internal/insights/types",
+        "//internal/timeutil",
+        "//lib/errors",
+        "//lib/pointers",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_hexops_valast//:valast",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_apimachinery//pkg/util/rand",
+    ],
+)

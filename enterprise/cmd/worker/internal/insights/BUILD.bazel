@@ -12,10 +12,11 @@ go_library(
     deps = [
         "//cmd/worker/job",
         "//cmd/worker/shared/init/db",
-        "//enterprise/internal/insights",
-        "//enterprise/internal/insights/background",
         "//internal/env",
         "//internal/goroutine",
+        "//internal/insights",
+        "//internal/insights/background",
+        "//internal/insights/database",
         "//internal/observation",
     ],
 )

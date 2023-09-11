@@ -44,8 +44,11 @@ const (
 type KubernetesContainerOptions struct {
 	CloneOptions          KubernetesCloneOptions
 	Namespace             string
+	JobAnnotations        map[string]string
+	PodAnnotations        map[string]string
 	NodeName              string
 	NodeSelector          map[string]string
+	ImagePullSecrets      []corev1.LocalObjectReference
 	RequiredNodeAffinity  KubernetesNodeAffinity
 	PodAffinity           []corev1.PodAffinityTerm
 	PodAntiAffinity       []corev1.PodAffinityTerm
@@ -58,6 +61,7 @@ type KubernetesContainerOptions struct {
 	SecurityContext       KubernetesSecurityContext
 	SingleJobPod          bool
 	StepImage             string
+	GitCACert             string
 	JobVolume             KubernetesJobVolume
 }
 
@@ -435,16 +439,21 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:        name,
+			Annotations: options.JobAnnotations,
 		},
 		Spec: batchv1.JobSpec{
 			// Prevent K8s from retrying. This will lead to the retried jobs always failing as the workspace will get
 			// cleaned up from the first failure.
 			BackoffLimit: pointer.Int32(0),
 			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: options.PodAnnotations,
+				},
 				Spec: corev1.PodSpec{
-					NodeName:     options.NodeName,
-					NodeSelector: options.NodeSelector,
+					NodeName:         options.NodeName,
+					NodeSelector:     options.NodeSelector,
+					ImagePullSecrets: options.ImagePullSecrets,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsUser:  options.SecurityContext.RunAsUser,
 						RunAsGroup: options.SecurityContext.RunAsGroup,
@@ -560,10 +569,17 @@ func NewKubernetesSingleJob(
 	if repoOptions.RepositoryDirectory != "" {
 		repoDir = repoOptions.RepositoryDirectory
 	}
+
+	sslCAInfo := ""
+	if options.GitCACert != "" {
+		sslCAInfo = fmt.Sprintf("git config --local http.sslCAInfo %s; ", options.GitCACert)
+	}
+
 	setupArgs := []string{
 		"set -e; " +
 			fmt.Sprintf("mkdir -p %s; ", repoDir) +
 			fmt.Sprintf("git -C %s init; ", repoDir) +
+			sslCAInfo +
 			fmt.Sprintf("git -C %s remote add origin %s; ", repoDir, repoOptions.CloneURL) +
 			fmt.Sprintf("git -C %s config --local gc.auto 0; ", repoDir) +
 			fmt.Sprintf("git -C %s "+
@@ -614,8 +630,14 @@ func NewKubernetesSingleJob(
 	}
 
 	for stepIndex, step := range specs {
-		fmt.Println("dir: ", step.Dir)
 		jobEnvs := newEnvVars(step.Env)
+		// Single job does not need to add the git directory as safe since the user is the same across all containers.
+		// This is a work around until we have a more elegant solution for dealing with the multi-job and different users.
+		// e.g. Executor is run as sourcegraph user and batcheshelper is run as root.
+		jobEnvs = append(jobEnvs, corev1.EnvVar{
+			Name:  "EXECUTOR_ADD_SAFE",
+			Value: "false",
+		})
 
 		nextIndexCommand := fmt.Sprintf("if [ \"$(%s /job/skip.json %s)\" != \"skip\" ]; then ", filepath.Join(KubernetesJobMountPath, "nextIndex.sh"), step.Key)
 		stepInitContainers[stepIndex+1] = corev1.Container{
@@ -639,21 +661,21 @@ func NewKubernetesSingleJob(
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:        name,
+			Annotations: options.JobAnnotations,
 		},
 		Spec: batchv1.JobSpec{
 			// Prevent K8s from retrying. This will lead to the retried jobs always failing as the workspace will get
 			// cleaned up from the first failure.
 			BackoffLimit: pointer.Int32(0),
 			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: options.PodAnnotations,
+				},
 				Spec: corev1.PodSpec{
-					NodeName:     options.NodeName,
-					NodeSelector: options.NodeSelector,
-					SecurityContext: &corev1.PodSecurityContext{
-						RunAsUser:  options.SecurityContext.RunAsUser,
-						RunAsGroup: options.SecurityContext.RunAsGroup,
-						FSGroup:    options.SecurityContext.FSGroup,
-					},
+					NodeName:              options.NodeName,
+					NodeSelector:          options.NodeSelector,
+					ImagePullSecrets:      options.ImagePullSecrets,
 					Affinity:              affinity,
 					RestartPolicy:         corev1.RestartPolicyNever,
 					Tolerations:           options.Tolerations,

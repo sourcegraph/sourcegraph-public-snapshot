@@ -15,10 +15,10 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	bstore "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	bstore "github.com/sourcegraph/sourcegraph/internal/batches/store"
+	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"

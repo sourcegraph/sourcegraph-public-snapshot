@@ -1,0 +1,31 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "scheduler",
+    srcs = [
+        "scheduler.go",
+        "ticker.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/batches/scheduler",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/batches/store",
+        "//internal/batches/types/scheduler/config",
+        "//internal/batches/types/scheduler/window",
+        "//internal/goroutine",
+        "//internal/goroutine/recorder",
+        "@com_github_inconshreveable_log15//:log15",
+    ],
+)
+
+go_test(
+    name = "scheduler_test",
+    timeout = "short",
+    srcs = ["ticker_test.go"],
+    embed = [":scheduler"],
+    deps = [
+        "//internal/batches/types/scheduler/window",
+        "//schema",
+    ],
+)

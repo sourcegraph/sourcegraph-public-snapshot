@@ -14,13 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestAllowAnonymousRequest(t *testing.T) {
-	ui.InitRouter(database.NewMockDB(), jobutil.NewUnimplementedEnterpriseJobs())
+	ui.InitRouter(database.NewMockDB())
 	// Ensure auth.public is false (be robust against some other tests having side effects that
 	// change it, or changed defaults).
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthPublic: false, AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}}})
@@ -58,7 +57,7 @@ func TestAllowAnonymousRequest(t *testing.T) {
 }
 
 func TestAllowAnonymousRequestWithAdditionalConfig(t *testing.T) {
-	ui.InitRouter(database.NewMockDB(), jobutil.NewUnimplementedEnterpriseJobs())
+	ui.InitRouter(database.NewMockDB())
 	// Ensure auth.public is false (be robust against some other tests having side effects that
 	// change it, or changed defaults).
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthPublic: false, AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}}})
@@ -116,7 +115,7 @@ func TestAllowAnonymousRequestWithAdditionalConfig(t *testing.T) {
 }
 
 func TestNewUserRequiredAuthzMiddleware(t *testing.T) {
-	ui.InitRouter(database.NewMockDB(), jobutil.NewUnimplementedEnterpriseJobs())
+	ui.InitRouter(database.NewMockDB())
 	// Ensure auth.public is false (be robust against some other tests having side effects that
 	// change it, or changed defaults).
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthPublic: false, AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}}})

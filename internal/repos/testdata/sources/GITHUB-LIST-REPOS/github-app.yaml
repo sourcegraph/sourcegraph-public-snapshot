@@ -1,0 +1,117 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://api.github.com/app/installations/38844262/access_tokens
+    method: POST
+  response:
+    body: '{"token":"ghs_RmOWmlLDEVcN2YPdx9KQk8IlcRk2N51oYyjg","expires_at":"2023-06-23T11:26:27Z","permissions":{"contents":"read","metadata":"read"},"repository_selection":"selected"}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - public, max-age=60, s-maxage=60
+      Content-Length:
+      - "174"
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 23 Jun 2023 10:26:27 GMT
+      Etag:
+      - '"6c32ea7b6e87c99b084c53821626bac36d9bd38e76caf2fc2bfad77bb294205b"'
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
+      X-Github-Media-Type:
+      - github.v3; format=json
+      X-Github-Request-Id:
+      - D29F:4B53:1E7312:27BF42:64957352
+      X-Xss-Protection:
+      - "0"
+    status: 201 Created
+    code: 201
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/installation/repositories?page=1&per_page=100
+    method: GET
+  response:
+    body: '{"total_count":1,"repository_selection":"selected","repositories":[{"id":648564320,"node_id":"R_kgDOJqhOYA","name":"ygoza","full_name":"pjlast/ygoza","private":true,"owner":{"login":"pjlast","id":6427795,"node_id":"MDQ6VXNlcjY0Mjc3OTU=","avatar_url":"https://avatars.githubusercontent.com/u/6427795?v=4","gravatar_id":"","url":"https://api.github.com/users/pjlast","html_url":"https://github.com/pjlast","followers_url":"https://api.github.com/users/pjlast/followers","following_url":"https://api.github.com/users/pjlast/following{/other_user}","gists_url":"https://api.github.com/users/pjlast/gists{/gist_id}","starred_url":"https://api.github.com/users/pjlast/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/pjlast/subscriptions","organizations_url":"https://api.github.com/users/pjlast/orgs","repos_url":"https://api.github.com/users/pjlast/repos","events_url":"https://api.github.com/users/pjlast/events{/privacy}","received_events_url":"https://api.github.com/users/pjlast/received_events","type":"User","site_admin":false},"html_url":"https://github.com/pjlast/ygoza","description":null,"fork":false,"url":"https://api.github.com/repos/pjlast/ygoza","forks_url":"https://api.github.com/repos/pjlast/ygoza/forks","keys_url":"https://api.github.com/repos/pjlast/ygoza/keys{/key_id}","collaborators_url":"https://api.github.com/repos/pjlast/ygoza/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/pjlast/ygoza/teams","hooks_url":"https://api.github.com/repos/pjlast/ygoza/hooks","issue_events_url":"https://api.github.com/repos/pjlast/ygoza/issues/events{/number}","events_url":"https://api.github.com/repos/pjlast/ygoza/events","assignees_url":"https://api.github.com/repos/pjlast/ygoza/assignees{/user}","branches_url":"https://api.github.com/repos/pjlast/ygoza/branches{/branch}","tags_url":"https://api.github.com/repos/pjlast/ygoza/tags","blobs_url":"https://api.github.com/repos/pjlast/ygoza/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/pjlast/ygoza/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/pjlast/ygoza/git/refs{/sha}","trees_url":"https://api.github.com/repos/pjlast/ygoza/git/trees{/sha}","statuses_url":"https://api.github.com/repos/pjlast/ygoza/statuses/{sha}","languages_url":"https://api.github.com/repos/pjlast/ygoza/languages","stargazers_url":"https://api.github.com/repos/pjlast/ygoza/stargazers","contributors_url":"https://api.github.com/repos/pjlast/ygoza/contributors","subscribers_url":"https://api.github.com/repos/pjlast/ygoza/subscribers","subscription_url":"https://api.github.com/repos/pjlast/ygoza/subscription","commits_url":"https://api.github.com/repos/pjlast/ygoza/commits{/sha}","git_commits_url":"https://api.github.com/repos/pjlast/ygoza/git/commits{/sha}","comments_url":"https://api.github.com/repos/pjlast/ygoza/comments{/number}","issue_comment_url":"https://api.github.com/repos/pjlast/ygoza/issues/comments{/number}","contents_url":"https://api.github.com/repos/pjlast/ygoza/contents/{+path}","compare_url":"https://api.github.com/repos/pjlast/ygoza/compare/{base}...{head}","merges_url":"https://api.github.com/repos/pjlast/ygoza/merges","archive_url":"https://api.github.com/repos/pjlast/ygoza/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/pjlast/ygoza/downloads","issues_url":"https://api.github.com/repos/pjlast/ygoza/issues{/number}","pulls_url":"https://api.github.com/repos/pjlast/ygoza/pulls{/number}","milestones_url":"https://api.github.com/repos/pjlast/ygoza/milestones{/number}","notifications_url":"https://api.github.com/repos/pjlast/ygoza/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/pjlast/ygoza/labels{/name}","releases_url":"https://api.github.com/repos/pjlast/ygoza/releases{/id}","deployments_url":"https://api.github.com/repos/pjlast/ygoza/deployments","created_at":"2023-06-02T09:06:33Z","updated_at":"2023-06-02T09:09:04Z","pushed_at":"2023-06-19T16:02:18Z","git_url":"git://github.com/pjlast/ygoza.git","ssh_url":"git@github.com:pjlast/ygoza.git","clone_url":"https://github.com/pjlast/ygoza.git","svn_url":"https://github.com/pjlast/ygoza","homepage":null,"size":360,"stargazers_count":0,"watchers_count":0,"language":"TypeScript","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":false,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":0,"license":null,"allow_forking":true,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":0,"watchers":0,"default_branch":"main","permissions":{"admin":false,"maintain":false,"push":false,"triage":false,"pull":false}}]}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 23 Jun 2023 10:26:27 GMT
+      Etag:
+      - W/"ef45a14df78e5663733396b92948be46159a074fe9627ec857167c8e498e8b84"
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
+      X-Github-Media-Type:
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
+        format=json
+      X-Github-Request-Id:
+      - D29F:4B53:1E7318:27BF49:64957353
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "1"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""

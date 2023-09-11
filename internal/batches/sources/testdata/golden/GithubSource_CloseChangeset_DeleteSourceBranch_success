@@ -1,0 +1,191 @@
+{
+  "ID": "PR_kwDODS5xec5TsclN",
+  "Title": "This is a test PR",
+  "Body": "This is the description of the test PR",
+  "State": "CLOSED",
+  "URL": "https://github.com/sourcegraph/automation-testing/pull/490",
+  "HeadRefOid": "7c232f7ec9b8e717ff297e33f2ab095a7e902085",
+  "BaseRefOid": "58dd8da9d9099a823c814c528b29b72c9b2ac98b",
+  "HeadRefName": "test-review-decision",
+  "BaseRefName": "master",
+  "Number": 490,
+  "ReviewDecision": "REVIEW_REQUIRED",
+  "Author": {
+   "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+   "Login": "davejrt",
+   "URL": "https://github.com/davejrt"
+  },
+  "BaseRepository": {
+   "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Name": "automation-testing",
+   "Owner": {
+    "Login": "sourcegraph"
+   }
+  },
+  "HeadRepository": {
+   "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Name": "automation-testing",
+   "Owner": {
+    "Login": "sourcegraph"
+   }
+  },
+  "Participants": [
+   {
+    "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+    "Login": "davejrt",
+    "URL": "https://github.com/davejrt"
+   }
+  ],
+  "Labels": {
+   "Nodes": []
+  },
+  "TimelineItems": [
+   {
+    "Type": "PullRequestCommit",
+    "Item": {
+     "Commit": {
+      "OID": "7c232f7ec9b8e717ff297e33f2ab095a7e902085",
+      "Message": "foobar",
+      "MessageHeadline": "foobar",
+      "URL": "https://github.com/sourcegraph/automation-testing/commit/7c232f7ec9b8e717ff297e33f2ab095a7e902085",
+      "Committer": {
+       "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?v=4",
+       "Email": "davetry@gmail.com",
+       "Name": "davejrt",
+       "User": {
+        "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+        "Login": "davejrt",
+        "URL": "https://github.com/davejrt"
+       }
+      },
+      "CommittedDate": "2023-06-22T21:05:25Z",
+      "PushedDate": "2023-06-22T21:05:29Z"
+     }
+    }
+   },
+   {
+    "Type": "ClosedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "CreatedAt": "2023-06-23T15:17:36Z",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/490#event-9618938482"
+    }
+   },
+   {
+    "Type": "ReopenedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "CreatedAt": "2023-06-23T15:18:20Z"
+    }
+   },
+   {
+    "Type": "ClosedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "CreatedAt": "2023-06-23T15:18:34Z",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/490#event-9618946734"
+    }
+   },
+   {
+    "Type": "ReopenedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "CreatedAt": "2023-06-23T15:22:17Z"
+    }
+   },
+   {
+    "Type": "ClosedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "CreatedAt": "2023-06-23T15:23:36Z",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/490#event-9618989772"
+    }
+   }
+  ],
+  "Commits": {
+   "Nodes": [
+    {
+     "Commit": {
+      "OID": "7c232f7ec9b8e717ff297e33f2ab095a7e902085",
+      "CheckSuites": {
+       "Nodes": [
+        {
+         "ID": "CS_kwDODS5xec8AAAADNrcULQ",
+         "Status": "QUEUED",
+         "Conclusion": "",
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
+        },
+        {
+         "ID": "CS_kwDODS5xec8AAAADNrcURA",
+         "Status": "QUEUED",
+         "Conclusion": "",
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
+        },
+        {
+         "ID": "CS_kwDODS5xec8AAAADNrcUXg",
+         "Status": "QUEUED",
+         "Conclusion": "",
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
+        },
+        {
+         "ID": "CS_kwDODS5xec8AAAADNrcUcw",
+         "Status": "QUEUED",
+         "Conclusion": "",
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
+        },
+        {
+         "ID": "CS_kwDODS5xec8AAAADNrcUkg",
+         "Status": "QUEUED",
+         "Conclusion": "",
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
+        }
+       ]
+      },
+      "Status": {
+       "State": "",
+       "Contexts": null
+      },
+      "CommittedDate": "2023-06-22T21:05:25Z"
+     }
+    }
+   ]
+  },
+  "IsDraft": false,
+  "CreatedAt": "2023-06-22T21:06:33Z",
+  "UpdatedAt": "2023-06-23T15:23:36Z"
+ }

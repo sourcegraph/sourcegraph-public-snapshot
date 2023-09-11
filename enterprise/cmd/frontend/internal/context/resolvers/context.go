@@ -6,8 +6,8 @@ import (
 	"github.com/sourcegraph/conc/iter"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	codycontext "github.com/sourcegraph/sourcegraph/enterprise/internal/codycontext"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	codycontext "github.com/sourcegraph/sourcegraph/internal/codycontext"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -61,7 +61,7 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 		return nil, err
 	}
 
-	tr, ctx := trace.New(ctx, "resolveChunks", "")
+	tr, ctx := trace.New(ctx, "resolveChunks")
 	defer tr.FinishWithErr(&err)
 
 	return iter.MapErr(fileChunks, func(fileChunk *codycontext.FileChunkContext) (graphqlbackend.ContextResultResolver, error) {

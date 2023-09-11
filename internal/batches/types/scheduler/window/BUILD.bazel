@@ -1,0 +1,42 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "window",
+    srcs = [
+        "config.go",
+        "rate.go",
+        "schedule.go",
+        "time.go",
+        "weekday.go",
+        "window.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/batches/types/scheduler/window",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "//schema",
+        "@org_uber_go_ratelimit//:ratelimit",
+    ],
+)
+
+go_test(
+    name = "window_test",
+    timeout = "short",
+    srcs = [
+        "config_test.go",
+        "rate_test.go",
+        "schedule_test.go",
+        "time_test.go",
+        "weekday_test.go",
+        "window_test.go",
+    ],
+    embed = [":window"],
+    deps = [
+        "//lib/errors",
+        "//lib/pointers",
+        "//schema",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

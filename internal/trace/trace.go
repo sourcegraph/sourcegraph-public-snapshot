@@ -2,13 +2,11 @@ package trace
 
 import (
 	"context"
-	"fmt"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	oteltrace "go.opentelemetry.io/otel/trace"
-	nettrace "golang.org/x/net/trace"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -17,27 +15,21 @@ import (
 // golang.org/x/net/trace.Trace, applying its various API functions to both
 // underlying trace types. Use New to construct one.
 type Trace struct {
-	family string
-
 	// oteltraceSpan is always set.
 	oteltraceSpan oteltrace.Span
-	// nettraceTrace may be nil if EnableNetTrace is false, all callsites should
-	// check first.
-	nettraceTrace nettrace.Trace
 }
 
-// New returns a new Trace with the specified family and title.
-func New(ctx context.Context, family, title string, attrs ...attribute.KeyValue) (*Trace, context.Context) {
+// New returns a new Trace with the specified name.
+// For tips on naming, see the OpenTelemetry Span documentation:
+// https://opentelemetry.io/docs/specs/otel/trace/api/#span
+func New(ctx context.Context, name string, attrs ...attribute.KeyValue) (*Trace, context.Context) {
 	tr := Tracer{TracerProvider: otel.GetTracerProvider()}
-	return tr.New(ctx, family, title, attrs...)
+	return tr.New(ctx, name, attrs...)
 }
 
 // SetAttributes sets kv as attributes of the Span.
 func (t *Trace) SetAttributes(attributes ...attribute.KeyValue) {
 	t.oteltraceSpan.SetAttributes(attributes...)
-	if t.nettraceTrace != nil {
-		t.nettraceTrace.LazyLog(attributesStringer(attributes), false)
-	}
 }
 
 // AddEvent records an event on this span with the given name and attributes.
@@ -46,23 +38,6 @@ func (t *Trace) SetAttributes(attributes ...attribute.KeyValue) {
 // accepts attributes for simplicity, and for ease of adapting to nettrace.
 func (t *Trace) AddEvent(name string, attributes ...attribute.KeyValue) {
 	t.oteltraceSpan.AddEvent(name, oteltrace.WithAttributes(attributes...))
-	if t.nettraceTrace != nil {
-		t.nettraceTrace.LazyLog(attributesStringer(attributes), false)
-	}
-}
-
-// LazyPrintf evaluates its arguments with fmt.Sprintf each time the
-// /debug/requests page is rendered. Any memory referenced by a will be
-// pinned until the trace is finished and later discarded.
-func (t *Trace) LazyPrintf(format string, a ...any) {
-	t.oteltraceSpan.AddEvent("LazyPrintf", oteltrace.WithAttributes(
-		attribute.Stringer("message", stringerFunc(func() string {
-			return fmt.Sprintf(format, a...)
-		})),
-	))
-	if t.nettraceTrace != nil {
-		t.nettraceTrace.LazyPrintf(format, a...)
-	}
 }
 
 // SetError declares that this trace and span resulted in an error.
@@ -76,11 +51,6 @@ func (t *Trace) SetError(err error) {
 
 	t.oteltraceSpan.RecordError(err)
 	t.oteltraceSpan.SetStatus(codes.Error, err.Error())
-
-	if t.nettraceTrace != nil {
-		t.nettraceTrace.LazyPrintf("error: %v", err)
-		t.nettraceTrace.SetError()
-	}
 }
 
 // SetErrorIfNotContext calls SetError unless err is context.Canceled or
@@ -89,9 +59,6 @@ func (t *Trace) SetErrorIfNotContext(err error) {
 	if errors.IsAny(err, context.Canceled, context.DeadlineExceeded) {
 		err = truncateError(err, defaultErrorRuneLimit)
 		t.oteltraceSpan.RecordError(err)
-		if t.nettraceTrace != nil {
-			t.nettraceTrace.LazyPrintf("error: %v", err)
-		}
 		return
 	}
 
@@ -102,9 +69,6 @@ func (t *Trace) SetErrorIfNotContext(err error) {
 // The trace should not be used after calling this method.
 func (t *Trace) Finish() {
 	t.oteltraceSpan.End()
-	if t.nettraceTrace != nil {
-		t.nettraceTrace.Finish()
-	}
 }
 
 // FinishWithErr finishes the span and sets its error value.

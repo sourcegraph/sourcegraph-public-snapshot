@@ -1,0 +1,63 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "lsifstore",
+    srcs = [
+        "document_metadata.go",
+        "locations_by_position.go",
+        "lsifstore_documents.go",
+        "metadata_by_position.go",
+        "observability.go",
+        "scan.go",
+        "store.go",
+        "symbols_by_position.go",
+        "util.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/codeintel/codenav/shared",
+        "//internal/codeintel/shared",
+        "//internal/codeintel/shared/ranges",
+        "//internal/codeintel/uploads/shared",
+        "//internal/database/basestore",
+        "//internal/database/dbutil",
+        "//internal/metrics",
+        "//internal/observation",
+        "//lib/codeintel/precise",
+        "//lib/errors",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_lib_pq//:pq",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
+        "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_google_protobuf//proto",
+    ],
+)
+
+go_test(
+    name = "lsifstore_test",
+    timeout = "moderate",
+    srcs = [
+        "document_metadata_test.go",
+        "locations_by_position_test.go",
+        "metadata_by_position_test.go",
+        "symbols_by_position_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":lsifstore"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
+    deps = [
+        "//internal/codeintel/codenav/shared",
+        "//internal/codeintel/shared",
+        "//internal/database/dbtest",
+        "//internal/observation",
+        "//lib/codeintel/precise",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
+    ],
+)

@@ -2,8 +2,9 @@ package messagesize
 
 import (
 	"fmt"
-	"google.golang.org/grpc"
 	"math"
+
+	"google.golang.org/grpc"
 
 	"github.com/dustin/go-humanize"
 	"github.com/sourcegraph/sourcegraph/internal/env"

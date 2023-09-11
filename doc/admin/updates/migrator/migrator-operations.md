@@ -42,25 +42,25 @@ Manifest loactions:
 
 Example default environment variables:
 ```yaml
-  PGHOST: "pgsql"
-  PGPORT: "5432"
-  PGUSER: "sg"
-  PGPASSWORD: "sg"
-  PGDATABASE: "sg"
-  PGSSLMODE: "disable"
-  CODEINTEL_PGHOST: "codeintel-db"
-  CODEINTEL_PGPORT: "5432"
-  CODEINTEL_PGUSER: "sg"
-  CODEINTEL_PGPASSWORD: "sg"
-  CODEINTEL_PGDATABASE: "sg"
-  CODEINTEL_PGSSLMODE: "disable"
-  CODEINSIGHTS_PGHOST: "codeinsights-db"
-  CODEINSIGHTS_PGPORT: "5432"
-  CODEINSIGHTS_PGUSER: "postgres"
-  CODEINSIGHTS_PGPASSWORD: "password"
-  CODEINSIGHTS_PGDATABASE: "postgres"
-  CODEINSIGHTS_PGSSLMODE: "disable"
-  ```
+PGHOST: "pgsql"
+PGPORT: "5432"
+PGUSER: "sg"
+PGPASSWORD: "sg"
+PGDATABASE: "sg"
+PGSSLMODE: "disable"
+CODEINTEL_PGHOST: "codeintel-db"
+CODEINTEL_PGPORT: "5432"
+CODEINTEL_PGUSER: "sg"
+CODEINTEL_PGPASSWORD: "sg"
+CODEINTEL_PGDATABASE: "sg"
+CODEINTEL_PGSSLMODE: "disable"
+CODEINSIGHTS_PGHOST: "codeinsights-db"
+CODEINSIGHTS_PGPORT: "5432"
+CODEINSIGHTS_PGUSER: "postgres"
+CODEINSIGHTS_PGPASSWORD: "password"
+CODEINSIGHTS_PGDATABASE: "postgres"
+CODEINSIGHTS_PGSSLMODE: "disable"
+```
 
 ## Commands
 
@@ -70,7 +70,7 @@ The `migrator` service exposes the following commands:
 
 The `upgrade` command performs database schema migrations and out-of-band migrations to rewrite existing instance data in-place into the shaped expected by a given target Sourcegraph version. This command is used by site-administrators to perform [multi-version upgrades](../index.md#upgrade-types).
 
-```
+```sh
 upgrade \
     --from=<current version> --to=<target version> \
     [--dry-run=false] \
@@ -104,7 +104,7 @@ upgrade \
 
 The `drift` command describes the current (live) database schema and compares it against the expected schema at the given version. The output of this command will include all relevant schema differences that could affect application correctness and performance. When schema drift is detected, a diff of the expected and actual Postgres object definitions will be shown, along with instructions on how to manually resolve the disparity. [Learn more here.](./schema-drift.md)
 
-```
+```sh
 drift \
     --db=<schema> \
     [--version=<version>] \
@@ -128,7 +128,7 @@ Exactly one of `--version` and `--file` must be supplied.
 
 The `downgrade` command performs database schema migrations and (reverse-applied) out-of-band migrations to rewrite existing instance data in-place into the shaped expected by a given target Sourcegraph version.
 
-```
+```sh
 downgrade \
     --from=<current version> --to=<target version> \
     [--dry-run=false] \
@@ -161,7 +161,7 @@ downgrade \
 
 The `add-log` command adds an entry to the `migration_logs` table after a site administrator has explicitly applied the contents of a migration definition. This command may be performed by a site-administrator as part of [repairing a dirty database](../../how-to/dirty_database.md#3-add-a-migration-log-entry).
 
-```
+```sh
 add-log \
     --db=<schema> \
     --version=<version> \
@@ -181,7 +181,7 @@ add-log \
 
 The `validate` command validates the current state of the database (both schema and data migration progress). This command is used on Sourcegraph instance startup of database-dependent services to ensure that the migrator has been run to the expected version.
 
-```
+```sh
 validate \
     [--db=all] \
     [--skip-out-of-band-migrations=false]
@@ -204,7 +204,7 @@ The `up` command (the default behavior of the `migrator` service) applies all mi
 
 Users should generally prefer the command [`upto`](#upto), which accepts more explicit bounds and does not depend on the migrator compilation version.
 
-```
+```sh
 up \
     [--db=all] \
     [--skip-upgrade-validation=false] \
@@ -229,7 +229,7 @@ up \
 
 The `run-out-of-band-migrations` command runs out-of-band migrations within the `migrator`. This command may be performed by a site-administrator as part of [repairing an unfinished migration](../../how-to/unfinished_migration.md).
 
-```
+```sh
 run-out-of-band-migrations \
     [--id <id>]+ \
     [--apply-reverse=false] \
@@ -249,7 +249,7 @@ run-out-of-band-migrations \
 
 The `describe` command outputs a dump of your database schema.
 
-```
+```sh
 describe \
     --db=<schema> \
     --format=<json|psql> \
@@ -293,16 +293,17 @@ To run `migrator` with a specific *command*:
 
 For example here the `upgrade` command:
 ```yaml
-      containers:
-        - name: migrator
-          image: "index.docker.io/sourcegraph/migrator:5.0.3"
-          args: ["upgrade", "--from=v3.41.0", "--to=v4.5.1"]
-          envFrom:
+containers:
+  - name: migrator
+    image: "index.docker.io/sourcegraph/migrator:5.0.3"
+    args: ["upgrade", "--from=v3.41.0", "--to=v4.5.1"]
+    envFrom:
 ```
 
 2. Apply the job and wait for it to complete.
 
-```bash
+```sh
+# Delete previous job (if one exists)
 kubectl delete -f configure/migrator/migrator.Job.yaml --ignore-not-found=true
 
 # Apply the manifest and wait for the operation to complete before continuing
@@ -311,8 +312,8 @@ kubectl apply -f configure/migrator/migrator.Job.yaml
 
 3. Check the logs from execution
    
-```bash
-kubectl logs job.batch/migrator -f
+```sh
+$ kubectl logs job.batch/migrator -f
 ```
 
 ### Kubernetes Helm
@@ -322,7 +323,7 @@ Running migrator operations in helm takes advantage of the [sourcegraph-migrator
 Generally the migrator is run via the `helm upgrade`, for example:
 
 ```
-helm upgrade --install -n sourcegraph --set "migrator.args={drift,--db=frontend,--version=v3.39.1}" sourcegraph-migrator sourcegraph/sourcegraph-migrator --version 4.4.2
+$ helm upgrade --install -n sourcegraph --set "migrator.args={drift,--db=frontend,--version=v3.39.1}" sourcegraph-migrator sourcegraph/sourcegraph-migrator --version 4.4.2
 ```
 
 In the example above the `drift` operation is run with flags `--db` and `--version`. The migrator is run using image version `v4.4.2`.
@@ -332,7 +333,7 @@ Arguments are set with the `--set "migrator.args={operation-arg,flag-arg-1,flag-
 In the most general form running operations follows this template:
 
 ```
-helm upgrade --install -n <your namespace> --set "migrator.args={<arg1>,<arg2>,<arg3>}" sourcegraph-migrator sourcegraph/sourcegraph-migrator --version <migrator image version> 
+$ helm upgrade --install -n <your namespace> --set "migrator.args={<arg1>,<arg2>,<arg3>}" sourcegraph-migrator sourcegraph/sourcegraph-migrator --version <migrator image version> 
 ```
 
 > NOTE: You can troubleshoot a migrators operations with the command `kubectl -n sourcegraph logs -l job=migrator -f`. This will show you logs from the migrator jobs operation steps.
@@ -347,24 +348,24 @@ To run `migrator` with a specific *command*:
 
 For example here the `upgrade` command:
 ```yaml
-  migrator:
-    container_name: migrator
-    image: 'index.docker.io/sourcegraph/migrator:5.0.3'
-    cpus: 0.5
-    mem_limit: '500m'
-    command: ['upgrade', '--from=v3.41.0', '--to=v4.5.1']
-    environment:
+migrator:
+  container_name: migrator
+  image: 'index.docker.io/sourcegraph/migrator:5.0.3'
+  cpus: 0.5
+  mem_limit: '500m'
+  command: ['upgrade', '--from=v3.41.0', '--to=v4.5.1']
+  environment:
 ```
 
 2. Apply the job and wait for it to complete.
 
-```bash
-docker-compose up -d migrator
+```sh
+$ docker-compose up -d migrator
 ```
 
 3. The log output of `migrator` can be checked with the command
-```bash
-docker logs migrator
+```sh
+$ docker logs migrator
 ```
 
 > Note: Remember to set the `command:` back to `up` and `image:` back to your deployment version if you are starting Souregraph again.
@@ -375,7 +376,7 @@ Run the following commands on your Docker host.
 
 > NOTE: These values will work for a standard docker-compose deployment of Sourcegraph. If you've customized your deployment (e.g., using an external database service), you will have to modify the environment variables accordingly.
 
-```bash
+```sh
 export MIGRATOR_SOURCEGRAPH_VERSION="..."
 
 docker run \
@@ -407,8 +408,8 @@ docker run \
 
 Observe the output of the `migrator` container via:
 
-```bash
-docker logs migrator_$SOURCEGRAPH_VERSION
+```sh
+$ docker logs migrator_$SOURCEGRAPH_VERSION
 ```
 
 The log output of the `migrator` should include `INFO`-level logs and successfully terminate with `migrator exited with code 0`. If you see an error message or any of the databases have been flagged as "dirty", please follow ["How to troubleshoot a dirty database"](../../../admin/how-to/dirty_database.md). A dirty database will not affect your ability to use Sourcegraph however it will need to be resolved to upgrade further. If you are unable to resolve the issues, contact support at <mailto:support@sourcegraph.com> for further assistance. Otherwise, you are now safe to upgrade Sourcegraph.

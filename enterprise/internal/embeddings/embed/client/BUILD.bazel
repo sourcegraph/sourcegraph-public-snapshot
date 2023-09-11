@@ -1,8 +1,0 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
-
-go_library(
-    name = "client",
-    srcs = ["client.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client",
-    visibility = ["//enterprise:__subpackages__"],
-)

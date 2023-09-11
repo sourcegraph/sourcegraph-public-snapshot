@@ -1,0 +1,28 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "search",
+    srcs = [
+        "errors.go",
+        "text.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/batches/search",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/batches/search/syntax",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    name = "search_test",
+    timeout = "short",
+    srcs = ["text_test.go"],
+    embed = [":search"],
+    deps = [
+        "//internal/batches/search/syntax",
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

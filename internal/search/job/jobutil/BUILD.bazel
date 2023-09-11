@@ -6,7 +6,6 @@ go_library(
     srcs = [
         "alert.go",
         "combinators.go",
-        "enterprise.go",
         "expression_job.go",
         "filter_file_contains.go",
         "filter_file_contributor.go",
@@ -33,6 +32,7 @@ go_library(
         "//internal/featureflag",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
+        "//internal/own/search",
         "//internal/search",
         "//internal/search/alert",
         "//internal/search/commit",

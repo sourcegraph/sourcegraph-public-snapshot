@@ -21,15 +21,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	ghaauth "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth"
-	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	authcheck "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	ghaauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -51,16 +51,14 @@ func Middleware(db database.DB) *auth.Middleware {
 
 const cacheTTLSeconds = 60 * 60 // 1 hour
 
-func newMiddleware(ossDB database.DB, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
-	db := edb.NewEnterpriseDB(ossDB)
+func newMiddleware(db database.DB, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
 	ghAppState := rcache.NewWithTTL("github_app_state", cacheTTLSeconds)
 	handler := newServeMux(db, authPrefix, ghAppState)
-	traceFamily := "githubapp"
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// This span should be manually finished before delegating to the next handler or
 		// redirecting.
-		span, _ := trace.New(r.Context(), traceFamily, "Middleware.Handle")
+		span, _ := trace.New(r.Context(), "githubapp")
 		span.SetAttributes(attribute.Bool("isAPIHandler", isAPIHandler))
 		span.Finish()
 		if strings.HasPrefix(r.URL.Path, authPrefix+"/") {
@@ -73,7 +71,7 @@ func newMiddleware(ossDB database.DB, authPrefix string, isAPIHandler bool, next
 }
 
 // checkSiteAdmin checks if the current user is a site admin and sets http error if not
-func checkSiteAdmin(db edb.EnterpriseDB, w http.ResponseWriter, req *http.Request) error {
+func checkSiteAdmin(db database.DB, w http.ResponseWriter, req *http.Request) error {
 	err := authcheck.CheckCurrentUserIsSiteAdmin(req.Context(), db)
 	if err == nil {
 		return nil
@@ -116,9 +114,10 @@ type gitHubAppStateDetails struct {
 	WebhookUUID string `json:"webhookUUID,omitempty"`
 	Domain      string `json:"domain"`
 	AppID       int    `json:"app_id,omitempty"`
+	BaseURL     string `json:"base_url,omitempty"`
 }
 
-func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.Handler {
+func newServeMux(db database.DB, prefix string, cache *rcache.Cache) http.Handler {
 	r := mux.NewRouter()
 
 	r.Path(prefix + "/state").Methods("GET").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -136,6 +135,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 
 		gqlID := req.URL.Query().Get("id")
 		domain := req.URL.Query().Get("domain")
+		baseURL := req.URL.Query().Get("baseURL")
 		if gqlID == "" {
 			// we marshal an empty `gitHubAppStateDetails` struct because we want the values saved in the cache
 			// to always conform to the same structure.
@@ -156,8 +156,9 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 		stateDetails, err := json.Marshal(gitHubAppStateDetails{
-			AppID:  int(id64),
-			Domain: domain,
+			AppID:   int(id64),
+			Domain:  domain,
+			BaseURL: baseURL,
 		})
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
@@ -179,6 +180,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		webhookURN := req.URL.Query().Get("webhookURN")
 		appName := req.URL.Query().Get("appName")
 		domain := req.URL.Query().Get("domain")
+		baseURL := req.URL.Query().Get("baseURL")
 		var webhookUUID string
 		if webhookURN != "" {
 			ws := backend.NewWebhookService(db, keyring.Default())
@@ -199,6 +201,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		stateDetails, err := json.Marshal(gitHubAppStateDetails{
 			WebhookUUID: webhookUUID,
 			Domain:      domain,
+			BaseURL:     baseURL,
 		})
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
@@ -262,9 +265,16 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 
-		u, err := getAPIUrl(req, code)
+		baseURL, err := url.Parse(stateDetails.BaseURL)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Unexpected error when creating github API URL: %v", err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Bad request, could not parse baseURL from state: %v, error: %v", stateDetails.BaseURL, err), http.StatusInternalServerError)
+			return
+		}
+
+		apiURL, _ := github.APIRoot(baseURL)
+		u, err := url.JoinPath(apiURL.String(), "/app-manifests", code, "conversions")
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Unexpected error when building manifest endpoint URL: %v", err), http.StatusInternalServerError)
 			return
 		}
 
@@ -482,34 +492,28 @@ func generateRedirectURL(domain *string, installationID, appID *int, appName *st
 	}
 }
 
-func getAPIUrl(req *http.Request, code string) (string, error) {
-	referer, err := url.Parse(req.Referer())
-	if err != nil {
-		return "", err
-	}
-	api := referer.Scheme + "://api." + referer.Host
-	u, err := url.JoinPath(api, "/app-manifests", code, "conversions")
-	if err != nil {
-		return "", err
-	}
-	return u, nil
-}
-
 var MockCreateGitHubApp func(conversionURL string, domain types.GitHubAppDomain) (*ghtypes.GitHubApp, error)
 
 func createGitHubApp(conversionURL string, domain types.GitHubAppDomain) (*ghtypes.GitHubApp, error) {
 	if MockCreateGitHubApp != nil {
 		return MockCreateGitHubApp(conversionURL, domain)
 	}
-	r, err := http.NewRequest("POST", conversionURL, http.NoBody)
+	r, err := http.NewRequest(http.MethodPost, conversionURL, http.NoBody)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := http.DefaultClient.Do(r)
+
+	cf := httpcli.UncachedExternalClientFactory
+	client, err := cf.Doer()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create GitHub client")
+	}
+
+	resp, err := client.Do(r)
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode != 201 {
+	if resp.StatusCode != http.StatusCreated {
 		return nil, errors.Newf("expected 201 statusCode, got: %d", resp.StatusCode)
 	}
 

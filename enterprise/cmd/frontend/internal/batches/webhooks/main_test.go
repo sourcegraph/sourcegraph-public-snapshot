@@ -10,7 +10,7 @@ import (
 	"os"
 	"testing"
 
-	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )

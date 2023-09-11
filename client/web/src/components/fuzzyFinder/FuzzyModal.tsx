@@ -44,6 +44,7 @@ import { SearchValueRankingCache } from '../../fuzzyFinder/SearchValueRankingCac
 import { mergedHandler } from '../../fuzzyFinder/WordSensitiveFuzzySearch'
 import { Keybindings } from '../KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 
+import { parseFuzzyFileQuery } from './FuzzyFiles'
 import { fuzzyErrors, FuzzyState, FuzzyTabs, FuzzyTabKey, FuzzyScope } from './FuzzyTabs'
 import { HighlightedLink, HighlightedLinkProps, linkStyle } from './HighlightedLink'
 
@@ -567,7 +568,9 @@ const SearchQueryLink: React.FunctionComponent<FuzzyState & { onClickItem: () =>
         case 'symbols':
             return searchQueryLink(`type:symbol ${props.query}${isScopeEverywhere ? '' : repoFilter(props)}`)
         case 'files':
-            return searchQueryLink(`type:path ${props.query}${isScopeEverywhere ? '' : repoFilter(props)}`)
+            return searchQueryLink(
+                `type:path ${parseFuzzyFileQuery(props.query).filename}${isScopeEverywhere ? '' : repoFilter(props)}`
+            )
         case 'repos':
             return searchQueryLink(`type:repo ${props.query}`)
         case 'all':

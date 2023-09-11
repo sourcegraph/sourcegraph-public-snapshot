@@ -12,15 +12,14 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
-	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
-	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
+	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
+	"github.com/sourcegraph/sourcegraph/internal/batches/state"
+	"github.com/sourcegraph/sourcegraph/internal/batches/store"
+	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
+	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -198,7 +197,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		}
 	}
 
-	s, err := newSchema(db, New(edb.NewEnterpriseDB(db), bstore, gitserver.NewMockClient(), logger))
+	s, err := newSchema(db, New(db, bstore, gitserver.NewMockClient(), logger))
 	if err != nil {
 		t.Fatal(err)
 	}

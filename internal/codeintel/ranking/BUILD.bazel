@@ -1,0 +1,56 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "ranking",
+    srcs = [
+        "init.go",
+        "observability.go",
+        "service.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/ranking",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/codeintel/ranking/internal/background",
+        "//internal/codeintel/ranking/internal/background/coordinator",
+        "//internal/codeintel/ranking/internal/background/exporter",
+        "//internal/codeintel/ranking/internal/background/janitor",
+        "//internal/codeintel/ranking/internal/background/mapper",
+        "//internal/codeintel/ranking/internal/background/reducer",
+        "//internal/codeintel/ranking/internal/lsifstore",
+        "//internal/codeintel/ranking/internal/shared",
+        "//internal/codeintel/ranking/internal/store",
+        "//internal/codeintel/ranking/shared",
+        "//internal/codeintel/shared",
+        "//internal/codeintel/types",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/goroutine",
+        "//internal/metrics",
+        "//internal/observation",
+        "//schema",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "ranking_test",
+    timeout = "short",
+    srcs = [
+        "mocks_test.go",
+        "service_test.go",
+    ],
+    embed = [":ranking"],
+    deps = [
+        "//internal/api",
+        "//internal/codeintel/ranking/internal/store",
+        "//internal/codeintel/ranking/shared",
+        "//internal/codeintel/uploads/shared",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/observation",
+        "//schema",
+    ],
+)

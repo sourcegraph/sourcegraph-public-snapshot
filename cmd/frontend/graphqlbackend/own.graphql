@@ -86,21 +86,22 @@ type OwnershipStats {
     Total files considered for ownership statistics (owned + unowned).
     """
     totalFiles: Int!
-
     """
     Total files with ownership stemming from CODEOWNERS files.
     """
     totalCodeownedFiles: Int!
-
     """
     Total files with any ownership defined (both CODEOWNERS and assigned).
     """
     totalOwnedFiles: Int!
-
     """
     Total files with assigned ownership.
     """
     totalAssignedOwnershipFiles: Int!
+    """
+    When statistics were last updated.
+    """
+    updatedAt: DateTime
 }
 
 """

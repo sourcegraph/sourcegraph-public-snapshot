@@ -16,8 +16,8 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -88,7 +88,7 @@ func (c *Client) RepoUpdateSchedulerInfo(
 	ctx context.Context,
 	args protocol.RepoUpdateSchedulerInfoArgs,
 ) (result *protocol.RepoUpdateSchedulerInfoResult, err error) {
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return nil, err
@@ -127,8 +127,8 @@ func (c *Client) RepoLookup(
 		return MockRepoLookup(args)
 	}
 
-	tr, ctx := trace.New(ctx, "repoupdater", "RepoLookup",
-		attribute.String("repo", string(args.Repo)))
+	tr, ctx := trace.New(ctx, "repoupdater.RepoLookup",
+		args.Repo.Attr())
 	defer func() {
 		if result != nil {
 			tr.SetAttributes(attribute.Bool("found", result.Repo != nil))
@@ -136,7 +136,7 @@ func (c *Client) RepoLookup(
 		tr.FinishWithErr(&err)
 	}()
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return nil, err
@@ -207,7 +207,7 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*pro
 		return MockEnqueueRepoUpdate(ctx, repo)
 	}
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return nil, err
@@ -216,9 +216,10 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*pro
 		req := proto.EnqueueRepoUpdateRequest{Repo: string(repo)}
 		resp, err := client.EnqueueRepoUpdate(ctx, &req)
 		if err != nil {
-			if st := status.Convert(err); st.Code() == codes.NotFound {
-				return nil, &repoNotFoundError{repo: string(repo), responseBody: st.Message()}
+			if s, ok := status.FromError(err); ok && s.Code() == codes.NotFound {
+				return nil, &repoNotFoundError{repo: string(repo), responseBody: s.Message()}
 			}
+
 			return nil, err
 		}
 
@@ -270,7 +271,7 @@ func (c *Client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
 		return MockEnqueueChangesetSync(ctx, ids)
 	}
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return err
@@ -315,7 +316,7 @@ func (c *Client) SyncExternalService(ctx context.Context, externalServiceID int6
 		return MockSyncExternalService(ctx, externalServiceID)
 	}
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return nil, err
@@ -362,7 +363,7 @@ func (c *Client) ExternalServiceNamespaces(ctx context.Context, args protocol.Ex
 		return MockExternalServiceNamespaces(ctx, args)
 	}
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return nil, err
@@ -398,7 +399,7 @@ func (c *Client) ExternalServiceRepositories(ctx context.Context, args protocol.
 		return MockExternalServiceRepositories(ctx, args)
 	}
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return nil, err
@@ -441,7 +442,7 @@ func (c *Client) httpPost(ctx context.Context, method string, payload any) (resp
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request) (_ *http.Response, err error) {
-	tr, ctx := trace.New(ctx, "repoupdater", "do")
+	tr, ctx := trace.New(ctx, "repoupdater.do")
 	defer tr.FinishWithErr(&err)
 
 	req.Header.Set("Content-Type", "application/json")

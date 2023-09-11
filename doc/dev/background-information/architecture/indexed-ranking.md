@@ -26,17 +26,26 @@ Larger values give a more stable ranking, but searches can take longer to return
 
 ## Result Ranking
 
-Zoekt creates a [score for a match](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/zoekt%24+matchScore&patternType=literal) based on a few heuristics. In order of importance:
+There are two main components to a search result's rank: the strength of the query's match with the file, and static signals
+representing the file's importance.
+
+Zoekt creates a [match score for a query](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/zoekt%24+matchScore&patternType=literal) based on a few heuristics. In order of importance:
 
 - It matches a symbol, such as an exact match on the name of a class.
 - The match is at the start or end of a symbol. For example if you search for `Indexed`, then a class called `IndexedRepo` will score more highly than one named `NonIndexedRepo`.
 - It partially matches a symbol. Symbols are a sign of something important, so any overlap is better than none.
 - It matches a full word. For example, if you search `rank`, then `result rank` will score more highly than `ranked list`.
 - It partially matches a word. For example, if you search `rank`, then `result rank` will score more highly than `ranked list`.
+- The number of query components that match the file content (in the case of OR queries).
 
-We also incorporate smaller signals based on the repository and file importance (described in the next section), as well as the number of query components that match (in the case of OR queries).
+In terms of static file signals, Zoekt uses the repository priority and file order (described in the next section).
 
-## Ordering files by importance
+In addition, if code intel ranks are being calculated from [SCIP data](./../../../code_navigation/explanations/precise_code_navigation.md), then Zoekt incorporates these
+as an important file signal. A file's rank is based on the number inbound references from any other file in the available code graph, representing how widely-used
+and important the file is to the codebase. This is inspired by PageRank in web search, which considers a website to be more authoritative if it has a large number
+of inbound links from other authoritative sites. See [this guide](./precise-ranking.md) on how to enable the background job to produce these ranks.
+
+## Ordering files within the index
 
 When creating indexes, we lay out the files such that we search more important files and repositories first. This means when streaming we're more likely to encounter important candidates first, leading to a better set of ranked results.
 
@@ -45,10 +54,10 @@ The [repository priority](https://sourcegraph.com/search?q=context:global+repo:%
 
 Within each repository, files are ordered in terms of importance:
 - Down rank generated code. This code is usually the least interesting in results.
-- Down rank vendored code. Developers are normally looking for code written by their organisation.
+- Down rank vendored code. Developers are normally looking for code written by their organization.
 - Down rank test code. Developers normally prefer results in non-test code over test code.
 - Up rank files with lots of symbols. These files are usually edited a lot.
-- Up rank small files. If you have similiar symbol levels, prefer the shorter file.
+- Up rank small files. If you have similar symbol levels, prefer the shorter file.
 - Up rank short names. The closer to the project root the likely more important you are.
 - Up rank branch count. if the same document appears on multiple branches its likely more important.
 
@@ -56,4 +65,3 @@ Within each repository, files are ordered in terms of importance:
 
 - [RFC 359](https://docs.google.com/document/d/1EiD_dKkogqBNAbKN3BbanII4lQwROI7a0aGaZ7i-0AU/edit#heading=h.trqab8y0kufp): Search Result Ranking
 - [Zoekt design reference](https://github.com/sourcegraph/zoekt/blob/master/doc/design.md#ranking)
-

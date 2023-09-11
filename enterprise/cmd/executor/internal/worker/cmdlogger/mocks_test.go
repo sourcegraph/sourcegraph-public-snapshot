@@ -10,8 +10,8 @@ import (
 	"context"
 	"sync"
 
-	types "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	executor "github.com/sourcegraph/sourcegraph/internal/executor"
+	types "github.com/sourcegraph/sourcegraph/internal/executor/types"
 )
 
 // MockExecutionLogEntryStore is a mock implementation of the

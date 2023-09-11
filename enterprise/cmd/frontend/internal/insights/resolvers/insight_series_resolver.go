@@ -17,13 +17,13 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/insights/background/queryrunner"
+	"github.com/sourcegraph/sourcegraph/internal/insights/query/querybuilder"
+	"github.com/sourcegraph/sourcegraph/internal/insights/scheduler"
+	"github.com/sourcegraph/sourcegraph/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/insights/types"
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

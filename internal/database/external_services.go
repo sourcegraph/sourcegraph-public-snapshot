@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -449,8 +450,8 @@ func validateGitHubConnection(githubValidators []func(*types.GitHubConnection) e
 	if c.Token == "" && c.GitHubAppDetails == nil {
 		err = errors.Append(err, errors.New("either token or GitHub App Details must be set"))
 	}
-	if c.Repos == nil && c.RepositoryQuery == nil && c.Orgs == nil {
-		err = errors.Append(err, errors.New("at least one of repositoryQuery, repos or orgs must be set"))
+	if c.Repos == nil && c.RepositoryQuery == nil && c.Orgs == nil && (c.GitHubAppDetails == nil || !c.GitHubAppDetails.CloneAllRepositories) {
+		err = errors.Append(err, errors.New("at least one of repositoryQuery, repos, orgs, or gitHubAppDetails.cloneAllRepositories must be set"))
 	}
 	return err
 }
@@ -790,6 +791,8 @@ type ExternalServiceUpdate struct {
 	Config         *string
 	CloudDefault   *bool
 	TokenExpiresAt *time.Time
+	LastSyncAt     *time.Time
+	NextSyncAt     *time.Time
 }
 
 func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) (err error) {
@@ -869,7 +872,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		unrestricted := !envvar.SourcegraphDotComMode() && !gjson.GetBytes(normalized, "authorization").Exists()
 		updates = append(updates,
 			sqlf.Sprintf(
-				"config = %s, encryption_key_id = %s, next_sync_at = NOW(), unrestricted = %s, has_webhooks = %s",
+				"config = %s, encryption_key_id = %s, unrestricted = %s, has_webhooks = %s",
 				encryptedConfig, keyID, unrestricted, hasWebhooks,
 			))
 	}
@@ -880,6 +883,17 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 
 	if update.TokenExpiresAt != nil {
 		updates = append(updates, sqlf.Sprintf("token_expires_at = %s", update.TokenExpiresAt))
+	}
+
+	if update.LastSyncAt != nil {
+		updates = append(updates, sqlf.Sprintf("last_sync_at = %s", dbutil.NullTimeColumn(*update.LastSyncAt)))
+	}
+
+	if update.NextSyncAt != nil {
+		updates = append(updates, sqlf.Sprintf("next_sync_at = %s", dbutil.NullTimeColumn(*update.NextSyncAt)))
+	} else if update.Config != nil {
+		// If the config changed, trigger a new sync immediately.
+		updates = append(updates, sqlf.Sprintf("next_sync_at = NOW()"))
 	}
 
 	if len(updates) == 0 {
@@ -1333,7 +1347,7 @@ ORDER BY es.id, essj.finished_at DESC
 }
 
 func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesListOptions) (_ []*types.ExternalService, err error) {
-	tr, ctx := trace.New(ctx, "externalServiceStore", "List")
+	tr, ctx := trace.New(ctx, "externalServiceStore.List")
 	defer tr.FinishWithErr(&err)
 
 	if opt.OrderByDirection != "ASC" {
@@ -1428,7 +1442,7 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 }
 
 func (e *externalServiceStore) ListRepos(ctx context.Context, opt ExternalServiceReposListOptions) (_ []*types.ExternalServiceRepo, err error) {
-	tr, ctx := trace.New(ctx, "externalServiceStore", "ListRepos")
+	tr, ctx := trace.New(ctx, "externalServiceStore.ListRepos")
 	defer tr.FinishWithErr(&err)
 
 	predicate := sqlf.Sprintf("TRUE")
@@ -1578,8 +1592,12 @@ func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawC
 	// For existing auth providers, this is forwards compatible. While at the same time if they also
 	// wanted to get on the `enforcePermissions` pattern, this change is backwards compatible.
 	enforcePermissions := gjson.Get(rawConfig, "enforcePermissions")
-	if !envvar.SourcegraphDotComMode() && enforcePermissions.Exists() {
-		es.Unrestricted = !enforcePermissions.Bool()
+	if !envvar.SourcegraphDotComMode() {
+		if globals.PermissionsUserMapping().Enabled {
+			es.Unrestricted = false
+		} else if enforcePermissions.Exists() {
+			es.Unrestricted = !enforcePermissions.Bool()
+		}
 	}
 
 	hasWebhooks := false

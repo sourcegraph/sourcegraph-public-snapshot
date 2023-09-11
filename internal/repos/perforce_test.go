@@ -115,7 +115,7 @@ func TestPerforceSource_ListRepos(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			svc := &types.ExternalService{
 				Kind:   extsvc.KindPerforce,
-				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, tc.conf)),
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, tc.conf)),
 			}
 
 			perforceSrc, err := newPerforceSource(svc, tc.conf)
@@ -123,7 +123,7 @@ func TestPerforceSource_ListRepos(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			repos, err := listAll(context.Background(), perforceSrc)
+			repos, err := ListAll(context.Background(), perforceSrc)
 
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
@@ -182,7 +182,7 @@ func TestPerforceSource_makeRepo(t *testing.T) {
 				got = append(got, s.makeRepo(depot))
 			}
 
-			testutil.AssertGolden(t, "testdata/golden/"+test.name, update(test.name), got)
+			testutil.AssertGolden(t, "testdata/golden/"+test.name, Update(test.name), got)
 		})
 	}
 }

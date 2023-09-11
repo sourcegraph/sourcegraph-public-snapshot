@@ -6,8 +6,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings/qa/embed_queries",
     visibility = ["//visibility:private"],
     deps = [
-        "//enterprise/internal/embeddings/embed",
         "//internal/conf",
+        "//internal/embeddings/embed",
         "//internal/jsonc",
         "//lib/errors",
         "//schema",

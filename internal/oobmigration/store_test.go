@@ -19,9 +19,6 @@ import (
 )
 
 func TestSynchronizeMetadata(t *testing.T) {
-	// Note: package globals block test parallelism
-	testEnterprise(t)
-
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -92,9 +89,6 @@ func TestSynchronizeMetadata(t *testing.T) {
 }
 
 func TestSynchronizeMetadataFallback(t *testing.T) {
-	// Note: package globals block test parallelism
-	testEnterprise(t)
-
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -164,31 +158,6 @@ func TestSynchronizeMetadataFallback(t *testing.T) {
 
 func TestList(t *testing.T) {
 	// Note: package globals block test parallelism
-	withMigrationIDs(t, []int{1, 2, 3})
-
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := testStore(t, db)
-
-	migrations, err := store.List(context.Background())
-	if err != nil {
-		t.Fatalf("unexpected error getting migrations: %s", err)
-	}
-
-	expectedMigrations := make([]Migration, len(testMigrations))
-	copy(expectedMigrations, testMigrations)
-	sort.Slice(expectedMigrations, func(i, j int) bool {
-		return expectedMigrations[i].ID > expectedMigrations[j].ID
-	})
-
-	if diff := cmp.Diff(expectedMigrations, migrations); diff != "" {
-		t.Errorf("unexpected migrations (-want +got):\n%s", diff)
-	}
-}
-
-func TestListEnterprise(t *testing.T) {
-	// Note: package globals block test parallelism
-	testEnterprise(t)
 	withMigrationIDs(t, []int{1, 2, 3, 4, 5})
 
 	logger := logtest.Scoped(t)
@@ -202,7 +171,6 @@ func TestListEnterprise(t *testing.T) {
 
 	expectedMigrations := make([]Migration, len(testMigrations))
 	copy(expectedMigrations, testMigrations)
-	expectedMigrations = append(expectedMigrations, testEnterpriseMigrations...)
 	sort.Slice(expectedMigrations, func(i, j int) bool {
 		return expectedMigrations[i].ID > expectedMigrations[j].ID
 	})
@@ -226,12 +194,6 @@ func TestGetMultiple(t *testing.T) {
 	for i, expectedMigration := range testMigrations {
 		if diff := cmp.Diff(expectedMigration, migrations[i]); diff != "" {
 			t.Errorf("unexpected migration (-want +got):\n%s", diff)
-		}
-	}
-
-	for i, expectedMigration := range testEnterpriseMigrations {
-		if diff := cmp.Diff(expectedMigration, migrations[i+len(testMigrations)]); diff != "" {
-			t.Errorf("unexpected enterprise migration (-want +got):\n%s", diff)
 		}
 	}
 
@@ -484,9 +446,6 @@ var testMigrations = []Migration{
 			{Message: "uh-oh 4", Created: testTime.Add(time.Hour*5 + time.Second*3)},
 		},
 	},
-}
-
-var testEnterpriseMigrations = []Migration{
 	{
 		ID:             4,
 		Team:           "search",
@@ -498,7 +457,6 @@ var testEnterpriseMigrations = []Migration{
 		Created:        testTime,
 		LastUpdated:    nil,
 		NonDestructive: false,
-		IsEnterprise:   true,
 		ApplyReverse:   false,
 		Metadata:       json.RawMessage(`{}`),
 		Errors:         []MigrationError{},
@@ -514,7 +472,6 @@ var testEnterpriseMigrations = []Migration{
 		Created:        testTime.Add(time.Hour * 1),
 		LastUpdated:    pointers.Ptr(testTime.Add(time.Hour * 2)),
 		NonDestructive: true,
-		IsEnterprise:   true,
 		ApplyReverse:   false,
 		Metadata:       json.RawMessage(`{}`),
 		Errors:         []MigrationError{},
@@ -523,11 +480,6 @@ var testEnterpriseMigrations = []Migration{
 
 func newVersionPtr(major, minor int) *Version {
 	return pointers.Ptr(NewVersion(major, minor))
-}
-
-func testEnterprise(t *testing.T) {
-	ReturnEnterpriseMigrations = true
-	t.Cleanup(func() { ReturnEnterpriseMigrations = false })
 }
 
 func withMigrationIDs(t *testing.T, ids []int) {
@@ -544,21 +496,15 @@ func testStore(t *testing.T, db database.DB) *Store {
 	}
 
 	for i := range testMigrations {
-		if err := insertMigration(store, testMigrations[i], false); err != nil {
+		if err := insertMigration(store, testMigrations[i]); err != nil {
 			t.Fatalf("unexpected error inserting migration: %s", err)
-		}
-	}
-
-	for i := range testEnterpriseMigrations {
-		if err := insertMigration(store, testEnterpriseMigrations[i], true); err != nil {
-			t.Fatalf("unexpected error inserting enterprise migration: %s", err)
 		}
 	}
 
 	return store
 }
 
-func insertMigration(store *Store, migration Migration, enterpriseOnly bool) error {
+func insertMigration(store *Store, migration Migration) error {
 	var deprecatedMajor, deprecatedMinor *int
 	if migration.Deprecated != nil {
 		deprecatedMajor = &migration.Deprecated.Major
@@ -579,9 +525,8 @@ func insertMigration(store *Store, migration Migration, enterpriseOnly bool) err
 			created,
 			last_updated,
 			non_destructive,
-			apply_reverse,
-			is_enterprise
-		) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+			apply_reverse
+		) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 	`,
 		migration.ID,
 		migration.Team,
@@ -596,7 +541,6 @@ func insertMigration(store *Store, migration Migration, enterpriseOnly bool) err
 		migration.LastUpdated,
 		migration.NonDestructive,
 		migration.ApplyReverse,
-		enterpriseOnly,
 	)
 
 	if err := store.Store.Exec(context.Background(), query); err != nil {

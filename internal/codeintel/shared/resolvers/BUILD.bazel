@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "resolvers",
+    srcs = ["site_admin_checker.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/auth",
+        "//internal/database",
+    ],
+)

@@ -63,7 +63,7 @@ func run(w io.Writer, args []string) error {
 	fmt.Fprintln(w, "plan", inputs.Plan)
 	fmt.Fprintln(w, "query", inputs.Query)
 
-	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan, nil)
+	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
 	if err != nil {
 		return errors.Wrap(err, "failed to create planJob")
 	}

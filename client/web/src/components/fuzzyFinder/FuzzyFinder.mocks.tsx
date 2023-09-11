@@ -13,11 +13,13 @@ import { FUZZY_GIT_LSFILES_QUERY } from './FuzzyFiles'
 import { FuzzyFinderContainer } from './FuzzyFinder'
 import { FUZZY_REPOS_QUERY } from './FuzzyRepos'
 import { FUZZY_SYMBOLS_QUERY } from './FuzzySymbols'
+import { FuzzyTabKey } from './FuzzyTabs'
 
 export interface FuzzyWrapperProps {
     url: string
     experimentalFeatures: Settings['experimentalFeatures']
     initialQuery?: string
+    activeTab?: FuzzyTabKey
 }
 
 export const FuzzyWrapper: React.FunctionComponent<FuzzyWrapperProps> = props => {
@@ -26,6 +28,7 @@ export const FuzzyWrapper: React.FunctionComponent<FuzzyWrapperProps> = props =>
     const client = useApolloClient()
     return (
         <FuzzyFinderContainer
+            defaultActiveTab={props.activeTab}
             client={client}
             isVisible={true}
             setIsVisible={() => {}}

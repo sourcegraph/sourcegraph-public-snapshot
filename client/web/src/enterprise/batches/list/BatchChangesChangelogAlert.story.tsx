@@ -9,8 +9,17 @@ const decorator: DecoratorFn = story => <div className="p-3 container web-conten
 const config: Meta = {
     title: 'web/batches/BatchChangesChangelogAlert',
     decorators: [decorator],
+    argTypes: {
+        viewerIsAdmin: {
+            name: 'Viewer is admin?',
+            control: { type: 'boolean' },
+            defaultValue: false,
+        },
+    },
 }
 
 export default config
 
-export const Changelog: Story = () => <WebStory>{() => <BatchChangesChangelogAlert />}</WebStory>
+export const Changelog: Story = args => (
+    <WebStory>{() => <BatchChangesChangelogAlert viewerIsAdmin={args.viewerIsAdmin} />}</WebStory>
+)

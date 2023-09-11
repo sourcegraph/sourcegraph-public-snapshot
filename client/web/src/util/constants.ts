@@ -1,3 +1,4 @@
+// NOTE(naman): Remember to add events to allow list: https://docs.sourcegraph.com/dev/background-information/data-usage-pipeline#allow-list
 export const enum EventName {
     CODY_CHAT_PAGE_VIEWED = 'web:codyChat:pageViewed',
     CODY_CHAT_SUBMIT = 'web:codyChat:submit',

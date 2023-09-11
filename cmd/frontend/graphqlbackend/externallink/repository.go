@@ -100,8 +100,8 @@ func linksForRepository(
 	db database.DB,
 	repo *types.Repo,
 ) (phabRepo *types.PhabricatorRepo, links *protocol.RepoLinks, serviceType string) {
-	tr, ctx := trace.New(ctx, "externallink", "linksForRepository",
-		attribute.String("repo", string(repo.Name)),
+	tr, ctx := trace.New(ctx, "linksForRepository",
+		repo.Name.Attr(),
 		attribute.Stringer("externalRepo", repo.ExternalRepo))
 	defer tr.Finish()
 

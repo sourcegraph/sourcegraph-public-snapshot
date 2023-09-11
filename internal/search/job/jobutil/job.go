@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	ownsearch "github.com/sourcegraph/sourcegraph/internal/own/search"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -29,10 +30,10 @@ import (
 )
 
 // NewPlanJob converts a query.Plan into its job tree representation.
-func NewPlanJob(inputs *search.Inputs, plan query.Plan, enterpriseJobs EnterpriseJobs) (job.Job, error) {
+func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 	children := make([]job.Job, 0, len(plan))
 	for _, q := range plan {
-		child, err := NewBasicJob(inputs, q, enterpriseJobs)
+		child, err := NewBasicJob(inputs, q)
 		if err != nil {
 			return nil, err
 		}
@@ -41,7 +42,7 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan, enterpriseJobs Enterpris
 
 	jobTree := NewOrJob(children...)
 	newJob := func(b query.Basic) (job.Job, error) {
-		return NewBasicJob(inputs, b, enterpriseJobs)
+		return NewBasicJob(inputs, b)
 	}
 
 	if inputs.PatternType == query.SearchTypeKeyword {
@@ -67,7 +68,7 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan, enterpriseJobs Enterpris
 }
 
 // NewBasicJob converts a query.Basic into its job tree representation.
-func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs EnterpriseJobs) (job.Job, error) {
+func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	var children []job.Job
 	addJob := func(j job.Job) {
 		children = append(children, j)
@@ -198,7 +199,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 
 	{ // Apply code ownership post-search filter
 		if includeOwners, excludeOwners, ok := isOwnershipSearch(b); ok {
-			basicJob = enterpriseJobs.FileHasOwnerJob(basicJob, includeOwners, excludeOwners)
+			basicJob = ownsearch.NewFileHasOwnersJob(basicJob, includeOwners, excludeOwners)
 		}
 	}
 
@@ -222,7 +223,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
 			if isSelectOwnersSearch(sp) {
 				// the select owners job is ran separately as it requires state and can return multiple owners from one match.
-				basicJob = enterpriseJobs.SelectFileOwnerJob(basicJob)
+				basicJob = ownsearch.NewSelectOwnersJob(basicJob)
 			} else {
 				basicJob = NewSelectJob(sp, basicJob)
 			}

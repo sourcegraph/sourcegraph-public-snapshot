@@ -17,32 +17,57 @@ Embeddings for relevant code files must be enabled for each repository that you'
 > NOTE: Enterprise Cloud customers should reach out to their Sourcegraph representative to enable embeddings.
 > See [Enabling Cody Enterprise: Cody on Sourcegraph Cloud](./enabling_cody_enterprise.md#cody-on-sourcegraph-cloud)
 
-Embeddings are automatically enabled and configured once [Cody is enabled](../quickstart.md).
-After enabling Cody, navigate to **Site admin > Cody** (`/site-admin/cody`) and schedule repositories for embedding.
+Embeddings are automatically enabled and configured once [Cody is enabled](../quickstart.md). You can also [use third-party embeddings provider directly](#using-a-third-party-embeddings-provider-directly) for embeddings.
 
-> NOTE: By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice).
+Embeddings will not be generated for any repo unless an admin takes action. There are two ways to do this.
 
-<span class="virtual-br"></span>
+The recommended way of configuring embeddings is to use a policy. These are configured through the Admin UI using [policies](https://docs.sourcegraph.com/cody/explanations/policies). Policy based embeddings will be automatically updated based on the [update interval](#adjust-the-minimum-time-interval-between-automatically-scheduled-embeddings).
 
-> NOTE: You can also [use third-party embeddings provider directly](#using-a-third-party-embeddings-provider-directly) for embeddings.
+ Admins can also [schedule one-time embeddings jobs for specific repositories](./schedule_one_off_embeddings_jobs.md). These one-off embeddings will not be automatically updated.
 
-### Excluding files from embeddings
+Whether created manually or through a policy, embeddings will be generated incrementally if [incremental updates](#incremental-embeddings) are enabled.
 
-The `excludedFilePathPatterns` is a setting in the Sourcegraph embeddings configuration that allows you to exclude certain file paths from being used in generating embeddings. By specifying glob patterns that match file paths, you can exclude files that have low information value, such as test fixtures, mocks, auto-generated files, and other files that are not relevant to the codebase.
+> NOTE: Generating embeddings sends code snippets to a third-party language party provider. By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice).
 
-To use `excludedFilePathPatterns`, add it to your embeddings site config with a list of glob patterns. For example, to exclude all SVG files, you would add the following setting to your configuration file:
+### Filtering files from embeddings
+
+`fileFilters` is a setting in the Sourcegraph embeddings configuration that allows you to filter file paths meeting certain conditions from being used in generating embeddings. By specifying glob patterns in `excludedFilePathPatterns` and `includedFilePathPatterns` that match file paths, you can exclude files that have low information value, such as test fixtures, mocks, auto-generated files, and other files that are not relevant to the codebase.
+
+To use `fileFilters`, add it to your embeddings site config. 
+
+For example, to: exclude all files under `node_modules`, include only .go files, and limiting the maximum file size to 300KB, you would add the following setting to your configuration file:
 
 ```json
 {
   // [...]
   "embeddings": {
     // [...]
-    "excludedFilePathPatterns": [
-      "*.svg"
-    ]
+    "fileFilters": {
+      "excludedFilePathPatterns": [
+        "node_modules/"
+      ],
+      "includedFilePathPatterns": [
+        "*.go"
+      ],
+      "maxFileSizeBytes": 300000 //300 KB
+    }
   }
 }
 ```
+
+By default, the following patterns are excluded from embeddings:
+
+- *ignore" // Files like .gitignore, .eslintignore
+- .gitattributes
+- .mailmap
+- *.csv
+- *.svg
+- *.xml
+- \_\_fixtures\_\_/
+- node_modules/
+- testdata/
+- mocks/
+- vendor/
 
 > NOTE: The `excludedFilePathPatterns` setting is only available in Sourcegraph version `5.0.1` and later.
 
@@ -87,7 +112,7 @@ If you would like to allow your Sourcegraph instance to control the creation and
 
 ### Environment variables for the `embeddings` service
 
-- `EMBEDDINGS_CACHE_SIZE`: The maximum size of the in-memory cache (in bytes) that holds the embeddings for commonly-searched repos. If embeddings for a repo are larger than this size, the repo will not be held in the cache and must be re-fetched for each embeddings search. Defaults to `6442450944` (6 GiB).
+- `EMBEDDINGS_CACHE_SIZE`: The maximum size of the in-memory cache that holds the embeddings for commonly-searched repos. If embeddings for a repo are larger than this size, the repo will not be held in the cache and must be re-fetched for each embeddings search. Defaults to `6GiB`.
 
 ### Incremental embeddings
 
@@ -131,16 +156,45 @@ Supported time units are h (hours), m ( minutes), and s (seconds).
 
 ### Using a third-party embeddings provider directly
 
-Instead of [Sourcegraph Cody Gateway](./cody_gateway.md), you can configure Sourcegraph to use a third-party provider directly for embeddings. Currently, this can only be OpenAI embeddings.
+Instead of [Sourcegraph Cody Gateway](./cody_gateway.md), you can configure Sourcegraph to use a third-party provider directly for embeddings. Currently, this can be one of
+- OpenAI
+- Azure OpenAI <span class="badge badge-experimental">Experimental</span>
 
-You must create your own key with OpenAI [here](https://beta.openai.com/account/api-keys). Once you have the key, go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
+#### OpenAI
+
+First, you must create your own key with OpenAI [here](https://beta.openai.com/account/api-keys). Once you have the key, go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
+
+```jsonc
+{
+  // [...]
+  "cody.enabled": true,
+  "embeddings": {
+    "provider": "openai",
+    "accessToken": "<token>",
+    "excludedFilePathPatterns": []
+  }
+}
+```
+
+#### Azure OpenAI <span class="badge badge-experimental">Experimental</span>
+
+First, make sure you created a project in the Azure OpenAI portal. 
+
+From the project overview, go to **Keys and Endpoint** and grab **one of the keys** on that page, and the **endpoint**.
+
+Next, under **Model deployments** click "manage deployments" and make sure you deploy the models you want to use. For example, `text-embedding-ada-002`. Take note of the **deployment name**.
+
+Once done, go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
 
 ```jsonc
 {
   "cody.enabled": true,
   "embeddings": {
-    "provider": "openai",
-    "accessToken": "<token>",
+    "provider": "azure-openai",
+    "model": "<deployment name of the model>",
+    "endpoint": "<endpoint>",
+    "accessToken": "<key>",
+    "dimensions": 1536,
     "excludedFilePathPatterns": []
   }
 }
@@ -170,6 +224,21 @@ A negative value disables the limit and all repositories are selected.
   "embeddings": {
     // [...]
     "policyRepositoryMatchLimit": 5000
+  }
+}
+```
+
+### Limitting the number of embeddings that can be generated
+
+The number of embeddings that can be generated per repo is limited to `embeddings.maxCodeEmbeddingsPerRepo` for code embeddings (default 3.072.000) or `embeddings.maxTextEmbeddingsPerRepo` (default 512.000) for text embeddings.
+
+Use the following site configuration to update the limits:
+
+```jsonc
+{
+  "embeddings": {
+    "maxCodeEmbeddingsPerRepo": 3072000,
+    "maxTextEmbeddingsPerRepo": 512000
   }
 }
 ```

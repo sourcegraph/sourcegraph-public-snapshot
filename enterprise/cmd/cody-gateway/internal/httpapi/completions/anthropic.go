@@ -8,10 +8,12 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/anthropic"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
@@ -34,10 +36,15 @@ func NewAnthropicHandler(
 		anthropicAPIURL,
 		allowedModels,
 		upstreamHandlerMethods[anthropicRequest]{
-			transformBody: func(body *anthropicRequest) {
-				// Null the metadata field, we don't want to allow users to specify it:
-				body.Metadata = nil
-				// TODO: We can forward the actor ID here later if we want?
+			validateRequest: func(_ codygateway.Feature, ar anthropicRequest) (int, error) {
+				return 0, nil
+			},
+			transformBody: func(body *anthropicRequest, act *actor.Actor) {
+				// Overwrite the metadata field, we don't want to allow users to specify it:
+				body.Metadata = &anthropicRequestMetadata{
+					// We forward the actor ID to support tracking.
+					UserID: act.ID,
+				}
 			},
 			getRequestMetadata: func(body anthropicRequest) (promptCharacterCount int, model string, additionalMetadata map[string]any) {
 				return len(body.Prompt), body.Model, map[string]any{"stream": body.Stream}
@@ -50,6 +57,7 @@ func NewAnthropicHandler(
 				r.Header.Set("Content-Type", "application/json")
 				r.Header.Set("Client", "sourcegraph-cody-gateway/1.0")
 				r.Header.Set("X-API-Key", accessToken)
+				r.Header.Set("anthropic-version", "2023-01-01")
 			},
 			parseResponse: func(reqBody anthropicRequest, r io.Reader) int {
 				// Try to parse the request we saw, if it was non-streaming, we can simply parse
@@ -90,20 +98,32 @@ func NewAnthropicHandler(
 				return len(lastCompletion)
 			},
 		},
+
+		// Anthropic primarily uses concurrent requests to rate-limit spikes
+		// in requests, so set a default retry-after that is likely to be
+		// acceptable for Sourcegraph clients to retry (the default
+		// SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION) since we might be
+		// able to circumvent concurrents limits without raising an error to the
+		// user.
+		2, // seconds
 	)
 }
 
 // anthropicRequest captures all known fields from https://console.anthropic.com/docs/api/reference.
 type anthropicRequest struct {
-	Prompt            string   `json:"prompt"`
-	Model             string   `json:"model"`
-	MaxTokensToSample int32    `json:"max_tokens_to_sample"`
-	StopSequences     []string `json:"stop_sequences,omitempty"`
-	Stream            bool     `json:"stream,omitempty"`
-	Temperature       float32  `json:"temperature,omitempty"`
-	TopK              int32    `json:"top_k,omitempty"`
-	TopP              int32    `json:"top_p,omitempty"`
-	Metadata          any      `json:"metadata,omitempty"`
+	Prompt            string                    `json:"prompt"`
+	Model             string                    `json:"model"`
+	MaxTokensToSample int32                     `json:"max_tokens_to_sample"`
+	StopSequences     []string                  `json:"stop_sequences,omitempty"`
+	Stream            bool                      `json:"stream,omitempty"`
+	Temperature       float32                   `json:"temperature,omitempty"`
+	TopK              int32                     `json:"top_k,omitempty"`
+	TopP              int32                     `json:"top_p,omitempty"`
+	Metadata          *anthropicRequestMetadata `json:"metadata,omitempty"`
+}
+
+type anthropicRequestMetadata struct {
+	UserID string `json:"user_id,omitempty"`
 }
 
 // anthropicResponse captures all relevant-to-us fields from https://console.anthropic.com/docs/api/reference.

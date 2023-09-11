@@ -127,7 +127,10 @@ export class CodebaseContext {
             : populateCodeContextTemplate
 
         return groupedResults.results.flatMap<Message>(text =>
-            getContextMessageWithResponse(contextTemplateFn(text, groupedResults.file.fileName), groupedResults.file)
+            getContextMessageWithResponse(
+                contextTemplateFn(text, groupedResults.file.fileName, groupedResults.file.repoName),
+                groupedResults.file
+            )
         )
     }
 
@@ -148,7 +151,10 @@ export class CodebaseContext {
         }
 
         return results.flatMap(({ content, filePath, repoName, revision }) => {
-            const messageText = populateCodeContextTemplate(content, filePath)
+            const messageText = isMarkdownFile(filePath)
+                ? populateMarkdownContextTemplate(content, filePath, repoName)
+                : populateCodeContextTemplate(content, filePath, repoName)
+
             return getContextMessageWithResponse(messageText, { fileName: filePath, repoName, revision })
         })
     }
@@ -223,7 +229,7 @@ function mergeConsecutiveResults(results: EmbeddingsSearchResult[]): string[] {
 
 function resultsToMessages(results: ContextResult[]): ContextMessage[] {
     return results.flatMap(({ content, fileName, repoName, revision }) => {
-        const messageText = populateCodeContextTemplate(content, fileName)
+        const messageText = populateCodeContextTemplate(content, fileName, repoName)
         return getContextMessageWithResponse(messageText, { fileName, repoName, revision })
     })
 }

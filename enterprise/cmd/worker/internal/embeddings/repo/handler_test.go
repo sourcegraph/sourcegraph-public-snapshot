@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"io/fs"
 	"os"
 	"sort"
@@ -10,10 +11,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
@@ -81,6 +82,41 @@ func TestDiff(t *testing.T) {
 	}
 }
 
+func TestValidateRevision(t *testing.T) {
+	ctx := context.Background()
+
+	gitserverClient := gitserver.NewMockClient()
+
+	rf := revisionFetcher{
+		repo:      "dummy",
+		revision:  "rev",
+		gitserver: gitserverClient,
+	}
+	err := rf.validateRevision(ctx)
+	if err != nil {
+		t.Fatalf("Unexpected error: %s", err.Error())
+	}
+
+	// request branch from gitserver for empty rev
+	rf = revisionFetcher{
+		repo:      "dummy",
+		revision:  "",
+		gitserver: gitserverClient,
+	}
+
+	gitserverClient.GetDefaultBranchFunc.PushReturn("ref", "rev", errors.New("some gitserver reported error"))
+	err = rf.validateRevision(ctx)
+	if err.Error() != "some gitserver reported error" {
+		t.Fatalf("Unexpected error: %s", err.Error())
+	}
+
+	gitserverClient.GetDefaultBranchFunc.PushReturn("", "rev", nil)
+	err = rf.validateRevision(ctx)
+	if err.Error() != "could not get latest commit for repo dummy" {
+		t.Fatalf("Unexpected error: %s", err.Error())
+	}
+}
+
 type FakeFileInfo struct {
 	name    string
 	size    int64
@@ -113,44 +149,56 @@ func (fi FakeFileInfo) Sys() interface{} {
 	return nil
 }
 
-func TestGetExcludedFilePathPatterns(t *testing.T) {
+func TestGetFileFilterPathPatterns(t *testing.T) {
 	// nil embeddingsConfig. This shouldn't happen, but just in case
 	var embeddingsConfig *conftypes.EmbeddingsConfig
-	result := getExcludedFilePathPatterns(embeddingsConfig)
-	if len(result) != len(embed.DefaultExcludedFilePathPatterns) {
-		t.Fatalf("Expected %d items, got %d", len(embed.DefaultExcludedFilePathPatterns), len(result))
+	_, exclude := getFileFilterPathPatterns(embeddingsConfig)
+	if len(exclude) != len(embed.DefaultExcludedFilePathPatterns) {
+		t.Fatalf("Expected %d items, got %d", len(embed.DefaultExcludedFilePathPatterns), len(exclude))
 	}
 
 	// Empty embeddingsConfig
 	embeddingsConfig = &conftypes.EmbeddingsConfig{}
-	result = getExcludedFilePathPatterns(embeddingsConfig)
-	if len(result) != len(embed.DefaultExcludedFilePathPatterns) {
-		t.Fatalf("Expected %d items, got %d", len(embed.DefaultExcludedFilePathPatterns), len(result))
+	_, exclude = getFileFilterPathPatterns(embeddingsConfig)
+	if len(exclude) != len(embed.DefaultExcludedFilePathPatterns) {
+		t.Fatalf("Expected %d items, got %d", len(embed.DefaultExcludedFilePathPatterns), len(exclude))
 	}
 
 	// Non-empty embeddingsConfig
 	embeddingsConfig = &conftypes.EmbeddingsConfig{
-		ExcludedFilePathPatterns: []string{
-			"*.foo",
-			"*.bar",
+		FileFilters: conftypes.EmbeddingsFileFilters{
+			ExcludedFilePathPatterns: []string{
+				"*.foo",
+				"*.bar",
+			},
+			IncludedFilePathPatterns: []string{"*.go"},
 		},
 	}
-	result = getExcludedFilePathPatterns(embeddingsConfig)
-	if len(result) != 2 {
-		t.Fatalf("Expected 2 items, got %d", len(result))
+	include, exclude := getFileFilterPathPatterns(embeddingsConfig)
+	if len(exclude) != 2 {
+		t.Fatalf("Expected 2 items, got %d", len(exclude))
+	}
+	if len(include) != 1 {
+		t.Fatalf("Expected 1 items, got %d", len(include))
 	}
 
-	if result[0].Match("test.foo") == false {
+	if exclude[0].Match("test.foo") == false {
 		t.Fatalf("Expected true, got false")
 	}
-	if result[0].Match("test.bar") == true {
+	if exclude[0].Match("test.bar") == true {
 		t.Fatalf("Expected false, got true")
 	}
 
-	if result[1].Match("test.bar") == false {
+	if exclude[1].Match("test.bar") == false {
 		t.Fatalf("Expected true, got false")
 	}
-	if result[1].Match("test.foo") == true {
+	if exclude[1].Match("test.foo") == true {
+		t.Fatalf("Expected false, got true")
+	}
+	if include[0].Match("test.go") == false {
+		t.Fatalf("Expected true, got false")
+	}
+	if include[0].Match("test.bar") == true {
 		t.Fatalf("Expected false, got true")
 	}
 }

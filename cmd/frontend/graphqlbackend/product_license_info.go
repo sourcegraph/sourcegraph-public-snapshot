@@ -29,6 +29,8 @@ type ProductLicenseInfo struct {
 	RevokedAtValue                *time.Time
 	SalesforceSubscriptionIDValue *string
 	SalesforceOpportunityIDValue  *string
+	IsValidValue                  bool
+	LicenseInvalidityReasonValue  *string
 }
 
 func (r ProductLicenseInfo) ProductNameWithBrand() string {
@@ -51,4 +53,12 @@ func (r ProductLicenseInfo) SalesforceSubscriptionID() *string {
 
 func (r ProductLicenseInfo) SalesforceOpportunityID() *string {
 	return r.SalesforceOpportunityIDValue
+}
+
+func (r ProductLicenseInfo) IsValid() bool {
+	return r.IsValidValue
+}
+
+func (r ProductLicenseInfo) LicenseInvalidityReason() *string {
+	return r.LicenseInvalidityReasonValue
 }

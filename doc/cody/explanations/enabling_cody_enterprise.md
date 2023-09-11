@@ -21,20 +21,22 @@ There are two steps required to enable Cody on your enterprise instance:
 
 > NOTE: Cody uses one or more third-party LLM (Large Language Model) providers. Make sure you review the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice). In particular, code snippets will be sent to a third-party language model provider when you use the Cody extension or when embeddings are enabled.
 
-Note that this requires site-admin privileges. First, configure your desired LLM provider:
+This requires site-admin privileges.
 
-- [Using Sourcegraph Cody Gateway](./cody_gateway.md#using-cody-gateway-in-sourcegraph-enterprise)
-- [Using a third-party LLM provider directly](#using-a-third-party-llm-provider-directly)
+1. First, configure your desired LLM provider:
+    - Recommended: [Using Sourcegraph Cody Gateway](./cody_gateway.md#using-cody-gateway-in-sourcegraph-enterprise)
+    - [Using a third-party LLM provider directly](#using-a-third-party-llm-provider-directly)
+2. Go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
 
-Once your provider is set up, make sure Cody is enabled in your site configuration:
+    ```json
+    {
+      // [...]
+      "cody.enabled": true
+    }
+    ```
+3. Set up a policy to automatically create embeddings for repositories: ["Configuring embeddings"](code_graph_context.md#configuring-embeddings)
 
-```json
-{
-  "cody.enabled": true,
-}
-```
-
-Cody can also be configured to use embeddings for code graph context to significantly improve the quality of its responses. This involves sending your entire codebase to a third-party service to generate a low-dimensional semantic representation, that is used for improved context fetching. See the [codebase-aware answers](#enabling-codebase-aware-answers) section for more.
+Cody is now fully set up on your instance!
 
 ### Step 2: Configure the VS Code extension
 
@@ -47,7 +49,7 @@ Now that Cody is turned on on your Sourcegraph instance, any user can configure 
 
 3. Reload VS Code, and open the Cody extension. Review and accept the terms.
 
-4. Now you'll need to point the Cody extension to your Sourcegraph instance. On your instance, go to `settings` / `access token` (`https://<your-instance>.sourcegraph.com/users/<your-instance>/settings/tokens`). Generate an access token, copy it, and set it in the Cody extension.
+4. Now you'll need to point the Cody extension to your Sourcegraph instance. On your Sourcegraph instance, click on **Settings**, then on **Access tokens** (`https://<your-instance>.sourcegraph.com/users/<your-instance>/settings/tokens`). Generate an access token, copy it, and set it in the Cody extension.
 
     <img width="1369" alt="image" src="https://user-images.githubusercontent.com/25070988/227510686-4afcb1f9-a3a5-495f-b1bf-6d661ba53cce.png">
 
@@ -135,20 +137,74 @@ To do so:
 
 ## Using a third-party LLM provider directly
 
-Instead of [Sourcegraph Cody Gateway](./cody_gateway.md), you can configure Sourcegraph to use a third-party provider directly. Currently, this can only be Anthropic or OpenAI.
+Instead of [Sourcegraph Cody Gateway](./cody_gateway.md), you can configure Sourcegraph to use a third-party provider directly. Currently, this can be one of
+- Anthropic
+- OpenAI
+- Azure OpenAI <span class="badge badge-experimental">Experimental</span>
 
-You must create your own key with Anthropic [here](https://console.anthropic.com/account/keys) or with OpenAI [here](https://beta.openai.com/account/api-keys). Once you have the key, go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
+### Anthropic
+
+First, you must create your own key with Anthropic [here](https://console.anthropic.com/account/keys). Once you have the key, go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
 
 ```jsonc
 {
   // [...]
   "cody.enabled": true,
   "completions": {
-    "provider": "anthropic", // or "openai" if you use OpenAI
-    "model": "claude-v1", // or one of the models listed [here](https://platform.openai.com/docs/models) if you use OpenAI
+    "provider": "anthropic",
+    "chatModel": "claude-2", // Or any other model you would like to use
+    "fastChatModel": "claude-instant-1", // Or any other model you would like to use
+    "completionModel": "claude-instant-1", // Or any other model you would like to use
     "accessToken": "<key>"
   }
 }
 ```
 
-Similarly, you can also [use a third-party LLM provider directly for embeddings](./code_graph_context.md#using-a-third-party-llm-directly).
+### OpenAI
+
+First, you must create your own key with OpenAI [here](https://beta.openai.com/account/api-keys). Once you have the key, go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
+
+```jsonc
+{
+  // [...]
+  "cody.enabled": true,
+  "completions": {
+    "provider": "openai",
+    "chatModel": "gpt-4", // Or any other model you would like to use
+    "fastChatModel": "gpt-35-turbo", // Or any other model you would like to use
+    "completionModel": "gpt-35-turbo", // Or any other model you would like to use
+    "accessToken": "<key>"
+  }
+}
+```
+
+_[*OpenAI models supported](https://platform.openai.com/docs/models)_
+
+### Azure OpenAI <span class="badge badge-experimental">Experimental</span>
+
+First, make sure you created a project in the Azure OpenAI portal. 
+
+From the project overview, go to **Keys and Endpoint** and grab **one of the keys** on that page, and the **endpoint**.
+
+Next, under **Model deployments** click "manage deployments" and make sure you deploy the models you want to use. For example, `gpt-35-turbo`. Take note of the **deployment name**.
+
+Once done, go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
+
+```jsonc
+{
+  // [...]
+  "cody.enabled": true,
+  "completions": {
+    "provider": "azure-openai",
+    "chatModel": "<deployment name of the model>",
+    "fastChatModel": "<deployment name of the model>",
+    "completionModel": "<deployment name of the model>",
+    "endpoint": "<endpoint>",
+    "accessToken": "<key>"
+  }
+}
+```
+
+---
+
+Similarly, you can also [use a third-party LLM provider directly for embeddings](./code_graph_context.md#using-a-third-party-embeddings-provider-directly).

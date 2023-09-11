@@ -50,6 +50,8 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
                         <Link to={`${repo.url}@${revision.oid}`}>
                             {repo.name}@{revision.abbreviatedOID}
                         </Link>
+                    ) : repo ? (
+                        <>{repo.name}</>
                     ) : (
                         <div>Unknown repository</div>
                     )}

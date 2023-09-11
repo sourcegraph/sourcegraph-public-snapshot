@@ -17,4 +17,9 @@ go_test(
     timeout = "short",
     srcs = ["version_check_test.go"],
     embed = [":api"],
+    deps = [
+        "//lib/errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
 )

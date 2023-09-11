@@ -7,15 +7,33 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var (
+	client *Client
+	once   sync.Once
+)
+
+func init() {
+	syntectServer := env.Get("SRC_SYNTECT_SERVER", "http://syntect-server:9238", "syntect_server HTTP(s) address")
+	once.Do(func() {
+		client = New(syntectServer)
+	})
+}
+
+func GetSyntectClient() *Client {
+	return client
+}
 
 const (
 	SyntaxEngineSyntect    = "syntect"
@@ -158,7 +176,7 @@ func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightRespon
 	// Normalize filetype
 	q.Filetype = languages.NormalizeLanguage(q.Filetype)
 
-	tr, ctx := trace.New(ctx, "gosyntect", "Highlight",
+	tr, ctx := trace.New(ctx, "gosyntect.Highlight",
 		attribute.String("filepath", q.Filepath),
 		attribute.String("theme", q.Theme),
 		attribute.Bool("css", q.CSS))
@@ -251,4 +269,51 @@ func New(syntectServer string) *Client {
 		syntectServer: strings.TrimSuffix(syntectServer, "/"),
 		httpClient:    httpcli.InternalClient,
 	}
+}
+
+type symbolsResponse struct {
+	Scip      string
+	Plaintext bool
+}
+
+type SymbolsQuery struct {
+	FileName string `json:"filename"`
+	Content  string `json:"content"`
+}
+
+// SymbolsResponse represents a response to a symbols query.
+type SymbolsResponse struct {
+	Scip      string `json:"scip"`
+	Plaintext bool   `json:"plaintext"`
+}
+
+func (c *Client) Symbols(ctx context.Context, q *SymbolsQuery) (*SymbolsResponse, error) {
+	serialized, err := json.Marshal(q)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to encode query")
+	}
+	body := bytes.NewReader(serialized)
+
+	req, err := http.NewRequest("POST", c.url("/symbols"), body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to build request")
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to perform symbols request")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Newf("unexpected status code %d", resp.StatusCode)
+	}
+
+	var r SymbolsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
+		return nil, errors.Wrap(err, "failed to decode symbols response")
+	}
+
+	return &r, nil
 }

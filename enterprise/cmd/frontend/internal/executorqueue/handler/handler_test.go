@@ -19,10 +19,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
-	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
-	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
+	executorstore "github.com/sourcegraph/sourcegraph/internal/executor/store"
+	executortypes "github.com/sourcegraph/sourcegraph/internal/executor/types"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	dbworkerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
@@ -76,7 +76,7 @@ func TestHandler_HandleDequeue(t *testing.T) {
 			name:                 "Invalid version",
 			body:                 `{"executorName": "test-executor", "version":"\n1.2", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
 			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: `{"error":"Invalid Semantic Version"}`,
+			expectedResponseBody: `{"error":"failed to check version \"\\n1.2\": Invalid Semantic Version"}`,
 			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, mockStore.DequeueFunc.History(), 0)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 0)

@@ -313,6 +313,29 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 	return formattedSite, err
 }
 
+func ReturnSafeConfigs(raw conftypes.RawUnified) (empty conftypes.RawUnified, err error) {
+	cfg, err := ParseConfig(raw)
+	if err != nil {
+		return empty, errors.Wrap(err, "parse config")
+	}
+
+	// Another way to achieve this would be to use the `reflect` package to iterate through a slice
+	// of white listed fields in the `schema.SiteConfiguration` struct and populate the new instance of
+	// schema.SiteConfiguration with the fields contained in the slice, however I feel using `reflect` is
+	// an overkill
+	r, err := json.Marshal(schema.SiteConfiguration{
+		// 🚨 SECURITY: Only populate this struct with fields that are safe to display to non site-admins.
+		BatchChangesRolloutWindows: cfg.BatchChangesRolloutWindows,
+	})
+	if err != nil {
+		return empty, err
+	}
+
+	return conftypes.RawUnified{
+		Site: string(r),
+	}, err
+}
+
 func RedactSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err error) {
 	return redactConfSecrets(raw, false)
 }

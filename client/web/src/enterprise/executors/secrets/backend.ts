@@ -217,7 +217,6 @@ export const globalExecutorSecretsConnectionFactory = (
         },
         options: {
             useURL: true,
-            fetchPolicy: 'no-cache',
         },
         getConnection: result => {
             const { executorSecrets } = dataOrThrowErrors(result)

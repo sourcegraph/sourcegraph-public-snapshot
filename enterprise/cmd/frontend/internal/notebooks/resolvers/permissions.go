@@ -3,8 +3,8 @@ package resolvers
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/notebooks"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/notebooks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 

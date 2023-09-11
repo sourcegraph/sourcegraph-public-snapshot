@@ -9,8 +9,7 @@ image_name="$2"
 gqltest="$3"
 authtest="$4"
 
-port="7081"
-url="http://localhost:$port"
+url="http://localhost:$PORT"
 
 # Backend integration tests uses a specific GITHUB_TOKEN that is available as GHE_GITHUB_TOKEN
 # because it refers to our internal GitHub enterprise instance used for testing.
@@ -20,7 +19,7 @@ export GITHUB_TOKEN
 ALLOW_SINGLE_DOCKER_CODE_INSIGHTS="true"
 export ALLOW_SINGLE_DOCKER_CODE_INSIGHTS
 
-run_server_image "$tarball" "$image_name" "$url" "$port"
+run_server_image "$tarball" "$image_name" "$url" "$PORT"
 
 echo "--- integration test ./dev/gqltest -long"
 "$gqltest" -long -base-url "$url"

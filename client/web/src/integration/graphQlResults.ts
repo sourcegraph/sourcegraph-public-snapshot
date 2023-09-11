@@ -85,6 +85,9 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             productVersion: '0.0.0+dev',
         },
         productVersion: '0.0.0+dev',
+        codeIntelligenceConfigurationPolicies: {
+            totalCount: 1,
+        },
     }),
 
     EventLogsData: () => ({

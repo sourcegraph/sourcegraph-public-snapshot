@@ -36,11 +36,11 @@ For more details about configuring Cody, refer to the following guides:
 
 ## Configuring custom models
 
-To configure custom models for various Cody configurations (e.g. `"completions"` and `"embeddings"`), specify the desired model with the upstream provider as a prefix to the name of the model. For example, to use the `claude-v1` model from Anthropic, you would configure:
+To configure custom models for various Cody configurations (e.g. `"completions"` and `"embeddings"`), specify the desired model with the upstream provider as a prefix to the name of the model. For example, to use the `claude-2` model from Anthropic, you would configure:
 
 ```json
 {
-  "completions": { "chatModel": "anthropic/claude-v1" },
+  "completions": { "chatModel": "anthropic/claude-2" },
 }
 ```
 
@@ -52,6 +52,8 @@ The currently supported upstream providers for models are:
 For Sourcegraph Enterprise customers, model availability depends on your Sourcegraph Enterprise subscription - reach out your account manager for more details.
 
 Refer to [Cody documentation](../index.md) to learn more about Cody configuration.
+
+> WARNING: When using OpenAI models for completions, only chat completions will work - code completions are currently unsupported.
 
 ## Rate limits and quotas
 

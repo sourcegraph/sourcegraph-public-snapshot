@@ -3,16 +3,14 @@ package resolvers
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/own"
+	"github.com/sourcegraph/sourcegraph/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 )
 
-func computeRecentViewSignals(ctx context.Context, db edb.EnterpriseDB, path string, repoID api.RepoID) ([]reasonAndReference, error) {
+func computeRecentViewSignals(ctx context.Context, db database.DB, path string, repoID api.RepoID) ([]reasonAndReference, error) {
 	enabled, err := db.OwnSignalConfigurations().IsEnabled(ctx, types.SignalRecentViews)
 	if err != nil {
 		return nil, errors.Wrap(err, "IsEnabled")
@@ -47,5 +45,5 @@ func (v *recentViewOwnershipSignal) Title() (string, error) {
 }
 
 func (v *recentViewOwnershipSignal) Description() (string, error) {
-	return "Owner is associated because they have viewed this file in the last 90 days.", nil
+	return "Associated because they have viewed this file in the last 90 days.", nil
 }

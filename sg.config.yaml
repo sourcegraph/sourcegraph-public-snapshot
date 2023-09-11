@@ -44,6 +44,7 @@ env:
   PROMETHEUS_URL: http://localhost:9090
   JAEGER_SERVER_URL: http://localhost:16686
 
+  SRC_GRPC_ENABLE_CONF: "true"
   SRC_DEVELOPMENT: "true"
   SRC_PROF_HTTP: ""
   SRC_PROF_SERVICES: |
@@ -118,9 +119,17 @@ env:
   # OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
   # OTEL_EXPORTER_OTLP_PROTOCOL: http/json
 
-  # Enable full protobuf message logging when a non-utf8 string error occurs
-  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_NON_UTF8_PROTOBUF_MESSAGES_ENABLED: "true"
-  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_NON_UTF8_PROTOBUF_MESSAGES_MAX_SIZE_BYTES: 1024
+  # Enable gRPC Web UI for debugging
+  GRPC_WEB_UI_ENABLED: "true"
+
+  # Enable full protobuf message logging when an internal error occurred
+  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED: "true"
+  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: "1KB"
+  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: "100MB"
+  ## zoekt-specific message logging
+  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED: "true"
+  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: "1KB"
+  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: "100MB"
 
 commands:
   server:
@@ -223,7 +232,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
+      go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
     checkBinary: .bin/repo-updater
     env:
       ENTERPRISE: 1
@@ -231,8 +240,6 @@ commands:
       - lib
       - internal
       - cmd/repo-updater
-      - enterprise/internal
-      - enterprise/cmd/repo-updater
 
   symbols:
     cmd: .bin/symbols
@@ -254,7 +261,7 @@ commands:
       - internal
       - cmd/symbols
       - enterprise/cmd/symbols
-      - enterprise/internal/rockskip
+      - internal/rockskip
 
   embeddings:
     cmd: |
@@ -271,7 +278,7 @@ commands:
       - lib
       - internal
       - enterprise/cmd/embeddings
-      - enterprise/internal/embeddings
+      - internal/embeddings
   worker:
     cmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -329,7 +336,7 @@ commands:
     cmd: .bin/caddy_${CADDY_VERSION} run --watch --config=dev/Caddyfile
     install_func: installCaddy
     env:
-      CADDY_VERSION: 2.4.5
+      CADDY_VERSION: 2.7.3
 
   web:
     description: Enterprise version of the web app
@@ -488,12 +495,12 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/codeintel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
+      go build -gcflags="$GCFLAGS" -o .bin/codeintel-worker github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker
     checkBinary: .bin/codeintel-worker
     watch:
       - lib
       - internal
-      - enterprise/cmd/precise-code-intel-worker
+      - cmd/precise-code-intel-worker
       - enterprise/internal
       - lib/codeintel
 
@@ -604,7 +611,7 @@ commands:
       # TODO: This is required but should only be set on M1 Macs.
       PLATFORM: linux/arm64
     watch:
-      - enterprise/cmd/batcheshelper
+      - cmd/batcheshelper
       - lib/batches
     continueWatchOnExit: true
 
@@ -655,7 +662,7 @@ commands:
       .bin/jaeger-all-in-one-${JAEGER_VERSION} --log-level ${JAEGER_LOG_LEVEL}
     install_func: installJaeger
     env:
-      JAEGER_VERSION: 1.36.0
+      JAEGER_VERSION: 1.45.0
       JAEGER_DISK: $HOME/.sourcegraph-dev/data/jaeger
       JAEGER_LOG_LEVEL: error
       QUERY_BASE_PATH: /-/debug/jaeger
@@ -905,7 +912,7 @@ bazelCommands:
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
   repo-updater:
-    target: //enterprise/cmd/repo-updater
+    target: //cmd/repo-updater
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
     env:
@@ -946,7 +953,7 @@ bazelCommands:
   codeintel-worker:
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
-    target: //enterprise/cmd/precise-code-intel-worker
+    target: //cmd/precise-code-intel-worker
   executor-template: &executor_template_bazel
     target: //enterprise/cmd/executor
     env:

@@ -388,7 +388,7 @@
           }
         },
         "enablePermissionsWebhooks": {
-          "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
+          "description": "DEPRECATED: No longer has any effect.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -1113,12 +1113,12 @@
       "default": "disabled"
     },
     "permissions.userMapping": {
-      "description": "Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).",
+      "description": "Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This will mark repositories as restricted by default.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "enabled": {
-          "description": "Whether permissions user mapping is enabled. There must be no `authorization` field in any external service configuration before enabling this.",
+          "description": "Whether permissions user mapping is enabled.",
           "type": "boolean",
           "default": false
         },
@@ -1387,6 +1387,52 @@
       "type": "string",
       "minLength": 20,
       "examples": ["my-super-secret-access-token"]
+    },
+    "executors.multiqueue": {
+      "description": "The configuration for multiqueue executors.",
+      "type": "object",
+      "properties": {
+        "dequeueCacheConfig": {
+          "description": "The configuration for the dequeue cache of multiqueue executors. Each queue defines a limit of dequeues in the expiration window as well as a weight, indicating how frequently a queue is picked at random. For example, a weight of 4 for batches and 1 for codeintel means out of 5 dequeues, statistically batches will be picked 4 times and codeintel 1 time (unless one of those queues is at its limit).",
+          "type": "object",
+          "properties": {
+            "batches": {
+              "description": "The configuration for the batches queue.",
+              "type": "object",
+              "required": ["limit", "weight"],
+              "properties": {
+                "limit": {
+                  "description": "The maximum number of dequeues allowed within the expiration window.",
+                  "type": "integer",
+                  "default": 50
+                },
+                "weight": {
+                  "description": "The relative weight of this queue. Higher weights mean a higher chance of being picked at random.",
+                  "type": "integer",
+                  "default": 4
+                }
+              }
+            },
+            "codeintel": {
+              "description": "The configuration for the codeintel queue.",
+              "type": "object",
+              "required": ["limit", "weight"],
+              "properties": {
+                "limit": {
+                  "description": "The maximum number of dequeues allowed within the expiration window.",
+                  "type": "integer",
+                  "default": 250
+                },
+                "weight": {
+                  "description": "The relative weight of this queue. Higher weights mean a higher chance of being picked at random.",
+                  "type": "integer",
+                  "default": 1
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "auth.userOrgMap": {
       "description": "Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form `{\"*\": [\"org1\", \"org2\"]}`, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is `\"*\"`.",
@@ -2383,7 +2429,7 @@
         "provider": {
           "type": "string",
           "description": "The provider to use for generating embeddings. Defaults to sourcegraph.",
-          "enum": ["openai", "sourcegraph"]
+          "enum": ["openai", "azure-openai", "sourcegraph"]
         },
         "endpoint": {
           "type": "string",
@@ -2394,6 +2440,45 @@
           "description": "The url to the external embedding API service. Deprecated, use endpoint instead.",
           "type": "string",
           "format": "uri"
+        },
+        "fileFilters": {
+          "description": "Filters that will decode which files om a repository get embedded.",
+          "type": "object",
+          "properties": {
+            "excludedFilePathPatterns": {
+              "description": "A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                ".*ignore",
+                ".gitattributes",
+                ".mailmap",
+                "*.csv",
+                "*.svg",
+                "*.xml",
+                "__fixtures__/",
+                "node_modules/",
+                "testdata/",
+                "mocks/",
+                "vendor/"
+              ]
+            },
+            "includedFilePathPatterns": {
+              "description": "A list of glob patterns that match file paths you want to include in embeddings. If specified, all files not matching these include patterns are excluded.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "examples": ["*.go", "*.ts", "*.md", "src/", "cmd/"]
+            },
+            "maxFileSizeBytes": {
+              "description": "The maximum file size (in bytes) to include in embeddings. Must be between 0 and 100000 (1 MB).",
+              "type": "integer",
+              "default": 1000000
+            }
+          }
         },
         "excludedFilePathPatterns": {
           "description": "A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).",
@@ -2413,7 +2498,8 @@
             "testdata/",
             "mocks/",
             "vendor/"
-          ]
+          ],
+          "deprecationMessage": "Deprecated in favor of fileFilers.excludedFilePathPatterns"
         },
         "maxCodeEmbeddingsPerRepo": {
           "description": "The maximum number of embeddings for code files to generate per repo",
@@ -2445,6 +2531,14 @@
             "pointer": true
           },
           "default": "5000"
+        },
+        "excludeChunkOnError": {
+          "description": "Whether to cancel indexing a repo if embedding a single file fails. If true, the chunk that cannot generate embeddings is not indexed and the remainder of the repository proceeds with indexing.",
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          },
+          "default": true
         }
       },
       "examples": [
@@ -2478,13 +2572,25 @@
           "description": "The model used for fast chat completions.",
           "type": "string"
         },
+        "fastChatModelMaxTokens": {
+          "description": "The maximum number of tokens to use as client when talking to fastChatModel. If not set, clients need to set their own limit.",
+          "type": "integer"
+        },
         "chatModel": {
           "description": "The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.",
           "type": "string"
         },
+        "chatModelMaxTokens": {
+          "description": "The maximum number of tokens to use as client when talking to chatModel. If not set, clients need to set their own limit.",
+          "type": "integer"
+        },
         "completionModel": {
           "description": "The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.",
           "type": "string"
+        },
+        "completionModelMaxTokens": {
+          "description": "The maximum number of tokens to use as client when talking to completionModel. If not set, clients need to set their own limit.",
+          "type": "integer"
         },
         "accessToken": {
           "description": "The access token used to authenticate with the external completions provider. If using the default provider 'sourcegraph', and if 'licenseKey' is set, a default access token is generated.",
@@ -2494,7 +2600,7 @@
           "type": "string",
           "description": "The external completions provider. Defaults to 'sourcegraph'.",
           "default": "anthropic",
-          "enum": ["anthropic", "openai", "sourcegraph"]
+          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai"]
         },
         "endpoint": {
           "type": "string",
@@ -2514,7 +2620,6 @@
       "examples": [
         {
           "enabled": true,
-          "model": "code-completion",
           "chatModel": "chat",
           "completionModel": "code-completion",
           "accessToken": "abc123",
@@ -2848,6 +2953,11 @@
           "type": "string",
           "description": "URL of the GitLab instance, such as https://gitlab.com or https://gitlab.example.com.",
           "default": "https://gitlab.com/"
+        },
+        "ssoURL": {
+          "type": "string",
+          "description": "An alternate sign-in URL used to ease SSO sign-in flows, such as https://gitlab.com/groups/your-group/saml/sso?token=xxxxxx",
+          "default": ""
         },
         "clientID": {
           "type": "string",

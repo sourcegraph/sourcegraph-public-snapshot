@@ -1,16 +1,6 @@
 #!/usr/bin/env bash
 
-build_number="${BUILDKITE_BUILD_NUMBER:-000000}"
-date_fragment="$(date +%Y-%m-%d)"
-latest_tag="5.0"
-
-# We historically use 12 chars for short commits.
-commit="$(git rev-parse HEAD)"
-commit="${commit:0:12}"
-
-stamp_version="${build_number}_${date_fragment}_${latest_tag}-${commit}"
-
-echo STABLE_VERSION "$stamp_version"
+echo STABLE_VERSION "$VERSION"
 echo VERSION_TIMESTAMP "$(date +%s)"
 
 # Unstable Buildkite env vars

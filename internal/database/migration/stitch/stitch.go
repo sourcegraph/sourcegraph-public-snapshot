@@ -208,15 +208,31 @@ var allowedOverrideMap = map[int]struct{}{
 	1528395701: {}, // https://github.com/sourcegraph/sourcegraph/pull/16203 - rewritten to avoid * in select
 	1528395730: {}, // https://github.com/sourcegraph/sourcegraph/pull/15972 - drops/re-created view to avoid dependencies
 	1663871069: {}, // https://github.com/sourcegraph/sourcegraph/pull/43390 - fixes malformed published value
+	1648628900: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098 - magic
+	1652707934: {},
+	1655157509: {},
+	1667220626: {},
+	1670934184: {},
+	1674455760: {},
+	1675962678: {},
+	1677003167: {},
+	1676420496: {},
+	1677944752: {},
+	1678214530: {},
+	1678456448: {},
 
 	// codeintel
 	1000000020: {}, // https://github.com/sourcegraph/sourcegraph/pull/28772 - rewritten to be idempotent
+	1665531314: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098 - magic
+	1670365552: {},
 
 	// codeiensights
 	1000000002: {}, // https://github.com/sourcegraph/sourcegraph/pull/28713 - fixed SQL error
 	1000000001: {}, // https://github.com/sourcegraph/sourcegraph/pull/30781 - removed timescsaledb
 	1000000004: {}, // https://github.com/sourcegraph/sourcegraph/pull/30781 - removed timescsaledb
 	1000000010: {}, // https://github.com/sourcegraph/sourcegraph/pull/30781 - removed timescsaledb
+	1659572248: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098 - magic
+	1672921606: {},
 }
 
 func overrideAllowed(id int) bool {

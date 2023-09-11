@@ -53,6 +53,14 @@ export const OwnerSearchResult: React.FunctionComponent<OwnerSearchResultProps> 
     const url = useMemo(() => {
         const url = getOwnerMatchUrl(result)
         const validUrlPrefixes = ['/teams/', '/users/', 'mailto:']
+        // TODO(#54209): Introduce a proper solution where a streamed team
+        // is returned with a URL if present. Temporarily return no URL
+        // in case name contains /. This indicates a Github team, and these
+        // are not linkable within code search - where / is not an allowed
+        // character for team names.
+        if (result.type === 'team' && result.name.includes('/')) {
+            return ''
+        }
         if (!validUrlPrefixes.some(prefix => url.startsWith(prefix))) {
             // This is not a real URL, remove it.
             return ''

@@ -6874,8 +6874,11 @@ type Site implements SettingsSubject {
     siteID: String!
     """
     The site's configuration. Only visible to site admins.
+
+    If returnSafeConfigsOnly is true, returns a subset of the configuration classified
+    as safe config.
     """
-    configuration: SiteConfiguration!
+    configuration(returnSafeConfigsOnly: Boolean): SiteConfiguration!
     """
     The site's latest site-wide settings (which are the second-lowest-precedence
     in the configuration cascade for a user).
@@ -7114,6 +7117,85 @@ type Site implements SettingsSubject {
     Whether Cody is enabled for this site.
     """
     isCodyEnabled: Boolean!
+
+    """
+    If Cody is enabled, this returns how Cody is configured to talk to the LLM.
+    """
+    codyLLMConfiguration: CodyLLMConfiguration
+
+    """
+    Returns the status of the Cody Rate limits when using the `sourcegraph` provider.
+    If the instance is not using the Cody Gateway there will be no rate limits.
+
+    Site-admin only.
+    """
+    codyGatewayRateLimitStatus: [CodyGatewayRateLimitStatus!]
+}
+
+"""
+Cody LLM configuration contains information about how the main LLM used by Cody
+is configured.
+"""
+type CodyLLMConfiguration {
+    """
+    Name of the model being used for chat.
+    """
+    chatModel: String!
+    """
+    Maximum number of tokens client should use when talking to the chatModel.
+    """
+    chatModelMaxTokens: Int
+    """
+    Name of the model being used for fast chat.
+    """
+    fastChatModel: String!
+    """
+    Maximum number of tokens client should use when talking to the fastChatModel.
+    """
+    fastChatModelMaxTokens: Int
+    """
+    Name of the model being used for code completions.
+    """
+    completionModel: String!
+    """
+    Maximum number of tokens client should use when talking to the completionModel.
+    """
+    completionModelMaxTokens: Int
+}
+
+"""
+CodyGatewayRateLimitStatus current status of a rate limit.
+"""
+type CodyGatewayRateLimitStatus {
+    """
+    The feature that the rate limit applies to.
+    """
+    feature: String!
+
+    """
+    The limit allowed.
+    """
+    limit: BigInt!
+
+    """
+    The number of usages in current period.
+    """
+    usage: BigInt!
+
+    """
+    The percentage of the rate limit used.
+    """
+    percentUsed: Int!
+
+    """
+    The time interval for the rate limit.
+    """
+    interval: String!
+
+    """
+    When the rate limit next resets if an interval has already started.
+    """
+    nextLimitReset: DateTime
 }
 
 """
@@ -8265,6 +8347,17 @@ type ProductLicenseInfo {
     The Salesforce opportunity ID associated with this license.
     """
     salesforceOpportunityID: String
+    """
+    This indicates if the current license is valid. It will be false if:
+    - The license key has expired
+    - The license key is in use on another instance
+    - The license key was revoked
+    """
+    isValid: Boolean!
+    """
+    This indicates the reason the license is invalid. It'll be null if `isValid` is true.
+    """
+    licenseInvalidityReason: String
 }
 
 """

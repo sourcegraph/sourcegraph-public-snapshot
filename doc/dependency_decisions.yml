@@ -506,3 +506,24 @@
     :why:
     :versions: []
     :when: 2023-06-02 13:33:29.979046000 Z
+- - :license
+  - "@jspm/core"
+  - Apache 2.0
+  - :who:
+    :why:
+    :versions: []
+    :when: 2023-06-19 14:46:26.158816000 Z
+- - :license
+  - require-like
+  - MIT
+  - :who:
+    :why:
+    :versions: []
+    :when: 2023-06-19 14:47:16.005983000 Z
+- - :license
+  - github.com/hashicorp/go-retryablehttp
+  - Mozilla Public License 2.0
+  - :who:
+    :why:
+    :versions: []
+    :when: 2023-08-24 17:36:21.450035000 Z

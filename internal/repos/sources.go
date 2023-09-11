@@ -210,9 +210,9 @@ func sourceErrorFormatFunc(es []error) string {
 		len(es), strings.Join(points, "\n\t"))
 }
 
-// listAll calls ListRepos on the given Source and collects the SourceResults
+// ListAll calls ListRepos on the given Source and collects the SourceResults
 // the Source sends over a channel into a slice of *types.Repo and a single error
-func listAll(ctx context.Context, src Source) ([]*types.Repo, error) {
+func ListAll(ctx context.Context, src Source) ([]*types.Repo, error) {
 	results := make(chan SourceResult)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
