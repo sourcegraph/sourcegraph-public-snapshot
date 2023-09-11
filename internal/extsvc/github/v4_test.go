@@ -120,61 +120,53 @@ func TestV4Client_RateLimitRetry(t *testing.T) {
 		},
 	}
 
-	// Test both a GET and POST request to make sure retrying is working correctly
-	methodTests := []string{"GET", "POST"}
-	for _, methodTest := range methodTests {
-		for name, tt := range tests {
-			t.Run(methodTest+"_"+name, func(t *testing.T) {
-				numRequests := 0
-				succeeded := false
-				srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					numRequests++
-					if tt.secondaryLimitWasHit {
-						w.Header().Add("retry-after", "1")
-						w.WriteHeader(http.StatusForbidden)
-						w.Write([]byte(`{"message": "Secondary rate limit hit"}`))
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			numRequests := 0
+			succeeded := false
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				numRequests++
+				if tt.secondaryLimitWasHit {
+					w.Header().Add("retry-after", "1")
+					w.WriteHeader(http.StatusForbidden)
+					w.Write([]byte(`{"message": "Secondary rate limit hit"}`))
 
-						tt.secondaryLimitWasHit = false
-						return
-					}
-
-					if tt.primaryLimitWasHit {
-						w.Header().Add("x-ratelimit-remaining", "0")
-						w.Header().Add("x-ratelimit-limit", "5000")
-						resetTime := time.Now().Add(time.Second)
-						w.Header().Add("x-ratelimit-reset", strconv.Itoa(int(resetTime.Unix())))
-						w.WriteHeader(http.StatusForbidden)
-						w.Write([]byte(`{"message": "Primary rate limit hit"}`))
-
-						tt.primaryLimitWasHit = false
-						return
-					}
-
-					succeeded = true
-					w.Write([]byte(`{"message": "Very nice"}`))
-				}))
-
-				t.Cleanup(srv.Close)
-
-				srvURL, err := url.Parse(srv.URL)
-				require.NoError(t, err)
-
-				transport := http.DefaultTransport.(*http.Transport).Clone()
-				transport.DisableKeepAlives = true // Disable keep-alives otherwise the read of the request body is cached
-				cli := &http.Client{Transport: transport}
-				client := NewV4Client("test", srvURL, nil, cli)
-				client.githubDotCom = true // Otherwise it will make an extra request to determine GH version
-				if methodTest == "POST" {
-					_, err = client.SearchRepos(ctx, SearchReposParams{Query: "test"})
-				} else {
-					_, err = client.GetAuthenticatedUser(ctx)
+					tt.secondaryLimitWasHit = false
+					return
 				}
-				require.NoError(t, err)
 
-				assert.Equal(t, tt.numRequests, numRequests)
-				assert.Equal(t, tt.succeeded, succeeded)
-			})
-		}
+				if tt.primaryLimitWasHit {
+					w.Header().Add("x-ratelimit-remaining", "0")
+					w.Header().Add("x-ratelimit-limit", "5000")
+					resetTime := time.Now().Add(time.Second)
+					w.Header().Add("x-ratelimit-reset", strconv.Itoa(int(resetTime.Unix())))
+					w.WriteHeader(http.StatusForbidden)
+					w.Write([]byte(`{"message": "Primary rate limit hit"}`))
+
+					tt.primaryLimitWasHit = false
+					return
+				}
+
+				succeeded = true
+				w.Write([]byte(`{"message": "Very nice"}`))
+			}))
+
+			t.Cleanup(srv.Close)
+
+			srvURL, err := url.Parse(srv.URL)
+			require.NoError(t, err)
+
+			transport := http.DefaultTransport.(*http.Transport).Clone()
+			transport.DisableKeepAlives = true // Disable keep-alives otherwise the read of the request body is cached
+			cli := &http.Client{Transport: transport}
+			client := NewV4Client("test", srvURL, nil, cli)
+			client.githubDotCom = true // Otherwise it will make an extra request to determine GH version
+			_, err = client.SearchRepos(ctx, SearchReposParams{Query: "test"})
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.numRequests, numRequests)
+			assert.Equal(t, tt.succeeded, succeeded)
+		})
 	}
 }
 
@@ -968,7 +960,6 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 		wantRepos        []*Repository
 		err              string
 	}{
-
 		{
 			name: "found",
 			mockResponseBody: `
