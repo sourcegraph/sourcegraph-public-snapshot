@@ -506,9 +506,8 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 		AccountID:   "107564",
 	}
 	svc := types.ExternalService{
-		Kind:      extsvc.KindGitLab,
-		CreatedAt: timeutil.Now(),
-		Config:    extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.sgdev.org", "authorization": {"identityProvider": {"type": "oauth"}}, "token": "abc", "projectQuery": [ "projects?membership=true&archived=no" ],}`),
+		Kind:   extsvc.KindGitLab,
+		Config: extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.sgdev.org", "authorization": {"identityProvider": {"type": "oauth"}}, "token": "abc", "projectQuery": [ "projects?membership=true&archived=no" ]}`),
 	}
 	uri, err := url.Parse("https://gitlab.sgdev.org")
 	if err != nil {
@@ -567,134 +566,78 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 	// This integration tests performs a user-centric permissions syncing against
 	// https://gitlab.sgdev.org, then check if permissions are correctly granted for the test
 	// user "sourcegraph-vcr".
-	t.Run("user-centric", func(t *testing.T) {
-		t.Run("featureflag-enabled", func(t *testing.T) {
-			name := t.Name()
+	t.Run("test feature flag", func(t *testing.T) {
+		name := t.Name()
 
-			cf, save := httptestutil.NewRecorderFactory(t, update(name), name)
-			defer save()
-			doer, err := cf.Doer()
+		cf, save := httptestutil.NewRecorderFactory(t, update(name), name)
+		defer save()
+		doer, err := cf.Doer()
+		require.NoError(t, err)
+
+		testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+		ctx := actor.WithInternalActor(context.Background())
+
+		reposStore := repos.NewStore(logtest.Scoped(t), testDB)
+
+		err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
+		require.NoError(t, err)
+
+		provider := authzGitLab.NewOAuthProvider(authzGitLab.OAuthProviderOp{
+			BaseURL: uri,
+			DB:      testDB,
+			CLI:     doer,
+		})
+
+		authz.SetProviders(false, []authz.Provider{provider})
+		defer authz.SetProviders(true, nil)
+		for _, repo := range testRepos {
+			err = reposStore.RepoStore().Create(ctx, &repo)
+			require.NoError(t, err)
+		}
+
+		user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
+			AuthData: extsvc.NewUnencryptedData(authData),
+		})
+		require.NoError(t, err)
+
+		permsStore := database.Perms(logger, testDB, timeutil.Now)
+		syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
+
+		assertUserPermissions := func(t *testing.T, wantIDs []int32) {
+			t.Helper()
+			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
 			require.NoError(t, err)
 
-			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+			assert.Equal(t, database.CodeHostStatusesSet{{
+				ProviderID:   "https://gitlab.sgdev.org/",
+				ProviderType: "gitlab",
+				Status:       database.CodeHostStatusSuccess,
+				Message:      "FetchUserPerms",
+			}}, providerStates)
 
-			ctx := actor.WithInternalActor(context.Background())
+			p, err := permsStore.LoadUserPermissions(ctx, user.ID)
+			require.NoError(t, err)
+
+			gotIDs := make([]int32, len(p))
+			for i, perm := range p {
+				gotIDs[i] = perm.RepoID
+			}
+
+			if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
+				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			}
+		}
+
+		t.Run("feature-flag disabled", func(t *testing.T) {
+			assertUserPermissions(t, []int32{2})
+		})
+
+		t.Run("feature-flag enabled", func(t *testing.T) {
 			_, err = testDB.FeatureFlags().CreateBool(ctx, "gitLabProjectVisibilityExperimental", true)
 			require.NoError(t, err, "feature flag creation failed")
 
-			reposStore := repos.NewStore(logtest.Scoped(t), testDB)
-
-			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
-			require.NoError(t, err)
-
-			provider := authzGitLab.NewOAuthProvider(authzGitLab.OAuthProviderOp{
-				BaseURL: uri,
-				DB:      testDB,
-				CLI:     doer,
-			})
-
-			authz.SetProviders(false, []authz.Provider{provider})
-			defer authz.SetProviders(true, nil)
-			for _, repo := range testRepos {
-				err = reposStore.RepoStore().Create(ctx, &repo)
-				require.NoError(t, err)
-			}
-
-			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
-				AuthData: extsvc.NewUnencryptedData(authData),
-			})
-			require.NoError(t, err)
-
-			permsStore := database.Perms(logger, testDB, timeutil.Now)
-			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
-
-			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
-			require.NoError(t, err)
-
-			assert.Equal(t, database.CodeHostStatusesSet{{
-				ProviderID:   "https://gitlab.sgdev.org/",
-				ProviderType: "gitlab",
-				Status:       database.CodeHostStatusSuccess,
-				Message:      "FetchUserPerms",
-			}}, providerStates)
-
-			p, err := permsStore.LoadUserPermissions(ctx, user.ID)
-			require.NoError(t, err)
-
-			gotIDs := make([]int32, len(p))
-			for i, perm := range p {
-				gotIDs[i] = perm.RepoID
-			}
-
-			wantIDs := []int32{1, 2}
-			if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
-				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
-			}
-		})
-
-		t.Run("featureflag-disabled", func(t *testing.T) {
-			name := t.Name()
-
-			cf, save := httptestutil.NewRecorderFactory(t, update(name), name)
-			defer save()
-			doer, err := cf.Doer()
-			require.NoError(t, err)
-
-			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
-
-			ctx := actor.WithInternalActor(context.Background())
-
-			reposStore := repos.NewStore(logtest.Scoped(t), testDB)
-
-			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			provider := authzGitLab.NewOAuthProvider(authzGitLab.OAuthProviderOp{
-				BaseURL: uri,
-				DB:      testDB,
-				CLI:     doer,
-			})
-
-			authz.SetProviders(false, []authz.Provider{provider})
-			defer authz.SetProviders(true, nil)
-
-			for _, repo := range testRepos {
-				err = reposStore.RepoStore().Create(ctx, &repo)
-				require.NoError(t, err)
-			}
-
-			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
-				AuthData: extsvc.NewUnencryptedData(authData),
-			})
-			require.NoError(t, err)
-
-			permsStore := testDB.Perms()
-			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
-
-			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
-			require.NoError(t, err)
-
-			assert.Equal(t, database.CodeHostStatusesSet{{
-				ProviderID:   "https://gitlab.sgdev.org/",
-				ProviderType: "gitlab",
-				Status:       database.CodeHostStatusSuccess,
-				Message:      "FetchUserPerms",
-			}}, providerStates)
-
-			p, err := permsStore.LoadUserPermissions(ctx, user.ID)
-			require.NoError(t, err)
-
-			gotIDs := make([]int32, len(p))
-			for i, perm := range p {
-				gotIDs[i] = perm.RepoID
-			}
-
-			wantIDs := []int32{2}
-			if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
-				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
-			}
+			assertUserPermissions(t, []int32{1, 2})
 		})
 	})
 }
