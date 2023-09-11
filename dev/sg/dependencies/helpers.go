@@ -426,3 +426,24 @@ func forceASDFPluginAdd(ctx context.Context, plugin string, source string) error
 	}
 	return errors.Wrap(err, "asdf plugin-add")
 }
+
+func checkPythonVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
+	if err := check.InPath("python")(ctx); err != nil {
+		return err
+	}
+
+	cmd := "python -V"
+	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
+	if err != nil {
+		return errors.Wrapf(err, "failed to run %q", cmd)
+	}
+	parts := strings.Split(strings.TrimSpace(data), " ")
+	if len(parts) == 0 {
+		return errors.Newf("no output from %q", cmd)
+	}
+	if len(parts) < 2 {
+		return errors.Newf("unexpected output from %q: %q", cmd, data)
+	}
+
+	return check.Version("python", parts[1], "~3")
+}
