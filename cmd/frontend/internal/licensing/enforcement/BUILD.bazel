@@ -1,0 +1,54 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "enforcement",
+    srcs = [
+        "doc.go",
+        "enforcement.go",
+        "external_services.go",
+        "monitoring.go",
+        "users.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/licensing/enforcement",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//internal/actor",
+        "//internal/auth",
+        "//internal/cloud",
+        "//internal/database",
+        "//internal/errcode",
+        "//internal/extsvc",
+        "//internal/licensing",
+        "//internal/types",
+        "//lib/errors",
+        "//schema",
+        "@com_github_inconshreveable_log15//:log15",
+    ],
+)
+
+go_test(
+    name = "enforcement_test",
+    timeout = "short",
+    srcs = [
+        "external_services_test.go",
+        "main_test.go",
+        "users_test.go",
+    ],
+    embed = [":enforcement"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//internal/actor",
+        "//internal/auth",
+        "//internal/cloud",
+        "//internal/database/dbmocks",
+        "//internal/extsvc",
+        "//internal/license",
+        "//internal/licensing",
+        "//internal/types",
+        "@com_github_derision_test_go_mockgen//testutil/require",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 
 import type { AuthenticatedUser } from '../auth'
 import { Page } from '../components/Page'
@@ -8,6 +8,7 @@ import { PageTitle } from '../components/PageTitle'
 import { CodySurveyToast } from '../marketing/toast/CodySurveyToast'
 import { eventLogger } from '../tracking/eventLogger'
 
+import { getReturnTo } from './SignInSignUpCommon'
 import { withAuthenticatedUser } from './withAuthenticatedUser'
 
 import styles from './PostSignUpPage.module.scss'
@@ -17,9 +18,12 @@ interface PostSignUpPageProps {
 }
 
 const PostSignUp: React.FunctionComponent<PostSignUpPageProps> = ({ authenticatedUser }) => {
-    // Redirects to /search page, if user has already completed post signup flow
+    const location = useLocation()
+
+    // Redirect if user has already completed post signup flow
     if (authenticatedUser.completedPostSignup) {
-        return <Navigate to="/search" replace={true} />
+        const returnTo = getReturnTo(location)
+        return <Navigate to={returnTo} replace={true} />
     }
 
     return (

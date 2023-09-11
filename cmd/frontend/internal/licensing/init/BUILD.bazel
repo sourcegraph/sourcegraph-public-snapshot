@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "init",
+    srcs = ["init.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/licensing/init",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/enterprise",
+        "//cmd/frontend/envvar",
+        "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/hooks",
+        "//cmd/frontend/internal/auth",
+        "//cmd/frontend/internal/dotcom/productsubscription",
+        "//cmd/frontend/internal/licensing/enforcement",
+        "//cmd/frontend/internal/licensing/resolvers",
+        "//cmd/frontend/internal/registry",
+        "//internal/codeintel",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/goroutine",
+        "//internal/licensing",
+        "//internal/observation",
+        "//internal/usagestats",
+        "//lib/pointers",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

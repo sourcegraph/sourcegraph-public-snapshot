@@ -29,8 +29,8 @@ var defaultIndexerSHAs = map[string]string{
 	"sourcegraph/scip-go":         "sha256:4f82e2490c4385a3c47ac0d062c9c53ce5a0bfc5acf0c4032ad07486b39163ec",
 	"sourcegraph/lsif-rust":       "sha256:83cb769788987eb52f21a18b62d51ebb67c9436e1b0d2e99904c70fef424f9d1",
 	"sourcegraph/scip-rust":       "sha256:adf0047fc3050ba4f7be71302b42c74b49901f38fb40916d94ac5fc9181ac078",
-	"sourcegraph/scip-java":       "sha256:dd68953280566f485d5bcddb6e347e200164b7884bbc9b298324b35e631337aa",
-	"sourcegraph/scip-python":     "sha256:7840506839061a06f86651442a29cfea983883fcd68cf7f780f32ab1a8af3aec",
+	"sourcegraph/scip-java":       "sha256:9f04445d3fc70f69a2db42b05964e20b22e716836eefaf1155de4a8b36e8ec19",
+	"sourcegraph/scip-python":     "sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321",
 	"sourcegraph/scip-typescript": "sha256:4c9b65a449916bf2d8716c8b4b0a45666cd303a05b78e02980d25b23c1e55e92",
 	"sourcegraph/scip-ruby":       "sha256:ef53e5f1450330ddb4a3edce963b7e10d900d44ff1e7de4960680289ac25f319",
 }

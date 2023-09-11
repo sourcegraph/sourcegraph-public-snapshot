@@ -6,6 +6,8 @@ import "syscall"
 type DiskUsage interface {
 	Free() uint64
 	Size() uint64
+	Usage() float32
+	Available() uint64
 }
 
 // DiskUsage contains usage data and provides user-friendly access methods
@@ -31,4 +33,19 @@ func (du *diskUsage) Free() uint64 {
 // Size returns total size of the file system
 func (du *diskUsage) Size() uint64 {
 	return uint64(du.stat.Blocks) * uint64(du.stat.Bsize)
+}
+
+// Used returns total bytes used in file system
+func (du *diskUsage) used() uint64 {
+	return du.Size() - du.Free()
+}
+
+// Usage returns percentage of use on the file system
+func (du *diskUsage) Usage() float32 {
+	return float32(du.used()) / float32(du.Size())
+}
+
+// Available return total available bytes on file system to an unprivileged user
+func (du *diskUsage) Available() uint64 {
+	return du.stat.Bavail * uint64(du.stat.Bsize)
 }

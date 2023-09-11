@@ -205,4 +205,6 @@ result-*
 # Windows
 /cmd/sourcegraph/__debug_bin.exe
 
+# For locally building and testing shared packages from the sourcegraph/cody repository on
+# the web client.
 /cody

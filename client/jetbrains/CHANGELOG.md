@@ -17,6 +17,7 @@
 - Telemetry and other GraphQL requests are now sent through the agent [56001](https://github.com/sourcegraph/sourcegraph/pull/56001)
 - Use agent for recipes [#56196](https://github.com/sourcegraph/sourcegraph/pull/56196)
 - Authentication settings changed to accounts from three types of instance types to which user can connect [#56362](https://github.com/sourcegraph/sourcegraph/pull/56362)
+- Enabled manually triggering autocomplete even when implicit autocomplete is disabled (globally or for a language) [#56473](https://github.com/sourcegraph/sourcegraph/pull/56473)
 
 ### Deprecated
 
