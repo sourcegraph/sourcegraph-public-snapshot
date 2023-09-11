@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package telemetrygateway.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1";
+
+service TelemeteryGatewayService {
+  rpc RecordEvents(RecordEventsRequest) returns (RecordEventsResponse) {}
+}
+
+message RecordEventsRequest {
+  repeated Event events = 1;
+
+  // Metadata associated with the events being recorded.
+  RecordEventsRequestMetadata metadata = 2;
+}
+
+message RecordEventsRequestMetadata {
+  // License key hashed for analytics purposes (hashed value should include the
+  // appropriate prefix).
+  //
+  // TODO: We may be able to remove this before GA.
+  string analytics_hashed_license_key = 1;
+}
+
+message RecordEventsResponse {}
+
+message Event {
+  // Timestamp of when the original event was recorded.
+  google.protobuf.Timestamp timestamp = 1;
+  // Name of the event.
+  string name = 2;
+  // Source of the event.
+  EventSource source = 3;
+  // Parameters of the event.
+  EventParameters parameters = 4;
+  // Optional user associated with the event.
+  optional EventUser user = 5;
+  // Optional marketing campaign tracking parameters.
+  optional EventMarketingTracking marketingTracking = 6;
+}
+
+message EventSource {
+  // Version of the Sourcegraph instance that received the event.
+  string serverVersion = 1;
+  // Source client of the event.
+  optional string client = 2;
+  // Version of the source client of the event.
+  optional string clientVersion = 3;
+}
+
+message EventParameters {
+  // Version of the event parameters, used for indicating the "shape" of this
+  // event's metadata, beginning at 0.
+  int32 version = 1;
+  // Strictly typed metadata, restricted to integer values.
+  map<string, int64> metadata = 2;
+  // Additional potentially sensitive metadata - i.e. not restricted to integer
+  // values. By default, this metadata should not be assumed to be unsafe for
+  // export from an instance, and should only be exported on an allowlist basis.
+  optional google.protobuf.Struct privateMetadata = 3;
+  // Billing-related metadata.
+  optional EventBillingMetadata billingMetadata = 4;
+}
+
+message EventBillingMetadata {
+  // Billing product ID associated with the event.
+  string product = 1;
+  // Billing category ID the event falls into.
+  string category = 2;
+}
+
+message EventUser {
+  // Database user ID of signed in user.
+  //
+  // We use an int64 as an ID because in Sourcegraph, database user IDs are
+  // always integers.
+  int64 userID = 1;
+  // Randomized unique identifier for client (i.e. stored in localstorage in web
+  // client).
+  string anonymousUserID = 2;
+}
+
+message EventMarketingTracking {
+  string url = 1;
+  string firstSourceURL = 2;
+  string cohortID = 3;
+  string referrer = 4;
+  string lastSourceURL = 5;
+  string deviceSessionID = 6;
+  string sessionReferrer = 7;
+  string sessionFirstURL = 8;
+}
