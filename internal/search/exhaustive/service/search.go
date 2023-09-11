@@ -132,15 +132,14 @@ type BlobstoreCSVWriter struct {
 
 	options Options
 
-	// blobs are named {prefix}-{shard} except for the first blob which is just
+	// blobs are named {prefix}-{shard} except for the first blob, which is named
 	// {prefix}
 	prefix string
 
 	store uploadstore.Store
 	w     *csv.Writer
 
-	// header keeps track of the header we expect to write as the first row of a new
-	// file.
+	// header keeps track of the header we write as the first row of a new file.
 	header []string
 
 	// close takes care of flushing w and closing the upload.
