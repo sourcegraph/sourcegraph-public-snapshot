@@ -321,6 +321,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			publishOps.Append(publishFinalDockerImage(c, dockerImage))
 		}
 		// Executor VM image
+		// TODO JH WILLIAM add release bazel runtype
 		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease) {
 			publishOps.Append(publishExecutorVM(c, skipHashCompare))
 			publishOps.Append(publishExecutorBinary(c))

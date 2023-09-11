@@ -18,6 +18,7 @@ const (
 
 	// Nightly builds - must be first because they take precedence
 
+	ReleaseBazel   // TODO JH WILLIAM
 	ReleaseNightly // release branch nightly healthcheck builds
 	BextNightly    // browser extension nightly build
 	VsceNightly    // vs code extension nightly build
@@ -85,6 +86,10 @@ func (t RunType) Is(oneOfTypes ...RunType) bool {
 // Matcher returns the requirements for a build to be considered of this RunType.
 func (t RunType) Matcher() *RunTypeMatcher {
 	switch t {
+	case ReleaseBazel:
+		return &RunTypeMatcher{
+			TagPrefix: "wip_v",
+		}
 	case ReleaseNightly:
 		return &RunTypeMatcher{
 			EnvIncludes: map[string]string{
