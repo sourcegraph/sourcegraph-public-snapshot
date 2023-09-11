@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//cmd/blobstore/shared",
         "//cmd/executor/singlebinary",
+        "//cmd/frontend/shared",
         "//cmd/github-proxy/shared",
         "//cmd/gitserver/shared",
         "//cmd/precise-code-intel-worker/shared",
@@ -15,7 +16,6 @@ go_library(
         "//cmd/searcher/shared",
         "//cmd/sourcegraph/osscmd",
         "//enterprise/cmd/embeddings/shared",
-        "//enterprise/cmd/frontend/shared",
         "//enterprise/cmd/symbols/shared",
         "//enterprise/cmd/worker/shared",
         "//internal/sanitycheck",

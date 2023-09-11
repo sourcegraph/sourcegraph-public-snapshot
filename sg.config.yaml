@@ -145,7 +145,7 @@ commands:
       URL: "http://localhost:7080"
 
   frontend:
-    description: Enterprise frontend
+    description: Frontend
     cmd: |
       # TODO: This should be fixed
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -157,7 +157,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
+      go build -gcflags="$GCFLAGS" -o .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend
     checkBinary: .bin/frontend
     env:
       CONFIGURATION_MODE: server
@@ -171,7 +171,6 @@ commands:
       - lib
       - internal
       - cmd/frontend
-      - enterprise/cmd/frontend
 
   gitserver-template: &gitserver_template
     cmd: .bin/gitserver
@@ -964,7 +963,7 @@ bazelCommands:
     target: //cmd/github-proxy
   frontend:
     description: Enterprise frontend
-    target: //enterprise/cmd/frontend
+    target: //cmd/frontend
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
       # If EXTSVC_CONFIG_FILE is *unset*, set a default.
