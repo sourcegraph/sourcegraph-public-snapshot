@@ -279,7 +279,6 @@ require (
 	github.com/mroth/weightedrand/v2 v2.0.1
 	github.com/prometheus/statsd_exporter v0.22.7
 	github.com/qdrant/go-client v1.3.0
-	github.com/ricochet2200/go-disk-usage/du v0.0.0-20210707232629-ac9918953285
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare v0.0.0-20230822024612-edb48c530722
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20230822024612-edb48c530722
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/random v0.0.0-20230822024612-edb48c530722

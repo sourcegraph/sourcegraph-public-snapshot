@@ -8,6 +8,7 @@ import com.intellij.openapi.editor.actionSystem.EditorActionHandler
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
 import com.sourcegraph.cody.vscode.InlineAutocompleteItem
+import com.sourcegraph.utils.CodyEditorUtil
 
 open class AutocompleteActionHandler : EditorActionHandler() {
 
@@ -15,7 +16,7 @@ open class AutocompleteActionHandler : EditorActionHandler() {
     // Returns false to fall back to normal action if there is no suggestion at the caret.
     val project = editor.project
     return if (project != null &&
-        CodyAutocompleteManager.isEditorInstanceSupported(editor) &&
+        CodyEditorUtil.isEditorInstanceSupported(editor) &&
         CodyAgent.isConnected(project)) {
       getAgentAutocompleteItem(caret) != null
     } else {

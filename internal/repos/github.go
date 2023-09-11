@@ -720,9 +720,6 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 			results <- &githubResult{err: errors.Wrapf(err, "failed to list public repositories: sinceRepoID=%d", sinceRepoID)}
 			return
 		}
-		if !hasNextPage {
-			return
-		}
 		s.logger.Debug("github sync public", log.Int("repos", len(repos)), log.Error(err))
 		for _, r := range repos {
 			_, isArchived := archivedRepos[r.ID]
@@ -736,6 +733,9 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 			if sinceRepoID < r.DatabaseID {
 				sinceRepoID = r.DatabaseID
 			}
+		}
+		if !hasNextPage {
+			return
 		}
 	}
 }

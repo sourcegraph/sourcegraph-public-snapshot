@@ -5,7 +5,7 @@ import com.intellij.openapi.command.CommandListener
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
-import com.sourcegraph.common.EditorUtils.VIM_EXIT_INSERT_MODE_ACTION
+import com.sourcegraph.utils.CodyEditorUtil.VIM_EXIT_INSERT_MODE_ACTION
 
 class CodyCommandListener(val project: Project) : CommandListener {
     override fun commandFinished(event: CommandEvent) {

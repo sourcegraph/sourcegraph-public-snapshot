@@ -5,6 +5,7 @@ import java.util.Map;
 public class ExtensionConfiguration {
 
   public String serverEndpoint;
+  public String proxy;
   public String accessToken;
   public Map<String, String> customHeaders;
   public String autocompleteAdvancedProvider;
@@ -17,6 +18,11 @@ public class ExtensionConfiguration {
 
   public ExtensionConfiguration setServerEndpoint(String serverEndpoint) {
     this.serverEndpoint = serverEndpoint;
+    return this;
+  }
+
+  public ExtensionConfiguration setProxy(String proxy) {
+    this.proxy = proxy;
     return this;
   }
 
@@ -74,6 +80,9 @@ public class ExtensionConfiguration {
     return "ExtensionConfiguration{"
         + "serverEndpoint='"
         + serverEndpoint
+        + '\''
+        + ", proxy='"
+        + proxy
         + '\''
         + ", accessToken='"
         + accessToken

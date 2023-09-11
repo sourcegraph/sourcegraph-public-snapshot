@@ -1,6 +1,5 @@
 package com.sourcegraph.cody.config
 
-import com.intellij.collaboration.auth.ui.AccountsPanelFactory.accountsPanel
 import com.intellij.collaboration.util.ProgressIndicatorsProvider
 import com.intellij.ide.DataManager
 import com.intellij.openapi.components.service
@@ -22,6 +21,7 @@ import com.intellij.ui.dsl.builder.toMutableProperty
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.util.ui.EmptyIcon
+import com.sourcegraph.cody.config.ui.customAccountsPanel
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.config.PluginSettingChangeActionNotifier
 import com.sourcegraph.config.PluginSettingChangeContext
@@ -47,19 +47,19 @@ class SettingsConfigurable(private val project: Project) :
     dialogPanel = panel {
       group("Authentication") {
         row {
-          accountsPanel(
+          customAccountsPanel(
                   accountManager,
                   defaultAccountHolder,
                   accountsModel,
                   detailsProvider,
                   disposable!!,
                   true,
-                  EmptyIcon.ICON_16)
+                  EmptyIcon.ICON_16) {
+                    it.copy(server = it.server.copy())
+                  }
               .horizontalAlign(HorizontalAlign.FILL)
               .verticalAlign(VerticalAlign.FILL)
-              .applyToComponent {
-                  this.preferredSize = Dimension(Int.MAX_VALUE, 200)
-              }
+              .applyToComponent { this.preferredSize = Dimension(Int.MAX_VALUE, 200) }
               .also {
                 DataManager.registerDataProvider(it.component) { key ->
                   if (CodyAccountsHost.KEY.`is`(key)) accountsModel else null

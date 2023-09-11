@@ -111,7 +111,7 @@ Available commands in `sg.config.yaml`:
 * embeddings
 * executor-kubernetes-template
 * executor-template
-* frontend: Enterprise frontend
+* frontend: Frontend
 * github-proxy
 * gitserver
 * gitserver-0
