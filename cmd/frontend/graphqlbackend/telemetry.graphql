@@ -26,6 +26,9 @@ Properties comprising a telemetry V2 event that can be reported by a client.
 input TelemetryEventInput {
     """
     Name of the event.
+
+    Event names must come from a static set of values in libraries - it is left
+    as a string in the API to allow some flexibility.
     """
     name: String!
 
@@ -80,7 +83,8 @@ input TelemetryEventParametersInput {
     """
     metadata: [TelemetryEventMetadataInput!]
     """
-    Private metadata in JSON format.
+    Private metadata in JSON format. Unlike metadata, values can be of any type,
+    not just numeric.
 
     By default, this metadata is assumed to be unsafe for export from an instance.
     """
@@ -127,16 +131,24 @@ Billing-related metadata for a telemetry event.
 input TelemetryEventBillingMetadataInput {
     """
     Billing product ID associated with the event.
+
+    IDs must come from a static set of values in libraries - it is left as a
+    string in the API to allow some flexibility.
     """
-    product: Int
+    product: String!
     """
     Billing category ID the event falls into.
+
+    IDs must come from a static set of values in libraries - it is left as a
+    string in the API to allow some flexibility.
     """
-    category: Int
+    category: String!
 }
 
 """
 Marketing campaign tracking parameters for a telemetry V2 event.
+
+By default, this metadata is assumed to be unsafe for export from an instance.
 """
 input TelemetryEventMarketingTrackingInput {
     """
