@@ -462,7 +462,7 @@ func checkPGUtilsPath(ctx context.Context, out *std.Output, args CheckArgs) erro
 		return errors.Wrapf(err, "unexpected error with %s", userBazelRcPath)
 	}
 
-	// If it exists, we check if the inject PATH actually contains createdb as intended.
+	// If it exists, we check if the injected PATH actually contains createdb as intended.
 	// If not, we'll raise an error for sg setup to correct.
 	f, err := os.Open(userBazelRcPath)
 	if err != nil {
