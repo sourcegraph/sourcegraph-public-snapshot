@@ -161,8 +161,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
-- **End-to-end tests**: Executors E2E
-- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
+- **Publish images**: Push final images
 
 ### Release branch nightly healthcheck build
 
