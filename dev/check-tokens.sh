@@ -12,35 +12,35 @@ files=$(git diff --name-only --staged)
 function check() {
   local file="$1"
 
-  if grep -q "sg[ps]_[0-9a-fA-F]\{64\}" "$file"; then
+  if grep -qE "s(?:g[psd]|lk)_[0-9a-fA-F]{40,}" "$file"; then
     echo "Found a Sourcegraph token in git staged file: $file. Please remove it."
     exit 1
   fi
-  if grep -q "gh[pousr]_[0-9a-zA-Z]\{36\}" "$file"; then
+  if grep -qE "gh[pousr]_[0-9a-zA-Z]{36}" "$file"; then
     echo "Found a GitHub token in git staged file: $file. Please remove it."
     exit 1
   fi
-  if grep -q "\(\(ABIA\)\|\(ACCA\)\|\(AGPA\)\|\(AIDA\)\|\(AIPA\)\|\(AKIA\)\|\(ANPA\)\|\(ANVA\)\|\(APKA\)\|\(AROA\)\|\(ASCA\)\|\(ASIA\)\)[0-9A-Z]\{16\}" "$file"; then
+  if grep -qE "(?:(ABIA)|(ACCA)|(AGPA)|(AIDA)|(AIPA)|(AKIA)|(ANPA)|(ANVA)|(APKA)|(AROA)|(ASCA)|(ASIA))[0-9A-Z]{16}" "$file"; then
     echo "Found an AWS token in git staged file: $file. Please remove it."
     exit 1
   fi
-  if grep -q "sk-[0-9a-zA-Z]\{48\}" "$file"; then
+  if grep -qE "sk-[0-9a-zA-Z]{48}" "$file"; then
     echo "Found an OpenAI token in git staged file: $file. Please remove it."
     exit 1
   fi
-  if grep -q "sk-[0-9a-zA-Z-]\{86\}" "$file"; then
+  if grep -qE "sk-[0-9a-zA-Z-]{86}" "$file"; then
     echo "Found an Anthropic token in git staged file: $file. Please remove it."
     exit 1
   fi
-  if grep -q "https://hooks.slack.com/services/[0-9A-Za-z/]\{44\}" "$file"; then
+  if grep -qE "https://hooks.slack.com/services/[0-9A-Za-z/]{44}" "$file"; then
     echo "Found a Slack webhook in git staged file: $file. Please remove it."
     exit 1
   fi
-  if grep -q "xoxb-[0-9a-zA-Z-]\{49\}" "$file"; then
+  if grep -qE "xoxb-[0-9a-zA-Z-]{49}" "$file"; then
     echo "Found a Slack bot token in git staged file: $file. Please remove it."
     exit 1
   fi
-  if grep -q "xapp-[0-9a-zA-Z-]\{92\}" "$file"; then
+  if grep -qE "xapp-[0-9a-zA-Z-]{92}" "$file"; then
     echo "Found a Slack app token in git staged file: $file. Please remove it."
     exit 1
   fi
