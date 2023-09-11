@@ -194,8 +194,7 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 
 	apiURL := url.URL{
 		Scheme: "https",
-		// c.endpoint must define the AWS region.
-		Host: fmt.Sprintf("bedrock.%s.amazonaws.com", c.endpoint),
+		Host:   fmt.Sprintf("bedrock.%s.amazonaws.com", defaultConfig.Region),
 	}
 
 	if stream {
@@ -211,7 +210,7 @@ func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Cont
 
 	// Sign the request with AWS credentials.
 	hash := sha256.Sum256(reqBody)
-	if err := v4.NewSigner().SignHTTP(ctx, creds, req, hex.EncodeToString(hash[:]), "bedrock", c.endpoint, time.Now()); err != nil {
+	if err := v4.NewSigner().SignHTTP(ctx, creds, req, hex.EncodeToString(hash[:]), "bedrock", defaultConfig.Region, time.Now()); err != nil {
 		return nil, errors.Wrap(err, "signing request")
 	}
 
