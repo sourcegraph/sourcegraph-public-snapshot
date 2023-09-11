@@ -791,7 +791,53 @@ commands:
       DISABLE_SOURCEGRAPH_CONFIG: false
 
   postgres_exporter:
-    cmd: ./dev/postgres_exporter.sh
+    cmd: |
+      if [[ $(uname) == "Linux" ]]; then
+        # Linux needs an extra arg to support host.internal.docker, which is how grafana connects
+        # to the prometheus backend.
+        ADD_HOST_FLAG="--add-host=host.docker.internal:host-gateway"
+      fi
+
+      # Use psql to read the effective values for PG* env vars (instead of, e.g., hardcoding the default
+      # values).
+      get_pg_env() { psql -c '\set' | grep "$1" | cut -f 2 -d "'"; }
+      PGHOST=${PGHOST-$(get_pg_env HOST)}
+      PGUSER=${PGUSER-$(get_pg_env USER)}
+      PGPORT=${PGPORT-$(get_pg_env PORT)}
+      # we need to be able to query migration_logs table
+      PGDATABASE=${PGDATABASE-$(get_pg_env DBNAME)}
+
+      ADJUSTED_HOST=${PGHOST:-127.0.0.1}
+      if [[ ("$ADJUSTED_HOST" == "localhost" || "$ADJUSTED_HOST" == "127.0.0.1" || -f "$ADJUSTED_HOST") && "$OSTYPE" != "linux-gnu" ]]; then
+        ADJUSTED_HOST="host.docker.internal"
+      fi
+
+      NET_ARG=""
+      DATA_SOURCE_NAME="postgresql://${PGUSER}:${PGPASSWORD}@${ADJUSTED_HOST}:${PGPORT}/${PGDATABASE}?sslmode=${PGSSLMODE:-disable}"
+
+      if [[ "$OSTYPE" == "linux-gnu" ]]; then
+        NET_ARG="--net=host"
+        DATA_SOURCE_NAME="postgresql://${PGUSER}:${PGPASSWORD}@${ADJUSTED_HOST}:${PGPORT}/${PGDATABASE}?sslmode=${PGSSLMODE:-disable}"
+      fi
+
+      echo "postgres_exporter: serving on http://localhost:${PORT}"
+      docker run --rm ${DOCKER_USER} \
+        --name=${CONTAINER} \
+        -e DATA_SOURCE_NAME="${DATA_SOURCE_NAME}" \
+        --cpus=1 \
+        --memory=1g \
+        -p 0.0.0.0:9187:9187 ${ADD_HOST_FLAG} \
+        "${IMAGE}"
+    install: |
+      docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
+      bazel build //docker-images/postgres_exporter:image_tarball
+      docker load --input $(bazel cquery //docker-images/postgres_exporter:image_tarball --output=files)
+    env:
+      IMAGE: postgres-exporter:candidate
+      CONTAINER: postgres_exporter
+      # docker containers must access things via docker host on non-linux platforms
+      DOCKER_USER: ""
+      ADD_HOST_FLAG: ""
 
   monitoring-generator:
     cmd: echo "monitoring-generator is deprecated, please run 'sg generate go' or 'bazel run //dev:write_all_generated' instead"
@@ -833,7 +879,7 @@ commands:
         JAEGER_HOST="localhost"
       fi
 
-      docker container rm otel-collector
+      docker container rm -f otel-collector
       docker run --rm --name=otel-collector $DOCKER_NET $DOCKER_ARGS \
         -p 4317:4317 -p 4318:4318 -p 55679:55679 -p 55670:55670 \
         -p 8888:8888 \
