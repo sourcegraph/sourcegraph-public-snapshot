@@ -120,7 +120,6 @@ func TestV4Client_RateLimitRetry(t *testing.T) {
 		},
 	}
 
-	// Test both a GET and POST request to make sure retrying is working correctly
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			numRequests := 0
