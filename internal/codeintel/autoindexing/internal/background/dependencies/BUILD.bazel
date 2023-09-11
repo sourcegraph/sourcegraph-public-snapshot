@@ -56,6 +56,7 @@ go_test(
         "mocks_test.go",
     ],
     embed = [":dependencies"],
+    tags = [ "requires-network" ],
     deps = [
         "//cmd/frontend/envvar",
         "//internal/api",
