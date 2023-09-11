@@ -1,0 +1,16 @@
+{
+  "name": "scala-cli",
+  "argv": [
+    "/Users/antonsviridov/.tools/scala-cli",
+    "bsp",
+    "--json-options",
+    "/Users/antonsviridov/projects/sourcegraph/sourcegraph/.scala-build/ide-options-v2.json",
+    "/Users/antonsviridov/projects/sourcegraph/sourcegraph"
+  ],
+  "version": "1.0.4-SNAPSHOT",
+  "bspVersion": "2.1.0-M5",
+  "languages": [
+    "scala",
+    "java"
+  ]
+}

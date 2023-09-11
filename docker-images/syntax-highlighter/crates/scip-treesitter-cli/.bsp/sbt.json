@@ -1,0 +1,1 @@
+{"name":"sbt","version":"1.9.0-RC3","bspVersion":"2.1.0-M1","languages":["scala"],"argv":["/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home/bin/java","-Xms100m","-Xmx100m","-classpath","/Users/antonsviridov/.cache/sbt/boot/sbt-launch/1.9.0-RC3/sbt-launch-1.9.0-RC3.jar","-Dsbt.script=/Users/antonsviridov/.tools/sbt","xsbt.boot.Boot","-bsp"]}
