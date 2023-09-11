@@ -1,21 +1,16 @@
 package com.sourcegraph.cody.autocomplete;
 
 import com.intellij.codeInsight.lookup.LookupManager;
-import com.intellij.injected.editor.EditorWindow;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.*;
-import com.intellij.openapi.editor.ex.EditorEx;
-import com.intellij.openapi.editor.impl.ImaginaryEditor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
-import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings;
 import com.intellij.util.concurrency.annotations.RequiresEdt;
-import com.sourcegraph.cody.CodyCompatibility;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.agent.protocol.AutocompleteExecuteParams;
@@ -24,11 +19,10 @@ import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus;
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService;
 import com.sourcegraph.cody.vscode.*;
 import com.sourcegraph.cody.vscode.InlineAutocompleteList;
-import com.sourcegraph.common.EditorUtils;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.UserLevelConfig;
 import com.sourcegraph.telemetry.GraphQlLogger;
-import com.sourcegraph.utils.CodyLanguageUtil;
+import com.sourcegraph.utils.CodyEditorUtil;
 import difflib.Delta;
 import difflib.DiffUtils;
 import difflib.Patch;
@@ -44,7 +38,6 @@ import org.jetbrains.annotations.Nullable;
 /** Responsible for triggering and clearing inline code completions (the autocomplete feature). */
 public class CodyAutocompleteManager {
   private static final Logger logger = Logger.getInstance(CodyAutocompleteManager.class);
-  private static final Key<Boolean> KEY_EDITOR_SUPPORTED = Key.create("cody.editorSupported");
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   private final AtomicReference<CancellationToken> currentJob =
       new AtomicReference<>(new CancellationToken());
@@ -97,15 +90,15 @@ public class CodyAutocompleteManager {
    */
   @RequiresEdt
   public void clearAutocompleteSuggestionsForAllProjects() {
-    EditorUtils.getAllOpenEditors().forEach(this::clearAutocompleteSuggestions);
+    CodyEditorUtil.getAllOpenEditors().forEach(this::clearAutocompleteSuggestions);
   }
 
   @RequiresEdt
   public void clearAutocompleteSuggestionsForLanguageIds(List<String> languageIds) {
-    EditorUtils.getAllOpenEditors().stream()
+    CodyEditorUtil.getAllOpenEditors().stream()
         .filter(
             e ->
-                Optional.ofNullable(CodyLanguageUtil.Companion.getLanguage(e))
+                Optional.ofNullable(CodyEditorUtil.getLanguage(e))
                     .map(l -> languageIds.contains(l.getID()))
                     .orElse(false))
         .forEach(this::clearAutocompleteSuggestions);
@@ -121,17 +114,6 @@ public class CodyAutocompleteManager {
         .forEach(Disposer::dispose);
   }
 
-  @RequiresEdt
-  public boolean isEnabledForEditor(Editor editor) {
-    return ConfigUtil.isCodyEnabled()
-        && ConfigUtil.isCodyAutocompleteEnabled()
-        && editor != null
-        && !CodyLanguageUtil.Companion.isLanguageBlacklisted(editor)
-        && editor.getDocument().isWritable()
-        && isProjectAvailable(editor.getProject())
-        && isEditorSupported(editor);
-  }
-
   /**
    * Triggers auto-complete suggestions for the given editor at the specified offset.
    *
@@ -140,12 +122,13 @@ public class CodyAutocompleteManager {
    */
   public void triggerAutocomplete(
       @NotNull Editor editor, int offset, InlineCompletionTriggerKind triggerKind) {
-    if (!isEnabledForEditor(editor)) {
-      if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)) {
-        logger.warn("triggered autocomplete with invalid editor " + editor);
-      }
+    boolean isTriggeredManually = triggerKind.equals(InlineCompletionTriggerKind.INVOKE);
+    if (!ConfigUtil.isCodyEnabled()) return;
+    else if (!CodyEditorUtil.isEditorValidForAutocomplete(editor)) {
+      if (isTriggeredManually) logger.warn("triggered autocomplete with invalid editor " + editor);
       return;
-    }
+    } else if (!isTriggeredManually
+        && !CodyEditorUtil.isImplicitAutocompleteEnabledForEditor(editor)) return;
 
     final Project project = editor.getProject();
     if (project == null) {
@@ -297,7 +280,7 @@ public class CodyAutocompleteManager {
       InlineAutocompleteItem item,
       InlayModel inlayModel,
       InlineCompletionTriggerKind triggerKind) {
-    TextRange range = EditorUtils.getTextRange(editor.getDocument(), item.range);
+    TextRange range = CodyEditorUtil.getTextRange(editor.getDocument(), item.range);
     String originalText = editor.getDocument().getText(range);
     String insertTextFirstLine = item.insertText.lines().findFirst().orElse("");
     String multilineInsertText =
@@ -370,43 +353,13 @@ public class CodyAutocompleteManager {
       String indentation =
           item.insertText.substring(
               0, item.insertText.length() - withoutLeadingWhitespace.length());
-      String newIndentation = EditorUtils.tabsToSpaces(indentation, indentOptions);
+      String newIndentation = CodyEditorUtil.tabsToSpaces(indentation, indentOptions);
       String newInsertText = newIndentation + withoutLeadingWhitespace;
       int rangeDiff = item.insertText.length() - newInsertText.length();
       Range newRange =
           item.range.withEnd(item.range.end.withCharacter(item.range.end.character - rangeDiff));
       return item.withInsertText(newInsertText).withRange(newRange);
     } else return item;
-  }
-
-  private boolean isProjectAvailable(Project project) {
-    return project != null && !project.isDisposed();
-  }
-
-  private boolean isEditorSupported(@NotNull Editor editor) {
-    if (editor.isDisposed()) {
-      return false;
-    }
-
-    Boolean fromCache = KEY_EDITOR_SUPPORTED.get(editor);
-    if (fromCache != null) {
-      return fromCache;
-    }
-
-    boolean isSupported =
-        isEditorInstanceSupported(editor)
-            && CodyCompatibility.isSupportedProject(editor.getProject());
-    KEY_EDITOR_SUPPORTED.set(editor, isSupported);
-    return isSupported;
-  }
-
-  public static boolean isEditorInstanceSupported(@NotNull Editor editor) {
-    return editor.getProject() != null
-        && !editor.isViewer()
-        && !editor.isOneLineMode()
-        && !(editor instanceof EditorWindow)
-        && !(editor instanceof ImaginaryEditor)
-        && (!(editor instanceof EditorEx) || !((EditorEx) editor).isEmbeddedIntoDialogWrapper());
   }
 
   private void cancelCurrentJob() {
