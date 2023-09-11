@@ -1,4 +1,6 @@
-CMD_PREAMBLE = """export HOME=$(pwd)
+CMD_PREAMBLE = """set -e
+
+export HOME=$(pwd)
 export SG_FORCE_REPO_ROOT=$(pwd)
 
 if [ -n "$PG_UTILS_PATH" ]; then
@@ -27,7 +29,7 @@ def _migration_impl(ctx):
         execution_requirements = {"requires-network": "1"},
         command = """{cmd_preamble}
 
-        trap "dropdb sg-squasher-{db} && echo 'temp db sg-squasher-{db} dropped'" EXIT
+        trap "dropdb --if-exists sg-squasher-{db} && echo 'temp db sg-squasher-{db} dropped'" EXIT
 
         {sg} migration squash-all -skip-teardown -db {db} -f {output_file}
         """.format(
@@ -58,13 +60,19 @@ def _describe_impl(ctx):
         execution_requirements = {"requires-network": "1"},
         command = """{cmd_preamble}
 
+        export PGDATABASE="_describe_{name}"
+        dropdb --if-exists $PGDATABASE
+        createdb "$PGDATABASE"
+        trap "dropdb --if-exists $PGDATABASE" exit
+
         {sg} migration describe -db {db} --format={format} -force -out {output_file}
         """.format(
             cmd_preamble = CMD_PREAMBLE,
             sg = ctx.executable._sg.path,
             db = ctx.attr.db,
             format = ctx.attr.format,
-            output_file = ctx.outputs.out.path
+            output_file = ctx.outputs.out.path,
+            name = ctx.attr.name,
         ),
         tools = ctx.attr._sg[DefaultInfo].default_runfiles.files,
     )
