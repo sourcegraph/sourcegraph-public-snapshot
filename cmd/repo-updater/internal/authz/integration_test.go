@@ -521,18 +521,35 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 		EmailIsVerified: true,
 	}
 
-	repo := types.Repo{
-		Name:    "gitlab.sgdev.org/petrissupercoolgroup/schwifty2",
-		Private: true,
-		URI:     "gitlab.sgdev.org/petrissupercoolgroup/schwifty2",
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "371335",
-			ServiceType: extsvc.TypeGitLab,
-			ServiceID:   "https://gitlab.sgdev.org/",
+	testRepos := []types.Repo{
+		{
+			Name:    "gitlab.sgdev.org/petrissupercoolgroup/schwifty2",
+			Private: true,
+			URI:     "gitlab.sgdev.org/petrissupercoolgroup/schwifty2",
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "371335",
+				ServiceType: extsvc.TypeGitLab,
+				ServiceID:   "https://gitlab.sgdev.org/",
+			},
+			Sources: map[string]*types.SourceInfo{
+				svc.URN(): {
+					ID: svc.URN(),
+				},
+			},
 		},
-		Sources: map[string]*types.SourceInfo{
-			svc.URN(): {
-				ID: svc.URN(),
+		{
+			Name:    "gitlab.sgdev.org/petri.last/getschwifty",
+			Private: true,
+			URI:     "gitlab.sgdev.org/petri.last/getschwifty",
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "371334",
+				ServiceType: extsvc.TypeGitLab,
+				ServiceID:   "https://gitlab.sgdev.org/",
+			},
+			Sources: map[string]*types.SourceInfo{
+				svc.URN(): {
+					ID: svc.URN(),
+				},
 			},
 		},
 	}
@@ -570,8 +587,10 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 
 			authz.SetProviders(false, []authz.Provider{provider})
 			defer authz.SetProviders(true, nil)
-			err = reposStore.RepoStore().Create(ctx, &repo)
-			require.NoError(t, err)
+			for _, repo := range testRepos {
+				err = reposStore.RepoStore().Create(ctx, &repo)
+				require.NoError(t, err)
+			}
 
 			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
 				AuthData: extsvc.NewUnencryptedData(authData),
@@ -599,7 +618,7 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 				gotIDs[i] = perm.RepoID
 			}
 
-			wantIDs := []int32{1}
+			wantIDs := []int32{1,2}
 			if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
@@ -633,8 +652,10 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 			authz.SetProviders(false, []authz.Provider{provider})
 			defer authz.SetProviders(true, nil)
 
-			err = reposStore.RepoStore().Create(ctx, &repo)
-			require.NoError(t, err)
+			for _, repo := range testRepos {
+				err = reposStore.RepoStore().Create(ctx, &repo)
+				require.NoError(t, err)
+			}
 
 			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
 				AuthData: extsvc.NewUnencryptedData(authData),
@@ -662,7 +683,7 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 				gotIDs[i] = perm.RepoID
 			}
 
-			wantIDs := []int32{}
+			wantIDs := []int32{2}
 			if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
 				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 			}
