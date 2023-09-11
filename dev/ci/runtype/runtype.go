@@ -88,7 +88,8 @@ func (t RunType) Matcher() *RunTypeMatcher {
 	switch t {
 	case ReleaseBazel:
 		return &RunTypeMatcher{
-			TagPrefix: "wip_v",
+			Branch:       `^wip_v[0-9]+\.[0-9]+\.[0-9]+$`,
+			BranchRegexp: true,
 		}
 	case ReleaseNightly:
 		return &RunTypeMatcher{
