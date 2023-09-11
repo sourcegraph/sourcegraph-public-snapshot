@@ -18,7 +18,7 @@ describe('humanizeSize', () => {
     })
 
     it('returns TB size for values above 1TB', () => {
-        expect(humanizeSize(1234567890123)).toBe('1234.57TB')
+        expect(humanizeSize(1234567890123)).toBe('1.23TB')
     })
 
     it('rounds decimal values to 2 places', () => {
