@@ -2,40 +2,39 @@
 
 # Sourcegraph Cody + Code Search
 
-Use Sourcegraph Code Search and Sourcegraph’s AI assistant Cody directly from your JetBrains IDE.
+Use Sourcegraph’s AI assistant Cody and Sourcegraph Code Search directly from your JetBrains IDE.
 
-- With Code Search, you can search code across all your repositories and code hosts—even the code you don’t have locally.
-- Cody can write code and answer questions across your entire codebase.
+- [Cody](https://about.sourcegraph.com/cody) is a free and [open-source](https://github.com/sourcegraph/cody) AI coding assistant that can write, understand and fix your code. Cody is powered by Sourcegraph’s code graph, and has knowledge of your entire codebase.
+- With [Code Search](https://about.sourcegraph.com/code-search), you can search code across all your repositories and code hosts—even the code you don’t have locally.
 
-**Cody AI for JetBrains IDEs is experimental right now. We’d love your [feedback](https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/jetbrains)**!
+**Cody for JetBrains IDEs is experimental right now. We’d love your [feedback](https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/jetbrains)**!
 
-## Features
+## Cody Features
 
-### 🤖 Ask Cody about anything in your codebase
+### Autocomplete: Cody writes code for you
 
-**Cody understands your entire codebase — not just your open files. Ask questions, insert code, and use the built-in commands such as "Generate unit test" and "Improve variable names".**
-
-Cody combines the power of large language models (LLMs) with Sourcegraph’s Code Graph API, generating deep knowledge of all of your code—even the code you don’t have locally. Large monorepos, multiple languages, and complex codebases are no problem for Cody.
-
-Example questions you can ask Cody:
-
-- Where is the CI config for the web integration tests?
-- Write a new GraphQL resolver for the AuditLog
-- Why is the UserConnectionResolver giving an error "unknown user", and how do I fix it?
-- Add helpful debug log statements
-- Make this work _(seriously, it often works—try it!)_
-
-![Example of chatting with Cody](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/Chat_IntelliJ_SS.jpg)
-
-### 🔨 Let Cody write code for you
-
-Cody can provide real-time code autocompletions as you're typing. As you start coding, or after you type a comment, Cody will look at the context around your open files, your file history, and your entire codebase to predict what you're trying to implement and provide suggestions.
+Cody autocompletes single lines, or whole functions, in any programming language, configuration file, or documentation. It’s powered by latest instant LLM models for accuracy and performance.
 
 ![Example of using code autocomplete](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/AutoCompletion_IntelliJ_SS.jpg)
 
-## 🍳 Built-in commands
+### Chat: Ask Cody about anything in your codebase
 
-Select the commands tab or right-click on a selection of code and choose one of the `Ask Cody > ...` commands, such as:
+Cody understands your entire codebase — not just your open files. Ask Cody any question about your code, and it will use Sourcegraph's code graph to answer using knowledge of your codebase.
+
+For example, you can ask Cody:
+
+- "How is our app's secret storage implemented on Linux?"
+- "Where is the CI config for the web integration tests?"
+- "Write a new GraphQL resolver for the AuditLog"
+- "Why is the UserConnectionResolver giving an "unknown user" error, and how do I fix it?"
+- "Add helpful debug log statements"
+- "Make this work" _(seriously, it often works—try it!)_
+
+![Example of chatting with Cody](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/Chat_IntelliJ_SS.jpg)
+
+### Built-in commands
+
+Cody has quick commands for common actions. Select the commands tab or right-click on a selection of code and choose one of the `Ask Cody > ...` commands, such as:
 
 - Explain code
 - Generate unit test
@@ -44,6 +43,38 @@ Select the commands tab or right-click on a selection of code and choose one of 
 - Smell code
 
 _We also welcome also pull request contributions for new, useful commands!_
+
+### Swappable LLMs
+
+Cody supports Anthropic Claude, Claude 2, and OpenAI GPT-4/3.5 models, with more coming soon.
+
+### Free usage
+
+Cody is currently in beta, and includes free LLM usage for individual users on both personal and work code. Fair use limits apply.
+
+### Programming language support
+
+Cody works for any programming language because it uses LLMs trained on broad data. Cody works great with Python, Go, JavaScript, and TypeScript code.
+
+### Code graph
+
+Cody is powered by Sourcegraph’s code graph and uses context of your codebase to extend its capabilities. By using context from entire repositories, Cody is able to give more accurate answers and generate idiomatic code.
+
+For example:
+
+- Ask Cody to generate an API call. Cody can gather context on your API schema to inform the code it writes.
+- Ask Cody to find where in your codebase a specific component is defined. Cody can retrieve and describe the exact files where that component is written.
+- Ask Cody questions that require an understanding of multiple files. For example, ask Cody how frontend data is populated in a React app; Cody can find the React component definitions to understand what data is being passed and where it originates.
+
+### Embeddings
+
+Cody indexes your entire repository and generates embeddings, which are a vector representation of your entire codebase. Cody queries this embeddings database on-demand, and passes that data to the LLM as context. Embeddings make up one part of Sourcegraph’s code graph.
+
+Embeddings for free Cody users are generated via the [Cody desktop app](https://docs.sourcegraph.com/app). For Cody Enterprise customers the embeddings are generated by your Sourcegraph Enterprise instance.
+
+### Cody Enterprise
+
+Cody Enterprise requires the use of a Sourcegraph Enterprise instance, and gives you access to AI coding tools across your entire organization. [Contact us](https://about.sourcegraph.com/contact/request-info) to set up a trial of Cody Enterprise. If you’re an existing Sourcegraph Enterprise customer, contact your technical advisor.
 
 ## Feedback
 

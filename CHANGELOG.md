@@ -21,6 +21,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Fixed a bug when syncing repository lists from GitHub that could lead to 404 errors showing up when running into GitHub rate limits [#56478](https://github.com/sourcegraph/sourcegraph/pull/56478)
+
 ### Removed
 
 ## Unreleased 5.1.9 (planned release date: September 20, 2023)
@@ -30,6 +32,8 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 ### Fixed
+
+- Fixed a bug when syncing repository lists from GitHub that could lead to 404 errors showing up when running into GitHub rate limits [#56478](https://github.com/sourcegraph/sourcegraph/pull/56478)
 
 ### Removed
 

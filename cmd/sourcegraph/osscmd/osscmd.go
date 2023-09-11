@@ -16,7 +16,7 @@ var config = svcmain.Config{
 	},
 }
 
-// Main is called from the `main` function of the `sourcegraph-oss` command.
+// MainOSS is called from the `main` function of the `cmd/sourcegraph` command.
 func MainOSS(services []service.Service, args []string) {
 	svcmain.Main(services, config, args)
 }

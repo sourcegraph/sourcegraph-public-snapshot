@@ -99,6 +99,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     const navigate = useNavigate()
 
     const codyChatStore = useCodyChat({
+        userID: authenticatedUser?.id,
         onTranscriptHistoryLoad,
         autoLoadTranscriptFromHistory: false,
         autoLoadScopeWithRepositories: isSourcegraphApp,
@@ -377,7 +378,12 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                     New chat
                                 </Button>
                             </div>
-                            <ChatUI codyChatStore={codyChatStore} isSourcegraphApp={true} isCodyChatPage={true} />
+                            <ChatUI
+                                codyChatStore={codyChatStore}
+                                isSourcegraphApp={true}
+                                isCodyChatPage={true}
+                                authenticatedUser={authenticatedUser}
+                            />
                         </div>
 
                         {showMobileHistory && (
@@ -457,7 +463,11 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                 deleteHistoryItem={deleteHistoryItem}
                             />
                         ) : (
-                            <ChatUI codyChatStore={codyChatStore} isCodyChatPage={true} />
+                            <ChatUI
+                                codyChatStore={codyChatStore}
+                                isCodyChatPage={true}
+                                authenticatedUser={authenticatedUser}
+                            />
                         )}
                     </div>
                 )}

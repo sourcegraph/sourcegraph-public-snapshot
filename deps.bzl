@@ -6485,6 +6485,14 @@ def go_dependencies():
         version = "v1.8.4",
     )
     go_repository(
+        name = "com_github_stvp_go_udp_testing",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/stvp/go-udp-testing",
+        sum = "h1:LUsDduamlucuNnWcaTbXQ6aLILFcLXADpOzeEH3U+OI=",
+        version = "v0.0.0-20201019212854-469649b16807",
+    )
+
+    go_repository(
         name = "com_github_stvp_tempredis",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/stvp/tempredis",
