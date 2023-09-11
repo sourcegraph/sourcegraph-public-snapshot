@@ -27,6 +27,8 @@ import kotlin.math.min
 object CodyEditorUtil {
     const val VIM_EXIT_INSERT_MODE_ACTION = "VimInsertExitModeAction"
 
+    private const val VIM_MOTION_COMMAND = "Motion"
+
     @JvmStatic
     private val KEY_EDITOR_SUPPORTED = Key.create<Boolean>("cody.editorSupported")
 
@@ -40,7 +42,8 @@ object CodyEditorUtil {
      */
     @JvmStatic
     fun tabsToSpaces(
-        inputText: String, indentOptions: IndentOptions): String {
+        inputText: String, indentOptions: IndentOptions
+    ): String {
         val tabReplacement = " ".repeat(indentOptions.TAB_SIZE)
         return inputText.replace("\t".toRegex(), tabReplacement)
     }
@@ -51,7 +54,8 @@ object CodyEditorUtil {
      */
     @JvmStatic
     fun indentOptions(
-        editor: Editor): IndentOptions {
+        editor: Editor
+    ): IndentOptions {
         return Optional.ofNullable(codeStyleSettings(editor).indentOptions)
             .orElse(IndentOptions.DEFAULT_INDENT_OPTIONS)
     }
@@ -73,10 +77,12 @@ object CodyEditorUtil {
     fun getTextRange(document: Document, range: Range): TextRange {
         val start = min(
             document.getLineEndOffset(range.start.line),
-            document.getLineStartOffset(range.start.line) + range.start.character)
+            document.getLineStartOffset(range.start.line) + range.start.character
+        )
         val end = min(
             document.getLineEndOffset(range.end.line),
-            document.getLineStartOffset(range.end.line) + range.end.character)
+            document.getLineStartOffset(range.end.line) + range.end.character
+        )
         return TextRange.create(start, end)
     }
 
@@ -92,10 +98,10 @@ object CodyEditorUtil {
     @JvmStatic
     fun isEditorInstanceSupported(editor: Editor): Boolean {
         return editor.project != null && !editor.isViewer
-            && !editor.isOneLineMode
-            && editor !is EditorWindow
-            && editor !is ImaginaryEditor
-            && (editor !is EditorEx || !editor.isEmbeddedIntoDialogWrapper)
+                && !editor.isOneLineMode
+                && editor !is EditorWindow
+                && editor !is ImaginaryEditor
+                && (editor !is EditorEx || !editor.isEmbeddedIntoDialogWrapper)
     }
 
     @JvmStatic
@@ -116,16 +122,16 @@ object CodyEditorUtil {
     @RequiresEdt
     fun isEditorValidForAutocomplete(editor: Editor?): Boolean {
         return editor != null
-            && editor.document.isWritable
-            && CodyProjectUtil.isProjectAvailable(editor.project)
-            && isEditorSupported(editor)
+                && editor.document.isWritable
+                && CodyProjectUtil.isProjectAvailable(editor.project)
+                && isEditorSupported(editor)
     }
 
     @JvmStatic
     fun isImplicitAutocompleteEnabledForEditor(editor: Editor): Boolean {
         return ConfigUtil.isCodyEnabled()
-            && ConfigUtil.isCodyAutocompleteEnabled()
-            && !isLanguageBlacklisted(editor)
+                && ConfigUtil.isCodyAutocompleteEnabled()
+                && !isLanguageBlacklisted(editor)
     }
 
     @JvmStatic
@@ -138,5 +144,11 @@ object CodyEditorUtil {
     fun isLanguageBlacklisted(editor: Editor): Boolean {
         val language = getLanguage(editor) ?: return false
         return ConfigUtil.getBlacklistedAutocompleteLanguageIds().contains(language.id)
+    }
+
+    @JvmStatic
+    fun isCommandExcluded(command: String?): Boolean {
+        return (command.isNullOrEmpty()
+                || command.contains(VIM_MOTION_COMMAND))
     }
 }

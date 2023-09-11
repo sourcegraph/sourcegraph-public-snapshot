@@ -2,6 +2,7 @@ package com.sourcegraph.cody.autocomplete;
 
 import com.intellij.codeInsight.lookup.LookupManager;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
@@ -123,13 +124,16 @@ public class CodyAutocompleteManager {
   public void triggerAutocomplete(
       @NotNull Editor editor, int offset, InlineCompletionTriggerKind triggerKind) {
     boolean isTriggeredManually = triggerKind.equals(InlineCompletionTriggerKind.INVOKE);
+    String currentCommand = CommandProcessor.getInstance().getCurrentCommandName();
     if (!ConfigUtil.isCodyEnabled()) return;
     else if (!CodyEditorUtil.isEditorValidForAutocomplete(editor)) {
       if (isTriggeredManually) logger.warn("triggered autocomplete with invalid editor " + editor);
       return;
     } else if (!isTriggeredManually
         && !CodyEditorUtil.isImplicitAutocompleteEnabledForEditor(editor)) return;
-
+    else if (CodyEditorUtil.isCommandExcluded(currentCommand)) {
+      return;
+    }
     final Project project = editor.getProject();
     if (project == null) {
       logger.warn("triggered autocomplete with null project");
