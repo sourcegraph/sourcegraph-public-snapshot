@@ -114,7 +114,7 @@ DEPS = [
     "//cmd/precise-code-intel-worker",
     "//cmd/searcher",
     "//enterprise/cmd/embeddings",
-    "//enterprise/cmd/frontend",
+    "//cmd/frontend",
     "//cmd/gitserver",
     "//enterprise/cmd/migrator",
     "//cmd/repo-updater",

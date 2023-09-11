@@ -9,8 +9,8 @@ import com.intellij.openapi.util.TextRange;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.vscode.InlineAutocompleteItem;
-import com.sourcegraph.common.EditorUtils;
 import com.sourcegraph.telemetry.GraphQlLogger;
+import com.sourcegraph.utils.CodyEditorUtil;
 import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
@@ -93,7 +93,7 @@ public class AcceptCodyAutocompleteAction extends EditorAction {
         @NotNull Caret caret,
         @NotNull InlineAutocompleteItem completionItem) {
       Document document = editor.getDocument();
-      TextRange range = EditorUtils.getTextRange(document, completionItem.range);
+      TextRange range = CodyEditorUtil.getTextRange(document, completionItem.range);
       document.replaceString(
           range.getStartOffset(), range.getEndOffset(), completionItem.insertText);
       caret.moveToOffset(range.getStartOffset() + completionItem.insertText.length());

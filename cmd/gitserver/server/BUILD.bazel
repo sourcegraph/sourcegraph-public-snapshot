@@ -92,7 +92,6 @@ go_library(
         "@com_github_mxk_go_flowrate//flowrate",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
-        "@com_github_ricochet2200_go_disk_usage_du//:du",
         "@com_github_sourcegraph_conc//:conc",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_mountinfo//:mountinfo",
