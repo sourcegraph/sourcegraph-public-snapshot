@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -269,6 +270,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			log.Int32("ID", userID),
 			log.String("name", user.Username)),
 	)
+	ctx = featureflag.WithFlags(ctx, s.db.FeatureFlags())
 
 	results, err := s.fetchUserPermsViaExternalAccounts(ctx, user, noPerms, fetchOpts)
 	providerStates := results.providerStates
@@ -699,7 +701,6 @@ func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32,
 		UserID:            userID,
 		ExternalAccountID: acctID,
 	}, repoIDs, authz.SourceUserSync)
-
 	if err != nil {
 		logger.Warn("saving perms to DB", log.Error(err))
 		return nil, err
