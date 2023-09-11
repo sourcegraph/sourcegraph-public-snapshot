@@ -4,16 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
@@ -1207,12 +1206,7 @@ func TestRateLimitRetry(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			testCase.numRequests += 1
 			if usePrimaryLimit {
-				w.Header().Add("x-ratelimit-remaining", "0")
-				w.Header().Add("x-ratelimit-limit", "5000")
-				resetTime := time.Now().Add(time.Second)
-				w.Header().Add("x-ratelimit-reset", strconv.Itoa(int(resetTime.Unix())))
-				w.WriteHeader(http.StatusForbidden)
-				w.Write([]byte(`{"message": "Primary rate limit hit"}`))
+				simulateGitHubPrimaryRateLimitHit(w)
 
 				usePrimaryLimit = false
 				testCase.primaryLimitWasHit = true
@@ -1220,9 +1214,7 @@ func TestRateLimitRetry(t *testing.T) {
 			}
 
 			if useSecondaryLimit {
-				w.Header().Add("retry-after", "1")
-				w.WriteHeader(http.StatusForbidden)
-				w.Write([]byte(`{"message": "Secondary rate limit hit"}`))
+				simulateGitHubSecondaryRateLimitHit(w)
 
 				useSecondaryLimit = false
 				testCase.secondaryLimitWasHit = true
@@ -1308,6 +1300,74 @@ func TestRateLimitRetry(t *testing.T) {
 		assert.True(t, test.succeeded)
 		assert.Equal(t, 3, test.numRequests)
 	})
+}
+
+func TestV3Client_Request_RequestUnmutated(t *testing.T) {
+	rcache.SetupForTest(t)
+
+	payload := struct {
+		Name string `json:"name"`
+		Age  int    `json:"age"`
+	}{Name: "foobar", Age: 35}
+	result := struct{}{}
+
+	ctx := context.Background()
+
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.DisableKeepAlives = true // Disable keep-alives otherwise the read of the request body is cached
+	cli := &http.Client{Transport: transport}
+
+	numRequests := 0
+	requestPaths := []string{}
+	requestBodies := []string{}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		numRequests++
+
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		requestPaths = append(requestPaths, r.URL.Path)
+		requestBodies = append(requestBodies, string(body))
+
+		if numRequests == 1 {
+			simulateGitHubPrimaryRateLimitHit(w)
+			return
+		}
+
+		w.Write([]byte(`{"message": "Very nice"}`))
+	}))
+
+	t.Cleanup(srv.Close)
+
+	srvURL, err := url.Parse(srv.URL)
+	require.NoError(t, err)
+
+	// Now, this is IMPORTANT: we use `APIRoot` to simulate a real setup in which
+	// we append the "API path" to the base URL configured by an admin.
+	apiURL, _ := APIRoot(srvURL)
+
+	// Now we create a client to talk to our test server with the API path
+	// appended.
+	client := NewV3Client(logtest.Scoped(t), "test", apiURL, nil, cli)
+
+	// We use client.post as a shortcut to send a request with a payload, so
+	// we can test that the payload and the path are untouched when retried.
+	// The request doesn't make sense, but that doesn't matter since we're only
+	// testing the client.
+	_, err = client.post(ctx, "user/repos", payload, &result)
+	require.NoError(t, err)
+
+	// Two requests should have been sent
+	assert.Equal(t, numRequests, 2)
+
+	// We want the same data to have been sent, twice
+	wantPath := "/api/v3/user/repos"
+	wantBody := `{"name":"foobar","age":35}`
+	assert.Equal(t, []string{wantPath, wantPath}, requestPaths)
+	assert.Equal(t, []string{wantBody, wantBody}, requestBodies)
 }
 
 func TestListPublicRepositories(t *testing.T) {

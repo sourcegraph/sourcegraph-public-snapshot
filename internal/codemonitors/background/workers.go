@@ -214,19 +214,13 @@ type actionRunner struct {
 
 func (r *actionRunner) Handle(ctx context.Context, logger log.Logger, j *database.ActionJob) (err error) {
 	logger.Info("actionRunner.Handle starting")
-	defer func() {
-		if err != nil {
-			logger.Error("actionRunner.Handle", log.Error(err))
-		}
-	}()
-
 	switch {
 	case j.Email != nil:
-		return r.handleEmail(ctx, j)
+		return errors.Wrap(r.handleEmail(ctx, j), "Email")
 	case j.Webhook != nil:
-		return r.handleWebhook(ctx, j)
+		return errors.Wrap(r.handleWebhook(ctx, j), "Webhook")
 	case j.SlackWebhook != nil:
-		return r.handleSlackWebhook(ctx, j)
+		return errors.Wrap(r.handleSlackWebhook(ctx, j), "SlackWebhook")
 	default:
 		return errors.New("job must be one of type email, webhook, or slack webhook")
 	}

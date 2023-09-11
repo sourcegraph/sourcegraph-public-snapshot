@@ -1,5 +1,6 @@
 package com.sourcegraph.config;
 
+import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 public class PluginSettingChangeContext {
@@ -14,6 +15,9 @@ public class PluginSettingChangeContext {
   @Nullable public final Integer oldCustomAutocompleteColor;
   @Nullable public final Integer customAutocompleteColor;
 
+  public final List<String> oldBlacklistedAutocompleteLanguageIds;
+  public final List<String> newBlacklistedAutocompleteLanguageIds;
+
   public PluginSettingChangeContext(
       boolean serverUrlChanged,
       boolean accessTokenChanged,
@@ -24,7 +28,9 @@ public class PluginSettingChangeContext {
       boolean oldIsCustomAutocompleteColorEnabled,
       boolean isCustomAutocompleteColorEnabled,
       @Nullable Integer oldCustomAutocompleteColor,
-      @Nullable Integer customAutocompleteColor) {
+      @Nullable Integer customAutocompleteColor,
+      List<String> oldBlacklistedAutocompleteLanguageIds,
+      List<String> newBlacklistedAutocompleteLanguageIds) {
     this.serverUrlChanged = serverUrlChanged;
     this.accessTokenChanged = accessTokenChanged;
     this.oldCodyEnabled = oldCodyEnabled;
@@ -35,5 +41,7 @@ public class PluginSettingChangeContext {
     this.isCustomAutocompleteColorEnabled = isCustomAutocompleteColorEnabled;
     this.oldCustomAutocompleteColor = oldCustomAutocompleteColor;
     this.customAutocompleteColor = customAutocompleteColor;
+    this.oldBlacklistedAutocompleteLanguageIds = oldBlacklistedAutocompleteLanguageIds;
+    this.newBlacklistedAutocompleteLanguageIds = newBlacklistedAutocompleteLanguageIds;
   }
 }

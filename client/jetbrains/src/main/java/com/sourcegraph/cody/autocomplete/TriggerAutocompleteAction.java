@@ -7,6 +7,7 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.actionSystem.EditorAction;
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler;
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind;
+import com.sourcegraph.utils.CodyEditorUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,7 +22,7 @@ public class TriggerAutocompleteAction extends EditorAction {
     @Override
     protected boolean isEnabledForCaret(
         @NotNull Editor editor, @NotNull Caret caret, DataContext dataContext) {
-      return CodyAutocompleteManager.isEditorInstanceSupported(editor);
+      return CodyEditorUtil.isEditorInstanceSupported(editor);
     }
 
     @Override

@@ -116,6 +116,16 @@ func TestExhaustiveSearch(t *testing.T) {
 		job2.WorkerJob = job.WorkerJob
 		require.Equal(job, job2)
 	}
+
+	// Assert that cancellation affects the number of rows we expect. This is a bit
+	// counterintuitive at this point because we have already completed the job.
+	// However, cancellation affects the rows independently of the job state.
+	{
+		wantCount := 6
+		gotCount, err := store.CancelSearchJob(userCtx, job.ID)
+		require.NoError(err)
+		require.Equal(wantCount, gotCount)
+	}
 }
 
 func parseCSV(csv string) (o [][]string) {

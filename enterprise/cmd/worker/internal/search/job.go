@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/uploadstore"
 )
 
 // config stores shared config we can override in each worker. We don't expose
@@ -51,7 +52,7 @@ func (j *searchJob) Description() string {
 }
 
 func (j *searchJob) Config() []env.Config {
-	return nil
+	return []env.Config{uploadstore.ConfigInst}
 }
 
 func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {

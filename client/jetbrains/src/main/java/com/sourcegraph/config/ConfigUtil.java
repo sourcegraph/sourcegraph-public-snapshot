@@ -35,6 +35,7 @@ public class ConfigUtil {
         .setServerEndpoint(serverAuth.getInstanceUrl())
         .setAccessToken(serverAuth.getAccessToken())
         .setCustomHeaders(getCustomRequestHeadersAsMap(serverAuth.getCustomRequestHeaders()))
+        .setProxy(UserLevelConfig.getProxy())
         .setAutocompleteAdvancedProvider(
             UserLevelConfig.getAutocompleteProviderType().vscodeSettingString())
         .setAutocompleteAdvancedServerEndpoint(UserLevelConfig.getAutocompleteServerEndpoint())
@@ -140,5 +141,9 @@ public class ConfigUtil {
         .filter(fileEditor -> fileEditor instanceof com.intellij.openapi.fileEditor.TextEditor)
         .map(fileEditor -> ((com.intellij.openapi.fileEditor.TextEditor) fileEditor).getEditor())
         .collect(Collectors.toList());
+  }
+
+  public static List<String> getBlacklistedAutocompleteLanguageIds() {
+    return CodyApplicationSettings.getInstance().getBlacklistedLanguageIds();
   }
 }

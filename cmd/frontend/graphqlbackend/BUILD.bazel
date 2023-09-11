@@ -6,7 +6,6 @@ load("@aspect_rules_js//js:defs.bzl", "js_library")
 package(default_visibility = [
     "//client/shared:__subpackages__",
     "//cmd/frontend:__subpackages__",
-    "//enterprise:__subpackages__",
 ])
 
 js_library(

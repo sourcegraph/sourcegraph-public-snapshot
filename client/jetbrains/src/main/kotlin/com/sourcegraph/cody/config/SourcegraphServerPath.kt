@@ -35,7 +35,26 @@ data class SourcegraphServerPath(
     fun from(uri: String, customRequestHeaders: String): SourcegraphServerPath {
       val matcher = URL_REGEX.matcher(uri)
       if (!matcher.matches()) throw SourcegraphParseException("Not a valid URL")
-      return SourcegraphServerPath(uri, customRequestHeaders)
+      val extractedSchema = matcher.group(1)
+      val schema = if (extractedSchema.isNullOrEmpty()) "https://" else extractedSchema
+      val host = matcher.group(2) ?: throw SourcegraphParseException("Empty host")
+      val port: Int?
+      val extractedPort = matcher.group(4)
+      port =
+          if (extractedPort == null) {
+            null
+          } else {
+            try {
+              extractedPort.toInt()
+            } catch (e: NumberFormatException) {
+              throw SourcegraphParseException("Invalid port format")
+            }
+          }
+
+      val extractedPath = matcher.group(5)
+      val path = if (!extractedPath.endsWith("/")) "$extractedPath/" else extractedPath
+      val fullUri = schema + host + (port?.let { ":$it" } ?: "") + path
+      return SourcegraphServerPath(fullUri, customRequestHeaders)
     }
   }
 }
