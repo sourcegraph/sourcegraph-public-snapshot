@@ -62,10 +62,6 @@ func (a *anthropicClient) Stream(
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return errors.Newf("unexpected status code from API: %d", resp.StatusCode)
-	}
-
 	dec := NewDecoder(resp.Body)
 	for dec.Scan() {
 		if ctx.Err() != nil && ctx.Err() == context.Canceled {
