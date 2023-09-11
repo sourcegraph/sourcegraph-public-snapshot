@@ -3,15 +3,15 @@ package com.sourcegraph.cody.autocomplete;
 import java.util.Arrays;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public enum AutocompleteProviderType {
   ANTHROPIC,
   UNSTABLE_CODEGEN,
-  UNSTABLE_AZURE_OPENAI;
+  UNSTABLE_OPENAI,
+  UNSTABLE_FIREWORKS;
 
-  public static final AutocompleteProviderType DEFAULT_AUTOCOMPLETE_PROVIDER_TYPE = ANTHROPIC;
 
-  @NotNull
   public static Optional<AutocompleteProviderType> optionalValueOf(@NotNull String name) {
     return Arrays.stream(AutocompleteProviderType.values())
         .filter(providerType -> providerType.vscodeSettingString().equals(name))
