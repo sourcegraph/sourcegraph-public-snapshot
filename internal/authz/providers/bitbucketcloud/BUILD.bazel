@@ -33,6 +33,9 @@ go_test(
         "provider_test.go",
     ],
     embed = [":bitbucketcloud"],
+    tags = [
+        "requires-network",
+    ],
     deps = [
         "//internal/authz",
         "//internal/database/dbmocks",

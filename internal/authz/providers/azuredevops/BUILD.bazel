@@ -26,6 +26,9 @@ go_test(
     timeout = "short",
     srcs = ["provider_test.go"],
     embed = [":azuredevops"],
+    tags = [
+        "requires-network",
+    ],
     deps = [
         "//internal/authz",
         "//internal/conf",

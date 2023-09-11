@@ -36,6 +36,9 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":releasecache"],
+    tags = [
+        "requires-network",
+    ],
     deps = [
         "//internal/conf",
         "//internal/errcode",
