@@ -65,10 +65,10 @@ func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Cont
 		return nil, err
 	}
 
-	return j.routines(workCtx, observationCtx, uploadStore)
+	return j.newSearchJobRoutines(workCtx, observationCtx, uploadStore)
 }
 
-func (j *searchJob) routines(
+func (j *searchJob) newSearchJobRoutines(
 	workCtx context.Context,
 	observationCtx *observation.Context,
 	uploadStore uploadstore2.Store,

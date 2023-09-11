@@ -124,11 +124,12 @@ func TestBlobstoreCSVWriter(t *testing.T) {
 		service.WithMaxBlobSizeBytes(12),
 	)
 
-	err := csvWriter.WriteHeader("h", "h", "h") // 3 "a" + 2 commas + 1 newline = 6 bytes
+	err := csvWriter.WriteHeader("h", "h", "h") // 3 bytes (letters) + 2 bytes (commas) + 1 byte (newline) = 6 bytes
 	require.NoError(t, err)
 	err = csvWriter.WriteRow("a", "a", "a")
 	require.NoError(t, err)
-	err = csvWriter.WriteRow("b", "b", "b") // new file
+	// We expect a new file to be created here because we have reached the max blob size.
+	err = csvWriter.WriteRow("b", "b", "b")
 	require.NoError(t, err)
 
 	err = csvWriter.Close()

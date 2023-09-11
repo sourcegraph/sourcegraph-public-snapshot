@@ -95,7 +95,7 @@ func TestExhaustiveSearch(t *testing.T) {
 		return int64(len(b)), nil
 	})
 
-	routines, err := searchJob.routines(workerCtx, observationCtx, mockStore)
+	routines, err := searchJob.newSearchJobRoutines(workerCtx, observationCtx, mockStore)
 	require.NoError(err)
 	for _, routine := range routines {
 		go routine.Start()

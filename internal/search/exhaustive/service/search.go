@@ -112,7 +112,9 @@ func NewBlobstoreCSVWriter(ctx context.Context, prefix string, store uploadstore
 		ctx:     ctx,
 		prefix:  prefix,
 		store:   store,
-		shard:   1,
+		// Start with "1" because we increment it before creating a new file. The second
+		// shard will be called {prefix}-2.
+		shard: 1,
 	}
 
 	c.startNewFile(ctx, prefix)
@@ -120,7 +122,12 @@ func NewBlobstoreCSVWriter(ctx context.Context, prefix string, store uploadstore
 	return c
 }
 
+// BlobstoreCSVWriter is a CSVWriter which writes to an uploadstore.Store. It
+// takes care of chunking blobs into files of options.maxBlobSizeBytes. Each
+// file has the same header, which is set by calling WriteHeader once before
+// calling WriteRow.
 type BlobstoreCSVWriter struct {
+	// ctx is the context we use for uploading blobs.
 	ctx context.Context
 
 	options Options
@@ -132,15 +139,17 @@ type BlobstoreCSVWriter struct {
 	store uploadstore.Store
 	w     *csv.Writer
 
+	// header keeps track of the header we expect to write as the first row of a new
+	// file.
 	header []string
 
-	// close takes care of flushing the CSV writer and closing the upload.
+	// close takes care of flushing w and closing the upload.
 	close func() error
 
-	// n is the number of bytes written since the last flush
+	// n is the total number of bytes written to the current blob.
 	n int64
 
-	// shard is incremented each time we create a new shard.
+	// shard is incremented before we create a new shard.
 	shard int
 }
 
@@ -149,7 +158,7 @@ func (c *BlobstoreCSVWriter) WriteHeader(s ...string) error {
 		c.header = s
 	}
 
-	// return error if c.header doesn't match s
+	// Check that c.header matches s.
 	if len(c.header) != len(s) {
 		return errors.Errorf("header mismatch: %v != %v", c.header, s)
 	}
@@ -159,20 +168,18 @@ func (c *BlobstoreCSVWriter) WriteHeader(s ...string) error {
 		}
 	}
 
-	err := c.write(s)
-	if err != nil {
-		return err
-	}
-	return nil
+	return c.write(s)
 }
 
 func (c *BlobstoreCSVWriter) WriteRow(s ...string) error {
 	// Create new file if we've exceeded the max blob size.
 	if c.n >= c.options.maxBlobSizeBytes {
+		// Close the current upload.
 		err := c.Close()
 		if err != nil {
 			return errors.Wrapf(err, "error closing upload")
 		}
+
 		c.shard++
 		c.startNewFile(c.ctx, fmt.Sprintf("%s-%d", c.prefix, c.shard))
 		err = c.WriteHeader(c.header...)
@@ -181,17 +188,12 @@ func (c *BlobstoreCSVWriter) WriteRow(s ...string) error {
 		}
 	}
 
-	err := c.write(s)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return c.write(s)
 }
 
 // startNewFile creates a new blob and sets up the CSV writer to write to it.
 //
-// The caller is expected to call Close() before calling startNewFile if a
+// The caller is expected to call c.Close() before calling startNewFile if a
 // previous file was open.
 func (c *BlobstoreCSVWriter) startNewFile(ctx context.Context, key string) {
 	pr, pw := io.Pipe()
@@ -200,16 +202,19 @@ func (c *BlobstoreCSVWriter) startNewFile(ctx context.Context, key string) {
 
 	eg := errgroup.Group{}
 
-	// cleaned up goroutine by calling pw.Close()
+	// Cleaned up by calling pw.Close() in closeFn.
 	eg.Go(func() error {
+		// We ignore the error from pr.Close(), because we only care about the upload
+		// and the cleanup of the goroutine.
 		defer pr.Close()
-		n, err := c.store.Upload(ctx, key, pr)
-		fmt.Println("upload", key, n, err)
+		_, err := c.store.Upload(ctx, key, pr)
 		return err
 	})
 
 	closeFn := func() error {
 		csvWriter.Flush()
+
+		// Stop the upload and wait for the goroutine to finish.
 		err := pw.Close()
 		if err2 := eg.Wait(); err2 != nil {
 			err = errors.Append(err, err2)
@@ -220,13 +225,13 @@ func (c *BlobstoreCSVWriter) startNewFile(ctx context.Context, key string) {
 	c.w = csvWriter
 	c.close = closeFn
 
-	// reset count
+	// Reset count.
 	c.n = 0
 }
 
 // write wraps Write to keep track of the number of bytes written. This is
 // mainly for test purposes: The CSV writer is buffered (default 4096 bytes),
-// and we don't have access to the number of bytes in the buffer. In practice,
+// and we don't have access to the number of bytes in the buffer. In production,
 // we could just wrap the io.Pipe writer with a counter, ignore the buffer, and
 // accept that size of the blobs is off by a few kilobytes.
 func (c *BlobstoreCSVWriter) write(s []string) error {
@@ -238,8 +243,8 @@ func (c *BlobstoreCSVWriter) write(s []string) error {
 	for _, field := range s {
 		c.n += int64(len(field))
 	}
-	c.n += 1             // for the newline
-	c.n += int64(len(s)) // for the commas
+	c.n += int64(len(s)) // len(s)-1 for the commas, +1 for the newline
+
 	return nil
 }
 
