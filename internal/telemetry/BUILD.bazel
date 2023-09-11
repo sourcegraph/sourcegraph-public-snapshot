@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "telemetry",
+    srcs = [
+        "billing_categories.go",
+        "billing_products.go",
+        "event_names.go",
+        "telemetry.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/telemetry",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/database",
+        "//internal/telemetrygateway/v1:telemetrygateway",
+        "//internal/version",
+        "@org_golang_google_protobuf//types/known/structpb",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
+)
+
+go_test(
+    name = "telemetry_test",
+    srcs = ["telemetry_test.go"],
+    embed = [":telemetry"],
+    deps = [
+        "//internal/actor",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_protobuf//encoding/protojson",
+    ],
+)
