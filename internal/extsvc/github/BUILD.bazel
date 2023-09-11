@@ -49,6 +49,9 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":github"],
+    tags = [
+        "requires-network",
+    ],
     deps = [
         "//internal/conf",
         "//internal/errcode",
