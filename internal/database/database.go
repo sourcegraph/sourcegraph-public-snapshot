@@ -383,5 +383,5 @@ func (d *db) OwnSignalConfigurations() SignalConfigurationStore {
 }
 
 func (d *db) FileMetrics() FileMetricsStore {
-	return MapFileToLangWith(d.logger, d.Store)
+	return FileMetricsWith(d.logger, d.Store)
 }
