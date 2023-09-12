@@ -134,6 +134,7 @@ var baseEngineConfig = syntaxEngineConfig{
 	Overrides: map[string]EngineType{
 		// Languages enabled for advanced syntax features
 		"perl": EngineScipSyntax,
+		"matlab": EngineTreeSitter,
 	},
 }
 
