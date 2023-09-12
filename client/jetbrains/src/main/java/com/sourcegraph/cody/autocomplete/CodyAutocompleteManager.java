@@ -288,7 +288,7 @@ public class CodyAutocompleteManager {
     String originalText = editor.getDocument().getText(range);
     String insertTextFirstLine = item.insertText.lines().findFirst().orElse("");
     String multilineInsertText =
-        item.insertText.lines().skip(1).collect(Collectors.joining(inferLineSeparator(editor)));
+        item.insertText.lines().skip(1).collect(Collectors.joining("\n"));
 
     // Run Myer's diff between the existing text in the document and the first line of the
     // `insertText` that is returned from the agent.
@@ -326,17 +326,6 @@ public class CodyAutocompleteManager {
           false,
           Integer.MAX_VALUE,
           new CodyAutocompleteBlockElementRenderer(multilineInsertText, item, editor));
-    }
-  }
-
-  private @NotNull String inferLineSeparator(@NotNull Editor editor) {
-    VirtualFile virtualFile = FileDocumentManager.getInstance().getFile(editor.getDocument());
-
-    if (virtualFile != null) {
-      return Optional.ofNullable(virtualFile.getDetectedLineSeparator())
-          .orElse(System.lineSeparator());
-    } else {
-      return System.lineSeparator();
     }
   }
 
