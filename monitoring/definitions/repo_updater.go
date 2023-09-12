@@ -577,6 +577,7 @@ func RepoUpdater() *monitoring.Dashboard {
 				shared.GRPCInternalErrorMetricsOptions{
 					HumanServiceName:   "repo_updater",
 					RawGRPCServiceName: grpcServiceName,
+					Namespace:          "src",
 
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSource),
