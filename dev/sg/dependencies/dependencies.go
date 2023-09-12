@@ -13,6 +13,7 @@ type CheckArgs struct {
 	ConfigFile          string
 	ConfigOverwriteFile string
 	DisableOverwrite    bool
+	DisablePreCommits   bool
 }
 
 type category = check.Category[CheckArgs]

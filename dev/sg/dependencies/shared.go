@@ -198,6 +198,10 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 			{
 				Name: "pre-commit.com is installed",
 				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
+					if args.DisablePreCommits {
+						return nil
+					}
+
 					repoRoot, err := root.RepositoryRoot()
 					if err != nil {
 						return err

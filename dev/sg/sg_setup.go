@@ -35,6 +35,10 @@ var setupCommand = &cli.Command{
 			Name:  "oss",
 			Usage: "Omit Sourcegraph-teammate-specific setup",
 		},
+		&cli.BoolFlag{
+			Name:  "skip-precommits",
+			Usage: "Skip overwriting pre-commit.com installation",
+		},
 	},
 	Subcommands: []*cli.Command{{
 		Name:  "disable-pre-commit",
@@ -67,6 +71,7 @@ var setupCommand = &cli.Command{
 			ConfigFile:          configFile,
 			ConfigOverwriteFile: configOverwriteFile,
 			DisableOverwrite:    disableOverwrite,
+			DisablePreCommits:   cmd.Bool("skip-precommits"),
 		}
 
 		switch {
