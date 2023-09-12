@@ -129,7 +129,7 @@ func TestList(t *testing.T) {
 	autogold.Expect([]interface{}{9, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
 
 	// List the keys
-	iter, err := store.List(ctx)
+	iter, err := store.List(ctx, "foobar")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,7 +147,7 @@ func TestListEmpty(t *testing.T) {
 	store, server, _ := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()
 
-	iter, err := store.List(ctx)
+	iter, err := store.List(ctx, "")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"strings"
 	"testing"
 	"time"
 
@@ -32,7 +33,7 @@ func (s *noOpUploadStore) Get(ctx context.Context, key string) (io.ReadCloser, e
 	return nil, nil
 }
 
-func (s *noOpUploadStore) List(ctx context.Context) (*iterator.Iterator[string], error) {
+func (s *noOpUploadStore) List(ctx context.Context, prefix string) (*iterator.Iterator[string], error) {
 	return nil, nil
 }
 
@@ -85,10 +86,12 @@ func (s *mockUploadStore) Get(ctx context.Context, key string) (io.ReadCloser, e
 	return io.NopCloser(bytes.NewReader(file)), nil
 }
 
-func (s *mockUploadStore) List(ctx context.Context) (*iterator.Iterator[string], error) {
+func (s *mockUploadStore) List(ctx context.Context, prefix string) (*iterator.Iterator[string], error) {
 	var names []string
 	for k := range s.files {
-		names = append(names, k)
+		if strings.HasPrefix(k, prefix) {
+			names = append(names, k)
+		}
 	}
 
 	return iterator.From[string](names), nil

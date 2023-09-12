@@ -85,9 +85,15 @@ const maxZeroReads = 3
 // in a row.
 var errNoDownloadProgress = errors.New("no download progress")
 
-func (s *s3Store) List(ctx context.Context) (*iterator.Iterator[string], error) {
+func (s *s3Store) List(ctx context.Context, prefix string) (*iterator.Iterator[string], error) {
+	input := s3.ListObjectsV2Input{Bucket: &s.bucket}
+
+	if prefix != "" {
+		input.Prefix = &prefix
+	}
+
 	// We wrap the client's paginator and just return the keys.
-	paginator := s.client.NewListObjectsV2Paginator(&s3.ListObjectsV2Input{Bucket: &s.bucket})
+	paginator := s.client.NewListObjectsV2Paginator(&input)
 
 	next := func() ([]string, error) {
 		if !paginator.HasMorePages() {
