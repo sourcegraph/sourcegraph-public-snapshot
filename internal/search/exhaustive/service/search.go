@@ -84,21 +84,9 @@ type CSVWriter interface {
 	WriteRow(...string) error
 }
 
-type Options struct {
-	maxBlobSizeBytes int64
-}
-
-type Option func(*Options)
-
-func WithMaxBlobSizeBytes(n int64) Option {
-	return func(o *Options) {
-		o.maxBlobSizeBytes = n
-	}
-}
-
 // NewBlobstoreCSVWriter creates a new BlobstoreCSVWriter which writes a CSV to
-// the store. BlobstoreCSVWriter takes care of chunking the CSV into blobs of 100MiB
-// (default), each with the same header row. Blobs are named {prefix}-{shard}
+// the store. BlobstoreCSVWriter takes care of chunking the CSV into blobs of
+// 100MiB, each with the same header row. Blobs are named {prefix}-{shard}
 // except for the first blob, which is named {prefix}.
 //
 // Data is buffered in memory until the blob reaches the maximum allowed size,
@@ -106,20 +94,13 @@ func WithMaxBlobSizeBytes(n int64) Option {
 //
 // The caller is expected to call Close() once and only once after the last call
 // to WriteRow.
-func NewBlobstoreCSVWriter(ctx context.Context, store uploadstore.Store, prefix string, opts ...Option) *BlobstoreCSVWriter {
-	options := Options{
-		maxBlobSizeBytes: 100 * 1024 * 1024,
-	}
-
-	for _, opt := range opts {
-		opt(&options)
-	}
+func NewBlobstoreCSVWriter(ctx context.Context, store uploadstore.Store, prefix string) *BlobstoreCSVWriter {
 
 	c := &BlobstoreCSVWriter{
-		options: options,
-		ctx:     ctx,
-		prefix:  prefix,
-		store:   store,
+		maxBlobSizeBytes: 100 * 1024 * 1024,
+		ctx:              ctx,
+		prefix:           prefix,
+		store:            store,
 		// Start with "1" because we increment it before creating a new file. The second
 		// shard will be called {prefix}-2.
 		shard: 1,
@@ -134,7 +115,7 @@ type BlobstoreCSVWriter struct {
 	// ctx is the context we use for uploading blobs.
 	ctx context.Context
 
-	options Options
+	maxBlobSizeBytes int64
 
 	prefix string
 
@@ -178,7 +159,7 @@ func (c *BlobstoreCSVWriter) WriteHeader(s ...string) error {
 
 func (c *BlobstoreCSVWriter) WriteRow(s ...string) error {
 	// Create new file if we've exceeded the max blob size.
-	if c.n >= c.options.maxBlobSizeBytes {
+	if c.n >= c.maxBlobSizeBytes {
 		// Close the current upload.
 		err := c.Close()
 		if err != nil {

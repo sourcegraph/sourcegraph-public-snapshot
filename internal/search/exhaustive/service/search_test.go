@@ -1,4 +1,4 @@
-package service_test
+package service
 
 import (
 	"bytes"
@@ -12,13 +12,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
 )
 
 func TestBackendFake(t *testing.T) {
-	testNewSearcher(t, service.NewSearcherFake(), newSearcherTestCase{
+	testNewSearcher(t, NewSearcherFake(), newSearcherTestCase{
 		Query:        "1@rev1 1@rev2 2@rev3",
 		WantRefSpecs: "RepositoryRevSpec{1@spec} RepositoryRevSpec{2@spec}",
 		WantRepoRevs: "RepositoryRevision{1@rev1} RepositoryRevision{1@rev2} RepositoryRevision{2@rev3}",
@@ -37,7 +36,7 @@ type newSearcherTestCase struct {
 	WantCSV      string
 }
 
-func testNewSearcher(t *testing.T, newSearcher service.NewSearcher, tc newSearcherTestCase) {
+func testNewSearcher(t *testing.T, newSearcher NewSearcher, tc newSearcherTestCase) {
 	assert := require.New(t)
 
 	ctx := context.Background()
@@ -117,12 +116,8 @@ func TestBlobstoreCSVWriter(t *testing.T) {
 		return int64(len(b)), nil
 	})
 
-	csvWriter := service.NewBlobstoreCSVWriter(
-		context.Background(),
-		mockStore,
-		"blob",
-		service.WithMaxBlobSizeBytes(12),
-	)
+	csvWriter := NewBlobstoreCSVWriter(context.Background(), mockStore, "blob")
+	csvWriter.maxBlobSizeBytes = 12
 
 	err := csvWriter.WriteHeader("h", "h", "h") // 3 bytes (letters) + 2 bytes (commas) + 1 byte (newline) = 6 bytes
 	require.NoError(t, err)
