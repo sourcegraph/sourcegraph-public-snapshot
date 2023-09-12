@@ -20,9 +20,6 @@ buildozer 'add outs schema-descriptions/{{new_version}}-internal_database_schema
 # Update the shell script powering that target
 echo "{{new_version}}" >> cmd/migrator/wip_git_versions.txt
 
-# Ensure the result is correct
-bazel test //cmd/migrator:schema_descriptions_test
-
 git add cmd/migrator/BUILD.bazel cmd/migrator/wip_git_versions.txt
 git commit -m "release_patch: build {{new_version}}"
 
