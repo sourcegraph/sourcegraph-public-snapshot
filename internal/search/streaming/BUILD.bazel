@@ -13,8 +13,10 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
+        "//internal/authz",
         "//internal/database",
         "//internal/fileutil",
+        "//internal/gitserver",
         "//internal/lazyregexp",
         "//internal/rcache",
         "//internal/search",
