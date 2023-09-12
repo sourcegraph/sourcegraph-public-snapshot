@@ -214,19 +214,14 @@ func scanProtects(logger log.Logger, rc io.Reader, s *protectsScanner, ignoreHos
 		// Trim whitespace
 		line = strings.TrimSpace(line)
 
-		// Skip comments
-		if strings.HasPrefix(line, "##") {
+		// Skip comments and blank lines
+		if strings.HasPrefix(line, "##") || line == "" {
 			continue
 		}
 
 		// Trim trailing comments
 		if i := strings.Index(line, "##"); i > -1 {
 			line = line[:i]
-		}
-
-		// Skip blank lines
-		if line == "" {
-			continue
 		}
 
 		logger.Debug("Scanning protects line", log.String("line", line))
