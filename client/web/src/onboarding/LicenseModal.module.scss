@@ -1,0 +1,46 @@
+
+:global(.theme-light) {
+    .modal {
+        background-color: #f9fafb;
+        border: 1px solid #E6EBF2;
+    }
+
+    .key-wrapper {
+        background: #FFFFFF;
+    }
+
+    .modal-container {
+        background-color: hsla(224, 22%, 10%, 0.33);
+    }
+}
+
+.key-wrapper {
+    border: 1px solid #dbe2f0;
+}
+
+.key-container {
+    display: grid;
+    grid-template-columns: 50px 1fr;
+    column-gap: 1.5rem;
+}
+
+.logo-container {
+    display: grid;
+    align-items: center;
+}
+
+.empty-logo {
+    border: 1px dotted #CAD2E2;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    align-self: center;
+    justify-self: center;
+}
+
+.submit {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 0.5rem;
+}
+
