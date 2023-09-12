@@ -28,6 +28,7 @@ type CoreTestOperationsOptions struct {
 	CacheBundleSize      bool
 	CreateBundleSizeDiff bool
 	IsMainBranch         bool
+	NoLint               bool
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
@@ -53,11 +54,13 @@ func CoreTestOperations(buildOpts bk.BuildOptions, diff changed.Diff, opts CoreT
 
 	// Simple, fast-ish linter checks
 	ops.Append(BazelOperations(buildOpts, opts.IsMainBranch)...)
-	linterOps := operations.NewNamedSet("Linters and static analysis")
-	if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
-		linterOps.Append(addSgLints(targets))
+	if !opts.NoLint {
+		linterOps := operations.NewNamedSet("Linters and static analysis")
+		if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
+			linterOps.Append(addSgLints(targets))
+		}
+		ops.Merge(linterOps)
 	}
-	ops.Merge(linterOps)
 
 	if diff.Has(changed.Client | changed.GraphQL) {
 		// If there are any Graphql changes, they are impacting the client as well.

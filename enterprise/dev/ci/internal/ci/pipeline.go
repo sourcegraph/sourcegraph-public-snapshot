@@ -294,6 +294,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
 			IsMainBranch:              true,
+			NoLint:                    c.RunType.Is(runtype.ReleaseBazel),
 		}))
 
 		// Security scanning - sonarcloud
