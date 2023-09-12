@@ -5,18 +5,15 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -25,24 +22,32 @@ import (
 var fileMetricsCache = rcache.NewWithTTL("lang:v1:FileMetrics", 300)
 
 type FileMetricsStore interface {
-	// CalculateAndStoreFileMetrics will calculate the file metrics and store them in the cache (database table).
-	// It returns the metrics that were calculated, and any error that occurs while calculating.
-	// If the error is not nil, then the metrics are not complete.
-	// Not complete means:
-	// - the languages are determined from the file name/extension, not from the content
-	// - the byte, line and word counts are probably not accurate
-	// The content is gotten from gitserver.
-	// Errors are logged internally and returned to the caller.
-	CalculateAndStoreFileMetrics(context.Context, types.MinimalRepo, string, api.CommitID) (*fileutil.FileMetrics, error)
 	// GetFileMetrics queries the file metrics from the database.
 	// Return values in order:
 	// - the file metrics
 	// - indicator of if the metrics were calculated comletely. If false, the metrics may be inaccurate.
 	// returning true if there are metrics stored; false if not.
-	GetFileMetrics(context.Context, api.RepoID, string, api.CommitID) *fileutil.FileMetrics
-	// PutFileMetrics stores a mapping of file to language, updating an existing record if one exists
-	// (based on repo + path + commit)
-	PutFileMetrics(context.Context, api.RepoID, string, api.CommitID, *fileutil.FileMetrics, bool) error
+	GetFileMetrics(context.Context, api.RepoID, api.CommitID, string) *fileutil.FileMetrics
+	// SetFileMetrics stores file metrics in redis and the database, updating an existing record if one exists.
+	// The bool parameter is to indicate if the metrics are complete -
+	// if the file contents were included in the metrics calculation.
+	SetFileMetrics(context.Context, api.RepoID, api.CommitID, string, *fileutil.FileMetrics, bool) error
+	With(basestore.ShareableStore) FileMetricsStore
+	Transact(context.Context) (FileMetricsStore, error)
+}
+
+func FileMetrics(logger log.Logger) FileMetricsStore {
+	return &fileMetricsStore{
+		Store:  &basestore.Store{},
+		logger: logger,
+	}
+}
+
+func FileMetricsWith(logger log.Logger, other basestore.ShareableStore) FileMetricsStore {
+	return &fileMetricsStore{
+		Store:  basestore.NewWithHandle(other.Handle()),
+		logger: logger,
+	}
 }
 
 type fileMetricsStore struct {
@@ -50,27 +55,32 @@ type fileMetricsStore struct {
 	logger log.Logger
 }
 
-var _ FileMetricsStore = (*fileMetricsStore)(nil)
+var _ FileMetricsStore = &fileMetricsStore{}
 
-func MapFileToLangWith(logger log.Logger, other basestore.ShareableStore) FileMetricsStore {
-	return &fileMetricsStore{
-		logger: logger,
-		Store:  basestore.NewWithHandle(other.Handle()),
+func (s *fileMetricsStore) With(other basestore.ShareableStore) FileMetricsStore {
+	return &fileMetricsStore{s.Store.With((other)), s.logger}
+}
+
+func (s *fileMetricsStore) Transact(ctx context.Context) (FileMetricsStore, error) {
+	tx, err := s.Store.Transact(ctx)
+	if err != nil {
+		return nil, err
 	}
+	return &fileMetricsStore{tx, s.logger}, nil
 }
 
 var newLine = []byte{'\n'}
 
-func (s *fileMetricsStore) GetFileMetrics(ctx context.Context, repoID api.RepoID, path string, commitID api.CommitID) (metrics *fileutil.FileMetrics) {
+func (s *fileMetricsStore) GetFileMetrics(ctx context.Context, repoID api.RepoID, commitID api.CommitID, path string) (metrics *fileutil.FileMetrics) {
 	cacheKey := fmt.Sprintf("%d:%s:%s", repoID, path, commitID)
 	cacheValue, cacheHit := fileMetricsCache.Get(cacheKey)
 	if cacheHit {
 		metrics = &fileutil.FileMetrics{}
-		if err := json.Unmarshal(cacheValue, &metrics); err != nil {
+		if err := json.Unmarshal(cacheValue, &metrics); err == nil {
+			return
+		} else {
 			s.logger.Warn("unmarshal file metrics failed", log.Error(err), log.Int32("repoID", int32(repoID)), log.String("path", path), log.String("commitID", string(commitID)))
 			fileMetricsCache.Delete(cacheKey)
-		} else {
-			return
 		}
 	}
 	if fm, err := s.queryFileMetricsRecord(ctx, repoID, path, commitID); err == nil {
@@ -118,7 +128,7 @@ on conflict (repo_id, file_path, commit_sha)
 do update set size_in_bytes = %s, line_count = %s, languages = %s, complete = %s
 `
 
-func (s *fileMetricsStore) PutFileMetrics(ctx context.Context, repoID api.RepoID, path string, commitID api.CommitID, metrics *fileutil.FileMetrics, complete bool) error {
+func (s *fileMetricsStore) SetFileMetrics(ctx context.Context, repoID api.RepoID, commitID api.CommitID, path string, metrics *fileutil.FileMetrics, complete bool) error {
 
 	s.putInRedis(repoID, path, commitID, metrics)
 
@@ -146,35 +156,6 @@ func (s *fileMetricsStore) PutFileMetrics(ctx context.Context, repoID api.RepoID
 	// Return the db error, if there was one.
 	// Ignore the redis error, as it's just a cache.
 	return err
-}
-
-func (s *fileMetricsStore) CalculateAndStoreFileMetrics(ctx context.Context, repo types.MinimalRepo, path string, commitID api.CommitID) (metrics *fileutil.FileMetrics, err error) {
-
-	metrics = &fileutil.FileMetrics{}
-
-	// no cache hit (or not complete); calculate the metrics
-	err = metrics.CalculateFileMetrics(
-		ctx,
-		path,
-		func(ctx context.Context, path string) (io.ReadCloser, error) {
-			return gitserver.NewClient().NewFileReader(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, path)
-		},
-	)
-
-	// only warn on errors (instead of fail), because we'll get some metrics anyway
-	if err == nil {
-		s.logger.Warn("CalculateFileMetrics failed", log.Error(err), log.Int32("repoID", int32(repo.ID)), log.String("path", path), log.String("commitID", string(commitID)))
-	}
-
-	// don't make the caller wait for the cache storage
-	bgCtx, cancel := context.WithCancel(ctx)
-	go func() {
-		defer cancel()
-		s.PutFileMetrics(bgCtx, repo.ID, path, commitID, metrics, err != nil)
-	}()
-
-	// return the metrics and any error that may have occured when calculating
-	return metrics, err
 }
 
 var getFileMetrics = `

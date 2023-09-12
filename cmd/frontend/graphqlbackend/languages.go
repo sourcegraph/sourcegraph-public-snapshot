@@ -2,10 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
+	"io"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -21,9 +23,9 @@ func (r *schemaResolver) GetLanguageForFile(ctx context.Context, args *struct {
 		return "", errors.New("missing file path")
 	}
 
-	fileMetrics := r.db.FileMetrics()
+	metricsCache := r.db.FileMetrics()
 
-	metrics := fileMetrics.GetFileMetrics(context.TODO(), api.RepoID(args.RepoId), args.Path, api.CommitID(args.CommitSHA))
+	metrics := metricsCache.GetFileMetrics(context.TODO(), api.RepoID(args.RepoId), api.CommitID(args.CommitSHA), args.Path)
 
 	if metrics != nil {
 		return metrics.FirstLanguage(), nil
@@ -45,16 +47,15 @@ func (r *schemaResolver) GetLanguageForFile(ctx context.Context, args *struct {
 		}
 	}
 
-	// still ambiguous language detection
-	// go for the full tamale
-	metrics, err := fileMetrics.CalculateAndStoreFileMetrics(
+	err := metrics.CalculateFileMetrics(
 		context.TODO(),
-		types.MinimalRepo{
-			ID:   api.RepoID(args.RepoId),
-			Name: api.RepoName(args.RepoName),
-		},
 		args.Path,
-		api.CommitID(args.CommitSHA),
+		func(ctx context.Context, path string) (io.ReadCloser, error) {
+			return gitserver.NewClient().NewFileReader(ctx, authz.DefaultSubRepoPermsChecker, api.RepoName(args.RepoName), api.CommitID(args.CommitSHA), path)
+		},
 	)
+
+	metricsCache.SetFileMetrics(context.TODO(), api.RepoID(args.RepoId), api.CommitID(args.CommitSHA), args.Path, metrics, err == nil)
+
 	return metrics.FirstLanguage(), err
 }

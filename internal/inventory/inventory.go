@@ -47,7 +47,7 @@ func getLang(ctx context.Context, db database.DB, repoID api.RepoID, file fs.Fil
 
 	// Check the cache first.
 	// It is a two-level cache: redis backed by the database.
-	metrics := db.FileMetrics().GetFileMetrics(ctx, repoID, file.Name(), commitID)
+	metrics := db.FileMetrics().GetFileMetrics(ctx, repoID, commitID, file.Name())
 
 	if metrics == nil {
 		// Nothing cached.
@@ -61,7 +61,7 @@ func getLang(ctx context.Context, db database.DB, repoID api.RepoID, file fs.Fil
 		bgCtx, cancel := context.WithCancel(ctx)
 		go func() {
 			defer cancel()
-			db.FileMetrics().PutFileMetrics(bgCtx, repoID, file.Name(), commitID, metrics, err == nil)
+			db.FileMetrics().SetFileMetrics(bgCtx, repoID, commitID, file.Name(), metrics, err == nil)
 		}()
 	}
 

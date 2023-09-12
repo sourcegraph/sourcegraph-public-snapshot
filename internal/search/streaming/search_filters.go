@@ -3,14 +3,17 @@ package streaming
 import (
 	"context"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -71,8 +74,8 @@ var commonFileFilters = []struct {
 
 func languageFromFile(fileMatch *result.FileMatch, db database.DB) string {
 
-	// FileMetrics maintains a dual-level cache: redis cache, backed by the database
-	metrics := db.FileMetrics().GetFileMetrics(context.TODO(), fileMatch.Repo.ID, fileMatch.Path, fileMatch.CommitID)
+	// FileMetrics maintains a dual-level cache: redis backed by the database
+	metrics := db.FileMetrics().GetFileMetrics(context.TODO(), fileMatch.Repo.ID, fileMatch.CommitID, fileMatch.Path)
 
 	if metrics != nil {
 		return metrics.FirstLanguage()
@@ -81,9 +84,19 @@ func languageFromFile(fileMatch *result.FileMatch, db database.DB) string {
 	// not in cache; thread out calculation and storage
 	// while continuing to process
 	go func() {
-		db.FileMetrics().CalculateAndStoreFileMetrics(context.TODO(), fileMatch.Repo, fileMatch.Path, fileMatch.CommitID)
+		metrics := &fileutil.FileMetrics{}
+		err := metrics.CalculateFileMetrics(
+			context.TODO(),
+			fileMatch.Path,
+			func(ctx context.Context, path string) (io.ReadCloser, error) {
+				return gitserver.NewClient().NewFileReader(ctx, authz.DefaultSubRepoPermsChecker, fileMatch.Repo.Name, fileMatch.CommitID, path)
+			},
+		)
+		db.FileMetrics().SetFileMetrics(context.TODO(), fileMatch.Repo.ID, fileMatch.CommitID, fileMatch.Path, metrics, err == nil)
 	}()
 
+	// meanwhile, make an effort to figure out the language,
+	// using the context of the search results, if there is any context
 	metrics = &fileutil.FileMetrics{}
 	metrics.LanguagesByFileNameAndExtension(fileMatch.Path)
 	if len(metrics.Languages) != 1 {
