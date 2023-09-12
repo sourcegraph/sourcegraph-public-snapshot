@@ -1,14 +1,10 @@
-import {
-    type FC,
-    type PropsWithChildren,
-    useCallback,
-    useState,
-} from 'react'
+import { type FC, type PropsWithChildren, useCallback, useState } from 'react'
 
 import { mdiAlertCircle, mdiChevronDown, mdiCheckCircle, mdiCheckCircleOutline } from '@mdi/js'
 // eslint-disable-next-line id-length
 import cx from 'classnames'
 
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import {
     H4,
     LoadingSpinner,
@@ -20,16 +16,19 @@ import {
     Icon,
     Link,
 } from '@sourcegraph/wildcard'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+
 import { useOnboardingChecklistQuery } from './graphql-hooks'
-import { content } from './OnboardingChecklist.content'
-import { OnboardingChecklistItem, type OnboardingChecklistItemProps } from './types';
 import { LicenseKeyModal } from './LicenseModal'
+import { content } from './OnboardingChecklist.content'
+import type { ChecklistItem, OnboardingChecklistItemProps } from './types'
 
 import styles from './OnboardingChecklist.module.scss'
 
 export const OnboardingChecklist: FC = (): JSX.Element => {
-    const [hasCompletedLicenseCheck, setHasCompletedLicenseCheck] = useTemporarySetting('admin.hasCompletedLicenseCheck', false)
+    const [hasCompletedLicenseCheck, setHasCompletedLicenseCheck] = useTemporarySetting(
+        'admin.hasCompletedLicenseCheck',
+        false
+    )
     const { data, loading, error, refetch } = useOnboardingChecklistQuery()
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
     const toggleDropdownOpen = useCallback(() => setIsDropdownOpen(isOpen => !isOpen), [])
@@ -61,7 +60,7 @@ export const OnboardingChecklist: FC = (): JSX.Element => {
                         {content.map(({ id, isComplete, title, description, link }) => (
                             <OnboardingChecklistItem
                                 key={id}
-                                isComplete={checklistItem[id as keyof OnboardingChecklistItem] || isComplete}
+                                isComplete={checklistItem[id as keyof ChecklistItem] || isComplete}
                                 title={title}
                                 description={description}
                                 link={link}
@@ -70,17 +69,15 @@ export const OnboardingChecklist: FC = (): JSX.Element => {
                     </OnboardingChecklistList>
                 </PopoverContent>
             </Popover>
-            {
-                (!hasCompletedLicenseCheck) && (
-                    <LicenseKeyModal
+            {!hasCompletedLicenseCheck && (
+                <LicenseKeyModal
                     licenseKey={licenseKey}
                     config={config}
                     id={id}
                     refetch={refetch}
                     onHandleLicenseCheck={setHasCompletedLicenseCheck}
                 />
-                )
-            }
+            )}
         </>
     )
 }
@@ -116,4 +113,3 @@ const OnboardingChecklistItem: FC<OnboardingChecklistItemProps> = ({
         </div>
     </li>
 )
-

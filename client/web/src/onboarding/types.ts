@@ -9,7 +9,7 @@ export interface OnboardingChecklistResult {
     licenseKey: LicenseInfo
     id: number
     config: string
-    checklistItem: OnboardingChecklistItem
+    checklistItem: ChecklistItem
 }
 
 export interface LicenseInfo {
@@ -19,7 +19,7 @@ export interface LicenseInfo {
     expiresAt: string
 }
 
-export interface OnboardingChecklistItem {
+export interface ChecklistItem {
     licenseKey: boolean
     externalURL: boolean
     emailSmtp: boolean
