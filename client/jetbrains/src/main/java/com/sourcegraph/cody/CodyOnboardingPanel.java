@@ -9,7 +9,7 @@ import com.intellij.ui.components.AnActionLink;
 import com.intellij.util.ui.JBUI;
 import com.sourcegraph.cody.chat.ChatUIConstants;
 import com.sourcegraph.cody.chat.ContentWithGradientBorder;
-import com.sourcegraph.cody.config.SettingsConfigurable;
+import com.sourcegraph.cody.config.ui.AccountConfigurable;
 import com.sourcegraph.cody.ui.Colors;
 import java.awt.*;
 import javax.swing.*;
@@ -53,7 +53,7 @@ public class CodyOnboardingPanel extends JPanel {
               @Override
               public void actionPerformed(@NotNull AnActionEvent e) {
                 ShowSettingsUtil.getInstance()
-                    .showSettingsDialog(project, SettingsConfigurable.class);
+                    .showSettingsDialog(project, AccountConfigurable.class);
               }
             });
     goToSettingsLink.setForeground(Colors.SECONDARY_LINK_COLOR);
