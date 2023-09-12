@@ -21,7 +21,6 @@ echo "{{new_version}}" >> cmd/migrator/wip_git_versions.txt
 # Ensure the result is correct
 bazel test //cmd/migrator:schema_descriptions_test
 
-git add cmd/migrator/BUILD.bazel
-git add cmd/migrator/wip_git_versions.text
+git add cmd/migrator/BUILD.bazel cmd/migrator/wip_git_versions.txt
 
 git commit -m "release_patch: build {{new_version}}"
