@@ -33,14 +33,26 @@ func publicAccountDataFromJSON(ctx context.Context, account extsvc.Account) (*ex
 	return p.ExternalAccountInfo(ctx, account)
 }
 
-func (r *externalAccountDataResolver) DisplayName() string {
-	return r.data.DisplayName
+func (r *externalAccountDataResolver) DisplayName() *string {
+	if r.data.DisplayName == "" {
+		return nil
+	}
+
+	return &r.data.DisplayName
 }
 
-func (r *externalAccountDataResolver) Login() string {
-	return r.data.Login
+func (r *externalAccountDataResolver) Login() *string {
+	if r.data.Login == "" {
+		return nil
+	}
+
+	return &r.data.Login
 }
 
-func (r *externalAccountDataResolver) URL() string {
-	return r.data.URL
+func (r *externalAccountDataResolver) URL() *string {
+	if r.data.URL == "" {
+		return nil
+	}
+
+	return &r.data.URL
 }
