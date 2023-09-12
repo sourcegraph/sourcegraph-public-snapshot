@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -16,6 +17,8 @@ import (
 //  2. Run the test with the -update flag:
 //     `go test -run='TestAzureDevOpsSource_ListRepos' -update=TestAzureDevOpsSource_ListRepos`
 func TestAzureDevOpsSource_ListRepos(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
 	conf := &schema.AzureDevOpsConnection{
 		Url:      "https://dev.azure.com",
 		Username: os.Getenv("AZURE_DEV_OPS_USERNAME"),

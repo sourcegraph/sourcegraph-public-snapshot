@@ -72,6 +72,9 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":sources"],
+    tags = [
+        "requires-network",
+    ],
     deps = [
         "//internal/api",
         "//internal/authz",
@@ -101,6 +104,7 @@ go_test(
         "//internal/gitserver/protocol",
         "//internal/httpcli",
         "//internal/httptestutil",
+        "//internal/ratelimit",
         "//internal/rcache",
         "//internal/testutil",
         "//internal/types",

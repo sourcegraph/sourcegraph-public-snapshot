@@ -36,9 +36,11 @@ go_test(
         "//internal/httpcli",
         "//internal/httptestutil",
         "//internal/lazyregexp",
+        "//internal/ratelimit",
         "//internal/testutil",
         "//lib/errors",
         "@com_github_dnaeon_go_vcr//cassette",
         "@com_github_stretchr_testify//assert",
+        "@org_golang_x_time//rate",
     ],
 )
