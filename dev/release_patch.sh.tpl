@@ -10,7 +10,7 @@ if [ ! -d ".git" ]; then
 fi
 
 echo "Checking out a new branch named {{new_version}}"
-git checkout -b {{new_version}}
+git checkout -b wip_{{new_version}}
 
 # Update the buildfile for schema_descriptions so it has our new schema.
 buildozer 'add outs schema-descriptions/{{new_version}}-internal_database_schema.codeinsights.json schema-descriptions/{{new_version}}-internal_database_schema.codeintel.json schema-descriptions/{{new_version}}-internal_database_schema.json' //cmd/migrator:schema_descriptions
