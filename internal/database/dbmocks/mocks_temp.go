@@ -23,6 +23,7 @@ import (
 	extsvc "github.com/sourcegraph/sourcegraph/internal/extsvc"
 	auth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	featureflag "github.com/sourcegraph/sourcegraph/internal/featureflag"
+	fileutil "github.com/sourcegraph/sourcegraph/internal/fileutil"
 	store "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	types1 "github.com/sourcegraph/sourcegraph/internal/own/types"
 	result "github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -36783,6 +36784,539 @@ func (c FeatureFlagStoreWithTransactFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c FeatureFlagStoreWithTransactFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockFileMetricsStore is a mock implementation of the FileMetricsStore
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/database) used for unit
+// testing.
+type MockFileMetricsStore struct {
+	// GetFileMetricsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetFileMetrics.
+	GetFileMetricsFunc *FileMetricsStoreGetFileMetricsFunc
+	// SetFileMetricsFunc is an instance of a mock function object
+	// controlling the behavior of the method SetFileMetrics.
+	SetFileMetricsFunc *FileMetricsStoreSetFileMetricsFunc
+	// TransactFunc is an instance of a mock function object controlling the
+	// behavior of the method Transact.
+	TransactFunc *FileMetricsStoreTransactFunc
+	// WithFunc is an instance of a mock function object controlling the
+	// behavior of the method With.
+	WithFunc *FileMetricsStoreWithFunc
+}
+
+// NewMockFileMetricsStore creates a new mock of the FileMetricsStore
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockFileMetricsStore() *MockFileMetricsStore {
+	return &MockFileMetricsStore{
+		GetFileMetricsFunc: &FileMetricsStoreGetFileMetricsFunc{
+			defaultHook: func(context.Context, api.RepoID, api.CommitID, string) (r0 *fileutil.FileMetrics) {
+				return
+			},
+		},
+		SetFileMetricsFunc: &FileMetricsStoreSetFileMetricsFunc{
+			defaultHook: func(context.Context, api.RepoID, api.CommitID, string, *fileutil.FileMetrics, bool) (r0 error) {
+				return
+			},
+		},
+		TransactFunc: &FileMetricsStoreTransactFunc{
+			defaultHook: func(context.Context) (r0 database.FileMetricsStore, r1 error) {
+				return
+			},
+		},
+		WithFunc: &FileMetricsStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) (r0 database.FileMetricsStore) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockFileMetricsStore creates a new mock of the FileMetricsStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockFileMetricsStore() *MockFileMetricsStore {
+	return &MockFileMetricsStore{
+		GetFileMetricsFunc: &FileMetricsStoreGetFileMetricsFunc{
+			defaultHook: func(context.Context, api.RepoID, api.CommitID, string) *fileutil.FileMetrics {
+				panic("unexpected invocation of MockFileMetricsStore.GetFileMetrics")
+			},
+		},
+		SetFileMetricsFunc: &FileMetricsStoreSetFileMetricsFunc{
+			defaultHook: func(context.Context, api.RepoID, api.CommitID, string, *fileutil.FileMetrics, bool) error {
+				panic("unexpected invocation of MockFileMetricsStore.SetFileMetrics")
+			},
+		},
+		TransactFunc: &FileMetricsStoreTransactFunc{
+			defaultHook: func(context.Context) (database.FileMetricsStore, error) {
+				panic("unexpected invocation of MockFileMetricsStore.Transact")
+			},
+		},
+		WithFunc: &FileMetricsStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.FileMetricsStore {
+				panic("unexpected invocation of MockFileMetricsStore.With")
+			},
+		},
+	}
+}
+
+// NewMockFileMetricsStoreFrom creates a new mock of the
+// MockFileMetricsStore interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockFileMetricsStoreFrom(i database.FileMetricsStore) *MockFileMetricsStore {
+	return &MockFileMetricsStore{
+		GetFileMetricsFunc: &FileMetricsStoreGetFileMetricsFunc{
+			defaultHook: i.GetFileMetrics,
+		},
+		SetFileMetricsFunc: &FileMetricsStoreSetFileMetricsFunc{
+			defaultHook: i.SetFileMetrics,
+		},
+		TransactFunc: &FileMetricsStoreTransactFunc{
+			defaultHook: i.Transact,
+		},
+		WithFunc: &FileMetricsStoreWithFunc{
+			defaultHook: i.With,
+		},
+	}
+}
+
+// FileMetricsStoreGetFileMetricsFunc describes the behavior when the
+// GetFileMetrics method of the parent MockFileMetricsStore instance is
+// invoked.
+type FileMetricsStoreGetFileMetricsFunc struct {
+	defaultHook func(context.Context, api.RepoID, api.CommitID, string) *fileutil.FileMetrics
+	hooks       []func(context.Context, api.RepoID, api.CommitID, string) *fileutil.FileMetrics
+	history     []FileMetricsStoreGetFileMetricsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetFileMetrics delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockFileMetricsStore) GetFileMetrics(v0 context.Context, v1 api.RepoID, v2 api.CommitID, v3 string) *fileutil.FileMetrics {
+	r0 := m.GetFileMetricsFunc.nextHook()(v0, v1, v2, v3)
+	m.GetFileMetricsFunc.appendCall(FileMetricsStoreGetFileMetricsFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the GetFileMetrics
+// method of the parent MockFileMetricsStore instance is invoked and the
+// hook queue is empty.
+func (f *FileMetricsStoreGetFileMetricsFunc) SetDefaultHook(hook func(context.Context, api.RepoID, api.CommitID, string) *fileutil.FileMetrics) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetFileMetrics method of the parent MockFileMetricsStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *FileMetricsStoreGetFileMetricsFunc) PushHook(hook func(context.Context, api.RepoID, api.CommitID, string) *fileutil.FileMetrics) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *FileMetricsStoreGetFileMetricsFunc) SetDefaultReturn(r0 *fileutil.FileMetrics) {
+	f.SetDefaultHook(func(context.Context, api.RepoID, api.CommitID, string) *fileutil.FileMetrics {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *FileMetricsStoreGetFileMetricsFunc) PushReturn(r0 *fileutil.FileMetrics) {
+	f.PushHook(func(context.Context, api.RepoID, api.CommitID, string) *fileutil.FileMetrics {
+		return r0
+	})
+}
+
+func (f *FileMetricsStoreGetFileMetricsFunc) nextHook() func(context.Context, api.RepoID, api.CommitID, string) *fileutil.FileMetrics {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *FileMetricsStoreGetFileMetricsFunc) appendCall(r0 FileMetricsStoreGetFileMetricsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of FileMetricsStoreGetFileMetricsFuncCall
+// objects describing the invocations of this function.
+func (f *FileMetricsStoreGetFileMetricsFunc) History() []FileMetricsStoreGetFileMetricsFuncCall {
+	f.mutex.Lock()
+	history := make([]FileMetricsStoreGetFileMetricsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// FileMetricsStoreGetFileMetricsFuncCall is an object that describes an
+// invocation of method GetFileMetrics on an instance of
+// MockFileMetricsStore.
+type FileMetricsStoreGetFileMetricsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoID
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.CommitID
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *fileutil.FileMetrics
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c FileMetricsStoreGetFileMetricsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c FileMetricsStoreGetFileMetricsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// FileMetricsStoreSetFileMetricsFunc describes the behavior when the
+// SetFileMetrics method of the parent MockFileMetricsStore instance is
+// invoked.
+type FileMetricsStoreSetFileMetricsFunc struct {
+	defaultHook func(context.Context, api.RepoID, api.CommitID, string, *fileutil.FileMetrics, bool) error
+	hooks       []func(context.Context, api.RepoID, api.CommitID, string, *fileutil.FileMetrics, bool) error
+	history     []FileMetricsStoreSetFileMetricsFuncCall
+	mutex       sync.Mutex
+}
+
+// SetFileMetrics delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockFileMetricsStore) SetFileMetrics(v0 context.Context, v1 api.RepoID, v2 api.CommitID, v3 string, v4 *fileutil.FileMetrics, v5 bool) error {
+	r0 := m.SetFileMetricsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.SetFileMetricsFunc.appendCall(FileMetricsStoreSetFileMetricsFuncCall{v0, v1, v2, v3, v4, v5, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetFileMetrics
+// method of the parent MockFileMetricsStore instance is invoked and the
+// hook queue is empty.
+func (f *FileMetricsStoreSetFileMetricsFunc) SetDefaultHook(hook func(context.Context, api.RepoID, api.CommitID, string, *fileutil.FileMetrics, bool) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetFileMetrics method of the parent MockFileMetricsStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *FileMetricsStoreSetFileMetricsFunc) PushHook(hook func(context.Context, api.RepoID, api.CommitID, string, *fileutil.FileMetrics, bool) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *FileMetricsStoreSetFileMetricsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID, api.CommitID, string, *fileutil.FileMetrics, bool) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *FileMetricsStoreSetFileMetricsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, api.RepoID, api.CommitID, string, *fileutil.FileMetrics, bool) error {
+		return r0
+	})
+}
+
+func (f *FileMetricsStoreSetFileMetricsFunc) nextHook() func(context.Context, api.RepoID, api.CommitID, string, *fileutil.FileMetrics, bool) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *FileMetricsStoreSetFileMetricsFunc) appendCall(r0 FileMetricsStoreSetFileMetricsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of FileMetricsStoreSetFileMetricsFuncCall
+// objects describing the invocations of this function.
+func (f *FileMetricsStoreSetFileMetricsFunc) History() []FileMetricsStoreSetFileMetricsFuncCall {
+	f.mutex.Lock()
+	history := make([]FileMetricsStoreSetFileMetricsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// FileMetricsStoreSetFileMetricsFuncCall is an object that describes an
+// invocation of method SetFileMetrics on an instance of
+// MockFileMetricsStore.
+type FileMetricsStoreSetFileMetricsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoID
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.CommitID
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 *fileutil.FileMetrics
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c FileMetricsStoreSetFileMetricsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c FileMetricsStoreSetFileMetricsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// FileMetricsStoreTransactFunc describes the behavior when the Transact
+// method of the parent MockFileMetricsStore instance is invoked.
+type FileMetricsStoreTransactFunc struct {
+	defaultHook func(context.Context) (database.FileMetricsStore, error)
+	hooks       []func(context.Context) (database.FileMetricsStore, error)
+	history     []FileMetricsStoreTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// Transact delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockFileMetricsStore) Transact(v0 context.Context) (database.FileMetricsStore, error) {
+	r0, r1 := m.TransactFunc.nextHook()(v0)
+	m.TransactFunc.appendCall(FileMetricsStoreTransactFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Transact method of
+// the parent MockFileMetricsStore instance is invoked and the hook queue is
+// empty.
+func (f *FileMetricsStoreTransactFunc) SetDefaultHook(hook func(context.Context) (database.FileMetricsStore, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Transact method of the parent MockFileMetricsStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *FileMetricsStoreTransactFunc) PushHook(hook func(context.Context) (database.FileMetricsStore, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *FileMetricsStoreTransactFunc) SetDefaultReturn(r0 database.FileMetricsStore, r1 error) {
+	f.SetDefaultHook(func(context.Context) (database.FileMetricsStore, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *FileMetricsStoreTransactFunc) PushReturn(r0 database.FileMetricsStore, r1 error) {
+	f.PushHook(func(context.Context) (database.FileMetricsStore, error) {
+		return r0, r1
+	})
+}
+
+func (f *FileMetricsStoreTransactFunc) nextHook() func(context.Context) (database.FileMetricsStore, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *FileMetricsStoreTransactFunc) appendCall(r0 FileMetricsStoreTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of FileMetricsStoreTransactFuncCall objects
+// describing the invocations of this function.
+func (f *FileMetricsStoreTransactFunc) History() []FileMetricsStoreTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]FileMetricsStoreTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// FileMetricsStoreTransactFuncCall is an object that describes an
+// invocation of method Transact on an instance of MockFileMetricsStore.
+type FileMetricsStoreTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.FileMetricsStore
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c FileMetricsStoreTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c FileMetricsStoreTransactFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// FileMetricsStoreWithFunc describes the behavior when the With method of
+// the parent MockFileMetricsStore instance is invoked.
+type FileMetricsStoreWithFunc struct {
+	defaultHook func(basestore.ShareableStore) database.FileMetricsStore
+	hooks       []func(basestore.ShareableStore) database.FileMetricsStore
+	history     []FileMetricsStoreWithFuncCall
+	mutex       sync.Mutex
+}
+
+// With delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockFileMetricsStore) With(v0 basestore.ShareableStore) database.FileMetricsStore {
+	r0 := m.WithFunc.nextHook()(v0)
+	m.WithFunc.appendCall(FileMetricsStoreWithFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the With method of the
+// parent MockFileMetricsStore instance is invoked and the hook queue is
+// empty.
+func (f *FileMetricsStoreWithFunc) SetDefaultHook(hook func(basestore.ShareableStore) database.FileMetricsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// With method of the parent MockFileMetricsStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *FileMetricsStoreWithFunc) PushHook(hook func(basestore.ShareableStore) database.FileMetricsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *FileMetricsStoreWithFunc) SetDefaultReturn(r0 database.FileMetricsStore) {
+	f.SetDefaultHook(func(basestore.ShareableStore) database.FileMetricsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *FileMetricsStoreWithFunc) PushReturn(r0 database.FileMetricsStore) {
+	f.PushHook(func(basestore.ShareableStore) database.FileMetricsStore {
+		return r0
+	})
+}
+
+func (f *FileMetricsStoreWithFunc) nextHook() func(basestore.ShareableStore) database.FileMetricsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *FileMetricsStoreWithFunc) appendCall(r0 FileMetricsStoreWithFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of FileMetricsStoreWithFuncCall objects
+// describing the invocations of this function.
+func (f *FileMetricsStoreWithFunc) History() []FileMetricsStoreWithFuncCall {
+	f.mutex.Lock()
+	history := make([]FileMetricsStoreWithFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// FileMetricsStoreWithFuncCall is an object that describes an invocation of
+// method With on an instance of MockFileMetricsStore.
+type FileMetricsStoreWithFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 basestore.ShareableStore
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.FileMetricsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c FileMetricsStoreWithFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c FileMetricsStoreWithFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

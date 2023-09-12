@@ -41,6 +41,7 @@
     - ExecutorStore
     - ExternalServiceStore
     - FeatureFlagStore
+    - FileMetricsStore
     - GitserverLocalCloneStore
     - GitserverRepoStore
     - GlobalStateStore
