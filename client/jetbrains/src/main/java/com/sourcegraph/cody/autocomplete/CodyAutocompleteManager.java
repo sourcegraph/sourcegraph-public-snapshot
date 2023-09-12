@@ -122,7 +122,7 @@ public class CodyAutocompleteManager {
    * @param offset The character offset in the editor to trigger auto-complete at.
    */
   public void triggerAutocomplete(
-      @NotNull Editor editor, int offset, InlineCompletionTriggerKind triggerKind) {
+      @NotNull Editor editor, int offset, @NotNull InlineCompletionTriggerKind triggerKind) {
     boolean isTriggeredManually = triggerKind.equals(InlineCompletionTriggerKind.INVOKE);
     String currentCommand = CommandProcessor.getInstance().getCurrentCommandName();
     if (!ConfigUtil.isCodyEnabled()) return;
@@ -168,8 +168,8 @@ public class CodyAutocompleteManager {
       @NotNull Editor editor,
       int offset,
       @NotNull TextDocument textDocument,
-      InlineCompletionTriggerKind triggerKind,
-      CancellationToken cancellationToken) {
+      @NotNull InlineCompletionTriggerKind triggerKind,
+      @NotNull CancellationToken cancellationToken) {
     CodyAgentServer server = CodyAgent.getServer(project);
     boolean isAgentAutocomplete = server != null;
     if (!isAgentAutocomplete) {
@@ -219,9 +219,9 @@ public class CodyAutocompleteManager {
       @NotNull Project project,
       @NotNull Editor editor,
       int offset,
-      InlineCompletionTriggerKind triggerKind,
-      InlineAutocompleteList result,
-      CancellationToken cancellationToken) {
+      @NotNull InlineCompletionTriggerKind triggerKind,
+      @NotNull InlineAutocompleteList result,
+      @NotNull CancellationToken cancellationToken) {
     if (currentAutocompleteTelemetry != null) {
       currentAutocompleteTelemetry.markCompletionEvent(result.completionEvent);
     }
@@ -281,9 +281,9 @@ public class CodyAutocompleteManager {
   private void displayAgentAutocomplete(
       @NotNull Editor editor,
       int offset,
-      InlineAutocompleteItem item,
-      InlayModel inlayModel,
-      InlineCompletionTriggerKind triggerKind) {
+      @NotNull InlineAutocompleteItem item,
+      @NotNull InlayModel inlayModel,
+      @NotNull InlineCompletionTriggerKind triggerKind) {
     TextRange range = CodyEditorUtil.getTextRange(editor.getDocument(), item.range);
     String originalText = editor.getDocument().getText(range);
     String insertTextFirstLine = item.insertText.lines().findFirst().orElse("");
