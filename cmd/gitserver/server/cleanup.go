@@ -54,6 +54,9 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wre
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
+			// Make sure the janitor can see every repo.
+			ctx = actor.WithInternalActor(ctx)
+
 			gitserverAddrs := gitserver.NewGitserverAddresses(conf.Get())
 			// TODO: Should this return an error?
 			cleanupRepos(ctx, logger, db, rcf, cfg.ShardID, cfg.ReposDir, cloneRepo, gitserverAddrs)
@@ -325,8 +328,7 @@ func cleanupRepos(
 			return false, nil
 		}
 
-		return false, nil
-		// return maybeRemoveNonExistingRepo(ctx, logger, db, reposDir, shardID, dir)
+		return maybeRemoveNonExistingRepo(ctx, logger, db, reposDir, shardID, dir)
 	}
 
 	ensureGitAttributes := func(dir common.GitDir) (done bool, err error) {
@@ -1412,7 +1414,7 @@ func mockRemoveNonExistingReposConfig(value bool) {
 	removeNonExistingRepos = value
 }
 
-func MaybeRemoveNonExistingRepo(ctx context.Context, logger log.Logger, db database.DB, reposDir string, shardID string, dir common.GitDir) (done bool, _ error) {
+func maybeRemoveNonExistingRepo(ctx context.Context, logger log.Logger, db database.DB, reposDir string, shardID string, dir common.GitDir) (done bool, _ error) {
 	repoName := repoNameFromDir(reposDir, dir)
 	logger = logger.Scoped("repo-purge", "Repo purge janitor task").With(log.String("repo", string(repoName)))
 
@@ -1445,7 +1447,8 @@ func MaybeRemoveNonExistingRepo(ctx context.Context, logger log.Logger, db datab
 
 	// The repo does not exist in the DB (or is soft-deleted), continue deleting it.
 	// Also attempt to mark it as not-cloned in the DB.
-	err = removeRepoDirectory(ctx, logger, db, shardID, reposDir, dir, true)
+	// TODO: Set to true.
+	err = removeRepoDirectory(ctx, logger, db, shardID, reposDir, dir, false)
 	if err == nil {
 		nonExistingReposRemoved.Inc()
 		logger.Info("deleted repo")
