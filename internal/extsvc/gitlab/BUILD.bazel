@@ -87,5 +87,6 @@ go_test(
         "@com_github_masterminds_semver//:semver",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
+        "@org_golang_x_time//rate",
     ],
 )

@@ -62,6 +62,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
     const isAppSetupPage = routeMatch?.startsWith(EnterprisePageRoutes.AppSetup)
+    const isSearchJobsPage = routeMatch?.startsWith(EnterprisePageRoutes.SearchJobs)
     const isAppAuthCallbackPage = routeMatch?.startsWith(EnterprisePageRoutes.AppAuthCallback)
     const isSearchNotebooksPage = routeMatch?.startsWith(EnterprisePageRoutes.Notebooks)
     const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
@@ -86,7 +87,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const isSetupWizardPage = location.pathname.startsWith(PageRoutes.SetupWizard)
 
     const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
-    const userHistory = useUserHistory(isRepositoryRelatedPage)
+    const userHistory = useUserHistory(props.authenticatedUser?.id, isRepositoryRelatedPage)
 
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
     const isCommunitySearchContextPage = communitySearchContextPaths.includes(location.pathname)
@@ -250,7 +251,8 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                         !isCommunitySearchContextPage &&
                         !isSearchConsolePage &&
                         !isSearchNotebooksPage &&
-                        !isCodySearchPage
+                        !isCodySearchPage &&
+                        !isSearchJobsPage
                     }
                     setFuzzyFinderIsVisible={setFuzzyFinderVisible}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}

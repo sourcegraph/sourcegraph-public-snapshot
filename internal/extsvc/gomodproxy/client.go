@@ -36,7 +36,7 @@ func NewClient(urn string, urls []string, httpfactory *httpcli.Factory) *Client 
 		urls:           urls,
 		cachedClient:   cached,
 		uncachedClient: uncached,
-		limiter:        ratelimit.DefaultRegistry.Get(urn),
+		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(urn)),
 	}
 }
 

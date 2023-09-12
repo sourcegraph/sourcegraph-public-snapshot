@@ -10,9 +10,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/metrics",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/diskusage",
         "//lib/errors",
         "@com_github_prometheus_client_golang//prometheus",
-        "@com_github_ricochet2200_go_disk_usage_du//:du",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 

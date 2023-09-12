@@ -2,8 +2,10 @@ import React, { useEffect, useMemo, useCallback } from 'react'
 
 import classNames from 'classnames'
 
+import type { TranscriptJSON } from '@sourcegraph/cody-shared/dist/chat/transcript'
 import type { CodyClientScope } from '@sourcegraph/cody-shared/dist/chat/useClient'
 import { useLazyQuery } from '@sourcegraph/http-client'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Text } from '@sourcegraph/wildcard'
 
 import type { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
@@ -22,11 +24,13 @@ export interface ScopeSelectorProps {
     fetchRepositoryNames: (count: number) => Promise<string[]>
     isSourcegraphApp?: boolean
     logTranscriptEvent: (eventLabel: string, eventProperties?: { [key: string]: any }) => void
+    transcriptHistory: TranscriptJSON[]
     className?: string
     renderHint?: (repos: IRepo[]) => React.ReactNode
     // Whether to encourage the selector popover to overlap its trigger if necessary,
     // rather than collapsing or flipping position.
     encourageOverlap?: boolean
+    authenticatedUser: AuthenticatedUser | null
 }
 
 export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function ScopeSelectorComponent({
@@ -37,9 +41,11 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     fetchRepositoryNames,
     isSourcegraphApp,
     logTranscriptEvent,
+    transcriptHistory,
     className,
     renderHint,
     encourageOverlap,
+    authenticatedUser,
 }) {
     const [loadReposStatus, { data: newReposStatusData, previousData: previousReposStatusData }] = useLazyQuery<
         ReposStatusResult,
@@ -62,10 +68,10 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
         }
 
         loadReposStatus({
-            variables: { repoNames, first: repoNames.length, includeJobs: !!window.context.currentUser?.siteAdmin },
+            variables: { repoNames, first: repoNames.length, includeJobs: !!authenticatedUser?.siteAdmin },
             pollInterval: 2000,
         }).catch(() => null)
-    }, [activeEditor, scope.repositories, loadReposStatus])
+    }, [activeEditor, scope.repositories, loadReposStatus, authenticatedUser?.siteAdmin])
 
     const allRepositories = useMemo(() => reposStatusData?.repositories.nodes || [], [reposStatusData])
 
@@ -134,6 +140,8 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
                         toggleIncludeInferredRepository={toggleIncludeInferredRepository}
                         toggleIncludeInferredFile={toggleIncludeInferredFile}
                         encourageOverlap={encourageOverlap}
+                        transcriptHistory={transcriptHistory}
+                        authenticatedUser={authenticatedUser}
                     />
                     {scope.includeInferredFile && activeEditor?.filePath && (
                         <Text size="small" className="ml-2 mb-0 align-self-center">

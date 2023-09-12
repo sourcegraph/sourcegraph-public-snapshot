@@ -11,7 +11,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/repo-updater/shared",
-        "//cmd/sourcegraph-oss/osscmd",
+        "//cmd/sourcegraph/osscmd",
         "//internal/sanitycheck",
     ],
 )

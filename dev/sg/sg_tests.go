@@ -8,6 +8,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
@@ -38,7 +39,7 @@ sg test -help
 # Arguments are passed along to the command
 sg test backend-integration -run TestSearch
 `,
-	Category: CategoryDev,
+	Category: category.Dev,
 	BashComplete: completions.CompleteOptions(func() (options []string) {
 		config, _ := getConfig()
 		if config == nil {

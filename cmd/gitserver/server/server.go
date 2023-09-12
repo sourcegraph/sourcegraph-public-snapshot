@@ -184,9 +184,9 @@ type Server struct {
 	cloneLimiter     *limiter.MutableLimiter
 	cloneableLimiter *limiter.MutableLimiter
 
-	// rpsLimiter limits the remote code host git operations done per second
+	// RPSLimiter limits the remote code host git operations done per second
 	// per gitserver instance
-	rpsLimiter *ratelimit.InstrumentedLimiter
+	RPSLimiter *ratelimit.InstrumentedLimiter
 
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
 	repoUpdateLocks   map[api.RepoName]*locks
@@ -312,28 +312,6 @@ func (s *Server) Handler() http.Handler {
 		s.cloneableLimiter.SetLimit(limit)
 	})
 
-	s.rpsLimiter = ratelimit.NewInstrumentedLimiter("RpsLimiter", rate.NewLimiter(rate.Inf, 10))
-	setRPSLimiter := func() {
-		if maxRequestsPerSecond := conf.GitMaxCodehostRequestsPerSecond(); maxRequestsPerSecond == -1 {
-			// As a special case, -1 means no limiting
-			s.rpsLimiter.SetLimit(rate.Inf)
-			s.rpsLimiter.SetBurst(10)
-		} else if maxRequestsPerSecond == 0 {
-			// A limiter with zero limit but a non-zero burst is not rejecting all events
-			// because the bucket is initially full with N tokens and refilled N tokens
-			// every second, where N is the burst size. See
-			// https://github.com/golang/go/issues/18763 for details.
-			s.rpsLimiter.SetLimit(0)
-			s.rpsLimiter.SetBurst(0)
-		} else {
-			s.rpsLimiter.SetLimit(rate.Limit(maxRequestsPerSecond))
-			s.rpsLimiter.SetBurst(10)
-		}
-	}
-	conf.Watch(func() {
-		setRPSLimiter()
-	})
-
 	mux := http.NewServeMux()
 	mux.HandleFunc("/archive", trace.WithRouteName("archive", accesslog.HTTPMiddleware(
 		s.Logger.Scoped("archive.accesslog", "archive endpoint access log"),
@@ -361,6 +339,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/repo-update", trace.WithRouteName("repo-update", s.handleRepoUpdate))
 	mux.HandleFunc("/repo-clone", trace.WithRouteName("repo-clone", s.handleRepoClone))
 	mux.HandleFunc("/create-commit-from-patch-binary", trace.WithRouteName("create-commit-from-patch-binary", s.handleCreateCommitFromPatchBinary))
+	mux.HandleFunc("/disk-info", trace.WithRouteName("disk-info", s.handleDiskInfo))
 	mux.HandleFunc("/ping", trace.WithRouteName("ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -1994,7 +1973,7 @@ func (s *Server) CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOpt
 	}
 	defer cancel()
 
-	if err = s.rpsLimiter.Wait(ctx); err != nil {
+	if err = s.RPSLimiter.Wait(ctx); err != nil {
 		return "", err
 	}
 
@@ -2063,7 +2042,7 @@ func (s *Server) doClone(
 			repoCloneFailedCounter.Inc()
 		}
 	}()
-	if err := s.rpsLimiter.Wait(ctx); err != nil {
+	if err := s.RPSLimiter.Wait(ctx); err != nil {
 		return err
 	}
 	ctx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
@@ -2508,7 +2487,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	}
 	defer cancel2()
 
-	if err = s.rpsLimiter.Wait(ctx); err != nil {
+	if err = s.RPSLimiter.Wait(ctx); err != nil {
 		return err
 	}
 

@@ -36,8 +36,6 @@ type Config struct {
 	SyncRepoStateUpdatePerSecond   int
 	BatchLogGlobalConcurrencyLimit int
 
-	RateLimitSyncerLimitPerSecond int
-
 	JanitorReposDesiredPercentFree int
 	JanitorInterval                time.Duration
 }
@@ -75,9 +73,6 @@ func (c *Config) Load() {
 	c.SyncRepoStateBatchSize = c.GetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", "500", "Number of updates to perform per batch")
 	c.SyncRepoStateUpdatePerSecond = c.GetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", "500", "The number of updated rows allowed per second across all gitserver instances")
 	c.BatchLogGlobalConcurrencyLimit = c.GetInt("SRC_BATCH_LOG_GLOBAL_CONCURRENCY_LIMIT", "256", "The maximum number of in-flight Git commands from all /batch-log requests combined")
-
-	// 80 per second (4800 per minute) is well below our alert threshold of 30k per minute.
-	c.RateLimitSyncerLimitPerSecond = c.GetInt("SRC_REPOS_SYNC_RATE_LIMIT_RATE_PER_SECOND", "80", "Rate limit applied to rate limit syncing")
 
 	// Align these variables with the 'disk_space_remaining' alerts in monitoring
 	c.JanitorReposDesiredPercentFree = c.GetInt("SRC_REPOS_DESIRED_PERCENT_FREE", "10", "Target percentage of free space on disk.")

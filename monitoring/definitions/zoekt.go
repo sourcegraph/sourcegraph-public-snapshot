@@ -15,7 +15,10 @@ func Zoekt() *monitoring.Dashboard {
 		indexServerContainerName = "zoekt-indexserver"
 		webserverContainerName   = "zoekt-webserver"
 		bundledContainerName     = "indexed-search"
+		grpcServiceName          = "zoekt.webserver.v1.WebserverService"
 	)
+
+	grpcMethodVariable := shared.GRPCMethodVariable(grpcServiceName)
 
 	return &monitoring.Dashboard{
 		Name:                     "zoekt",
@@ -33,6 +36,17 @@ func Zoekt() *monitoring.Dashboard {
 				},
 				Multi: true,
 			},
+			{
+				Label: "Webserver Instance",
+				Name:  "webserver_instance",
+				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+					Query:         "zoekt_webserver_watchdog_errors",
+					LabelName:     "instance",
+					ExampleOption: "zoekt-webserver-0:6072",
+				},
+				Multi: true,
+			},
+			grpcMethodVariable,
 		},
 		Groups: []monitoring.Group{
 			{
@@ -1055,6 +1069,25 @@ func Zoekt() *monitoring.Dashboard {
 					},
 				},
 			},
+
+			shared.NewGRPCServerMetricsGroup(
+				shared.GRPCServerMetricsOptions{
+					HumanServiceName:   "zoekt-webserver",
+					RawGRPCServiceName: grpcServiceName,
+
+					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					InstanceFilterRegex: `${webserver_instance:regex}`,
+				}, monitoring.ObservableOwnerSearchCore),
+
+			shared.NewGRPCInternalErrorMetricsGroup(
+				shared.GRPCInternalErrorMetricsOptions{
+					HumanServiceName:   "zoekt-webserver",
+					RawGRPCServiceName: grpcServiceName,
+					Namespace:          "", // deliberately empty
+
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+				}, monitoring.ObservableOwnerSearchCore),
+
 			shared.NewDiskMetricsGroup(
 				shared.DiskMetricsGroupOptions{
 					DiskTitle: "data",

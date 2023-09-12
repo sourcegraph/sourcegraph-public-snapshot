@@ -6,18 +6,20 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/urfave/cli/v2"
+
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 )
 
 var telemetryCommand = &cli.Command{
 	Name:     "telemetry",
 	Usage:    "Operations relating to Sourcegraph telemetry",
-	Category: CategoryDev,
+	Category: category.Dev,
 	Subcommands: []*cli.Command{
 		allowlistCommand,
 	},

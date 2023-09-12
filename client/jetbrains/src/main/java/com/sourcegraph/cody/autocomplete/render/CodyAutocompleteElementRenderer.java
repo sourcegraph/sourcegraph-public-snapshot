@@ -1,5 +1,8 @@
 package com.sourcegraph.cody.autocomplete.render;
 
+import static com.sourcegraph.config.ConfigUtil.getCustomAutocompleteColor;
+import static com.sourcegraph.config.ConfigUtil.isCustomAutocompleteColorEnabled;
+
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorCustomElementRenderer;
 import com.intellij.openapi.editor.Inlay;
@@ -26,7 +29,10 @@ public abstract class CodyAutocompleteElementRenderer implements EditorCustomEle
       @Nullable AutocompleteRendererType type) {
     this.text = text;
     this.completionItem = completionItem;
-    this.themeAttributes = AutocompleteRenderUtils.getTextAttributesForEditor(editor);
+    this.themeAttributes =
+        isCustomAutocompleteColorEnabled()
+            ? AutocompleteRenderUtils.getCustomTextAttributes(editor, getCustomAutocompleteColor())
+            : AutocompleteRenderUtils.getTextAttributesForEditor(editor);
     this.editor = editor;
     this.type = type;
   }

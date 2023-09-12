@@ -12,12 +12,10 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sourcegraph/log"
 	"golang.org/x/sync/semaphore"
-	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
@@ -145,6 +143,10 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
 		RecordingCommandFactory: recordingCommandFactory,
 		Locker:                  locker,
+		RPSLimiter: ratelimit.NewInstrumentedLimiter(
+			ratelimit.GitRPSLimiterBucketName,
+			ratelimit.NewGlobalRateLimiter(ratelimit.GitRPSLimiterBucketName),
+		),
 	}
 
 	// Make sure we watch for config updates that affect the recordingCommandFactory.
@@ -173,18 +175,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Best effort attempt to sync rate limiters for external services early on. If
-	// it fails, we'll try again in the background syncer.
-	if err := syncExternalServiceRateLimiters(ctx, db.ExternalServices()); err != nil {
-		logger.Warn("error performing initial rate limit sync", log.Error(err))
-	}
-
 	routines := []goroutine.BackgroundRoutine{
 		httpserver.NewFromAddr(config.ListenAddress, &http.Server{
 			Handler: handler,
 		}),
 		gitserver.NewClonePipeline(logger, cloneQueue),
-		newRateLimitSyncer(ctx, db, config.RateLimitSyncerLimitPerSecond),
 		server.NewRepoStateSyncer(
 			ctx,
 			logger,
@@ -498,63 +493,6 @@ func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (server.VCSSyncer
 		return server.NewRubyPackagesSyncer(&c, opts.depsSvc, cli), nil
 	}
 	return server.NewGitRepoSyncer(opts.recordingCommandFactory), nil
-}
-
-func syncExternalServiceRateLimiters(ctx context.Context, store database.ExternalServiceStore) error {
-	svcs, err := store.List(ctx, database.ExternalServicesListOptions{})
-	if err != nil {
-		return errors.Wrap(err, "listing external services")
-	}
-	syncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store, repos.RateLimitSyncerOpts{})
-	return syncer.SyncServices(ctx, svcs)
-}
-
-// Sync rate limiters from config. Since we don't have a trigger that watches for
-// changes to rate limits we'll run this periodically in the background.
-func newRateLimitSyncer(ctx context.Context, db database.DB, perSecond int) goroutine.BackgroundRoutine {
-	batchSize := 50
-
-	// perSecond should be spread across all gitserver instances. If we cannot
-	// get the number of gitservers initially, we just continue, this limiter
-	// is not very critical as it just means how many external services we fetch
-	// in a given second, and most instances have a handful at most.
-	instanceCount := len(conf.Get().ServiceConnectionConfig.GitServers)
-	if instanceCount <= 0 {
-		instanceCount = 1
-	}
-
-	limiter := ratelimit.NewInstrumentedLimiter(
-		"RateLimitSyncer",
-		rate.NewLimiter(rate.Limit(float64(perSecond)/float64(instanceCount)), batchSize),
-	)
-	syncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, db.ExternalServices(), repos.RateLimitSyncerOpts{
-		PageSize: batchSize,
-		Limiter:  limiter,
-	})
-
-	var lastSuccessfulSync time.Time
-	return goroutine.NewPeriodicGoroutine(
-		actor.WithInternalActor(ctx),
-		goroutine.HandlerFunc(func(ctx context.Context) error {
-			// Get the latest configuration for the rate limiter and update it.
-			instanceCount := len(conf.Get().ServiceConnectionConfig.GitServers)
-			if instanceCount <= 0 {
-				instanceCount = 1
-			}
-			limiter.SetLimit(rate.Limit(float64(perSecond) / float64(instanceCount)))
-
-			start := time.Now()
-			if err := syncer.SyncLimitersSince(ctx, lastSuccessfulSync); err != nil {
-				return errors.Wrap(err, "syncRateLimiters: error syncing rate limits")
-			}
-			lastSuccessfulSync = start
-
-			return nil
-		}),
-		goroutine.WithName("gitserver.rate-limit-syncer"),
-		goroutine.WithDescription("syncs rate limit configurations from external services into memory"),
-		goroutine.WithInterval(time.Minute),
-	)
 }
 
 // methodSpecificStreamInterceptor returns a gRPC stream server interceptor that only calls the next interceptor if the method matches.

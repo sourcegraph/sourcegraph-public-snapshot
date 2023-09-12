@@ -30,17 +30,6 @@ commands:
       - internal
       - cmd/frontend
 
-  enterprise-frontend:
-    cmd: .bin/enterprise-frontend
-    install: go build -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
-    env:
-      CONFIGURATION_MODE: server
-      USE_ENHANCED_LANGUAGE_DETECTION: false
-    watch:
-      - internal
-      - cmd/frontend
-      - enterprise/cmd/frontend
-
   gitserver:
     cmd: .bin/gitserver
     install: go build -o .bin/gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver

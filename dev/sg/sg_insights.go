@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -21,7 +22,7 @@ import (
 var insightsCommand = &cli.Command{
 	Name:     "insights",
 	Usage:    "Tools to interact with Code Insights data",
-	Category: CategoryDev,
+	Category: category.Dev,
 	Subcommands: []*cli.Command{
 		{
 			Name:        "decode-id",
