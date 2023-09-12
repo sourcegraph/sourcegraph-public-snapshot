@@ -352,5 +352,5 @@ exports_files([
 
 release_patch(
     name = "release_patch",
-    version = "5.1.100",
+    version = "v5.1.100",
 )
