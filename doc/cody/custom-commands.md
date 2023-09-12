@@ -164,14 +164,6 @@ Type: `object`
 
 Default: `{ "codebase": true }`
 
-#### `commands.<id>.context.selection`
-
-Include currently selected code. When not specified, Cody will try to use visible content from the current file instead
-
-Type: `boolean`
-
-Default: `false`
-
 #### `commands.<id>.context.codebase`
 
 Include embeddings and/or keyword code search (depending on availability).
@@ -180,13 +172,13 @@ Type: `boolean`
 
 Default: `true`
 
-#### `commands.<id>.context.openTabs`
+#### `commands.<id>.context.command`
 
-Include the text content of opened editor tabs.
+Terminal command to run and include the output of.
 
-Type: `boolean`
+Type: `string`
 
-Default: `false`
+Default: `""`
 
 #### `commands.<id>.context.currentDir`
 
@@ -204,14 +196,6 @@ Type: `boolean`
 
 Default: `false`
 
-#### `commands.<id>.context.command`
-
-Terminal command to run and include the output of.
-
-Type: `string`
-
-Default: `""`
-
 #### `commands.<id>.context.none`
 
 Provide only the prompt, and no additional context. If `true`, overrides all other context settings.
@@ -219,3 +203,20 @@ Provide only the prompt, and no additional context. If `true`, overrides all oth
 Type: `boolean`
 
 Default: `false`
+
+#### `commands.<id>.context.openTabs`
+
+Include the text content of opened editor tabs.
+
+Type: `boolean`
+
+Default: `false`
+
+#### `commands.<id>.context.selection`
+
+Include currently selected code. When not specified, Cody will try to use visible content from the current file instead.
+
+Type: `boolean`
+
+Default: `false`
+
