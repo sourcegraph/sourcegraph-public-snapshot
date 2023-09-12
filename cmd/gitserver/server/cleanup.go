@@ -325,7 +325,8 @@ func cleanupRepos(
 			return false, nil
 		}
 
-		return maybeRemoveNonExistingRepo(ctx, logger, db, reposDir, shardID, dir)
+		return false, nil
+		// return maybeRemoveNonExistingRepo(ctx, logger, db, reposDir, shardID, dir)
 	}
 
 	ensureGitAttributes := func(dir common.GitDir) (done bool, err error) {
@@ -1411,7 +1412,7 @@ func mockRemoveNonExistingReposConfig(value bool) {
 	removeNonExistingRepos = value
 }
 
-func maybeRemoveNonExistingRepo(ctx context.Context, logger log.Logger, db database.DB, reposDir string, shardID string, dir common.GitDir) (done bool, _ error) {
+func MaybeRemoveNonExistingRepo(ctx context.Context, logger log.Logger, db database.DB, reposDir string, shardID string, dir common.GitDir) (done bool, _ error) {
 	repoName := repoNameFromDir(reposDir, dir)
 	logger = logger.Scoped("repo-purge", "Repo purge janitor task").With(log.String("repo", string(repoName)))
 
@@ -1422,6 +1423,14 @@ func maybeRemoveNonExistingRepo(ctx context.Context, logger log.Logger, db datab
 	}
 
 	// Get the repo, even if it's blocked or deleted.
+	// TODO:
+	// If the repo is deleted, the name is usually turned into a different name
+	// in the DB following the scheme DELETED-<timestamp>-<name>, so those repos
+	// will also appear as deleted to this code, thus the TTL check doesn't work.
+	//
+	// When a new repo is recreated with the same name, we will find that repo,
+	// and not delete anything. That is expected, since the repo contents could
+	// be the contents of the new repo with the same name.
 	rs, err := db.Repos().List(ctx, database.ReposListOptions{IncludeDeleted: true, IncludeBlocked: true, Names: []string{string(repoName)}})
 	if err != nil {
 		logger.Warn("failed to look up repo", log.Error(err), log.String("repo", string(dir)))
