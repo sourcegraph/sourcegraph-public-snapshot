@@ -99,7 +99,7 @@ To access the command builder within VS Code, open the Cody commands menu (⌥C 
     "prompt": "Suggest an informative commit message by summarizing code changes from the shared command output. The commit message should follow the conventional commit format and provide meaningful context for future readers.",
     "context": {
       "selection": false,
-      "command": "git diff"
+      "command": "git diff --cached"
     }
   }
 }
