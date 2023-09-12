@@ -34,6 +34,6 @@ func (p provider) CachedInfo() *providers.Info {
 
 func (p *provider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
 	return &extsvc.PublicAccountData{
-		DisplayName: &account.AccountID,
+		DisplayName: account.AccountID,
 	}, nil
 }
