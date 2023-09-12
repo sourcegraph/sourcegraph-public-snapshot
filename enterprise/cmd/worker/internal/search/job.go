@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/uploadstore"
-	uploadstore2 "github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
 // config stores shared config we can override in each worker. We don't expose
@@ -71,7 +70,7 @@ func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Cont
 func (j *searchJob) newSearchJobRoutines(
 	workCtx context.Context,
 	observationCtx *observation.Context,
-	uploadStore uploadstore2.Store,
+	uploadStore uploadstore.Store,
 ) ([]goroutine.BackgroundRoutine, error) {
 	j.once.Do(func() {
 		db := j.workerDB
