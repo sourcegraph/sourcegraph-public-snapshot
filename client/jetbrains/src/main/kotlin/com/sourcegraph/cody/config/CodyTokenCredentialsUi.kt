@@ -5,12 +5,10 @@ import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.ui.setEmptyState
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.components.fields.ExtendableTextField
+import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.MAX_LINE_LENGTH_NO_WRAP
 import com.intellij.ui.dsl.builder.Panel
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
-import com.intellij.ui.layout.CellBuilder
-import com.intellij.ui.layout.LayoutBuilder
-import com.intellij.ui.layout.applyToComponent
 import com.intellij.ui.layout.enteredTextSatisfies
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphAuthenticationException
@@ -38,21 +36,15 @@ internal class CodyTokenCredentialsUi(
   }
 
   override fun Panel.centerPanel() {
-    row("Server: ") { cell(serverTextField).horizontalAlign(HorizontalAlign.FILL) }
+    lateinit var serverField: Cell<ExtendableTextField>
+    row("Server: ") { serverField = cell(serverTextField).horizontalAlign(HorizontalAlign.FILL) }
     row("Token: ") { cell(tokenTextField).horizontalAlign(HorizontalAlign.FILL) }
-  override fun LayoutBuilder.centerPanel() {
-    lateinit var serverField: CellBuilder<ExtendableTextField>
-    row("Server: ") { serverField = serverTextField(pushX, growX) }
-    row {
-      cell { label("Token: ") }
-      cell(isFullWidth = true, isVerticalFlow = true) {
-        tokenTextField()
-        link("Generate new token") { BrowserOpener.openInBrowser(null, buildNewTokenUrl()) }
-            .enableIf(
-                serverField.component.enteredTextSatisfies {
-                  it.isNotEmpty() && isServerPathValid(it)
-                })
-      }
+    row("") {
+      link("Generate new token") { BrowserOpener.openInBrowser(null, buildNewTokenUrl()) }
+          .enabledIf(
+              serverField.component.enteredTextSatisfies {
+                it.isNotEmpty() && isServerPathValid(it)
+              })
     }
     row("Custom request headers: ") {
       cell(customRequestHeadersField)
