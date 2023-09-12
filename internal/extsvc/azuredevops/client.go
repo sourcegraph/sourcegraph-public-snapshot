@@ -11,6 +11,8 @@ import (
 
 	"github.com/goware/urlx"
 	"github.com/sourcegraph/log"
+	"golang.org/x/oauth2"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -18,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/oauth2"
 )
 
 const (
@@ -83,7 +84,7 @@ func NewClient(urn string, url string, auth auth.Authenticator, httpClient httpc
 	return &client{
 		httpClient:          httpClient,
 		URL:                 u,
-		internalRateLimiter: ratelimit.DefaultRegistry.Get(urn),
+		internalRateLimiter: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(urn)),
 		externalRateLimiter: ratelimit.DefaultMonitorRegistry.GetOrSet(url, auth.Hash(), "rest", &ratelimit.Monitor{HeaderPrefix: "X-"}),
 		auth:                auth,
 		urn:                 urn,

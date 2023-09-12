@@ -67,7 +67,7 @@ func NewClient(urn string, url *url.URL, creds *AccountCredentials, httpClient h
 	return &client{
 		httpClient: httpClient,
 		URL:        url,
-		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
+		rateLimit:  ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(urn)),
 		auther:     auther,
 	}, nil
 }

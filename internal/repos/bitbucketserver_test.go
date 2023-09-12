@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -25,6 +26,7 @@ import (
 )
 
 func TestBitbucketServerSource_MakeRepo(t *testing.T) {
+	ratelimit.SetupForTest(t)
 	repos := GetReposFromTestdata(t, "bitbucketserver-repos.json")
 
 	cases := map[string]*schema.BitbucketServerConnection{
@@ -79,6 +81,7 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 }
 
 func TestBitbucketServerSource_Exclude(t *testing.T) {
+	ratelimit.SetupForTest(t)
 	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -173,6 +176,7 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 	// httpcli uses rcache, so we need to prepare the redis connection.
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 
 	svc := &types.ExternalService{
 		Kind: extsvc.KindBitbucketServer,
@@ -230,6 +234,7 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 }
 
 func TestBitbucketServerSource_ListByReposOnly(t *testing.T) {
+	ratelimit.SetupForTest(t)
 	repos := GetReposFromTestdata(t, "bitbucketserver-repos.json")
 
 	mux := http.NewServeMux()
@@ -282,6 +287,7 @@ func TestBitbucketServerSource_ListByReposOnly(t *testing.T) {
 }
 
 func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
+	ratelimit.SetupForTest(t)
 	repos := GetReposFromTestdata(t, "bitbucketserver-repos.json")
 
 	type Results struct {
@@ -384,6 +390,7 @@ func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
 }
 
 func TestBitbucketServerSource_ListByProjectKeyMock(t *testing.T) {
+	ratelimit.SetupForTest(t)
 	repos := GetReposFromTestdata(t, "bitbucketserver-repos.json")
 
 	type Results struct {
@@ -450,6 +457,7 @@ func TestBitbucketServerSource_ListByProjectKeyMock(t *testing.T) {
 }
 
 func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
+	ratelimit.SetupForTest(t)
 	url := "https://bitbucket.sgdev.org"
 	token := os.Getenv("BITBUCKET_SERVER_TOKEN")
 

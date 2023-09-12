@@ -7,11 +7,13 @@ import (
 	"testing"
 
 	"github.com/grafana/regexp"
+	"golang.org/x/time/rate"
 
 	bbtest "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud/testing"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -70,6 +72,7 @@ func newTestClient(t testing.TB) *client {
 	if err != nil {
 		t.Fatal(err)
 	}
+	cli.rateLimit = ratelimit.NewInstrumentedLimiter("bitbucket", rate.NewLimiter(100, 10))
 
 	return cli
 }

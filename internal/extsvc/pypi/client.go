@@ -65,11 +65,12 @@ func NewClient(urn string, urls []string, httpfactory *httpcli.Factory) (*Client
 	if err != nil {
 		return nil, err
 	}
+
 	return &Client{
 		urls:           urls,
 		uncachedClient: uncached,
 		cachedClient:   cached,
-		limiter:        ratelimit.DefaultRegistry.Get(urn),
+		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(urn)),
 	}, nil
 }
 
