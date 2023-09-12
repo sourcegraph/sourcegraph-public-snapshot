@@ -6,23 +6,7 @@
 </p>
 </aside>
 
-Custom Commands allow you to define reusable prompts tailored for your own needs. 
-
-```json
-{
-  "commands": {
-    "my-command": {
-      "description": "Description of the command",
-      "prompt": "Prompt for Cody",
-      "context": {
-        // Context selection options
-      }
-    }
-  }
-}
-```
-
-Custom Commands are supported by [Cody for VS Code](overview/install-vscode) v0.8+.
+Custom Commands allow you to define reusable prompts tailored for your own needs. They are currently supported by [Cody for VS Code](overview/install-vscode) version 0.8 and above.
 
 ### Use cases
 
@@ -31,55 +15,6 @@ Custom Commands are supported by [Cody for VS Code](overview/install-vscode) v0.
 * Analyze software dependencies output to explain compatibility or suggest upgrades
 * Explain code quality output like linter warnings
 
-## Configuration
-
-### File Paths
-
-Custom Commands can be defined in the following two file paths:
-
-* User Settings (`~/.vscode/code.json`) — Stored locally. Use this for personal commands to use across all your projects.
-* Workspace Settings (`.vscode/cody.json`) — Stored in project’s repository. Use this to share commands with others working on the same codebase, and for project-specific commands.
-
-### Properties
-
-#### `commands`
-
-An object containing the commands. *(Required)*
-
-#### `commands.<id>`
-
-The slash name used for the command. *(Required)*
-
-e.g. `summarize-git-changes`
-
-#### `commands.<id>.description`
-
-A short, sentence-case description of what the command does. *(Required)*
-
-e.g. `"Summarize recent git changes"`
-
-#### `commands.<id>.prompt`
-
-The set of instructions for Cody. *(Required)*
-
-e.g. `"Summarize the given git changes in 3-5 sentences"`
-
-#### `commands.<id>.context`
-
-Which context data should be generated and passed to Cody. *(Optional)*
-
-> NOTE: More context does not always lead to higher quality responses. Only enable the context options required for your prompt.
-
-| Property | Default | Description |
-|-|-|-|
-| `selection` | `true` | Include currently selected code. When not specified, Cody will try to use visible content from the current file instead. |
-| `codebase` | `false` | Include embeddings/keyword code search |
-| `openTabs` | `false` | List open filenames/contents. |
-| `currentDir` | `false` | Include snippets from first n directory files. |
-| `currentFile` | `false` | Include snippets from the current file. If the file is too long, only the content surrounding the current selection will be included. |
-| `command` | `false` | Terminal command to run and include output. |
-| `none` | `false` | Provide no context to Cody. If true, overrides all other context settings. |
-
 ## Creating a Command
 
 You can can create a custom command by editing the [configuration JSON file](#file-paths), or by using command builder within VS Code.
@@ -87,6 +22,13 @@ You can can create a custom command by editing the [configuration JSON file](#fi
 To access the command builder within VS Code, open the Cody commands menu (⌥C on Mac or Alt-C on Windows/Linux) → "Configure Custom Commands..." → "New Custom Command..."
 
 ![Cody Custom Command Setup in VS Code](https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/custom-command-setup-1.png)
+
+## Configuration File Paths
+
+Custom Commands can be defined in the following two file paths:
+
+* User Settings (`~/.vscode/code.json`) — Stored locally. Use this for personal commands to use across all your projects.
+* Workspace Settings (`.vscode/cody.json`) — Stored in project’s repository. Use this to share commands with others working on the same codebase, and for project-specific commands.
 
 ## Examples
 
@@ -179,3 +121,101 @@ To access the command builder within VS Code, open the Cody commands menu (⌥C 
   }
 }
 ```
+
+## Configuration Properties
+
+#### `commands` (required)
+
+An object containing the commands.
+
+Type: `object`
+
+Example: `{ "commands": {} }`
+
+#### `commands.<id>` (required)
+
+The slash name used for the command.
+
+Type: `string`
+
+Example: `"summarize-git-changes"`
+
+#### `commands.<id>.description` (required)
+
+A short, sentence-case string description of what the command does.
+
+Type: `string`
+
+Example: `"Summarize recent git changes"`
+
+#### `commands.<id>.prompt`
+
+The set of instructions for Cody. *(string)*
+
+Type: `string`
+
+Example: `"Summarize the given git changes in 3-5 sentences"`
+
+#### `commands.<id>.context`
+
+Optional context data to generate and pass to Cody.
+
+Type: `object`
+
+Default: `{ "codebase": true }`
+
+#### `commands.<id>.context.selection`
+
+Include currently selected code. When not specified, Cody will try to use visible content from the current file instead
+
+Type: `boolean`
+
+Default: `false`
+
+#### `commands.<id>.context.codebase`
+
+Include embeddings and/or keyword code search (depending on availability).
+
+Type: `boolean`
+
+Default: `true`
+
+#### `commands.<id>.context.openTabs`
+
+Include the text content of opened editor tabs.
+
+Type: `boolean`
+
+Default: `false`
+
+#### `commands.<id>.context.currentDir`
+
+Include snippets from first n directory files.
+
+Type: `boolean`
+
+Default: `false`
+
+#### `commands.<id>.context.currentFile`
+
+Include snippets from the current file. If the file is too long, only the content surrounding the current selection will be included.
+
+Type: `boolean`
+
+Default: `false`
+
+#### `commands.<id>.context.command`
+
+Terminal command to run and include the output of.
+
+Type: `string`
+
+Default: `""`
+
+#### `commands.<id>.context.none`
+
+Provide only the prompt, and no additional context. If `true`, overrides all other context settings.
+
+Type: `boolean`
+
+Default: `false`
