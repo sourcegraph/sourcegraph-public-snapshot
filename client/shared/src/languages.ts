@@ -13,7 +13,7 @@ export function getModeFromPathOrContent(path: string, content: string): string 
     const fileName = basename(path)
     const extension = getPathExtension(path)
 
-    var mode: string[]
+    let mode: string[]
     mode = getModeFromExactFilename(fileName) || getModeFromExtension(extension) || []
     if (mode.length !== 1) {
         mode = [inferModeFromContent(path, content)]
