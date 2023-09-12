@@ -16,8 +16,10 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/mod/module"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
@@ -138,7 +140,9 @@ func newTestClient(t testing.TB, name string, update bool) *Client {
 		Urls: []string{"https://proxy.golang.org"},
 	}
 
-	return NewClient("urn", c.Urls, hc)
+	cli := NewClient("urn", c.Urls, hc)
+	cli.limiter = ratelimit.NewInstrumentedLimiter("gomod", rate.NewLimiter(100, 10))
+	return cli
 }
 
 var normalizer = lazyregexp.New("[^A-Za-z0-9-]+")

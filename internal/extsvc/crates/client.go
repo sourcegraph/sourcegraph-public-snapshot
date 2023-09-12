@@ -24,7 +24,7 @@ func NewClient(urn string, httpfactory *httpcli.Factory) (*Client, error) {
 	}
 	return &Client{
 		uncachedClient: uncached,
-		limiter:        ratelimit.DefaultRegistry.Get(urn),
+		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(urn)),
 	}, nil
 }
 
