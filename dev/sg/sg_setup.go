@@ -7,9 +7,11 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/dependencies"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/exit"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -34,6 +36,13 @@ var setupCommand = &cli.Command{
 			Usage: "Omit Sourcegraph-teammate-specific setup",
 		},
 	},
+	Subcommands: []*cli.Command{{
+		Name:  "disable-pre-commit",
+		Usage: "Disable pre-commit hooks",
+		Action: func(cmd *cli.Context) error {
+			return root.Run(run.Bash(cmd.Context, "rm .git/hooks/pre-commit || echo \"no pre-commit hook was found.\"")).Stream(os.Stdout)
+		},
+	}},
 	Action: func(cmd *cli.Context) error {
 		if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
 			std.Out.WriteLine(output.Styled(output.StyleWarning, "'sg setup' currently only supports macOS and Linux"))

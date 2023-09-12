@@ -101,6 +101,11 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 	cmd = cmd + "lint -annotations -fail-fast=false " + formatCheck + strings.Join(targets, " ")
 
 	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":boar: pre-commit",
+			bk.Agent("queue", "bazel"),
+			bk.Cmd(".buildkite/pre-commit.sh"),
+		)
+
 		pipeline.AddStep(":pineapple::lint-roller: Run sg lint",
 			withPnpmCache(),
 			bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{

@@ -9,9 +9,8 @@ load("@io_bazel_rules_go//proto/wkt:well_known_types.bzl", "WELL_KNOWN_TYPES_API
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev/linters/staticcheck:analyzers.bzl", "STATIC_CHECK_ANALYZERS")
 load("@npm//:eslint/package_json.bzl", eslint_bin = "bin")
-load("//:stamp_tags.bzl", "stamp_tags")
 load("//dev:eslint.bzl", "eslint_test_with_types")
-load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
+load("@npm//:prettier/package_json.bzl", prettier_bin = "bin")
 
 # Gazelle config
 #
@@ -36,6 +35,14 @@ npm_link_all_packages(name = "node_modules")
 eslint_bin.eslint_binary(
     name = "eslint",
     testonly = True,
+    visibility = ["//visibility:public"],
+)
+
+prettier_bin.prettier_binary(
+    name = "prettier",
+    data = [
+        "//:prettier_config_js",
+    ],
     visibility = ["//visibility:public"],
 )
 

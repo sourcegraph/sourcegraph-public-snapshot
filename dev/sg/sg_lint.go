@@ -96,26 +96,6 @@ sg lint --help
 			for _, c := range linters.Targets {
 				allLintTargetsMap[c.Name] = c
 			}
-
-			hasFormatTarget := false
-			for _, t := range targets {
-				target, ok := allLintTargetsMap[t]
-				if !ok {
-					std.Out.WriteFailuref("unrecognized target %q provided", t)
-					return flag.ErrHelp
-				}
-				if target.Name == linters.Formatting.Name {
-					hasFormatTarget = true
-				}
-
-				lintTargets = append(lintTargets, target)
-			}
-
-			// If we haven't added the format target already, add it! Unless we must skip it
-			if !lintSkipFormatCheck.Get(cmd) && !hasFormatTarget {
-				lintTargets = append(lintTargets, linters.Formatting)
-				targets = append(targets, linters.Formatting.Name)
-			}
 		}
 
 		repoState, err := repo.GetState(cmd.Context)
@@ -132,7 +112,7 @@ sg lint --help
 		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
 		return runner.Check(cmd.Context, repoState)
 	},
-	Subcommands: lintTargets(append(linters.Targets, linters.Formatting)).Commands(),
+	Subcommands: lintTargets(linters.Targets).Commands(),
 }
 
 type lintTargets []linters.Target
@@ -157,12 +137,6 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 
 				lintTargets := []linters.Target{target}
 				targets := []string{target.Name}
-				// Always add the format check, unless we must skip it!
-				if !lintSkipFormatCheck.Get(cmd) && target.Name != linters.Formatting.Name {
-					lintTargets = append(lintTargets, linters.Formatting)
-					targets = append(targets, linters.Formatting.Name)
-
-				}
 
 				runner := linters.NewRunner(std.Out, generateAnnotations.Get(cmd), lintTargets...)
 				if lintFix.Get(cmd) {

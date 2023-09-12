@@ -1,6 +1,5 @@
 load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_library")
 load("//dev:defs.bzl", "ts_project")
-
 # gazelle:ignore
 
 # dev/ does not contain a src/

@@ -1,4 +1,5 @@
 <p align="center">
+
 <a href="https://about.sourcegraph.com/" target="_blank">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://p21.p4.n0.cdn.getcloudapp.com/items/6qub2y6g/8c25cf68-2715-4f0e-9de6-26292fad604f.svg" width="50%">

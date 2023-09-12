@@ -106,15 +106,6 @@ var Targets = []Target{
 			bufLint,
 		},
 	},
-	Formatting,
-}
-
-var Formatting = Target{
-	Name:        "format",
-	Description: "Check client code and docs for formatting errors",
-	Checks: []*linter{
-		prettier,
-	},
 }
 
 func onlyLocal(l *linter) *linter {

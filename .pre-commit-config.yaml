@@ -1,0 +1,37 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: https://github.com/keith/pre-commit-buildifier
+    rev: 5.0.1
+    hooks:
+      - id: buildifier
+      - id: buildifier-lint
+  # TODO(@jhchabran) for now we can't use those until we find a reliable way
+  # to make them available without asdf.
+  # - repo: local
+  #   hooks:
+  #   - id: shellcheck
+  #     name: shellcheck
+  #     description: ''
+  #     entry: shellcheck
+  #     language: system
+  #     'types': [shell]
+  # - repo: https://github.com/pecigonzalo/pre-commit-shfmt
+  #   rev: 069d7b3826f1c1ab00ef37260dae39bafeee131f
+  #   hooks:
+  #     - id: shell-fmt
+  - repo: local
+    hooks:
+    - id: prettier
+      name: prettier
+      description: ''
+      entry: ./dev/pre-commit-prettier-wrapper.sh
+      language: script
+      'types': [text]
+      files: \.(js|json|ts|tsx|graphql|md|scss)
+      args: []
+      require_serial: false
