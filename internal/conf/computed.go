@@ -747,16 +747,10 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 			completionsConfig.CompletionModel = "accounts/fireworks/models/starcoder-7b-w8a16"
 		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAWSBedrock) {
-		// If no endpoint is configured, use a default value.
+		// If no endpoint is configured, no default available.
 		if completionsConfig.Endpoint == "" {
-			completionsConfig.Endpoint = "us-west-2"
+			return nil
 		}
-
-		// If not access token is set, we cannot talk to AWS. Bail.
-		// TODO: What about generic AWS config?
-		// if completionsConfig.AccessToken == "" {
-		// 	return nil
-		// }
 
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
@@ -1054,6 +1048,12 @@ func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model st
 		// We cannot know based on the model name what model is actually used,
 		// this is a sane default for GPT in general.
 		return 8_000
+	case conftypes.CompletionsProviderNameAWSBedrock:
+		if strings.HasPrefix(model, "anthropic.") {
+			return anthropicDefaultMaxPromptTokens(strings.TrimPrefix(model, "anthropic."))
+		}
+		// Fallback for weird values.
+		return 9_000
 	}
 
 	// Should be unreachable.
@@ -1065,7 +1065,7 @@ func anthropicDefaultMaxPromptTokens(model string) int {
 		return 100_000
 
 	}
-	if model == "claude-2" {
+	if model == "claude-2" || model == "claude-v2" {
 		// TODO: Technically, v2 also uses a 100k window, but we should validate
 		// that returning 100k here is the right thing to do.
 		return 12_000
