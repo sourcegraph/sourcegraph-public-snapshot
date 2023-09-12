@@ -134,14 +134,23 @@ public class CodyToolWindowContent implements UpdatableChat {
         new DumbAwareAction() {
           @Override
           public void actionPerformed(@NotNull AnActionEvent e) {
-            chatMessageHistory.popUpperMessage(promptInput);
+            if (promptInput.getCaretPosition() == 0) {
+              chatMessageHistory.popUpperMessage(promptInput);
+            } else {
+              promptInput.setCaretPosition(0);
+            }
           }
         };
     AnAction lowerMessageAction =
         new DumbAwareAction() {
           @Override
           public void actionPerformed(@NotNull AnActionEvent e) {
-            chatMessageHistory.popLowerMessage(promptInput);
+            int promptLastPosition = promptInput.getText().length();
+            if (promptInput.getCaretPosition() == promptLastPosition) {
+              chatMessageHistory.popLowerMessage(promptInput);
+            } else {
+              promptInput.setCaretPosition(promptLastPosition);
+            }
           }
         };
 
