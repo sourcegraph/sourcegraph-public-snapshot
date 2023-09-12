@@ -26,7 +26,3 @@ run:debug -- --node_options=--inspect-brk
 #
 # Docs: https://bazel.build/reference/command-line-reference#flag--enable_runfiles
 build --enable_runfiles
-
-build --@aspect_rules_ts//ts:skipLibCheck=honor_tsconfig
-fetch --@aspect_rules_ts//ts:skipLibCheck=honor_tsconfig
-query --@aspect_rules_ts//ts:skipLibCheck=honor_tsconfig
