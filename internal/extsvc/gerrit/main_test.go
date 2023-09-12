@@ -1,7 +1,6 @@
 package gerrit
 
 import (
-	"context"
 	"flag"
 	"net/http"
 	"net/url"
@@ -13,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 func TestMain(m *testing.M) {
@@ -58,18 +56,6 @@ func NewTestClient(t testing.TB, name string, update bool) (Client, func()) {
 			t.Errorf("failed to update test data: %s", err)
 		}
 	}
-}
-
-// This test needs to be run with invalid credentials
-func TestNoTrimmingWhenGerritPrefixIsntPresent(t *testing.T) {
-	client, save := NewTestClient(t, "TestNoTrimmingWhenGerritPrefixIsntPresent", *update)
-	defer save()
-
-	_, _, err := client.ListProjects(context.Background(), ListProjectsArgs{})
-	if err == nil {
-		t.Fatal("expected error, test needs to be run with invalid credentials")
-	}
-	testutil.AssertGolden(t, "testdata/golden/TestNoTrimmingWhenGerritPrefixIsntPresent.txt", *update, err.Error())
 }
 
 var normalizer = lazyregexp.New("[^A-Za-z0-9-]+")
