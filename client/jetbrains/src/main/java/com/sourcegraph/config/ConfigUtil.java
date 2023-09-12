@@ -15,10 +15,7 @@ import com.sourcegraph.cody.config.CodyAuthenticationManager;
 import com.sourcegraph.cody.config.ServerAuth;
 import com.sourcegraph.cody.config.ServerAuthLoader;
 import com.sourcegraph.cody.config.SourcegraphServerPath;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -31,18 +28,23 @@ public class ConfigUtil {
   @NotNull
   public static ExtensionConfiguration getAgentConfiguration(@NotNull Project project) {
     ServerAuth serverAuth = ServerAuthLoader.loadServerAuth(project);
-    return new ExtensionConfiguration()
-        .setServerEndpoint(serverAuth.getInstanceUrl())
-        .setAccessToken(serverAuth.getAccessToken())
-        .setCustomHeaders(getCustomRequestHeadersAsMap(serverAuth.getCustomRequestHeaders()))
-        .setProxy(UserLevelConfig.getProxy())
-        .setAutocompleteAdvancedProvider(
-            UserLevelConfig.getAutocompleteProviderType().vscodeSettingString())
-        .setAutocompleteAdvancedServerEndpoint(UserLevelConfig.getAutocompleteServerEndpoint())
-        .setAutocompleteAdvancedAccessToken(UserLevelConfig.getAutocompleteAccessToken())
-        .setAutocompleteAdvancedEmbeddings(UserLevelConfig.getAutocompleteAdvancedEmbeddings())
-        .setDebug(isCodyDebugEnabled())
-        .setVerboseDebug(isCodyVerboseDebugEnabled());
+    ExtensionConfiguration config =
+        new ExtensionConfiguration()
+            .setServerEndpoint(serverAuth.getInstanceUrl())
+            .setAccessToken(serverAuth.getAccessToken())
+            .setCustomHeaders(getCustomRequestHeadersAsMap(serverAuth.getCustomRequestHeaders()))
+            .setProxy(UserLevelConfig.getProxy())
+            .setAutocompleteAdvancedServerEndpoint(UserLevelConfig.getAutocompleteServerEndpoint())
+            .setAutocompleteAdvancedAccessToken(UserLevelConfig.getAutocompleteAccessToken())
+            .setAutocompleteAdvancedEmbeddings(UserLevelConfig.getAutocompleteAdvancedEmbeddings())
+            .setDebug(isCodyDebugEnabled())
+            .setVerboseDebug(isCodyVerboseDebugEnabled());
+
+    if (UserLevelConfig.getAutocompleteProviderType() != null) {
+      config.setAutocompleteAdvancedProvider(
+          UserLevelConfig.getAutocompleteProviderType().vscodeSettingString());
+    }
+    return config;
   }
 
   @NotNull
