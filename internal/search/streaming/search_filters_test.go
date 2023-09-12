@@ -1,9 +1,12 @@
 package streaming
 
 import (
+	"context"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -72,12 +75,26 @@ func TestSearchFiltersUpdate(t *testing.T) {
 		},
 	}
 
+	// add mocks for the file metrics caching that is now involved in search filters
+	// avoids NPEs because dbmocks does not instantiate any mock functions
+	mockDB := dbmocks.NewMockDB()
+	fileMetricsStore := dbmocks.NewMockFileMetricsStore()
+	fileMetricsStore.GetFileMetricsFunc.SetDefaultHook(func(ctx context.Context, ri api.RepoID, ci api.CommitID, s string) *fileutil.FileMetrics {
+		// no caching in tests
+		return nil
+	})
+	fileMetricsStore.SetFileMetricsFunc.SetDefaultHook(func(ctx context.Context, ri api.RepoID, ci api.CommitID, s string, fm *fileutil.FileMetrics, b bool) error {
+		// no caching in tests
+		return nil
+	})
+	mockDB.FileMetricsFunc.SetDefaultReturn(fileMetricsStore)
+
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 
 			s := &SearchFilters{}
 			for _, event := range c.events {
-				s.Update(event, dbmocks.NewMockDB())
+				s.Update(event, mockDB)
 			}
 
 			f, ok := s.filters[c.wantFilterName]
