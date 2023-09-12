@@ -1,12 +1,18 @@
+$primary: #f9fafb;
+$secondary: #e6ebf2;
+$tertiary: #ffffff;
+$quaternary: #dbe2f0;
+$quinary: #cad2e2;
+
 
 :global(.theme-light) {
     .modal {
-        background-color: #f9fafb;
-        border: 1px solid #E6EBF2;
+        background-color: $primary;
+        border: 1px solid $secondary;
     }
 
     .key-wrapper {
-        background: #FFFFFF;
+        background: $tertiary;
     }
 
     .modal-container {
@@ -15,7 +21,7 @@
 }
 
 .key-wrapper {
-    border: 1px solid #dbe2f0;
+    border: 1px solid $quaternary;
 }
 
 .key-container {
@@ -30,7 +36,7 @@
 }
 
 .empty-logo {
-    border: 1px dotted #CAD2E2;
+    border: 1px dotted $quinary;
     border-radius: 50%;
     width: 50px;
     height: 50px;

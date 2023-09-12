@@ -1,6 +1,8 @@
 $primary: #b52626;
 $secondary: #fbeaea;
 $tertiary: #c92b2a;
+$quaternary: #e6ebf2;
+$quinary: #ffffff;
 
 .button {
     outline: none;
@@ -60,12 +62,12 @@ $tertiary: #c92b2a;
     }
 
     .container {
-        background: #ffffff;
-        border: 1px solid #e6ebf2;
+        background: $quinary;
+        border: 1px solid $quaternary;
     }
 
     .item {
-        border-bottom: 1px solid #e6ebf2;
+        border-bottom: 1px solid $quaternary;
     }
 }
 

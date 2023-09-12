@@ -27,20 +27,21 @@ export const useOnboardingChecklistQuery = (): UseOnboardingChecklistResult => {
 
 function getChecklistItems(data: SiteConfigResult): OnboardingChecklistResult {
     const config = parse(data.site.configuration.effectiveContents) as EffectiveContent
-    const licenseInfo = data.site.configuration.licenseInfo as LicenseInfo
+    const { licenseKey: key, externalURL } = config
+    const { tags = [], userCount = 10, expiresAt = '' } = (data.site.configuration.licenseInfo as LicenseInfo) || {}
 
     return {
         id: data.site.configuration.id,
         licenseKey: {
-            key: config.licenseKey,
-            tags: licenseInfo?.tags ?? [],
-            userCount: licenseInfo?.userCount ?? 10,
-            expiresAt: licenseInfo?.expiresAt ?? '',
+            key,
+            tags,
+            userCount,
+            expiresAt,
         },
         config: data.site.configuration.effectiveContents,
         checklistItem: {
-            licenseKey: config.licenseKey !== '',
-            externalURL: config.externalURL !== '',
+            licenseKey: key !== '',
+            externalURL: externalURL !== '',
             emailSmtp: config['email.smtp']?.host !== '' || false,
             authProviders: config['auth.providers'].length > 1,
             externalServices: data.externalServices?.nodes?.length > 0 || false,

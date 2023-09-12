@@ -141,8 +141,8 @@ function getLicenseKeyInfo(isValid: boolean, licenseInfo: LicenseInfo, isLightTh
     const expiration = new Date(expiresAt)
     const validDate = format(expiration, 'y-LL-dd')
     const remaining = formatDistanceToNow(expiration, { addSuffix: false })
-    const title = tags.includes('dev') ? 'Sourcegraph Enterprise (dev-only)' : 'Sourcegraph Enterprise'
-    const type = tags.includes('dev') ? 'Dev-only' : 'Enterprise'
+    const type = tags.includes('dev') ? 'Sourcegraph Enterprise (dev-only)' : 'Sourcegraph Enterprise'
+    const title = 'License'
     const numUsers = userCount > 0 ? userCount : 1
     const logo = <BrandLogo isLightTheme={isLightTheme} variant="symbol" />
 
