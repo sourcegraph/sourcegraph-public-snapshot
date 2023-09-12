@@ -6,8 +6,8 @@ import com.intellij.openapi.ui.setEmptyState
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.components.fields.ExtendableTextField
 import com.intellij.ui.dsl.builder.MAX_LINE_LENGTH_NO_WRAP
-import com.intellij.ui.layout.LayoutBuilder
-import com.intellij.ui.layout.applyToComponent
+import com.intellij.ui.dsl.builder.Panel
+import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphAuthenticationException
 import com.sourcegraph.cody.api.SourcegraphSecurityUtil
@@ -31,11 +31,12 @@ internal class CodyTokenCredentialsUi(
     tokenTextField.text = token
   }
 
-  override fun LayoutBuilder.centerPanel() {
-    row("Server: ") { serverTextField(pushX, growX) }
-    row("Token: ") { tokenTextField(constraints = arrayOf(pushX, growX)) }
+  override fun Panel.centerPanel() {
+    row("Server: ") { cell(serverTextField).horizontalAlign(HorizontalAlign.FILL) }
+    row("Token: ") { cell(tokenTextField).horizontalAlign(HorizontalAlign.FILL) }
     row("Custom request headers: ") {
-      customRequestHeadersField(pushX, growX)
+      cell(customRequestHeadersField)
+          .horizontalAlign(HorizontalAlign.FILL)
           .comment(
               """Any custom headers to send with every request to Sourcegraph.<br>
                   |Use any number of pairs: "header1, value1, header2, value2, ...".<br>

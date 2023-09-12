@@ -1,10 +1,10 @@
 package com.sourcegraph.cody.config
 
-import com.intellij.collaboration.auth.AccountsRepository
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.SettingsCategory
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import com.sourcegraph.cody.auth.AccountsRepository
 
 @State(
     name = "CodyAccounts",
