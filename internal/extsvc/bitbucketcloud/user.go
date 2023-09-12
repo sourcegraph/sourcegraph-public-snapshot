@@ -35,15 +35,15 @@ func GetPublicExternalAccountData(ctx context.Context, accountData *extsvc.Accou
 	if err != nil {
 		return nil, err
 	}
-	var url *string
+	var url string
 	link, ok := data.Links["self"]
 	if ok {
-		url = &link.Href
+		url = link.Href
 	}
 
 	return &extsvc.PublicAccountData{
-		DisplayName: &data.DisplayName,
-		Login:       &data.Username,
+		DisplayName: data.DisplayName,
+		Login:       data.Username,
 		URL:         url,
 	}, nil
 }
