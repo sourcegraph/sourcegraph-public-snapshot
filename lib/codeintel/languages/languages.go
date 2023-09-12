@@ -29,7 +29,14 @@ func GetLanguage(path, contents string) (lang string, found bool) {
 	}
 
 	// Lastly, fall back to whatever enry decides is a useful algorithm for calculating.
-	lang = enry.GetLanguage(path, []byte(contents))
+
+	c := contents
+	// classifier is faster on small files without losing much accuracy
+	if len(c) > 2048 {
+		c = c[:2048]
+	}
+
+	lang = enry.GetLanguage(path, []byte(c))
 	if lang != "" {
 		return NormalizeLanguage(lang), true
 	}
