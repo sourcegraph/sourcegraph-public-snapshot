@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
 set -eu
+# Ensure we're at the root of the repository.
+if [ ! -d ".git" ]; then
+  echo "This command must run at the root of the sourcegraph repository."
+  echo "Please run it again with:"
+  echo "  bazel run :release_patch --run_under=\"cd $PWD &&\""
+  exit 1
+fi
 
 echo "Checking out a new branch named {{new_version}}"
 git checkout -b {{new_version}}
