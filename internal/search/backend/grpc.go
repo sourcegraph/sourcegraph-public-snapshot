@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/sourcegraph/zoekt"
-	proto "github.com/sourcegraph/zoekt/cmd/zoekt-webserver/grpc/protos/zoekt/webserver/v1"
+	proto "github.com/sourcegraph/zoekt/grpc/protos/zoekt/webserver/v1"
 	"github.com/sourcegraph/zoekt/query"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
