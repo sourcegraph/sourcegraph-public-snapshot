@@ -182,7 +182,7 @@ Default: `""`
 
 #### `commands.<id>.context.currentDir`
 
-Include snippets from first n directory files.
+Include snippets from first 10 files in the current directory.
 
 Type: `boolean`
 
