@@ -132,7 +132,7 @@ load("@rules_nodejs//nodejs:repositories.bzl", "nodejs_register_toolchains")
 
 nodejs_register_toolchains(
     name = "nodejs",
-    node_version = "16.19.0",
+    node_version = "18.17.1",
 )
 
 # rules_js npm setup ============================
