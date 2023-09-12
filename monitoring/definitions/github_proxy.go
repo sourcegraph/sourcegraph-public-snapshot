@@ -25,7 +25,7 @@ func GitHubProxy() *monitoring.Dashboard {
 							Query:       `max(github_proxy_waiting_requests)`,
 							Warning:     monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("requests waiting"),
-							Owner:       monitoring.ObservableOwnerRepoManagement,
+							Owner:       monitoring.ObservableOwnerSource,
 							NextSteps: `
 								- **Check github-proxy logs for network connection issues.
 								- **Check github status.`,

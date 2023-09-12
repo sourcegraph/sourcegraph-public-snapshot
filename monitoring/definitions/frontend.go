@@ -172,7 +172,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:       `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))`,
 							Critical:    monitoring.Alert().GreaterOrEqual(5),
 							Panel:       monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerRepoManagement,
+							Owner:       monitoring.ObservableOwnerSource,
 							NextSteps: `
 								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
@@ -469,7 +469,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:       `histogram_quantile(0.99, sum by (le,category)(rate(src_gitserver_request_duration_seconds_bucket{job=~"(sourcegraph-)?frontend"}[5m])))`,
 							Warning:     monitoring.Alert().GreaterOrEqual(20),
 							Panel:       monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerRepoManagement,
+							Owner:       monitoring.ObservableOwnerSource,
 							NextSteps:   "none",
 						},
 						{
@@ -478,7 +478,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:       `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job=~"(sourcegraph-)?frontend",code!~"2.."}[5m])) / ignoring(code) group_left sum by (category)(increase(src_gitserver_request_duration_seconds_count{job=~"(sourcegraph-)?frontend"}[5m])) * 100`,
 							Warning:     monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Percentage),
-							Owner:       monitoring.ObservableOwnerRepoManagement,
+							Owner:       monitoring.ObservableOwnerSource,
 							NextSteps:   "none",
 						},
 					},
@@ -649,7 +649,7 @@ func Frontend() *monitoring.Dashboard {
 							Warning:     monitoring.Alert().GreaterOrEqual(15000).For(5 * time.Minute),
 							Critical:    monitoring.Alert().GreaterOrEqual(30000).For(5 * time.Minute),
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerRepoManagement,
+							Owner:       monitoring.ObservableOwnerSource,
 							NextSteps: `
 								- Revert recent commits that cause extensive listing from "external_services" and/or "user_external_accounts" tables.
 							`,
@@ -660,7 +660,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:       `min by (kubernetes_name) (src_encryption_cache_hit_total/(src_encryption_cache_hit_total+src_encryption_cache_miss_total))`,
 							NoAlert:     true,
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerRepoManagement,
+							Owner:       monitoring.ObservableOwnerSource,
 							Interpretation: `
 								- Encryption cache hit ratio (hits/(hits+misses)) - minimum across all instances of a workload.
 							`,
@@ -671,7 +671,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:       `sum by (kubernetes_name) (irate(src_encryption_cache_eviction_total[5m]))`,
 							NoAlert:     true,
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerRepoManagement,
+							Owner:       monitoring.ObservableOwnerSource,
 							Interpretation: `
 								- Rate of encryption cache evictions (caused by cache exceeding its maximum size) - sum across all instances of a workload
 							`,
@@ -1037,7 +1037,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:       "histogram_quantile(0.95, sum  (rate(src_http_request_duration_seconds_bucket{route=~\"webhooks|github.webhooks|gitlab.webhooks|bitbucketServer.webhooks|bitbucketCloud.webhooks\"}[5m])) by (le, route))",
 							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
-							Owner:       monitoring.ObservableOwnerRepoManagement,
+							Owner:       monitoring.ObservableOwnerSource,
 							Interpretation: `
 							p95 response time to incoming webhook requests from code hosts.
 
