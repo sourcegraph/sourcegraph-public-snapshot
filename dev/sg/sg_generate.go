@@ -118,7 +118,9 @@ func (gt generateTargets) Commands() (cmds []*cli.Command) {
 			}
 
 			fmt.Printf(report.Output)
-			std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "(%ds)", report.Duration/time.Second))
+			std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "%s (%ds)",
+				c.Name,
+				report.Duration/time.Second))
 			return nil
 		}
 	}
