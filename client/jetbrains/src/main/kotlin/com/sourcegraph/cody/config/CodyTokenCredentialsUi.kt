@@ -8,14 +8,20 @@ import com.intellij.ui.components.fields.ExtendableTextField
 import com.intellij.ui.dsl.builder.MAX_LINE_LENGTH_NO_WRAP
 import com.intellij.ui.dsl.builder.Panel
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
+import com.intellij.ui.layout.CellBuilder
+import com.intellij.ui.layout.LayoutBuilder
+import com.intellij.ui.layout.applyToComponent
+import com.intellij.ui.layout.enteredTextSatisfies
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphAuthenticationException
 import com.sourcegraph.cody.api.SourcegraphSecurityUtil
 import com.sourcegraph.cody.config.DialogValidationUtils.custom
 import com.sourcegraph.cody.config.DialogValidationUtils.notBlank
 import com.sourcegraph.common.AuthorizationUtil
+import com.sourcegraph.common.BrowserOpener
 import java.net.UnknownHostException
 import javax.swing.JComponent
+import javax.swing.JTextField
 
 internal class CodyTokenCredentialsUi(
     private val serverTextField: ExtendableTextField,
@@ -34,6 +40,20 @@ internal class CodyTokenCredentialsUi(
   override fun Panel.centerPanel() {
     row("Server: ") { cell(serverTextField).horizontalAlign(HorizontalAlign.FILL) }
     row("Token: ") { cell(tokenTextField).horizontalAlign(HorizontalAlign.FILL) }
+  override fun LayoutBuilder.centerPanel() {
+    lateinit var serverField: CellBuilder<ExtendableTextField>
+    row("Server: ") { serverField = serverTextField(pushX, growX) }
+    row {
+      cell { label("Token: ") }
+      cell(isFullWidth = true, isVerticalFlow = true) {
+        tokenTextField()
+        link("Generate new token") { BrowserOpener.openInBrowser(null, buildNewTokenUrl()) }
+            .enableIf(
+                serverField.component.enteredTextSatisfies {
+                  it.isNotEmpty() && isServerPathValid(it)
+                })
+      }
+    }
     row("Custom request headers: ") {
       cell(customRequestHeadersField)
           .horizontalAlign(HorizontalAlign.FILL)
@@ -50,11 +70,34 @@ internal class CodyTokenCredentialsUi(
 
   override fun getPreferredFocusableComponent(): JComponent = tokenTextField
 
+  private fun buildNewTokenUrl(): String {
+    val sourcegraphServerPath =
+        runCatching { SourcegraphServerPath.from(serverTextField.text, "") }.getOrNull()
+            ?: return ""
+    return sourcegraphServerPath.url + "user/settings/tokens/new"
+  }
+
   override fun getValidator(): () -> ValidationInfo? = {
-    notBlank(tokenTextField, "Token cannot be empty")
-        ?: custom(tokenTextField, "Invalid access token") {
+    getServerPathValidationInfo()
+        ?: notBlank(tokenTextField, "Token cannot be empty")
+            ?: custom(tokenTextField, "Invalid access token") {
           AuthorizationUtil.isValidAccessToken(tokenTextField.text)
         }
+  }
+
+  private fun getServerPathValidationInfo(): ValidationInfo? {
+    return notBlank(serverTextField, "Server url cannot be empty")
+        ?: validateServerPath(serverTextField)
+  }
+
+  private fun validateServerPath(field: JTextField): ValidationInfo? =
+      if (!isServerPathValid(field.text)) {
+        ValidationInfo("Invalid server url", field)
+      } else {
+        null
+      }
+  private fun isServerPathValid(text: String): Boolean {
+    return runCatching { SourcegraphServerPath.from(text, "") }.getOrNull() != null
   }
 
   override fun createExecutor() = factory.create(tokenTextField.text)
