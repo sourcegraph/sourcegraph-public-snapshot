@@ -146,13 +146,13 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	var bs []byte
 	bs, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	// Gerrit attaches this prefix to most of its responses, so if it exists, we cut it, so we can parse it as a json properly.
 	bs, _ = bytes.CutPrefix(bs, []byte(")]}'"))
