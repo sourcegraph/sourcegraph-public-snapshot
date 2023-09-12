@@ -119,8 +119,8 @@ func TestBlobstoreCSVWriter(t *testing.T) {
 
 	csvWriter := service.NewBlobstoreCSVWriter(
 		context.Background(),
-		"blob",
 		mockStore,
+		"blob",
 		service.WithMaxBlobSizeBytes(12),
 	)
 

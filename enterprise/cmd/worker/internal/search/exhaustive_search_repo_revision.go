@@ -68,7 +68,7 @@ func (h *exhaustiveSearchRepoRevHandler) Handle(ctx context.Context, logger log.
 		return err
 	}
 
-	csvWriter := service.NewBlobstoreCSVWriter(ctx, fmt.Sprintf("%d-%d", jobID, record.ID), h.uploadStore)
+	csvWriter := service.NewBlobstoreCSVWriter(ctx, h.uploadStore, fmt.Sprintf("%d-%d", jobID, record.ID))
 
 	err = q.Search(ctx, repoRev, csvWriter)
 	if closeErr := csvWriter.Close(); closeErr != nil {

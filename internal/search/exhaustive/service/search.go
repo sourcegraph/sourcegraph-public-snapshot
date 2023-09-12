@@ -1,14 +1,12 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"encoding/csv"
 	"fmt"
-	"io"
 	"strconv"
 	"strings"
-
-	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
@@ -98,7 +96,17 @@ func WithMaxBlobSizeBytes(n int64) Option {
 	}
 }
 
-func NewBlobstoreCSVWriter(ctx context.Context, prefix string, store uploadstore.Store, opts ...Option) *BlobstoreCSVWriter {
+// NewBlobstoreCSVWriter creates a new BlobstoreCSVWriter which writes a CSV to
+// the store. BlobstoreCSVWriter takes care of chunking the CSV into blobs of 100MiB
+// (default), each with the same header row. Blobs are named {prefix}-{shard}
+// except for the first blob, which is named {prefix}.
+//
+// Data is buffered in memory until the blob reaches the maximum allowed size,
+// at which point the blob is uploaded to the store.
+//
+// The caller is expected to call Close() once and only once after the last call
+// to WriteRow.
+func NewBlobstoreCSVWriter(ctx context.Context, store uploadstore.Store, prefix string, opts ...Option) *BlobstoreCSVWriter {
 	options := Options{
 		maxBlobSizeBytes: 100 * 1024 * 1024,
 	}
@@ -122,22 +130,20 @@ func NewBlobstoreCSVWriter(ctx context.Context, prefix string, store uploadstore
 	return c
 }
 
-// BlobstoreCSVWriter is a CSVWriter which writes to an uploadstore.Store. It
-// takes care of chunking blobs into files of options.maxBlobSizeBytes. Each
-// file has the same header, which is set by calling WriteHeader once before
-// calling WriteRow.
 type BlobstoreCSVWriter struct {
 	// ctx is the context we use for uploading blobs.
 	ctx context.Context
 
 	options Options
 
-	// blobs are named {prefix}-{shard} except for the first blob, which is named
-	// {prefix}
 	prefix string
 
+	w *csv.Writer
+
+	// local buffer for the current blob.
+	buf bytes.Buffer
+
 	store uploadstore.Store
-	w     *csv.Writer
 
 	// header keeps track of the header we write as the first row of a new file.
 	header []string
@@ -145,7 +151,7 @@ type BlobstoreCSVWriter struct {
 	// close takes care of flushing w and closing the upload.
 	close func() error
 
-	// n is the total number of bytes written to the current blob.
+	// n is the total number of bytes we have buffered so far.
 	n int64
 
 	// shard is incremented before we create a new shard.
@@ -195,36 +201,17 @@ func (c *BlobstoreCSVWriter) WriteRow(s ...string) error {
 // The caller is expected to call c.Close() before calling startNewFile if a
 // previous file was open.
 func (c *BlobstoreCSVWriter) startNewFile(ctx context.Context, key string) {
-	pr, pw := io.Pipe()
-
-	csvWriter := csv.NewWriter(pw)
-
-	eg := errgroup.Group{}
-
-	// Cleaned up by calling pw.Close() in closeFn.
-	eg.Go(func() error {
-		// We ignore the error from pr.Close(), because we only care about the upload
-		// and the cleanup of the goroutine.
-		defer pr.Close()
-		_, err := c.store.Upload(ctx, key, pr)
-		return err
-	})
+	c.buf = bytes.Buffer{}
+	csvWriter := csv.NewWriter(&c.buf)
 
 	closeFn := func() error {
 		csvWriter.Flush()
-
-		// Stop the upload and wait for the goroutine to finish.
-		err := pw.Close()
-		if err2 := eg.Wait(); err2 != nil {
-			err = errors.Append(err, err2)
-		}
+		_, err := c.store.Upload(ctx, key, &c.buf)
 		return err
 	}
 
 	c.w = csvWriter
 	c.close = closeFn
-
-	// Reset count.
 	c.n = 0
 }
 
