@@ -85,7 +85,12 @@ const maxZeroReads = 3
 // in a row.
 var errNoDownloadProgress = errors.New("no download progress")
 
-func (s *s3Store) List(ctx context.Context, prefix string) (*iterator.Iterator[string], error) {
+func (s *s3Store) List(ctx context.Context, prefix string) (_ *iterator.Iterator[string], err error) {
+	ctx, _, endObservation := s.operations.List.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("prefix", prefix),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	// We wrap the client's paginator and just return the keys.
 	paginator := s.client.NewListObjectsV2Paginator(&s3.ListObjectsV2Input{
 		Bucket: aws.String(s.bucket),

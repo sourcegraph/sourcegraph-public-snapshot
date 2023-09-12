@@ -80,7 +80,12 @@ func (s *gcsStore) Init(ctx context.Context) error {
 // Equals the default of S3's ListObjectsV2Input.MaxKeys
 const maxKeys = 1_000
 
-func (s *gcsStore) List(ctx context.Context, prefix string) (*sgiterator.Iterator[string], error) {
+func (s *gcsStore) List(ctx context.Context, prefix string) (_ *sgiterator.Iterator[string], err error) {
+	ctx, _, endObservation := s.operations.List.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("prefix", prefix),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	query := storage.Query{Prefix: prefix}
 
 	// Performance optimization
@@ -93,7 +98,6 @@ func (s *gcsStore) List(ctx context.Context, prefix string) (*sgiterator.Iterato
 		for len(keys) < maxKeys {
 			attr, err := iter.Next()
 			if err != nil && err != iterator.Done {
-				s.operations.List.Logger.Error("Failed to list objects in GCS bucket", sglog.Error(err))
 				return nil, err
 			}
 			if err == iterator.Done {
