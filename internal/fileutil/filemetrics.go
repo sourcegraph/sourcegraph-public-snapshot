@@ -2,7 +2,6 @@ package fileutil
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"io"
 	"strings"
@@ -66,7 +65,7 @@ func (f *FileMetrics) CalculateFileMetrics(ctx context.Context, filePath string,
 		return errors.Wrapf(err, "scanning %s", filePath)
 	}
 
-	if len(f.Languages) != 1 {
+	if len(f.Languages) != 1 && len(fileContents) > 0 {
 		// indeterminate language detection
 		// involve the file contents
 		// the initial chunk of file contents should be enough to detect a language
@@ -92,41 +91,42 @@ func scan(ctx context.Context, filePath string, fileReaderFunc func(ctx context.
 	}
 	defer rc.Close()
 
-	buf := make([]byte, fileReadBufferSize)
-	var copied int
+	collector := newScanLinesPlusByteCounter(fileReadBufferSize)
 
 	scanner := bufio.NewScanner(rc)
-	scanner.Split(scanNewLines)
+	scanner.Split(collector.ScanLines)
 	for scanner.Scan() {
 		line := scanner.Bytes()
 		lineCount++
 		wordCount += uint64(len(strings.Fields(string(line))))
-		byteCount += uint64(len(line) + 1)
-		if lineLen := len(line); copied+lineLen+1 <= fileReadBufferSize {
-			copy(buf[copied:], line)
-			copied += lineLen
-			copy(buf[copied:], newLine)
-			copied++
-		}
 	}
-	beginningOfFile = buf[:copied]
+	byteCount = collector.byteCount
+	beginningOfFile = collector.buffer[:collector.bufferSize]
 
 	return
 }
 
-// clone ScanLines, but without the `dropCR` so that byte size will be reliable
-func scanNewLines(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	if atEOF && len(data) == 0 {
-		return 0, nil, nil
+func newScanLinesPlusByteCounter(bufferSize int) *ScanLinesPlusByteCounter {
+	return &ScanLinesPlusByteCounter{buffer: make([]byte, bufferSize)}
+}
+
+// create a data structure to hold the byte size of the file (really, the stream)
+// along with the reading of the lines
+type ScanLinesPlusByteCounter struct {
+	byteCount  uint64
+	buffer     []byte
+	bufferSize int
+}
+
+// Entrypoint that gathers byte count of what's read so far
+// and collects `x.bufferSize` number of bytes from the beginning of the stream.
+// Requires `x.buffer` to be initialized in order to collect bytes.
+func (x *ScanLinesPlusByteCounter) ScanLines(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	a, t, e := bufio.ScanLines(data, atEOF)
+	x.byteCount += uint64(a)
+	if a > 0 && x.bufferSize+a <= cap(x.buffer) {
+		copy(x.buffer[x.bufferSize:], t)
+		x.bufferSize += a
 	}
-	if i := bytes.IndexByte(data, '\n'); i >= 0 {
-		// We have a full newline-terminated line.
-		return i + 1, data, nil
-	}
-	// If we're at EOF, we have a final, non-terminated line. Return it.
-	if atEOF {
-		return len(data), data, nil
-	}
-	// Request more data.
-	return 0, nil, nil
+	return a, t, e
 }
