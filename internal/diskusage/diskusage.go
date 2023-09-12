@@ -6,7 +6,7 @@ import "syscall"
 type DiskUsage interface {
 	Free() uint64
 	Size() uint64
-	Usage() float32
+	PercentUsed() float32
 	Available() uint64
 }
 
@@ -40,8 +40,8 @@ func (du *diskUsage) used() uint64 {
 	return du.Size() - du.Free()
 }
 
-// Usage returns percentage of use on the file system
-func (du *diskUsage) Usage() float32 {
+// PercentUsed returns percentage of use on the file system
+func (du *diskUsage) PercentUsed() float32 {
 	return float32(du.used()) / float32(du.Size())
 }
 

@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/settings"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
@@ -93,12 +94,6 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 var disableSecurity, _ = strconv.ParseBool(env.Get("DISABLE_SECURITY", "false", "disables security upgrade notices"))
 
 func init() {
-	fmt.Println("I dey run init......")
-	fmt.Println("I dey run init......")
-	fmt.Println("I dey run init......")
-	fmt.Println("I dey run init......")
-	fmt.Println("I dey run init......")
-
 	conf.ContributeWarning(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
 		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsApp() {
 			return nil
@@ -485,6 +480,19 @@ func codyGatewayUsageAlert(args AlertFuncArgs) []*Alert {
 	}
 
 	return alerts
+}
+
+func gitserverDiskInfoThresholdAlert(gc gitserver.Client) func(args AlertFuncArgs) []*Alert {
+	return func(args AlertFuncArgs) []*Alert {
+		// We only show this alert to site admins.
+		if !args.IsSiteAdmin {
+			return nil
+		}
+
+		var alerts []*Alert
+
+		return alerts
+	}
 }
 
 func pluralize(v int, singular, plural string) string {
