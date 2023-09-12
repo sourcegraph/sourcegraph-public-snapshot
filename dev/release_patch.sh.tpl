@@ -9,8 +9,10 @@ if [ ! -d ".git" ]; then
   exit 1
 fi
 
+release_branch="wip_{{new_version}}"
+
 echo "Checking out a new branch named {{new_version}}"
-git checkout -b wip_{{new_version}}
+git checkout -b "$release_branch"
 
 # Update the buildfile for schema_descriptions so it has our new schema.
 buildozer 'add outs schema-descriptions/{{new_version}}-internal_database_schema.codeinsights.json schema-descriptions/{{new_version}}-internal_database_schema.codeintel.json schema-descriptions/{{new_version}}-internal_database_schema.json' //cmd/migrator:schema_descriptions
@@ -22,5 +24,7 @@ echo "{{new_version}}" >> cmd/migrator/wip_git_versions.txt
 bazel test //cmd/migrator:schema_descriptions_test
 
 git add cmd/migrator/BUILD.bazel cmd/migrator/wip_git_versions.txt
-
 git commit -m "release_patch: build {{new_version}}"
+
+git push origin "$release_branch"
+gh pr create -t "PRETEND RELEASE WIP: release_patch: build {{new_version}}"
