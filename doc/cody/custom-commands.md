@@ -6,7 +6,7 @@
 </p>
 </aside>
 
-Custom Commands allow you to define reusable prompts tailored for your own needs. They are currently supported by [Cody for VS Code](overview/install-vscode) version 0.8 and above.
+Custom Commands allow you to define reusable prompts tailored for your own needs. They are currently supported by [Cody for VS Code](overview/install-vscode.md) version 0.8 and above.
 
 ### Use cases
 
@@ -29,6 +29,8 @@ Custom Commands can be defined in the following two file paths:
 
 * User Settings (`~/.vscode/code.json`) — Stored locally. Use this for personal commands to use across all your projects.
 * Workspace Settings (`.vscode/cody.json`) — Stored in project’s repository. Use this to share commands with others working on the same codebase, and for project-specific commands.
+
+See the [examples](#examples) and [configuration properties](#configuration-properties) below for more details on how to configure custom commands.
 
 ## Examples
 
