@@ -29,7 +29,10 @@ go_binary(
 
 genrule(
     name = "schema_descriptions",
-    srcs = ["generate.sh", "wip_git_versions.txt"],
+    srcs = [
+        "generate.sh",
+        "wip_git_versions.txt",
+    ],
     outs = [
         "schema-descriptions/v3.20.0-internal_database_schema.json",
         "schema-descriptions/v3.20.1-internal_database_schema.json",
@@ -320,8 +323,8 @@ sh_test(
     ],
     data = [
         "generate.sh",
-        ":schema_descriptions",
         "wip_git_versions.txt",
+        ":schema_descriptions",
     ],
     tags = ["requires-network"],
 )
