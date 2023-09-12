@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class BrowserOpener {
   public static void openRelativeUrlInBrowser(
@@ -16,7 +17,7 @@ public class BrowserOpener {
     openInBrowser(project, ConfigUtil.getServerPath(project).getUrl() + "/" + relativeUrl);
   }
 
-  public static void openInBrowser(@NotNull Project project, @NotNull String absoluteUrl) {
+  public static void openInBrowser(@Nullable Project project, @NotNull String absoluteUrl) {
     try {
       openInBrowser(project, new URI(absoluteUrl));
     } catch (URISyntaxException e) {
@@ -25,7 +26,7 @@ public class BrowserOpener {
     }
   }
 
-  private static void openInBrowser(@NotNull Project project, @NotNull URI uri) {
+  private static void openInBrowser(@Nullable Project project, @NotNull URI uri) {
     try {
       BrowserUtil.browse(uri);
     } catch (Exception e) {
