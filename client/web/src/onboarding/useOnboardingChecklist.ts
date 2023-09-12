@@ -13,10 +13,17 @@ import { useQuery, useMutation } from '@sourcegraph/http-client'
 import { SITE_CONFIG_QUERY, LICENSE_KEY_MUTATION } from './queries'
 
 interface OnboardingChecklistResult {
-    licenseKey: string
+    licenseKey: LicenseInfo
     id: number
     config: string
     checklistItem: OnboardingChecklistItem
+}
+
+export interface LicenseInfo {
+    key: string
+    tags: string[]
+    userCount: number
+    expiresAt: string
 }
 
 export interface OnboardingChecklistItem {
@@ -59,10 +66,16 @@ interface EffectiveContent {
 
 function getChecklistItems(data: SiteConfigResult): OnboardingChecklistResult {
     const config = parse(data.site.configuration.effectiveContents) as EffectiveContent
+    const licenseInfo = data.site.configuration.licenseInfo as LicenseInfo
 
     return {
         id: data.site.configuration.id,
-        licenseKey: config.licenseKey,
+        licenseKey: {
+            key: config.licenseKey,
+            tags: licenseInfo?.tags ?? [],
+            userCount: licenseInfo?.userCount ?? 10,
+            expiresAt: licenseInfo?.expiresAt ?? '',
+        },
         config: data.site.configuration.effectiveContents,
         checklistItem: {
             licenseKey: config.licenseKey !== '',

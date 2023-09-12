@@ -7509,6 +7509,15 @@ type SiteConfiguration {
         """
         before: String
     ): SiteConfigurationChangeConnection
+    """
+    """
+    licenseInfo: LicenseInfo!
+}
+
+type LicenseInfo {
+    tags: [String!]!
+    userCount: Int!
+    expiresAt: DateTime!
 }
 
 """

@@ -6,6 +6,11 @@ export const SITE_CONFIG_QUERY = gql`
             configuration {
                 id
                 effectiveContents
+                licenseInfo {
+                    tags
+                    userCount
+                    expiresAt
+                }
             }
         }
 
