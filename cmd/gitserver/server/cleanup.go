@@ -1439,8 +1439,9 @@ func maybeRemoveNonExistingRepo(ctx context.Context, logger log.Logger, db datab
 	err = removeRepoDirectory(ctx, logger, db, shardID, reposDir, dir, true)
 	if err == nil {
 		nonExistingReposRemoved.Inc()
+		logger.Info("deleted repo")
 	} else {
-		logger.Error("failed to delete repo", log.String("repo", string(repoName)), log.Error(err))
+		logger.Error("failed to delete repo", log.Error(err))
 	}
 	return true, err
 }
