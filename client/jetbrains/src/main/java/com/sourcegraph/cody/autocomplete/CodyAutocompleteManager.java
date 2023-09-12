@@ -9,7 +9,6 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.TextRange;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings;
 import com.intellij.util.concurrency.annotations.RequiresEdt;
 import com.sourcegraph.cody.agent.CodyAgent;
@@ -287,8 +286,7 @@ public class CodyAutocompleteManager {
     TextRange range = CodyEditorUtil.getTextRange(editor.getDocument(), item.range);
     String originalText = editor.getDocument().getText(range);
     String insertTextFirstLine = item.insertText.lines().findFirst().orElse("");
-    String multilineInsertText =
-        item.insertText.lines().skip(1).collect(Collectors.joining("\n"));
+    String multilineInsertText = item.insertText.lines().skip(1).collect(Collectors.joining("\n"));
 
     // Run Myer's diff between the existing text in the document and the first line of the
     // `insertText` that is returned from the agent.
