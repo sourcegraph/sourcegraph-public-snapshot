@@ -93,6 +93,12 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 var disableSecurity, _ = strconv.ParseBool(env.Get("DISABLE_SECURITY", "false", "disables security upgrade notices"))
 
 func init() {
+	fmt.Println("I dey run init......")
+	fmt.Println("I dey run init......")
+	fmt.Println("I dey run init......")
+	fmt.Println("I dey run init......")
+	fmt.Println("I dey run init......")
+
 	conf.ContributeWarning(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
 		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsApp() {
 			return nil
@@ -102,6 +108,12 @@ func init() {
 		}
 		return problems
 	})
+
+	// AlertFuncs = append(AlertFuncs, func(afa AlertFuncArgs) []*Alert {
+	// 	return []*Alert{
+
+	// 	}
+	// })
 
 	// Warn if email sending is not configured.
 	AlertFuncs = append(AlertFuncs, emailSendingNotConfiguredAlert)
@@ -290,8 +302,6 @@ func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
 }
 
 func outOfDateAlert(args AlertFuncArgs) []*Alert {
-	// TODO(app): App Update Messaging
-	// See: https://github.com/sourcegraph/sourcegraph/issues/48851
 	if deploy.IsApp() {
 		return nil
 	}
