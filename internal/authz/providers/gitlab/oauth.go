@@ -47,6 +47,8 @@ type OAuthProviderOp struct {
 	TokenType gitlab.TokenType
 
 	DB database.DB
+
+	CLI httpcli.Doer
 }
 
 func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {

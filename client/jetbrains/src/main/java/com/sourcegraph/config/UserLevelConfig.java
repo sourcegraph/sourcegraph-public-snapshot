@@ -70,6 +70,11 @@ public class UserLevelConfig {
     return properties.getProperty("remoteUrlReplacements", null);
   }
 
+  @Nullable
+  public static String getProxy() {
+    return readProperties().getProperty("cody.proxy", null);
+  }
+
   @NotNull
   public static String getSourcegraphUrl() {
     Properties properties = readProperties();

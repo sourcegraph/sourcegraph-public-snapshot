@@ -18,19 +18,20 @@ enum class AccountType {
 data class CodyAccount(
     @NlsSafe @Attribute("name") override var name: String = "",
     @Property(style = Property.Style.ATTRIBUTE, surroundWithTag = false)
-    override val server: SourcegraphServerPath = SourcegraphServerPath.from(ConfigUtil.DOTCOM_URL, ""),
+    override val server: SourcegraphServerPath =
+        SourcegraphServerPath.from(ConfigUtil.DOTCOM_URL, ""),
     @Attribute("id") override val id: String = generateId(),
 ) : ServerAccount() {
 
   fun isCodyApp(): Boolean {
-    return id == LocalAppManager.LOCAL_APP_ID
+    return Companion.isCodyApp(server)
   }
 
   fun getAccountType(): AccountType {
     if (isDotcomAccount()) {
       return AccountType.DOTCOM
     }
-    if (id == LocalAppManager.LOCAL_APP_ID) {
+    if (isCodyApp()) {
       return AccountType.LOCAL_APP
     }
     return AccountType.ENTERPRISE
@@ -47,12 +48,16 @@ data class CodyAccount(
         id: String = generateId(),
     ): CodyAccount {
       val username =
-          if (id == LocalAppManager.LOCAL_APP_ID) {
+          if (isCodyApp(server)) {
             LocalAppManager.LOCAL_APP_ID
           } else {
             name
           }
       return CodyAccount(username, server, id)
+    }
+
+    fun isCodyApp(server: SourcegraphServerPath): Boolean {
+      return server.url.startsWith(LocalAppManager.DEFAULT_LOCAL_APP_URL)
     }
   }
 }

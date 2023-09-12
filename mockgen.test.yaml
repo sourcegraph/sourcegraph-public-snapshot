@@ -151,12 +151,12 @@
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http/auth
   interfaces:
     - GitHubClient
-- filename: enterprise/cmd/frontend/internal/executorqueue/queues/batches/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/batches
+- filename: cmd/frontend/internal/executorqueue/queues/batches/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/cmd/frontend/internal/executorqueue/queues/batches
   interfaces:
     - BatchesStore
-- filename: enterprise/cmd/frontend/internal/executorqueue/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue
+- filename: cmd/frontend/internal/executorqueue/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/cmd/frontend/internal/executorqueue
   interfaces:
     - GitserverClient
 - filename: internal/batches/syncer/mocks_test.go
