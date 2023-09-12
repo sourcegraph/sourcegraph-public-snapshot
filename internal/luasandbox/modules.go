@@ -4,7 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"io"
-	"path"
+	"io/fs"
 	"path/filepath"
 	"strings"
 )
@@ -24,14 +24,14 @@ func init() {
 }
 
 func LuaModulesFromFS(fs embed.FS, dir, prefix string) (map[string]string, error) {
-	files, err := getAllFilepaths(fs, dir)
+	files, err := listFilesRecursive(fs, dir)
 	if err != nil {
 		return nil, err
 	}
 
 	modules := make(map[string]string, len(files))
 	for _, file := range files {
-		contents, err := readFile(fs, file)
+		contents, err := readAll(fs, file)
 		if err != nil {
 			return nil, err
 		}
@@ -50,33 +50,18 @@ func LuaModulesFromFS(fs embed.FS, dir, prefix string) (map[string]string, error
 	return modules, nil
 }
 
-func getAllFilepaths(fs embed.FS, dir string) (out []string, err error) {
-	if dir == "" {
-		dir = "."
-	}
-
-	entries, err := fs.ReadDir(dir)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, entry := range entries {
-		// All paths in embed FS are unix paths, so we need to use Unix, even on windows.
-		// Thus, we don't use filepath here.
-		f := path.Join(dir, entry.Name())
-
-		if entry.IsDir() {
-			descendents, err := getAllFilepaths(fs, f)
-			if err != nil {
-				return nil, err
-			}
-
-			out = append(out, descendents...)
-		} else {
-			out = append(out, f)
+// listFilesRecursive performs a recursive walk of filesystem rooted at relative
+// path 'root' and returns the list of all files.
+//
+// 'root' should be a subdirectory, or '.'
+func listFilesRecursive(filesystem fs.FS, root string) (out []string, err error) {
+	err = fs.WalkDir(filesystem, root, func(path string, dirEntry fs.DirEntry, err error) error {
+		if !dirEntry.IsDir() {
+			out = append(out, path)
 		}
-	}
-	return
+		return nil
+	})
+	return out, err
 }
 
 func splitPathList(path string) []string {
@@ -86,7 +71,7 @@ func splitPathList(path string) []string {
 	return strings.Split(path, ":")
 }
 
-func readFile(fs embed.FS, filepath string) (string, error) {
+func readAll(fs embed.FS, filepath string) (string, error) {
 	f, err := fs.Open(filepath)
 	if err != nil {
 		return "", err
