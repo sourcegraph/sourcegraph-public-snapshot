@@ -84,6 +84,7 @@ done
 
 wip_git_versions=(
   v5.1.100
+  v5.2.0
 )
 
 function wip_download_github() {
