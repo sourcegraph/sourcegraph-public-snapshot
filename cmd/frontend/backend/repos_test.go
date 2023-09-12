@@ -200,6 +200,21 @@ func TestReposGetInventory(t *testing.T) {
 		gitserverClient: gitserverClient,
 	}
 
+	// add mocks for the file metrics caching that is now involved in Inventory
+	// avoids NPEs because dbmocks does not instantiate any mock functions
+	mockDB := dbmocks.NewMockDB()
+	fileMetricsStore := dbmocks.NewMockFileMetricsStore()
+	fileMetricsStore.GetFileMetricsFunc.SetDefaultHook(func(ctx context.Context, ri api.RepoID, ci api.CommitID, s string) *fileutil.FileMetrics {
+		// no caching in tests
+		return nil
+	})
+	fileMetricsStore.SetFileMetricsFunc.SetDefaultHook(func(ctx context.Context, ri api.RepoID, ci api.CommitID, s string, fm *fileutil.FileMetrics, b bool) error {
+		// no caching in tests
+		return nil
+	})
+	mockDB.FileMetricsFunc.SetDefaultReturn(fileMetricsStore)
+	s.db = mockDB
+
 	tests := []struct {
 		useEnhancedLanguageDetection bool
 		want                         *inventory.Inventory
@@ -223,6 +238,7 @@ func TestReposGetInventory(t *testing.T) {
 			},
 		},
 	}
+
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("useEnhancedLanguageDetection=%v", test.useEnhancedLanguageDetection), func(t *testing.T) {
 			rcache.SetupForTest(t)

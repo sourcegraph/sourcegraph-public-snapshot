@@ -11,6 +11,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 )
 
@@ -63,7 +65,23 @@ func TestContext_Entries(t *testing.T) {
 		},
 	}
 
-	inv, err := c.Entries(context.Background(),
+	// add mocks for the file metrics caching that is now involved in Inventory
+	// avoids NPEs because dbmocks does not instantiate any mock functions
+	mockDB := dbmocks.NewMockDB()
+	fileMetricsStore := dbmocks.NewMockFileMetricsStore()
+	fileMetricsStore.GetFileMetricsFunc.SetDefaultHook(func(ctx context.Context, ri api.RepoID, ci api.CommitID, s string) *fileutil.FileMetrics {
+		// no caching in tests
+		return nil
+	})
+	fileMetricsStore.SetFileMetricsFunc.SetDefaultHook(func(ctx context.Context, ri api.RepoID, ci api.CommitID, s string, fm *fileutil.FileMetrics, b bool) error {
+		// no caching in tests
+		return nil
+	})
+	mockDB.FileMetricsFunc.SetDefaultReturn(fileMetricsStore)
+
+	inv, err := c.Entries(
+		context.Background(),
+		mockDB,
 		&fileutil.FileInfo{Name_: "d", Mode_: os.ModeDir},
 		&fileutil.FileInfo{Name_: "f.go", Mode_: 0, Size_: 1 /* HACK to force read */},
 	)
