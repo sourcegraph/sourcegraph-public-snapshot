@@ -5,6 +5,7 @@ import (
 	"container/list"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -353,7 +354,8 @@ func getRemoteURLFunc(
 			logger.Error("failed to list all repos", log.Error(err2))
 		} else {
 			logger.Error("failed to get repos, here's the table", log.Error(err))
-			fmt.Printf("repos: %#+v\n", rs)
+			out, _ := json.Marshal(rs)
+			fmt.Printf("repos: %#+v\n", string(out))
 		}
 		return "", err
 	}
