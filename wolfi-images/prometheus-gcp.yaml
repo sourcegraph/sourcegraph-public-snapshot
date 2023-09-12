@@ -19,3 +19,5 @@ paths:
     permissions: 0o755
 
 work-dir: /prometheus
+
+# MANUAL REBUILD: Tue Sep 12 12:34:03 EDT 2023
