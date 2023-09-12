@@ -352,7 +352,8 @@ func getRemoteURLFunc(
 		if err2 != nil {
 			logger.Error("failed to list all repos", log.Error(err2))
 		} else {
-			logger.Error("failed to get repos, here's the table", log.String("repos", fmt.Sprintf("%#+v", rs)), log.Error(err))
+			logger.Error("failed to get repos, here's the table", log.Error(err))
+			fmt.Printf("repos: %#+v\n", rs)
 		}
 		return "", err
 	}
