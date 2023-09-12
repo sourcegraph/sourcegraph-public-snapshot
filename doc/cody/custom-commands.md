@@ -150,7 +150,7 @@ Example: `"Summarize recent git changes"`
 
 #### `commands.<id>.prompt`
 
-The set of instructions for Cody. *(string)*
+The set of instructions for Cody.
 
 Type: `string`
 
