@@ -24,4 +24,4 @@ git add cmd/migrator/BUILD.bazel cmd/migrator/wip_git_versions.txt
 git commit -m "release_patch: build {{new_version}}"
 
 git push origin "$release_branch"
-gh pr create -t "PRETEND RELEASE WIP: release_patch: build {{new_version}}"
+gh pr create -f -t "PRETEND RELEASE WIP: release_patch: build {{new_version}}"
