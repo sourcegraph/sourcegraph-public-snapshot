@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -73,7 +72,7 @@ func NewProvider(logger log.Logger, p4Execer p4Execer, urn, host, user, password
 		host:                host,
 		user:                user,
 		password:            password,
-		p4Execer:            gitserver.NewClient(),
+		p4Execer:            p4Execer,
 		cachedGroupMembers:  make(map[string][]string),
 		ignoreRulesWithHost: ignoreRulesWithHost,
 	}
