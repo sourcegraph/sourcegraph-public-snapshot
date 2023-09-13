@@ -2,6 +2,7 @@ load(":defs.bzl", "server_integration_test")
 
 server_integration_test(
     name = "e2e_test",
+    timeout = "eternal",
     args = [
         "$(location //client/web/src/end-to-end:e2e)",
         "$(rootpath //:mocha_config)",
@@ -75,6 +76,9 @@ server_integration_test(
     ],
     port = "7081",
     runner_src = ":backend_integration_test.sh",
+    tags = [
+        "exclusive",  # fails consistently when run at the same time as other server_integration_test targets
+    ],
 )
 
 server_integration_test(
@@ -112,6 +116,7 @@ server_integration_test(
     port = "7082",
     runner_src = ":backend_integration_test.sh",
     tags = [
+        "exclusive",  # fails consistently when run at the same time as other server_integration_test targets
         "manual",
     ],
 )
@@ -165,6 +170,7 @@ server_integration_test(
     port = "7083",
     runner_src = ":codeintel_integration_test.sh",
     tags = [
+        "exclusive",  # fails consistently when run at the same time as other server_integration_test targets
         "manual",
     ],
 )
@@ -251,6 +257,6 @@ server_integration_test(
     runner_src = ":codeintel_integration_test.sh",
     tags = [
         "manual",
-        "no-sanbdox",
+        "no-sandbox",
     ],
 )
