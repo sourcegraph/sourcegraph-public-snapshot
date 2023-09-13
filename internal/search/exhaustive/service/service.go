@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 // New returns a Service.
@@ -157,22 +158,6 @@ func getPrefix(id int64) string {
 	return fmt.Sprintf("%d-", id)
 }
 
-// discards output from br up until delim is read. If an error is encountered
-// it is returned. Note: often the error is io.EOF
-func discardUntil(br *bufio.Reader, delim byte) error {
-	// This function just wraps ReadSlice which will read until delim. If we
-	// get the error ErrBufferFull we didn't find delim since we need to read
-	// more, so we just try again. For every other error (or nil) we can
-	// return it.
-	for {
-		_, err := br.ReadSlice(delim)
-		if err != bufio.ErrBufferFull {
-			return err
-		}
-	}
-	return nil
-}
-
 // CopyBlobs copies all the blobs associated with a search job to the given writer.
 func (s *Service) CopyBlobs(ctx context.Context, w io.Writer, id int64) error {
 	// 🚨 SECURITY: only someone with access to the job may copy the blobs
@@ -186,10 +171,28 @@ func (s *Service) CopyBlobs(ctx context.Context, w io.Writer, id int64) error {
 		return err
 	}
 
+	return copyBlobs(ctx, iter, s.uploadStore, w)
+}
+
+// discards output from br up until delim is read. If an error is encountered
+// it is returned. Note: often the error is io.EOF
+func discardUntil(br *bufio.Reader, delim byte) error {
+	// This function just wraps ReadSlice which will read until delim. If we
+	// get the error ErrBufferFull we didn't find delim since we need to read
+	// more, so we just try again. For every other error (or nil) we can
+	// return it.
+	_, err := br.ReadSlice(delim)
+	if err != bufio.ErrBufferFull {
+		return err
+	}
+	return nil
+}
+
+func copyBlobs(ctx context.Context, iter *iterator.Iterator[string], uploadStore uploadstore.Store, w io.Writer) error {
 	// keep a single bufio.Reader so we can reuse its buffer.
 	var br bufio.Reader
 	copyBlob := func(key string, skipHeader bool) error {
-		rc, err := s.uploadStore.Get(ctx, key)
+		rc, err := uploadStore.Get(ctx, key)
 		if err != nil {
 			_ = rc.Close()
 			return err
