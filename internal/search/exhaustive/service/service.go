@@ -49,6 +49,7 @@ type operations struct {
 	getSearchJob    *observation.Operation
 	listSearchJobs  *observation.Operation
 	cancelSearchJob *observation.Operation
+	copyBlobs       *observation.Operation
 }
 
 var (
@@ -82,6 +83,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 			getSearchJob:    op("GetSearchJob"),
 			listSearchJobs:  op("ListSearchJobs"),
 			cancelSearchJob: op("CancelSearchJob"),
+			copyBlobs:       op("CopyBlobs"),
 		}
 	})
 	return singletonOperations
@@ -159,9 +161,13 @@ func getPrefix(id int64) string {
 }
 
 // CopyBlobs copies all the blobs associated with a search job to the given writer.
-func (s *Service) CopyBlobs(ctx context.Context, w io.Writer, id int64) error {
+func (s *Service) CopyBlobs(ctx context.Context, w io.Writer, id int64) (err error) {
+	ctx, _, endObservation := s.operations.copyBlobs.With(ctx, &err, opAttrs(
+		attribute.Int64("id", id)))
+	defer endObservation(1, observation.Args{})
+
 	// 🚨 SECURITY: only someone with access to the job may copy the blobs
-	_, err := s.GetSearchJob(ctx, id)
+	_, err = s.GetSearchJob(ctx, id)
 	if err != nil {
 		return err
 	}
