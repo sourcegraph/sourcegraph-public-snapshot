@@ -6,9 +6,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.cody.CodyToolWindowContent;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.vcs.RepoUtil;
-
 import java.util.Objects;
-
 import org.jetbrains.annotations.Nullable;
 
 public class CodyAgentCodebase {

@@ -11,7 +11,6 @@ import com.intellij.util.ui.JBUI;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentClient;
 import com.sourcegraph.cody.agent.protocol.EmbeddingExistsParams;
-import com.sourcegraph.config.ConfigUtil;
 import java.awt.FlowLayout;
 import javax.swing.Box;
 import javax.swing.Icon;
