@@ -1,6 +1,8 @@
 package shared
 
 import (
+	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 	"time"
@@ -39,6 +41,21 @@ func TestConfigDefaults(t *testing.T) {
 	}
 	if have, want := config.JanitorInterval, time.Minute; have != want {
 		t.Errorf("invalid value for JanitorInterval: have=%s want=%s", have, want)
+	}
+}
+
+func TestConfigReposDir(t *testing.T) {
+	config := Config{}
+	config.SetMockGetter(mapGetter(map[string]string{"SRC_REPOS_DIR": string(os.PathSeparator) + filepath.Join("data", "repos") + string(os.PathSeparator)}))
+	config.Load()
+
+	if err := config.Validate(); err != nil {
+		t.Fatalf("unexpected validation error: %s", err)
+	}
+
+	// The trailing slash should have been trimmed.
+	if have, want := config.ReposDir, "/data/repos"; have != want {
+		t.Errorf("invalid value for ReposDir: have=%s want=%s", have, want)
 	}
 }
 

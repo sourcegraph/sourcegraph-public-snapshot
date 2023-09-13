@@ -160,7 +160,7 @@ func (r *repositoryMirrorInfoResolver) LastError(ctx context.Context) (*string, 
 }
 
 func (r *repositoryMirrorInfoResolver) LastSyncOutput(ctx context.Context) (*string, error) {
-	output, ok, err := r.db.GitserverRepos().GetLastSyncOutput(ctx, r.repository.innerRepo.Name)
+	output, ok, err := r.db.GitserverRepos().GetLastSyncOutput(ctx, r.repository.IDInt32())
 	if err != nil {
 		return nil, err
 	}

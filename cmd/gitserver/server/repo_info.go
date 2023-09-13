@@ -106,7 +106,7 @@ func deleteRepo(
 	if err != nil {
 		return errors.Wrap(err, "removing repo directory")
 	}
-	err = db.GitserverRepos().SetCloneStatus(ctx, repo, types.CloneStatusNotCloned, shardID)
+	err = db.GitserverRepos().SetCloneStatus(ctx, dirWithoutReposDir(reposDir, repoDirFromName(reposDir, repo)), types.CloneStatusNotCloned, shardID)
 	if err != nil {
 		return errors.Wrap(err, "setting clone status after delete")
 	}

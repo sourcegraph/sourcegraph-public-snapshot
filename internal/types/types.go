@@ -605,6 +605,10 @@ type GitserverRepo struct {
 	// A log of the different types of corruption that was detected on this repo. The order of the log entries are
 	// stored from most recent to least recent and capped at 10 entries. See LogCorruption on Gitserverrepo store.
 	CorruptionLogs []RepoCorruptionLog
+	// RepoDir is the directory on disk where the repository is stored. It may be empty if the repo is not cloned
+	// or we have not upserted this record yet. This field was introduced in Sourcegraph 5.2.
+	// RepoDir does not include the reposDir prefix.
+	RepoDir string
 }
 
 // RepoCorruptionLog represents a corruption event that has been detected on a repo.

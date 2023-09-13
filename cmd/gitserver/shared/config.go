@@ -2,7 +2,9 @@ package shared
 
 import (
 	"net"
+	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -45,6 +47,8 @@ func (c *Config) Load() {
 	if c.ReposDir == "" {
 		c.AddError(errors.New("SRC_REPOS_DIR is required"))
 	}
+	// Trim trailing path separators from ReposDir to avoid issues.
+	c.ReposDir = strings.TrimSuffix(c.ReposDir, string(os.PathSeparator))
 
 	// if COURSIER_CACHE_DIR is set, try create that dir and use it. If not set, use the SRC_REPOS_DIR value (or default).
 	c.CoursierCacheDir = c.GetOptional("COURSIER_CACHE_DIR", "Directory in which coursier data is cached for JVM package repos.")

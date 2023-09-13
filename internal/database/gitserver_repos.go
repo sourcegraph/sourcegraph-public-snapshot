@@ -32,29 +32,34 @@ type GitserverRepoStore interface {
 	// Use cursors and limit batch size to paginate through the full set.
 	IterateRepoGitserverStatus(ctx context.Context, options IterateRepoGitserverStatusOptions) (rs []types.RepoGitserverStatus, nextCursor int, err error)
 	GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error)
+	// GetByDir gets the gitserver_repos entry for the repository for the given directory.
+	// Use dirWithoutReposDir to get the dir.
+	// TODO: This could technically return more than one record!
+	// TODO: We need to write the dir in other methods other than just update!
+	GetByDir(ctx context.Context, dir string) (*types.GitserverRepo, error)
 	GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error)
 	GetByNames(ctx context.Context, names ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
 	// LogCorruption sets the corrupted at value and logs the corruption reason. Reason will be truncated if it exceeds
 	// MaxReasonSizeInMB
-	LogCorruption(ctx context.Context, name api.RepoName, reason string, shardID string) error
+	LogCorruption(ctx context.Context, dir string, reason string, shardID string) error
 	// SetCloneStatus will attempt to update ONLY the clone status of a
 	// GitServerRepo. If a matching row does not yet exist a new one will be created.
 	// If the status value hasn't changed, the row will not be updated.
-	SetCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus, shardID string) error
+	SetCloneStatus(ctx context.Context, dir string, status types.CloneStatus, shardID string) error
 	// SetLastError will attempt to update ONLY the last error of a GitServerRepo. If
 	// a matching row does not yet exist a new one will be created.
 	// If the error value hasn't changed, the row will not be updated.
-	SetLastError(ctx context.Context, name api.RepoName, error, shardID string) error
+	SetLastError(ctx context.Context, dir string, error, shardID string) error
 	// SetLastOutput will attempt to create/update the output of the last repository clone/fetch.
 	// If a matching row does not exist, a new one will be created.
 	// Only one record will be maintained, so this records only the most recent output.
-	SetLastOutput(ctx context.Context, name api.RepoName, output string) error
+	SetLastOutput(ctx context.Context, dir string, output string) error
 	// SetLastFetched will attempt to update ONLY the last fetched data (last_fetched, last_changed, shard_id) of a GitServerRepo and ensures it is marked as cloned.
-	SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error
+	SetLastFetched(ctx context.Context, dir string, data GitserverFetchData) error
 	// SetRepoSize will attempt to update ONLY the repo size of a GitServerRepo. If
 	// a matching row does not yet exist a new one will be created.
 	// If the size value hasn't changed, the row will not be updated.
-	SetRepoSize(ctx context.Context, name api.RepoName, size int64, shardID string) error
+	SetRepoSize(ctx context.Context, dir string, size int64, shardID string) error
 	// ListReposWithLastError iterates over repos w/ non-empty last_error field and calls the repoFn for these repos.
 	// note that this currently filters out any repos which do not have an associated external service where cloud_default = true.
 	ListReposWithLastError(ctx context.Context) ([]api.RepoName, error)
@@ -64,13 +69,13 @@ type GitserverRepoStore interface {
 	// TotalErroredCloudDefaultRepos returns the total number of repos which have a non-empty last_error field. Note that this is only
 	// counting repos with an associated cloud_default external service.
 	TotalErroredCloudDefaultRepos(ctx context.Context) (int, error)
-	// UpdateRepoSizes sets repo sizes according to input map. Key is repoID, value is repo_size_bytes.
-	UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoName]int64) (int, error)
+	// UpdateRepoSizes sets repo sizes according to input map. Key is repo dir name, value is repo_size_bytes.
+	UpdateRepoSizes(ctx context.Context, shardID string, repos map[string]int64) (int, error)
 	// SetCloningProgress updates a piece of text description from how cloning proceeds.
-	SetCloningProgress(context.Context, api.RepoName, string) error
+	SetCloningProgress(ctx context.Context, dir string, progress string) error
 	// GetLastSyncOutput returns the last stored output from a repo sync (clone or fetch), or ok: false if
 	// no log is found.
-	GetLastSyncOutput(ctx context.Context, name api.RepoName) (output string, ok bool, err error)
+	GetLastSyncOutput(ctx context.Context, id api.RepoID) (output string, ok bool, err error)
 	// GetGitserverGitDirSize returns the total size of all git directories of cloned
 	// repos across all gitservers.
 	GetGitserverGitDirSize(ctx context.Context) (sizeBytes int64, err error)
@@ -106,6 +111,7 @@ func (s *gitserverRepoStore) Update(ctx context.Context, repos ...*types.Gitserv
 	for _, gr := range repos {
 		values = append(values, sqlf.Sprintf("(%s::integer, %s::text, %s::text, %s::text, %s::timestamp with time zone, %s::timestamp with time zone, %s::timestamp with time zone, %s::bigint, NOW())",
 			gr.RepoID,
+			gr.RepoDir,
 			gr.CloneStatus,
 			gr.ShardID,
 			dbutil.NewNullString(sanitizeToUTF8(gr.LastError)),
@@ -124,6 +130,7 @@ func (s *gitserverRepoStore) Update(ctx context.Context, repos ...*types.Gitserv
 const updateGitserverReposQueryFmtstr = `
 UPDATE gitserver_repos AS gr
 SET
+	repo_dir = tmp.repo_dir,
 	clone_status = tmp.clone_status,
 	shard_id = tmp.shard_id,
 	last_error = tmp.last_error,
@@ -133,9 +140,9 @@ SET
 	repo_size_bytes = tmp.repo_size_bytes,
 	updated_at = NOW()
 FROM (VALUES
-	-- (<repo_id>, <clone_status>, <shard_id>, <last_error>, <last_fetched>, <last_changed>, <corrupted_at>, <repo_size_bytes>),
+	-- (<repo_id>, <repo_dir>, <clone_status>, <shard_id>, <last_error>, <last_fetched>, <last_changed>, <corrupted_at>, <repo_size_bytes>),
 		%s
-	) AS tmp(repo_id, clone_status, shard_id, last_error, last_fetched, last_changed, corrupted_at, repo_size_bytes)
+	) AS tmp(repo_id, repo_dir, clone_status, shard_id, last_error, last_fetched, last_changed, corrupted_at, repo_size_bytes)
 	WHERE
 		tmp.repo_id = gr.repo_id
 `
@@ -309,6 +316,7 @@ func (s *gitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, opt
 const iterateRepoGitserverQuery = `
 SELECT
 	gr.repo_id,
+	gr.repo_dir,
 	repo.name,
 	gr.clone_status,
 	gr.cloning_progress,
@@ -341,6 +349,7 @@ func (s *gitserverRepoStore) GetByID(ctx context.Context, id api.RepoID) (*types
 const getGitserverRepoByIDQueryFmtstr = `
 SELECT
 	gr.repo_id,
+	gr.repo_dir,
 	-- We don't need this here, but the scanner needs it.
 	'' as name,
 	gr.clone_status,
@@ -357,6 +366,37 @@ FROM gitserver_repos gr
 WHERE gr.repo_id = %s
 `
 
+func (s *gitserverRepoStore) GetByDir(ctx context.Context, dir string) (*types.GitserverRepo, error) {
+	repo, _, err := scanGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(getGitserverRepoByDirQueryFmtstr, dir)))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &ErrGitserverRepoNotFound{}
+		}
+		return nil, err
+	}
+	return repo, nil
+}
+
+const getGitserverRepoByDirQueryFmtstr = `
+SELECT
+	gr.repo_id,
+	gr.repo_dir,
+	-- We don't need this here, but the scanner needs it.
+	'' as name,
+	gr.clone_status,
+	gr.cloning_progress,
+	gr.shard_id,
+	gr.last_error,
+	gr.last_fetched,
+	gr.last_changed,
+	gr.repo_size_bytes,
+	gr.updated_at,
+	gr.corrupted_at,
+	gr.corruption_logs
+FROM gitserver_repos gr
+WHERE gr.repo_dir = %s
+`
+
 func (s *gitserverRepoStore) GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error) {
 	repo, _, err := scanGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(getGitserverRepoByNameQueryFmtstr, name)))
 	if err != nil {
@@ -371,6 +411,7 @@ func (s *gitserverRepoStore) GetByName(ctx context.Context, name api.RepoName) (
 const getGitserverRepoByNameQueryFmtstr = `
 SELECT
 	gr.repo_id,
+	gr.repo_dir,
 	-- We don't need this here, but the scanner needs it.
 	'' as name,
 	gr.clone_status,
@@ -396,6 +437,7 @@ func (ErrGitserverRepoNotFound) NotFound() bool     { return true }
 const getByNamesQueryTemplate = `
 SELECT
 	gr.repo_id,
+	gr.repo_dir,
 	r.name,
 	gr.clone_status,
 	gr.cloning_progress,
@@ -439,6 +481,7 @@ func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoNa
 	var repoName api.RepoName
 	err := scanner.Scan(
 		&gr.RepoID,
+		&gr.RepoDir,
 		&repoName,
 		&cloneStatus,
 		&gr.CloningProgress,
@@ -464,7 +507,7 @@ func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoNa
 	return &gr, repoName, nil
 }
 
-func (s *gitserverRepoStore) SetCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus, shardID string) error {
+func (s *gitserverRepoStore) SetCloneStatus(ctx context.Context, dir string, status types.CloneStatus, shardID string) error {
 	err := s.Exec(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos
 SET
@@ -473,10 +516,10 @@ SET
 	shard_id = %s,
 	updated_at = NOW()
 WHERE
-	repo_id = (SELECT id FROM repo WHERE name = %s)
+	repo_dir = %s
 	AND
 	clone_status IS DISTINCT FROM %s
-`, status, shardID, name, status))
+`, status, shardID, dir, status))
 	if err != nil {
 		return errors.Wrap(err, "setting clone status")
 	}
@@ -484,7 +527,7 @@ WHERE
 	return nil
 }
 
-func (s *gitserverRepoStore) SetLastError(ctx context.Context, name api.RepoName, error, shardID string) error {
+func (s *gitserverRepoStore) SetLastError(ctx context.Context, dir string, error, shardID string) error {
 	ns := dbutil.NewNullString(sanitizeToUTF8(error))
 
 	err := s.Exec(ctx, sqlf.Sprintf(`
@@ -494,10 +537,10 @@ SET
 	shard_id = %s,
 	updated_at = NOW()
 WHERE
-	repo_id = (SELECT id FROM repo WHERE name = %s)
+	repo_dir = %s
 	AND
 	last_error IS DISTINCT FROM %s
-`, ns, shardID, name, ns))
+`, ns, shardID, dir, ns))
 	if err != nil {
 		return errors.Wrap(err, "setting last error")
 	}
@@ -505,15 +548,15 @@ WHERE
 	return nil
 }
 
-func (s *gitserverRepoStore) SetLastOutput(ctx context.Context, name api.RepoName, output string) error {
+func (s *gitserverRepoStore) SetLastOutput(ctx context.Context, dir string, output string) error {
 	ns := sanitizeToUTF8(output)
 
 	err := s.Exec(ctx, sqlf.Sprintf(`
 INSERT INTO gitserver_repos_sync_output(repo_id, last_output)
-SELECT id, %s FROM repo WHERE name = %s
+SELECT repo_id, %s FROM gitserver_repos WHERE repo_dir = %s
 ON CONFLICT(repo_id)
 DO UPDATE SET last_output = EXCLUDED.last_output, updated_at = NOW()
-`, ns, name))
+`, ns, dir))
 	if err != nil {
 		return errors.Wrap(err, "setting last output")
 	}
@@ -521,8 +564,8 @@ DO UPDATE SET last_output = EXCLUDED.last_output, updated_at = NOW()
 	return nil
 }
 
-func (s *gitserverRepoStore) GetLastSyncOutput(ctx context.Context, name api.RepoName) (output string, ok bool, err error) {
-	q := sqlf.Sprintf(getLastSyncOutputQueryFmtstr, name)
+func (s *gitserverRepoStore) GetLastSyncOutput(ctx context.Context, id api.RepoID) (output string, ok bool, err error) {
+	q := sqlf.Sprintf(getLastSyncOutputQueryFmtstr, id)
 	output, ok, err = basestore.ScanFirstString(s.Query(ctx, q))
 	// We don't store NULLs in the db, so we need to map empty string to not ok as well.s
 	if output == "" {
@@ -537,7 +580,7 @@ SELECT
 FROM
 	gitserver_repos_sync_output
 WHERE
-	repo_id = (SELECT id FROM repo WHERE name = %s)
+	repo_id = %s
 `
 
 func (s *gitserverRepoStore) GetGitserverGitDirSize(ctx context.Context) (sizeBytes int64, err error) {
@@ -558,7 +601,7 @@ WHERE
 	%s
 `
 
-func (s *gitserverRepoStore) SetRepoSize(ctx context.Context, name api.RepoName, size int64, shardID string) error {
+func (s *gitserverRepoStore) SetRepoSize(ctx context.Context, dir string, size int64, shardID string) error {
 	err := s.Exec(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos
 SET
@@ -567,10 +610,10 @@ SET
 	clone_status = %s,
 	updated_at = NOW()
 WHERE
-	repo_id = (SELECT id FROM repo WHERE name = %s)
+	repo_dir = %s
 	AND
 	repo_size_bytes IS DISTINCT FROM %s
-	`, size, shardID, types.CloneStatusCloned, name, size))
+	`, size, shardID, types.CloneStatusCloned, dir, size))
 	if err != nil {
 		return errors.Wrap(err, "setting repo size")
 	}
@@ -578,7 +621,7 @@ WHERE
 	return nil
 }
 
-func (s *gitserverRepoStore) LogCorruption(ctx context.Context, name api.RepoName, reason string, shardID string) error {
+func (s *gitserverRepoStore) LogCorruption(ctx context.Context, dir string, reason string, shardID string) error {
 	// trim reason to 1 MB so that we don't store huge reasons and run into trouble when it gets too large
 	if len(reason) > MaxReasonSizeInMB {
 		reason = reason[:MaxReasonSizeInMB]
@@ -604,9 +647,9 @@ SET
 	corruption_logs = (SELECT jsonb_path_query_array(%s||gtr.corruption_logs, '$[0 to 9]')),
 	updated_at = NOW()
 WHERE
-	repo_id = (SELECT id FROM repo WHERE name = %s)
+	repo_dir = %s
 AND
-	corrupted_at IS NULL`, shardID, rawLog, name))
+	corrupted_at IS NULL`, shardID, rawLog, dir))
 	if err != nil {
 		return errors.Wrapf(err, "logging repo corruption")
 	}
@@ -630,7 +673,7 @@ type GitserverFetchData struct {
 	ShardID string
 }
 
-func (s *gitserverRepoStore) SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error {
+func (s *gitserverRepoStore) SetLastFetched(ctx context.Context, dir string, data GitserverFetchData) error {
 	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos
 SET
@@ -640,8 +683,8 @@ SET
 	shard_id = %s,
 	clone_status = %s,
 	updated_at = NOW()
-WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
-`, data.LastFetched, data.LastChanged, data.ShardID, types.CloneStatusCloned, name))
+WHERE repo_dir = %s
+`, data.LastFetched, data.LastChanged, data.ShardID, types.CloneStatusCloned, dir))
 	if err != nil {
 		return errors.Wrap(err, "setting last fetched")
 	}
@@ -655,14 +698,14 @@ WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
 	return nil
 }
 
-func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoName]int64) (updated int, err error) {
+func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string, repos map[string]int64) (updated int, err error) {
 	// NOTE: We have two args per row, so rows*2 should be less than maximum
 	// Postgres allows.
 	const batchSize = batch.MaxNumPostgresParameters / 2
 	return s.updateRepoSizesWithBatchSize(ctx, repos, batchSize)
 }
 
-func (s *gitserverRepoStore) updateRepoSizesWithBatchSize(ctx context.Context, repos map[api.RepoName]int64, batchSize int) (updated int, err error) {
+func (s *gitserverRepoStore) updateRepoSizesWithBatchSize(ctx context.Context, repos map[string]int64, batchSize int) (updated int, err error) {
 	tx, err := s.Store.Transact(ctx)
 	if err != nil {
 		return 0, err
@@ -707,12 +750,11 @@ SET
     repo_size_bytes = tmp.repo_size_bytes,
 	updated_at = NOW()
 FROM (VALUES
--- (<repo_name>, <repo_size_bytes>),
+-- (<repo_dir>, <repo_size_bytes>),
     %s
-) AS tmp(repo_name, repo_size_bytes)
-JOIN repo ON repo.name = tmp.repo_name
+) AS tmp(repo_dir, repo_size_bytes)
 WHERE
-	repo.id = gr.repo_id
+	gr.repo_dir = tmp.repo_dir
 AND
 	tmp.repo_size_bytes IS DISTINCT FROM gr.repo_size_bytes
 `
@@ -745,15 +787,15 @@ func sanitizeToUTF8(s string) string {
 	return strings.ToValidUTF8(t, "")
 }
 
-func (s *gitserverRepoStore) SetCloningProgress(ctx context.Context, repoName api.RepoName, progressLine string) error {
-	res, err := s.ExecResult(ctx, sqlf.Sprintf(setCloningProgressQueryFmtstr, progressLine, repoName))
+func (s *gitserverRepoStore) SetCloningProgress(ctx context.Context, dir string, progressLine string) error {
+	res, err := s.ExecResult(ctx, sqlf.Sprintf(setCloningProgressQueryFmtstr, progressLine, dir))
 	if err != nil {
 		return errors.Wrap(err, "failed to set cloning progress")
 	}
 	if nrows, err := res.RowsAffected(); err != nil {
 		return errors.Wrap(err, "failed to set cloning progress, cannot verify rows updated")
 	} else if nrows != 1 {
-		return errors.Newf("failed to set cloning progress, repo %q not found", repoName)
+		return errors.Newf("failed to set cloning progress, repo at dir %q not found", dir)
 	}
 	return nil
 }
@@ -763,5 +805,5 @@ UPDATE gitserver_repos
 SET
 	cloning_progress = %s,
 	updated_at = NOW()
-WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
+WHERE repo_dir = %s
 `

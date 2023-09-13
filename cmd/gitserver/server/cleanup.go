@@ -251,7 +251,7 @@ func cleanupRepos(
 		logger.Warn("current shard is not included in the list of known gitserver shards, will not delete repos", log.String("current-hostname", shardID), log.Strings("all-shards", gitServerAddrs.Addresses))
 	}
 
-	repoToSize := make(map[api.RepoName]int64)
+	repoToSize := make(map[string]int64)
 	var wrongShardRepoCount int64
 	var wrongShardRepoSize int64
 	defer func() {
@@ -271,7 +271,7 @@ func cleanupRepos(
 	collectSizeAndMaybeDeleteWrongShardRepos := func(dir common.GitDir) (done bool, err error) {
 		size := dirSize(dir.Path("."))
 		name := repoNameFromDir(reposDir, dir)
-		repoToSize[name] = size
+		repoToSize[dirWithoutReposDir(reposDir, dir)] = size
 
 		// Record the number and disk usage used of repos that should
 		// not belong on this instance and remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
@@ -304,9 +304,9 @@ func cleanupRepos(
 			return false, err
 		}
 
-		repoName := repoNameFromDir(reposDir, dir)
-		err = db.GitserverRepos().LogCorruption(ctx, repoName, fmt.Sprintf("sourcegraph detected corrupt repo: %s", reason), shardID)
+		err = db.GitserverRepos().LogCorruption(ctx, dirWithoutReposDir(reposDir, dir), fmt.Sprintf("sourcegraph detected corrupt repo: %s", reason), shardID)
 		if err != nil {
+			repoName := repoNameFromDir(reposDir, dir)
 			logger.Warn("failed to log repo corruption", log.String("repo", string(repoName)), log.Error(err))
 		}
 
@@ -816,7 +816,7 @@ func removeRepoDirectory(ctx context.Context, logger log.Logger, db database.DB,
 
 	if updateCloneStatus {
 		// Set as not_cloned in the database.
-		if err := db.GitserverRepos().SetCloneStatus(ctx, repoNameFromDir(reposDir, gitDir), types.CloneStatusNotCloned, shardID); err != nil {
+		if err := db.GitserverRepos().SetCloneStatus(ctx, dirWithoutReposDir(reposDir, gitDir), types.CloneStatusNotCloned, shardID); err != nil {
 			logger.Warn("failed to update clone status", log.Error(err))
 		}
 	}
@@ -848,6 +848,61 @@ func removeRepoDirectory(ctx context.Context, logger log.Logger, db database.DB,
 			logger.Warn("failed to stat parent directory", log.String("dir", current), log.Error(err))
 			return nil
 		}
+		if os.SameFile(rootInfo, info) {
+			// Stop, we are at the parent.
+			break
+		}
+
+		if err := os.Remove(current); err != nil {
+			// Stop, we assume remove failed due to current not being empty.
+			break
+		}
+	}
+
+	return nil
+}
+
+// recursivelyDeleteEmptyParentDirectories cleans up empty parent directories. We
+// just attempt to remove and if we have a failure we assume it's due to the directory
+// having other children. If we checked first we could race with someone else adding a
+// new clone.
+// For a given path /data/repos/github.com/sourcegraph/sourcegraph/.git, we traverse
+// - /data/repos/github.com/sourcegraph/sourcegraph/.git
+// - /data/repos/github.com/sourcegraph/sourcegraph
+// - /data/repos/github.com/sourcegraph
+// - /data/repos/github.com
+// - /data/repos - and stop here, since this is reposDir.
+// If one of the visited dirs has no entries other than current, delete it.
+// So assuming /data/repos/github.com/golang/go/.git exists, we would delete:
+// - /data/repos/github.com/sourcegraph/sourcegraph/.git
+// - /data/repos/github.com/sourcegraph/sourcegraph
+// - /data/repos/github.com/sourcegraph
+func recursivelyDeleteEmptyParentDirectories(ctx context.Context, logger log.Logger, reposDir string, dir common.GitDir) error {
+	rootInfo, err := os.Stat(reposDir)
+	if err != nil {
+		logger.Warn("Failed to stat ReposDir", log.Error(err))
+		return nil
+	}
+
+	current := string(dir)
+	for {
+		parent := filepath.Dir(current)
+		if parent == current {
+			// This shouldn't happen, but protecting against escaping
+			// ReposDir.
+			break
+		}
+		current = parent
+		info, err := os.Stat(current)
+		if os.IsNotExist(err) {
+			// Someone else beat us to it.
+			break
+		}
+		if err != nil {
+			logger.Warn("failed to stat parent directory", log.String("dir", current), log.Error(err))
+			return nil
+		}
+
 		if os.SameFile(rootInfo, info) {
 			// Stop, we are at the parent.
 			break

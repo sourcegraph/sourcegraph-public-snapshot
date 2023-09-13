@@ -543,7 +543,7 @@ func (p *clonePipelineRoutine) cloneJobConsumer(ctx context.Context, tasks <-cha
 				logger.Error("failed to clone repo", log.Error(err))
 			}
 			// Use a different context in case we failed because the original context failed.
-			p.s.setLastErrorNonFatal(p.s.ctx, task.repo, err)
+			p.s.setLastErrorNonFatal(p.s.ctx, repoDirFromName(p.s.ReposDir, task.repo), err)
 			_ = task.done()
 		}(task)
 	}
@@ -693,6 +693,13 @@ func syncRepoState(
 				// Since the repo has been recloned or is being cloned
 				// we can reset the corruption
 				repo.CorruptedAt = time.Time{}
+				shouldUpdate = true
+			}
+
+			repoDir := dirWithoutReposDir(reposDir, dir)
+
+			if repo.RepoDir != repoDir {
+				repo.RepoDir = repoDir
 				shouldUpdate = true
 			}
 
@@ -1851,7 +1858,7 @@ func (s *Server) p4Exec(ctx context.Context, logger log.Logger, req *protocol.P4
 	}
 }
 
-func setLastFetched(ctx context.Context, db database.DB, shardID string, dir common.GitDir, name api.RepoName) error {
+func setLastFetched(ctx context.Context, db database.DB, shardID string, reposDir string, dir common.GitDir, name api.RepoName) error {
 	lastFetched, err := repoLastFetched(dir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get last fetched for %s", name)
@@ -1862,7 +1869,7 @@ func setLastFetched(ctx context.Context, db database.DB, shardID string, dir com
 		return errors.Wrapf(err, "failed to get last changed for %s", name)
 	}
 
-	return db.GitserverRepos().SetLastFetched(ctx, name, database.GitserverFetchData{
+	return db.GitserverRepos().SetLastFetched(ctx, dirWithoutReposDir(reposDir, dir), database.GitserverFetchData{
 		LastFetched: lastFetched,
 		LastChanged: lastChanged,
 		ShardID:     shardID,
@@ -1870,13 +1877,13 @@ func setLastFetched(ctx context.Context, db database.DB, shardID string, dir com
 }
 
 // setLastErrorNonFatal will set the last_error column for the repo in the gitserver table.
-func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, err error) {
+func (s *Server) setLastErrorNonFatal(ctx context.Context, dir common.GitDir, err error) {
 	var errString string
 	if err != nil {
 		errString = err.Error()
 	}
 
-	if err := s.DB.GitserverRepos().SetLastError(ctx, name, errString, s.Hostname); err != nil {
+	if err := s.DB.GitserverRepos().SetLastError(ctx, dirWithoutReposDir(s.ReposDir, dir), errString, s.Hostname); err != nil {
 		s.Logger.Warn("Setting last error in DB", log.Error(err))
 	}
 }
@@ -1884,7 +1891,7 @@ func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, er
 func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, dir common.GitDir, stderr string) {
 	if checkMaybeCorruptRepo(s.Logger, s.RecordingCommandFactory, repo, s.ReposDir, dir, stderr) {
 		reason := stderr
-		if err := s.DB.GitserverRepos().LogCorruption(ctx, repo, reason, s.Hostname); err != nil {
+		if err := s.DB.GitserverRepos().LogCorruption(ctx, dirWithoutReposDir(s.ReposDir, dir), reason, s.Hostname); err != nil {
 			s.Logger.Warn("failed to log repo corruption", log.String("repo", string(repo)), log.Error(err))
 		}
 	}
@@ -1948,7 +1955,7 @@ func (s *Server) CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOpt
 	// the actual running clone for the DB state of last_error.
 	defer func() {
 		// Use a different context in case we failed because the original context failed.
-		s.setLastErrorNonFatal(s.ctx, repo, err)
+		s.setLastErrorNonFatal(s.ctx, dir, err)
 	}()
 
 	syncer, err := s.GetVCSSyncer(ctx, repo)
@@ -2074,13 +2081,13 @@ func (s *Server) doClone(
 
 	// It may already be cloned
 	if !repoCloned(dir) {
-		if err := s.DB.GitserverRepos().SetCloneStatus(ctx, repo, types.CloneStatusCloning, s.Hostname); err != nil {
+		if err := s.DB.GitserverRepos().SetCloneStatus(ctx, dirWithoutReposDir(s.ReposDir, dir), types.CloneStatusCloning, s.Hostname); err != nil {
 			s.Logger.Warn("Setting clone status in DB", log.Error(err))
 		}
 	}
 	defer func() {
 		// Use a background context to ensure we still update the DB even if we time out
-		if err := s.DB.GitserverRepos().SetCloneStatus(context.Background(), repo, cloneStatus(repoCloned(dir), false), s.Hostname); err != nil {
+		if err := s.DB.GitserverRepos().SetCloneStatus(context.Background(), dirWithoutReposDir(s.ReposDir, dir), cloneStatus(repoCloned(dir), false), s.Hostname); err != nil {
 			s.Logger.Warn("Setting clone status in DB", log.Error(err))
 		}
 	}()
@@ -2100,12 +2107,12 @@ func (s *Server) doClone(
 	pr, pw := io.Pipe()
 	defer pw.Close()
 
-	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
+	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, s.ReposDir, repo)
 
 	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, s.Logger, repo, cmd), true, pw)
 	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
 	// best-effort update the output of the clone
-	if err := s.DB.GitserverRepos().SetLastOutput(context.Background(), repo, redactedOutput); err != nil {
+	if err := s.DB.GitserverRepos().SetLastOutput(context.Background(), dirWithoutReposDir(s.ReposDir, dir), redactedOutput); err != nil {
 		s.Logger.Warn("Setting last output in DB", log.Error(err))
 	}
 
@@ -2183,13 +2190,13 @@ func postRepoFetchActions(
 
 	// Successfully updated, best-effort updating of db fetch state based on
 	// disk state.
-	if err := setLastFetched(ctx, db, shardID, dir, repo); err != nil {
+	if err := setLastFetched(ctx, db, shardID, reposDir, dir, repo); err != nil {
 		logger.Warn("failed setting last fetch in DB", log.Error(err))
 	}
 
 	// Successfully updated, best-effort calculation of the repo size.
 	repoSizeBytes := dirSize(dir.Path("."))
-	if err := db.GitserverRepos().SetRepoSize(ctx, repo, repoSizeBytes, shardID); err != nil {
+	if err := db.GitserverRepos().SetRepoSize(ctx, dirWithoutReposDir(reposDir, dir), repoSizeBytes, shardID); err != nil {
 		logger.Warn("failed to set repo size", log.Error(err))
 	}
 
@@ -2198,7 +2205,7 @@ func postRepoFetchActions(
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
-func readCloneProgress(db database.DB, logger log.Logger, redactor *urlRedactor, lock RepositoryLock, pr io.Reader, repo api.RepoName) {
+func readCloneProgress(db database.DB, logger log.Logger, redactor *urlRedactor, lock RepositoryLock, pr io.Reader, reposDir string, repo api.RepoName) {
 	// Use a background context to ensure we still update the DB even if we
 	// time out. IE we intentionally don't take an input ctx.
 	ctx := featureflag.WithFlags(context.Background(), db.FeatureFlags())
@@ -2244,7 +2251,7 @@ func readCloneProgress(db database.DB, logger log.Logger, redactor *urlRedactor,
 		if featureflag.FromContext(ctx).GetBoolOr("clone-progress-logging", false) &&
 			strings.Contains(redactedProgress, "%") &&
 			dbWritesLimiter.Allow() {
-			if err := store.SetCloningProgress(ctx, repo, redactedProgress); err != nil {
+			if err := store.SetCloningProgress(ctx, dirWithoutReposDir(reposDir, repoDirFromName(reposDir, repo)), redactedProgress); err != nil {
 				logger.Error("error updating cloning progress in the db", log.Error(err))
 			}
 		}
@@ -2450,7 +2457,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 					s.logIfCorrupt(ctx, repo, repoDirFromName(s.ReposDir, repo), gitErr.Output)
 				}
 			}
-			s.setLastErrorNonFatal(s.ctx, repo, err)
+			s.setLastErrorNonFatal(s.ctx, repoDirFromName(s.ReposDir, repo), err)
 		})
 	}()
 
@@ -2513,7 +2520,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	output, err := syncer.Fetch(ctx, remoteURL, repo, dir, revspec)
 	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
 	// best-effort update the output of the fetch
-	if err := s.DB.GitserverRepos().SetLastOutput(context.Background(), repo, redactedOutput); err != nil {
+	if err := s.DB.GitserverRepos().SetLastOutput(context.Background(), dirWithoutReposDir(s.ReposDir, dir), redactedOutput); err != nil {
 		s.Logger.Warn("Setting last output in DB", log.Error(err))
 	}
 

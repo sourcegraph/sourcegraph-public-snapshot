@@ -36961,6 +36961,9 @@ func (c GitserverLocalCloneStoreWithFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit
 // testing.
 type MockGitserverRepoStore struct {
+	// GetByDirFunc is an instance of a mock function object controlling the
+	// behavior of the method GetByDir.
+	GetByDirFunc *GitserverRepoStoreGetByDirFunc
 	// GetByIDFunc is an instance of a mock function object controlling the
 	// behavior of the method GetByID.
 	GetByIDFunc *GitserverRepoStoreGetByIDFunc
@@ -37030,6 +37033,11 @@ type MockGitserverRepoStore struct {
 // overwritten.
 func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 	return &MockGitserverRepoStore{
+		GetByDirFunc: &GitserverRepoStoreGetByDirFunc{
+			defaultHook: func(context.Context, string) (r0 *types.GitserverRepo, r1 error) {
+				return
+			},
+		},
 		GetByIDFunc: &GitserverRepoStoreGetByIDFunc{
 			defaultHook: func(context.Context, api.RepoID) (r0 *types.GitserverRepo, r1 error) {
 				return
@@ -37051,7 +37059,7 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		GetLastSyncOutputFunc: &GitserverRepoStoreGetLastSyncOutputFunc{
-			defaultHook: func(context.Context, api.RepoName) (r0 string, r1 bool, r2 error) {
+			defaultHook: func(context.Context, api.RepoID) (r0 string, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -37076,37 +37084,37 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		LogCorruptionFunc: &GitserverRepoStoreLogCorruptionFunc{
-			defaultHook: func(context.Context, api.RepoName, string, string) (r0 error) {
+			defaultHook: func(context.Context, string, string, string) (r0 error) {
 				return
 			},
 		},
 		SetCloneStatusFunc: &GitserverRepoStoreSetCloneStatusFunc{
-			defaultHook: func(context.Context, api.RepoName, types.CloneStatus, string) (r0 error) {
+			defaultHook: func(context.Context, string, types.CloneStatus, string) (r0 error) {
 				return
 			},
 		},
 		SetCloningProgressFunc: &GitserverRepoStoreSetCloningProgressFunc{
-			defaultHook: func(context.Context, api.RepoName, string) (r0 error) {
+			defaultHook: func(context.Context, string, string) (r0 error) {
 				return
 			},
 		},
 		SetLastErrorFunc: &GitserverRepoStoreSetLastErrorFunc{
-			defaultHook: func(context.Context, api.RepoName, string, string) (r0 error) {
+			defaultHook: func(context.Context, string, string, string) (r0 error) {
 				return
 			},
 		},
 		SetLastFetchedFunc: &GitserverRepoStoreSetLastFetchedFunc{
-			defaultHook: func(context.Context, api.RepoName, database.GitserverFetchData) (r0 error) {
+			defaultHook: func(context.Context, string, database.GitserverFetchData) (r0 error) {
 				return
 			},
 		},
 		SetLastOutputFunc: &GitserverRepoStoreSetLastOutputFunc{
-			defaultHook: func(context.Context, api.RepoName, string) (r0 error) {
+			defaultHook: func(context.Context, string, string) (r0 error) {
 				return
 			},
 		},
 		SetRepoSizeFunc: &GitserverRepoStoreSetRepoSizeFunc{
-			defaultHook: func(context.Context, api.RepoName, int64, string) (r0 error) {
+			defaultHook: func(context.Context, string, int64, string) (r0 error) {
 				return
 			},
 		},
@@ -37121,7 +37129,7 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		UpdateRepoSizesFunc: &GitserverRepoStoreUpdateRepoSizesFunc{
-			defaultHook: func(context.Context, string, map[api.RepoName]int64) (r0 int, r1 error) {
+			defaultHook: func(context.Context, string, map[string]int64) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -37138,6 +37146,11 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 // overwritten.
 func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 	return &MockGitserverRepoStore{
+		GetByDirFunc: &GitserverRepoStoreGetByDirFunc{
+			defaultHook: func(context.Context, string) (*types.GitserverRepo, error) {
+				panic("unexpected invocation of MockGitserverRepoStore.GetByDir")
+			},
+		},
 		GetByIDFunc: &GitserverRepoStoreGetByIDFunc{
 			defaultHook: func(context.Context, api.RepoID) (*types.GitserverRepo, error) {
 				panic("unexpected invocation of MockGitserverRepoStore.GetByID")
@@ -37159,7 +37172,7 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		GetLastSyncOutputFunc: &GitserverRepoStoreGetLastSyncOutputFunc{
-			defaultHook: func(context.Context, api.RepoName) (string, bool, error) {
+			defaultHook: func(context.Context, api.RepoID) (string, bool, error) {
 				panic("unexpected invocation of MockGitserverRepoStore.GetLastSyncOutput")
 			},
 		},
@@ -37184,37 +37197,37 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		LogCorruptionFunc: &GitserverRepoStoreLogCorruptionFunc{
-			defaultHook: func(context.Context, api.RepoName, string, string) error {
+			defaultHook: func(context.Context, string, string, string) error {
 				panic("unexpected invocation of MockGitserverRepoStore.LogCorruption")
 			},
 		},
 		SetCloneStatusFunc: &GitserverRepoStoreSetCloneStatusFunc{
-			defaultHook: func(context.Context, api.RepoName, types.CloneStatus, string) error {
+			defaultHook: func(context.Context, string, types.CloneStatus, string) error {
 				panic("unexpected invocation of MockGitserverRepoStore.SetCloneStatus")
 			},
 		},
 		SetCloningProgressFunc: &GitserverRepoStoreSetCloningProgressFunc{
-			defaultHook: func(context.Context, api.RepoName, string) error {
+			defaultHook: func(context.Context, string, string) error {
 				panic("unexpected invocation of MockGitserverRepoStore.SetCloningProgress")
 			},
 		},
 		SetLastErrorFunc: &GitserverRepoStoreSetLastErrorFunc{
-			defaultHook: func(context.Context, api.RepoName, string, string) error {
+			defaultHook: func(context.Context, string, string, string) error {
 				panic("unexpected invocation of MockGitserverRepoStore.SetLastError")
 			},
 		},
 		SetLastFetchedFunc: &GitserverRepoStoreSetLastFetchedFunc{
-			defaultHook: func(context.Context, api.RepoName, database.GitserverFetchData) error {
+			defaultHook: func(context.Context, string, database.GitserverFetchData) error {
 				panic("unexpected invocation of MockGitserverRepoStore.SetLastFetched")
 			},
 		},
 		SetLastOutputFunc: &GitserverRepoStoreSetLastOutputFunc{
-			defaultHook: func(context.Context, api.RepoName, string) error {
+			defaultHook: func(context.Context, string, string) error {
 				panic("unexpected invocation of MockGitserverRepoStore.SetLastOutput")
 			},
 		},
 		SetRepoSizeFunc: &GitserverRepoStoreSetRepoSizeFunc{
-			defaultHook: func(context.Context, api.RepoName, int64, string) error {
+			defaultHook: func(context.Context, string, int64, string) error {
 				panic("unexpected invocation of MockGitserverRepoStore.SetRepoSize")
 			},
 		},
@@ -37229,7 +37242,7 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		UpdateRepoSizesFunc: &GitserverRepoStoreUpdateRepoSizesFunc{
-			defaultHook: func(context.Context, string, map[api.RepoName]int64) (int, error) {
+			defaultHook: func(context.Context, string, map[string]int64) (int, error) {
 				panic("unexpected invocation of MockGitserverRepoStore.UpdateRepoSizes")
 			},
 		},
@@ -37246,6 +37259,9 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 // implementation, unless overwritten.
 func NewMockGitserverRepoStoreFrom(i database.GitserverRepoStore) *MockGitserverRepoStore {
 	return &MockGitserverRepoStore{
+		GetByDirFunc: &GitserverRepoStoreGetByDirFunc{
+			defaultHook: i.GetByDir,
+		},
 		GetByIDFunc: &GitserverRepoStoreGetByIDFunc{
 			defaultHook: i.GetByID,
 		},
@@ -37307,6 +37323,114 @@ func NewMockGitserverRepoStoreFrom(i database.GitserverRepoStore) *MockGitserver
 			defaultHook: i.With,
 		},
 	}
+}
+
+// GitserverRepoStoreGetByDirFunc describes the behavior when the GetByDir
+// method of the parent MockGitserverRepoStore instance is invoked.
+type GitserverRepoStoreGetByDirFunc struct {
+	defaultHook func(context.Context, string) (*types.GitserverRepo, error)
+	hooks       []func(context.Context, string) (*types.GitserverRepo, error)
+	history     []GitserverRepoStoreGetByDirFuncCall
+	mutex       sync.Mutex
+}
+
+// GetByDir delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverRepoStore) GetByDir(v0 context.Context, v1 string) (*types.GitserverRepo, error) {
+	r0, r1 := m.GetByDirFunc.nextHook()(v0, v1)
+	m.GetByDirFunc.appendCall(GitserverRepoStoreGetByDirFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetByDir method of
+// the parent MockGitserverRepoStore instance is invoked and the hook queue
+// is empty.
+func (f *GitserverRepoStoreGetByDirFunc) SetDefaultHook(hook func(context.Context, string) (*types.GitserverRepo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetByDir method of the parent MockGitserverRepoStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitserverRepoStoreGetByDirFunc) PushHook(hook func(context.Context, string) (*types.GitserverRepo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverRepoStoreGetByDirFunc) SetDefaultReturn(r0 *types.GitserverRepo, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (*types.GitserverRepo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverRepoStoreGetByDirFunc) PushReturn(r0 *types.GitserverRepo, r1 error) {
+	f.PushHook(func(context.Context, string) (*types.GitserverRepo, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverRepoStoreGetByDirFunc) nextHook() func(context.Context, string) (*types.GitserverRepo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverRepoStoreGetByDirFunc) appendCall(r0 GitserverRepoStoreGetByDirFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverRepoStoreGetByDirFuncCall objects
+// describing the invocations of this function.
+func (f *GitserverRepoStoreGetByDirFunc) History() []GitserverRepoStoreGetByDirFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverRepoStoreGetByDirFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverRepoStoreGetByDirFuncCall is an object that describes an
+// invocation of method GetByDir on an instance of MockGitserverRepoStore.
+type GitserverRepoStoreGetByDirFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.GitserverRepo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverRepoStoreGetByDirFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverRepoStoreGetByDirFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // GitserverRepoStoreGetByIDFunc describes the behavior when the GetByID
@@ -37754,15 +37878,15 @@ func (c GitserverRepoStoreGetGitserverGitDirSizeFuncCall) Results() []interface{
 // GetLastSyncOutput method of the parent MockGitserverRepoStore instance is
 // invoked.
 type GitserverRepoStoreGetLastSyncOutputFunc struct {
-	defaultHook func(context.Context, api.RepoName) (string, bool, error)
-	hooks       []func(context.Context, api.RepoName) (string, bool, error)
+	defaultHook func(context.Context, api.RepoID) (string, bool, error)
+	hooks       []func(context.Context, api.RepoID) (string, bool, error)
 	history     []GitserverRepoStoreGetLastSyncOutputFuncCall
 	mutex       sync.Mutex
 }
 
 // GetLastSyncOutput delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) GetLastSyncOutput(v0 context.Context, v1 api.RepoName) (string, bool, error) {
+func (m *MockGitserverRepoStore) GetLastSyncOutput(v0 context.Context, v1 api.RepoID) (string, bool, error) {
 	r0, r1, r2 := m.GetLastSyncOutputFunc.nextHook()(v0, v1)
 	m.GetLastSyncOutputFunc.appendCall(GitserverRepoStoreGetLastSyncOutputFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -37771,7 +37895,7 @@ func (m *MockGitserverRepoStore) GetLastSyncOutput(v0 context.Context, v1 api.Re
 // SetDefaultHook sets function that is called when the GetLastSyncOutput
 // method of the parent MockGitserverRepoStore instance is invoked and the
 // hook queue is empty.
-func (f *GitserverRepoStoreGetLastSyncOutputFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (string, bool, error)) {
+func (f *GitserverRepoStoreGetLastSyncOutputFunc) SetDefaultHook(hook func(context.Context, api.RepoID) (string, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -37780,7 +37904,7 @@ func (f *GitserverRepoStoreGetLastSyncOutputFunc) SetDefaultHook(hook func(conte
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *GitserverRepoStoreGetLastSyncOutputFunc) PushHook(hook func(context.Context, api.RepoName) (string, bool, error)) {
+func (f *GitserverRepoStoreGetLastSyncOutputFunc) PushHook(hook func(context.Context, api.RepoID) (string, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -37789,19 +37913,19 @@ func (f *GitserverRepoStoreGetLastSyncOutputFunc) PushHook(hook func(context.Con
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverRepoStoreGetLastSyncOutputFunc) SetDefaultReturn(r0 string, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName) (string, bool, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID) (string, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreGetLastSyncOutputFunc) PushReturn(r0 string, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, api.RepoName) (string, bool, error) {
+	f.PushHook(func(context.Context, api.RepoID) (string, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *GitserverRepoStoreGetLastSyncOutputFunc) nextHook() func(context.Context, api.RepoName) (string, bool, error) {
+func (f *GitserverRepoStoreGetLastSyncOutputFunc) nextHook() func(context.Context, api.RepoID) (string, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -37840,7 +37964,7 @@ type GitserverRepoStoreGetLastSyncOutputFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 api.RepoName
+	Arg1 api.RepoID
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 string
@@ -38303,15 +38427,15 @@ func (c GitserverRepoStoreListReposWithLastErrorFuncCall) Results() []interface{
 // LogCorruption method of the parent MockGitserverRepoStore instance is
 // invoked.
 type GitserverRepoStoreLogCorruptionFunc struct {
-	defaultHook func(context.Context, api.RepoName, string, string) error
-	hooks       []func(context.Context, api.RepoName, string, string) error
+	defaultHook func(context.Context, string, string, string) error
+	hooks       []func(context.Context, string, string, string) error
 	history     []GitserverRepoStoreLogCorruptionFuncCall
 	mutex       sync.Mutex
 }
 
 // LogCorruption delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) LogCorruption(v0 context.Context, v1 api.RepoName, v2 string, v3 string) error {
+func (m *MockGitserverRepoStore) LogCorruption(v0 context.Context, v1 string, v2 string, v3 string) error {
 	r0 := m.LogCorruptionFunc.nextHook()(v0, v1, v2, v3)
 	m.LogCorruptionFunc.appendCall(GitserverRepoStoreLogCorruptionFuncCall{v0, v1, v2, v3, r0})
 	return r0
@@ -38320,7 +38444,7 @@ func (m *MockGitserverRepoStore) LogCorruption(v0 context.Context, v1 api.RepoNa
 // SetDefaultHook sets function that is called when the LogCorruption method
 // of the parent MockGitserverRepoStore instance is invoked and the hook
 // queue is empty.
-func (f *GitserverRepoStoreLogCorruptionFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, string) error) {
+func (f *GitserverRepoStoreLogCorruptionFunc) SetDefaultHook(hook func(context.Context, string, string, string) error) {
 	f.defaultHook = hook
 }
 
@@ -38329,7 +38453,7 @@ func (f *GitserverRepoStoreLogCorruptionFunc) SetDefaultHook(hook func(context.C
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *GitserverRepoStoreLogCorruptionFunc) PushHook(hook func(context.Context, api.RepoName, string, string) error) {
+func (f *GitserverRepoStoreLogCorruptionFunc) PushHook(hook func(context.Context, string, string, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -38338,19 +38462,19 @@ func (f *GitserverRepoStoreLogCorruptionFunc) PushHook(hook func(context.Context
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverRepoStoreLogCorruptionFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, string, string) error {
+	f.SetDefaultHook(func(context.Context, string, string, string) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreLogCorruptionFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, api.RepoName, string, string) error {
+	f.PushHook(func(context.Context, string, string, string) error {
 		return r0
 	})
 }
 
-func (f *GitserverRepoStoreLogCorruptionFunc) nextHook() func(context.Context, api.RepoName, string, string) error {
+func (f *GitserverRepoStoreLogCorruptionFunc) nextHook() func(context.Context, string, string, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -38389,7 +38513,7 @@ type GitserverRepoStoreLogCorruptionFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 api.RepoName
+	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
@@ -38417,15 +38541,15 @@ func (c GitserverRepoStoreLogCorruptionFuncCall) Results() []interface{} {
 // SetCloneStatus method of the parent MockGitserverRepoStore instance is
 // invoked.
 type GitserverRepoStoreSetCloneStatusFunc struct {
-	defaultHook func(context.Context, api.RepoName, types.CloneStatus, string) error
-	hooks       []func(context.Context, api.RepoName, types.CloneStatus, string) error
+	defaultHook func(context.Context, string, types.CloneStatus, string) error
+	hooks       []func(context.Context, string, types.CloneStatus, string) error
 	history     []GitserverRepoStoreSetCloneStatusFuncCall
 	mutex       sync.Mutex
 }
 
 // SetCloneStatus delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) SetCloneStatus(v0 context.Context, v1 api.RepoName, v2 types.CloneStatus, v3 string) error {
+func (m *MockGitserverRepoStore) SetCloneStatus(v0 context.Context, v1 string, v2 types.CloneStatus, v3 string) error {
 	r0 := m.SetCloneStatusFunc.nextHook()(v0, v1, v2, v3)
 	m.SetCloneStatusFunc.appendCall(GitserverRepoStoreSetCloneStatusFuncCall{v0, v1, v2, v3, r0})
 	return r0
@@ -38434,7 +38558,7 @@ func (m *MockGitserverRepoStore) SetCloneStatus(v0 context.Context, v1 api.RepoN
 // SetDefaultHook sets function that is called when the SetCloneStatus
 // method of the parent MockGitserverRepoStore instance is invoked and the
 // hook queue is empty.
-func (f *GitserverRepoStoreSetCloneStatusFunc) SetDefaultHook(hook func(context.Context, api.RepoName, types.CloneStatus, string) error) {
+func (f *GitserverRepoStoreSetCloneStatusFunc) SetDefaultHook(hook func(context.Context, string, types.CloneStatus, string) error) {
 	f.defaultHook = hook
 }
 
@@ -38443,7 +38567,7 @@ func (f *GitserverRepoStoreSetCloneStatusFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *GitserverRepoStoreSetCloneStatusFunc) PushHook(hook func(context.Context, api.RepoName, types.CloneStatus, string) error) {
+func (f *GitserverRepoStoreSetCloneStatusFunc) PushHook(hook func(context.Context, string, types.CloneStatus, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -38452,19 +38576,19 @@ func (f *GitserverRepoStoreSetCloneStatusFunc) PushHook(hook func(context.Contex
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverRepoStoreSetCloneStatusFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, types.CloneStatus, string) error {
+	f.SetDefaultHook(func(context.Context, string, types.CloneStatus, string) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreSetCloneStatusFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, api.RepoName, types.CloneStatus, string) error {
+	f.PushHook(func(context.Context, string, types.CloneStatus, string) error {
 		return r0
 	})
 }
 
-func (f *GitserverRepoStoreSetCloneStatusFunc) nextHook() func(context.Context, api.RepoName, types.CloneStatus, string) error {
+func (f *GitserverRepoStoreSetCloneStatusFunc) nextHook() func(context.Context, string, types.CloneStatus, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -38503,7 +38627,7 @@ type GitserverRepoStoreSetCloneStatusFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 api.RepoName
+	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 types.CloneStatus
@@ -38531,15 +38655,15 @@ func (c GitserverRepoStoreSetCloneStatusFuncCall) Results() []interface{} {
 // SetCloningProgress method of the parent MockGitserverRepoStore instance
 // is invoked.
 type GitserverRepoStoreSetCloningProgressFunc struct {
-	defaultHook func(context.Context, api.RepoName, string) error
-	hooks       []func(context.Context, api.RepoName, string) error
+	defaultHook func(context.Context, string, string) error
+	hooks       []func(context.Context, string, string) error
 	history     []GitserverRepoStoreSetCloningProgressFuncCall
 	mutex       sync.Mutex
 }
 
 // SetCloningProgress delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) SetCloningProgress(v0 context.Context, v1 api.RepoName, v2 string) error {
+func (m *MockGitserverRepoStore) SetCloningProgress(v0 context.Context, v1 string, v2 string) error {
 	r0 := m.SetCloningProgressFunc.nextHook()(v0, v1, v2)
 	m.SetCloningProgressFunc.appendCall(GitserverRepoStoreSetCloningProgressFuncCall{v0, v1, v2, r0})
 	return r0
@@ -38548,7 +38672,7 @@ func (m *MockGitserverRepoStore) SetCloningProgress(v0 context.Context, v1 api.R
 // SetDefaultHook sets function that is called when the SetCloningProgress
 // method of the parent MockGitserverRepoStore instance is invoked and the
 // hook queue is empty.
-func (f *GitserverRepoStoreSetCloningProgressFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string) error) {
+func (f *GitserverRepoStoreSetCloningProgressFunc) SetDefaultHook(hook func(context.Context, string, string) error) {
 	f.defaultHook = hook
 }
 
@@ -38557,7 +38681,7 @@ func (f *GitserverRepoStoreSetCloningProgressFunc) SetDefaultHook(hook func(cont
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *GitserverRepoStoreSetCloningProgressFunc) PushHook(hook func(context.Context, api.RepoName, string) error) {
+func (f *GitserverRepoStoreSetCloningProgressFunc) PushHook(hook func(context.Context, string, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -38566,19 +38690,19 @@ func (f *GitserverRepoStoreSetCloningProgressFunc) PushHook(hook func(context.Co
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverRepoStoreSetCloningProgressFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, string) error {
+	f.SetDefaultHook(func(context.Context, string, string) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreSetCloningProgressFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, api.RepoName, string) error {
+	f.PushHook(func(context.Context, string, string) error {
 		return r0
 	})
 }
 
-func (f *GitserverRepoStoreSetCloningProgressFunc) nextHook() func(context.Context, api.RepoName, string) error {
+func (f *GitserverRepoStoreSetCloningProgressFunc) nextHook() func(context.Context, string, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -38618,7 +38742,7 @@ type GitserverRepoStoreSetCloningProgressFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 api.RepoName
+	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
@@ -38643,15 +38767,15 @@ func (c GitserverRepoStoreSetCloningProgressFuncCall) Results() []interface{} {
 // SetLastError method of the parent MockGitserverRepoStore instance is
 // invoked.
 type GitserverRepoStoreSetLastErrorFunc struct {
-	defaultHook func(context.Context, api.RepoName, string, string) error
-	hooks       []func(context.Context, api.RepoName, string, string) error
+	defaultHook func(context.Context, string, string, string) error
+	hooks       []func(context.Context, string, string, string) error
 	history     []GitserverRepoStoreSetLastErrorFuncCall
 	mutex       sync.Mutex
 }
 
 // SetLastError delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) SetLastError(v0 context.Context, v1 api.RepoName, v2 string, v3 string) error {
+func (m *MockGitserverRepoStore) SetLastError(v0 context.Context, v1 string, v2 string, v3 string) error {
 	r0 := m.SetLastErrorFunc.nextHook()(v0, v1, v2, v3)
 	m.SetLastErrorFunc.appendCall(GitserverRepoStoreSetLastErrorFuncCall{v0, v1, v2, v3, r0})
 	return r0
@@ -38660,7 +38784,7 @@ func (m *MockGitserverRepoStore) SetLastError(v0 context.Context, v1 api.RepoNam
 // SetDefaultHook sets function that is called when the SetLastError method
 // of the parent MockGitserverRepoStore instance is invoked and the hook
 // queue is empty.
-func (f *GitserverRepoStoreSetLastErrorFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, string) error) {
+func (f *GitserverRepoStoreSetLastErrorFunc) SetDefaultHook(hook func(context.Context, string, string, string) error) {
 	f.defaultHook = hook
 }
 
@@ -38668,7 +38792,7 @@ func (f *GitserverRepoStoreSetLastErrorFunc) SetDefaultHook(hook func(context.Co
 // SetLastError method of the parent MockGitserverRepoStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *GitserverRepoStoreSetLastErrorFunc) PushHook(hook func(context.Context, api.RepoName, string, string) error) {
+func (f *GitserverRepoStoreSetLastErrorFunc) PushHook(hook func(context.Context, string, string, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -38677,19 +38801,19 @@ func (f *GitserverRepoStoreSetLastErrorFunc) PushHook(hook func(context.Context,
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverRepoStoreSetLastErrorFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, string, string) error {
+	f.SetDefaultHook(func(context.Context, string, string, string) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreSetLastErrorFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, api.RepoName, string, string) error {
+	f.PushHook(func(context.Context, string, string, string) error {
 		return r0
 	})
 }
 
-func (f *GitserverRepoStoreSetLastErrorFunc) nextHook() func(context.Context, api.RepoName, string, string) error {
+func (f *GitserverRepoStoreSetLastErrorFunc) nextHook() func(context.Context, string, string, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -38728,7 +38852,7 @@ type GitserverRepoStoreSetLastErrorFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 api.RepoName
+	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
@@ -38756,15 +38880,15 @@ func (c GitserverRepoStoreSetLastErrorFuncCall) Results() []interface{} {
 // SetLastFetched method of the parent MockGitserverRepoStore instance is
 // invoked.
 type GitserverRepoStoreSetLastFetchedFunc struct {
-	defaultHook func(context.Context, api.RepoName, database.GitserverFetchData) error
-	hooks       []func(context.Context, api.RepoName, database.GitserverFetchData) error
+	defaultHook func(context.Context, string, database.GitserverFetchData) error
+	hooks       []func(context.Context, string, database.GitserverFetchData) error
 	history     []GitserverRepoStoreSetLastFetchedFuncCall
 	mutex       sync.Mutex
 }
 
 // SetLastFetched delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) SetLastFetched(v0 context.Context, v1 api.RepoName, v2 database.GitserverFetchData) error {
+func (m *MockGitserverRepoStore) SetLastFetched(v0 context.Context, v1 string, v2 database.GitserverFetchData) error {
 	r0 := m.SetLastFetchedFunc.nextHook()(v0, v1, v2)
 	m.SetLastFetchedFunc.appendCall(GitserverRepoStoreSetLastFetchedFuncCall{v0, v1, v2, r0})
 	return r0
@@ -38773,7 +38897,7 @@ func (m *MockGitserverRepoStore) SetLastFetched(v0 context.Context, v1 api.RepoN
 // SetDefaultHook sets function that is called when the SetLastFetched
 // method of the parent MockGitserverRepoStore instance is invoked and the
 // hook queue is empty.
-func (f *GitserverRepoStoreSetLastFetchedFunc) SetDefaultHook(hook func(context.Context, api.RepoName, database.GitserverFetchData) error) {
+func (f *GitserverRepoStoreSetLastFetchedFunc) SetDefaultHook(hook func(context.Context, string, database.GitserverFetchData) error) {
 	f.defaultHook = hook
 }
 
@@ -38782,7 +38906,7 @@ func (f *GitserverRepoStoreSetLastFetchedFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *GitserverRepoStoreSetLastFetchedFunc) PushHook(hook func(context.Context, api.RepoName, database.GitserverFetchData) error) {
+func (f *GitserverRepoStoreSetLastFetchedFunc) PushHook(hook func(context.Context, string, database.GitserverFetchData) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -38791,19 +38915,19 @@ func (f *GitserverRepoStoreSetLastFetchedFunc) PushHook(hook func(context.Contex
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverRepoStoreSetLastFetchedFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, database.GitserverFetchData) error {
+	f.SetDefaultHook(func(context.Context, string, database.GitserverFetchData) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreSetLastFetchedFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, api.RepoName, database.GitserverFetchData) error {
+	f.PushHook(func(context.Context, string, database.GitserverFetchData) error {
 		return r0
 	})
 }
 
-func (f *GitserverRepoStoreSetLastFetchedFunc) nextHook() func(context.Context, api.RepoName, database.GitserverFetchData) error {
+func (f *GitserverRepoStoreSetLastFetchedFunc) nextHook() func(context.Context, string, database.GitserverFetchData) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -38842,7 +38966,7 @@ type GitserverRepoStoreSetLastFetchedFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 api.RepoName
+	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 database.GitserverFetchData
@@ -38867,15 +38991,15 @@ func (c GitserverRepoStoreSetLastFetchedFuncCall) Results() []interface{} {
 // SetLastOutput method of the parent MockGitserverRepoStore instance is
 // invoked.
 type GitserverRepoStoreSetLastOutputFunc struct {
-	defaultHook func(context.Context, api.RepoName, string) error
-	hooks       []func(context.Context, api.RepoName, string) error
+	defaultHook func(context.Context, string, string) error
+	hooks       []func(context.Context, string, string) error
 	history     []GitserverRepoStoreSetLastOutputFuncCall
 	mutex       sync.Mutex
 }
 
 // SetLastOutput delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) SetLastOutput(v0 context.Context, v1 api.RepoName, v2 string) error {
+func (m *MockGitserverRepoStore) SetLastOutput(v0 context.Context, v1 string, v2 string) error {
 	r0 := m.SetLastOutputFunc.nextHook()(v0, v1, v2)
 	m.SetLastOutputFunc.appendCall(GitserverRepoStoreSetLastOutputFuncCall{v0, v1, v2, r0})
 	return r0
@@ -38884,7 +39008,7 @@ func (m *MockGitserverRepoStore) SetLastOutput(v0 context.Context, v1 api.RepoNa
 // SetDefaultHook sets function that is called when the SetLastOutput method
 // of the parent MockGitserverRepoStore instance is invoked and the hook
 // queue is empty.
-func (f *GitserverRepoStoreSetLastOutputFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string) error) {
+func (f *GitserverRepoStoreSetLastOutputFunc) SetDefaultHook(hook func(context.Context, string, string) error) {
 	f.defaultHook = hook
 }
 
@@ -38893,7 +39017,7 @@ func (f *GitserverRepoStoreSetLastOutputFunc) SetDefaultHook(hook func(context.C
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *GitserverRepoStoreSetLastOutputFunc) PushHook(hook func(context.Context, api.RepoName, string) error) {
+func (f *GitserverRepoStoreSetLastOutputFunc) PushHook(hook func(context.Context, string, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -38902,19 +39026,19 @@ func (f *GitserverRepoStoreSetLastOutputFunc) PushHook(hook func(context.Context
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverRepoStoreSetLastOutputFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, string) error {
+	f.SetDefaultHook(func(context.Context, string, string) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreSetLastOutputFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, api.RepoName, string) error {
+	f.PushHook(func(context.Context, string, string) error {
 		return r0
 	})
 }
 
-func (f *GitserverRepoStoreSetLastOutputFunc) nextHook() func(context.Context, api.RepoName, string) error {
+func (f *GitserverRepoStoreSetLastOutputFunc) nextHook() func(context.Context, string, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -38953,7 +39077,7 @@ type GitserverRepoStoreSetLastOutputFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 api.RepoName
+	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
@@ -38978,15 +39102,15 @@ func (c GitserverRepoStoreSetLastOutputFuncCall) Results() []interface{} {
 // SetRepoSize method of the parent MockGitserverRepoStore instance is
 // invoked.
 type GitserverRepoStoreSetRepoSizeFunc struct {
-	defaultHook func(context.Context, api.RepoName, int64, string) error
-	hooks       []func(context.Context, api.RepoName, int64, string) error
+	defaultHook func(context.Context, string, int64, string) error
+	hooks       []func(context.Context, string, int64, string) error
 	history     []GitserverRepoStoreSetRepoSizeFuncCall
 	mutex       sync.Mutex
 }
 
 // SetRepoSize delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) SetRepoSize(v0 context.Context, v1 api.RepoName, v2 int64, v3 string) error {
+func (m *MockGitserverRepoStore) SetRepoSize(v0 context.Context, v1 string, v2 int64, v3 string) error {
 	r0 := m.SetRepoSizeFunc.nextHook()(v0, v1, v2, v3)
 	m.SetRepoSizeFunc.appendCall(GitserverRepoStoreSetRepoSizeFuncCall{v0, v1, v2, v3, r0})
 	return r0
@@ -38995,7 +39119,7 @@ func (m *MockGitserverRepoStore) SetRepoSize(v0 context.Context, v1 api.RepoName
 // SetDefaultHook sets function that is called when the SetRepoSize method
 // of the parent MockGitserverRepoStore instance is invoked and the hook
 // queue is empty.
-func (f *GitserverRepoStoreSetRepoSizeFunc) SetDefaultHook(hook func(context.Context, api.RepoName, int64, string) error) {
+func (f *GitserverRepoStoreSetRepoSizeFunc) SetDefaultHook(hook func(context.Context, string, int64, string) error) {
 	f.defaultHook = hook
 }
 
@@ -39003,7 +39127,7 @@ func (f *GitserverRepoStoreSetRepoSizeFunc) SetDefaultHook(hook func(context.Con
 // SetRepoSize method of the parent MockGitserverRepoStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *GitserverRepoStoreSetRepoSizeFunc) PushHook(hook func(context.Context, api.RepoName, int64, string) error) {
+func (f *GitserverRepoStoreSetRepoSizeFunc) PushHook(hook func(context.Context, string, int64, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -39012,19 +39136,19 @@ func (f *GitserverRepoStoreSetRepoSizeFunc) PushHook(hook func(context.Context, 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverRepoStoreSetRepoSizeFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, int64, string) error {
+	f.SetDefaultHook(func(context.Context, string, int64, string) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreSetRepoSizeFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, api.RepoName, int64, string) error {
+	f.PushHook(func(context.Context, string, int64, string) error {
 		return r0
 	})
 }
 
-func (f *GitserverRepoStoreSetRepoSizeFunc) nextHook() func(context.Context, api.RepoName, int64, string) error {
+func (f *GitserverRepoStoreSetRepoSizeFunc) nextHook() func(context.Context, string, int64, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -39063,7 +39187,7 @@ type GitserverRepoStoreSetRepoSizeFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 api.RepoName
+	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 int64
@@ -39312,15 +39436,15 @@ func (c GitserverRepoStoreUpdateFuncCall) Results() []interface{} {
 // UpdateRepoSizes method of the parent MockGitserverRepoStore instance is
 // invoked.
 type GitserverRepoStoreUpdateRepoSizesFunc struct {
-	defaultHook func(context.Context, string, map[api.RepoName]int64) (int, error)
-	hooks       []func(context.Context, string, map[api.RepoName]int64) (int, error)
+	defaultHook func(context.Context, string, map[string]int64) (int, error)
+	hooks       []func(context.Context, string, map[string]int64) (int, error)
 	history     []GitserverRepoStoreUpdateRepoSizesFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdateRepoSizes delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) UpdateRepoSizes(v0 context.Context, v1 string, v2 map[api.RepoName]int64) (int, error) {
+func (m *MockGitserverRepoStore) UpdateRepoSizes(v0 context.Context, v1 string, v2 map[string]int64) (int, error) {
 	r0, r1 := m.UpdateRepoSizesFunc.nextHook()(v0, v1, v2)
 	m.UpdateRepoSizesFunc.appendCall(GitserverRepoStoreUpdateRepoSizesFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -39329,7 +39453,7 @@ func (m *MockGitserverRepoStore) UpdateRepoSizes(v0 context.Context, v1 string, 
 // SetDefaultHook sets function that is called when the UpdateRepoSizes
 // method of the parent MockGitserverRepoStore instance is invoked and the
 // hook queue is empty.
-func (f *GitserverRepoStoreUpdateRepoSizesFunc) SetDefaultHook(hook func(context.Context, string, map[api.RepoName]int64) (int, error)) {
+func (f *GitserverRepoStoreUpdateRepoSizesFunc) SetDefaultHook(hook func(context.Context, string, map[string]int64) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -39338,7 +39462,7 @@ func (f *GitserverRepoStoreUpdateRepoSizesFunc) SetDefaultHook(hook func(context
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *GitserverRepoStoreUpdateRepoSizesFunc) PushHook(hook func(context.Context, string, map[api.RepoName]int64) (int, error)) {
+func (f *GitserverRepoStoreUpdateRepoSizesFunc) PushHook(hook func(context.Context, string, map[string]int64) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -39347,19 +39471,19 @@ func (f *GitserverRepoStoreUpdateRepoSizesFunc) PushHook(hook func(context.Conte
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverRepoStoreUpdateRepoSizesFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, map[api.RepoName]int64) (int, error) {
+	f.SetDefaultHook(func(context.Context, string, map[string]int64) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreUpdateRepoSizesFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, string, map[api.RepoName]int64) (int, error) {
+	f.PushHook(func(context.Context, string, map[string]int64) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverRepoStoreUpdateRepoSizesFunc) nextHook() func(context.Context, string, map[api.RepoName]int64) (int, error) {
+func (f *GitserverRepoStoreUpdateRepoSizesFunc) nextHook() func(context.Context, string, map[string]int64) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -39401,7 +39525,7 @@ type GitserverRepoStoreUpdateRepoSizesFuncCall struct {
 	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 map[api.RepoName]int64
+	Arg2 map[string]int64
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int

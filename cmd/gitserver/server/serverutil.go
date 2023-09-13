@@ -287,3 +287,12 @@ func hostnameMatch(shardID, addr string) bool {
 	next := addr[len(shardID)]
 	return next == '.' || next == ':'
 }
+
+// dirWithoutReposDir returns the dir to the repo as an absolute path without
+// the reposDir prefix.
+func dirWithoutReposDir(reposDir string, dir common.GitDir) string {
+	// Trim trailing path separators from ReposDir to avoid issues.
+	reposDir = strings.TrimSuffix(reposDir, string(os.PathSeparator))
+
+	return strings.TrimPrefix(reposDir, string(dir))
+}
