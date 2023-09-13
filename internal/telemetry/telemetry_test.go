@@ -31,13 +31,15 @@ func TestMakeRawEvent(t *testing.T) {
 				Action:  ActionExample,
 			},
 			expect: autogold.Expect(`{
-"name": "Example",
+"action": "exampleAction",
+"feature": "exampleFeature",
 "parameters": {},
 "source": {
-	"serverVersion": "0.0.0+dev"
+	"server": {
+		"version": "0.0.0+dev"
+	}
 },
-"timestamp": "2023-02-24T14:48:30Z",
-"user": {}
+"timestamp": "2023-02-24T14:48:30Z"
 }`),
 		},
 		{
@@ -48,15 +50,15 @@ func TestMakeRawEvent(t *testing.T) {
 				Action:  ActionExample,
 			},
 			expect: autogold.Expect(`{
-"name": "Example",
+"action": "exampleAction",
+"feature": "exampleFeature",
 "parameters": {},
 "source": {
-	"serverVersion": "0.0.0+dev"
+	"server": {
+		"version": "0.0.0+dev"
+	}
 },
-"timestamp": "2023-02-24T14:48:30Z",
-"user": {
-	"anonymousUserID": "1234"
-}
+"timestamp": "2023-02-24T14:48:30Z"
 }`),
 		},
 		{
@@ -80,29 +82,33 @@ func TestMakeRawEvent(t *testing.T) {
 				},
 			},
 			expect: autogold.Expect(`{
-"name": "Example",
+"action": "exampleAction",
+"feature": "exampleFeature",
 "parameters": {
 	"billingMetadata": {
-		"category": 5,
-		"product": 3
+		"category": "EXAMPLE",
+		"product": "EXAMPLE"
 	},
 	"metadata": {
-		"foobar": 3
+		"foobar": "3"
 	},
-	"privateMetadata": "{\"barbaz\":\"hello world!\"}"
+	"privateMetadata": {
+		"barbaz": "hello world!"
+	}
 },
 "source": {
-	"serverVersion": "0.0.0+dev"
+	"server": {
+		"version": "0.0.0+dev"
+	}
 },
-"timestamp": "2023-02-24T14:48:30Z",
-"user": {}
+"timestamp": "2023-02-24T14:48:30Z"
 }`),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			got := makeRawEvent(tc.ctx, staticTime, tc.event.Feature, tc.event.Action, tc.event.Parameters)
 
-			protodata, err := protojson.Marshal(&got)
+			protodata, err := protojson.Marshal(got)
 			require.NoError(t, err)
 
 			// Protojson output isn't stable by injecting randomized whitespace,
