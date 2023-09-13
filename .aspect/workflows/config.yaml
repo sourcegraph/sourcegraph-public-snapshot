@@ -1,0 +1,16 @@
+---
+tasks:
+    # Checks that the branch is current
+    branch_freshness:
+        # Rebase PR changes on main, to avoid churning the repository cache
+        update_strategy: rebase
+    # Checks that BUILD file content is up-to-date with sources
+    gazelle:
+    # Checks that all tests are passing
+    test:
+        collect_coverage: false
+        # These flags are guaranteed to come after those added by Rosetta,
+        # so we are sure to override them.
+        # Most flags belong in your .bazelrc file.
+        targets:
+            - //...
