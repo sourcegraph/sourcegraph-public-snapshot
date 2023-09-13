@@ -157,6 +157,22 @@ func getPrefix(id int64) string {
 	return fmt.Sprintf("%d-", id)
 }
 
+// discards output from br up until delim is read. If an error is encountered
+// it is returned. Note: often the error is io.EOF
+func discardUntil(br *bufio.Reader, delim byte) error {
+	// This function just wraps ReadSlice which will read until delim. If we
+	// get the error ErrBufferFull we didn't find delim since we need to read
+	// more, so we just try again. For every other error (or nil) we can
+	// return it.
+	for {
+		_, err := br.ReadSlice(delim)
+		if err != bufio.ErrBufferFull {
+			return err
+		}
+	}
+	return nil
+}
+
 // CopyBlobs copies all the blobs associated with a search job to the given writer.
 func (s *Service) CopyBlobs(ctx context.Context, w io.Writer, id int64) error {
 	// 🚨 SECURITY: only someone with access to the job may copy the blobs
@@ -170,6 +186,8 @@ func (s *Service) CopyBlobs(ctx context.Context, w io.Writer, id int64) error {
 		return err
 	}
 
+	// keep a single bufio.Reader so we can reuse its buffer.
+	var br bufio.Reader
 	copyBlob := func(key string, skipHeader bool) error {
 		rc, err := s.uploadStore.Get(ctx, key)
 		if err != nil {
@@ -178,24 +196,22 @@ func (s *Service) CopyBlobs(ctx context.Context, w io.Writer, id int64) error {
 		}
 		defer rc.Close()
 
-		scanner := bufio.NewScanner(rc)
+		br.Reset(rc)
 
 		// skip header line
-		if skipHeader && scanner.Scan() {
-		}
-
-		for scanner.Scan() {
-			_, err = w.Write(scanner.Bytes())
-			if err != nil {
-				return err
-			}
-			_, err = w.Write([]byte("\n"))
-			if err != nil {
+		if skipHeader {
+			err := discardUntil(&br, '\n')
+			if err == io.EOF {
+				// reached end of file before finding the newline. Write
+				// nothing
+				return nil
+			} else if err != nil {
 				return err
 			}
 		}
 
-		return scanner.Err()
+		_, err = br.WriteTo(w)
+		return err
 	}
 
 	// For the first blob we want the header, for the rest we don't
