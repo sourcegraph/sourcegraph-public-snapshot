@@ -64,9 +64,10 @@ var AlertFuncs []func(AlertFuncArgs) []*Alert
 // Site.alerts value. They allow the functions to customize the returned alerts based on the
 // identity of the viewer (without needing to query for that on their own, which would be slow).
 type AlertFuncArgs struct {
-	IsAuthenticated     bool             // whether the viewer is authenticated
-	IsSiteAdmin         bool             // whether the viewer is a site admin
-	ViewerFinalSettings *schema.Settings // the viewer's final user/org/global settings
+	IsAuthenticated      bool             // whether the viewer is authenticated
+	IsSiteAdmin          bool             // whether the viewer is a site admin
+	ViewerFinalSettings  *schema.Settings // the viewer's final user/org/global settings
+	GitserverSystemsInfo []gitserver.SystemInfo
 }
 
 func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
@@ -75,10 +76,18 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 		return nil, err
 	}
 
+	si, err := r.gitserverClient.SystemsInfo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	args := AlertFuncArgs{
 		IsAuthenticated:     actor.FromContext(ctx).IsAuthenticated(),
 		IsSiteAdmin:         auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil,
 		ViewerFinalSettings: settings,
+
+		// GitserverSystemsInfo retrieves disk information from all gitserver instances.
+		GitserverSystemsInfo: si,
 	}
 
 	var alerts []*Alert
@@ -104,12 +113,6 @@ func init() {
 		return problems
 	})
 
-	// AlertFuncs = append(AlertFuncs, func(afa AlertFuncArgs) []*Alert {
-	// 	return []*Alert{
-
-	// 	}
-	// })
-
 	// Warn if email sending is not configured.
 	AlertFuncs = append(AlertFuncs, emailSendingNotConfiguredAlert)
 
@@ -124,6 +127,8 @@ func init() {
 	AlertFuncs = append(AlertFuncs, updateAvailableAlert)
 
 	AlertFuncs = append(AlertFuncs, storageLimitReachedAlert)
+
+	AlertFuncs = append(AlertFuncs, gitserverDiskInfoThresholdAlert)
 
 	// Notify admins if critical alerts are firing, if Prometheus is configured.
 	prom, err := srcprometheus.NewClient(srcprometheus.PrometheusURL)
@@ -482,17 +487,24 @@ func codyGatewayUsageAlert(args AlertFuncArgs) []*Alert {
 	return alerts
 }
 
-func gitserverDiskInfoThresholdAlert(gc gitserver.Client) func(args AlertFuncArgs) []*Alert {
-	return func(args AlertFuncArgs) []*Alert {
-		// We only show this alert to site admins.
-		if !args.IsSiteAdmin {
-			return nil
-		}
-
-		var alerts []*Alert
-
-		return alerts
+func gitserverDiskInfoThresholdAlert(args AlertFuncArgs) []*Alert {
+	// We only show this alert to site admins.
+	if !args.IsSiteAdmin {
+		return nil
 	}
+
+	var alerts []*Alert
+
+	for _, s := range args.GitserverSystemsInfo {
+		if s.PercentUsed >= 90 {
+			alerts = append(alerts, &Alert{
+				TypeValue:    AlertTypeWarning,
+				MessageValue: fmt.Sprintf("The disk usage on gitserver %q is over 90%% (%.2f%% used). Free up disk space to avoid potential issues.", s.Address, s.PercentUsed),
+			})
+		}
+	}
+
+	return alerts
 }
 
 func pluralize(v int, singular, plural string) string {

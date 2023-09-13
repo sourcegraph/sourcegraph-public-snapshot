@@ -20,9 +20,9 @@ func getDiskInfo(dir string) (*proto.DiskInfoResponse, error) {
 		return nil, err
 	}
 	return &proto.DiskInfoResponse{
-		TotalSpace: usage.Size(),
-		FreeSpace:  usage.Free(),
-		// PercentUsed: usage.PercentUsed(),
+		TotalSpace:  usage.Size(),
+		FreeSpace:   usage.Free(),
+		PercentUsed: usage.PercentUsed(),
 	}, nil
 }
 
