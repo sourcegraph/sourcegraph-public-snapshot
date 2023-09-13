@@ -28,6 +28,11 @@ object CodyEditorUtil {
     const val VIM_EXIT_INSERT_MODE_ACTION = "VimInsertExitModeAction"
 
     private const val VIM_MOTION_COMMAND = "Motion"
+    private const val UP_COMMAND = "Up"
+    private const val DOWN_COMMAND = "Down"
+    private const val LEFT_COMMAND = "Left"
+    private const val RIGHT_COMMAND = "Right"
+    private const val MOVE_CARET_COMMAND = "Move Caret"
 
     @JvmStatic
     private val KEY_EDITOR_SUPPORTED = Key.create<Boolean>("cody.editorSupported")
@@ -149,6 +154,11 @@ object CodyEditorUtil {
     @JvmStatic
     fun isCommandExcluded(command: String?): Boolean {
         return (command.isNullOrEmpty()
-                || command.contains(VIM_MOTION_COMMAND))
+                || command.contains(VIM_MOTION_COMMAND)
+                || command == UP_COMMAND
+                || command == DOWN_COMMAND
+                || command == LEFT_COMMAND
+                || command == RIGHT_COMMAND
+                || command.contains(MOVE_CARET_COMMAND))
     }
 }
