@@ -24,8 +24,8 @@ class CodyConfigurable(val project: Project) :
     private val codyApplicationSettings = service<CodyApplicationSettings>()
     override fun createPanel(): DialogPanel {
         dialogPanel = panel {
+            lateinit var enableCodyCheckbox: Cell<JBCheckBox>
             group("Cody AI") {
-                lateinit var enableCodyCheckbox: Cell<JBCheckBox>
                 row {
                     enableCodyCheckbox =
                         checkBox("Enable Cody")
@@ -45,33 +45,34 @@ class CodyConfigurable(val project: Project) :
                         .enabledIf(enableCodyCheckbox.selected)
                         .bindSelected(settingsModel::isCodyVerboseDebugEnabled)
                 }
-                group("Autocomplete") {
-                    row {
-                        val enableCustomAutocompleteColor =
-                            checkBox("Custom color for completions")
-                                .enabledIf(enableCodyCheckbox.selected)
-                                .bindSelected(settingsModel::isCustomAutocompleteColorEnabled)
-                        colorPanel()
-                            .bind(
-                                ColorPanel::getSelectedColor,
-                                ColorPanel::setSelectedColor,
-                                settingsModel::customAutocompleteColor.toMutableProperty())
-                            .visibleIf(enableCustomAutocompleteColor.selected)
-                    }
-                    row {
-                        checkBox("Automatically trigger completions")
+            }
+
+            group("Autocomplete") {
+                row {
+                    val enableCustomAutocompleteColor =
+                        checkBox("Custom color for completions")
                             .enabledIf(enableCodyCheckbox.selected)
-                            .bindSelected(settingsModel::isCodyAutocompleteEnabled)
-                    }
-                    row {
-                        autocompleteLanguageTable()
-                            .horizontalAlign(HorizontalAlign.FILL)
-                            .bind(
-                                AutoCompleteLanguageTableWrapper::getBlacklistedLanguageIds,
-                                AutoCompleteLanguageTableWrapper::setBlacklistedLanguageIds,
-                                settingsModel::blacklistedLanguageIds.toMutableProperty()
-                            )
-                    }
+                            .bindSelected(settingsModel::isCustomAutocompleteColorEnabled)
+                    colorPanel()
+                        .bind(
+                            ColorPanel::getSelectedColor,
+                            ColorPanel::setSelectedColor,
+                            settingsModel::customAutocompleteColor.toMutableProperty())
+                        .visibleIf(enableCustomAutocompleteColor.selected)
+                }
+                row {
+                    checkBox("Automatically trigger completions")
+                        .enabledIf(enableCodyCheckbox.selected)
+                        .bindSelected(settingsModel::isCodyAutocompleteEnabled)
+                }
+                row {
+                    autocompleteLanguageTable()
+                        .horizontalAlign(HorizontalAlign.FILL)
+                        .bind(
+                            AutoCompleteLanguageTableWrapper::getBlacklistedLanguageIds,
+                            AutoCompleteLanguageTableWrapper::setBlacklistedLanguageIds,
+                            settingsModel::blacklistedLanguageIds.toMutableProperty()
+                        )
                 }
             }
         }
