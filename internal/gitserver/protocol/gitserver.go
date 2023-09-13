@@ -254,6 +254,9 @@ func SignatureFromProto(p *proto.CommitMatch_Signature) Signature {
 type ExecRequest struct {
 	Repo api.RepoName `json:"repo"`
 
+	// ensureRevision is the revision to ensure is present in the repository before running the git command.
+	//
+	// 🚨Warning🚨: EnsureRevision might not be a utf 8 encoded string.
 	EnsureRevision string   `json:"ensureRevision"`
 	Args           []string `json:"args"`
 	Stdin          []byte   `json:"stdin,omitempty"`
