@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -177,4 +179,61 @@ func TestObservabilityActiveAlertsAlert(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_gitserverDiskInfoThresholdAlert(t *testing.T) {
+	t.Run("no alert for non-admin", func(t *testing.T) {
+		args := AlertFuncArgs{
+			IsSiteAdmin: false,
+		}
+
+		alerts := gitserverDiskInfoThresholdAlert(args)
+
+		require.Len(t, alerts, 0)
+	})
+
+	t.Run("alert when usage exceeds threshold", func(t *testing.T) {
+		args := AlertFuncArgs{
+			IsSiteAdmin: true,
+			GitserverSystemsInfo: []gitserver.SystemInfo{
+				{Address: "gitserver1", PercentUsed: 95},
+			},
+		}
+
+		wantAlerts := []*Alert{
+			{
+				TypeValue:    AlertTypeWarning,
+				MessageValue: "The disk usage on gitserver \"gitserver1\" is over 90% (95.00% used). Free up disk space to avoid potential issues.",
+			},
+		}
+
+		alerts := gitserverDiskInfoThresholdAlert(args)
+
+		require.Equal(t, wantAlerts, alerts)
+	})
+
+	t.Run("multiple alerts", func(t *testing.T) {
+		args := AlertFuncArgs{
+			IsSiteAdmin: true,
+			GitserverSystemsInfo: []gitserver.SystemInfo{
+				{Address: "gitserver1", PercentUsed: 95},
+				{Address: "gitserver2", PercentUsed: 92},
+			},
+		}
+
+		wantAlerts := []*Alert{
+			{
+				TypeValue:    AlertTypeWarning,
+				MessageValue: "The disk usage on gitserver \"gitserver1\" is over 90% (95.00% used). Free up disk space to avoid potential issues.",
+			},
+			{
+				TypeValue:    AlertTypeWarning,
+				MessageValue: "The disk usage on gitserver \"gitserver2\" is over 90% (92.00% used). Free up disk space to avoid potential issues.",
+			},
+		}
+
+		alerts := gitserverDiskInfoThresholdAlert(args)
+
+		require.Equal(t, wantAlerts, alerts)
+	})
 }
