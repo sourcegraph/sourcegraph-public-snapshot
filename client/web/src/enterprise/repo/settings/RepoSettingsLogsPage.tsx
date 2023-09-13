@@ -1,6 +1,7 @@
 import { type FC, useCallback, useEffect, useState } from 'react'
 
-import { mdiCalendar, mdiClockAlertOutline } from '@mdi/js'
+import { mdiCalendar, mdiClockAlertOutline, mdiChevronDown, mdiChevronRight } from '@mdi/js'
+import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import { useSearchParams } from 'react-router-dom'
 
@@ -18,6 +19,7 @@ import {
     LoadingSpinner,
     ErrorAlert,
     Button,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { LogOutput } from '../../../components/LogOutput'
@@ -135,6 +137,15 @@ interface LastExecutedCommandNodeProps {
 }
 
 const LastExecutedCommandNode: FC<LastExecutedCommandNodeProps> = ({ command, mirrorInfo }) => {
+    const [isExpanded, setIsExpanded] = useState(false)
+    const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
+        event => {
+            event.preventDefault()
+            setIsExpanded(!isExpanded)
+        },
+        [isExpanded]
+    )
+
     const startDate = parseISO(command.start)
     const duration = formatDuration(command.duration)
 
@@ -152,6 +163,14 @@ const LastExecutedCommandNode: FC<LastExecutedCommandNodeProps> = ({ command, mi
                 <div className={styles.commandNodeDurationGroup}>
                     <Icon aria-hidden={true} svgPath={mdiClockAlertOutline} className="mr-1" />
                     <Text className="mb-0">Ran in {duration}</Text>
+                    <Tooltip content={command.isSuccess ? 'Command executed successfully' : 'Command failed'}>
+                        <div
+                            className={classNames(styles.commandNodeStatus, {
+                                [styles.commandNodeSuccessStatus]: command.isSuccess,
+                                [styles.commandNodeErrorStatus]: !command.isSuccess,
+                            })}
+                        />
+                    </Tooltip>
                 </div>
             </div>
 
@@ -165,6 +184,23 @@ const LastExecutedCommandNode: FC<LastExecutedCommandNodeProps> = ({ command, mi
                     <small className="mt-2 mb-0">
                         <span className="font-weight-bold">Path:</span> {command.dir}
                     </small>
+                )}
+                {command.output && (
+                    <div className="mt-2">
+                        <Button
+                            variant="icon"
+                            aria-label={isExpanded ? 'Hide output' : 'Show output'}
+                            onClick={toggleIsExpanded}
+                        >
+                            <Icon
+                                aria-hidden={true}
+                                svgPath={isExpanded ? mdiChevronDown : mdiChevronRight}
+                                className={styles.commandNodeExpandBtn}
+                            />
+                            <small className="font-weight-bold">Output</small>
+                        </Button>
+                        {isExpanded && <LogOutput text={command.output} logDescription="Output:" className="mt-1" />}
+                    </div>
                 )}
             </div>
         </div>

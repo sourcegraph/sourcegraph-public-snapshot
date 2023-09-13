@@ -30,5 +30,27 @@
     &__footer {
         display: flex;
         flex-direction: column;
+        margin-bottom: 0.5rem;
+    }
+
+    &__expand-btn {
+        // We add this negative margin because the SVG icon has some extra padding created by the viewbox
+        // which makes it indented a bit. This negative margin brings it back in line.
+        margin-left: -5px;
+    }
+
+    &__status {
+        width: 1.5rem;
+        height: 1.5rem;
+        margin-left: 0.5rem;
+        border-radius: var(--border-radius);
+    }
+
+    &__success-status {
+        background-color: var(--success);
+    }
+
+    &__error-status {
+        background-color: var(--danger);
     }
 }

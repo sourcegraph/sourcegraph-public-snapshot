@@ -78,6 +78,8 @@ export const REPOSITORY_RECORDED_COMMANDS_QUERY = gql`
         duration
         command
         dir
+        output
+        isSuccess
     }
 `
 

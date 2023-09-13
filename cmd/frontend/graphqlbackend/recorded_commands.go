@@ -84,6 +84,8 @@ type RecordedCommandResolver interface {
 	Command() string
 	Dir() string
 	Path() string
+	Output() string
+	IsSuccess() bool
 }
 
 type recordedCommandResolver struct {
@@ -115,4 +117,12 @@ func (r *recordedCommandResolver) Dir() string {
 
 func (r *recordedCommandResolver) Path() string {
 	return r.command.Path
+}
+
+func (r *recordedCommandResolver) Output() string {
+	return r.command.Output
+}
+
+func (r *recordedCommandResolver) IsSuccess() bool {
+	return r.command.IsSuccess
 }
