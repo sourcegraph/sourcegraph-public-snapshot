@@ -330,7 +330,9 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 
                     {props.authenticatedUser?.siteAdmin && !isSourcegraphApp && (
                         <>
-                            <OnboardingChecklist />
+                            <NavAction>
+                                <OnboardingChecklist />
+                            </NavAction>
                             <NavAction>
                                 <StatusMessagesNavItem isSourcegraphApp={isSourcegraphApp} />
                             </NavAction>
