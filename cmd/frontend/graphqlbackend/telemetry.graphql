@@ -12,10 +12,16 @@ Mutations for recording events from clients.
 type TelemetryMutation {
     """
     Record a single telemetry event.
+
+    ❗ Do not use this directly when recording events in-product - use the
+    @sourcegraph/telemetry package instead, or equivalent, instead.
     """
     recordEvent(event: TelemetryEventInput!): EmptyResponse
     """
     Record a batch of telemetry events.
+
+    ❗ Do not use this directly when recording events in-product - use the
+    @sourcegraph/telemetry package, or equivalent, instead.
     """
     recordEvents(events: [TelemetryEventInput!]!): EmptyResponse
 }
@@ -25,12 +31,20 @@ Properties comprising a telemetry V2 event that can be reported by a client.
 """
 input TelemetryEventInput {
     """
-    Name of the event.
+    Feature associated with the event in camelCase, e.g. 'myFeature'.
 
-    Event names must come from a static set of values in libraries - it is left
-    as a string in the API to allow some flexibility.
+    Feature names must come from a static set of values in libraries - it is
+    left as a string in the API to allow some flexibility.
     """
-    name: String!
+    feature: String!
+
+    """
+    Action associated with the event in camelCase, e.g. 'pageView'.
+
+    Action names must come from a static set of values in libraries - it is
+    left as a string in the API to allow some flexibility.
+    """
+    action: String!
 
     """
     Information about where this event came from.

@@ -21,7 +21,8 @@ type RecordEventArgs struct{ Event TelemetryEventInput }
 type RecordEventsArgs struct{ Events []TelemetryEventInput }
 
 type TelemetryEventInput struct {
-	Name              string                                `json:"name"`
+	Feature           string                                `json:"feature"`
+	Action            string                                `json:"action"`
 	Source            TelemetryEventSourceInput             `json:"source"`
 	Parameters        TelemetryEventParametersInput         `json:"parameters"`
 	User              *TelemetryEventUser                   `json:"user,omitempty"`
