@@ -755,6 +755,14 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 
 		var imgs []string
 		for _, image := range []string{publishImage, devImage} {
+			// TODO RFC 795
+			if c.RunType.Is(runtype.WIPRelease) {
+				if image != publishImage {
+					imgs = append(imgs, fmt.Sprintf("%s:wip_insiders", image))
+				}
+				continue
+			}
+
 			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest) {
 				imgs = append(imgs, fmt.Sprintf("%s:%s", image, c.Version))
 			}
@@ -765,10 +773,6 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 
 			if c.RunType.Is(runtype.MainBranch) {
 				imgs = append(imgs, fmt.Sprintf("%s:insiders", image))
-			}
-
-			if image != publishImage && c.RunType.Is(runtype.WIPRelease) {
-				imgs = append(imgs, fmt.Sprintf("%s:wip_insiders", image))
 			}
 		}
 
