@@ -11,13 +11,6 @@ Mutations for recording events from clients.
 """
 type TelemetryMutation {
     """
-    Record a single telemetry event.
-
-    ❗ Do not use this directly when recording events in-product - use the
-    @sourcegraph/telemetry package instead, or equivalent, instead.
-    """
-    recordEvent(event: TelemetryEventInput!): EmptyResponse
-    """
     Record a batch of telemetry events.
 
     ❗ Do not use this directly when recording events in-product - use the

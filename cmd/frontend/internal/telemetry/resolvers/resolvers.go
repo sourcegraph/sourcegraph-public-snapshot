@@ -1,4 +1,4 @@
-package resolver
+package resolvers
 
 import (
 	"context"
@@ -22,10 +22,6 @@ func New(logger log.Logger, db database.DB) graphqlbackend.TelemetryResolver {
 }
 
 var _ graphqlbackend.TelemetryResolver = &Resolver{}
-
-func (r *Resolver) RecordEvent(ctx context.Context, args *graphqlbackend.RecordEventArgs) (*graphqlbackend.EmptyResponse, error) {
-	return nil, errors.New("not implemented")
-}
 
 func (r *Resolver) RecordEvents(ctx context.Context, args *graphqlbackend.RecordEventsArgs) (*graphqlbackend.EmptyResponse, error) {
 	return nil, errors.New("not implemented")

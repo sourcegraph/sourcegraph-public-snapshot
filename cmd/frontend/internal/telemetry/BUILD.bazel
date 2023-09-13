@@ -12,6 +12,5 @@ go_library(
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/observation",
-        "//internal/telemetry/resolver",
     ],
 )

@@ -13,7 +13,6 @@ func (t *TelemetryRootResolver) Telemetry() TelemetryResolver { return t.Resolve
 
 type TelemetryResolver interface {
 	// Mutations
-	RecordEvent(ctx context.Context, args *RecordEventArgs) (*EmptyResponse, error)
 	RecordEvents(ctx context.Context, args *RecordEventsArgs) (*EmptyResponse, error)
 }
 

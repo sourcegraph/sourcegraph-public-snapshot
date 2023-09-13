@@ -9,7 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry/resolver"
+
+	resolvers "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/telemetry/resolvers"
 )
 
 // Init initializes the given enterpriseServices to include the required resolvers for telemetry.
@@ -22,7 +23,7 @@ func Init(
 	enterpriseServices *enterprise.Services,
 ) error {
 	enterpriseServices.TelemetryRootResolver = &graphqlbackend.TelemetryRootResolver{
-		Resolver: resolver.New(
+		Resolver: resolvers.New(
 			observationCtx.Logger.Scoped("telemetry", "Telemetry V2 resolver"),
 			db),
 	}
