@@ -68,7 +68,7 @@ func NewGlobalRateLimiter(logger log.Logger, bucketName string) GlobalLimiter {
 	logger = logger.Scoped(fmt.Sprintf("GlobalRateLimiter.%s", bucketName), "")
 	pool, ok := kv().Pool()
 	if !ok {
-		rl := -1 // Documented default.
+		rl := -1 // Documented default in site-config JSON schema. -1 means infinite.
 		if rate := conf.Get().DefaultRateLimit; rate != nil {
 			rl = *rate
 		}
@@ -227,21 +227,19 @@ const (
 
 func invokeScriptWithRetries(ctx context.Context, script *redis.Script, c redis.Conn, keysAndArgs ...any) (result any, err error) {
 	for i := 0; i < scriptInvocationMaxRetries; i++ {
-		if i != 0 {
-			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			case <-time.After(time.Duration(rand.Intn(scriptInvocationMaxRetryDelayMs-scriptInvocationMinRetryDelayMs)+scriptInvocationMinRetryDelayMs) * time.Millisecond):
-				// Continue.
-			}
-		}
-		result, err = script.DoContext(ctx,
-			c,
-			keysAndArgs...,
-		)
-		// If no error, return the result.
+		result, err = script.DoContext(ctx, c, keysAndArgs...)
 		if err == nil {
+			// If no error, return the result.
 			return result, nil
+		}
+
+		delayMs := rand.Intn(scriptInvocationMaxRetryDelayMs-scriptInvocationMinRetryDelayMs) + scriptInvocationMinRetryDelayMs
+		sleepDelay := time.Duration(delayMs) * time.Millisecond
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(sleepDelay):
+			// Continue.
 		}
 	}
 
