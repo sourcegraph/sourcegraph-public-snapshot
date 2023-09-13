@@ -34,7 +34,7 @@ export const OnboardingChecklist: FC = (): JSX.Element => {
     const toggleDropdownOpen = useCallback(() => setIsDropdownOpen(isOpen => !isOpen), [])
 
     if (loading || !data) {
-        return <LoadingSpinner />
+        return <LoadingSpinner data-testid="onboard-loading" />
     }
     if (error) {
         return <></>
@@ -50,9 +50,9 @@ export const OnboardingChecklist: FC = (): JSX.Element => {
     return (
         <>
             <Popover isOpen={isDropdownOpen} onOpenChange={toggleDropdownOpen}>
-                <PopoverTrigger type="button" className={styles.button}>
+                <PopoverTrigger data-testid="onboard-setup" type="button" className={styles.button}>
                     <Icon aria-hidden={true} size="md" svgPath={mdiAlertCircle} />
-                    <span>Setup</span>
+                    <span data-testid="onboard-dropdown">Setup</span>
                     <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                 </PopoverTrigger>
                 <PopoverContent className={styles.container} position={Position.bottom}>
@@ -83,7 +83,9 @@ export const OnboardingChecklist: FC = (): JSX.Element => {
 }
 
 const OnboardingChecklistList: FC<PropsWithChildren<{}>> = ({ children }): JSX.Element => (
-    <ul className={styles.list}>{children}</ul>
+    <ul data-testid="onboard-content" className={styles.list}>
+        {children}
+    </ul>
 )
 
 const OnboardingChecklistItem: FC<OnboardingChecklistItemProps> = ({

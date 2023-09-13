@@ -48,7 +48,9 @@ export const LicenseKeyModal: FC<LicenseKeyModalProps> = ({
             }
             await updateLicenseKey({ variables: { lastID: id, input } })
             setIsValid(true)
-            await refetch()
+            if (refetch) {
+                await refetch()
+            }
         }
         if (debouncedValue.length > 10) {
             setLicenseKey().catch(() => setIsValid(false))
@@ -67,7 +69,9 @@ export const LicenseKeyModal: FC<LicenseKeyModalProps> = ({
                 event?.preventDefault()
                 onHandleLicenseCheck(true)
                 navigate('site-admin/configuration')
-                await refetch()
+                if (refetch) {
+                    await refetch()
+                }
             }
             await submit()
         },

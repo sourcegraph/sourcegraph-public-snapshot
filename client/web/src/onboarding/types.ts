@@ -32,7 +32,7 @@ export interface UseOnboardingChecklistResult {
     loading: boolean
     error?: ErrorLike
     data?: OnboardingChecklistResult
-    refetch: () => Promise<ApolloQueryResult<SiteConfigResult>>
+    refetch?: () => Promise<ApolloQueryResult<SiteConfigResult>>
 }
 
 export interface EffectiveContent {
@@ -55,7 +55,7 @@ export interface LicenseKeyModalProps {
     id: number
     config: string
     licenseKey: LicenseInfo
-    refetch: () => Promise<ApolloQueryResult<SiteConfigResult>>
+    refetch?: () => Promise<ApolloQueryResult<SiteConfigResult>>
     onHandleLicenseCheck: (
         newValue: boolean | ((previousValue: boolean | undefined) => boolean | undefined) | undefined
     ) => void

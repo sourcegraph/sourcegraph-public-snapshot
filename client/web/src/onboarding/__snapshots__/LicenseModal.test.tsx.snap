@@ -1,0 +1,73 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`LicenseKeyModal should render 1`] = `
+<DocumentFragment>
+  <h2>
+    Unexpected Application Error!
+  </h2>
+  <h3
+    style="font-style: italic;"
+  >
+    Could not find "client" in the context or passed in as an option. Wrap the root component in an &lt;ApolloProvider&gt;, or pass an ApolloClient instance in via options.
+  </h3>
+  <pre
+    style="padding: 0.5rem; background-color: rgba(200, 200, 200, 0.5);"
+  >
+    Invariant Violation: Could not find "client" in the context or passed in as an option. Wrap the root component in an &lt;ApolloProvider&gt;, or pass an ApolloClient instance in via options.
+    at new InvariantError (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/ts-invariant@0.10.3/node_modules/ts-invariant/lib/invariant.js:11:28)
+    at Object.invariant (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/ts-invariant@0.10.3/node_modules/ts-invariant/lib/invariant.js:24:15)
+    at invariant (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/@apollo+client@3.8.0-alpha.7_graphql-ws@5.13.1_graphql@15.4.0_react-dom@18.1.0_react@18.1.0/node_modules/@apollo/client/react/hooks/useApolloClient.js:7:15)
+    at useMutation (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/@apollo+client@3.8.0-alpha.7_graphql-ws@5.13.1_graphql@15.4.0_react-dom@18.1.0_react@18.1.0/node_modules/@apollo/client/react/hooks/useMutation.js:9:18)
+    at useMutation (/Users/cesar/go/src/sourcegraph/client/http-client/src/graphql/apollo/hooks.ts:103:29)
+    at useUpdateLicenseKeyMutation (/Users/cesar/go/src/sourcegraph/client/web/src/onboarding/graphql-hooks.ts:57:17)
+    at LicenseKeyModal (/Users/cesar/go/src/sourcegraph/client/web/src/onboarding/LicenseModal.tsx:38:79)
+    at renderWithHooks (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:16175:18)
+    at mountIndeterminateComponent (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:20913:13)
+    at beginWork (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:22416:16)
+    at beginWork$1 (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:27381:14)
+    at performUnitOfWork (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:26516:12)
+    at workLoopSync (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:26422:5)
+    at renderRootSync (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:26390:7)
+    at recoverFromConcurrentError (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:25806:20)
+    at performConcurrentWorkOnRoot (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:25706:22)
+    at flushActQueue (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/react@18.1.0/node_modules/react/cjs/react.development.js:2665:24)
+    at act (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/react@18.1.0/node_modules/react/cjs/react.development.js:2580:11)
+    at /Users/cesar/go/src/sourcegraph/node_modules/.pnpm/@testing-library+react@13.4.0_react-dom@18.1.0_react@18.1.0/node_modules/@testing-library/react/dist/act-compat.js:63:25
+    at renderRoot (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/@testing-library+react@13.4.0_react-dom@18.1.0_react@18.1.0/node_modules/@testing-library/react/dist/pure.js:159:26)
+    at render (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/@testing-library+react@13.4.0_react-dom@18.1.0_react@18.1.0/node_modules/@testing-library/react/dist/pure.js:246:10)
+    at renderWithBrandedContext (/Users/cesar/go/src/sourcegraph/client/wildcard/src/testing/render-with-branded-context.tsx:86:18)
+    at Object.&lt;anonymous&gt; (/Users/cesar/go/src/sourcegraph/client/web/src/onboarding/LicenseModal.test.tsx:8:37)
+    at Promise.then.completed (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/utils.js:333:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/utils.js:259:10)
+    at _callCircusTest (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/run.js:277:40)
+    at processTicksAndRejections (node:internal/process/task_queues:96:5)
+    at _runTest (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/run.js:209:3)
+    at _runTestsForDescribeBlock (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/run.js:97:9)
+    at _runTestsForDescribeBlock (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/run.js:91:9)
+    at run (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/run.js:31:3)
+    at runAndTransformResultsToJestFormat (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:135:21)
+    at jestAdapter (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:92:19)
+    at runTestInternal (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/jest-runner@28.1.3/node_modules/jest-runner/build/runTest.js:411:16)
+    at runTest (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/jest-runner@28.1.3/node_modules/jest-runner/build/runTest.js:499:34)
+    at Object.worker (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/jest-runner@28.1.3/node_modules/jest-runner/build/testWorker.js:133:12)
+  </pre>
+  <p>
+    💿 Hey developer 👋
+  </p>
+  <p>
+    You can provide a way better UX than this when your app throws errors by providing your own 
+    <code
+      style="padding: 2px 4px; background-color: rgba(200, 200, 200, 0.5);"
+    >
+      errorElement
+    </code>
+     props on 
+    <code
+      style="padding: 2px 4px; background-color: rgba(200, 200, 200, 0.5);"
+    >
+      &lt;Route&gt;
+    </code>
+  </p>
+</DocumentFragment>
+`;
