@@ -1,19 +1,14 @@
 package com.sourcegraph.cody.config.notification
 
-import com.intellij.openapi.Disposable
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
-import com.intellij.util.messages.MessageBusConnection
 import com.sourcegraph.cody.CodyAgentProjectListener
-import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.config.CodyApplicationSettings.Companion.getInstance
 import com.sourcegraph.config.ConfigUtil
-import com.sourcegraph.find.browser.JavaToJSBridge
 import com.sourcegraph.telemetry.GraphQlLogger
 
 class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
     init {
-        connection?.subscribe(
+        connection.subscribe(
             AccountSettingChangeActionNotifier.TOPIC,
             object : AccountSettingChangeActionNotifier {
                 override fun beforeAction(serverUrlChanged: Boolean) {
@@ -35,12 +30,6 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
                     } else {
                         // Stopping the agent is idempotent, so it's OK if we call stopAgent multiple times.
                         CodyAgentProjectListener.stopAgent(project)
-                    }
-
-                    // Notify Cody Agent about config changes.
-                    val agentServer = CodyAgent.getServer(project)
-                    if (ConfigUtil.isCodyEnabled() && agentServer != null) {
-                        agentServer.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
                     }
 
                     // Log install events

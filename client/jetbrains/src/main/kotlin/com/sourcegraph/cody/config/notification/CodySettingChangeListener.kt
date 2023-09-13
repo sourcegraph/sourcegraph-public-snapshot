@@ -1,28 +1,23 @@
 package com.sourcegraph.cody.config.notification
 
-import com.intellij.openapi.Disposable
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
-import com.intellij.util.messages.MessageBusConnection
 import com.sourcegraph.cody.CodyAgentProjectListener
 import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
 import com.sourcegraph.cody.autocomplete.render.AutocompleteRenderUtils
-import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService.Companion.notifyApplication
 import com.sourcegraph.config.ConfigUtil
-import com.sourcegraph.find.browser.JavaToJSBridge
 import com.sourcegraph.utils.CollectionUtil.Companion.diff
 import java.util.function.Consumer
 
 
 class CodySettingChangeListener(project: Project) : ChangeListener(project) {
     init {
-        connection?.subscribe(
+        connection.subscribe(
             CodySettingChangeActionNotifier.TOPIC,
             object : CodySettingChangeActionNotifier {
                 override fun afterAction(context: CodySettingChangeContext) {
