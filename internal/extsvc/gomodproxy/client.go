@@ -11,6 +11,8 @@ import (
 
 	"golang.org/x/mod/module"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -36,7 +38,7 @@ func NewClient(urn string, urls []string, httpfactory *httpcli.Factory) *Client 
 		urls:           urls,
 		cachedClient:   cached,
 		uncachedClient: uncached,
-		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(urn)),
+		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GoModClient", ""), urn)),
 	}
 }
 

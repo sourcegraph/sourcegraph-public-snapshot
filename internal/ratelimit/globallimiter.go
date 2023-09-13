@@ -4,12 +4,16 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -52,6 +56,7 @@ type globalRateLimiter struct {
 	prefix     string
 	bucketName string
 	pool       *redis.Pool
+	logger     log.Logger
 
 	// optionally used for tests
 	nowFunc func() time.Time
@@ -59,16 +64,22 @@ type globalRateLimiter struct {
 	timerFunc func(d time.Duration) (<-chan time.Time, func() bool)
 }
 
-func NewGlobalRateLimiter(bucketName string) GlobalLimiter {
+func NewGlobalRateLimiter(logger log.Logger, bucketName string) GlobalLimiter {
+	logger = logger.Scoped(fmt.Sprintf("GlobalRateLimiter.%s", bucketName), "")
 	pool, ok := kv().Pool()
 	if !ok {
-		return getInMemoryLimiter(bucketName)
+		rl := -1 // Documented default.
+		if rate := conf.Get().DefaultRateLimit; rate != nil {
+			rl = *rate
+		}
+		return getInMemoryLimiter(bucketName, rl)
 	}
 
 	return &globalRateLimiter{
 		prefix:     tokenBucketGlobalPrefix,
 		bucketName: bucketName,
 		pool:       pool,
+		logger:     logger,
 	}
 }
 
@@ -142,23 +153,27 @@ func (r *globalRateLimiter) newTimer(d time.Duration) (<-chan time.Time, func() 
 }
 
 func (r *globalRateLimiter) waitn(ctx context.Context, n int, requestTime time.Time, maxTimeToWait time.Duration) (timeToWait time.Duration, err error) {
+	metricLimiterAttempts.Inc()
+	metricLimiterWaiting.Inc()
+	defer metricLimiterWaiting.Dec()
 	keys := getRateLimiterKeys(r.prefix, r.bucketName)
 	connection := r.pool.Get()
 	defer connection.Close()
 
-	defaultRateLimit := conf.Get().DefaultRateLimit
+	fallbackRateLimit := -1 // equivalent of rate.Inf
 	// the rate limit in the config is in requests per hour, whereas rate.Limit is in
 	// requests per second.
-	fallbackRateLimit := defaultRateLimit
-	if defaultRateLimit <= 0 {
-		fallbackRateLimit = -1 // equivalent of rate.Inf
+	if rate := conf.Get().DefaultRateLimit; rate != nil {
+		fallbackRateLimit = *rate
 	}
 
 	maxWaitTime := int32(-1)
 	if maxTimeToWait != -1 {
 		maxWaitTime = int32(maxTimeToWait.Seconds())
 	}
-	result, err := getTokensScript.DoContext(ctx,
+	result, err := invokeScriptWithRetries(
+		ctx,
+		getTokensScript,
 		connection,
 		keys.BucketKey, keys.LastReplenishmentTimestampKey, keys.RateKey, keys.ReplenishmentIntervalSecondsKey, keys.BurstKey,
 		requestTime.Unix(),
@@ -169,7 +184,20 @@ func (r *globalRateLimiter) waitn(ctx context.Context, n int, requestTime time.T
 		n,
 	)
 	if err != nil {
-		return 0, errors.Wrapf(err, "error while getting tokens from bucket %s", keys.BucketKey)
+		metricLimiterFailedAcquire.Inc()
+		r.logger.Error("failed to acquire global rate limiter, falling back to default in-memory limiter", log.Error(err))
+		// If using the real global limiter fails, we fall back to the in-memory registry
+		// of rate limiters. This rate limiter is NOT synced across services, so when these
+		// errors occur, admins should fix their redis connection stability! Since these
+		// rate limiters are not configured by the worker job, the default rate limit will
+		// be used, which can be configured using site config under `.defaultRateLimit`.
+
+		defaultRateLimit := 3600 // Allow 1 request / s per code host in fallback mode, if defaultRateLimit is not configured.
+		if rate := conf.Get().DefaultRateLimit; rate != nil {
+			defaultRateLimit = *rate
+		}
+		rl := getInMemoryLimiter(r.bucketName, defaultRateLimit)
+		return 0, rl.WaitN(ctx, n)
 	}
 
 	scriptResponse, ok := result.([]interface{})
@@ -189,6 +217,35 @@ func (r *globalRateLimiter) waitn(ctx context.Context, n int, requestTime time.T
 
 	timeToWait = time.Duration(timeToWaitSeconds) * time.Second
 	return timeToWait, getTokenBucketError(keys.BucketKey, getTokenGrantType(allowedInt), timeToWait)
+}
+
+const (
+	scriptInvokationMaxRetries      = 8
+	scriptInvokationMinRetryDelayMs = 50
+	scriptInvokationMaxRetryDelayMs = 250
+)
+
+func invokeScriptWithRetries(ctx context.Context, script *redis.Script, c redis.Conn, keysAndArgs ...any) (result any, err error) {
+	for i := 0; i < scriptInvokationMaxRetries; i++ {
+		if i != 0 {
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(time.Duration(rand.Intn(scriptInvokationMaxRetryDelayMs-scriptInvokationMinRetryDelayMs)+scriptInvokationMinRetryDelayMs) * time.Millisecond):
+				// Continue.
+			}
+		}
+		result, err = script.DoContext(ctx,
+			c,
+			keysAndArgs...,
+		)
+		// If no error, return the result.
+		if err == nil {
+			return result, nil
+		}
+	}
+
+	return nil, err
 }
 
 func getTokenBucketError(bucketKey string, allowed getTokenGrantType, timeToWait time.Duration) error {
@@ -418,14 +475,14 @@ var (
 // getInMemoryLimiter in app mode, we don't have a working redis, so our limiters
 // are in memory instead. Since we only have a single binary in app, this is actually
 // just as global as it is in multi-container deployments with redis as the backing
-// store.
-func getInMemoryLimiter(name string) GlobalLimiter {
+// store. When used as the fallback limiter for a failing redis-backed limiter, it
+// is a best-effort limiter and not actually configured with code-host rate limits.
+func getInMemoryLimiter(name string, defaultPerHour int) GlobalLimiter {
 	inMemoryLimitersMapMu.Lock()
 	l, ok := inMemoryLimitersMap[name]
 	if !ok {
-		drl := conf.Get().DefaultRateLimit
-		r := rate.Limit(drl / 3600)
-		if drl < 0 {
+		r := rate.Limit(defaultPerHour / 3600)
+		if defaultPerHour < 0 {
 			r = rate.Inf
 		}
 		l = &inMemoryLimiter{rl: rate.NewLimiter(r, defaultBurst)}
@@ -509,3 +566,20 @@ func kv() redispool.KeyValue {
 	}
 	return redispool.Store
 }
+
+// metrics.
+var (
+	metricLimiterAttempts = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_globallimiter_attempts",
+		Help: "Incremented each time we request a token from a rate limiter.",
+	})
+	metricLimiterWaiting = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_globallimiter_waiting",
+		Help: "Number of rate limiter requests that are pending.",
+	})
+	// TODO: Once we add Grafana dashboards, add an alert on this metric.
+	metricLimiterFailedAcquire = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_globallimiter_failed_acquire",
+		Help: "Incremented each time requesting a token from a rate limiter fails after retries.",
+	})
+)
