@@ -25,18 +25,11 @@ public class NotificationActivity implements StartupActivity.DumbAware {
 
   @Override
   public void runActivity(@NotNull Project project) {
-    String latestReleaseMilestoneVersion = "2.0.0";
-    String lastNotifiedPluginVersion = ConfigUtil.getLastUpdateNotificationPluginVersion();
-    if (lastNotifiedPluginVersion == null
-        || lastNotifiedPluginVersion.compareTo(latestReleaseMilestoneVersion) < 0) {
-      notifyAboutUpdate(project);
-    } else {
-      AccountType defaultAccountType =
-          CodyAuthenticationManager.getInstance().getDefaultAccountType(project);
-      if (!ConfigUtil.isDefaultDotcomAccountNotificationDismissed()
-          && (defaultAccountType == AccountType.DOTCOM)) {
-        notifyAboutDefaultDotcomAccount();
-      }
+    AccountType defaultAccountType =
+        CodyAuthenticationManager.getInstance().getDefaultAccountType(project);
+    if (!ConfigUtil.isDefaultDotcomAccountNotificationDismissed()
+        && (defaultAccountType == AccountType.DOTCOM)) {
+      notifyAboutDefaultDotcomAccount();
     }
   }
 
@@ -106,7 +99,5 @@ public class NotificationActivity implements StartupActivity.DumbAware {
     notification.addAction(openAction);
     notification.addAction(learnMoreAction);
     Notifications.Bus.notify(notification);
-
-    ConfigUtil.setLastUpdateNotificationPluginVersionToCurrent();
   }
 }

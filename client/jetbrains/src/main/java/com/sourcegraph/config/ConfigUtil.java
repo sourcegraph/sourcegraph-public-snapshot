@@ -116,15 +116,6 @@ public class ConfigUtil {
     return CodyApplicationSettings.getInstance().getCustomAutocompleteColor();
   }
 
-  public static String getLastUpdateNotificationPluginVersion() {
-    return CodyApplicationSettings.getInstance().getLastUpdateNotificationPluginVersion();
-  }
-
-  public static void setLastUpdateNotificationPluginVersionToCurrent() {
-    CodyApplicationSettings.getInstance()
-        .setLastUpdateNotificationPluginVersion(getPluginVersion());
-  }
-
   @Nullable
   public static String getWorkspaceRoot(@NotNull Project project) {
     if (project.getBasePath() != null) {
