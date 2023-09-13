@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"net/url"
+	"sort"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
@@ -65,12 +66,31 @@ func (s PerforceSource) CheckConnection(ctx context.Context) error {
 // ListRepos returns all Perforce depots accessible to all connections
 // configured in Sourcegraph via the external services configuration.
 func (s PerforceSource) ListRepos(ctx context.Context, results chan SourceResult) {
+	// we don't care if the depo is a classic or streams depot while listing them
+	depots := make([]string, len(s.config.Depots)+len(s.config.Streams))
+	depotCount := 0
 	for _, depot := range s.config.Depots {
+		depots[depotCount] = depot
+		depotCount++
+	}
+	for _, depot := range s.config.Streams {
+		depots[depotCount] = depot
+		depotCount++
+	}
+	sort.Strings(depots)
+
+	lastDepot := ""
+	for _, depot := range depots {
 		// Tiny optimization: exit early if context has been canceled.
 		if err := ctx.Err(); err != nil {
 			results <- SourceResult{Source: s, Err: err}
 			return
 		}
+		// because we're combining depots and streams, make sure we're not doubling up on the clonable tests
+		if depot == lastDepot {
+			continue
+		}
+		lastDepot = depot
 
 		u := url.URL{
 			Scheme: "perforce",
