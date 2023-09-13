@@ -31,10 +31,13 @@ func (s *rateLimitConfigJob) Routines(_ context.Context, observationCtx *observa
 	if err != nil {
 		return nil, err
 	}
+	logger := observationCtx.Logger.Scoped("Periodic rate limit config job", "Routine that periodically copies rate limit configurations to Redis.")
 	rlcWorker := makeRateLimitConfigWorker(&handler{
-		logger:               observationCtx.Logger.Scoped("Periodic rate limit config job", "Routine that periodically copies rate limit configurations to Redis."),
+		logger:               logger,
 		externalServiceStore: db.ExternalServices(),
-		newRateLimiterFunc:   ratelimit.NewGlobalRateLimiter,
+		newRateLimiterFunc: func(bucketName string) ratelimit.GlobalLimiter {
+			return ratelimit.NewGlobalRateLimiter(logger, bucketName)
+		},
 	})
 
 	return []goroutine.BackgroundRoutine{rlcWorker}, nil

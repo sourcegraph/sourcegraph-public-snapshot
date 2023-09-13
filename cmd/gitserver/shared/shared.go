@@ -145,7 +145,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		Locker:                  locker,
 		RPSLimiter: ratelimit.NewInstrumentedLimiter(
 			ratelimit.GitRPSLimiterBucketName,
-			ratelimit.NewGlobalRateLimiter(ratelimit.GitRPSLimiterBucketName),
+			ratelimit.NewGlobalRateLimiter(logger, ratelimit.GitRPSLimiterBucketName),
 		),
 	}
 
