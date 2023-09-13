@@ -90,24 +90,25 @@ RETURNING id
 `
 
 const getRepoRevSpecFmtStr = `
-SELECT sj.query, srj.repo_id, srj.ref_spec
+SELECT sj.id, sj.query, srj.repo_id, srj.ref_spec
 FROM exhaustive_search_repo_jobs srj
 JOIN exhaustive_search_jobs sj ON srj.search_job_id = sj.id
 WHERE srj.id = %s
 `
 
 func (s *Store) GetQueryRepoRev(ctx context.Context, job *types.ExhaustiveSearchRepoRevisionJob) (
+	id int64,
 	query string,
 	repoRev types.RepositoryRevision,
 	err error,
 ) {
 	row := s.QueryRow(ctx, sqlf.Sprintf(getRepoRevSpecFmtStr, job.SearchRepoJobID))
-	err = row.Scan(&query, &repoRev.Repository, &repoRev.RevisionSpecifier)
+	err = row.Scan(&id, &query, &repoRev.Repository, &repoRev.RevisionSpecifier)
 	if err != nil {
-		return "", types.RepositoryRevision{}, err
+		return 0, "", types.RepositoryRevision{}, err
 	}
 	repoRev.Revision = job.Revision
-	return query, repoRev, nil
+	return id, query, repoRev, nil
 }
 
 func scanRevSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchRepoRevisionJob, error) {
