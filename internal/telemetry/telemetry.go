@@ -18,9 +18,8 @@ import (
 )
 
 type Event struct {
-	// Name of the event.
-	Name eventName
-	// Parameters associated with the event.
+	Feature    eventFeature
+	Action     eventAction
 	Parameters EventParameters
 }
 
@@ -30,7 +29,7 @@ type Event struct {
 type EventRecorder interface {
 	// Record records a single telemetry event with the context's Sourcegraph
 	// actor.
-	Record(context.Context, eventName, EventParameters) error
+	Record(context.Context, eventFeature, eventAction, EventParameters) error
 	// BatchRecord records a set of telemetry events with the context's
 	// Sourcegraph actor.
 	BatchRecord(context.Context, ...Event) error
@@ -72,9 +71,9 @@ func NewEventRecorder(store database.TelemetryStore) EventRecorder {
 	return &eventRecorder{store: store}
 }
 
-func (r *eventRecorder) Record(ctx context.Context, event eventName, parameters EventParameters) error {
+func (r *eventRecorder) Record(ctx context.Context, feature eventFeature, action eventAction, parameters EventParameters) error {
 	return r.store.RecordEvents(ctx, []telemetrygatewayv1.Event{
-		makeRawEvent(ctx, time.Now(), event, parameters),
+		makeRawEvent(ctx, time.Now(), feature, action, parameters),
 	})
 }
 
@@ -84,17 +83,18 @@ func (r *eventRecorder) BatchRecord(ctx context.Context, events ...Event) error 
 	}
 	rawEvents := make([]telemetrygatewayv1.Event, len(events))
 	for i, e := range events {
-		rawEvents[i] = makeRawEvent(ctx, time.Now(), e.Name, e.Parameters)
+		rawEvents[i] = makeRawEvent(ctx, time.Now(), e.Feature, e.Action, e.Parameters)
 	}
 	return r.store.RecordEvents(ctx, rawEvents)
 }
 
 // makeRawEvent translates recording to raw events for storage and export. It
 // extracts actor from context as the event user.
-func makeRawEvent(ctx context.Context, now time.Time, event eventName, parameters EventParameters) telemetrygatewayv1.Event {
+func makeRawEvent(ctx context.Context, now time.Time, feature eventFeature, action eventAction, parameters EventParameters) telemetrygatewayv1.Event {
 	return telemetrygatewayv1.Event{
 		Timestamp: timestamppb.New(now),
-		Name:      string(event),
+		Feature:   string(feature),
+		Action:    string(action),
 		Source: &telemetrygatewayv1.EventSource{
 			ServerVersion: version.Version(),
 		},

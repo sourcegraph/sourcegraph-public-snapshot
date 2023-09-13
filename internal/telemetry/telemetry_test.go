@@ -27,7 +27,8 @@ func TestMakeRawEvent(t *testing.T) {
 			name: "basic",
 			ctx:  context.Background(),
 			event: Event{
-				Name: EventExample,
+				Feature: FeatureExample,
+				Action:  ActionExample,
 			},
 			expect: autogold.Expect(`{
 "name": "Example",
@@ -43,7 +44,8 @@ func TestMakeRawEvent(t *testing.T) {
 			name: "with user",
 			ctx:  actor.WithActor(context.Background(), actor.FromAnonymousUser("1234")),
 			event: Event{
-				Name: EventExample,
+				Feature: FeatureExample,
+				Action:  ActionExample,
 			},
 			expect: autogold.Expect(`{
 "name": "Example",
@@ -61,7 +63,8 @@ func TestMakeRawEvent(t *testing.T) {
 			name: "with parameters",
 			ctx:  context.Background(),
 			event: Event{
-				Name: EventExample,
+				Feature: FeatureExample,
+				Action:  ActionExample,
 				Parameters: EventParameters{
 					Version: 0,
 					Metadata: EventMetadata{
@@ -97,7 +100,7 @@ func TestMakeRawEvent(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			got := makeRawEvent(tc.ctx, staticTime, tc.event.Name, tc.event.Parameters)
+			got := makeRawEvent(tc.ctx, staticTime, tc.event.Feature, tc.event.Action, tc.event.Parameters)
 
 			protodata, err := protojson.Marshal(&got)
 			require.NoError(t, err)
