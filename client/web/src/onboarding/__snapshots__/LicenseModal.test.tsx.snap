@@ -19,7 +19,7 @@ exports[`LicenseKeyModal should render 1`] = `
     at invariant (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/@apollo+client@3.8.0-alpha.7_graphql-ws@5.13.1_graphql@15.4.0_react-dom@18.1.0_react@18.1.0/node_modules/@apollo/client/react/hooks/useApolloClient.js:7:15)
     at useMutation (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/@apollo+client@3.8.0-alpha.7_graphql-ws@5.13.1_graphql@15.4.0_react-dom@18.1.0_react@18.1.0/node_modules/@apollo/client/react/hooks/useMutation.js:9:18)
     at useMutation (/Users/cesar/go/src/sourcegraph/client/http-client/src/graphql/apollo/hooks.ts:103:29)
-    at useUpdateLicenseKeyMutation (/Users/cesar/go/src/sourcegraph/client/web/src/onboarding/graphql-hooks.ts:57:17)
+    at useUpdateLicenseKeyMutation (/Users/cesar/go/src/sourcegraph/client/web/src/onboarding/graphql-hooks.ts:55:17)
     at LicenseKeyModal (/Users/cesar/go/src/sourcegraph/client/web/src/onboarding/LicenseModal.tsx:38:79)
     at renderWithHooks (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:16175:18)
     at mountIndeterminateComponent (/Users/cesar/go/src/sourcegraph/node_modules/.pnpm/react-dom@18.1.0_react@18.1.0/node_modules/react-dom/cjs/react-dom.development.js:20913:13)
