@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/sourcegraph/zoekt"
-	v1 "github.com/sourcegraph/zoekt/grpc/v1"
+	proto "github.com/sourcegraph/zoekt/grpc/protos/zoekt/webserver/v1"
 	"github.com/sourcegraph/zoekt/query"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -55,7 +55,7 @@ func (c *switchableZoektGRPCClient) String() string {
 // zoektGRPCClient is a zoekt.Streamer that uses gRPC for its RPC layer
 type zoektGRPCClient struct {
 	endpoint string
-	client   v1.WebserverServiceClient
+	client   proto.WebserverServiceClient
 
 	// We capture the dial error to return it lazily.
 	// This allows us to treat Dial as infallible, which is
@@ -70,9 +70,11 @@ func (z *zoektGRPCClient) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		return z.dialErr
 	}
 
-	req := &v1.SearchRequest{
-		Query: query.QToProto(q),
-		Opts:  opts.ToProto(),
+	req := &proto.StreamSearchRequest{
+		Request: &proto.SearchRequest{
+			Query: query.QToProto(q),
+			Opts:  opts.ToProto(),
+		},
 	}
 
 	ss, err := z.client.StreamSearch(ctx, req)
@@ -89,7 +91,7 @@ func (z *zoektGRPCClient) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		var repoURLS map[string]string      // We don't use repoURLs in Sourcegraph
 		var lineFragments map[string]string // We don't use lineFragments in Sourcegraph
 
-		sender.Send(zoekt.SearchResultFromProto(msg, repoURLS, lineFragments))
+		sender.Send(zoekt.SearchResultFromProto(msg.GetResponseChunk(), repoURLS, lineFragments))
 	}
 }
 
@@ -98,7 +100,7 @@ func (z *zoektGRPCClient) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 		return nil, z.dialErr
 	}
 
-	req := &v1.SearchRequest{
+	req := &proto.SearchRequest{
 		Query: query.QToProto(q),
 		Opts:  opts.ToProto(),
 	}
@@ -121,7 +123,7 @@ func (z *zoektGRPCClient) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 		return nil, z.dialErr
 	}
 
-	req := &v1.ListRequest{
+	req := &proto.ListRequest{
 		Query: query.QToProto(q),
 		Opts:  opts.ToProto(),
 	}

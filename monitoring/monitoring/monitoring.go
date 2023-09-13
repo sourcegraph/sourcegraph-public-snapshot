@@ -501,10 +501,10 @@ var (
 		handbookSlug: "security",
 		teamName:     "Security",
 	}
-	ObservableOwnerRepoManagement = ObservableOwner{
-		identifier:   "repo-management",
-		handbookSlug: "repo-management",
-		teamName:     "Repo Management",
+	ObservableOwnerSource = ObservableOwner{
+		identifier:   "source",
+		handbookSlug: "source",
+		teamName:     "Source",
 	}
 	ObservableOwnerCodeInsights = ObservableOwner{
 		identifier:   "code-insights",

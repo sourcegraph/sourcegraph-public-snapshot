@@ -235,6 +235,7 @@ regularly above 0 it is a sign for further investigation.`,
 				shared.GRPCInternalErrorMetricsOptions{
 					HumanServiceName:   "searcher",
 					RawGRPCServiceName: grpcServiceName,
+					Namespace:          "src",
 
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSearchCore),
