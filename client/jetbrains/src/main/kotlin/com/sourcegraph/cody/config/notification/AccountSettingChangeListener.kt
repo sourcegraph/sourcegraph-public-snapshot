@@ -11,20 +11,14 @@ import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.find.browser.JavaToJSBridge
 import com.sourcegraph.telemetry.GraphQlLogger
 
-class AccountSettingChangeListener(val project: Project) : Disposable {
-    var connection: MessageBusConnection? = null
-    var javaToJSBridge: JavaToJSBridge? = null
-    val logger = Logger.getInstance(AccountSettingChangeListener::class.java)
-
+class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
     init {
-        val bus = project.messageBus
-        connection = bus.connect()
         connection?.subscribe(
             AccountSettingChangeActionNotifier.TOPIC,
             object : AccountSettingChangeActionNotifier {
-                override fun beforeAction(context: AccountSettingChangeContext) {
+                override fun beforeAction(serverUrlChanged: Boolean) {
                     val codyApplicationSettings = getInstance()
-                    if (context.serverUrlChanged) {
+                    if (serverUrlChanged) {
                         GraphQlLogger.logUninstallEvent(project)
                         codyApplicationSettings.isInstallEventLogged = false
                     }
@@ -60,9 +54,5 @@ class AccountSettingChangeListener(val project: Project) : Disposable {
                     }
                 }
             })
-    }
-
-    override fun dispose() {
-        connection!!.disconnect()
     }
 }

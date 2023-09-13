@@ -96,7 +96,7 @@ class CodyConfigurable(val project: Project) :
     override fun apply() {
         val bus = project.messageBus
         val publisher = bus.syncPublisher(CodySettingChangeActionNotifier.TOPIC)
-
+        super.apply()
         val context =
             CodySettingChangeContext(
                 codyApplicationSettings.isCodyEnabled,
@@ -109,9 +109,6 @@ class CodyConfigurable(val project: Project) :
                 settingsModel.customAutocompleteColor?.rgb,
                 codyApplicationSettings.blacklistedLanguageIds,
                 settingsModel.blacklistedLanguageIds)
-        publisher.beforeAction(context)
-
-        super.apply()
         codyApplicationSettings.isCodyEnabled = settingsModel.isCodyEnabled
         codyApplicationSettings.isCodyAutocompleteEnabled = settingsModel.isCodyAutocompleteEnabled
         codyApplicationSettings.isCodyDebugEnabled = settingsModel.isCodyDebugEnabled

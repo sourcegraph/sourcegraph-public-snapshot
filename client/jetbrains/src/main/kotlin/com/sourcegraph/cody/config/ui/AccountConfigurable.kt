@@ -92,10 +92,9 @@ class AccountConfigurable(val project: Project) :
 
         val serverUrlChanged = oldUrl != newUrl
 
-        val context = AccountSettingChangeContext(serverUrlChanged, accessTokenChanged)
-        publisher.beforeAction(context)
-
+        publisher.beforeAction(serverUrlChanged)
         super.apply()
+        val context = AccountSettingChangeContext(serverUrlChanged, accessTokenChanged)
         CodyAuthenticationManager.getInstance().setDefaultAccount(project, defaultAccount)
         accountsModel.defaultAccount = defaultAccount
         publisher.afterAction(context)

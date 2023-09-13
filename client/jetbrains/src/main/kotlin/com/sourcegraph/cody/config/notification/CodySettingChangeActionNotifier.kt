@@ -10,7 +10,5 @@ interface CodySettingChangeActionNotifier {
             CodySettingChangeActionNotifier::class.java)
     }
 
-    fun beforeAction(context: CodySettingChangeContext)
-
     fun afterAction(context: CodySettingChangeContext)
 }

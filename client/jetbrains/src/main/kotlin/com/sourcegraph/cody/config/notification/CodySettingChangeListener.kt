@@ -20,20 +20,11 @@ import com.sourcegraph.utils.CollectionUtil.Companion.diff
 import java.util.function.Consumer
 
 
-class CodySettingChangeListener(val project: Project) : Disposable {
-    var connection: MessageBusConnection? = null
-    var javaToJSBridge: JavaToJSBridge? = null
-    val logger = Logger.getInstance(CodySettingChangeListener::class.java)
-
+class CodySettingChangeListener(project: Project) : ChangeListener(project) {
     init {
-        val bus = project.messageBus
-        connection = bus.connect()
         connection?.subscribe(
             CodySettingChangeActionNotifier.TOPIC,
             object : CodySettingChangeActionNotifier {
-                override fun beforeAction(context: CodySettingChangeContext) {
-                }
-
                 override fun afterAction(context: CodySettingChangeContext) {
                     // Notify JCEF about the config changes
                     javaToJSBridge?.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project))
@@ -94,9 +85,5 @@ class CodySettingChangeListener(val project: Project) : Disposable {
                             .clearAutocompleteSuggestionsForLanguageIds(languageIdsToClear)
                 }
             })
-    }
-
-    override fun dispose() {
-        connection!!.disconnect()
     }
 }

@@ -10,7 +10,7 @@ interface AccountSettingChangeActionNotifier {
             AccountSettingChangeActionNotifier::class.java)
     }
 
-    fun beforeAction(context: AccountSettingChangeContext)
+    fun beforeAction(serverUrlChanged: Boolean)
 
     fun afterAction(context: AccountSettingChangeContext)
 }
