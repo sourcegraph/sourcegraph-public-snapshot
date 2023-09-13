@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.auth.ui
 
 import com.intellij.collaboration.messages.CollaborationToolsBundle
-import com.intellij.ui.ScalingAsyncImageIcon
 import com.intellij.ui.components.labels.LinkLabel
 import com.intellij.ui.components.labels.LinkListener
 import com.intellij.util.IconUtil
@@ -29,9 +28,9 @@ import javax.swing.JPanel
 import javax.swing.ListCellRenderer
 
 class SimpleAccountsListCellRenderer<A : Account, D : AccountDetails>(
-  private val listModel: AccountsListModel<A, *>,
-  private val detailsProvider: AccountsDetailsProvider<A, D>,
-  private val defaultAvatarIcon: Icon
+    private val listModel: AccountsListModel<A, *>,
+    private val detailsProvider: AccountsDetailsProvider<A, D>,
+    private val defaultAvatarIcon: Icon
 ) : ListCellRenderer<A>, JPanel() {
 
   private val avatarIcons = mutableMapOf<A, Icon>()
@@ -50,31 +49,36 @@ class SimpleAccountsListCellRenderer<A : Account, D : AccountDetails>(
     layout = FlowLayout(FlowLayout.LEFT, 0, 0)
     border = JBUI.Borders.empty(5, 8)
 
-    val namesPanel = JPanel().apply {
-      layout = GridBagLayout()
-      border = JBUI.Borders.empty(0, 6, 4, 6)
+    val namesPanel =
+        JPanel().apply {
+          layout = GridBagLayout()
+          border = JBUI.Borders.empty(0, 6, 4, 6)
 
-      val bag = GridBag()
-        .setDefaultInsets(JBUI.insetsRight(UIUtil.DEFAULT_HGAP))
-        .setDefaultAnchor(GridBagConstraints.WEST)
-        .setDefaultFill(GridBagConstraints.VERTICAL)
-      add(fullName, bag.nextLine().next())
-      add(accountName, bag.next())
-      add(loadingError, bag.next())
-      add(reloginLink, bag.next())
-      add(serverName, bag.nextLine().coverLine())
-    }
+          val bag =
+              GridBag()
+                  .setDefaultInsets(JBUI.insetsRight(UIUtil.DEFAULT_HGAP))
+                  .setDefaultAnchor(GridBagConstraints.WEST)
+                  .setDefaultFill(GridBagConstraints.VERTICAL)
+          add(fullName, bag.nextLine().next())
+          add(accountName, bag.next())
+          add(loadingError, bag.next())
+          add(reloginLink, bag.next())
+          add(serverName, bag.nextLine().coverLine())
+        }
 
     add(profilePicture)
     add(namesPanel)
   }
 
-  override fun getListCellRendererComponent(list: JList<out A>,
-                                            account: A,
-                                            index: Int,
-                                            isSelected: Boolean,
-                                            cellHasFocus: Boolean): Component {
-    UIUtil.setBackgroundRecursively(this, ListUiUtil.WithTallRow.background(list, isSelected, list.hasFocus()))
+  override fun getListCellRendererComponent(
+      list: JList<out A>,
+      account: A,
+      index: Int,
+      isSelected: Boolean,
+      cellHasFocus: Boolean
+  ): Component {
+    UIUtil.setBackgroundRecursively(
+        this, ListUiUtil.WithTallRow.background(list, isSelected, list.hasFocus()))
     val primaryTextColor = ListUiUtil.WithTallRow.foreground(isSelected, list.hasFocus())
     val secondaryTextColor = ListUiUtil.WithTallRow.secondaryForeground(list, isSelected)
 
@@ -87,15 +91,12 @@ class SimpleAccountsListCellRenderer<A : Account, D : AccountDetails>(
       if (account is ServerAccount) {
         isVisible = true
         text = account.server.toString()
-      }
-      else {
+      } else {
         isVisible = false
       }
       foreground = secondaryTextColor
     }
-    profilePicture.apply {
-      icon = getAvatarIcon(account)
-    }
+    profilePicture.apply { icon = getAvatarIcon(account) }
     fullName.apply {
       text = getDetails(account)?.name
       setBold(isDefault(account))
@@ -108,9 +109,7 @@ class SimpleAccountsListCellRenderer<A : Account, D : AccountDetails>(
     }
     reloginLink.apply {
       isVisible = getError(account) != null && needReLogin(account)
-      setListener(LinkListener { _, _ ->
-        editAccount(list, account)
-      }, null)
+      setListener(LinkListener { _, _ -> editAccount(list, account) }, null)
     }
     return this
   }
@@ -121,30 +120,31 @@ class SimpleAccountsListCellRenderer<A : Account, D : AccountDetails>(
     if (image == null) return IconUtil.resizeSquared(defaultAvatarIcon, iconSize)
     return avatarIcons.getOrPut(account) {
       ScalingAsyncImageIcon(
-        iconSize,
-        defaultAvatarIcon,
-        imageLoader = {
-          CompletableFuture<Image?>().completeAsync({
-            getAvatarImage(account)
-          }, CachingCodyUserAvatarLoader.avatarLoadingExecutor)
-        }
-      )
+          iconSize,
+          defaultAvatarIcon,
+          imageLoader = {
+            CompletableFuture<Image?>()
+                .completeAsync(
+                    { getAvatarImage(account) }, CachingCodyUserAvatarLoader.avatarLoadingExecutor)
+          })
     }
   }
 
-  private fun isDefault(account: A): Boolean = (listModel is AccountsListModel.WithDefault) && account == listModel.defaultAccount
-  private fun editAccount(parentComponent: JComponent, account: A) = listModel.editAccount(parentComponent, account)
+  private fun isDefault(account: A): Boolean =
+      (listModel is AccountsListModel.WithDefault) && account == listModel.defaultAccount
+  private fun editAccount(parentComponent: JComponent, account: A) =
+      listModel.editAccount(parentComponent, account)
 
   private fun getDetails(account: A): D? = detailsProvider.getDetails(account)
   private fun getAvatarImage(account: A): Image? = detailsProvider.getAvatarImage(account)
 
-  @Nls
-  private fun getError(account: A): String? = detailsProvider.getErrorText(account)
+  @Nls private fun getError(account: A): String? = detailsProvider.getErrorText(account)
   private fun needReLogin(account: A): Boolean = detailsProvider.checkErrorRequiresReLogin(account)
 
   companion object {
     private fun JLabel.setBold(isBold: Boolean) {
-      font = font.deriveFont(if (isBold) font.style or Font.BOLD else font.style and Font.BOLD.inv())
+      font =
+          font.deriveFont(if (isBold) font.style or Font.BOLD else font.style and Font.BOLD.inv())
     }
   }
 }

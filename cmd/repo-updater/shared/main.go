@@ -76,19 +76,14 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	logger := observationCtx.Logger
 
-	clock := func() time.Time { return time.Now().UTC() }
 	if err := keyring.Init(ctx); err != nil {
 		return errors.Wrap(err, "initializing encryption keyring")
 	}
 
-	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
-		return serviceConnections.PostgresDSN
-	})
-	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "repo-updater")
+	db, err := getDB(observationCtx)
 	if err != nil {
-		return errors.Wrap(err, "initializing database store")
+		return err
 	}
-	db := database.NewDB(logger, sqlDB)
 
 	// Generally we'll mark the service as ready sometime after the database has been
 	// connected; migrations may take a while and we don't want to start accepting
@@ -110,88 +105,63 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		httpcli.NewLoggingMiddleware(sourcerLogger),
 	)
 
-	var src repos.Sourcer
-	{
-		m := repos.NewSourceMetrics()
-		m.MustRegister(prometheus.DefaultRegisterer)
-
-		src = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependencies.NewService(observationCtx, db)), repos.ObservedSource(sourcerLogger, m))
-	}
-
+	sourceMetrics := repos.NewSourceMetrics()
+	sourceMetrics.MustRegister(prometheus.DefaultRegisterer)
+	src := repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependencies.NewService(observationCtx, db)), repos.ObservedSource(sourcerLogger, sourceMetrics))
+	syncer := repos.NewSyncer(observationCtx, store, src)
 	updateScheduler := repos.NewUpdateScheduler(logger, db)
 	server := &repoupdater.Server{
 		Logger:                logger,
 		ObservationCtx:        observationCtx,
 		Store:                 store,
+		Syncer:                syncer,
 		Scheduler:             updateScheduler,
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 	}
 
-	serviceServer := &repoupdater.RepoUpdaterServiceServer{
-		Server: server,
-	}
-
-	syncer := &repos.Syncer{
-		Sourcer: src,
-		Store:   store,
-		// We always want to listen on the Synced channel since external service syncing
-		// happens on both Cloud and non Cloud instances.
-		Synced:  make(chan repos.Diff),
-		Now:     clock,
-		ObsvCtx: observation.ContextWithLogger(logger.Scoped("syncer", "repo syncer"), observationCtx),
-	}
-
-	server.Syncer = syncer
-
-	// All dependencies ready
-	debugDumpers := make(map[string]debugserver.Dumper)
-
-	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
-	if debug {
-		observationCtx.Logger.Info("enterprise edition")
-	}
-
-	kr := keyring.Default()
-
 	// No Batch Changes on dotcom, so we don't need to spawn the
 	// background jobs for this feature.
 	if !envvar.SourcegraphDotComMode() {
-		syncRegistry := batches.InitBackgroundJobs(ctx, db, kr.BatchChangesCredentialKey, cf)
+		syncRegistry := batches.InitBackgroundJobs(ctx, db, keyring.Default().BatchChangesCredentialKey, cf)
 		server.ChangesetSyncRegistry = syncRegistry
 	}
 
-	permsStore := database.Perms(observationCtx.Logger, db, timeutil.Now)
-	permsSyncer := authz.NewPermsSyncer(observationCtx.Logger.Scoped("PermsSyncer", "repository and user permissions syncer"), db, store, permsStore, timeutil.Now)
+	go globals.WatchExternalURL()
+	go watchAuthzProviders(ctx, db)
+	go watchSyncer(ctx, logger, syncer, updateScheduler, server.ChangesetSyncRegistry)
 
-	server.Syncer.EnterpriseCreateRepoHook = enterpriseCreateRepoHook
-	server.Syncer.EnterpriseUpdateRepoHook = enterpriseUpdateRepoHook
-
+	permsSyncer := authz.NewPermsSyncer(
+		observationCtx.Logger.Scoped("PermsSyncer", "repository and user permissions syncer"),
+		db,
+		store,
+		database.Perms(observationCtx.Logger, db, timeutil.Now),
+		timeutil.Now,
+	)
 	repoWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeRepo)
 	userWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeUser)
 	permissionSyncJobStore := database.PermissionSyncJobsWith(observationCtx.Logger, db)
-	repoSyncWorker := authz.MakeWorker(ctx, observationCtx, repoWorkerStore, permsSyncer, authz.SyncTypeRepo, permissionSyncJobStore)
-	userSyncWorker := authz.MakeWorker(ctx, observationCtx, userWorkerStore, permsSyncer, authz.SyncTypeUser, permissionSyncJobStore)
-	// Type of store (repo/user) for resetter doesn't matter, because it has its
-	// separate name for logging and metrics.
-	resetter := authz.MakeResetter(observationCtx, repoWorkerStore)
-
-	go watchAuthzProviders(ctx, db)
-
-	go watchSyncer(ctx, logger, syncer, updateScheduler, server.ChangesetSyncRegistry)
-
 	routines := []goroutine.BackgroundRoutine{
-		repoSyncWorker,
-		userSyncWorker,
-		resetter,
+		makeHTTPServer(logger, server),
+		// repoSyncWorker
+		authz.MakeWorker(ctx, observationCtx, repoWorkerStore, permsSyncer, authz.SyncTypeRepo, permissionSyncJobStore),
+		// userSyncWorker
+		authz.MakeWorker(ctx, observationCtx, userWorkerStore, permsSyncer, authz.SyncTypeUser, permissionSyncJobStore),
+		// Type of store (repo/user) for resetter doesn't matter, because it has its
+		// separate name for logging and metrics.
+		authz.MakeResetter(observationCtx, repoWorkerStore),
 		newUnclonedReposManager(ctx, logger, envvar.SourcegraphDotComMode(), updateScheduler, store),
 		repos.NewPhabricatorRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker", ""), store),
+		// Run git fetches scheduler
+		updateScheduler,
 	}
 
-	routines = append(routines, syncer.Routines(ctx, store, repos.RunOptions{
-		EnqueueInterval: repos.ConfRepoListUpdateInterval,
-		IsDotCom:        envvar.SourcegraphDotComMode(),
-		MinSyncInterval: repos.ConfRepoListUpdateInterval,
-	})...)
+	routines = append(routines,
+		syncer.Routines(ctx, store, repos.RunOptions{
+			EnqueueInterval: repos.ConfRepoListUpdateInterval,
+			IsDotCom:        envvar.SourcegraphDotComMode(),
+			MinSyncInterval: repos.ConfRepoListUpdateInterval,
+		})...,
+	)
 
 	if envvar.SourcegraphDotComMode() {
 		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(.05, 1))
@@ -207,9 +177,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		routines = append(routines, repos.NewRepositoryPurgeWorker(ctx, log.Scoped("repoPurgeWorker", "remove deleted repositories"), db, conf.DefaultClient()))
 	}
 
-	// Run git fetches scheduler
-	go repos.RunScheduler(ctx, logger, updateScheduler)
-
 	// Register recorder in all routines that support it.
 	recorderCache := recorder.GetCache()
 	rec := recorder.New(observationCtx.Logger, env.MyName, recorderCache)
@@ -222,36 +189,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 	rec.RegistrationDone()
 
-	go goroutine.MonitorBackgroundRoutines(
-		ctx,
-		routines...,
-	)
-
-	host := ""
-	if env.InsecureDev {
-		host = "127.0.0.1"
-	}
-
-	addr := net.JoinHostPort(host, port)
-	logger.Info("listening", log.String("addr", addr))
-
-	m := repoupdater.NewHandlerMetrics()
-	m.MustRegister(prometheus.DefaultRegisterer)
-
-	handler := repoupdater.ObservedHandler(
-		logger,
-		m,
-		otel.GetTracerProvider(),
-	)(server.Handler())
-
-	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
-	proto.RegisterRepoUpdaterServiceServer(grpcServer, serviceServer)
-	reflection.Register(grpcServer)
-
-	handler = internalgrpc.MultiplexHandlers(grpcServer, handler)
-
-	go globals.WatchExternalURL()
-
+	debugDumpers := make(map[string]debugserver.Dumper)
 	debugDumpers["repos"] = updateScheduler
 	debugserverEndpoints.repoUpdaterStateEndpoint = repoUpdaterStatsHandler(debugDumpers)
 	debugserverEndpoints.listAuthzProvidersEndpoint = listAuthzProvidersHandler()
@@ -264,6 +202,46 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// after being unblocked.
 	ready()
 
+	goroutine.MonitorBackgroundRoutines(ctx, routines...)
+
+	return nil
+}
+
+func getDB(observationCtx *observation.Context) (database.DB, error) {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.PostgresDSN
+	})
+	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "repo-updater")
+	if err != nil {
+		return nil, errors.Wrap(err, "initializing database store")
+	}
+	return database.NewDB(observationCtx.Logger, sqlDB), nil
+}
+
+func makeHTTPServer(logger log.Logger, server *repoupdater.Server) goroutine.BackgroundRoutine {
+	host := ""
+	if env.InsecureDev {
+		host = "127.0.0.1"
+	}
+
+	addr := net.JoinHostPort(host, port)
+	logger.Info("listening", log.String("addr", addr))
+
+	m := repoupdater.NewHandlerMetrics()
+	m.MustRegister(prometheus.DefaultRegisterer)
+	handler := repoupdater.ObservedHandler(
+		logger,
+		m,
+		otel.GetTracerProvider(),
+	)(server.Handler())
+	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
+	serviceServer := &repoupdater.RepoUpdaterServiceServer{
+		Server: server,
+	}
+	proto.RegisterRepoUpdaterServiceServer(grpcServer, serviceServer)
+	reflection.Register(grpcServer)
+	handler = internalgrpc.MultiplexHandlers(grpcServer, handler)
+
 	// NOTE: Internal actor is required to have full visibility of the repo table
 	// 	(i.e. bypass repository authorization).
 	authzBypass := func(f http.Handler) http.HandlerFunc {
@@ -272,15 +250,15 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			f.ServeHTTP(w, r)
 		}
 	}
-	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
+
+	return httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler: instrumentation.HTTPMiddleware("",
-			trace.HTTPMiddleware(logger, authzBypass(handler), conf.DefaultClient())),
+		Handler: instrumentation.HTTPMiddleware(
+			"",
+			trace.HTTPMiddleware(logger, authzBypass(handler), conf.DefaultClient()),
+		),
 	})
-	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
-
-	return nil
 }
 
 func gitserverReposStatusHandler(db database.DB) http.HandlerFunc {

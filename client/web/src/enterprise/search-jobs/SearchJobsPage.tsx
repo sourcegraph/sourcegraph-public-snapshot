@@ -1,6 +1,7 @@
 import { FC, useState } from 'react'
 
 import { mdiRefresh, mdiDelete, mdiDownload } from '@mdi/js'
+import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 import LayersSearchOutlineIcon from 'mdi-react/LayersSearchOutlineIcon'
 
@@ -8,6 +9,7 @@ import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { SearchJobsOrderBy, SearchJobState } from '@sourcegraph/shared/src/graphql-operations'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Badge,
     BadgeVariantType,
@@ -27,6 +29,7 @@ import {
     PageHeader,
     Select,
     Text,
+    H2,
     Tooltip,
 } from '@sourcegraph/wildcard'
 
@@ -94,6 +97,7 @@ export const SEARCH_JOBS_QUERY = gql`
 `
 
 export const SearchJobsPage: FC = props => {
+    const [searchTerm, setSearchTerm] = useState<string>('')
     const [searchStateTerm, setSearchStateTerm] = useState('')
     const [selectedUsers, setUsers] = useState<User[]>([])
     const [selectedStates, setStates] = useState<SearchJobState[]>([])
@@ -148,9 +152,11 @@ export const SearchJobsPage: FC = props => {
             <Container className="mt-4">
                 <header className={styles.header}>
                     <Input
+                        value={searchTerm}
                         placeholder="Search jobs by query..."
                         className={styles.search}
                         inputClassName={styles.searchInput}
+                        onChange={event => setSearchTerm(event.target.value)}
                     />
 
                     <MultiCombobox
@@ -209,7 +215,13 @@ export const SearchJobsPage: FC = props => {
 
                 {connection && (
                     <ul className={styles.jobs}>
-                        {connection.nodes.length === 0 && <SearchJobsZeroState />}
+                        {connection.nodes.length === 0 && (
+                            <SearchJobsZeroState
+                                searchTerm={searchTerm}
+                                selectedUsers={selectedUsers}
+                                selectedStates={selectedStates}
+                            />
+                        )}
 
                         {connection.nodes.map(searchJob => (
                             <SearchJob key={searchJob.id} job={searchJob} />
@@ -331,12 +343,66 @@ const getBadgeVariant = (jobStatus: SearchJobState): BadgeVariantType => {
     }
 }
 
-const SearchJobsZeroState: FC = () => (
+interface SearchJobsZeroStateProps {
+    searchTerm: string
+    selectedUsers: User[]
+    selectedStates: SearchJobState[]
+}
+
+const SearchJobsZeroState: FC<SearchJobsZeroStateProps> = props => {
+    const { searchTerm, selectedUsers, selectedStates } = props
+
+    return hasFiltersValues(selectedStates, selectedUsers, searchTerm) ? (
+        <SearchJobsWithFiltersZeroState />
+    ) : (
+        <SearchJobsInitialZeroState />
+    )
+}
+
+const SearchJobsWithFiltersZeroState: FC = () => (
     <ListPageZeroState
         title="No Search jobs found"
-        subTitle="Create your first search job from the search page in the results menu"
-        className={styles.zeroState}
+        subTitle="Try to reset filters to see all search jobs available to you"
+        className={styles.zeroStateWithFilters}
     />
 )
 
+interface SearchJobsInitialZeroStateProps {
+    className?: string
+}
+
+const SearchJobsInitialZeroState: FC<SearchJobsInitialZeroStateProps> = props => {
+    const isLightTheme = useIsLightTheme()
+    const assetsRoot = window.context?.assetsRoot || ''
+
+    return (
+        <div className={classNames(props.className, styles.initialZeroState)}>
+            <img
+                alt="Search jobs creation button UI"
+                width={384}
+                height={267}
+                src={`${assetsRoot}/img/no-jobs-state-${isLightTheme ? 'light' : 'dark'}.png`}
+                className={styles.initialZeroStateImage}
+            />
+            <div className={styles.initialZeroStateText}>
+                <H2 className={styles.initialZeroStateHeading}>No search jobs found</H2>
+
+                <Text>
+                    Search jobs are long running searches that will exhaustively return all results for widely scoped
+                    queries.
+                </Text>
+
+                <Text>
+                    You can trigger a search job from the results information panel when a normal search hits a result
+                    limit.
+                </Text>
+
+                <Text>Learn more in the search jobs documentation page.</Text>
+            </div>
+        </div>
+    )
+}
+
 const formatJobState = (state: SearchJobState): string => upperFirst(state.toLowerCase())
+const hasFiltersValues = (states: SearchJobState[], users: User[], searchTerm: string): boolean =>
+    states.length > 0 || users.length > 0 || searchTerm.trim().length > 0

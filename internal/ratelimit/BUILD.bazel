@@ -17,12 +17,14 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf",
+        "//internal/conf/deploy",
         "//internal/redispool",
         "//internal/timeutil",
         "//lib/errors",
         "@com_github_gomodule_redigo//redis",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_log//:log",
         "@org_golang_x_time//rate",
     ],
 )
@@ -41,6 +43,7 @@ go_test(
     deps = [
         "//internal/conf",
         "//internal/redispool",
+        "//lib/pointers",
         "//schema",
         "@com_github_derision_test_glock//:glock",
         "@com_github_gomodule_redigo//redis",

@@ -7,7 +7,7 @@
     "url": "https://github.com/sourcegraph/sourcegraph"
   },
   "engines": {
-    "node": "^v16.18.1",
+    "node": "^v18.17.1",
     "pnpm": "^8.3.0"
   },
   "scripts": {
@@ -194,7 +194,7 @@
     "@types/mock-require": "^2.0.1",
     "@types/mockdate": "2.0.0",
     "@types/mz": "2.7.3",
-    "@types/node": "13.13.5",
+    "@types/node": "18.17.15",
     "@types/node-fetch": "2.5.10",
     "@types/pollyjs__adapter": "4.3.0",
     "@types/pollyjs__core": "4.3.1",

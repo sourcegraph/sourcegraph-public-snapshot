@@ -21,6 +21,7 @@ type config struct {
 	api   *url.URL
 	owner string
 	name  string
+	uri   string
 	urn   string
 
 	token         string
@@ -35,7 +36,8 @@ func parseSiteConfig(conf *conf.Unified) (*config, error) {
 		interval: 1 * time.Hour,
 		owner:    "sourcegraph",
 		name:     "src-cli",
-		urn:      "https://github.com",
+		uri:      "https://github.com",
+		urn:      "releasecache:github.com",
 	}
 
 	// There's a _lot_ of pointer indirection boilerplate required to build up
@@ -68,12 +70,10 @@ func parseSiteConfig(conf *conf.Unified) (*config, error) {
 		}
 	}
 
-	// We need to turn the GitHub URI into the "urn" and "apiUrl" required to
-	// build a GitHub V4Client.
 	if c.Github.Uri != "" {
-		config.urn = c.Github.Uri
+		config.uri = c.Github.Uri
 	}
-	configUrl, err := url.Parse(config.urn)
+	configUrl, err := url.Parse(config.uri)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing GitHub URL from configuration")
 	}

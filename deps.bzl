@@ -100,8 +100,8 @@ def go_dependencies():
         name = "com_github_adalogics_go_fuzz_headers",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/AdaLogics/go-fuzz-headers",
-        sum = "h1:V8krnnfGj4pV65YLUm3C0/8bl7V5Nry2Pwvy3ru/wLc=",
-        version = "v0.0.0-20210715213245-6c3934b029d8",
+        sum = "h1:bvDV9vkmnHYOMsOr4WLk+Vo07yKIzd94sVoIqshQ4bU=",
+        version = "v0.0.0-20230811130428-ced1acdcaa24",
     )
 
     go_repository(
@@ -6371,8 +6371,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:jz6dUd7NKcULoGoC0KcsdWw1dh58S8/cM50rl1K2b00=",
-        version = "v0.0.0-20230912152407-3ce1f2b24c80",
+        sum = "h1:30sVCGSj0tgC4SPRZiRTm7wJ6VbXMPM9w7w3PU+R/4A=",
+        version = "v0.0.0-20230913182917-2d1affd44cb7",
     )
 
     go_repository(

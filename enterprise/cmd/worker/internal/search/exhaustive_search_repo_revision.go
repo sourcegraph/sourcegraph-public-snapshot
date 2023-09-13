@@ -2,7 +2,7 @@ package search
 
 import (
 	"context"
-	"io"
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -12,9 +12,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
+	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // newExhaustiveSearchRepoRevisionWorker creates a background routine that periodically runs the exhaustive search of a revision on a repo.
@@ -24,12 +26,14 @@ func newExhaustiveSearchRepoRevisionWorker(
 	workerStore dbworkerstore.Store[*types.ExhaustiveSearchRepoRevisionJob],
 	exhaustiveSearchStore *store.Store,
 	newSearcher service.NewSearcher,
+	uploadStore uploadstore.Store,
 	config config,
 ) goroutine.BackgroundRoutine {
 	handler := &exhaustiveSearchRepoRevHandler{
 		logger:      log.Scoped("exhaustive-search-repo-revision", "The background worker running exhaustive searches on a revision of a repository"),
 		store:       exhaustiveSearchStore,
 		newSearcher: newSearcher,
+		uploadStore: uploadStore,
 	}
 
 	opts := workerutil.WorkerOptions{
@@ -48,15 +52,13 @@ type exhaustiveSearchRepoRevHandler struct {
 	logger      log.Logger
 	store       *store.Store
 	newSearcher service.NewSearcher
+	uploadStore uploadstore.Store
 }
 
 var _ workerutil.Handler[*types.ExhaustiveSearchRepoRevisionJob] = &exhaustiveSearchRepoRevHandler{}
 
-// Temporary hack. We will replace this quickly once we implement the blobstore.
-var csvBuf = io.Discard
-
 func (h *exhaustiveSearchRepoRevHandler) Handle(ctx context.Context, logger log.Logger, record *types.ExhaustiveSearchRepoRevisionJob) error {
-	query, repoRev, err := h.store.GetQueryRepoRev(ctx, record)
+	jobID, query, repoRev, err := h.store.GetQueryRepoRev(ctx, record)
 	if err != nil {
 		return err
 	}
@@ -66,7 +68,12 @@ func (h *exhaustiveSearchRepoRevHandler) Handle(ctx context.Context, logger log.
 		return err
 	}
 
-	csvWriter := service.NewCSVWriterFake(csvBuf)
+	csvWriter := service.NewBlobstoreCSVWriter(ctx, h.uploadStore, fmt.Sprintf("%d-%d", jobID, record.ID))
 
-	return q.Search(ctx, repoRev, csvWriter)
+	err = q.Search(ctx, repoRev, csvWriter)
+	if closeErr := csvWriter.Close(); closeErr != nil {
+		err = errors.Append(err, closeErr)
+	}
+
+	return err
 }

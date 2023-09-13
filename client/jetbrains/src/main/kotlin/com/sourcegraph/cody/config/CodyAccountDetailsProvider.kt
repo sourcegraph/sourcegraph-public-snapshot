@@ -14,7 +14,7 @@ import com.sourcegraph.cody.api.SourcegraphSecurityUtil
 import com.sourcegraph.cody.auth.ui.LoadingAccountsDetailsProvider
 import java.util.concurrent.CompletableFuture
 
-class CodyAccounDetailsProvider(
+class CodyAccountDetailsProvider(
     progressIndicatorsProvider: ProgressIndicatorsProvider,
     private val accountManager: CodyAccountManager,
     private val accountsModel: CodyAccountListModel

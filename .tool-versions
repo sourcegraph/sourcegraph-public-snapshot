@@ -1,5 +1,5 @@
 golang 1.20.8
-nodejs 16.18.1
+nodejs 18.17.1
 fd 8.6.0
 shfmt 3.5.0
 shellcheck 0.7.1

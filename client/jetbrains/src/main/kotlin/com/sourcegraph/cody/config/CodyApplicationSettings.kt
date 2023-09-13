@@ -14,7 +14,6 @@ data class CodyApplicationSettings(
     var isDefaultDotcomAccountNotificationDismissed: Boolean = false,
     var anonymousUserId: String? = null,
     var isInstallEventLogged: Boolean = false,
-    var lastUpdateNotificationPluginVersion: String? = null,
     var isCustomAutocompleteColorEnabled: Boolean = false,
     var customAutocompleteColor: Int? = null,
     var blacklistedLanguageIds: List<String> = listOf(),
@@ -30,7 +29,6 @@ data class CodyApplicationSettings(
         state.isDefaultDotcomAccountNotificationDismissed
     this.anonymousUserId = state.anonymousUserId
     this.isInstallEventLogged = state.isInstallEventLogged
-    this.lastUpdateNotificationPluginVersion = state.lastUpdateNotificationPluginVersion
     this.isCustomAutocompleteColorEnabled = state.isCustomAutocompleteColorEnabled
     this.customAutocompleteColor = state.customAutocompleteColor
     this.blacklistedLanguageIds = state.blacklistedLanguageIds

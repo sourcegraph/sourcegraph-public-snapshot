@@ -56,6 +56,22 @@ func (j *searchJob) Config() []env.Config {
 }
 
 func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	workCtx := actor.WithInternalActor(context.Background())
+
+	uploadStore, err := uploadstore.New(workCtx, observationCtx, uploadstore.ConfigInst)
+	if err != nil {
+		j.err = err
+		return nil, err
+	}
+
+	return j.newSearchJobRoutines(workCtx, observationCtx, uploadStore)
+}
+
+func (j *searchJob) newSearchJobRoutines(
+	workCtx context.Context,
+	observationCtx *observation.Context,
+	uploadStore uploadstore.Store,
+) ([]goroutine.BackgroundRoutine, error) {
 	j.once.Do(func() {
 		db := j.workerDB
 		if db == nil {
@@ -85,12 +101,10 @@ func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Cont
 			observationCtx,
 		)
 
-		workCtx := actor.WithInternalActor(context.Background())
-
 		j.workers = []goroutine.BackgroundRoutine{
 			newExhaustiveSearchWorker(workCtx, observationCtx, searchWorkerStore, exhaustiveSearchStore, newSearcher, j.config),
 			newExhaustiveSearchRepoWorker(workCtx, observationCtx, repoWorkerStore, exhaustiveSearchStore, newSearcher, j.config),
-			newExhaustiveSearchRepoRevisionWorker(workCtx, observationCtx, revWorkerStore, exhaustiveSearchStore, newSearcher, j.config),
+			newExhaustiveSearchRepoRevisionWorker(workCtx, observationCtx, revWorkerStore, exhaustiveSearchStore, newSearcher, uploadStore, j.config),
 		}
 	})
 
