@@ -49,6 +49,27 @@ type PerforceDepot struct {
 	Type PerforceDepotType `json:"type,omitempty"`
 }
 
+// PerforceStream is a definiton of a depot stream that matches the format
+// returned from `p4 -Mj -ztag streams`
+type PerforceStream struct {
+	// Access is seconds since the Epoch, but p4 quotes it in the output, so it's a string
+	Access     string `json:"Access,omitempty"`     // 1651172591
+	Name       string `json:"Name,omitempty"`       // stream2
+	Options    string `json:"Options,omitempty"`    // allsubmit unlocked toparent fromparent mergedown
+	Owner      string `json:"Owner,omitempty"`      // admin
+	Parent     string `json:"Parent,omitempty"`     // //stream-test/main
+	ParentView string `json:"ParentView,omitempty"` // inherit
+	Stream     string `json:"Stream,omitempty"`     // //stream-test/stream2
+	Type       string `json:"Type,omitempty"`       // development
+	// Update is seconds since the Epoch, but p4 quotes it in the output, so it's a string
+	Update                string `json:"Update,omitempty"`                // 1651172591
+	BaseParent            string `json:"baseParent,omitempty"`            // //stream-test/main
+	ChangeFlowsFromParent string `json:"changeFlowsFromParent,omitempty"` // true
+	ChangeFlowsToParent   string `json:"changeFlowsToParent,omitempty"`   // true
+	Desc                  string `json:"desc,omitempty"`                  // Created by admin.\n
+	FirmerThanParent      string `json:"firmerThanParent,omitempty"`      // false
+}
+
 // PerforceDepotSyncer is a syncer for Perforce depots.
 type PerforceDepotSyncer struct {
 	// MaxChanges indicates to only import at most n changes when possible.
@@ -64,6 +85,9 @@ type PerforceDepotSyncer struct {
 	// P4Home is a directory we will pass to `git p4` commands as the
 	// $HOME directory as it requires this to write cache data.
 	P4Home string
+
+	// Streams indicates whether or not this syncer will attempt to sync stream depots.
+	Streams bool
 }
 
 func (s *PerforceDepotSyncer) Type() string {
@@ -125,7 +149,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 
 	var cmd *exec.Cmd
 	if s.FusionConfig.Enabled {
-		cmd = s.buildP4FusionCmd(ctx, depot, username, tmpPath, p4port)
+		cmd = s.buildP4FusionCmd(ctx, p4port, depot, username, password, tmpPath)
 	} else {
 		// Example: git p4 clone --bare --max-changes 1000 //Sourcegraph/@all /tmp/clone-584194180/.git
 		args := append([]string{"p4", "clone", "--bare"}, s.p4CommandOptions()...)
@@ -137,16 +161,16 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 	return cmd, nil
 }
 
-func (s *PerforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, username, src, port string) *exec.Cmd {
+func (s *PerforceDepotSyncer) buildP4FusionCmd(ctx context.Context, host, depot, username, password, src string) *exec.Cmd {
 	// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
-	return exec.CommandContext(ctx, "p4-fusion",
+	cmd := exec.CommandContext(ctx, "p4-fusion",
 		"--path", depot+"...",
 		"--client", s.FusionConfig.Client,
 		"--user", username,
 		"--src", src,
 		"--networkThreads", strconv.Itoa(s.FusionConfig.NetworkThreads),
 		"--printBatch", strconv.Itoa(s.FusionConfig.PrintBatch),
-		"--port", port,
+		"--port", host,
 		"--lookAhead", strconv.Itoa(s.FusionConfig.LookAhead),
 		"--retries", strconv.Itoa(s.FusionConfig.Retries),
 		"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
@@ -155,6 +179,16 @@ func (s *PerforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, usern
 		"--fsyncEnable", strconv.FormatBool(s.FusionConfig.FsyncEnable),
 		"--noColor", "true",
 	)
+	if s.Streams {
+		// seek out and add streams to the command
+		streams, err := p4streams(ctx, host, username, password, depot)
+		if err == nil && len(streams) > 0 {
+			for _, stream := range streams {
+				cmd.Args = append(cmd.Args, "--branch", stream.Name)
+			}
+		}
+	}
+	return cmd
 }
 
 // Fetch tries to fetch updates of a Perforce depot as a Git repository.
@@ -173,7 +207,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ a
 	if s.FusionConfig.Enabled {
 		// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
 		root, _ := filepath.Split(string(dir))
-		cmd = wrexec.Wrap(ctx, nil, s.buildP4FusionCmd(ctx, depot, username, root+".git", host))
+		cmd = wrexec.Wrap(ctx, nil, s.buildP4FusionCmd(ctx, host, depot, username, password, root+".git"))
 	} else {
 		// Example: git p4 sync --max-changes 1000
 		args := append([]string{"p4", "sync"}, s.p4CommandOptions()...)
@@ -355,6 +389,50 @@ func p4depots(ctx context.Context, host, username, password, nameFilter string) 
 
 	// no error, but also no depots. Maybe the user doesn't have access to any depots?
 	return depots, nil
+}
+
+// p4streams returns all of the streams on a particular depot
+func p4streams(ctx context.Context, host, username, password, depot string) ([]PerforceStream, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "p4", "-Mj", "-ztag", "streams", depot+"...")
+	cmd.Env = append(os.Environ(),
+		"P4PORT="+host,
+		"P4USER="+username,
+		"P4PASSWD="+password,
+	)
+
+	out, err := runCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
+	if err != nil {
+		if ctxerr := ctx.Err(); ctxerr != nil {
+			err = ctxerr
+		}
+		if len(out) > 0 {
+			err = errors.Wrapf(err, `failed to run command "p4 streams" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd))
+		}
+		return nil, err
+	}
+	streams := make([]PerforceStream, 0)
+	if len(out) > 0 {
+		// the output of `p4 -Mj -ztag streams` is a series of JSON-formatted stream definitions, one per line
+		buf := bufio.NewScanner(bytes.NewBuffer(out))
+		for buf.Scan() {
+			stream := PerforceStream{}
+			err := json.Unmarshal(buf.Bytes(), &stream)
+			if err != nil {
+				return nil, errors.Wrap(err, "malformed output from p4 streams")
+			}
+			streams = append(streams, stream)
+		}
+		if err := buf.Err(); err != nil {
+			return nil, errors.Wrap(err, "malformed output from p4 streams")
+		}
+		return streams, nil
+	}
+
+	// no error, but also no streams. Maybe the depot isn't a streams depot?
+	return streams, nil
 }
 
 func specifyCommandInErrorMessage(errorMsg string, command *exec.Cmd) string {
