@@ -19,11 +19,11 @@ message RecordEventsRequest {
 }
 
 message RecordEventsRequestMetadata {
-  // License key hashed for analytics purposes (hashed value should include the
-  // appropriate prefix).
+  // Self-reported identifier for analytics purposes. Currently, this is an
+  // analytics prefix and the instance license key hashed together.
   //
   // TODO: We may be able to remove this before GA.
-  string analytics_hashed_license_key = 1;
+  string analyticsIdentifier = 1;
 }
 
 message RecordEventsResponse {}
