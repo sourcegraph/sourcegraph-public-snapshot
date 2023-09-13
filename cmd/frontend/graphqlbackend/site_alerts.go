@@ -501,7 +501,7 @@ func gitserverDiskInfoThresholdAlert(args AlertFuncArgs) []*Alert {
 		if s.PercentUsed >= gitserverDiskAlertThreshold {
 			alerts = append(alerts, &Alert{
 				TypeValue:    AlertTypeWarning,
-				MessageValue: fmt.Sprintf("The disk usage on gitserver %q is over 90%% (%.2f%% used). Free up disk space to avoid potential issues.", s.Address, s.PercentUsed),
+				MessageValue: fmt.Sprintf("The disk usage on gitserver **%q** is over 90%% (%.2f%% used). Free up disk space to avoid potential issues.", s.Address, s.PercentUsed),
 			})
 		}
 	}
