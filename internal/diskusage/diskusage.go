@@ -40,9 +40,13 @@ func (du *diskUsage) used() uint64 {
 	return du.Size() - du.Free()
 }
 
+func (du *diskUsage) usage() float32 {
+	return float32(du.used()) / float32(du.Size())
+}
+
 // PercentUsed returns percentage of use on the file system
 func (du *diskUsage) PercentUsed() float32 {
-	return float32(du.used()) / float32(du.Size()) * 100
+	return du.usage() * 100
 }
 
 // Available return total available bytes on file system to an unprivileged user

@@ -487,6 +487,8 @@ func codyGatewayUsageAlert(args AlertFuncArgs) []*Alert {
 	return alerts
 }
 
+const gitserverDiskAlertThreshold = 90
+
 func gitserverDiskInfoThresholdAlert(args AlertFuncArgs) []*Alert {
 	// We only show this alert to site admins.
 	if !args.IsSiteAdmin {
@@ -496,7 +498,7 @@ func gitserverDiskInfoThresholdAlert(args AlertFuncArgs) []*Alert {
 	var alerts []*Alert
 
 	for _, s := range args.GitserverSystemsInfo {
-		if s.PercentUsed >= 90 {
+		if s.PercentUsed >= gitserverDiskAlertThreshold {
 			alerts = append(alerts, &Alert{
 				TypeValue:    AlertTypeWarning,
 				MessageValue: fmt.Sprintf("The disk usage on gitserver %q is over 90%% (%.2f%% used). Free up disk space to avoid potential issues.", s.Address, s.PercentUsed),
