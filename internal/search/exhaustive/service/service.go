@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"io"
 	"sync"
 
 	"github.com/sourcegraph/log"
@@ -13,25 +14,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
+	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // New returns a Service.
-func New(observationCtx *observation.Context, store *store.Store) *Service {
+func New(observationCtx *observation.Context, store *store.Store, uploadStore uploadstore.Store) *Service {
 	logger := log.Scoped("searchjobs.Service", "search job service")
 	svc := &Service{
-		logger:     logger,
-		store:      store,
-		operations: newOperations(observationCtx),
+		logger:      logger,
+		store:       store,
+		uploadStore: uploadStore,
+		operations:  newOperations(observationCtx),
 	}
 
 	return svc
 }
 
 type Service struct {
-	logger     log.Logger
-	store      *store.Store
-	operations *operations
+	logger      log.Logger
+	store       *store.Store
+	uploadStore uploadstore.Store
+	operations  *operations
 }
 
 func opAttrs(attrs ...attribute.KeyValue) observation.Args {
@@ -146,4 +150,43 @@ func (s *Service) ListSearchJobs(ctx context.Context) (jobs []*types.ExhaustiveS
 	}()
 
 	return s.store.ListExhaustiveSearchJobs(ctx)
+}
+
+// CopyBlobs copies all the blobs associated with a search job to the given writer.
+func (s *Service) CopyBlobs(ctx context.Context, w io.Writer, id int64) error {
+	_, err := s.GetSearchJob(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	prefix := fmt.Sprintf("%d-", id)
+	iter, err := s.uploadStore.List(ctx, prefix)
+	if err != nil {
+		return err
+	}
+
+	copyBlob := func(key string) error {
+		rc, err := s.uploadStore.Get(ctx, key)
+		if err != nil {
+			_ = rc.Close()
+			return err
+		}
+		defer rc.Close()
+
+		_, err = io.Copy(w, rc)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	for iter.Next() {
+		key := iter.Current()
+		if err := copyBlob(key); err != nil {
+			return err
+		}
+	}
+
+	return iter.Err()
 }
