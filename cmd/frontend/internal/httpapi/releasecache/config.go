@@ -35,7 +35,7 @@ func parseSiteConfig(conf *conf.Unified) (*config, error) {
 		interval: 1 * time.Hour,
 		owner:    "sourcegraph",
 		name:     "src-cli",
-		urn:      "https://github.com",
+		urn:      "releasecache:github.com",
 	}
 
 	// There's a _lot_ of pointer indirection boilerplate required to build up
