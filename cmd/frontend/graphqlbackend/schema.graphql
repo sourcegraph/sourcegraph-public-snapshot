@@ -7564,8 +7564,17 @@ type SiteConfiguration {
 License information extracted from license key.
 """
 type LicenseInfo {
+    """
+    Tags of the license.
+    """
     tags: [String!]!
+    """
+    The number of users that can use the license.
+    """
     userCount: Int!
+    """
+    The expiration date of the license.
+    """
     expiresAt: DateTime!
 }
 
