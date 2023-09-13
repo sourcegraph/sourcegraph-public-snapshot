@@ -21,8 +21,7 @@ func ServeSearchJobDownload(svc *service.Service) http.HandlerFunc {
 			return
 		}
 
-		ctx := r.Context()
-		err = svc.CopyBlobs(ctx, w, int64(jobID))
+		err = svc.CopyBlobs(r.Context(), w, int64(jobID))
 		if err != nil {
 			if errors.Is(err, auth.ErrMustBeSiteAdminOrSameUser) {
 				http.Error(w, err.Error(), http.StatusForbidden)

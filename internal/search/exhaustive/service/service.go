@@ -153,15 +153,19 @@ func (s *Service) ListSearchJobs(ctx context.Context) (jobs []*types.ExhaustiveS
 	return s.store.ListExhaustiveSearchJobs(ctx)
 }
 
+func getPrefix(id int64) string {
+	return fmt.Sprintf("%d-", id)
+}
+
 // CopyBlobs copies all the blobs associated with a search job to the given writer.
 func (s *Service) CopyBlobs(ctx context.Context, w io.Writer, id int64) error {
+	// 🚨 SECURITY: only someone with access to the job may copy the blobs
 	_, err := s.GetSearchJob(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	prefix := fmt.Sprintf("%d-", id)
-	iter, err := s.uploadStore.List(ctx, prefix)
+	iter, err := s.uploadStore.List(ctx, getPrefix(id))
 	if err != nil {
 		return err
 	}
@@ -181,7 +185,6 @@ func (s *Service) CopyBlobs(ctx context.Context, w io.Writer, id int64) error {
 		}
 
 		for scanner.Scan() {
-			// add new line to each row
 			_, err = w.Write(scanner.Bytes())
 			if err != nil {
 				return err
@@ -195,13 +198,19 @@ func (s *Service) CopyBlobs(ctx context.Context, w io.Writer, id int64) error {
 		return scanner.Err()
 	}
 
-	skipHeader := false
-	for iter.Next() {
+	// For the first blob we want the header, for the rest we don't
+	if iter.Next() {
 		key := iter.Current()
-		if err := copyBlob(key, skipHeader); err != nil {
+		if err := copyBlob(key, false); err != nil {
 			return err
 		}
-		skipHeader = true
+	}
+
+	for iter.Next() {
+		key := iter.Current()
+		if err := copyBlob(key, true); err != nil {
+			return err
+		}
 	}
 
 	return iter.Err()
