@@ -321,8 +321,6 @@ class SettingsMigration : StartupActivity, DumbAware {
         codyApplicationService.isUrlNotificationDismissed
     codyApplicationSettings.anonymousUserId = codyApplicationService.anonymousUserId
     codyApplicationSettings.isInstallEventLogged = codyApplicationService.isInstallEventLogged
-    codyApplicationSettings.lastUpdateNotificationPluginVersion =
-        codyApplicationService.lastUpdateNotificationPluginVersion
   }
 
   companion object {
