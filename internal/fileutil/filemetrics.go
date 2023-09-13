@@ -2,7 +2,6 @@ package fileutil
 
 import (
 	"bufio"
-	"context"
 	"io"
 	"strings"
 
@@ -54,15 +53,17 @@ func (f *FileMetrics) LanguagesByFileContent(filePath string, fileContent []byte
 // and if the file reader function gets a valid file reader,
 // use the file contents to refine the language detection,
 // and count the lines and bytes.
-func (f *FileMetrics) CalculateFileMetrics(ctx context.Context, filePath string, fileReaderFunc func(ctx context.Context, path string) (io.ReadCloser, error)) (err error) {
+func (f *FileMetrics) CalculateFileMetrics(filePath string, stream io.Reader) (err error) {
 	// start with what can be calculated without involving the file contents
 	f.LanguagesByFileNameAndExtension(filePath)
 
 	var fileContents []byte
 
-	fileContents, f.Lines, f.Words, f.Bytes, err = scan(ctx, filePath, fileReaderFunc)
-	if err != nil {
-		return errors.Wrapf(err, "scanning %s", filePath)
+	if stream != nil {
+		fileContents, f.Lines, f.Words, f.Bytes, err = scan(filePath, stream)
+		if err != nil {
+			return errors.Wrapf(err, "scanning %s", filePath)
+		}
 	}
 
 	if len(f.Languages) != 1 && len(fileContents) > 0 {
@@ -77,23 +78,11 @@ func (f *FileMetrics) CalculateFileMetrics(ctx context.Context, filePath string,
 // Read the file contents, counting lines, words and bytes.
 // Return the first `fileReadBufferSize` bytes along with the counts
 // so that the caller can use the contents to refine language detection
-func scan(ctx context.Context, filePath string, fileReaderFunc func(ctx context.Context, path string) (io.ReadCloser, error)) (beginningOfFile []byte, lineCount, wordCount, byteCount uint64, err error) {
-
-	rc, err := fileReaderFunc(ctx, filePath)
-	if err != nil {
-		err = errors.Wrap(err, "getting file reader")
-		return
-	}
-	if rc == nil {
-		// no file contents to scan
-		err = nil
-		return
-	}
-	defer rc.Close()
+func scan(filePath string, stream io.Reader) (beginningOfFile []byte, lineCount, wordCount, byteCount uint64, err error) {
 
 	collector := newScanLinesPlusByteCounter(fileReadBufferSize)
 
-	scanner := bufio.NewScanner(rc)
+	scanner := bufio.NewScanner(stream)
 	scanner.Split(collector.ScanLines)
 	for scanner.Scan() {
 		line := scanner.Bytes()

@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Inventory summarizes a tree's contents (e.g., which programming
@@ -54,10 +55,19 @@ func getLang(ctx context.Context, db database.DB, repoID api.RepoID, file fs.Fil
 	if metrics == nil {
 		// Nothing cached.
 		// Calculate the metrics and cache them.
+		var rc io.ReadCloser
+		rc, err = getFileReader(ctx, file.Name())
+		if err != nil {
+			return Lang{}, errors.Wrap(err, "getting file reader")
+		}
+		if rc != nil {
+			defer rc.Close()
+		}
+
 		metrics = &fileutil.FileMetrics{}
 
 		// this might be slow if `getFileReader` is set up to call `gitserver`
-		err = metrics.CalculateFileMetrics(ctx, file.Name(), getFileReader)
+		err = metrics.CalculateFileMetrics(file.Name(), rc)
 
 		// don't make the client wait for the cache insert
 		bgCtx, cancel := context.WithCancel(ctx)
@@ -65,12 +75,21 @@ func getLang(ctx context.Context, db database.DB, repoID api.RepoID, file fs.Fil
 			defer cancel()
 			db.FileMetrics().SetFileMetrics(bgCtx, repoID, commitID, file.Name(), metrics, err == nil)
 		}()
+
+		// No way to read the file contents
+		// Historically, in this situation, getLang returned the first language, lexographically,
+		// determined from the file name/extension, and the file size as reported by the file info
+		if rc == nil {
+			return Lang{
+				Name:       metrics.FirstLanguage(),
+				TotalBytes: uint64(file.Size()),
+			}, nil
+		}
 	}
 
-	if len(metrics.Languages) != 1 && metrics.Bytes == 0 && err == nil {
+	if len(metrics.Languages) != 1 && metrics.Bytes == 0 {
 		// multiple language options and an empty file, so no way to refine the language
-		// historically, in this situation, `getLang` returned nothing
-		// so keep that behavior
+		// historically, in this situation, getLang returned nothing
 		return Lang{}, nil
 	}
 

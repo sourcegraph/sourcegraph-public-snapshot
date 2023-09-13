@@ -3,7 +3,6 @@ package streaming
 import (
 	"context"
 	"fmt"
-	"io"
 	"strconv"
 	"strings"
 
@@ -85,13 +84,8 @@ func languageFromFile(fileMatch *result.FileMatch, db database.DB) string {
 	// while continuing to process
 	go func() {
 		metrics := &fileutil.FileMetrics{}
-		err := metrics.CalculateFileMetrics(
-			context.TODO(),
-			fileMatch.Path,
-			func(ctx context.Context, path string) (io.ReadCloser, error) {
-				return gitserver.NewClient().NewFileReader(ctx, authz.DefaultSubRepoPermsChecker, fileMatch.Repo.Name, fileMatch.CommitID, path)
-			},
-		)
+		stream, err := gitserver.NewClient().NewFileReader(context.TODO(), authz.DefaultSubRepoPermsChecker, fileMatch.Repo.Name, fileMatch.CommitID, fileMatch.Path)
+		err = metrics.CalculateFileMetrics(fileMatch.Path, stream)
 		db.FileMetrics().SetFileMetrics(context.TODO(), fileMatch.Repo.ID, fileMatch.CommitID, fileMatch.Path, metrics, err == nil)
 	}()
 

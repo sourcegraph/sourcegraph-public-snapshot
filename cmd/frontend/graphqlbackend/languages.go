@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"io"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -47,13 +46,9 @@ func (r *schemaResolver) GetLanguageForFile(ctx context.Context, args *struct {
 		}
 	}
 
-	err := metrics.CalculateFileMetrics(
-		context.TODO(),
-		args.Path,
-		func(ctx context.Context, path string) (io.ReadCloser, error) {
-			return gitserver.NewClient().NewFileReader(ctx, authz.DefaultSubRepoPermsChecker, api.RepoName(args.RepoName), api.CommitID(args.CommitSHA), path)
-		},
-	)
+	stream, err := gitserver.NewClient().NewFileReader(ctx, authz.DefaultSubRepoPermsChecker, api.RepoName(args.RepoName), api.CommitID(args.CommitSHA), args.Path)
+
+	err = metrics.CalculateFileMetrics(args.Path, stream)
 
 	metricsCache.SetFileMetrics(context.TODO(), api.RepoID(args.RepoId), api.CommitID(args.CommitSHA), args.Path, metrics, err == nil)
 
