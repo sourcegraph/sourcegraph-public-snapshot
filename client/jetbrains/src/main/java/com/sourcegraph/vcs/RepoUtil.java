@@ -95,11 +95,15 @@ public class RepoUtil {
   @Nullable
   private static String getSimpleRepositoryName(
       @NotNull Project project, @NotNull VirtualFile file) {
-    Repository repository = VcsRepositoryManager.getInstance(project).getRepositoryForFile(file);
-    if (repository == null) {
+    try {
+      Repository repository = VcsRepositoryManager.getInstance(project).getRepositoryForFile(file);
+      if (repository == null) {
+        return null;
+      }
+      return repository.getRoot().getName();
+    } catch (Exception e) {
       return null;
     }
-    return repository.getRoot().getName();
   }
 
   private static String doReplacements(
