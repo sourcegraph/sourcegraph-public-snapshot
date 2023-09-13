@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	extsvcGitHub "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -49,6 +50,7 @@ func update(name string) bool {
 // guidelines https://docs.sourcegraph.com/admin/external_service/github#github-api-token-and-access
 // to ensure everything works, in case of new scopes being required.
 func TestIntegration_GitHubPermissions(t *testing.T) {
+	github.SetupForTest(t)
 	if testing.Short() {
 		t.Skip()
 	}

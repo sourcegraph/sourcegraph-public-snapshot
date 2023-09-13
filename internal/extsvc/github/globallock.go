@@ -89,7 +89,36 @@ type lock interface {
 	UnlockContext(context.Context) (bool, error)
 }
 
+var testLock *mockLock
+
+// TB is a subset of testing.TB
+type TB interface {
+	Name() string
+	Skip(args ...any)
+	Helper()
+	Fatalf(string, ...any)
+}
+
+func SetupForTest(t TB) {
+	t.Helper()
+
+	testLock = &mockLock{}
+}
+
+type mockLock struct{}
+
+func (m *mockLock) LockContext(_ context.Context) error {
+	return nil
+}
+
+func (m *mockLock) UnlockContext(_ context.Context) (bool, error) {
+	return false, nil
+}
+
 func lockForToken(logger log.Logger, token string) lock {
+	if testLock != nil {
+		return testLock
+	}
 	// We hash the token so we don't store it as plain-text in redis.
 	hash := sha256.New()
 	hashedToken := "hash-failed"

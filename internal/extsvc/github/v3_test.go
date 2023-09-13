@@ -36,6 +36,7 @@ func newTestClient(t *testing.T, cli httpcli.Doer) *V3Client {
 }
 
 func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli httpcli.Doer) *V3Client {
+	SetupForTest(t)
 	rcache.SetupForTest(t)
 	ratelimit.SetupForTest(t)
 
@@ -967,6 +968,7 @@ func TestV3Client_UpdateRef(t *testing.T) {
 
 func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 	t.Helper()
+	SetupForTest(t)
 
 	cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
 	uri, err := url.Parse("https://github.com")
@@ -987,6 +989,7 @@ func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 
 func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
 	t.Helper()
+	SetupForTest(t)
 
 	cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
 	uri, err := url.Parse("https://ghe.sgdev.org/api/v3")
