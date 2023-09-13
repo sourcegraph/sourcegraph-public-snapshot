@@ -350,7 +350,7 @@ exports_files([
     "CONTRIBUTING.md",
 ])
 
+
 release_patch(
     name = "release_patch",
-    version = "v5.1.101",
 )

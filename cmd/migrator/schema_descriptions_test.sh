@@ -19,7 +19,6 @@ got_files="${@:3}"
 # Loop over all of them and check if we can find each of them in the
 # outputs from :schema_descriptions target.
 for file in expected/**/*; do
-  echo ">>>$file<<<"
   # Trim the "expected" part of the path
   want="${file##expected}"
   found="false"
