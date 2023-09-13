@@ -50,11 +50,11 @@ func update(name string) bool {
 // guidelines https://docs.sourcegraph.com/admin/external_service/github#github-api-token-and-access
 // to ensure everything works, in case of new scopes being required.
 func TestIntegration_GitHubPermissions(t *testing.T) {
-	github.SetupForTest(t)
 	if testing.Short() {
 		t.Skip()
 	}
 
+	github.SetupForTest(t)
 	ratelimit.SetupForTest(t)
 
 	logger := logtest.Scoped(t)
