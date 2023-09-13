@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -67,7 +68,7 @@ func newAuthzProvider(
 		}
 	}
 
-	return NewProvider(logger, urn, host, user, password, depotIDs), nil
+	return NewProvider(logger, gitserver.NewClient(), urn, host, user, password, depotIDs, a.IgnoreRulesWithHost), nil
 }
 
 // ValidateAuthz validates the authorization fields of the given Perforce
