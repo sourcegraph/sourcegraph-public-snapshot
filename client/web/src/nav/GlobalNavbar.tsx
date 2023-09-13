@@ -157,6 +157,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 
     const isSearchJobsEnabled = useExperimentalFeatures(features => features.searchJobs)
     const [isSentinelEnabled] = useFeatureFlag('sentinel')
+    const [isAdminOnboardingEnabled] = useFeatureFlag('admin-onboarding')
     // TODO: Include isSourcegraphDotCom in subsequent PR
     // const showSentinel = sentinelEnabled && isSourcegraphDotCom && props.authenticatedUser?.siteAdmin
     const showSentinel = isSentinelEnabled && props.authenticatedUser?.siteAdmin && !isSourcegraphApp
@@ -330,9 +331,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 
                     {props.authenticatedUser?.siteAdmin && !isSourcegraphApp && (
                         <>
-                            <NavAction>
-                                <OnboardingChecklist />
-                            </NavAction>
+                            {isAdminOnboardingEnabled && (
+                                <NavAction>
+                                    <OnboardingChecklist />
+                                </NavAction>
+                            )}
                             <NavAction>
                                 <StatusMessagesNavItem isSourcegraphApp={isSourcegraphApp} />
                             </NavAction>
