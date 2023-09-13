@@ -38,7 +38,6 @@ import org.jetbrains.annotations.Nullable;
 /** Responsible for triggering and clearing inline code completions (the autocomplete feature). */
 public class CodyAutocompleteManager {
   private static final Logger logger = Logger.getInstance(CodyAutocompleteManager.class);
-  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   private final AtomicReference<CancellationToken> currentJob =
       new AtomicReference<>(new CancellationToken());
 
@@ -122,43 +121,56 @@ public class CodyAutocompleteManager {
    */
   public void triggerAutocomplete(
       @NotNull Editor editor, int offset, @NotNull InlineCompletionTriggerKind triggerKind) {
-    boolean isTriggeredManually = triggerKind.equals(InlineCompletionTriggerKind.INVOKE);
-    String currentCommand = CommandProcessor.getInstance().getCurrentCommandName();
-    if (!ConfigUtil.isCodyEnabled()) return;
-    else if (!CodyEditorUtil.isEditorValidForAutocomplete(editor)) {
-      if (isTriggeredManually) logger.warn("triggered autocomplete with invalid editor " + editor);
-      return;
-    } else if (!isTriggeredManually
-        && !CodyEditorUtil.isImplicitAutocompleteEnabledForEditor(editor)) return;
-    else if (CodyEditorUtil.isCommandExcluded(currentCommand) && !isTriggeredManually) {
+    boolean isTriggeredExplicitly = triggerKind.equals(InlineCompletionTriggerKind.INVOKE);
+    boolean isTriggeredImplicitly = !isTriggeredExplicitly;
+
+    if (!ConfigUtil.isCodyEnabled()) {
+      if (isTriggeredExplicitly) {
+        logger.warn("ignoring explicit autocomplete because Cody is disabled");
+      }
       return;
     }
+
+    if (!CodyEditorUtil.isEditorValidForAutocomplete(editor)) {
+      if (isTriggeredExplicitly) {
+        logger.warn("triggered autocomplete with invalid editor " + editor);
+      }
+      return;
+    }
+
+    if (isTriggeredImplicitly && !CodyEditorUtil.isImplicitAutocompleteEnabledForEditor(editor)) {
+      return;
+    }
+
+    String currentCommand = CommandProcessor.getInstance().getCurrentCommandName();
+    if (isTriggeredImplicitly && CodyEditorUtil.isCommandExcluded(currentCommand)) {
+      return;
+    }
+
     final Project project = editor.getProject();
     if (project == null) {
       logger.warn("triggered autocomplete with null project");
       return;
     }
+
     currentAutocompleteTelemetry = AutocompleteTelemetry.createAndMarkTriggered();
 
     TextDocument textDocument = new IntelliJTextDocument(editor, project);
     AutocompleteDocumentContext autoCompleteDocumentContext =
         textDocument.getAutocompleteContext(offset);
-    // If the context has a valid completion trigger, cancel any running job
-    // and asynchronously trigger the auto-complete
-    if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)
-        || autoCompleteDocumentContext.isCompletionTriggerValid()) { // TODO: skip this condition
-      CancellationToken cancellationToken = new CancellationToken();
-      Callable<CompletableFuture<Void>> callable =
-          () ->
-              triggerAutocompleteAsync(
-                  project, editor, offset, textDocument, triggerKind, cancellationToken);
-      ScheduledFuture<CompletableFuture<Void>> scheduledAutocomplete =
-          this.scheduler.schedule(callable, 20, TimeUnit.MILLISECONDS);
-      cancellationToken.onCancellationRequested(() -> scheduledAutocomplete.cancel(true));
-      // debouncing the autocomplete trigger
-      cancelCurrentJob();
-      this.currentJob.set(cancellationToken);
+
+    if (isTriggeredImplicitly && !autoCompleteDocumentContext.isCompletionTriggerValid()) {
+      return;
     }
+
+    cancelCurrentJob();
+    CancellationToken cancellationToken = new CancellationToken();
+    this.currentJob.set(cancellationToken);
+
+    CompletableFuture<Void> autocompleteRequest =
+        triggerAutocompleteAsync(
+            project, editor, offset, textDocument, triggerKind, cancellationToken);
+    cancellationToken.onCancellationRequested(() -> autocompleteRequest.cancel(true));
   }
 
   /** Asynchronously triggers auto-complete for the given editor and offset. */
