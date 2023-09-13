@@ -8,20 +8,22 @@ import "google/protobuf/struct.proto";
 option go_package = "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1";
 
 service TelemeteryGatewayService {
-  rpc RecordEvents(RecordEventsRequest) returns (RecordEventsResponse) {}
+  rpc RecordEvents(stream RecordEventsRequest) returns (RecordEventsResponse) {}
 }
 
 message RecordEventsRequest {
-  repeated Event events = 1;
+  message Metadata {
+    // Self-reported identifier for analytics purposes. Currently, this is an
+    // analytics prefix and the instance license key hashed together.
+    string analytics_identifier = 1;
+  }
 
-  // Metadata associated with the events being recorded.
-  RecordEventsRequestMetadata metadata = 2;
-}
-
-message RecordEventsRequestMetadata {
-  // Self-reported identifier for analytics purposes. Currently, this is an
-  // analytics prefix and the instance license key hashed together.
-  string analytics_identifier = 1;
+  oneof payload {
+    // Metadata about the events being recorded.
+    Metadata metadata = 1;
+    // Event to record.
+    Event event = 2;
+  }
 }
 
 message RecordEventsResponse {}

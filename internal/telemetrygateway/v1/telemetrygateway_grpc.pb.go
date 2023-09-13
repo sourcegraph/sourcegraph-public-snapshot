@@ -26,7 +26,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TelemeteryGatewayServiceClient interface {
-	RecordEvents(ctx context.Context, in *RecordEventsRequest, opts ...grpc.CallOption) (*RecordEventsResponse, error)
+	RecordEvents(ctx context.Context, opts ...grpc.CallOption) (TelemeteryGatewayService_RecordEventsClient, error)
 }
 
 type telemeteryGatewayServiceClient struct {
@@ -37,20 +37,45 @@ func NewTelemeteryGatewayServiceClient(cc grpc.ClientConnInterface) TelemeteryGa
 	return &telemeteryGatewayServiceClient{cc}
 }
 
-func (c *telemeteryGatewayServiceClient) RecordEvents(ctx context.Context, in *RecordEventsRequest, opts ...grpc.CallOption) (*RecordEventsResponse, error) {
-	out := new(RecordEventsResponse)
-	err := c.cc.Invoke(ctx, TelemeteryGatewayService_RecordEvents_FullMethodName, in, out, opts...)
+func (c *telemeteryGatewayServiceClient) RecordEvents(ctx context.Context, opts ...grpc.CallOption) (TelemeteryGatewayService_RecordEventsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &TelemeteryGatewayService_ServiceDesc.Streams[0], TelemeteryGatewayService_RecordEvents_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &telemeteryGatewayServiceRecordEventsClient{stream}
+	return x, nil
+}
+
+type TelemeteryGatewayService_RecordEventsClient interface {
+	Send(*RecordEventsRequest) error
+	CloseAndRecv() (*RecordEventsResponse, error)
+	grpc.ClientStream
+}
+
+type telemeteryGatewayServiceRecordEventsClient struct {
+	grpc.ClientStream
+}
+
+func (x *telemeteryGatewayServiceRecordEventsClient) Send(m *RecordEventsRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *telemeteryGatewayServiceRecordEventsClient) CloseAndRecv() (*RecordEventsResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(RecordEventsResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // TelemeteryGatewayServiceServer is the server API for TelemeteryGatewayService service.
 // All implementations must embed UnimplementedTelemeteryGatewayServiceServer
 // for forward compatibility
 type TelemeteryGatewayServiceServer interface {
-	RecordEvents(context.Context, *RecordEventsRequest) (*RecordEventsResponse, error)
+	RecordEvents(TelemeteryGatewayService_RecordEventsServer) error
 	mustEmbedUnimplementedTelemeteryGatewayServiceServer()
 }
 
@@ -58,8 +83,8 @@ type TelemeteryGatewayServiceServer interface {
 type UnimplementedTelemeteryGatewayServiceServer struct {
 }
 
-func (UnimplementedTelemeteryGatewayServiceServer) RecordEvents(context.Context, *RecordEventsRequest) (*RecordEventsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RecordEvents not implemented")
+func (UnimplementedTelemeteryGatewayServiceServer) RecordEvents(TelemeteryGatewayService_RecordEventsServer) error {
+	return status.Errorf(codes.Unimplemented, "method RecordEvents not implemented")
 }
 func (UnimplementedTelemeteryGatewayServiceServer) mustEmbedUnimplementedTelemeteryGatewayServiceServer() {
 }
@@ -75,22 +100,30 @@ func RegisterTelemeteryGatewayServiceServer(s grpc.ServiceRegistrar, srv Telemet
 	s.RegisterService(&TelemeteryGatewayService_ServiceDesc, srv)
 }
 
-func _TelemeteryGatewayService_RecordEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RecordEventsRequest)
-	if err := dec(in); err != nil {
+func _TelemeteryGatewayService_RecordEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(TelemeteryGatewayServiceServer).RecordEvents(&telemeteryGatewayServiceRecordEventsServer{stream})
+}
+
+type TelemeteryGatewayService_RecordEventsServer interface {
+	SendAndClose(*RecordEventsResponse) error
+	Recv() (*RecordEventsRequest, error)
+	grpc.ServerStream
+}
+
+type telemeteryGatewayServiceRecordEventsServer struct {
+	grpc.ServerStream
+}
+
+func (x *telemeteryGatewayServiceRecordEventsServer) SendAndClose(m *RecordEventsResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *telemeteryGatewayServiceRecordEventsServer) Recv() (*RecordEventsRequest, error) {
+	m := new(RecordEventsRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
-	if interceptor == nil {
-		return srv.(TelemeteryGatewayServiceServer).RecordEvents(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: TelemeteryGatewayService_RecordEvents_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TelemeteryGatewayServiceServer).RecordEvents(ctx, req.(*RecordEventsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return m, nil
 }
 
 // TelemeteryGatewayService_ServiceDesc is the grpc.ServiceDesc for TelemeteryGatewayService service.
@@ -99,12 +132,13 @@ func _TelemeteryGatewayService_RecordEvents_Handler(srv interface{}, ctx context
 var TelemeteryGatewayService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "telemetrygateway.v1.TelemeteryGatewayService",
 	HandlerType: (*TelemeteryGatewayServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
 		{
-			MethodName: "RecordEvents",
-			Handler:    _TelemeteryGatewayService_RecordEvents_Handler,
+			StreamName:    "RecordEvents",
+			Handler:       _TelemeteryGatewayService_RecordEvents_Handler,
+			ClientStreams: true,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "telemetrygateway.proto",
 }
