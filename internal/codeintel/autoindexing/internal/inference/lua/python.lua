@@ -79,14 +79,9 @@ end
 
 local make_job = function(root, name, version, additional_args)
   return {
-    steps = {
-      {
-        root = "",
-        image = indexer,
-        -- It's ok if pip install fails, we can still do our best attempt.
-        commands = { "pip install . || true" },
-      },
-    },
+    -- It's ok if pip install fails, we can still do our best attempt.
+    steps = {},
+    local_steps = {"pip install . || true"},
     root = root,
     indexer = indexer,
     indexer_args = {

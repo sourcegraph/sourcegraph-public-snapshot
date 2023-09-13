@@ -1,9 +1,6 @@
-- steps:
-    - root: ""
-      image: sourcegraph/scip-python@sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321
-      commands:
-        - pip install . || true
-  local_steps: []
+- steps: []
+  local_steps:
+    - pip install . || true
   root: ""
   indexer: sourcegraph/scip-python@sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321
   indexer_args:
@@ -18,12 +15,9 @@
     - src
   outfile: index.scip
   requestedEnvVars: []
-- steps:
-    - root: ""
-      image: sourcegraph/scip-python@sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321
-      commands:
-        - pip install . || true
-  local_steps: []
+- steps: []
+  local_steps:
+    - pip install . || true
   root: src
   indexer: sourcegraph/scip-python@sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321
   indexer_args:
