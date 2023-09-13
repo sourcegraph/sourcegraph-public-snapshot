@@ -25,7 +25,6 @@ export interface ChecklistItem {
     emailSmtp: boolean
     authProviders: boolean
     externalServices: boolean
-    usersPermissions: boolean
 }
 
 export interface UseOnboardingChecklistResult {

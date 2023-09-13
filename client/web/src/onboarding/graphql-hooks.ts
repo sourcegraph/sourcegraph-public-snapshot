@@ -45,8 +45,6 @@ function getChecklistItems(data: SiteConfigResult): OnboardingChecklistResult {
             emailSmtp: config['email.smtp']?.host !== '' || false,
             authProviders: config['auth.providers'].length > 1,
             externalServices: data.externalServices?.nodes?.length > 0 || false,
-            usersPermissions:
-                data.externalServices?.nodes?.every(({ unrestrictedAccess }) => !unrestrictedAccess) ?? false,
         },
     }
 }

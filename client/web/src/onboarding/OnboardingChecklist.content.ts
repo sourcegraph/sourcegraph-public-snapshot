@@ -34,12 +34,4 @@ export const content = [
         description: 'We recommend that enterprise instances use SSO or SAML to authenticate users.',
         link: 'https://docs.sourcegraph.com/admin/config/authorization_and_authentication',
     },
-    {
-        id: 'usersPermissions',
-        isComplete: false,
-        title: 'Set user permissions',
-        description:
-            'We recommend limiting permissions based on repository permissions already set in your code host(s).',
-        link: 'https://docs.sourcegraph.com/admin/permissions',
-    },
 ]
