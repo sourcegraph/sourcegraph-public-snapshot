@@ -37,7 +37,7 @@ type Lang struct {
 	TotalLines uint64 `json:"TotalLines,omitempty"`
 }
 
-func getLang(ctx context.Context, db database.DB, repoID api.RepoID, file fs.FileInfo, commitID api.CommitID, getFileReader func(ctx context.Context, path string) (io.ReadCloser, error)) (lang Lang, err error) {
+func getLang(ctx context.Context, db database.DB, repoID api.RepoID, file fs.FileInfo, commitID api.CommitID, getFileReader func(ctx context.Context, path string) (io.ReadCloser, error)) (Lang, error) {
 	if file == nil {
 		return Lang{}, nil
 	}
@@ -48,6 +48,8 @@ func getLang(ctx context.Context, db database.DB, repoID api.RepoID, file fs.Fil
 	// Check the cache first.
 	// It is a two-level cache: redis backed by the database.
 	metrics := db.FileMetrics().GetFileMetrics(ctx, repoID, commitID, file.Name())
+
+	var err error
 
 	if metrics == nil {
 		// Nothing cached.
@@ -63,6 +65,13 @@ func getLang(ctx context.Context, db database.DB, repoID api.RepoID, file fs.Fil
 			defer cancel()
 			db.FileMetrics().SetFileMetrics(bgCtx, repoID, commitID, file.Name(), metrics, err == nil)
 		}()
+	}
+
+	if len(metrics.Languages) != 1 && metrics.Bytes == 0 && err == nil {
+		// multiple language options and an empty file, so no way to refine the language
+		// historically, in this situation, `getLang` returned nothing
+		// so keep that behavior
+		return Lang{}, nil
 	}
 
 	return Lang{
