@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"io"
@@ -165,7 +166,7 @@ func (s *Service) CopyBlobs(ctx context.Context, w io.Writer, id int64) error {
 		return err
 	}
 
-	copyBlob := func(key string) error {
+	copyBlob := func(key string, skipHeader bool) error {
 		rc, err := s.uploadStore.Get(ctx, key)
 		if err != nil {
 			_ = rc.Close()
@@ -173,19 +174,34 @@ func (s *Service) CopyBlobs(ctx context.Context, w io.Writer, id int64) error {
 		}
 		defer rc.Close()
 
-		_, err = io.Copy(w, rc)
-		if err != nil {
-			return err
+		scanner := bufio.NewScanner(rc)
+
+		// skip header line
+		if skipHeader && scanner.Scan() {
 		}
 
-		return nil
+		for scanner.Scan() {
+			// add new line to each row
+			_, err = w.Write(scanner.Bytes())
+			if err != nil {
+				return err
+			}
+			_, err = w.Write([]byte("\n"))
+			if err != nil {
+				return err
+			}
+		}
+
+		return scanner.Err()
 	}
 
+	skipHeader := false
 	for iter.Next() {
 		key := iter.Current()
-		if err := copyBlob(key); err != nil {
+		if err := copyBlob(key, skipHeader); err != nil {
 			return err
 		}
+		skipHeader = true
 	}
 
 	return iter.Err()
