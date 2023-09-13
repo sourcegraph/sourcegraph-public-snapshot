@@ -19,6 +19,7 @@ http_archive(
     strip_prefix = "bazel-lib-1.31.2",
     url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.31.2/bazel-lib-v1.31.2.tar.gz",
 )
+
 # rules_js defines an older rules_nodejs, so we override it here
 http_archive(
     name = "rules_nodejs",
@@ -104,6 +105,7 @@ http_archive(
     strip_prefix = "container-structure-test-104a53ede5f78fff72172639781ac52df9f5b18f",
     urls = ["https://github.com/GoogleContainerTools/container-structure-test/archive/104a53ede5f78fff72172639781ac52df9f5b18f.zip"],
 )
+
 # hermetic_cc_toolchain setup ================================
 HERMETIC_CC_TOOLCHAIN_VERSION = "v2.0.0"
 
