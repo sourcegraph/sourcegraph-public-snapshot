@@ -29,29 +29,37 @@ message RecordEventsRequest {
 message RecordEventsResponse {}
 
 message Event {
+  // Generated ID of the event.
+  string id = 1;
   // Timestamp of when the original event was recorded.
-  google.protobuf.Timestamp timestamp = 1;
+  google.protobuf.Timestamp timestamp = 2;
   // Feature associated with the event in camelCase, e.g. 'myFeature'.
-  string feature = 2;
+  string feature = 3;
   // Action associated with the event in camelCase, e.g. 'pageView'.
-  string action = 3;
+  string action = 4;
   // Source of the event.
-  EventSource source = 4;
+  EventSource source = 5;
   // Parameters of the event.
-  EventParameters parameters = 5;
+  EventParameters parameters = 6;
   // Optional user associated with the event.
-  optional EventUser user = 6;
+  optional EventUser user = 7;
   // Optional marketing campaign tracking parameters.
-  optional EventMarketingTracking marketing_tracking = 7;
+  optional EventMarketingTracking marketing_tracking = 8;
 }
 
 message EventSource {
-  // Version of the Sourcegraph instance that received the event.
-  string server_version = 1;
-  // Source client of the event.
-  optional string client = 2;
-  // Version of the source client of the event.
-  optional string client_version = 3;
+  message Server {
+    string version = 1;
+  }
+  message Client {
+    string name = 1;
+    string version = 2;
+  }
+
+  // Information about the Sourcegraph instance that received the event.
+  Server server = 1;
+  // Information about the client that generated the event.
+  optional Client client = 2;
 }
 
 message EventParameters {
