@@ -193,6 +193,19 @@ To enable file-level permissions:
 
 1. Save the configuration. Permissions will be synced in the background based on your [Perforce protects file](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html).
 
+#### Handling Host rules in the protects file
+
+When file-level permissions are enabled, Sourcegraph will read the Perforce protects file to determine what users can access. Because Sourcegraph originates all depot access from one host, protects rules with a Host field cannot be followed exactly. By default, they are parsed as if they apply to all hosts, which can result in users losing access when they should have access. If you have protects rules with hosts that are causing lost access for users, you can set `ignoreRulesWithHost` to `true` in the code host configuration.
+
+```json
+    {
+      "authorization": {
+        "subRepoPermissions": true,
+        "ignoreRulesWithHost": true
+      }
+    }
+```
+
 ### Notes about permissions
 
 - Sourcegraph users are mapped to Perforce users based on their verified email addresses.

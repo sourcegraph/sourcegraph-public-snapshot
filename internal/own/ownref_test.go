@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -391,7 +390,7 @@ func addMockExternalAccount(ctx context.Context, t *testing.T, db database.DB, u
 	require.NoError(t, db.UserExternalAccounts().Insert(ctx, userID, spec, accountData))
 	mockProvider := providers.MockAuthProvider{
 		MockConfigID:          providers.ConfigID{Type: serviceType},
-		MockPublicAccountData: &extsvc.PublicAccountData{Login: pointers.Ptr(handle)},
+		MockPublicAccountData: &extsvc.PublicAccountData{Login: handle},
 	}
 	// Adding providers to the mock.
 	providers.MockProviders = append(providers.MockProviders, mockProvider)

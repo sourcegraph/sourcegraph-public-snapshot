@@ -1,12 +1,5 @@
-package com.sourcegraph.cody.config.ui
+package com.sourcegraph.cody.auth.ui
 
-import com.intellij.collaboration.auth.Account
-import com.intellij.collaboration.auth.AccountManager
-import com.intellij.collaboration.auth.AccountsListener
-import com.intellij.collaboration.auth.PersistentDefaultAccountHolder
-import com.intellij.collaboration.auth.ui.AccountsDetailsProvider
-import com.intellij.collaboration.auth.ui.AccountsListModel
-import com.intellij.collaboration.auth.ui.SimpleAccountsListCellRenderer
 import com.intellij.collaboration.messages.CollaborationToolsBundle
 import com.intellij.collaboration.ui.util.JListHoveredRowMaterialiser
 import com.intellij.icons.AllIcons
@@ -24,6 +17,10 @@ import com.intellij.ui.dsl.builder.Row
 import com.intellij.util.ui.EmptyIcon
 import com.intellij.util.ui.StatusText
 import com.intellij.util.ui.UIUtil
+import com.sourcegraph.cody.auth.Account
+import com.sourcegraph.cody.auth.AccountManager
+import com.sourcegraph.cody.auth.AccountsListener
+import com.sourcegraph.cody.auth.PersistentDefaultAccountHolder
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseListener

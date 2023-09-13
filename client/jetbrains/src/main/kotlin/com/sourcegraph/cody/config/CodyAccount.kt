@@ -1,10 +1,10 @@
 package com.sourcegraph.cody.config
 
-import com.intellij.collaboration.auth.ServerAccount
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.util.xmlb.annotations.Attribute
 import com.intellij.util.xmlb.annotations.Property
 import com.intellij.util.xmlb.annotations.Tag
+import com.sourcegraph.cody.auth.ServerAccount
 import com.sourcegraph.cody.localapp.LocalAppManager
 import com.sourcegraph.config.ConfigUtil
 

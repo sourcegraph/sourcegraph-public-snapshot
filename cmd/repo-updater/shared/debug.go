@@ -37,14 +37,6 @@ func createDebugServerEndpoints(ready chan struct{}, debugserverEndpoints *LazyD
 			}),
 		},
 		{
-			Name: "Rate Limiter State",
-			Path: "/rate-limiter-state",
-			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				<-ready
-				debugserverEndpoints.rateLimiterStateEndpoint(w, r)
-			}),
-		},
-		{
 			Name: "Manual Repo Purge",
 			Path: "/manual-purge",
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

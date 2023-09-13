@@ -61,4 +61,7 @@ public interface CodyAgentServer {
 
   @JsonNotification("debug/message")
   void debugMessage(DebugMessage message);
+
+  @JsonNotification("autocomplete/clearLastCandidate")
+  void autocompleteClearLastCandidate();
 }

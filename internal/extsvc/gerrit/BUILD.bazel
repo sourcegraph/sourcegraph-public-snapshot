@@ -19,6 +19,7 @@ go_library(
         "//internal/httpcli",
         "//internal/ratelimit",
         "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -27,6 +28,7 @@ go_test(
     timeout = "short",
     srcs = [
         "changes_test.go",
+        "client_test.go",
         "main_test.go",
         "projects_test.go",
     ],
@@ -36,9 +38,12 @@ go_test(
         "//internal/httpcli",
         "//internal/httptestutil",
         "//internal/lazyregexp",
+        "//internal/ratelimit",
         "//internal/testutil",
         "//lib/errors",
         "@com_github_dnaeon_go_vcr//cassette",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_x_time//rate",
     ],
 )

@@ -25,6 +25,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -47,6 +48,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -503,6 +505,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 				},
 				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 				Locker:                  server.NewRepositoryLocker(),
+				RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(100, 10)),
 			}
 
 			grpcServer := defaults.NewServer(logtest.Scoped(t))
@@ -1087,6 +1090,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		Perforce:                perforce.NewService(ctx, observation.TestContextTB(t), logger, db, list.New()),
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		Locker:                  server.NewRepositoryLocker(),
+		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(100, 10)),
 	}
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))

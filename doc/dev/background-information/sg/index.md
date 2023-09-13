@@ -256,6 +256,13 @@ Ensure that the `sourcegraph/syntax-highlighter:insiders` image is already avail
 docker pull -q sourcegraph/syntax-highlighter:insiders
 ```
 
+## `sg` and pre-commits 
+
+When `sg setup` is run, it will automatically install pre-commit hooks (using [pre-commit.com](https://pre-commit.com)), with a [provided configuration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/.pre-commit-config.yaml) that will perform a series of fast checks before each commit you create locally. 
+
+Amongst that list of checks, is a [script](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/check-tokens.sh) that tries to detect the presence of tokens that would have been accidentally committed. While it's implementation is rather simple and won't catch all tokens (this is covered by automated scans in CI), it's enough to catch common mistakes and save you from having to rotate secrets, as they never left your computer. Due to the importance of such a measure, it's an opt-out process instead of opt-in. 
+
+Therefore, it's strongly recommended to keep the pre-commit git hook. In the eventuality of the pre-commit detecting a false positive, you can disable it through `sg setup disable-pre-commit` and prevent `sg setup` from installing it by passing a flag `sg setup --skip-pre-commit`. 
 
 ## Contributing to `sg`
 

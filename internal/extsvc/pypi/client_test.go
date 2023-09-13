@@ -17,9 +17,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/unpack"
 )
@@ -449,5 +451,6 @@ func newTestClient(t testing.TB, name string, update bool) *Client {
 	doer := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec))
 
 	c, _ := NewClient("urn", []string{"https://pypi.org/simple"}, doer)
+	c.limiter = ratelimit.NewInstrumentedLimiter("pypi", rate.NewLimiter(100, 10))
 	return c
 }

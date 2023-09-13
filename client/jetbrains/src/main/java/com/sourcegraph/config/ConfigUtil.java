@@ -15,10 +15,7 @@ import com.sourcegraph.cody.config.CodyAuthenticationManager;
 import com.sourcegraph.cody.config.ServerAuth;
 import com.sourcegraph.cody.config.ServerAuthLoader;
 import com.sourcegraph.cody.config.SourcegraphServerPath;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -27,22 +24,30 @@ import org.jetbrains.annotations.Nullable;
 public class ConfigUtil {
   public static final String DOTCOM_URL = "https://sourcegraph.com/";
   public static final String SERVICE_DISPLAY_NAME = "Sourcegraph Cody + Code Search";
+  public static final String CODY_DISPLAY_NAME = "Cody AI";
+  public static final String CODE_SEARCH_DISPLAY_NAME = "Code Search";
+  public static final String SOURCEGRAPH_DISPLAY_NAME = "Sourcegraph";
 
   @NotNull
   public static ExtensionConfiguration getAgentConfiguration(@NotNull Project project) {
     ServerAuth serverAuth = ServerAuthLoader.loadServerAuth(project);
-    return new ExtensionConfiguration()
-        .setServerEndpoint(serverAuth.getInstanceUrl())
-        .setAccessToken(serverAuth.getAccessToken())
-        .setCustomHeaders(getCustomRequestHeadersAsMap(serverAuth.getCustomRequestHeaders()))
-        .setProxy(UserLevelConfig.getProxy())
-        .setAutocompleteAdvancedProvider(
-            UserLevelConfig.getAutocompleteProviderType().vscodeSettingString())
-        .setAutocompleteAdvancedServerEndpoint(UserLevelConfig.getAutocompleteServerEndpoint())
-        .setAutocompleteAdvancedAccessToken(UserLevelConfig.getAutocompleteAccessToken())
-        .setAutocompleteAdvancedEmbeddings(UserLevelConfig.getAutocompleteAdvancedEmbeddings())
-        .setDebug(isCodyDebugEnabled())
-        .setVerboseDebug(isCodyVerboseDebugEnabled());
+    ExtensionConfiguration config =
+        new ExtensionConfiguration()
+            .setServerEndpoint(serverAuth.getInstanceUrl())
+            .setAccessToken(serverAuth.getAccessToken())
+            .setCustomHeaders(getCustomRequestHeadersAsMap(serverAuth.getCustomRequestHeaders()))
+            .setProxy(UserLevelConfig.getProxy())
+            .setAutocompleteAdvancedServerEndpoint(UserLevelConfig.getAutocompleteServerEndpoint())
+            .setAutocompleteAdvancedAccessToken(UserLevelConfig.getAutocompleteAccessToken())
+            .setAutocompleteAdvancedEmbeddings(UserLevelConfig.getAutocompleteAdvancedEmbeddings())
+            .setDebug(isCodyDebugEnabled())
+            .setVerboseDebug(isCodyVerboseDebugEnabled());
+
+    if (UserLevelConfig.getAutocompleteProviderType() != null) {
+      config.setAutocompleteAdvancedProvider(
+          UserLevelConfig.getAutocompleteProviderType().vscodeSettingString());
+    }
+    return config;
   }
 
   @NotNull
@@ -112,15 +117,6 @@ public class ConfigUtil {
 
   public static Integer getCustomAutocompleteColor() {
     return CodyApplicationSettings.getInstance().getCustomAutocompleteColor();
-  }
-
-  public static String getLastUpdateNotificationPluginVersion() {
-    return CodyApplicationSettings.getInstance().getLastUpdateNotificationPluginVersion();
-  }
-
-  public static void setLastUpdateNotificationPluginVersionToCurrent() {
-    CodyApplicationSettings.getInstance()
-        .setLastUpdateNotificationPluginVersion(getPluginVersion());
   }
 
   @Nullable

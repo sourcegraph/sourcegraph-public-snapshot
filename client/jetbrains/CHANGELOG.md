@@ -4,6 +4,7 @@
 
 ### Added
 
+- New settings layout [#56579](https://github.com/sourcegraph/sourcegraph/pull/56579)
 - New settings to enable debugging with the agent [#55821](https://github.com/sourcegraph/sourcegraph/pull/55821)
 - Added ability to hide completion suggestions with ESC key [#55955](https://github.com/sourcegraph/sourcegraph/pull/55955)
 - New alt-backslash shortcut to exlicitly trigger autocomplete [#55926](https://github.com/sourcegraph/sourcegraph/pull/55926)
@@ -26,6 +27,7 @@
 - All network traffic from the plugin process [56001](https://github.com/sourcegraph/sourcegraph/pull/56001)
 - Non-agent autocomplete and chat [55997](https://github.com/sourcegraph/sourcegraph/pull/55997)
 - Support for 2022.0, 2022.1 is now required [#55831](https://github.com/sourcegraph/sourcegraph/pull/55831)
+- Removed code search onboarding notification [#56564](https://github.com/sourcegraph/sourcegraph/pull/56564)
 
 ### Fixed
 

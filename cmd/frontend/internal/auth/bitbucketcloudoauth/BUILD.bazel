@@ -64,6 +64,7 @@ go_test(
         "//internal/database/dbtest",
         "//internal/extsvc",
         "//internal/extsvc/bitbucketcloud",
+        "//internal/ratelimit",
         "//lib/errors",
         "//schema",
         "@com_github_dghubble_gologin//bitbucket",

@@ -40,8 +40,8 @@ func GetPublicExternalAccountData(ctx context.Context, data *extsvc.AccountData)
 	}
 
 	return &extsvc.PublicAccountData{
-		DisplayName: &usr.Name,
-		Login:       &usr.Username,
+		DisplayName: usr.Name,
+		Login:       usr.Username,
 	}, nil
 }
 

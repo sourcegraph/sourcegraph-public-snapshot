@@ -10,6 +10,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -74,4 +76,22 @@ func TestAllowSignup(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
+}
+
+func TestGetPublicExternalAccountData(t *testing.T) {
+	t.Run("confirm that empty account data does not panic", func(t *testing.T) {
+		data := ExternalAccountData{}
+		encryptedData, err := encryption.NewUnencryptedJSON[any](data)
+		require.NoError(t, err)
+
+		accountData := &extsvc.AccountData{
+			Data: encryptedData,
+		}
+
+		want := extsvc.PublicAccountData{}
+
+		got, err := GetPublicExternalAccountData(context.Background(), accountData)
+		require.NoError(t, err)
+		require.Equal(t, want, *got)
+	})
 }
