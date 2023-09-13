@@ -78,7 +78,7 @@ func (f *FileMetrics) CalculateFileMetrics(filePath string, stream io.Reader) (e
 // Read the file contents, counting lines, words and bytes.
 // Return the first `fileReadBufferSize` bytes along with the counts
 // so that the caller can use the contents to refine language detection
-func scan(stream io.Reader) (beginningOfFile []byte, lineCount, wordCount, byteCount uint64, err error) {
+func scan(stream io.Reader) (beginningOfFile []byte, lineCount, wordCount, byteCount uint64) {
 
 	collector := newScanLinesPlusByteCounter(fileReadBufferSize)
 
