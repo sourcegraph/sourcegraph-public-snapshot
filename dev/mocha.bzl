@@ -80,7 +80,6 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
         "TEST_USER_EMAIL": "test@sourcegraph.com",
         "TEST_USER_PASSWORD": "supersecurepassword",
         "SOURCEGRAPH_BASE_URL": "$(E2E_SOURCEGRAPH_BASE_URL)",
-        "GH_TOKEN": "$(GH_TOKEN)",
         "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
         "NO_CLEANUP": "false",
         "KEEP_BROWSER": "false",
