@@ -220,18 +220,18 @@ func (r *globalRateLimiter) waitn(ctx context.Context, n int, requestTime time.T
 }
 
 const (
-	scriptInvokationMaxRetries      = 8
-	scriptInvokationMinRetryDelayMs = 50
-	scriptInvokationMaxRetryDelayMs = 250
+	scriptInvocationMaxRetries      = 8
+	scriptInvocationMinRetryDelayMs = 50
+	scriptInvocationMaxRetryDelayMs = 250
 )
 
 func invokeScriptWithRetries(ctx context.Context, script *redis.Script, c redis.Conn, keysAndArgs ...any) (result any, err error) {
-	for i := 0; i < scriptInvokationMaxRetries; i++ {
+	for i := 0; i < scriptInvocationMaxRetries; i++ {
 		if i != 0 {
 			select {
 			case <-ctx.Done():
 				return nil, ctx.Err()
-			case <-time.After(time.Duration(rand.Intn(scriptInvokationMaxRetryDelayMs-scriptInvokationMinRetryDelayMs)+scriptInvokationMinRetryDelayMs) * time.Millisecond):
+			case <-time.After(time.Duration(rand.Intn(scriptInvocationMaxRetryDelayMs-scriptInvocationMinRetryDelayMs)+scriptInvocationMinRetryDelayMs) * time.Millisecond):
 				// Continue.
 			}
 		}
