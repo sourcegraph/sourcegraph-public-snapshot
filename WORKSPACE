@@ -19,6 +19,13 @@ http_archive(
     strip_prefix = "bazel-lib-1.31.2",
     url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.31.2/bazel-lib-v1.31.2.tar.gz",
 )
+# rules_js defines an older rules_nodejs, so we override it here
+http_archive(
+    name = "rules_nodejs",
+    sha256 = "5ad078287b5f3069735652e1fc933cb2e2189b15d2c9fc826c889dc466c32a07",
+    strip_prefix = "rules_nodejs-6.0.1",
+    url = "https://github.com/bazelbuild/rules_nodejs/releases/download/v6.0.1/rules_nodejs-v6.0.1.tar.gz",
+)
 
 http_archive(
     name = "aspect_rules_js",
@@ -97,7 +104,6 @@ http_archive(
     strip_prefix = "container-structure-test-104a53ede5f78fff72172639781ac52df9f5b18f",
     urls = ["https://github.com/GoogleContainerTools/container-structure-test/archive/104a53ede5f78fff72172639781ac52df9f5b18f.zip"],
 )
-
 # hermetic_cc_toolchain setup ================================
 HERMETIC_CC_TOOLCHAIN_VERSION = "v2.0.0"
 
@@ -132,7 +138,7 @@ load("@rules_nodejs//nodejs:repositories.bzl", "nodejs_register_toolchains")
 
 nodejs_register_toolchains(
     name = "nodejs",
-    node_version = "18.10.0",
+    node_version = "18.17.1",
 )
 
 # rules_js npm setup ============================
