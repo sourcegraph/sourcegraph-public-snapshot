@@ -21,9 +21,7 @@ message RecordEventsRequest {
 message RecordEventsRequestMetadata {
   // Self-reported identifier for analytics purposes. Currently, this is an
   // analytics prefix and the instance license key hashed together.
-  //
-  // TODO: We may be able to remove this before GA.
-  string analyticsIdentifier = 1;
+  string analytics_identifier = 1;
 }
 
 message RecordEventsResponse {}
@@ -42,16 +40,16 @@ message Event {
   // Optional user associated with the event.
   optional EventUser user = 6;
   // Optional marketing campaign tracking parameters.
-  optional EventMarketingTracking marketingTracking = 7;
+  optional EventMarketingTracking marketing_tracking = 7;
 }
 
 message EventSource {
   // Version of the Sourcegraph instance that received the event.
-  string serverVersion = 1;
+  string server_version = 1;
   // Source client of the event.
   optional string client = 2;
   // Version of the source client of the event.
-  optional string clientVersion = 3;
+  optional string client_version = 3;
 }
 
 message EventParameters {
@@ -63,9 +61,9 @@ message EventParameters {
   // Additional potentially sensitive metadata - i.e. not restricted to integer
   // values. By default, this metadata should not be assumed to be unsafe for
   // export from an instance, and should only be exported on an allowlist basis.
-  optional google.protobuf.Struct privateMetadata = 3;
+  optional google.protobuf.Struct private_metadata = 3;
   // Billing-related metadata.
-  optional EventBillingMetadata billingMetadata = 4;
+  optional EventBillingMetadata billing_metadata = 4;
 }
 
 message EventBillingMetadata {
@@ -80,19 +78,19 @@ message EventUser {
   //
   // We use an int64 as an ID because in Sourcegraph, database user IDs are
   // always integers.
-  int64 userID = 1;
+  int64 user_id = 1;
   // Randomized unique identifier for client (i.e. stored in localstorage in web
   // client).
-  string anonymousUserID = 2;
+  string anonymous_user_id = 2;
 }
 
 message EventMarketingTracking {
   string url = 1;
-  string firstSourceURL = 2;
-  string cohortID = 3;
+  string first_source_url = 2;
+  string cohort_id = 3;
   string referrer = 4;
-  string lastSourceURL = 5;
-  string deviceSessionID = 6;
-  string sessionReferrer = 7;
-  string sessionFirstURL = 8;
+  string last_source_url = 5;
+  string device_session_id = 6;
+  string session_referrer = 7;
+  string session_first_url = 8;
 }
