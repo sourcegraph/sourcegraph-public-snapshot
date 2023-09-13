@@ -8,7 +8,7 @@ import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.StatusText;
-import com.sourcegraph.cody.config.SettingsConfigurable;
+import com.sourcegraph.cody.config.ui.AccountConfigurable;
 import java.awt.*;
 import javax.swing.*;
 import org.apache.commons.lang.SystemUtils;
@@ -72,7 +72,7 @@ public class BrowserAndLoadingPanel extends JLayeredPane {
           new SimpleTextAttributes(STYLE_PLAIN, JBUI.CurrentTheme.Link.Foreground.ENABLED),
           __ ->
               ShowSettingsUtil.getInstance()
-                  .showSettingsDialog(project, SettingsConfigurable.class));
+                  .showSettingsDialog(project, AccountConfigurable.class));
 
     } else if (errorMessage != null) {
       String wrappedText = WordUtils.wrap("Error: " + errorMessage, 100);

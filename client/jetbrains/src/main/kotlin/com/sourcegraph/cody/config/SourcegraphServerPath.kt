@@ -1,8 +1,8 @@
 package com.sourcegraph.cody.config
 
-import com.intellij.collaboration.api.ServerPath
 import com.intellij.util.xmlb.annotations.Attribute
 import com.intellij.util.xmlb.annotations.Tag
+import com.sourcegraph.cody.auth.ServerPath
 import com.sourcegraph.config.ConfigUtil
 import java.util.regex.Pattern
 

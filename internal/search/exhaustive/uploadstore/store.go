@@ -59,7 +59,10 @@ func (c *Config) Load() {
 
 var ConfigInst = &Config{}
 
-func New(ctx context.Context, observationCtx *observation.Context, conf *Config) (uploadstore.Store, error) {
+// Store type alias avoids ugly important statements at call sites.
+type Store uploadstore.Store
+
+func New(ctx context.Context, observationCtx *observation.Context, conf *Config) (Store, error) {
 	c := uploadstore.Config{
 		Backend:      conf.Backend,
 		ManageBucket: conf.ManageBucket,

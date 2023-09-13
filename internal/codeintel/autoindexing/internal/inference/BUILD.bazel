@@ -59,10 +59,10 @@ go_test(
         "service_generator_test.go",
         "service_test.go",
     ],
+    data = glob(["testdata/**"]),
     embed = [":inference"],
     deps = [
         "//internal/api",
-        "//internal/codeintel/autoindexing/internal/inference/libs",
         "//internal/codeintel/dependencies",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
@@ -73,6 +73,9 @@ go_test(
         "//internal/unpack/unpacktest",
         "//lib/codeintel/autoindex/config",
         "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
+        "@com_github_stretchr_testify//require",
+        "@in_gopkg_yaml_v3//:yaml_v3",
         "@org_golang_x_time//rate",
     ],
 )

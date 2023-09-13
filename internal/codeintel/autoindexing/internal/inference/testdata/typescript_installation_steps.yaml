@@ -1,0 +1,72 @@
+- steps:
+    - root: ""
+      image: sourcegraph/scip-typescript@sha256:4c9b65a449916bf2d8716c8b4b0a45666cd303a05b78e02980d25b23c1e55e92
+      commands:
+        - npm install
+  local_steps:
+    - if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi
+  root: ""
+  indexer: sourcegraph/scip-typescript@sha256:4c9b65a449916bf2d8716c8b4b0a45666cd303a05b78e02980d25b23c1e55e92
+  indexer_args:
+    - scip-typescript
+    - index
+  outfile: index.scip
+  requestedEnvVars:
+    - NPM_TOKEN
+- steps:
+    - root: ""
+      image: sourcegraph/scip-typescript@sha256:4c9b65a449916bf2d8716c8b4b0a45666cd303a05b78e02980d25b23c1e55e92
+      commands:
+        - npm install
+    - root: foo/bar
+      image: sourcegraph/scip-typescript@sha256:4c9b65a449916bf2d8716c8b4b0a45666cd303a05b78e02980d25b23c1e55e92
+      commands:
+        - yarn
+  local_steps:
+    - if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi
+  root: foo/bar/baz
+  indexer: sourcegraph/scip-typescript@sha256:4c9b65a449916bf2d8716c8b4b0a45666cd303a05b78e02980d25b23c1e55e92
+  indexer_args:
+    - scip-typescript
+    - index
+  outfile: index.scip
+  requestedEnvVars:
+    - NPM_TOKEN
+- steps:
+    - root: ""
+      image: sourcegraph/scip-typescript@sha256:4c9b65a449916bf2d8716c8b4b0a45666cd303a05b78e02980d25b23c1e55e92
+      commands:
+        - npm install
+    - root: foo/bar
+      image: sourcegraph/scip-typescript@sha256:4c9b65a449916bf2d8716c8b4b0a45666cd303a05b78e02980d25b23c1e55e92
+      commands:
+        - yarn
+    - root: foo/bar/bonk
+      image: sourcegraph/scip-typescript@sha256:4c9b65a449916bf2d8716c8b4b0a45666cd303a05b78e02980d25b23c1e55e92
+      commands:
+        - npm install
+  local_steps:
+    - if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi
+  root: foo/bar/bonk
+  indexer: sourcegraph/scip-typescript@sha256:4c9b65a449916bf2d8716c8b4b0a45666cd303a05b78e02980d25b23c1e55e92
+  indexer_args:
+    - scip-typescript
+    - index
+  outfile: index.scip
+  requestedEnvVars:
+    - NPM_TOKEN
+- steps:
+    - root: ""
+      image: sourcegraph/scip-typescript@sha256:4c9b65a449916bf2d8716c8b4b0a45666cd303a05b78e02980d25b23c1e55e92
+      commands:
+        - npm install
+  local_steps:
+    - if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi
+  root: foo/baz
+  indexer: sourcegraph/scip-typescript@sha256:4c9b65a449916bf2d8716c8b4b0a45666cd303a05b78e02980d25b23c1e55e92
+  indexer_args:
+    - scip-typescript
+    - index
+  outfile: index.scip
+  requestedEnvVars:
+    - NPM_TOKEN

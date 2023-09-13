@@ -47,6 +47,7 @@ type Provider struct {
 	groupsCacheMutex      sync.RWMutex
 	cachedGroupMembers    map[string][]string // group -> members
 	groupsCacheLastUpdate time.Time
+	ignoreRulesWithHost   bool
 }
 
 func cacheIsUpToDate(lastUpdate time.Time) bool {
@@ -61,18 +62,19 @@ type p4Execer interface {
 // host, user and password to talk to a Perforce Server that is the source of
 // truth for permissions. It assumes emails of Sourcegraph accounts match 1-1
 // with emails of Perforce Server users.
-func NewProvider(logger log.Logger, p4Execer p4Execer, urn, host, user, password string, depots []extsvc.RepoID) *Provider {
+func NewProvider(logger log.Logger, p4Execer p4Execer, urn, host, user, password string, depots []extsvc.RepoID, ignoreRulesWithHost bool) *Provider {
 	baseURL, _ := url.Parse(host)
 	return &Provider{
-		logger:             logger,
-		urn:                urn,
-		codeHost:           extsvc.NewCodeHost(baseURL, extsvc.TypePerforce),
-		depots:             depots,
-		host:               host,
-		user:               user,
-		password:           password,
-		p4Execer:           p4Execer,
-		cachedGroupMembers: make(map[string][]string),
+		logger:              logger,
+		urn:                 urn,
+		codeHost:            extsvc.NewCodeHost(baseURL, extsvc.TypePerforce),
+		depots:              depots,
+		host:                host,
+		user:                user,
+		password:            password,
+		p4Execer:            p4Execer,
+		cachedGroupMembers:  make(map[string][]string),
+		ignoreRulesWithHost: ignoreRulesWithHost,
 	}
 }
 
@@ -176,11 +178,11 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	// Pull permissions from protects file.
 	perms := &authz.ExternalUserPermissions{}
 	if len(p.depots) == 0 {
-		err = errors.Wrap(scanProtects(p.logger, rc, repoIncludesExcludesScanner(perms)), "repoIncludesExcludesScanner")
+		err = errors.Wrap(scanProtects(p.logger, rc, repoIncludesExcludesScanner(perms), p.ignoreRulesWithHost), "repoIncludesExcludesScanner")
 	} else {
 		// SubRepoPermissions-enabled code path
 		perms.SubRepoPermissions = make(map[extsvc.RepoID]*authz.SubRepoPermissions, len(p.depots))
-		err = errors.Wrap(scanProtects(p.logger, rc, fullRepoPermsScanner(p.logger, perms, p.depots)), "fullRepoPermsScanner")
+		err = errors.Wrap(scanProtects(p.logger, rc, fullRepoPermsScanner(p.logger, perms, p.depots), p.ignoreRulesWithHost), "fullRepoPermsScanner")
 	}
 
 	// As per interface definition for this method, implementation should return
@@ -341,7 +343,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	defer func() { _ = rc.Close() }()
 
 	users := make(map[string]struct{})
-	if err := scanProtects(p.logger, rc, allUsersScanner(ctx, p, users)); err != nil {
+	if err := scanProtects(p.logger, rc, allUsersScanner(ctx, p, users), p.ignoreRulesWithHost); err != nil {
 		return nil, errors.Wrap(err, "scanning protects")
 	}
 

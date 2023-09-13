@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -286,17 +287,8 @@ func TestSiteConfigurationHistory(t *testing.T) {
 				siteConfigChangeResolverIDs[i] = s.siteConfig.ID
 			}
 
-			if len(siteConfigChangeResolvers) != len(tc.expectedSiteConfigIDs) {
-				diff := cmp.Diff(tc.expectedSiteConfigIDs, siteConfigChangeResolverIDs)
-				t.Fatalf(`mismatched number of resolvers, expected %d, got %d\n
-diff in IDs: %s,\n
-`, len(tc.expectedSiteConfigIDs), len(siteConfigChangeResolvers), diff)
-			}
-
-			for i, resolver := range siteConfigChangeResolvers {
-				if resolver.siteConfig.ID != tc.expectedSiteConfigIDs[i] {
-					t.Errorf("position %d: expected siteConfig.ID %d, but got %d", i, tc.expectedSiteConfigIDs[i], resolver.siteConfig.ID)
-				}
+			if diff := cmp.Diff(tc.expectedSiteConfigIDs, siteConfigChangeResolverIDs, cmpopts.EquateEmpty()); diff != "" {
+				t.Fatalf("unexpected site config ids (-want +got):%s\n", diff)
 			}
 		})
 	}

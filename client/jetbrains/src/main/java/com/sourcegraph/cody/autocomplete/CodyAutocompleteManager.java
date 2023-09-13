@@ -2,13 +2,13 @@ package com.sourcegraph.cody.autocomplete;
 
 import com.intellij.codeInsight.lookup.LookupManager;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.TextRange;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings;
 import com.intellij.util.concurrency.annotations.RequiresEdt;
 import com.sourcegraph.cody.agent.CodyAgent;
@@ -38,7 +38,6 @@ import org.jetbrains.annotations.Nullable;
 /** Responsible for triggering and clearing inline code completions (the autocomplete feature). */
 public class CodyAutocompleteManager {
   private static final Logger logger = Logger.getInstance(CodyAutocompleteManager.class);
-  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   private final AtomicReference<CancellationToken> currentJob =
       new AtomicReference<>(new CancellationToken());
 
@@ -121,41 +120,57 @@ public class CodyAutocompleteManager {
    * @param offset The character offset in the editor to trigger auto-complete at.
    */
   public void triggerAutocomplete(
-      @NotNull Editor editor, int offset, InlineCompletionTriggerKind triggerKind) {
-    boolean isTriggeredManually = triggerKind.equals(InlineCompletionTriggerKind.INVOKE);
-    if (!ConfigUtil.isCodyEnabled()) return;
-    else if (!CodyEditorUtil.isEditorValidForAutocomplete(editor)) {
-      if (isTriggeredManually) logger.warn("triggered autocomplete with invalid editor " + editor);
+      @NotNull Editor editor, int offset, @NotNull InlineCompletionTriggerKind triggerKind) {
+    boolean isTriggeredExplicitly = triggerKind.equals(InlineCompletionTriggerKind.INVOKE);
+    boolean isTriggeredImplicitly = !isTriggeredExplicitly;
+
+    if (!ConfigUtil.isCodyEnabled()) {
+      if (isTriggeredExplicitly) {
+        logger.warn("ignoring explicit autocomplete because Cody is disabled");
+      }
       return;
-    } else if (!isTriggeredManually
-        && !CodyEditorUtil.isImplicitAutocompleteEnabledForEditor(editor)) return;
+    }
+
+    if (!CodyEditorUtil.isEditorValidForAutocomplete(editor)) {
+      if (isTriggeredExplicitly) {
+        logger.warn("triggered autocomplete with invalid editor " + editor);
+      }
+      return;
+    }
+
+    if (isTriggeredImplicitly && !CodyEditorUtil.isImplicitAutocompleteEnabledForEditor(editor)) {
+      return;
+    }
+
+    String currentCommand = CommandProcessor.getInstance().getCurrentCommandName();
+    if (isTriggeredImplicitly && CodyEditorUtil.isCommandExcluded(currentCommand)) {
+      return;
+    }
 
     final Project project = editor.getProject();
     if (project == null) {
       logger.warn("triggered autocomplete with null project");
       return;
     }
+
     currentAutocompleteTelemetry = AutocompleteTelemetry.createAndMarkTriggered();
 
     TextDocument textDocument = new IntelliJTextDocument(editor, project);
     AutocompleteDocumentContext autoCompleteDocumentContext =
         textDocument.getAutocompleteContext(offset);
-    // If the context has a valid completion trigger, cancel any running job
-    // and asynchronously trigger the auto-complete
-    if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)
-        || autoCompleteDocumentContext.isCompletionTriggerValid()) { // TODO: skip this condition
-      CancellationToken cancellationToken = new CancellationToken();
-      Callable<CompletableFuture<Void>> callable =
-          () ->
-              triggerAutocompleteAsync(
-                  project, editor, offset, textDocument, triggerKind, cancellationToken);
-      ScheduledFuture<CompletableFuture<Void>> scheduledAutocomplete =
-          this.scheduler.schedule(callable, 20, TimeUnit.MILLISECONDS);
-      cancellationToken.onCancellationRequested(() -> scheduledAutocomplete.cancel(true));
-      // debouncing the autocomplete trigger
-      cancelCurrentJob();
-      this.currentJob.set(cancellationToken);
+
+    if (isTriggeredImplicitly && !autoCompleteDocumentContext.isCompletionTriggerValid()) {
+      return;
     }
+
+    cancelCurrentJob();
+    CancellationToken cancellationToken = new CancellationToken();
+    this.currentJob.set(cancellationToken);
+
+    CompletableFuture<Void> autocompleteRequest =
+        triggerAutocompleteAsync(
+            project, editor, offset, textDocument, triggerKind, cancellationToken);
+    cancellationToken.onCancellationRequested(() -> autocompleteRequest.cancel(true));
   }
 
   /** Asynchronously triggers auto-complete for the given editor and offset. */
@@ -164,8 +179,8 @@ public class CodyAutocompleteManager {
       @NotNull Editor editor,
       int offset,
       @NotNull TextDocument textDocument,
-      InlineCompletionTriggerKind triggerKind,
-      CancellationToken cancellationToken) {
+      @NotNull InlineCompletionTriggerKind triggerKind,
+      @NotNull CancellationToken cancellationToken) {
     CodyAgentServer server = CodyAgent.getServer(project);
     boolean isAgentAutocomplete = server != null;
     if (!isAgentAutocomplete) {
@@ -215,9 +230,9 @@ public class CodyAutocompleteManager {
       @NotNull Project project,
       @NotNull Editor editor,
       int offset,
-      InlineCompletionTriggerKind triggerKind,
-      InlineAutocompleteList result,
-      CancellationToken cancellationToken) {
+      @NotNull InlineCompletionTriggerKind triggerKind,
+      @NotNull InlineAutocompleteList result,
+      @NotNull CancellationToken cancellationToken) {
     if (currentAutocompleteTelemetry != null) {
       currentAutocompleteTelemetry.markCompletionEvent(result.completionEvent);
     }
@@ -277,14 +292,13 @@ public class CodyAutocompleteManager {
   private void displayAgentAutocomplete(
       @NotNull Editor editor,
       int offset,
-      InlineAutocompleteItem item,
-      InlayModel inlayModel,
-      InlineCompletionTriggerKind triggerKind) {
+      @NotNull InlineAutocompleteItem item,
+      @NotNull InlayModel inlayModel,
+      @NotNull InlineCompletionTriggerKind triggerKind) {
     TextRange range = CodyEditorUtil.getTextRange(editor.getDocument(), item.range);
     String originalText = editor.getDocument().getText(range);
     String insertTextFirstLine = item.insertText.lines().findFirst().orElse("");
-    String multilineInsertText =
-        item.insertText.lines().skip(1).collect(Collectors.joining(inferLineSeparator(editor)));
+    String multilineInsertText = item.insertText.lines().skip(1).collect(Collectors.joining("\n"));
 
     // Run Myer's diff between the existing text in the document and the first line of the
     // `insertText` that is returned from the agent.
@@ -322,17 +336,6 @@ public class CodyAutocompleteManager {
           false,
           Integer.MAX_VALUE,
           new CodyAutocompleteBlockElementRenderer(multilineInsertText, item, editor));
-    }
-  }
-
-  private @NotNull String inferLineSeparator(@NotNull Editor editor) {
-    VirtualFile virtualFile = FileDocumentManager.getInstance().getFile(editor.getDocument());
-
-    if (virtualFile != null) {
-      return Optional.ofNullable(virtualFile.getDetectedLineSeparator())
-          .orElse(System.lineSeparator());
-    } else {
-      return System.lineSeparator();
     }
   }
 

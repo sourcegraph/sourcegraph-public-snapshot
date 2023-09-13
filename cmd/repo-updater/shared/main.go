@@ -66,7 +66,6 @@ type LazyDebugserverEndpoint struct {
 	repoUpdaterStateEndpoint     http.HandlerFunc
 	listAuthzProvidersEndpoint   http.HandlerFunc
 	gitserverReposStatusEndpoint http.HandlerFunc
-	rateLimiterStateEndpoint     http.HandlerFunc
 	manualPurgeEndpoint          http.HandlerFunc
 }
 
@@ -118,14 +117,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		Syncer:                syncer,
 		Scheduler:             updateScheduler,
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
-		RateLimitSyncer:       repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore(), repos.RateLimitSyncerOpts{}),
-	}
-
-	// Attempt to perform an initial sync with all external services
-	if err := server.RateLimitSyncer.SyncRateLimiters(ctx); err != nil {
-		// This is not a fatal error since the syncer has been added to the server above
-		// and will still be run whenever an external service is added or updated
-		logger.Error("Performing initial rate limit sync", log.Error(err))
 	}
 
 	// No Batch Changes on dotcom, so we don't need to spawn the
@@ -203,7 +194,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	debugserverEndpoints.repoUpdaterStateEndpoint = repoUpdaterStatsHandler(debugDumpers)
 	debugserverEndpoints.listAuthzProvidersEndpoint = listAuthzProvidersHandler()
 	debugserverEndpoints.gitserverReposStatusEndpoint = gitserverReposStatusHandler(db)
-	debugserverEndpoints.rateLimiterStateEndpoint = rateLimiterStateHandler
 	debugserverEndpoints.manualPurgeEndpoint = manualPurgeHandler(db)
 
 	// We mark the service as ready now AFTER assigning the additional endpoints in
@@ -331,17 +321,6 @@ func manualPurgeHandler(db database.DB) http.HandlerFunc {
 		}
 		_, _ = w.Write([]byte(fmt.Sprintf("manual purge started with limit of %d and rate of %f", limit, perSecond)))
 	}
-}
-
-func rateLimiterStateHandler(w http.ResponseWriter, _ *http.Request) {
-	info := ratelimit.DefaultRegistry.LimitInfo()
-	resp, err := json.MarshalIndent(info, "", "  ")
-	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to marshal rate limiter state: %q", err.Error()), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write(resp)
 }
 
 func listAuthzProvidersHandler() http.HandlerFunc {

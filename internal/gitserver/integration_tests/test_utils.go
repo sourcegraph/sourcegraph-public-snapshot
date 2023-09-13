@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"golang.org/x/sync/semaphore"
+	"golang.org/x/time/rate"
 
 	sglog "github.com/sourcegraph/log"
 
@@ -25,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 )
@@ -84,6 +86,7 @@ func InitGitserver() {
 		DB:                      db,
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		Locker:                  server.NewRepositoryLocker(),
+		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(100, 10)),
 	}
 
 	grpcServer := defaults.NewServer(logger)

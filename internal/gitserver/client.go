@@ -694,11 +694,13 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 		}
 
 		req := &proto.ExecRequest{
-			Repo:           string(repoName),
-			EnsureRevision: c.EnsureRevision(),
-			Args:           stringsToByteSlices(c.args[1:]),
-			Stdin:          c.stdin,
-			NoTimeout:      c.noTimeout,
+			Repo:      string(repoName),
+			Args:      stringsToByteSlices(c.args[1:]),
+			Stdin:     c.stdin,
+			NoTimeout: c.noTimeout,
+
+			// 🚨Warning🚨: There is no guarantee that EnsureRevision is a valid utf-8 string.
+			EnsureRevision: []byte(c.EnsureRevision()),
 		}
 
 		stream, err := client.Exec(ctx, req)

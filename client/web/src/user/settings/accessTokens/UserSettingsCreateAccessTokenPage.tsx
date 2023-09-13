@@ -92,6 +92,8 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
         )
     )
 
+    const defaultDescriptionValue = new URLSearchParams(location.search).get('description') || undefined
+
     return (
         <div className="user-settings-create-access-token-page">
             <PageTitle title="Create access token" />
@@ -106,6 +108,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                         required={true}
                         autoFocus={true}
                         placeholder="What's this token for?"
+                        defaultValue={defaultDescriptionValue}
                         className="form-group"
                         label="Token description"
                     />

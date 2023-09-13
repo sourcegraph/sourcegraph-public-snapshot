@@ -106,11 +106,13 @@ func (gs *GRPCServer) DiskInfo(_ context.Context, _ *proto.DiskInfoRequest) (*pr
 
 func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_ExecServer) error {
 	internalReq := protocol.ExecRequest{
-		Repo:           api.RepoName(req.GetRepo()),
-		EnsureRevision: req.GetEnsureRevision(),
-		Args:           byteSlicesToStrings(req.GetArgs()),
-		Stdin:          req.GetStdin(),
-		NoTimeout:      req.GetNoTimeout(),
+		Repo:      api.RepoName(req.GetRepo()),
+		Args:      byteSlicesToStrings(req.GetArgs()),
+		Stdin:     req.GetStdin(),
+		NoTimeout: req.GetNoTimeout(),
+
+		// 🚨Warning🚨: There is no guarantee that EnsureRevision is a valid utf-8 string
+		EnsureRevision: string(req.GetEnsureRevision()),
 	}
 
 	w := streamio.NewWriter(func(p []byte) error {

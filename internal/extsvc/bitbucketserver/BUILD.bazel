@@ -27,6 +27,8 @@ go_library(
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_roaringbitmap_roaring//:roaring",
         "@com_github_segmentio_fasthash//fnv1",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_time//rate",
     ],
 )
 

@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -43,6 +44,8 @@ import (
 // Run from webhooks_integration_test.go
 func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 	return func(t *testing.T) {
+		ratelimit.SetupForTest(t)
+
 		// @BolajiOlajide hardcoded the time here because we use the time to generate the key
 		// for events in the `fixtures`. This key needs to be static else the tests fails, and it's not
 		// advisable to ignore the `key` field because if the logic changes, our tests won't catch it.
