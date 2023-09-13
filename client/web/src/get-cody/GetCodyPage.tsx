@@ -204,10 +204,15 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                         </div>
                     </div>
 
+                    <div className={classNames(styles.card, styles.startCodingWithMeImgWrapper, 'get-cody-step')}>
+                        <CodyStartCoding className={styles.startCodingWithMeImg} />
+                    </div>
+
                     {/* Install cody desktop app section */}
                     <div className={classNames(styles.card, 'get-cody-step')}>
                         <H2 className={classNames(styles.cardTitle, 'mb-4')}>
-                            Install the <span className={styles.installCodyTitle}>Cody desktop app</span>
+                            Optional: Install the <span className={styles.installCodyTitle}>Cody desktop app</span> for
+                            higher quality responses from Cody
                         </H2>
                         <Text className={styles.cardDescription}>
                             The Cody app, when combined with a Cody IDE extension, enables context fetching for all of
@@ -290,10 +295,6 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                 </Link>
                             </Text>
                         </div>
-                    </div>
-
-                    <div className={classNames(styles.card, styles.startCodingWithMeImgWrapper, 'get-cody-step')}>
-                        <CodyStartCoding className={styles.startCodingWithMeImg} />
                     </div>
 
                     {/* cody for enterprise section */}
