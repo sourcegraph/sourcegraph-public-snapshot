@@ -7555,10 +7555,14 @@ type SiteConfiguration {
         before: String
     ): SiteConfigurationChangeConnection
     """
+    License information from license key.
     """
     licenseInfo: LicenseInfo!
 }
 
+"""
+License information extracted from license key.
+"""
 type LicenseInfo {
     tags: [String!]!
     userCount: Int!
