@@ -31,16 +31,18 @@ message RecordEventsResponse {}
 message Event {
   // Timestamp of when the original event was recorded.
   google.protobuf.Timestamp timestamp = 1;
-  // Name of the event.
-  string name = 2;
+  // Feature associated with the event in camelCase, e.g. 'myFeature'.
+  string feature = 2;
+  // Action associated with the event in camelCase, e.g. 'pageView'.
+  string action = 3;
   // Source of the event.
-  EventSource source = 3;
+  EventSource source = 4;
   // Parameters of the event.
-  EventParameters parameters = 4;
+  EventParameters parameters = 5;
   // Optional user associated with the event.
-  optional EventUser user = 5;
+  optional EventUser user = 6;
   // Optional marketing campaign tracking parameters.
-  optional EventMarketingTracking marketingTracking = 6;
+  optional EventMarketingTracking marketingTracking = 7;
 }
 
 message EventSource {
