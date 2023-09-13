@@ -36,7 +36,7 @@
     &__expand-btn {
         // We add this negative margin because the SVG icon has some extra padding created by the viewbox
         // which makes it indented a bit. This negative margin brings it back in line.
-        margin-left: -5px;
+        margin-left: -0.3125rem;
     }
 
     &__status {
