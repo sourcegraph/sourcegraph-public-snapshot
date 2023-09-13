@@ -4,7 +4,6 @@ $tertiary: #ffffff;
 $quaternary: #dbe2f0;
 $quinary: #cad2e2;
 
-
 :global(.theme-light) {
     .modal {
         background-color: $primary;
@@ -49,4 +48,3 @@ $quinary: #cad2e2;
     grid-template-columns: auto 1fr;
     column-gap: 0.5rem;
 }
-
