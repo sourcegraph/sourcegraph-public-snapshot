@@ -29,7 +29,7 @@ import {
     PageHeader,
     Select,
     Text,
-    H3,
+    H2,
     Tooltip,
 } from '@sourcegraph/wildcard'
 
@@ -385,7 +385,7 @@ const SearchJobsInitialZeroState: FC<SearchJobsInitialZeroStateProps> = props =>
                 className={styles.initialZeroStateImage}
             />
             <div className={styles.initialZeroStateText}>
-                <H3 className={styles.initialZeroStateHeading}>No search jobs found</H3>
+                <H2 className={styles.initialZeroStateHeading}>No search jobs found</H2>
 
                 <Text>
                     Search jobs are long running searches that will exhaustively return all results for widely scoped
