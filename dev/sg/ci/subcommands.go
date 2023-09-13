@@ -440,11 +440,11 @@ var logsCommand = &cli.Command{
 	Usage: "Get logs from CI builds (e.g. to grep locally)",
 	Description: `Get logs from CI builds, and output them in stdout or push them to Loki. By default only gets failed jobs - to change this, use the '--state' flag.
 
-	The '--job' flag can be used to narrow down the logs returned - you can provide either the ID, or part of the name of the job you want to see logs for.
+The '--job' flag can be used to narrow down the logs returned - you can provide either the ID, or part of the name of the job you want to see logs for.
 
-	To send logs to a Loki instance, you can provide --out=http://127.0.0.1:3100 after spinning up an instance with 'sg run loki grafana'.
-	From there, you can start exploring logs with the Grafana explore panel.
-	`,
+To send logs to a Loki instance, you can provide --out=http://127.0.0.1:3100 after spinning up an instance with 'sg run loki grafana'.
+From there, you can start exploring logs with the Grafana explore panel.
+`,
 	Flags: append(ciTargetFlags,
 		&cli.StringFlag{
 			Name:    "job",
