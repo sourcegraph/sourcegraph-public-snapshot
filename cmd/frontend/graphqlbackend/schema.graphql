@@ -7412,7 +7412,7 @@ type CodyLLMConfiguration {
     """
     completionModelMaxTokens: Int
     """
-    Name of the provider being used for code completions.
+    Name of the provider being used for LLM interactions.
     """
     provider: String!
 }
