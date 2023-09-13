@@ -11,9 +11,8 @@ import com.intellij.ui.AnimatedIcon
 import com.intellij.ui.components.fields.ExtendableTextComponent
 import com.intellij.ui.components.fields.ExtendableTextField
 import com.intellij.ui.components.panels.Wrapper
-import com.intellij.ui.layout.LayoutBuilder
+import com.intellij.ui.dsl.builder.Panel
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
-import com.sourcegraph.cody.config.DialogValidationUtils.notBlank
 import java.util.concurrent.CompletableFuture
 import javax.swing.JComponent
 import javax.swing.JTextField
@@ -37,7 +36,7 @@ internal class CodyLoginPanel(
   private val progressIcon = AnimatedIcon.Default()
   private val progressExtension = ExtendableTextComponent.Extension { progressIcon }
 
-  var footer: LayoutBuilder.() -> Unit
+  var footer: Panel.() -> Unit
     get() = tokenUi.footer
     set(value) {
       tokenUi.footer = value
@@ -61,21 +60,10 @@ internal class CodyLoginPanel(
 
   fun doValidateAll(): List<ValidationInfo> {
     val uiError =
-        notBlank(serverTextField, "Server url cannot be empty")
-            ?: validateServerPath(serverTextField)
-                ?: validateCustomRequestHeaders(customRequestHeadersField)
-                ?: currentUi.getValidator().invoke()
+        validateCustomRequestHeaders(customRequestHeadersField) ?: currentUi.getValidator().invoke()
 
     return listOfNotNull(uiError, tokenAcquisitionError)
   }
-
-  private fun validateServerPath(field: JTextField): ValidationInfo? =
-      try {
-        SourcegraphServerPath.from(field.text, "")
-        null
-      } catch (e: Exception) {
-        ValidationInfo("Invalid server url", field)
-      }
 
   private fun validateCustomRequestHeaders(field: JTextField): ValidationInfo? {
     if (field.getText().isEmpty()) {

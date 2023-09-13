@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -27,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -383,6 +385,7 @@ func TestCleanupExpired(t *testing.T) {
 		DB:                      database.NewDB(logger, dbtest.NewDB(logger, t)),
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		Locker:                  NewRepositoryLocker(),
+		RPSLimiter:              ratelimit.NewInstrumentedLimiter("test", rate.NewLimiter(100, 10)),
 	}
 	s.Handler() // Handler as a side-effect sets up Server
 

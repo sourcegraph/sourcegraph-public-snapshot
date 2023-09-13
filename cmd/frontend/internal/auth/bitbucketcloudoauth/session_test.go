@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -52,6 +53,8 @@ func createTestServer() *httptest.Server {
 }
 
 func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
 	server := createTestServer()
 	defer server.Close()
 	bbURL, _ := url.Parse(server.URL)
@@ -220,6 +223,8 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 }
 
 func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
 	server := createTestServer()
 	defer server.Close()
 

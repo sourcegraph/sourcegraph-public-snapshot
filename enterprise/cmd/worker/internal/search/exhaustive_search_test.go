@@ -1,10 +1,9 @@
 package search
 
 import (
-	"bytes"
 	"context"
+	"io"
 	"sort"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -20,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
+	"github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
 )
 
 func TestExhaustiveSearch(t *testing.T) {
@@ -77,8 +77,25 @@ func TestExhaustiveSearch(t *testing.T) {
 		},
 	}
 
-	csvBuf = &concurrentWriter{writer: &bytes.Buffer{}}
-	routines, err := searchJob.Routines(workerCtx, observationCtx)
+	// Each entry in bucket corresponds to one 1 uploaded csv file.
+	mu := sync.Mutex{}
+	var bucket []string
+
+	mockStore := mocks.NewMockStore()
+	mockStore.UploadFunc.SetDefaultHook(func(ctx context.Context, key string, r io.Reader) (int64, error) {
+		b, err := io.ReadAll(r)
+		if err != nil {
+			return 0, err
+		}
+
+		mu.Lock()
+		bucket = append(bucket, string(b))
+		mu.Unlock()
+
+		return int64(len(b)), nil
+	})
+
+	routines, err := searchJob.newSearchJobRoutines(workerCtx, observationCtx, mockStore)
 	require.NoError(err)
 	for _, routine := range routines {
 		go routine.Start()
@@ -91,20 +108,14 @@ func TestExhaustiveSearch(t *testing.T) {
 	// Assert that we ended up writing the expected results. This validates
 	// that somehow the work happened (but doesn't dive into the guts of how
 	// we co-ordinate our workers)
-	require.Equal([][]string{
-		{
-			"repo,revspec,revision",
-			"1,spec,rev1",
-		},
-		{
-			"repo,revspec,revision",
-			"1,spec,rev2",
-		},
-		{
-			"repo,revspec,revision",
-			"2,spec,rev3",
-		},
-	}, parseCSV(csvBuf.(*concurrentWriter).String()))
+	{
+		sort.Strings(bucket)
+		require.Equal([]string{
+			"repo,revspec,revision\n1,spec,rev1\n",
+			"repo,revspec,revision\n1,spec,rev2\n",
+			"repo,revspec,revision\n2,spec,rev3\n",
+		}, bucket)
+	}
 
 	// Minor assertion that the job is regarded as finished.
 	{
@@ -126,29 +137,6 @@ func TestExhaustiveSearch(t *testing.T) {
 		require.NoError(err)
 		require.Equal(wantCount, gotCount)
 	}
-}
-
-func parseCSV(csv string) (o [][]string) {
-	rows := strings.Split(csv, "\n")
-	for i := 0; i < len(rows)-1; i += 2 {
-		o = append(o, []string{rows[i], rows[i+1]})
-	}
-	sort.Sort(byRow(o))
-	return
-}
-
-type byRow [][]string
-
-func (b byRow) Len() int {
-	return len(b)
-}
-
-func (b byRow) Less(i, j int) bool {
-	return b[i][1] < b[j][1]
-}
-
-func (b byRow) Swap(i, j int) {
-	b[i], b[j] = b[j], b[i]
 }
 
 // insertRow is a helper for inserting a row into a table. It assumes the
@@ -183,21 +171,4 @@ func tTimeout(t *testing.T, max time.Duration) time.Duration {
 		return max
 	}
 	return timeout
-}
-
-type concurrentWriter struct {
-	mu     sync.Mutex
-	writer *bytes.Buffer
-}
-
-func (w *concurrentWriter) String() string {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	return w.writer.String()
-}
-
-func (w *concurrentWriter) Write(p []byte) (n int, err error) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	return w.writer.Write(p)
 }

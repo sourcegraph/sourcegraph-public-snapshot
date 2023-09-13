@@ -50,7 +50,6 @@ go_test(
         "//internal/own/codeowners/v1:codeowners",
         "//internal/own/types",
         "//internal/types",
-        "//lib/pointers",
         "@com_github_google_go_cmp//cmp",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",

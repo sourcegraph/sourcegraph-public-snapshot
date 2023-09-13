@@ -16,9 +16,9 @@ import (
 )
 
 type ExternalAccountData struct {
-	IDToken    *oidc.IDToken  `json:"idToken"`
-	UserInfo   *oidc.UserInfo `json:"userInfo"`
-	UserClaims *userClaims    `json:"userClaims"`
+	IDToken    oidc.IDToken  `json:"idToken"`
+	UserInfo   oidc.UserInfo `json:"userInfo"`
+	UserClaims userClaims    `json:"userClaims"`
 }
 
 // getOrCreateUser gets or creates a user account based on the OpenID Connect token. It returns the
@@ -64,9 +64,9 @@ func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, idToken *
 	}
 
 	serialized, err := json.Marshal(ExternalAccountData{
-		IDToken:    idToken,
-		UserInfo:   userInfo,
-		UserClaims: claims,
+		IDToken:    *idToken,
+		UserInfo:   *userInfo,
+		UserClaims: *claims,
 	})
 	if err != nil {
 		return nil, "", err
@@ -130,8 +130,8 @@ func GetPublicExternalAccountData(ctx context.Context, accountData *extsvc.Accou
 	}
 
 	return &extsvc.PublicAccountData{
-		Login:       &login,
-		DisplayName: &displayName,
-		URL:         &data.UserInfo.Profile,
+		Login:       login,
+		DisplayName: displayName,
+		URL:         data.UserInfo.Profile,
 	}, nil
 }

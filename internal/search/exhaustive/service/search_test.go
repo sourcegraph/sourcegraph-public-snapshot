@@ -1,22 +1,23 @@
-package service_test
+package service
 
 import (
 	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
+	"github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
 )
 
 func TestBackendFake(t *testing.T) {
-	testNewSearcher(t, service.NewSearcherFake(), newSearcherTestCase{
+	testNewSearcher(t, NewSearcherFake(), newSearcherTestCase{
 		Query:        "1@rev1 1@rev2 2@rev3",
 		WantRefSpecs: "RepositoryRevSpec{1@spec} RepositoryRevSpec{2@spec}",
 		WantRepoRevs: "RepositoryRevision{1@rev1} RepositoryRevision{1@rev2} RepositoryRevision{2@rev3}",
@@ -35,7 +36,7 @@ type newSearcherTestCase struct {
 	WantCSV      string
 }
 
-func testNewSearcher(t *testing.T, newSearcher service.NewSearcher, tc newSearcherTestCase) {
+func testNewSearcher(t *testing.T, newSearcher NewSearcher, tc newSearcherTestCase) {
 	assert := require.New(t)
 
 	ctx := context.Background()
@@ -95,4 +96,46 @@ func (c *csvBuffer) WriteRow(row ...string) error {
 	}
 	_, err := c.buf.WriteString(strings.Join(row, ",") + "\n")
 	return err
+}
+
+func TestBlobstoreCSVWriter(t *testing.T) {
+	// Each entry in bucket corresponds to one 1 uploaded csv file.
+	var bucket [][]byte
+	var keys []string
+
+	mockStore := mocks.NewMockStore()
+	mockStore.UploadFunc.SetDefaultHook(func(ctx context.Context, key string, r io.Reader) (int64, error) {
+		b, err := io.ReadAll(r)
+		if err != nil {
+			return 0, err
+		}
+
+		bucket = append(bucket, b)
+		keys = append(keys, key)
+
+		return int64(len(b)), nil
+	})
+
+	csvWriter := NewBlobstoreCSVWriter(context.Background(), mockStore, "blob")
+	csvWriter.maxBlobSizeBytes = 12
+
+	err := csvWriter.WriteHeader("h", "h", "h") // 3 bytes (letters) + 2 bytes (commas) + 1 byte (newline) = 6 bytes
+	require.NoError(t, err)
+	err = csvWriter.WriteRow("a", "a", "a")
+	require.NoError(t, err)
+	// We expect a new file to be created here because we have reached the max blob size.
+	err = csvWriter.WriteRow("b", "b", "b")
+	require.NoError(t, err)
+
+	err = csvWriter.Close()
+	require.NoError(t, err)
+
+	wantFiles := 2
+	require.Equal(t, wantFiles, len(bucket))
+
+	require.Equal(t, "blob", keys[0])
+	require.Equal(t, "h,h,h\na,a,a\n", string(bucket[0]))
+
+	require.Equal(t, "blob-2", keys[1])
+	require.Equal(t, "h,h,h\nb,b,b\n", string(bucket[1]))
 }

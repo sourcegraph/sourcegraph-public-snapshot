@@ -185,12 +185,12 @@ func matchesAgainstDepot(match globMatch, depot string) bool {
 
 // PerformDebugScan will scan protections rules from r and log detailed
 // information about how each line was parsed.
-func PerformDebugScan(logger log.Logger, r io.Reader, depot extsvc.RepoID) (*authz.ExternalUserPermissions, error) {
+func PerformDebugScan(logger log.Logger, r io.Reader, depot extsvc.RepoID, ignoreRulesWithHost bool) (*authz.ExternalUserPermissions, error) {
 	perms := &authz.ExternalUserPermissions{
 		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
 	}
 	scanner := fullRepoPermsScanner(logger, perms, []extsvc.RepoID{depot})
-	err := scanProtects(logger, r, scanner)
+	err := scanProtects(logger, r, scanner, ignoreRulesWithHost)
 	return perms, err
 }
 
@@ -205,25 +205,24 @@ type protectsScanner struct {
 // scanProtects is a utility function for processing values from `p4 protects`.
 // It handles skipping comments, cleaning whitespace, parsing relevant fields, and
 // skipping entries that do not affect read access.
-func scanProtects(logger log.Logger, rc io.Reader, s *protectsScanner) error {
+func scanProtects(logger log.Logger, rc io.Reader, s *protectsScanner, ignoreRulesWithHost bool) error {
 	logger = logger.Scoped("scanProtects", "")
 	scanner := bufio.NewScanner(rc)
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		// Skip comments
-		if strings.HasPrefix(line, "##") {
+		// Trim whitespace
+		line = strings.TrimSpace(line)
+
+		// Skip comments and blank lines
+		if strings.HasPrefix(line, "##") || line == "" {
 			continue
 		}
 
 		// Trim trailing comments
-		i := strings.Index(line, "##")
-		if i > -1 {
+		if i := strings.Index(line, "##"); i > -1 {
 			line = line[:i]
 		}
-
-		// Trim whitespace
-		line = strings.TrimSpace(line)
 
 		logger.Debug("Scanning protects line", log.String("line", line))
 
@@ -231,6 +230,17 @@ func scanProtects(logger log.Logger, rc io.Reader, s *protectsScanner) error {
 		fields := strings.Fields(line)
 		if len(fields) < 5 {
 			logger.Debug("Line has less than 5 fields, discarding")
+			continue
+		}
+
+		// skip any rule that relies on particular client IP addresses or hostnames
+		// this is the initial approach to address wrong behaviors
+		// that are causing clients to need to disable sub-repo permissions
+		// GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/53374
+		// Subsequent approaches will need to add more sophisticated handling of hosts
+		// perhaps even capturing the browser IP address and comparing it to the host field.
+		if ignoreRulesWithHost && fields[3] != "*" {
+			logger.Debug("Skipping host-specific rule", log.String("line", line))
 			continue
 		}
 

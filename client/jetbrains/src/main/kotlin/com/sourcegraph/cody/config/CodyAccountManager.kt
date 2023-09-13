@@ -1,8 +1,8 @@
 package com.sourcegraph.cody.config
 
-import com.intellij.collaboration.auth.AccountManagerBase
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.sourcegraph.cody.auth.AccountManagerBase
 import com.sourcegraph.config.ConfigUtil
 
 @Service

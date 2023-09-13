@@ -79,6 +79,7 @@ go_test(
         "//internal/gitserver",
         "//internal/httptestutil",
         "//internal/observation",
+        "//internal/ratelimit",
         "//internal/rcache",
         "//internal/repos",
         "//internal/repoupdater",

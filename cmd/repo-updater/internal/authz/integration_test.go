@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	extsvcGitHub "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -51,6 +52,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+
+	ratelimit.SetupForTest(t)
 
 	logger := logtest.Scoped(t)
 	token := os.Getenv("GITHUB_TOKEN")

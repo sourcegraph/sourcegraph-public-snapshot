@@ -1,81 +1,48 @@
-# Contributing to Sourcegraph JetBrains Extension
+# Contributing to Sourcegraph JetBrains Plugin
 
-Thank you for your interest in contributing to Sourcegraph!
-The goal of this document is to provide a high-level overview of how you can contribute to the Sourcegraph JetBrains Extension.
-Please refer to our [main CONTRIBUTING](https://github.com/sourcegraph/sourcegraph/blob/main/CONTRIBUTING.md) docs for general information regarding contributing to any Sourcegraph feature.
-
-## License
-
-Apache
-
-## Feedback
-
-Your feedback is important to us and is greatly appreciated. Please do not hesitate to submit your ideas or suggestions about how we can improve the extension to our [JetBrains Plugin Feedback Discussion Thread](https://github.com/sourcegraph/sourcegraph/discussions/43930) on GitHub.
+Thank you for your interest in contributing to Sourcegraph! The goal of this
+document is to provide a high-level overview of how you can contribute to the
+Sourcegraph JetBrains Plugin.
 
 ## Issues / Bugs
 
-New issues and feature requests can be filed through our [issue tracker](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,jetbrains-ide&title=JetBrains:+) using the `jetbrains-ide` & `team/integrations` labels.
+New issues and feature requests can be filed through
+our [issue tracker](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,jetbrains-ide&title=JetBrains:+)
+using the `jetbrains-ide` & `team/integrations` labels.
 
 ## Development
 
-- Clone `https://github.com/sourcegraph/sourcegraph` (on Windows, you'll need to use WSL2)
-- Run `pnpm install` in the root directory to get all dependencies
-- Run `pnpm generate` in the root directory to generate graphql files
-- Go to `client/jetbrains/` and run `pnpm build` to generate the JS files, or `pnpm watch` to watch for changes and regenerate on the fly
-- You can test the “Find with Sourcegraph” window by running `pnpm standalone` in the `client/jetbrains/` directory and opening [http://localhost:3000/](http://localhost:3000/) in your browser.
-- Make sure you have Java 11 installed. Two ways to do that:
-  1. CLI: [SDKMAN!](https://github.com/sdkman/homebrew-tap):
-     - `brew tap sdkman/tap`
-     - `brew install sdkman-cli`
-     - Add this to your `.zprofile`:
-       ```sh
-       export SDKMAN_DIR=$(brew --prefix sdkman-cli)/libexec
-       [[ -s "${SDKMAN_DIR}/bin/sdkman-init.sh" ]] && source "${SDKMAN_DIR}/bin/sdkman-init.sh"
-       ```
-     - Try it with `sdk version` in a new terminal. It should work.
-     - Run `sdk install java 11.0.20-amzn`
-  2. GUI:
-     - Open your clone of the repo in IntelliJ
-     - Go to Project Structure (`⌘;`) | Platform Settings | SDK | Plus sign | Download JDK... | set version to 11 | pick Amazon Corretto aarch64
-- Run the plugin in a sandboxed IDE. Two ways to do that:
-  1. CLI: run `./gradlew :runIde`. This will start the platform with the versions defined in `gradle.properties`, [here](https://github.com/sourcegraph/sourcegraph/blob/main/client/jetbrains/gradle.properties#L14-L16).
-  2. Run | Run... (`⌃⌥R`) | Edit Configurations... | Plus sign | Gradle | set Tasks to `runIde` | set Gradle project to `jetbrains` | name it `runIde` | OK | Run it with the green play button at the top right of the IDE.
-  - Note: IntelliJ version 2021.3 or later is required for Macs with Apple Silicon chips.
-- Build a deployable plugin artifact by running `./gradlew buildPlugin`. The output file is `build/distributions/Sourcegraph.zip`.
-- Reformat the codebase with `./gradlew spotlessApply`.
-- Install the google-java-format plugin
-  https://plugins.jetbrains.com/plugin/8527-google-java-format and configure
-  IntelliJ's file save actions to format.
-- Set the environment variable `CODY_COMPLETIONS_ENABLED=true` to enable inline code completions.
-- Ensure `src login` is logged into your sourcegraph.com account. This avoids
-  the need to manually configure the access token in the UI every time you run
-  `./gradlew :runIde`.
-- If you are using an M1 MacBook and get a JCEF-related error using the "Find with Sourcegraph" command, try
-  running `./gradlew -PplatformVersion=221.5080.210 :runIde` instead.
-  See https://youtrack.jetbrains.com/issue/IDEA-291946 for more details.
-- To debug communication between the IntelliJ plugin and Cody agent, it's useful to keep an open terminal tab that's
-  running the command `fail -f build/sourcegraph/cody-agent-trace.json`.
-- The Cody agent is a JSON-RPC server that implements the prompt logic for Cody. The JetBrains plugin needs access to the
-  agent binary to function properly. This agent binary is automatically built from source if it does not exist. To
-  speed up edit/test/debug feedback loops, the agent binary does not get rebuilt unless you provide the
-  `-PforceAgentBuild=true` flag when running Gradle. For example, `./gradlew :runIde -PforceAgentBuild=true`.
-- The Cody agent is disabled by default for local `./gradlew :runIde` task only.
-  Use the `-PenableAgent=true` property to enable the Cody agent. For example, `./gradlew :runIde -PenableAgent=true`.
-  When the agent is disabled, the plugin falls back to the non-agent-based implementation.
+- Install Java 11 via SDKMAN! https://sdkman.io. Once you have SDKMAN! installed, run `sdk use java 11.0.15-tem`. Confirm that you have Java 11 installed with `java -version`.
+- Clone `https://github.com/sourcegraph/sourcegraph`
+- Clone `https://github.com/sourcegraph/cody` in a sibling directory. The toplevel directories for
+  sourcegraph/sourcegraph and sourcegraph/cody must be next to each other.
+- Install the following two IntelliJ plugins to format Java and Kotlin on file save
+  - https://plugins.jetbrains.com/plugin/8527-google-java-format
+  - https://plugins.jetbrains.com/plugin/14912-ktfmt
 
-### Developing JetBrains plugin with the Agent
+| What                                                         | Command                                                                  |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| Run the plugin locally                                       | `./gradlew :runIDE`                                                      |
+| Run the plugin locally with fresh build of Cody              | `./gradlew -PforceAgentBuild=true :runIDE`                               |
+| Build Code Search assets (separate terminal)                 | `pnpm build`                                                             |
+| Continuously re-build Code Search assets (separate terminal) | `pnpm watch`                                                             |
+| Code Search "Find with Sourcegraph" window                   | `pnpm standalone && open http://localhost:3000/`                         |
+| Build deployable plugin                                      | `./gradlew buildPlugin` (artifact is generated in `build/distributions`) |
+| Reformat Java and Kotlin sources                             | `./gradlew spotlessApply`                                                |
+| Debug agent JSON-RPC communication                           | `tail -f build/sourcegraph/cody-agent-trace.json`                        |
 
-- Assume [cody](https://sourcegraph.com/github.com/sourcegraph/cody) and [sourcegraph](https://sourcegraph.com/github.com/sourcegraph/sourcegraph) repositories are checked out in current users `$HOME` directory.
-- Build the agent:
-  ```
-  cd $HOME/cody/agent
-  AGENT_EXECUTABLE_TARGET_DIRECTORY="$HOME/sourcegraph/client/jetbrains/build/sourcegraph/agent" pnpm run build-agent-binaries
-  ```
-- Run development JetBrains with the Agent:
-  ```
-  cd $HOME/sourcegraph/clients/jetbrains
-  ./gradlew -PforceAgentBuild=true :runIDE
-  ```
+## Using Alpha channel releases
+
+We occasionally publish plugins to the "Alpha" channel instead of the default
+"Stable" channel. The alpha channel is primarily intended to publish
+pre-releases for internal (within Sourcegraph) testing.
+
+- Open Settings
+- Open "Plugins"
+- Click on cogwheel in the top bar, select "Manage plugin repositories"
+- Add the URL https://plugins.jetbrains.com/plugins/list?channel=alpha&pluginId=9682
+
+Remove the URL from the plugin repository list to go back to the stable channel.
 
 ### Wiring unstable-codegen via SOCKS proxy
 
@@ -95,13 +62,10 @@ Take the steps below _before_ [running JetBrains plugin with agent](#developing-
     gcloud --verbosity "debug" compute ssh --zone "us-central1-a" "codegen-access-test" --project "sourcegraph-dogfood" --ssh-flag="-D" --ssh-flag="9999" --ssh-flag="-N"
     ```
   - Patch in [sg/socks-proxy](https://github.com/sourcegraph/cody/compare/sg/socks-proxy?expand=1).
-    Note: After [#56254](https://github.com/sourcegraph/sourcegraph/issues/56254) is resolved this step is not needed anymore.
+    Note: After [#56254](https://github.com/sourcegraph/sourcegraph/issues/56254) is resolved this step is not needed
+    anymore.
 
 ## Publishing a new version
-
-The publishing process is based on the [intellij-platform-plugin-template](https://github.com/JetBrains/intellij-platform-plugin-template).
-
-### Publishing from your local machine
 
 1. Update `pluginVersion` in `gradle.properties`
 
@@ -144,4 +108,7 @@ built into the JetBrains platform. To enable debugging tools for this view, plea
 5. Change the default value to an open port (we use `9222`)
 6. Restart IDE
 7. Open the “Find with Sourcegraph” window (<kbd>Alt+A</kbd> / <kbd>⌥A</kbd>)
-8. Switch to a browser window, go to [`localhost:9222`](http://localhost:9222), and select the Sourcegraph window. Sometimes it needs some back and forth to focus the external browser with the JCEF component also focused—you may need to move the popup out of the way and click the external browser rather than using <kbd>Alt+Tab</kbd> / <kbd>⌘Tab</kbd>.
+8. Switch to a browser window, go to [`localhost:9222`](http://localhost:9222), and select the Sourcegraph window.
+   Sometimes it needs some back and forth to focus the external browser with the JCEF component also focused—you may
+   need to move the popup out of the way and click the external browser rather than using <kbd>Alt+Tab</kbd> / <kbd>
+   ⌘Tab</kbd>.

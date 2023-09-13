@@ -2,7 +2,6 @@ package com.sourcegraph.cody.config
 
 import com.intellij.collaboration.async.CompletableFutureUtil.submitIOTask
 import com.intellij.collaboration.async.CompletableFutureUtil.successOnEdt
-import com.intellij.collaboration.auth.Account
 import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
@@ -17,6 +16,7 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphSecurityUtil
+import com.sourcegraph.cody.auth.Account
 import com.sourcegraph.config.AccessTokenStorage
 import com.sourcegraph.config.CodyApplicationService
 import com.sourcegraph.config.CodyProjectService
@@ -321,8 +321,6 @@ class SettingsMigration : StartupActivity, DumbAware {
         codyApplicationService.isUrlNotificationDismissed
     codyApplicationSettings.anonymousUserId = codyApplicationService.anonymousUserId
     codyApplicationSettings.isInstallEventLogged = codyApplicationService.isInstallEventLogged
-    codyApplicationSettings.lastUpdateNotificationPluginVersion =
-        codyApplicationService.lastUpdateNotificationPluginVersion
   }
 
   companion object {

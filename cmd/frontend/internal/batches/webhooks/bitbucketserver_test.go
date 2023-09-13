@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -40,6 +41,8 @@ import (
 // Run from integration_test.go
 func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 	return func(t *testing.T) {
+		ratelimit.SetupForTest(t)
+
 		logger := logtest.Scoped(t)
 		now := timeutil.Now()
 		clock := func() time.Time { return now }

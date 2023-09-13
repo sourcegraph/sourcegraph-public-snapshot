@@ -19,11 +19,13 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -96,6 +98,7 @@ func TestGetAuthenticatedUserV4(t *testing.T) {
 
 func TestV4Client_RateLimitRetry(t *testing.T) {
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 
 	ctx := context.Background()
 
@@ -152,6 +155,7 @@ func TestV4Client_RateLimitRetry(t *testing.T) {
 			transport.DisableKeepAlives = true // Disable keep-alives otherwise the read of the request body is cached
 			cli := &http.Client{Transport: transport}
 			client := NewV4Client("test", srvURL, nil, cli)
+			client.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv4", rate.NewLimiter(100, 10))
 			client.githubDotCom = true // Otherwise it will make an extra request to determine GH version
 			_, err = client.SearchRepos(ctx, SearchReposParams{Query: "test"})
 			require.NoError(t, err)
@@ -179,6 +183,7 @@ func simulateGitHubPrimaryRateLimitHit(w http.ResponseWriter) {
 
 func TestV4Client_RequestGraphQL_RequestUnmutated(t *testing.T) {
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 
 	query := `query Foobar { foobar }`
 	vars := map[string]any{}
@@ -242,6 +247,7 @@ func TestV4Client_RequestGraphQL_RequestUnmutated(t *testing.T) {
 
 func TestV4Client_SearchRepos(t *testing.T) {
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 	cli, save := newV4Client(t, "SearchRepos")
 	t.Cleanup(save)
 
@@ -965,7 +971,10 @@ func newV4Client(t testing.TB, name string) (*V4Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV4Client("Test", uri, vcrToken, doer), save
+	cli := NewV4Client("Test", uri, vcrToken, doer)
+	cli.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv4", rate.NewLimiter(100, 10))
+
+	return cli, save
 }
 
 func newEnterpriseV4Client(t testing.TB, name string) (*V4Client, func()) {
@@ -983,7 +992,9 @@ func newEnterpriseV4Client(t testing.TB, name string) (*V4Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV4Client("Test", uri, gheToken, doer), save
+	cli := NewV4Client("Test", uri, gheToken, doer)
+	cli.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv4", rate.NewLimiter(100, 10))
+	return cli, save
 }
 
 func TestClient_GetReposByNameWithOwner(t *testing.T) {
@@ -1169,6 +1180,7 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 			mock := mockHTTPResponseBody{responseBody: tc.mockResponseBody}
 			apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
 			c := NewV4Client("Test", apiURL, nil, &mock)
+			c.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv4", rate.NewLimiter(100, 10))
 
 			repos, err := c.GetReposByNameWithOwner(context.Background(), namesWithOwners...)
 			if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); tc.err != "" && have != want {

@@ -33,6 +33,7 @@ import (
 	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -134,6 +135,7 @@ func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
 	// uses rcache, a caching layer that uses Redis.
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 
 	fixtureName := "GITHUB-ENTERPRISE/list-public-repos"
 	gheToken := prepareGheToken(t, fixtureName)
