@@ -54,7 +54,6 @@ export const completeSiteConfig = (): MockedResponse<SiteConfigResult> => ({
                     {
                         id: '1',
                         displayName: 'GitHub',
-                        unrestrictedAccess: false,
                     },
                 ],
             },
@@ -85,7 +84,6 @@ export const incompleteSiteConfig = (): MockedResponse<SiteConfigResult> => ({
                     {
                         id: '1',
                         displayName: 'GitHub',
-                        unrestrictedAccess: false,
                     },
                 ],
             },
