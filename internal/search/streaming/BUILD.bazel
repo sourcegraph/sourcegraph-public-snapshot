@@ -36,7 +36,9 @@ go_test(
     ],
     embed = [":streaming"],
     deps = [
+        "//internal/api",
         "//internal/database/dbmocks",
+        "//internal/fileutil",
         "//internal/search/result",
         "//internal/types",
         "@com_github_google_go_cmp//cmp",

@@ -15,7 +15,9 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	api2 "github.com/sourcegraph/sourcegraph/internal/api"
+	internalAPI "github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -93,6 +95,19 @@ func TestServeStream_chunkMatches(t *testing.T) {
 
 	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(mockRepos)
+
+	// add mocks for the file metrics caching that is now involved in streaming
+	// avoids NPEs because dbmocks does not instantiate any mock functions
+	fileMetricsStore := dbmocks.NewMockFileMetricsStore()
+	fileMetricsStore.GetFileMetricsFunc.SetDefaultHook(func(ctx context.Context, ri internalAPI.RepoID, ci internalAPI.CommitID, s string) *fileutil.FileMetrics {
+		// no caching in tests
+		return nil
+	})
+	fileMetricsStore.SetFileMetricsFunc.SetDefaultHook(func(ctx context.Context, ri internalAPI.RepoID, ci internalAPI.CommitID, s string, fm *fileutil.FileMetrics, b bool) error {
+		// no caching in tests
+		return nil
+	})
+	db.FileMetricsFunc.SetDefaultReturn(fileMetricsStore)
 
 	ts := httptest.NewServer(&streamHandler{
 		logger:              logtest.Scoped(t),
@@ -211,6 +226,19 @@ func TestDisplayLimit(t *testing.T) {
 			})
 			db := dbmocks.NewStrictMockDB()
 			db.ReposFunc.SetDefaultReturn(repos)
+
+			// add mocks for the file metrics caching that is now involved in streaming
+			// avoids NPEs because dbmocks does not instantiate any mock functions
+			fileMetricsStore := dbmocks.NewMockFileMetricsStore()
+			fileMetricsStore.GetFileMetricsFunc.SetDefaultHook(func(ctx context.Context, ri internalAPI.RepoID, ci internalAPI.CommitID, s string) *fileutil.FileMetrics {
+				// no caching in tests
+				return nil
+			})
+			fileMetricsStore.SetFileMetricsFunc.SetDefaultHook(func(ctx context.Context, ri internalAPI.RepoID, ci internalAPI.CommitID, s string, fm *fileutil.FileMetrics, b bool) error {
+				// no caching in tests
+				return nil
+			})
+			db.FileMetricsFunc.SetDefaultReturn(fileMetricsStore)
 
 			ts := httptest.NewServer(&streamHandler{
 				logger:              logtest.Scoped(t),

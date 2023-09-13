@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -17,8 +18,35 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var mockDB *dbmocks.MockDB
+var mockDBMutex sync.Mutex
+
+func mockDBForFileMetrics() *dbmocks.MockDB {
+	mockDBMutex.Lock()
+	if mockDB != nil {
+		mockDBMutex.Unlock()
+		return mockDB
+	}
+	// add mocks for the file metrics caching that is now involved in Inventory
+	// avoids NPEs because dbmocks does not instantiate any mock functions
+	mockDB = dbmocks.NewMockDB()
+	fileMetricsStore := dbmocks.NewMockFileMetricsStore()
+	fileMetricsStore.GetFileMetricsFunc.SetDefaultHook(func(ctx context.Context, ri api.RepoID, ci api.CommitID, s string) *fileutil.FileMetrics {
+		// no caching in tests
+		return nil
+	})
+	fileMetricsStore.SetFileMetricsFunc.SetDefaultHook(func(ctx context.Context, ri api.RepoID, ci api.CommitID, s string, fm *fileutil.FileMetrics, b bool) error {
+		// no caching in tests
+		return nil
+	})
+	mockDB.FileMetricsFunc.SetDefaultReturn(fileMetricsStore)
+	mockDBMutex.Unlock()
+	return mockDB
+}
 
 func TestGetLang_language(t *testing.T) {
 	tests := map[string]struct {
@@ -66,7 +94,7 @@ func TestGetLang_language(t *testing.T) {
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
 			lang, err := getLang(context.Background(),
-				dbmocks.NewMockDB(),
+				mockDBForFileMetrics(),
 				api.RepoID(1),
 				test.file,
 				api.CommitID("HEAD"),
@@ -134,7 +162,7 @@ func TestGet_readFile(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.file.Name(), func(t *testing.T) {
 			fr := makeFileReader(test.file.(fi).Contents)
-			lang, err := getLang(context.Background(), dbmocks.NewMockDB(), api.RepoID(1), test.file, api.CommitID("HEAD"), fr)
+			lang, err := getLang(context.Background(), mockDBForFileMetrics(), api.RepoID(1), test.file, api.CommitID("HEAD"), fr)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -168,7 +196,7 @@ func BenchmarkGetLang(b *testing.B) {
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		for _, file := range files {
-			_, err := getLang(context.Background(), dbmocks.NewMockDB(), api.RepoID(1), file, api.CommitID("HEAD"), fr)
+			_, err := getLang(context.Background(), mockDBForFileMetrics(), api.RepoID(1), file, api.CommitID("HEAD"), fr)
 			if err != nil {
 				b.Fatal(err)
 			}

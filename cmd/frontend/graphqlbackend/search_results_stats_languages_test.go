@@ -108,13 +108,28 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 			want: []inventory.Lang{{Name: "Go", TotalBytes: 10, TotalLines: 5}},
 		},
 	}
+
+	// add mocks for the file metrics caching that is now involved in Inventory
+	// avoids NPEs because dbmocks does not instantiate any mock functions
+	mockDB := dbmocks.NewMockDB()
+	fileMetricsStore := dbmocks.NewMockFileMetricsStore()
+	fileMetricsStore.GetFileMetricsFunc.SetDefaultHook(func(ctx context.Context, ri api.RepoID, ci api.CommitID, s string) *fileutil.FileMetrics {
+		// no caching in tests
+		return nil
+	})
+	fileMetricsStore.SetFileMetricsFunc.SetDefaultHook(func(ctx context.Context, ri api.RepoID, ci api.CommitID, s string, fm *fileutil.FileMetrics, b bool) error {
+		// no caching in tests
+		return nil
+	})
+	mockDB.FileMetricsFunc.SetDefaultReturn(fileMetricsStore)
+
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			gsClient.ReadDirFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
 				return test.getFiles, nil
 			})
 
-			langs, err := searchResultsStatsLanguages(context.Background(), logger, dbmocks.NewMockDB(), gsClient, test.results)
+			langs, err := searchResultsStatsLanguages(context.Background(), logger, mockDB, gsClient, test.results)
 			if err != nil {
 				t.Fatal(err)
 			}

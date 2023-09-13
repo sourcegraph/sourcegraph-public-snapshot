@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -241,9 +242,24 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 	defer func() { settings.MockCurrentUserFinal = nil }()
 
 	var expectedDynamicFilterStrs map[string]int
+
+	// add mocks for the file metrics caching that is now involved in streaming
+	// avoids NPEs because dbmocks does not instantiate any mock functions
+	mockDB := dbmocks.NewMockDB()
+	fileMetricsStore := dbmocks.NewMockFileMetricsStore()
+	fileMetricsStore.GetFileMetricsFunc.SetDefaultHook(func(ctx context.Context, ri api.RepoID, ci api.CommitID, s string) *fileutil.FileMetrics {
+		// no caching in tests
+		return nil
+	})
+	fileMetricsStore.SetFileMetricsFunc.SetDefaultHook(func(ctx context.Context, ri api.RepoID, ci api.CommitID, s string, fm *fileutil.FileMetrics, b bool) error {
+		// no caching in tests
+		return nil
+	})
+	mockDB.FileMetricsFunc.SetDefaultReturn(fileMetricsStore)
+
 	for _, test := range tests {
 		t.Run(test.descr, func(t *testing.T) {
-			actualDynamicFilters := (&SearchResultsResolver{db: dbmocks.NewMockDB(), Matches: test.searchResults}).DynamicFilters(context.Background())
+			actualDynamicFilters := (&SearchResultsResolver{db: mockDB, Matches: test.searchResults}).DynamicFilters(context.Background())
 			actualDynamicFilterStrs := make(map[string]int)
 
 			for _, filter := range actualDynamicFilters {
