@@ -60,7 +60,7 @@ func (f *FileMetrics) CalculateFileMetrics(filePath string, stream io.Reader) (e
 	var fileContents []byte
 
 	if stream != nil {
-		fileContents, f.Lines, f.Words, f.Bytes, err = scan(filePath, stream)
+		fileContents, f.Lines, f.Words, f.Bytes, err = scan(stream)
 		if err != nil {
 			return errors.Wrapf(err, "scanning %s", filePath)
 		}
@@ -78,7 +78,7 @@ func (f *FileMetrics) CalculateFileMetrics(filePath string, stream io.Reader) (e
 // Read the file contents, counting lines, words and bytes.
 // Return the first `fileReadBufferSize` bytes along with the counts
 // so that the caller can use the contents to refine language detection
-func scan(filePath string, stream io.Reader) (beginningOfFile []byte, lineCount, wordCount, byteCount uint64, err error) {
+func scan(stream io.Reader) (beginningOfFile []byte, lineCount, wordCount, byteCount uint64, err error) {
 
 	collector := newScanLinesPlusByteCounter(fileReadBufferSize)
 
