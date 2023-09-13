@@ -2056,7 +2056,7 @@ npm_package(
 jest_test(
     name = "test",
     size = "enormous",  # make sure bazel reserves enough RAM for this.
-    timeout = "long",
+    timeout = "moderate",
     data = [
         ":web_tests",
     ],
