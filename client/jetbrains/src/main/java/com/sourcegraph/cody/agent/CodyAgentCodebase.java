@@ -28,13 +28,12 @@ public class CodyAgentCodebase {
                   .invokeLater(
                       () -> {
                         if (!Objects.equals(this.currentCodebase, repositoryName)) {
-                          ExtensionConfiguration config =
-                              ConfigUtil.getAgentConfiguration(project).setCodebase(repositoryName);
+                          this.currentCodebase = repositoryName;
                           CodyToolWindowContent.getInstance(project)
                               .embeddingStatusView
                               .updateEmbeddingStatus();
-                          this.currentCodebase = repositoryName;
-                          underlying.configurationDidChange(config);
+                          underlying.configurationDidChange(
+                              ConfigUtil.getAgentConfiguration(project));
                         }
                       });
             });
