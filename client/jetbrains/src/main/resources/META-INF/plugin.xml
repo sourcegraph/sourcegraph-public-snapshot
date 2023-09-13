@@ -20,16 +20,31 @@
     <extensions defaultExtensionNs="com.intellij">
         <projectService serviceImplementation="com.sourcegraph.config.CodyProjectService"/>
         <projectService serviceImplementation="com.sourcegraph.cody.config.CodyProjectSettings"/>
-        <projectService serviceImplementation="com.sourcegraph.config.SettingsChangeListener"/>
+        <projectService serviceImplementation="com.sourcegraph.cody.config.notification.AccountSettingChangeListener"/>
+        <projectService serviceImplementation="com.sourcegraph.cody.config.notification.CodySettingChangeListener"/>
         <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyApplicationSettings"/>
         <applicationService serviceImplementation="com.sourcegraph.config.CodyApplicationService"/>
         <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyAuthenticationManager"/>
 
         <projectConfigurable
             parentId="tools"
-            instance="com.sourcegraph.cody.config.SettingsConfigurable"
-            id="com.sourcegraph.cody.config.SettingsConfigurable"
-            displayName="Sourcegraph Cody + Code Search"
+            instance="com.sourcegraph.cody.config.ui.AccountConfigurable"
+            id="com.sourcegraph.cody.config.ui.AccountConfigurable"
+            displayName="Sourcegraph"
+            nonDefaultProject="false"
+        />
+        <projectConfigurable
+            parentId="com.sourcegraph.cody.config.ui.AccountConfigurable"
+            instance="com.sourcegraph.cody.config.ui.CodyConfigurable"
+            id="com.sourcegraph.cody.config.ui.CodyConfigurable"
+            displayName="Cody AI"
+            nonDefaultProject="false"
+        />
+        <projectConfigurable
+            parentId="com.sourcegraph.cody.config.ui.AccountConfigurable"
+            instance="com.sourcegraph.cody.config.ui.CodeSearchConfigurable"
+            id="com.sourcegraph.cody.config.ui.CodeSearchConfigurable"
+            displayName="Code Search"
             nonDefaultProject="false"
         />
 

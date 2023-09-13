@@ -130,7 +130,7 @@ public class CodyAutocompleteManager {
       return;
     } else if (!isTriggeredManually
         && !CodyEditorUtil.isImplicitAutocompleteEnabledForEditor(editor)) return;
-    else if (CodyEditorUtil.isCommandExcluded(currentCommand)) {
+    else if (CodyEditorUtil.isCommandExcluded(currentCommand) && !isTriggeredManually) {
       return;
     }
     final Project project = editor.getProject();

@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -257,7 +258,7 @@ func TestGlobalRateLimiter_UnconfiguredLimiter(t *testing.T) {
 	// We do NOT call SetTokenBucketConfig here. Instead, we set a sane default.
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
-			DefaultRateLimit: 10,
+			DefaultRateLimit: pointers.Ptr(10),
 		},
 	})
 	defer conf.Mock(nil)

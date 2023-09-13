@@ -36,7 +36,7 @@ var setupCommand = &cli.Command{
 			Usage: "Omit Sourcegraph-teammate-specific setup",
 		},
 		&cli.BoolFlag{
-			Name:  "skip-precommits",
+			Name:  "skip-pre-commit",
 			Usage: "Skip overwriting pre-commit.com installation",
 		},
 	},
@@ -71,7 +71,7 @@ var setupCommand = &cli.Command{
 			ConfigFile:          configFile,
 			ConfigOverwriteFile: configOverwriteFile,
 			DisableOverwrite:    disableOverwrite,
-			DisablePreCommits:   cmd.Bool("skip-precommits"),
+			DisablePreCommits:   cmd.Bool("skip-pre-commit"),
 		}
 
 		switch {

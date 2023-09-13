@@ -183,7 +183,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                     <span className={styles.vscodeIcon}>
                                         <IntellijIcon className={styles.joinWaitlistButtonIcon} />
                                     </span>
-                                    <span className={styles.downloadForVscodeText}>Install Cody for Intellij</span>
+                                    <span className={styles.downloadForVscodeText}>Install Cody for IntelliJ</span>
                                 </Link>
                             </div>
                         </div>
