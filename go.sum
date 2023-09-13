@@ -97,6 +97,7 @@ dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7
 gioui.org v0.0.0-20210308172011-57750fc8a0a6/go.mod h1:RSH6KIUZ0p2xy5zHDxgAM4zumjgTw83q2ge/PI+yyw8=
 github.com/99designs/gqlgen v0.17.2/go.mod h1:K5fzLKwtph+FFgh9j7nFbRUdBKvTcGnsta51fsMTn3o=
 github.com/AdaLogics/go-fuzz-headers v0.0.0-20210715213245-6c3934b029d8/go.mod h1:CzsSbkDixRphAF5hS6wbMKq0eI6ccJRb7/A0M6JBnwg=
+github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24 h1:bvDV9vkmnHYOMsOr4WLk+Vo07yKIzd94sVoIqshQ4bU=
 github.com/Azure/azure-sdk-for-go v16.2.1+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
 github.com/Azure/azure-sdk-for-go v56.3.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
 github.com/Azure/azure-sdk-for-go/sdk/azcore v1.0.0/go.mod h1:uGG2W01BaETf0Ozp+QxxKJdMBNRWPdstHG0Fmdwn1/U=
@@ -2047,8 +2048,8 @@ github.com/sourcegraph/scip v0.3.1-0.20230627154934-45df7f6d33fc h1:o+eq0cjVV3B5
 github.com/sourcegraph/scip v0.3.1-0.20230627154934-45df7f6d33fc/go.mod h1:7ZKAtLIUmiMvOIgG5LMcBxdtBXVa0v2GWC4Hm1ASYQ0=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
-github.com/sourcegraph/zoekt v0.0.0-20230912152407-3ce1f2b24c80 h1:jz6dUd7NKcULoGoC0KcsdWw1dh58S8/cM50rl1K2b00=
-github.com/sourcegraph/zoekt v0.0.0-20230912152407-3ce1f2b24c80/go.mod h1:49Y2VVQuWxaSUXeFphZnZX+/zVy2G/sqd+cg/oqQTBk=
+github.com/sourcegraph/zoekt v0.0.0-20230913182917-2d1affd44cb7 h1:30sVCGSj0tgC4SPRZiRTm7wJ6VbXMPM9w7w3PU+R/4A=
+github.com/sourcegraph/zoekt v0.0.0-20230913182917-2d1affd44cb7/go.mod h1:K8nIDzlYzrAHu27Gp8Emrk0044Y7pvYkq1bHi5eqS2Q=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spaolacci/murmur3 v1.1.0/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v0.0.0-20170901052352-ee1bd8ee15a1/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
