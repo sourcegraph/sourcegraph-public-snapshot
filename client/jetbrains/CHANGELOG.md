@@ -26,6 +26,7 @@
 - All network traffic from the plugin process [56001](https://github.com/sourcegraph/sourcegraph/pull/56001)
 - Non-agent autocomplete and chat [55997](https://github.com/sourcegraph/sourcegraph/pull/55997)
 - Support for 2022.0, 2022.1 is now required [#55831](https://github.com/sourcegraph/sourcegraph/pull/55831)
+- Removed code search onboarding notification [#56564](https://github.com/sourcegraph/sourcegraph/pull/56564)
 
 ### Fixed
 
