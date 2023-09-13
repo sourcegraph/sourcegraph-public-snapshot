@@ -627,6 +627,7 @@ func (c *codyLLMConfigurationResolver) FastChatModelMaxTokens() *int32 {
 	return nil
 }
 
+func (c *codyLLMConfigurationResolver) Provider() string        { return string(c.config.Provider) }
 func (c *codyLLMConfigurationResolver) CompletionModel() string { return c.config.FastChatModel }
 func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
 	if c.config.CompletionModelMaxTokens != 0 {
