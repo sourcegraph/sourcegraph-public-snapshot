@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//cmd/frontend/enterprise",
         "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/internal/telemetry/resolvers",
         "//internal/codeintel",
         "//internal/conf/conftypes",
         "//internal/database",
