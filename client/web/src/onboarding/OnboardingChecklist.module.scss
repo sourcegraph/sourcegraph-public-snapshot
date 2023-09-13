@@ -14,14 +14,14 @@ $quinary: #ffffff;
     column-gap: 5px;
     align-items: center;
     border-radius: 4px;
-    font-size: 12px;
+    font-size: 0.75rem;
     font-weight: 500;
     line-height: 16.32px;
-    padding: 5px 9px;
+    padding: 0.3125rem 0.5625rem;
     box-shadow: none;
 
     div {
-        padding-left: 3px;
+        padding-left: 0.1875rem;
     }
 
     &:not(:disabled):not(.disabled):not([aria-disabled='true']) svg:not([data-caret]) {
@@ -71,8 +71,8 @@ $quinary: #ffffff;
 }
 
 .container {
-    margin: 8px 8px 0 0;
-    padding: 16px;
+    margin: 0.5rem 0.5rem 0 0;
+    padding: 1rem;
     max-width: 330px;
 }
 
@@ -93,10 +93,10 @@ $quinary: #ffffff;
     display: grid;
     grid-template-columns: 15px 1fr;
     column-gap: 10px;
-    padding: 8px;
+    padding: 0.5rem;
 
     svg {
-        margin-top: 2px;
+        margin-top: 0.125rem;
         fill: #798baf;
 
         &.checked {
@@ -108,18 +108,18 @@ $quinary: #ffffff;
 .content {
     white-space: pre-wrap;
     h4 {
-        margin-bottom: 4px;
-        font-size: 14px;
+        margin-bottom: 0.25rem;
+        font-size: 0.875rem;
         font-weight: 500;
         line-height: 17.5px;
         letter-spacing: -0.25px;
     }
     p {
         margin: 0;
-        font-size: 12px;
+        font-size: 0.75rem;
         line-height: 16.32px;
         font-weight: 400;
-        padding-bottom: 4px;
+        padding-bottom: 0.25rem;
     }
     a {
         font-weight: 300;
