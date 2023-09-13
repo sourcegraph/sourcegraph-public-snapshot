@@ -1,7 +1,7 @@
 sh_test(
     name = "test",
     size = "small",
-    timeout = "moderate",
+    timeout = "long",
     srcs = ["test.sh"],
     args = ["$(location //dev/tools:docsite)"],
     data = [

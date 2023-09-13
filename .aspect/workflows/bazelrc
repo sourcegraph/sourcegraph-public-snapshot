@@ -1,0 +1,34 @@
+# This bazelrc file is automatically picked up by Aspect Workflows and applied
+# on all tasks
+common --noexperimental_reuse_sandbox_directories
+
+# build without the bytes
+common --remote_download_minimal
+common --nobuild_runfile_links
+common --modify_execution_info=CopyFile=-local
+common --modify_execution_info=CopyFile=-no-cache
+common --modify_execution_info=CopyFile=-no-remote
+common --modify_execution_info=CopyFile=-no-remote-cache
+common --modify_execution_info=CopyFile=-no-remote-cache-upload
+common --modify_execution_info=CopyFile=-no-remote-exec
+
+common --modify_execution_info=CopyDirectory=-local
+common --modify_execution_info=CopyDirectory=-no-cache
+common --modify_execution_info=CopyDirectory=-no-remote
+common --modify_execution_info=CopyDirectory=-no-remote-cache
+common --modify_execution_info=CopyDirectory=-no-remote-cache-upload
+common --modify_execution_info=CopyDirectory=-no-remote-exec
+
+common --modify_execution_info=CopyToDirectory=-local
+common --modify_execution_info=CopyToDirectory=-no-cache
+common --modify_execution_info=CopyToDirectory=-no-remote
+common --modify_execution_info=CopyToDirectory=-no-remote-cache
+common --modify_execution_info=CopyToDirectory=-no-remote-cache-upload
+common --modify_execution_info=CopyToDirectory=-no-remote-exec
+
+common --modify_execution_info=PackageTar=-local
+common --modify_execution_info=PackageTar=-no-cache
+common --modify_execution_info=PackageTar=-no-remote
+common --modify_execution_info=PackageTar=-no-remote-cache
+common --modify_execution_info=PackageTar=-no-remote-cache-upload
+common --modify_execution_info=PackageTar=-no-remote-exec
