@@ -9,14 +9,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
 func Test_verifyAllowOrgs(t *testing.T) {
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 
 	profile := azuredevops.Profile{
 		ID:          "1",

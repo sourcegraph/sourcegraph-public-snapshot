@@ -9,11 +9,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -127,8 +129,9 @@ func TestCheckSSRFHeader(t *testing.T) {
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
-		DB:     db,
-		Locker: NewRepositoryLocker(),
+		DB:         db,
+		Locker:     NewRepositoryLocker(),
+		RPSLimiter: ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 	}
 	h := s.Handler()
 

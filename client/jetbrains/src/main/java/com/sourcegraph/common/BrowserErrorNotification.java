@@ -12,9 +12,10 @@ import com.sourcegraph.Icons;
 import java.awt.datatransfer.StringSelection;
 import java.net.URI;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class BrowserErrorNotification {
-  public static void show(Project project, URI uri) {
+  public static void show(@Nullable Project project, URI uri) {
     Notification notification =
         new Notification(
             "Sourcegraph errors",

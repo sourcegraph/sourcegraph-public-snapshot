@@ -21,7 +21,7 @@ import com.intellij.ui.dsl.builder.toMutableProperty
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.util.ui.EmptyIcon
-import com.sourcegraph.cody.config.ui.customAccountsPanel
+import com.sourcegraph.cody.auth.ui.customAccountsPanel
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.config.PluginSettingChangeActionNotifier
 import com.sourcegraph.config.PluginSettingChangeContext

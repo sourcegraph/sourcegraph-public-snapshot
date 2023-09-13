@@ -1293,6 +1293,16 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--fix, -f`: Fix all checks
 * `--oss`: Omit Sourcegraph-teammate-specific setup
+* `--skip-precommits`: Skip overwriting pre-commit.com installation
+
+### sg setup disable-pre-commit
+
+Disable pre-commit hooks.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
 ## sg src
 

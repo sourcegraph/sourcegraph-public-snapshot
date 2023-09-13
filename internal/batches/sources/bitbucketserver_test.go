@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -23,6 +24,8 @@ import (
 )
 
 func TestBitbucketServerSource_LoadChangeset(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
 		// The test fixtures and golden files were generated with
@@ -109,6 +112,8 @@ func TestBitbucketServerSource_LoadChangeset(t *testing.T) {
 }
 
 func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
 		// The test fixtures and golden files were generated with
@@ -223,6 +228,8 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 }
 
 func TestBitbucketServerSource_CloseChangeset(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
 		// The test fixtures and golden files were generated with
@@ -303,6 +310,8 @@ func TestBitbucketServerSource_CloseChangeset(t *testing.T) {
 }
 
 func TestBitbucketServerSource_CloseChangeset_DeleteSourceBranch(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
 	// Repository used: https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing
 	//
 	// This test can be updated with `-update BitbucketServerSource_CloseChangeset_DeleteSourceBranch`,
@@ -380,6 +389,8 @@ func TestBitbucketServerSource_CloseChangeset_DeleteSourceBranch(t *testing.T) {
 }
 
 func TestBitbucketServerSource_ReopenChangeset(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
 		// The test fixtures and golden files were generated with
@@ -458,6 +469,8 @@ func TestBitbucketServerSource_ReopenChangeset(t *testing.T) {
 }
 
 func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
 		// The test fixtures and golden files were generated with
@@ -560,6 +573,8 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 }
 
 func TestBitbucketServerSource_CreateComment(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
 		// The test fixtures and golden files were generated with
@@ -631,6 +646,8 @@ func TestBitbucketServerSource_CreateComment(t *testing.T) {
 }
 
 func TestBitbucketServerSource_MergeChangeset(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
 		// The test fixtures and golden files were generated with
@@ -721,6 +738,8 @@ func TestBitbucketServerSource_MergeChangeset(t *testing.T) {
 }
 
 func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
 	svc := &types.ExternalService{
 		Kind: extsvc.KindBitbucketServer,
 		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.BitbucketServerConnection{
@@ -779,6 +798,8 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 }
 
 func TestBitbucketServerSource_GetFork(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
 		// The test fixtures and golden files were generated with

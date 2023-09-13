@@ -42,11 +42,6 @@ type Server struct {
 		ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
 	}
 	ChangesetSyncRegistry syncer.ChangesetSyncRegistry
-	RateLimitSyncer       interface {
-		// SyncRateLimiters should be called when an external service changes so that
-		// our internal rate limiters are kept in sync
-		SyncRateLimiters(ctx context.Context, ids ...int64) error
-	}
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
@@ -178,15 +173,6 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		logger.Error("server.external-service-sync", log.Error(err))
 		return
-	}
-
-	// sync the rate limit first, because externalServiceValidate potentially
-	// makes a call to the code host, which might be rate limited
-	if s.RateLimitSyncer != nil {
-		err = s.RateLimitSyncer.SyncRateLimiters(ctx, req.ExternalServiceID)
-		if err != nil {
-			logger.Warn("Handling rate limiter sync", log.Error(err))
-		}
 	}
 
 	statusCode, resp := handleExternalServiceValidate(ctx, logger, es, genericSrc)

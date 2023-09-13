@@ -38,6 +38,9 @@ go_test(
         "sudo_test.go",
     ],
     embed = [":gitlab"],
+    tags = [
+        "requires-network",
+    ],
     deps = [
         "//internal/api",
         "//internal/auth/providers",
@@ -48,6 +51,7 @@ go_test(
         "//internal/extsvc/gitlab",
         "//internal/featureflag",
         "//internal/oauthutil",
+        "//internal/ratelimit",
         "//internal/rcache",
         "//internal/types",
         "//lib/errors",

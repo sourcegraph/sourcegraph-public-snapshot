@@ -159,6 +159,7 @@ go_test(
         "//internal/license",
         "//internal/licensing",
         "//internal/observation",
+        "//internal/ratelimit",
         "//internal/rbac",
         "//internal/rcache",
         "//internal/repos",

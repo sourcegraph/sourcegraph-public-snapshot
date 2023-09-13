@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
@@ -182,6 +183,8 @@ func TestUnpackPythonPackage_UnsupportedFormat(t *testing.T) {
 }
 
 func TestUnpackPythonPackage_Wheel(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
 	ctx := context.Background()
 
 	cl := newTestClient(t, "requests", update(t.Name()))

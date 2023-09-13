@@ -28,7 +28,7 @@ class CodyAuthenticationManager internal constructor() {
       accountManager.findCredentials(account)
 
   internal fun isAccountUnique(name: String, server: SourcegraphServerPath) =
-      accountManager.accounts.none { it.name == name && it.server == server }
+      accountManager.accounts.none { it.name == name && it.server.url == server.url }
 
   @RequiresEdt
   internal fun login(

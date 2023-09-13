@@ -52,9 +52,9 @@ type AccountData struct {
 // We only expose publicly available fields in this struct.
 // See the GraphQL API's corresponding fields for documentation.
 type PublicAccountData struct {
-	DisplayName *string `json:"displayName,omitempty"`
-	Login       *string `json:"login,omitempty"`
-	URL         *string `json:"url,omitempty"`
+	DisplayName string `json:"displayName,omitempty"`
+	Login       string `json:"login,omitempty"`
+	URL         string `json:"url,omitempty"`
 }
 
 type EncryptableData = encryption.JSONEncryptable[any]

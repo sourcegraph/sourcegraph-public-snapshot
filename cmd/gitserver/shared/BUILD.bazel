@@ -57,7 +57,6 @@ go_library(
         "@com_github_sourcegraph_log//:log",
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_x_sync//semaphore",
-        "@org_golang_x_time//rate",
     ],
 )
 

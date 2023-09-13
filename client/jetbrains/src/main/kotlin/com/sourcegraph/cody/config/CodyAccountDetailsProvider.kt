@@ -2,7 +2,6 @@ package com.sourcegraph.cody.config
 
 import com.intellij.collaboration.async.CompletableFutureUtil.submitIOTask
 import com.intellij.collaboration.async.CompletableFutureUtil.successOnEdt
-import com.intellij.collaboration.auth.ui.LoadingAccountsDetailsProvider
 import com.intellij.collaboration.util.ProgressIndicatorsProvider
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.service
@@ -12,6 +11,7 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.util.IconUtil
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphSecurityUtil
+import com.sourcegraph.cody.auth.ui.LoadingAccountsDetailsProvider
 import java.util.concurrent.CompletableFuture
 
 class CodyAccounDetailsProvider(

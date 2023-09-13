@@ -73,6 +73,11 @@
           "description": "Experimental: infer sub-repository permissions from protection rules.",
           "type": "boolean",
           "default": false
+        },
+        "ignoreRulesWithHost": {
+          "description": "Ignore host-based protection rules (any rule with something other than a wildcard in the Host field).",
+          "type": "boolean",
+          "default": false
         }
       }
     },

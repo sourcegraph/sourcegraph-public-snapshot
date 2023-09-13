@@ -15,9 +15,10 @@ import org.jetbrains.annotations.Nullable;
 public class UserLevelConfig {
   /**
    * Overrides the provider used for generating autocomplete suggestions. Only supported values at
-   * the moment are 'anthropic' (default) or 'unstable-codegen'.
+   * the moment are 'anthropic' (default), 'unstable-codegen', 'unstable-openai', or
+   * 'unstable-fireworks'.
    */
-  @NotNull
+  @Nullable
   public static AutocompleteProviderType getAutocompleteProviderType() {
     Properties properties = readProperties();
     String currentKey = "cody.autocomplete.advanced.provider";
@@ -29,7 +30,7 @@ public class UserLevelConfig {
                 Optional.ofNullable(
                     properties.getProperty(oldKey, null))) // fallback to the old key
         .flatMap(AutocompleteProviderType::optionalValueOf)
-        .orElse(AutocompleteProviderType.DEFAULT_AUTOCOMPLETE_PROVIDER_TYPE); // or default
+        .orElse(null);
   }
 
   public static boolean getAutocompleteAdvancedEmbeddings() {

@@ -94,6 +94,7 @@ go_test(
         "//internal/grpc/defaults",
         "//internal/httpcli",
         "//internal/observation",
+        "//internal/ratelimit",
         "//internal/types",
         "//internal/wrexec",
         "//lib/errors",
@@ -106,5 +107,6 @@ go_test(
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
+        "@org_golang_x_time//rate",
     ],
 )

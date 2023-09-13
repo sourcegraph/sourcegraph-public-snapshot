@@ -17,6 +17,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -179,7 +180,7 @@ func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 	}
 	projCache := rcache.NewWithTTL(key, int(cacheTTL/time.Second))
 
-	rl := ratelimit.DefaultRegistry.Get(p.urn)
+	rl := ratelimit.NewInstrumentedLimiter(p.urn, ratelimit.NewGlobalRateLimiter(p.urn))
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(p.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 
 	return &Client{
@@ -299,7 +300,7 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 	tokenHash := a.Hash()
 
 	cc := *c
-	cc.internalRateLimiter = ratelimit.DefaultRegistry.Get(c.urn)
+	cc.internalRateLimiter = ratelimit.NewInstrumentedLimiter(c.urn, ratelimit.NewGlobalRateLimiter(c.urn))
 	cc.externalRateLimiter = ratelimit.DefaultMonitorRegistry.GetOrSet(cc.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 	cc.Auth = a
 

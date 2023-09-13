@@ -71,11 +71,12 @@ local custom_recognizer = recognizer.new_path_recognizer {
 		local jobs = {}
 		for i = 1, #paths do
 			table.insert(jobs, {
-				steps = {},
+				indexer = "acme/acme-indexer",
 				root = path.dirname(paths[i]),
-				indexer = "acme/custom-indexer",
-				indexer_args = {},
-				outfile = "",
+				-- Run a dependency installation step before invoking the indexer
+				local_steps = {"acme-package-manager install"},
+				indexer_args = {"acme-indexer", "index", ".", "--output", "index.scip"},
+				outfile = "index.scip",
 			})
 		end
 
@@ -84,6 +85,7 @@ local custom_recognizer = recognizer.new_path_recognizer {
 }
 
 return require("sg.autoindex.config").new({
+	-- Uncomment one or more lines to turn off default auto-indexing scripts
 	-- ["sg.go"] = false,
 	-- ["sg.java"] = false,
 	-- ["sg.python"] = false,

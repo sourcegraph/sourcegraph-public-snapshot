@@ -99,15 +99,6 @@ func (s *RepoUpdaterServiceServer) SyncExternalService(ctx context.Context, req 
 		return &proto.SyncExternalServiceResponse{}, nil
 	}
 
-	// sync the rate limit first, because externalServiceValidate potentially
-	// makes a call to the code host, which might be rate limited
-	if s.Server.RateLimitSyncer != nil {
-		err = s.Server.RateLimitSyncer.SyncRateLimiters(ctx, req.ExternalServiceId)
-		if err != nil {
-			logger.Warn("Handling rate limiter sync", log.Error(err))
-		}
-	}
-
 	err = externalServiceValidate(ctx, es, genericSrc)
 	if err == github.ErrIncompleteResults {
 		logger.Info("server.external-service-sync", log.Error(err))

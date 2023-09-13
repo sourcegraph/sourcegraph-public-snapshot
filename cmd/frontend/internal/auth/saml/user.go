@@ -219,7 +219,7 @@ func GetPublicExternalAccountData(ctx context.Context, accountData *extsvc.Accou
 		return nil, nil
 	}
 	return &extsvc.PublicAccountData{
-		DisplayName: &displayName,
+		DisplayName: displayName,
 	}, nil
 }
 

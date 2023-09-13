@@ -24,7 +24,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.20.5
+          go-version: 1.20.8
 
       - name: Install asdf plugins
         uses: asdf-vm/actions/install@v1
