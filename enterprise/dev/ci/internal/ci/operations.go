@@ -766,6 +766,10 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 			if c.RunType.Is(runtype.MainBranch) {
 				imgs = append(imgs, fmt.Sprintf("%s:insiders", image))
 			}
+
+			if image != publishImage && c.RunType.Is(runtype.WIPRelease) {
+				imgs = append(imgs, fmt.Sprintf("%s:wip_insiders", image))
+			}
 		}
 
 		// these tags are pushed to our dev registry, and are only
