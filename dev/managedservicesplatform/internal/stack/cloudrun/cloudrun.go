@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2service"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2serviceiammember"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/bigquery"
@@ -225,6 +226,19 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Allow IAM-free access to the service - auth should be handled generally
+	// by the service itself.
+	//
+	// TODO: Parameterize this so internal services can choose to auth only via
+	// GCP IAM?
+	_ = cloudrunv2serviceiammember.NewCloudRunV2ServiceIamMember(stack, pointers.Ptr("cloudrun-allusers-runinvoker"), &cloudrunv2serviceiammember.CloudRunV2ServiceIamMemberConfig{
+		Name:     service.Name(),
+		Location: service.Location(),
+		Project:  &vars.ProjectID,
+		Member:   pointers.Ptr("allUsers"),
+		Role:     pointers.Ptr("roles/run.invoker"),
+	})
 
 	// Now we add a load balancer
 	lb := loadbalancer.New(stack, resourceid.New("lb-backend"), loadbalancer.Config{
