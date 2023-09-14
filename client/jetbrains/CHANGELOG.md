@@ -20,6 +20,7 @@
 - Authentication settings changed to accounts from three types of instance types to which user can connect [#56362](https://github.com/sourcegraph/sourcegraph/pull/56362)
 - Enabled manually triggering autocomplete even when implicit autocomplete is disabled (globally or for a language) [#56473](https://github.com/sourcegraph/sourcegraph/pull/56473)
 - Onboarding notifications merged into one simple notification to Open Cody [#56610](https://github.com/sourcegraph/sourcegraph/pull/56610)
+- Enabled implicit autocomplete by default [#56617](https://github.com/sourcegraph/sourcegraph/pull/56617)
 
 ### Deprecated
 

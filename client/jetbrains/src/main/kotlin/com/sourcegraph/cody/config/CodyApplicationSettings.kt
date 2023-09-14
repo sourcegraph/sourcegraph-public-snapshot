@@ -7,8 +7,8 @@ import com.intellij.openapi.components.service
 
 @State(name = "CodyApplicationSettings", storages = [Storage("cody_application_settings.xml")])
 data class CodyApplicationSettings(
-    var isCodyEnabled: Boolean = false,
-    var isCodyAutocompleteEnabled: Boolean = false,
+    var isCodyEnabled: Boolean = true,
+    var isCodyAutocompleteEnabled: Boolean = true,
     var isCodyDebugEnabled: Boolean = false,
     var isCodyVerboseDebugEnabled: Boolean = false,
     var isGetStartedNotificationDismissed: Boolean = false,
