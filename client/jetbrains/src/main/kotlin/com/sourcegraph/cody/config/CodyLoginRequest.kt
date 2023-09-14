@@ -7,7 +7,6 @@ import java.awt.Component
 internal class CodyLoginRequest(
     val title: String? = null,
     val server: SourcegraphServerPath? = null,
-    val isServerEditable: Boolean = server == null,
     val login: String? = null,
     val isCheckLoginUnique: Boolean = false,
     val token: String? = null,
@@ -31,7 +30,7 @@ private val CodyLoginRequest.isLoginUniqueChecker: UniqueLoginPredicate
   }
 
 private fun CodyLoginRequest.configure(dialog: BaseLoginDialog) {
-  server?.let { dialog.setServer(it.toString(), isServerEditable) }
+  server?.let { dialog.setServer(it.toString()) }
   login?.let { dialog.setLogin(it) }
   token?.let { dialog.setToken(it) }
   customRequestHeaders?.let { dialog.setCustomRequestHeaders(it) }

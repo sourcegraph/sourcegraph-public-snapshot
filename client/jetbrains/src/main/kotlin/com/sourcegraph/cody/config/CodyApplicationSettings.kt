@@ -11,7 +11,7 @@ data class CodyApplicationSettings(
     var isCodyAutocompleteEnabled: Boolean = false,
     var isCodyDebugEnabled: Boolean = false,
     var isCodyVerboseDebugEnabled: Boolean = false,
-    var isDefaultDotcomAccountNotificationDismissed: Boolean = false,
+    var isGetStartedNotificationDismissed: Boolean = false,
     var anonymousUserId: String? = null,
     var isInstallEventLogged: Boolean = false,
     var isCustomAutocompleteColorEnabled: Boolean = false,
@@ -25,8 +25,8 @@ data class CodyApplicationSettings(
     this.isCodyAutocompleteEnabled = state.isCodyAutocompleteEnabled
     this.isCodyDebugEnabled = state.isCodyDebugEnabled
     this.isCodyVerboseDebugEnabled = state.isCodyVerboseDebugEnabled
-    this.isDefaultDotcomAccountNotificationDismissed =
-        state.isDefaultDotcomAccountNotificationDismissed
+    this.isGetStartedNotificationDismissed =
+        state.isGetStartedNotificationDismissed
     this.anonymousUserId = state.anonymousUserId
     this.isInstallEventLogged = state.isInstallEventLogged
     this.isCustomAutocompleteColorEnabled = state.isCustomAutocompleteColorEnabled

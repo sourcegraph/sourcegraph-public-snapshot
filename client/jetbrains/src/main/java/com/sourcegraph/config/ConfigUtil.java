@@ -70,10 +70,10 @@ public class ConfigUtil {
 
   @NotNull
   public static SourcegraphServerPath getServerPath(@NotNull Project project) {
-    CodyAccount defaultAccount = CodyAuthenticationManager.getInstance().getDefaultAccount(project);
+    CodyAccount activeAccount = CodyAuthenticationManager.getInstance().getActiveAccount(project);
 
-    return defaultAccount != null
-        ? defaultAccount.getServer()
+    return activeAccount != null
+        ? activeAccount.getServer()
         : SourcegraphServerPath.from(DOTCOM_URL, "");
   }
 
@@ -94,10 +94,6 @@ public class ConfigUtil {
     IdeaPluginDescriptor plugin =
         PluginManagerCore.getPlugin(PluginId.getId("com.sourcegraph.jetbrains"));
     return plugin != null ? plugin.getVersion() : "unknown";
-  }
-
-  public static boolean isDefaultDotcomAccountNotificationDismissed() {
-    return CodyApplicationSettings.getInstance().isDefaultDotcomAccountNotificationDismissed();
   }
 
   public static boolean isCodyEnabled() {

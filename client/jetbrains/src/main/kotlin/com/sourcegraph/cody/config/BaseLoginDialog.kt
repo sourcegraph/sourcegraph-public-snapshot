@@ -14,7 +14,7 @@ import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import java.awt.Component
 import javax.swing.JComponent
 
-internal abstract class BaseLoginDialog(
+abstract class BaseLoginDialog(
     project: Project?,
     parent: Component?,
     executorFactory: SourcegraphApiRequestExecutor.Factory,
@@ -36,7 +36,7 @@ internal abstract class BaseLoginDialog(
 
   fun setToken(token: String?) = loginPanel.setToken(token)
   fun setLogin(login: String?) = loginPanel.setLogin(login, false)
-  fun setServer(path: String, editable: Boolean) = loginPanel.setServer(path, editable)
+  fun setServer(path: String) = loginPanel.setServer(path)
   fun setCustomRequestHeaders(customRequestHeaders: String) =
       loginPanel.setCustomRequestHeaders(customRequestHeaders)
   fun setLoginButtonText(text: String) = setOKButtonText(text)
