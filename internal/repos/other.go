@@ -72,10 +72,8 @@ func NewOtherSource(ctx context.Context, svc *types.ExternalService, cf *httpcli
 		return nil, err
 	}
 
-	if envvar.SourcegraphDotComMode() {
-		if c.DotComPublic {
-			svc.Unrestricted = true
-		}
+	if envvar.SourcegraphDotComMode() && c.DotComPublic {
+		svc.Unrestricted = true
 	}
 
 	return &OtherSource{
