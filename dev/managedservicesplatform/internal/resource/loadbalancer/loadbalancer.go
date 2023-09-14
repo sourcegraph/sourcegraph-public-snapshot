@@ -5,8 +5,8 @@ import (
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2service"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computebackendservice"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeforwardingrule"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeglobaladdress"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeglobalforwardingrule"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeregionnetworkendpointgroup"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesslcertificate"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesslpolicy"
@@ -105,8 +105,6 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 				ProjectID: googlesecretsmanager.ProjectID,
 			}).Value,
 
-			Count: pointers.Float64(1),
-
 			Lifecycle: &cdktf.TerraformResourceLifecycle{
 				CreateBeforeDestroy: pointers.Ptr(true),
 			},
@@ -152,9 +150,9 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 
 	// Forward traffic from the external address to the HTTPS proxy that then
 	// routes request to our target
-	_ = computeforwardingrule.NewComputeForwardingRule(scope,
+	_ = computeglobalforwardingrule.NewComputeGlobalForwardingRule(scope,
 		id.ResourceID("forwarding-rule"),
-		&computeforwardingrule.ComputeForwardingRuleConfig{
+		&computeglobalforwardingrule.ComputeGlobalForwardingRuleConfig{
 			Name:    pointers.Ptr(id.DisplayName()),
 			Project: pointers.Ptr(config.ProjectID),
 

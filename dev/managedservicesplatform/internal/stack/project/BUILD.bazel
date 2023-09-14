@@ -11,6 +11,7 @@ go_library(
         "//dev/managedservicesplatform/internal/stack",
         "//dev/managedservicesplatform/internal/stack/options/googleprovider",
         "//dev/managedservicesplatform/internal/stack/options/randomprovider",
+        "//dev/managedservicesplatform/spec",
         "//lib/pointers",
         "@com_github_aws_jsii_runtime_go//:jsii-runtime-go",
         "@com_github_grafana_regexp//:regexp",

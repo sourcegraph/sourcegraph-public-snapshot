@@ -44,6 +44,10 @@ function check() {
     echo "Found a Slack app token in git staged file: $file. Please remove it."
     exit 1
   fi
+  if grep -qE "service_account" "$file" && grep -qE "[0-9a-zA-Z-]*@[0-9a-zA-Z-]*\.iam\.gserviceaccount\.com" "$file"; then
+    echo "Found a Google service account key file in git staged file: $file. Please remove it."
+    exit 1
+  fi
 }
 
 export -f check

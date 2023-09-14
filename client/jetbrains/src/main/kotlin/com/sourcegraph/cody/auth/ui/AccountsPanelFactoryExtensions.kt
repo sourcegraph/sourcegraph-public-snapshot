@@ -20,7 +20,7 @@ import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.auth.Account
 import com.sourcegraph.cody.auth.AccountManager
 import com.sourcegraph.cody.auth.AccountsListener
-import com.sourcegraph.cody.auth.PersistentDefaultAccountHolder
+import com.sourcegraph.cody.auth.PersistentActiveAccountHolder
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseListener
@@ -85,20 +85,17 @@ private fun <A : Account, Cred, R> create(
           .setAddAction { model.addAccount(accountsList, it.preferredPopupPoint) }
           .setAddIcon(addIcon)
 
-  if (model is AccountsListModel.WithDefault) {
+  if (model is AccountsListModel.WithActive) {
     toolbar.addExtraAction(
-        object :
-            ToolbarDecorator.ElementActionButton(
-                CollaborationToolsBundle.message("accounts.set.default"),
-                AllIcons.Actions.Checked) {
+        object : ToolbarDecorator.ElementActionButton("Set as Active", AllIcons.Actions.Checked) {
           override fun actionPerformed(e: AnActionEvent) {
             val selected = accountsList.selectedValue
-            if (selected == model.defaultAccount) return
-            if (selected != null) model.defaultAccount = selected
+            if (selected == model.activeAccount) return
+            if (selected != null) model.activeAccount = selected
           }
 
           override fun updateButton(e: AnActionEvent) {
-            isEnabled = isEnabled && model.defaultAccount != accountsList.selectedValue
+            isEnabled = isEnabled && model.activeAccount != accountsList.selectedValue
           }
         })
   }
@@ -112,8 +109,8 @@ private fun <A : Account, Cred, R> create(
  */
 fun <A : Account, Cred> Row.customAccountsPanel(
     accountManager: AccountManager<A, Cred>,
-    defaultAccountHolder: PersistentDefaultAccountHolder<A>,
-    accountsModel: AccountsListModel.WithDefault<A, Cred>,
+    activeAccountHolder: PersistentActiveAccountHolder<A>,
+    accountsModel: AccountsListModel.WithActive<A, Cred>,
     detailsProvider: AccountsDetailsProvider<A, *>,
     disposable: Disposable,
     needAddBtnWithDropdown: Boolean,
@@ -127,21 +124,20 @@ fun <A : Account, Cred> Row.customAccountsPanel(
   fun isModified() =
       accountsModel.newCredentials.isNotEmpty() ||
           accountsModel.accounts != accountManager.accounts ||
-          accountsModel.defaultAccount != defaultAccountHolder.account
+          accountsModel.activeAccount != activeAccountHolder.account
 
   fun reset() {
-    val defaultAccount = defaultAccountHolder.account
-    val accountsWithoutDefault =
-        if (defaultAccount != null) accountManager.accounts - defaultAccount
+    val activeAccount = activeAccountHolder.account
+    val accountsWithoutActive =
+        if (activeAccount != null) accountManager.accounts - activeAccount
         else accountManager.accounts
-    if (defaultAccount != null) {
-      val defaultAccountCopy = copyAccount(defaultAccount)
-      accountsModel.accounts =
-          (accountsWithoutDefault.map(copyAccount) + defaultAccountCopy).toSet()
-      accountsModel.defaultAccount = defaultAccountCopy
+    if (activeAccount != null) {
+      val activeAccountCopy = copyAccount(activeAccount)
+      accountsModel.accounts = (accountsWithoutActive.map(copyAccount) + activeAccountCopy).toSet()
+      accountsModel.activeAccount = activeAccountCopy
     } else {
-      accountsModel.accounts = accountsWithoutDefault.map(copyAccount).toSet()
-      accountsModel.defaultAccount = null
+      accountsModel.accounts = accountsWithoutActive.map(copyAccount).toSet()
+      accountsModel.activeAccount = null
     }
 
     accountsModel.clearNewCredentials()
@@ -156,8 +152,8 @@ fun <A : Account, Cred> Row.customAccountsPanel(
     }
     val newTokensMap = accountsModel.accounts.associateWith { null }
     accountManager.updateAccounts(newTokensMap)
-    val defaultAccount = accountsModel.defaultAccount
-    defaultAccountHolder.account = defaultAccount
+    val activeAccount = accountsModel.activeAccount
+    activeAccountHolder.account = activeAccount
     accountsModel.clearNewCredentials()
   }
 

@@ -5,7 +5,6 @@ export SANITY_CHECK=true
 services=(
   embeddings
   frontend
-  github-proxy
   gitserver
   migrator
   precise-code-intel-worker

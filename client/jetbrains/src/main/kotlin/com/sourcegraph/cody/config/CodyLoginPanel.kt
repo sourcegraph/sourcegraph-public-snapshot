@@ -19,7 +19,7 @@ import javax.swing.JTextField
 
 internal typealias UniqueLoginPredicate = (login: String, server: SourcegraphServerPath) -> Boolean
 
-internal class CodyLoginPanel(
+class CodyLoginPanel(
     executorFactory: SourcegraphApiRequestExecutor.Factory,
     isAccountUnique: UniqueLoginPredicate
 ) : Wrapper() {
@@ -112,9 +112,8 @@ internal class CodyLoginPanel(
   fun getServer(): SourcegraphServerPath =
       SourcegraphServerPath.from(serverTextField.text.trim(), customRequestHeadersField.text.trim())
 
-  fun setServer(path: String, editable: Boolean) {
+  fun setServer(path: String) {
     serverTextField.text = path
-    serverTextField.isEditable = editable
   }
 
   fun setCustomRequestHeaders(customRequestHeaders: String) {

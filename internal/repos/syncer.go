@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -44,10 +45,16 @@ type Syncer struct {
 
 	// Ensure that we only run one sync per repo at a time
 	syncGroup singleflight.Group
+}
 
-	// Hooks for enterprise specific functionality. Ignored in OSS
-	EnterpriseCreateRepoHook func(context.Context, Store, *types.Repo) error
-	EnterpriseUpdateRepoHook func(context.Context, Store, *types.Repo, *types.Repo) error
+func NewSyncer(observationCtx *observation.Context, store Store, sourcer Sourcer) *Syncer {
+	return &Syncer{
+		Sourcer: sourcer,
+		Store:   store,
+		Synced:  make(chan Diff),
+		Now:     func() time.Time { return time.Now().UTC() },
+		ObsvCtx: observation.ContextWithLogger(observationCtx.Logger.Scoped("syncer", "repo syncer"), observationCtx),
+	}
 }
 
 // RunOptions contains options customizing Run behaviour.
@@ -795,10 +802,8 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		fallthrough
 	case 1: // Existing repo, update.
 		s.ObsvCtx.Logger.Debug("existing repo")
-		if s.EnterpriseUpdateRepoHook != nil {
-			if err := s.EnterpriseUpdateRepoHook(ctx, tx, stored[0], sourced); err != nil {
-				return Diff{}, LicenseError{errors.Wrapf(err, "syncer: failed to update repo %s", sourced.Name)}
-			}
+		if err := UpdateRepoLicenseHook(ctx, tx, stored[0], sourced); err != nil {
+			return Diff{}, LicenseError{errors.Wrapf(err, "syncer: failed to update repo %s", sourced.Name)}
 		}
 		modified := stored[0].Update(sourced)
 		if modified == types.RepoUnmodified {
@@ -816,10 +821,8 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 	case 0: // New repo, create.
 		s.ObsvCtx.Logger.Debug("new repo")
 
-		if s.EnterpriseCreateRepoHook != nil {
-			if err := s.EnterpriseCreateRepoHook(ctx, tx, sourced); err != nil {
-				return Diff{}, LicenseError{errors.Wrapf(err, "syncer: failed to update repo %s", sourced.Name)}
-			}
+		if err := CreateRepoLicenseHook(ctx, tx, sourced); err != nil {
+			return Diff{}, LicenseError{errors.Wrapf(err, "syncer: failed to update repo %s", sourced.Name)}
 		}
 
 		if err = tx.CreateExternalServiceRepo(ctx, svc, sourced); err != nil {
@@ -834,6 +837,69 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 
 	s.ObsvCtx.Logger.Debug("completed")
 	return d, nil
+}
+
+// CreateRepoLicenseHook checks if there is still room for private repositories
+// available in the applied license before creating a new private repository.
+func CreateRepoLicenseHook(ctx context.Context, s Store, repo *types.Repo) error {
+	// If the repository is public, we don't have to check anything
+	if !repo.Private {
+		return nil
+	}
+
+	if prFeature := (&licensing.FeaturePrivateRepositories{}); licensing.Check(prFeature) == nil {
+		if prFeature.Unrestricted {
+			return nil
+		}
+
+		numPrivateRepos, err := s.RepoStore().Count(ctx, database.ReposListOptions{OnlyPrivate: true})
+		if err != nil {
+			return err
+		}
+
+		if numPrivateRepos >= prFeature.MaxNumPrivateRepos {
+			return errors.Newf("maximum number of private repositories included in license (%d) reached", prFeature.MaxNumPrivateRepos)
+		}
+
+		return nil
+	}
+
+	return licensing.NewFeatureNotActivatedError("The private repositories feature is not activated for this license. Please upgrade your license to use this feature.")
+}
+
+// UpdateRepoLicenseHook checks if there is still room for private repositories
+// available in the applied license before updating a repository from public to private,
+// or undeleting a private repository.
+func UpdateRepoLicenseHook(ctx context.Context, s Store, existingRepo *types.Repo, newRepo *types.Repo) error {
+	// If it is being updated to a public repository, or if a repository is being deleted, we don't have to check anything
+	if !newRepo.Private || !newRepo.DeletedAt.IsZero() {
+		return nil
+	}
+
+	if prFeature := (&licensing.FeaturePrivateRepositories{}); licensing.Check(prFeature) == nil {
+		if prFeature.Unrestricted {
+			return nil
+		}
+
+		numPrivateRepos, err := s.RepoStore().Count(ctx, database.ReposListOptions{OnlyPrivate: true})
+		if err != nil {
+			return err
+		}
+
+		if numPrivateRepos > prFeature.MaxNumPrivateRepos {
+			return errors.Newf("maximum number of private repositories included in license (%d) reached", prFeature.MaxNumPrivateRepos)
+		} else if numPrivateRepos == prFeature.MaxNumPrivateRepos {
+			// If the repository is already private, we don't have to check anything
+			newPrivateRepo := (!existingRepo.DeletedAt.IsZero() || !existingRepo.Private) && newRepo.Private // If restoring a deleted repository, or if it was a public repository, and is now private
+			if newPrivateRepo {
+				return errors.Newf("maximum number of private repositories included in license (%d) reached", prFeature.MaxNumPrivateRepos)
+			}
+		}
+
+		return nil
+	}
+
+	return licensing.NewFeatureNotActivatedError("The private repositories feature is not activated for this license. Please upgrade your license to use this feature.")
 }
 
 func (s *Syncer) delete(ctx context.Context, svc *types.ExternalService, seen map[api.RepoID]struct{}) (int, error) {

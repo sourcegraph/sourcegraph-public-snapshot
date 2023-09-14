@@ -82,5 +82,12 @@
     padding: 0.5rem;
     font-size: 0.75rem;
     color: var(--text-muted);
-    background-color: var(--oc-gray-1);
+
+    :global(.theme-dark) & {
+        background-color: var(--color-bg-3);
+    }
+
+    :global(.theme-light) & {
+        background-color: var(--oc-gray-1);
+    }
 }
