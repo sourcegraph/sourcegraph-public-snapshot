@@ -201,7 +201,9 @@ func TestOther_DotComConfig(t *testing.T) {
 	require.True(t, repo.Private)
 
 	// Enable Dotcom mode. Then repo should be public.
+	orig := envvar.SourcegraphDotComMode()
 	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(orig)
 	source = makeSource(t)
 
 	repo, err = source.otherRepoFromCloneURL("other:source", cloneURL)
