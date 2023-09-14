@@ -454,29 +454,33 @@ $$;
 CREATE FUNCTION lsif_indexes_enqueue_candidates(lookback_window interval, cooldown interval) RETURNS TABLE(id bigint, commit text, queued_at timestamp with time zone, state text, failure_message text, started_at timestamp with time zone, finished_at timestamp with time zone, repository_id integer, process_after timestamp with time zone, num_resets integer, num_failures integer, docker_steps jsonb[], root text, indexer text, indexer_args text[], outfile text, log_contents text, execution_logs json[], local_steps text[], should_reindex boolean, requested_envvars text[], repository_name text, enqueuer_user_id integer)
     LANGUAGE sql STABLE STRICT
     AS $$
-    WITH newest_queued AS MATERIALIZED ( -- used to calculate top of window
+    WITH newest_queued AS MATERIALIZED (
+        -- used to calculate top of window
         SELECT MAX(queued_at) AS newest
         FROM lsif_indexes
         WHERE state IN ('queued', 'errored')
         LIMIT 1
     ),
     newest_in_window AS NOT MATERIALIZED (
+        -- select the newest index per repo within the window
         SELECT DISTINCT ON (repository_id) *
-        -- SELECT DISTINCT ON (repository_id) id, queued_at, repository_id
         FROM lsif_indexes
         WHERE
             state IN ('queued', 'errored')
+            AND enqueuer_user_id = 0
             AND queued_at BETWEEN
                 (SELECT newest - lookback_window FROM newest_queued) AND
                 (SELECT newest FROM newest_queued)
         ORDER BY repository_id, queued_at DESC, id
     ),
     potentially_starving AS NOT MATERIALIZED (
+        -- select the newest index per repo outside the window without a completed index
+        -- wwithin a grace period
         SELECT DISTINCT ON (repository_id) *
-        -- SELECT DISTINCT ON (repository_id) id, queued_at, repository_id
         FROM lsif_indexes l1
         WHERE
             state IN ('queued', 'errored')
+            AND enqueuer_user_id = 0
             AND queued_at < (SELECT newest - lookback_window FROM newest_queued)
             AND NOT EXISTS (
                 SELECT 1
@@ -488,12 +492,37 @@ CREATE FUNCTION lsif_indexes_enqueue_candidates(lookback_window interval, cooldo
             )
         ORDER BY repository_id, queued_at DESC, id
     ),
+    manually_enqueued AS MATERIALIZED (
+        -- select indexes that were manually enqueued that should be at the
+        -- top of the queue
+        SELECT *
+        FROM lsif_indexes
+        WHERE
+            enqueuer_user_id > 0
+            AND state IN ('queued', 'errored')
+    ),
     final_candidates AS NOT MATERIALIZED (
-        SELECT *
-        FROM newest_in_window
+        -- merge them all together, with a priority marker for ordering
+        SELECT *, 0 AS priority
+        FROM manually_enqueued
         UNION ALL
-        SELECT *
-        FROM potentially_starving
+        (
+            SELECT *, 1 AS priority
+            FROM potentially_starving
+            WHERE id NOT IN (
+                SELECT id
+                FROM manually_enqueued
+            )
+            UNION ALL
+            (
+                SELECT *, 2 AS priority
+                FROM newest_in_window
+                WHERE id NOT IN (
+                    SELECT id
+                    FROM manually_enqueued
+                )
+            )
+        )
     )
     SELECT u.id,
         u.commit,
@@ -522,7 +551,7 @@ CREATE FUNCTION lsif_indexes_enqueue_candidates(lookback_window interval, cooldo
     JOIN repo r
     ON r.id = u.repository_id
     WHERE (r.deleted_at IS NULL)
-    ORDER BY u.queued_at ASC
+    ORDER BY u.priority ASC
 $$;
 
 CREATE FUNCTION merge_audit_log_transitions(internal hstore, arrayhstore hstore[]) RETURNS hstore
