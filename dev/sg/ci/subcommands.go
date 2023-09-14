@@ -666,6 +666,6 @@ var buildReleaseCommand = &cli.Command{
 			return errors.Newf("invalid version %q, has to start with 'v'. Ex: v6.2.238", version)
 		}
 
-		return bazel.Run(ctx.Context, "//:release_patch", `--run_under="cd $PWD &&"`, "--", version)
+		return bazel.Run(ctx.Context, "//tools/release:patch", `--run_under="cd $PWD &&"`, "--", version)
 	},
 }

@@ -1,3 +1,4 @@
+# vim: filetype=bash
 #!/usr/bin/env bash
 
 set -eu
@@ -18,6 +19,9 @@ fi
 
 release_branch="wip_${NEW_VERSION}"
 
+echo "$PWD"
+echo "DEBUG: exiting early"
+exit 0
 echo "Checking out a new branch named $release_branch"
 git checkout -b "$release_branch"
 

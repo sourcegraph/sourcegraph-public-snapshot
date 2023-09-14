@@ -350,11 +350,3 @@ exports_files([
     "CONTRIBUTING.md",
 ])
 
-release_patch(
-    name = "release_patch",
-)
-
-sh_binary(
-    name = "finalize_release_patch",
-    srcs = ["//dev:finalize_release_patch.sh"],
-)
