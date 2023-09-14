@@ -7,12 +7,20 @@ type EnvironmentSpec struct {
 	// environment, e.g. "prod" or "dev".
 	ID string `json:"id"`
 
+	// Category is either "test", "internal", or "external".
+	Category *EnvironmentCategory `json:"category,omitempty"`
+
 	Deploy    EnvironmentDeploySpec    `json:"deploy"`
 	Domain    EnvironmentDomainSpec    `json:"domain"`
 	Instances EnvironmentInstancesSpec `json:"instances"`
 
-	Resources   *EnvironmentResourcesSpec   `json:"resources,omitempty"`
-	Healthcheck *EnvironmentHealthcheckSpec `json:"healtcheck,omitempty"`
+	Resources *EnvironmentResourcesSpec `json:"resources,omitempty"`
+
+	// StatupProbe is provisioned by default. It can be disabled with the
+	// 'disabled' field.
+	StatupProbe *EnvironmentStartupProbeSpec `json:"startupProbe,omitempty"`
+	// LivenessProbe is only provisioned if this field is set.
+	LivenessProbe *EnvironmentLivenessProbeSpec `json:"livenessProbe,omitempty"`
 
 	Env       map[string]string `json:"env,omitempty"`
 	SecretEnv map[string]string `json:"secretEnv,omitempty"`
@@ -23,6 +31,18 @@ func (s EnvironmentSpec) Validate() []error {
 	// TODO: Add validation
 	return errs
 }
+
+type EnvironmentCategory string
+
+const (
+	// EnvironmentCategoryTest should be used for testing and development
+	// environments.
+	EnvironmentCategoryTest EnvironmentCategory = "test"
+	// EnvironmentCategoryInternal should be used for internal environments.
+	EnvironmentCategoryInternal EnvironmentCategory = "internal"
+	// EnvironmentCategoryExternal is the default category if none is specified.
+	EnvironmentCategoryExternal EnvironmentCategory = "external"
+)
 
 type EnvironmentDeploySpec struct {
 	Type   EnvironmentDeployType        `json:"type"`
@@ -98,10 +118,38 @@ type EnvironmentInstancesScalingSpec struct {
 	MaxCount *int `json:"maxCount,omitempty"`
 }
 
-type EnvironmentHealthcheckSpec struct {
-	// LivenessProbeInterval configures the interval, in seconds, at which to
-	// probe the deployed service. If nil, no liveness probe is configured.
-	LivenessProbeInterval *int `json:"livenessProbeInterval,omitempty"`
+type EnvironmentLivenessProbeSpec struct {
+	// Timeout configures the period of time after which the probe times out,
+	// in seconds.
+	//
+	// Defaults to 1 second.
+	Timeout *int `json:"timeout,omitempty"`
+	// Interval configures the interval, in seconds, at which to
+	// probe the deployed service.
+	//
+	// Defaults to 1 second.
+	Interval *int `json:"interval,omitempty"`
+}
+
+type EnvironmentStartupProbeSpec struct {
+	// Disabled configures whether the startup probe should be disabled.
+	// We recommend disabling it when creating a service, and re-enabling it
+	// once the service is healthy.
+	//
+	// This prevents the first Terraform apply from failing if your healthcheck
+	// is comprehensive.
+	Disabled *bool `json:"disabled,omitempty"`
+
+	// Timeout configures the period of time after which the probe times out,
+	// in seconds.
+	//
+	// Defaults to 1 second.
+	Timeout *int `json:"timeout,omitempty"`
+	// Interval configures the interval, in seconds, at which to
+	// probe the deployed service.
+	//
+	// Defaults to 1 second.
+	Interval *int `json:"interval,omitempty"`
 }
 
 type EnvironmentResourcesSpec struct {

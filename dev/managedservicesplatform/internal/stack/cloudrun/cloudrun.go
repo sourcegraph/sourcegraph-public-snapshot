@@ -341,22 +341,35 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 					c.AdditionalEnv...),
 
 				// Do healthchecks with authorization based on MSP convention.
-				StartupProbe: &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbe{
-					HttpGet: &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGet{
-						Path: pointers.Ptr(healthCheckEndpoint),
-						HttpHeaders: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGetHttpHeaders{{
-							Name:  pointers.Ptr("Bearer"),
-							Value: pointers.Ptr(fmt.Sprintf("Authorization %s", c.DiagnosticsSecret.HexValue)),
-						}},
-					},
-					InitialDelaySeconds: pointers.Float64(0),
-					TimeoutSeconds:      pointers.Float64(1),
-					PeriodSeconds:       pointers.Float64(2),
-					FailureThreshold:    pointers.Float64(3),
-				},
+				StartupProbe: func() *cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbe {
+					// Default: enabled
+					if vars.Environment.StatupProbe != nil &&
+						pointers.Deref(vars.Environment.StatupProbe.Disabled, false) {
+						return nil
+					}
 
+					// Set zero value for ease of reference
+					if vars.Environment.StatupProbe == nil {
+						vars.Environment.StatupProbe = &spec.EnvironmentStartupProbeSpec{}
+					}
+
+					return &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbe{
+						HttpGet: &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGet{
+							Path: pointers.Ptr(healthCheckEndpoint),
+							HttpHeaders: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGetHttpHeaders{{
+								Name:  pointers.Ptr("Bearer"),
+								Value: pointers.Ptr(fmt.Sprintf("Authorization %s", c.DiagnosticsSecret.HexValue)),
+							}},
+						},
+						InitialDelaySeconds: pointers.Float64(0),
+						TimeoutSeconds:      pointers.Float64(pointers.Deref(vars.Environment.StatupProbe.Timeout, 1)),
+						PeriodSeconds:       pointers.Float64(pointers.Deref(vars.Environment.StatupProbe.Interval, 1)),
+						FailureThreshold:    pointers.Float64(3),
+					}
+				}(),
 				LivenessProbe: func() *cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbe {
-					if vars.Environment.Healthcheck == nil || vars.Environment.Healthcheck.LivenessProbeInterval == nil {
+					// Default: disabled
+					if vars.Environment.LivenessProbe == nil {
 						return nil
 					}
 					return &cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbe{
@@ -367,8 +380,8 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 								Value: pointers.Ptr(fmt.Sprintf("Authorization %s", c.DiagnosticsSecret.HexValue)),
 							}},
 						},
-						TimeoutSeconds:   pointers.Float64(3),
-						PeriodSeconds:    pointers.Float64(*vars.Environment.Healthcheck.LivenessProbeInterval),
+						TimeoutSeconds:   pointers.Float64(pointers.Deref(vars.Environment.LivenessProbe.Timeout, 1)),
+						PeriodSeconds:    pointers.Float64(pointers.Deref(vars.Environment.LivenessProbe.Interval, 1)),
 						FailureThreshold: pointers.Float64(2),
 					}
 				}(),
