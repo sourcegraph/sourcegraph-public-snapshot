@@ -178,7 +178,7 @@ JetBrains IntelliJ will typically notify you when updates are available for inst
 
 ## More benefits
 
-Read more about [Cody Capabilities](./../capabilities.md) to learn about all the features it provides to boost your development productivity.
+Read more about [Cody capabilities](./../capabilities.md) to learn about all the features it provides to boost your development productivity.
 
 ## More resources
 
