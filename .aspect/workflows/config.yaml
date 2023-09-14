@@ -14,3 +14,6 @@ tasks:
         # Most flags belong in your .bazelrc file.
         targets:
             - //...
+            - //client/web:test
+            - //testing:codeintel_integration_test
+            - //testing:grpc_backend_integration_test
