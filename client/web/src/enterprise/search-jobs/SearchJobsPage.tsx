@@ -368,8 +368,9 @@ const SearchJobsZeroState: FC<SearchJobsZeroStateProps> = props => {
 
 const SearchJobsWithFiltersZeroState: FC = () => (
     <ListPageZeroState
-        title="No Search jobs found"
-        subTitle="Try to reset filters to see all search jobs available to you"
+        title="No search jobs found"
+        subTitle="Reset filters to see all search jobs."
+        withIllustration={false}
         className={styles.zeroStateWithFilters}
     />
 )
