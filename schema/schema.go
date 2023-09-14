@@ -1756,6 +1756,8 @@ type OrganizationInvitations struct {
 
 // OtherExternalServiceConnection description: Configuration for a Connection to Git repositories for which an external service integration isn't yet available.
 type OtherExternalServiceConnection struct {
+	// DotComPublic description: Whether or not these repositories should be marked as public on Sourcegraph.com. Defaults to false.
+	DotComPublic bool `json:"dotComPublic,omitempty"`
 	// Exclude description: A list of repositories to never mirror by name after applying repositoryPathPattern. Supports excluding by exact name ({"name": "myrepo"}) or regular expression ({"pattern": ".*secret.*"}).
 	Exclude []*ExcludedOtherRepo `json:"exclude,omitempty"`
 	Repos   []string             `json:"repos"`
