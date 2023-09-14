@@ -86,6 +86,7 @@ public class CodyToolWindowContent implements UpdatableChat {
   private final JButton stopGeneratingButton =
       new JButton("Stop generating", IconUtil.desaturate(AllIcons.Actions.Suspend));
   private final @NotNull JBPanelWithEmptyText recipesPanel;
+  public final EmbeddingStatusView embeddingStatusView;
   private @NotNull volatile CancellationToken cancellationToken = new CancellationToken();
   private @NotNull Transcript transcript = new Transcript();
   private boolean isChatVisible = false;
@@ -162,7 +163,7 @@ public class CodyToolWindowContent implements UpdatableChat {
     lowerPanel.add(stopGeneratingButtonPanel);
     lowerPanel.add(controlsPanel);
 
-    EmbeddingStatusView embeddingStatusView = new EmbeddingStatusView(project);
+    embeddingStatusView = new EmbeddingStatusView(project);
     embeddingStatusView.setBorder(topBorder);
     lowerPanel.add(embeddingStatusView);
 
