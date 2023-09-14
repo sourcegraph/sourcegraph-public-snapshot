@@ -82,7 +82,7 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 		IsSiteAdmin:         auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil,
 		ViewerFinalSettings: settings,
 
-		gitserverClient: r.gitserverClient,
+		gitserverClient: gitserver.NewClient(),
 	}
 
 	var alerts []*Alert

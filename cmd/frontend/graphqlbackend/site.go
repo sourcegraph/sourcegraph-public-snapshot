@@ -31,7 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -57,7 +56,7 @@ func (r *schemaResolver) siteByGQLID(_ context.Context, id graphql.ID) (Node, er
 	if siteGQLID != singletonSiteGQLID {
 		return nil, errors.Errorf("site not found: %q", siteGQLID)
 	}
-	return NewSiteResolver(r.logger, r.db, r.gitserverClient), nil
+	return NewSiteResolver(r.logger, r.db), nil
 }
 
 func marshalSiteGQLID(siteID string) graphql.ID { return relay.MarshalID("Site", siteID) }
@@ -72,23 +71,21 @@ func unmarshalSiteGQLID(id graphql.ID) (siteID string, err error) {
 }
 
 func (r *schemaResolver) Site() *siteResolver {
-	return NewSiteResolver(r.logger, r.db, r.gitserverClient)
+	return NewSiteResolver(r.logger, r.db)
 }
 
-func NewSiteResolver(logger log.Logger, db database.DB, gitserverClient gitserver.Client) *siteResolver {
+func NewSiteResolver(logger log.Logger, db database.DB) *siteResolver {
 	return &siteResolver{
-		logger:          logger,
-		db:              db,
-		gqlID:           singletonSiteGQLID,
-		gitserverClient: gitserverClient,
+		logger: logger,
+		db:     db,
+		gqlID:  singletonSiteGQLID,
 	}
 }
 
 type siteResolver struct {
-	logger          log.Logger
-	db              database.DB
-	gqlID           string // == singletonSiteGQLID, not the site ID
-	gitserverClient gitserver.Client
+	logger log.Logger
+	db     database.DB
+	gqlID  string // == singletonSiteGQLID, not the site ID
 }
 
 func (r *siteResolver) ID() graphql.ID { return marshalSiteGQLID(r.gqlID) }
