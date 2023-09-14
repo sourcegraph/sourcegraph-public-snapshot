@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.config
 
+import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.ui.setEmptyState
@@ -17,6 +18,7 @@ import com.sourcegraph.cody.config.DialogValidationUtils.custom
 import com.sourcegraph.cody.config.DialogValidationUtils.notBlank
 import com.sourcegraph.common.AuthorizationUtil
 import com.sourcegraph.common.BrowserOpener
+import java.net.URLEncoder
 import java.net.UnknownHostException
 import javax.swing.JComponent
 import javax.swing.JTextField
@@ -66,7 +68,9 @@ internal class CodyTokenCredentialsUi(
     val sourcegraphServerPath =
         runCatching { SourcegraphServerPath.from(serverTextField.text, "") }.getOrNull()
             ?: return ""
-    return sourcegraphServerPath.url + "user/settings/tokens/new"
+    val productName = ApplicationNamesInfo.getInstance().fullProductName
+    val productNameEncoded= URLEncoder.encode(productName, "UTF-8")
+    return sourcegraphServerPath.url + "user/settings/tokens/new?description=" + productNameEncoded
   }
 
   override fun getValidator(): () -> ValidationInfo? = {
