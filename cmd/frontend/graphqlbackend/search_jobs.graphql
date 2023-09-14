@@ -36,7 +36,7 @@ extend type Query {
     """
     searchJobs(
         """
-        The number of results to return. Defaults to 50.
+        The number of results to return.
         """
         first: Int
         """
