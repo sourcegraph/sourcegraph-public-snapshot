@@ -5,7 +5,7 @@ load(":release.bzl", "release_patch")
 #     "release_patch.sh.tpl",
 # ])
 release_patch(
-    name = "patch",
+    name = "create_patch",
 )
 
 sh_binary(
