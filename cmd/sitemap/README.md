@@ -13,4 +13,5 @@ Once ran, it will output some stats as well as generate the sitemap.xml files to
 
 ```sh
 gsutil cp -r sitemap/ gs://sitemap-sourcegraph-com
+gsutil ls 'gs://sitemap-sourcegraph-com/*.gz' | xargs gsutil setmeta -h 'Content-Encoding:gzip'
 ```

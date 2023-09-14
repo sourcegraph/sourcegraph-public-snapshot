@@ -14,7 +14,7 @@ object ServerAuthLoader {
   @JvmStatic
   fun loadServerAuth(project: Project): ServerAuth {
     val codyAuthenticationManager = CodyAuthenticationManager.getInstance()
-    val defaultAccount = codyAuthenticationManager.getDefaultAccount(project)
+    val defaultAccount = codyAuthenticationManager.getActiveAccount(project)
     if (defaultAccount != null) {
       val accessToken = codyAuthenticationManager.getTokenForAccount(defaultAccount) ?: ""
       return ServerAuth(

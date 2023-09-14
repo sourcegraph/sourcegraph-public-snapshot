@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -69,6 +70,10 @@ func NewOtherSource(ctx context.Context, svc *types.ExternalService, cf *httpcli
 	exclude, err := eb.Build()
 	if err != nil {
 		return nil, err
+	}
+
+	if envvar.SourcegraphDotComMode() && c.MakeReposPublicOnDotCom {
+		svc.Unrestricted = true
 	}
 
 	return &OtherSource{

@@ -14,6 +14,7 @@ type EncryptionConfig struct {
 	EncryptedFieldNames []string
 	UpdateAsBytes       bool
 	Scan                func(basestore.Rows, error) (map[int]Encrypted, error)
+	TreatEmptyAsNull    bool
 	Key                 func() encryption.Key
 	Limit               int
 }
@@ -43,7 +44,8 @@ var userExternalAccountsEncryptionConfig = EncryptionConfig{
 	IDFieldName:         "id",
 	KeyIDFieldName:      "encryption_key_id",
 	EncryptedFieldNames: []string{"auth_data", "account_data"},
-	Scan:                basestore.NewMapScanner(scanEncryptedStringPair),
+	Scan:                basestore.NewMapScanner(scanNullableEncryptedStringPair),
+	TreatEmptyAsNull:    true,
 	Key:                 func() encryption.Key { return keyring.Default().UserExternalAccountKey },
 	Limit:               100,
 }
@@ -107,9 +109,21 @@ func scanEncryptedString(scanner dbutil.Scanner) (id int, e Encrypted, err error
 	return
 }
 
+func scanNullableEncryptedString(scanner dbutil.Scanner) (id int, e Encrypted, err error) {
+	e.Values = make([]string, 1)
+	err = scanner.Scan(&id, &e.KeyID, &dbutil.NullString{S: &e.Values[0]})
+	return
+}
+
 func scanEncryptedStringPair(scanner dbutil.Scanner) (id int, e Encrypted, err error) {
 	e.Values = make([]string, 2)
 	err = scanner.Scan(&id, &e.KeyID, &e.Values[0], &e.Values[1])
+	return
+}
+
+func scanNullableEncryptedStringPair(scanner dbutil.Scanner) (id int, e Encrypted, err error) {
+	e.Values = make([]string, 2)
+	err = scanner.Scan(&id, &e.KeyID, &dbutil.NullString{S: &e.Values[0]}, &dbutil.NullString{S: &e.Values[1]})
 	return
 }
 

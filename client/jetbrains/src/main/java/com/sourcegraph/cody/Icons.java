@@ -6,6 +6,7 @@ import javax.swing.*;
 
 public interface Icons {
   Icon CodyLogo = IconLoader.getIcon("/icons/codyLogo.svg", Icons.class);
+  Icon HiImCody = IconLoader.getIcon("/icons/hiImCodyLogo.svg", Icons.class);
 
   interface Repository {
     Icon Indexed = IconLoader.getIcon("/icons/repositoryIndexed.svg", Icons.class);
