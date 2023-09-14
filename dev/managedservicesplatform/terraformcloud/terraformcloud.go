@@ -141,9 +141,17 @@ func (w Workspace) URL() string {
 // problem of, if Terraform Cloud workspaces provision our resourcs, who provisions
 // our Terraform Cloud workspace?
 func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env spec.EnvironmentSpec, stacks []string) ([]Workspace, error) {
-	oauthClient, err := c.client.OAuthClients.Read(ctx, c.vcsOAuthClientID)
-	if err != nil {
-		return nil, err
+	// Load preconfigured OAuth to GitHub if we are using VCS mode
+	var oauthClient *tfe.OAuthClient
+	if c.workspaceConfig.RunMode == WorkspaceRunModeVCS {
+		var err error
+		oauthClient, err = c.client.OAuthClients.Read(ctx, c.vcsOAuthClientID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get OAuth client for VCS mode")
+		}
+		if len(oauthClient.OAuthTokens) == 0 {
+			return nil, errors.Wrapf(err, "OAuth client %q has no tokens, cannot use VCS mode", *oauthClient.Name)
+		}
 	}
 
 	// Set up project for workspaces to be in
@@ -162,6 +170,7 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 		}
 	}
 	if tfcProject == nil {
+		var err error
 		tfcProject, err = c.client.Projects.Create(ctx, c.org, tfe.ProjectCreateOptions{
 			Name: tfcProjectName,
 		})
@@ -220,7 +229,7 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 			// and provide the relative path to the root of the stack
 			wantWorkspaceOptions.WorkingDirectory = pointers.Ptr(workspaceDir)
 			wantWorkspaceOptions.VCSRepo = &tfe.VCSRepoOptions{
-				OAuthTokenID: &oauthClient.ID,
+				OAuthTokenID: &oauthClient.OAuthTokens[len(oauthClient.OAuthTokens)-1].ID,
 				Identifier:   pointers.Ptr(VCSRepo),
 				Branch:       pointers.Ptr("main"),
 			}

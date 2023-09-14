@@ -74,6 +74,7 @@ func (r *Renderer) RenderEnvironment(
 	projectOutput, err := project.NewStack(stacks, project.Variables{
 		ProjectIDPrefix: projectIDPrefix,
 		Name:            pointers.Deref(svc.Name, svc.ID),
+		Category:        env.Category,
 		Labels: map[string]string{
 			"service":     svc.ID,
 			"environment": env.ID,

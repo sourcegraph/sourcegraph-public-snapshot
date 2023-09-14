@@ -69,8 +69,14 @@ func init() {
 					Environments: []spec.EnvironmentSpec{
 						{
 							ID: "dev",
+							// For dev deployment, specify category 'test'.
+							Category: pointers.Ptr(spec.EnvironmentCategoryTest),
+
 							Deploy: spec.EnvironmentDeploySpec{
 								Type: "manual",
+								Manual: &spec.EnvironmentDeployManualSpec{
+									Tag: "insiders",
+								},
 							},
 							Domain: spec.EnvironmentDomainSpec{
 								Type: "cloudflare",
@@ -89,14 +95,14 @@ func init() {
 									MaxCount: pointers.Ptr(1),
 								},
 							},
-							Resources: &spec.EnvironmentResourcesSpec{
-								Redis: &spec.EnvironmentResourceRedisSpec{},
+							StatupProbe: &spec.EnvironmentStartupProbeSpec{
+								// Disable startup probes by default, as it is
+								// prone to causing the entire initial Terraform
+								// apply to fail.
+								Disabled: pointers.Ptr(true),
 							},
 							Env: map[string]string{
 								"SRC_LOG_LEVEL": "info",
-							},
-							SecretEnv: map[string]string{
-								"SUPER_SEKRET_VAR": "SUPER_SEKRET_VAR",
 							},
 						},
 					},
@@ -241,11 +247,11 @@ func init() {
 							return errors.Wrap(err, "get AccessToken")
 						}
 						tfcOAuthClient, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
-							Project: googlesecretsmanager.ProjectID,
 							Name:    googlesecretsmanager.SecretTFCOAuthClientID,
+							Project: googlesecretsmanager.ProjectID,
 						})
 						if err != nil {
-							return err
+							return errors.Wrap(err, "get TFC OAuth client ID")
 						}
 
 						tfcClient, err := terraformcloud.NewClient(tfcAccessToken, tfcOAuthClient,

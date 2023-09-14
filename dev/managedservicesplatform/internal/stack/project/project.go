@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/randomprovider"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -41,6 +42,17 @@ const (
 	DefaultProjectFolderID = "folders/26336759932"
 )
 
+var EnvironmentCategoryFolders = map[spec.EnvironmentCategory]string{
+	// Engineering Projects
+	spec.EnvironmentCategoryTest: "folders/795981974432",
+
+	// spec.EnvironmentCategoryInternal: "", // TODO
+
+	// Use default folder
+	spec.EnvironmentCategoryExternal: DefaultProjectFolderID,
+	spec.EnvironmentCategory(""):     DefaultProjectFolderID,
+}
+
 type Output struct {
 	// Project is created with a generated project ID.
 	Project project.Project
@@ -57,9 +69,8 @@ type Variables struct {
 	// Labels to apply to the project.
 	Labels map[string]string
 
-	// ProjectFolderID is a 'folders/'-prefixed folder ID to create the project
-	// in. A default project is set.
-	ProjectFolderID *string
+	// Category determines what folder the project will be created in.
+	Category *spec.EnvironmentCategory
 
 	// EnableAuditLogs ships GCP audit logs to security cluster.
 	// TODO: Not yet implemented
@@ -91,7 +102,13 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 				ProjectId:         &projectID.HexValue,
 				AutoCreateNetwork: false,
 				BillingAccount:    pointers.Ptr(BillingAccountID),
-				FolderId:          pointers.Ptr(pointers.Deref(vars.ProjectFolderID, DefaultProjectFolderID)),
+				FolderId: func() *string {
+					folder, ok := EnvironmentCategoryFolders[pointers.Deref(vars.Category, spec.EnvironmentCategoryExternal)]
+					if ok {
+						return &folder
+					}
+					return pointers.Ptr(string(DefaultProjectFolderID))
+				}(),
 				Labels: func(input map[string]string) *map[string]*string {
 					labels := make(map[string]*string)
 					for k, v := range input {
