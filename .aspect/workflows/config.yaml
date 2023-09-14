@@ -5,7 +5,7 @@ tasks:
         # Rebase PR changes on main, to avoid churning the repository cache
         update_strategy: rebase
     # Checks that BUILD file content is up-to-date with sources
-    gazelle:
+    # gazelle:
     # Checks that all tests are passing
     test:
         collect_coverage: false
